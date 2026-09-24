@@ -1144,26 +1144,57 @@ $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; sho
 
 /* ---------- pet shop ---------- */
 function renderShop(){
-  let h = `<div class="backrow"><h2>🛍️ Pet Shop</h2><button class="btn small" data-go="home">Back to town</button></div><h3>Pets</h3><div class="shopgrid">`;
-  REWARDS.filter(r => r.kind === 'pet' && r.unit === 'cafe').forEach(reward => {
-    const {id, emoji, name, price} = reward, own = S.owned.includes(id), active = S.pet === id;
-    h += `<div class="item ${active ? 'active' : ''}" id="reward-${id}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
-      ? (active ? '<span class="tag">Your helper</span>' : `<button class="btn small mint" data-pet="${id}">Choose</button>`)
-      : `<button class="btn small butter" data-buypet="${id}" ${S.coins < price ? 'disabled' : ''}>Buy for 🪙 ${price}</button>`}</div>`;
+  const hint = (reward, building) => {
+    if (!building.open) return `Opens with the ${building.name}.`;
+    const rule = reward.unlock;
+    if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
+    if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
+    if (rule.type === 'unitMastery') return `Master every ${building.name} skill`;
+    if (rule.type === 'sprint') return `Reach ${rule.best} in the Fact Sprint`;
+    if (rule.type === 'streak') return `Get ${rule.n} perfect orders in a row`;
+    return 'Available from the beginning';
+  };
+  const item = (reward, building) => {
+    const owned = owns(reward), active = reward.kind === 'pet' && S.pet === reward.id;
+    const unlocked = available(reward);
+    const classes = ['item'];
+    if (active) classes.push('active');
+    if (reward.legendary) classes.push('legendary');
+    let action;
+    if (owned) action = reward.kind === 'pet'
+      ? (active ? '<span class="tag">Your helper</span>' : `<button class="btn small mint" data-pet="${reward.id}">Choose</button>`)
+      : '<span class="tag">In your town</span>';
+    else if (unlocked && reward.price > 0) {
+      const data = reward.kind === 'pet' ? 'data-buypet' : 'data-buydecor';
+      action = `<button class="btn small butter" ${data}="${reward.id}" ${S.coins < reward.price ? 'disabled' : ''}>Buy for 🪙 ${reward.price}</button>`;
+    } else if (unlocked) action = '<span class="tag">Earned when unlocked</span>';
+    else action = `<span class="tag">🔒 ${esc(hint(reward, building))}</span>`;
+    const emoji = unlocked || owned ? reward.emoji : `<span style="opacity:.35">${reward.emoji}</span> 🔒`;
+    return `<div class="${classes.join(' ')}" id="reward-${reward.id}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(reward.name)}</div>${action}</div>`;
+  };
+  let h = '<div class="backrow"><h2>🛍️ Pet Shop</h2><button class="btn small" data-go="home">Back to town</button></div>';
+  BUILDINGS.forEach(building => {
+    h += `<section><h3>${building.emoji} ${building.name}${building.open ? '' : ' (Coming soon)'}</h3><div class="shopgrid">`;
+    REWARDS.filter(reward => reward.unit === building.id).forEach(reward => { h += item(reward, building); });
+    h += '</div></section>';
   });
-  h += '</div><h3>Decorations for the town square</h3><div class="shopgrid">';
-  REWARDS.filter(r => r.kind === 'decor' && r.unit === 'cafe').forEach(reward => {
-    const {id, emoji, name, price} = reward, own = S.decor.includes(id);
-    h += `<div class="item" id="reward-${id}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
-      ? '<span class="tag">In your town</span>' : `<button class="btn small butter" data-buydecor="${id}" ${S.coins < price ? 'disabled' : ''}>Buy for 🪙 ${price}</button>`}</div>`;
-  });
-  $('#shopWrap').innerHTML = h + '</div>';
+  $('#shopWrap').innerHTML = h;
 }
 $('#shopWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled || b.dataset.go) return;
-  if (b.dataset.pet) { S.pet = b.dataset.pet; save(); sfx('good'); toast(petName() + ' is your helper now!'); }
-  if (b.dataset.buypet) { const p = REWARDS.find(r => r.kind === 'pet' && r.unit === 'cafe' && r.id === b.dataset.buypet); if (p && S.coins >= p.price) { S.coins -= p.price; S.owned.push(p.id); S.pet = p.id; save(); sfx('coin'); toast(p.name + ' moved to town!'); } }
-  if (b.dataset.buydecor) { const d = REWARDS.find(r => r.kind === 'decor' && r.unit === 'cafe' && r.id === b.dataset.buydecor); if (d && S.coins >= d.price) { S.coins -= d.price; S.decor.push(d.id); save(); sfx('coin'); toast(d.name + ' is in the town square!'); } }
+  if (b.dataset.pet) {
+    const reward = REWARDS.find(r => r.id === b.dataset.pet);
+    if (reward?.kind === 'pet' && owns(reward)) { S.pet = reward.id; save(); sfx('good'); toast(petName() + ' is your helper now!'); }
+  }
+  if (b.dataset.buypet || b.dataset.buydecor) {
+    const id = b.dataset.buypet || b.dataset.buydecor, reward = REWARDS.find(r => r.id === id);
+    if (reward && reward.price > 0 && available(reward) && !owns(reward) && S.coins >= reward.price) {
+      S.coins -= reward.price;
+      (reward.kind === 'pet' ? S.owned : S.decor).push(reward.id);
+      if (reward.kind === 'pet') S.pet = reward.id;
+      save(); sfx('coin'); toast(reward.kind === 'pet' ? reward.name + ' moved to town!' : reward.name + ' is in the town square!');
+    }
+  }
   updateHeader(); renderShop();
 });
 
