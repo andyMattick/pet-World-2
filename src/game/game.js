@@ -116,7 +116,7 @@ function statusFromRecent(r){
 }
 const skillStatus = sk => statusFromRecent(S.kr[sk] || '');
 const lvlOf = sk => { const n = S.kn[sk] || 0; return n < 4 ? 1 : n < 10 ? 2 : 3; };
-let unlockQueue = [];
+let unlockQueue = [], unlockActive = null;
 function unitOpen(unit){
   const building = BUILDINGS.find(b => b.id === unit);
   return !!(building && building.open);
@@ -149,6 +149,29 @@ function checkUnlocks({announce = false} = {}){
     else if (!S.seenUnlocks.includes(reward.id)) S.seenUnlocks.push(reward.id);
   });
   return fresh;
+}
+function showNextUnlock(){
+  if (!unlockQueue.length || (order && !order.done) || pr) return;
+  const id = unlockQueue.shift(), reward = REWARDS.find(r => r.id === id);
+  if (!reward) { showNextUnlock(); return; }
+  unlockActive = id;
+  if (!S.seenUnlocks.includes(id)) { S.seenUnlocks.push(id); save(); }
+  const building = BUILDINGS.find(b => b.id === reward.unit);
+  $('#unlockEmoji').textContent = reward.emoji;
+  $('#unlockTitle').textContent = `New in the ${building ? building.name : reward.unit}!`;
+  $('#unlockMessage').textContent = reward.name;
+  $('#unlockModal').hidden = false; $('main').inert = true;
+  $('#unlockSee').focus();
+}
+function closeUnlock(openShop){
+  const id = unlockActive;
+  $('#unlockModal').hidden = true; $('main').inert = false;
+  if (openShop) {
+    renderShop(); show('shop');
+    setTimeout(() => { const item = document.getElementById('reward-' + id); if (item) item.scrollIntoView({block:'center'}); }, 0);
+  }
+  unlockActive = null;
+  setTimeout(showNextUnlock, 0);
 }
 function ccTotals(){
   let ca=0, cc=0, ma=0, mc=0;
@@ -570,6 +593,8 @@ const petEmoji = () => petReward().emoji;
 const petName = () => petReward().name.split(' ')[0];
 const fmtPow = p => p.toFixed(2).replace(/0$/,'').replace(/\.0$/,'');
 const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
+$('#unlockSee').addEventListener('click', () => closeUnlock(true));
+$('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 const SCREENS = ['loading','join','name','home','cafe','shift','sprint','summary','shop','hall','parent'];
 function show(id){
@@ -965,7 +990,7 @@ function completeOrder(){
   STATIONS.forEach((s,i) => { if (!before[i] && stationOpen(s.id)) setTimeout(() => toast(`New station open: ${s.name}!`), 900); });
   const last = shift.n >= shift.total;
   $('#boardActions').innerHTML = `<button class="btn mint" id="nextBtn">${last ? 'Close up for the day' : 'Next customer'}</button>`;
-  $('#nextBtn').addEventListener('click', nextCustomer); setTimeout(() => $('#nextBtn').focus(), 60);
+  $('#nextBtn').addEventListener('click', nextCustomer); setTimeout(() => $('#nextBtn').focus(), 60); setTimeout(showNextUnlock, 0);
 }
 function endShift(){
   const pw = shift.power; S.day++; S.power = 1; save(); updateHeader(); Backend.flush();
@@ -1040,6 +1065,7 @@ function closePractice(){
     startPatience(remaining, 100 * remaining / order.limit);
   }
   if (cur.onClose) cur.onClose();
+  setTimeout(showNextUnlock, 0);
 }
 
 /* ---------- fact sprint ---------- */
@@ -1112,7 +1138,7 @@ function endSprint(){
     const table = +Object.keys(count).sort((a,b) => count[b] - count[a] || b - a)[0];
     const f = trouble.find(([x,y]) => x === table || y === table), other = f[0] === table ? f[1] : f[0];
     setTimeout(() => openPractice({table, other, reason:'sprint', div:false, text:`${table} × ${other} = ${table*other}`}, () => $('#sumCafe').focus()), 900);
-  }
+  } else setTimeout(showNextUnlock, 0);
 }
 $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; show('home'); });
 
@@ -1121,14 +1147,14 @@ function renderShop(){
   let h = `<div class="backrow"><h2>🛍️ Pet Shop</h2><button class="btn small" data-go="home">Back to town</button></div><h3>Pets</h3><div class="shopgrid">`;
   REWARDS.filter(r => r.kind === 'pet' && r.unit === 'cafe').forEach(reward => {
     const {id, emoji, name, price} = reward, own = S.owned.includes(id), active = S.pet === id;
-    h += `<div class="item ${active ? 'active' : ''}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
+    h += `<div class="item ${active ? 'active' : ''}" id="reward-${id}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
       ? (active ? '<span class="tag">Your helper</span>' : `<button class="btn small mint" data-pet="${id}">Choose</button>`)
       : `<button class="btn small butter" data-buypet="${id}" ${S.coins < price ? 'disabled' : ''}>Buy for 🪙 ${price}</button>`}</div>`;
   });
   h += '</div><h3>Decorations for the town square</h3><div class="shopgrid">';
   REWARDS.filter(r => r.kind === 'decor' && r.unit === 'cafe').forEach(reward => {
     const {id, emoji, name, price} = reward, own = S.decor.includes(id);
-    h += `<div class="item"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
+    h += `<div class="item" id="reward-${id}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
       ? '<span class="tag">In your town</span>' : `<button class="btn small butter" data-buydecor="${id}" ${S.coins < price ? 'disabled' : ''}>Buy for 🪙 ${price}</button>`}</div>`;
   });
   $('#shopWrap').innerHTML = h + '</div>';
