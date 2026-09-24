@@ -33,6 +33,88 @@ export const STATIONS: Station[] = [
 ];
 export const UNLOCK_AT = 6;
 
+export type UnlockRule =
+  | { type: 'start' }
+  | { type: 'unit' }
+  | { type: 'station'; station: number }
+  | { type: 'mastery'; skills: string[] }
+  | { type: 'unitMastery' }
+  | { type: 'sprint'; best: number }
+  | { type: 'streak'; n: number };
+
+export interface Reward {
+  id: string; kind: 'pet' | 'decor'; emoji: string; name: string;
+  unit: string;
+  unlock: UnlockRule; price: number; legendary?: boolean;
+}
+
+/** Skills belonging to each unit. Add a unit's skills when that unit is built. */
+export const UNIT_SKILLS: Record<string, string[]> = {
+  cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
+  bakery: [], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+};
+
+const cafeRewards: Reward[] = [
+  { id:'cat',      kind:'pet',   emoji:'🐱', name:'Mochi the cat',       unit:'cafe', unlock:{type:'start'}, price:0 },
+  { id:'bunny',    kind:'pet',   emoji:'🐰', name:'Clover the bunny',    unit:'cafe', unlock:{type:'start'}, price:40 },
+  { id:'hamster',  kind:'pet',   emoji:'🐹', name:'Peanut the hamster',  unit:'cafe', unlock:{type:'start'}, price:60 },
+  { id:'penguin',  kind:'pet',   emoji:'🐧', name:'Pebble the penguin',  unit:'cafe', unlock:{type:'station', station:2}, price:100 },
+  { id:'fox',      kind:'pet',   emoji:'🦊', name:'Maple the fox',       unit:'cafe', unlock:{type:'station', station:3}, price:150 },
+  { id:'panda',    kind:'pet',   emoji:'🐼', name:'Dumpling the panda',  unit:'cafe', unlock:{type:'station', station:4}, price:220 },
+  { id:'unicorn',  kind:'pet',   emoji:'🦄', name:'Sparkle the unicorn', unit:'cafe', unlock:{type:'unitMastery'}, price:0, legendary:true },
+  { id:'tulips',   kind:'decor', emoji:'🌷', name:'Tulip vase',          unit:'cafe', unlock:{type:'start'}, price:20 },
+  { id:'plant',    kind:'decor', emoji:'🪴', name:'Leafy plant',         unit:'cafe', unlock:{type:'start'}, price:30 },
+  { id:'teddy',    kind:'decor', emoji:'🧸', name:'Teddy bear',          unit:'cafe', unlock:{type:'start'}, price:45 },
+  { id:'balloons', kind:'decor', emoji:'🎈', name:'Balloons',            unit:'cafe', unlock:{type:'start'}, price:50 },
+  { id:'frame',    kind:'decor', emoji:'🖼️', name:'Fancy painting',      unit:'cafe', unlock:{type:'mastery', skills:['basic']}, price:0 },
+  { id:'cake',     kind:'decor', emoji:'🎂', name:'Cake display',        unit:'cafe', unlock:{type:'mastery', skills:['table','equiv']}, price:90 },
+  { id:'lights',   kind:'decor', emoji:'✨', name:'Twinkle lights',      unit:'cafe', unlock:{type:'streak', n:5}, price:110 },
+  { id:'rainbow',  kind:'decor', emoji:'🌈', name:'Rainbow sign',         unit:'cafe', unlock:{type:'sprint', best:25}, price:160 },
+  { id:'crown',    kind:'decor', emoji:'👑', name:'Golden crown',         unit:'cafe', unlock:{type:'unitMastery'}, price:0, legendary:true }
+];
+
+/** [building id, pets (welcome, s2, s3, s4, legend), decor (welcome, s2, s3, s4, legend)] as [emoji, name] pairs */
+const UNIT_SETS: [string, [string,string][], [string,string][]][] = [
+  ['bakery', [['🦔','Crumb the hedgehog'],['🐭','Nibbles the mouse'],['🐥','Sunny the chick'],['🐻','Honey the bear'],['🦝','Sprinkles the raccoon']],
+             [['🍞','Bread basket'],['🥐','Croissant sign'],['🥧','Pie window'],['🥨','Pretzel garland'],['🏅',"Baker's gold medal"]]],
+  ['market', [['🐐','Gus the goat'],['🦜','Kiwi the parrot'],['🐢','Slowpoke the turtle'],['🦙','Lulu the llama'],['🐓','Rocco the rooster']],
+             [['🍉','Melon stand'],['🌽','Corn crate'],['🧺','Picnic basket'],['🏷️','Price tags'],['⚖️','Golden scale']]],
+  ['clock',  [['🦉','Hoot the owl'],['🦇','Midnight the bat'],['🐿️','Acorn the chipmunk'],['🦅','Soar the eagle'],['🐉','Ember the dragon']],
+             [['🕯️','Candles'],['🔔','Tower bell'],['⏳','Hourglass'],['🌙','Moon banner'],['🕰️','Golden clock']]],
+  ['rink',   [['🦌','Frost the reindeer'],['🐺','Howl the wolf'],['🐋','Splash the whale'],['🦈','Finn the shark'],['🦢','Crystal the swan']],
+             [['⛸️','Skates'],['🧣','Scarf rack'],['☃️','Snowman'],['🏒','Hockey sticks'],['🥇','Gold medal']]],
+  ['potion', [['🐸','Fizz the frog'],['🐍','Noodle the snake'],['🦎','Zap the lizard'],['🐙','Inky the octopus'],['🦋','Glimmer the butterfly']],
+             [['🧪','Flasks'],['🔮','Crystal ball'],['📜','Spell scroll'],['🕸️','Cobwebs'],['⚗️','Golden cauldron']]],
+  ['houses', [['🐌','Shelly the snail'],['🐞','Dot the ladybug'],['🐝','Buzz the bee'],['🦡','Digger the badger'],['🦚','Jewel the peacock']],
+             [['🌻','Sunflower patch'],['🧱','Brick pile'],['🏕️','Camp tent'],['🏠','Tiny house'],['🏰','Castle']]],
+  ['show',   [['🐩','Fifi the poodle'],['🐈','Duchess the show cat'],['🦒','Tallulah the giraffe'],['🦓','Stripes the zebra'],['🦁','King the lion']],
+             [['🎀','Ribbons'],['📊','Score board'],['🎪','Show tent'],['🎺','Trumpet'],['🏆','Grand trophy']]]
+];
+const SLOTS = ['welcome','s2','s3','s4','legend'] as const;
+const slotRule = (i: number): UnlockRule => i === 0 ? {type:'unit'} : i === 4 ? {type:'unitMastery'} : {type:'station', station:i + 1};
+const PRICE = { pet: [0,100,150,200,0], decor: [0,60,90,120,0] };
+
+export const REWARDS: Reward[] = [
+  ...cafeRewards,
+  ...UNIT_SETS.flatMap(([unit, pets, decor]) => (
+    [['pet', pets], ['decor', decor]] as const).flatMap(([kind, list]) =>
+      list.map(([emoji, name], i): Reward => ({
+        id: `${unit}_${kind}_${SLOTS[i]}`, kind, emoji, name, unit,
+        unlock: slotRule(i), price: PRICE[kind][i], legendary: i === 4 || undefined
+      }))))
+];
+
+export const BUILDINGS = [
+  {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', open:true},
+  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers'},
+  {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages'},
+  {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations'},
+  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers'},
+  {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations'},
+  {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures'},
+  {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics'}
+];
+
 export interface Misconception { name: string; kid: string; tip: string; skills: string[] }
 export const MIS: Record<string, Misconception> = {
   reversed:         { name: 'Writes the ratio in the wrong order', kid: 'Check the order. The first thing named goes first.', tip: 'Say the ratio in words first ("blueberries to strawberries") and point to each item while writing it.', skills: ['basic'] },

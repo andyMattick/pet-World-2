@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, BUILDINGS } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -39,17 +39,6 @@ const DECOR = [
   ['tulips','🌷','Tulip vase',20],['plant','🪴','Leafy plant',30],['teddy','🧸','Teddy bear',45],['balloons','🎈','Balloons',50],
   ['frame','🖼️','Fancy painting',70],['cake','🎂','Cake display',90],['lights','✨','Twinkle lights',110],['rainbow','🌈','Rainbow sign',160],['crown','👑','Golden crown',250]
 ];
-const BUILDINGS = [
-  {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', open:true},
-  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers'},
-  {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages'},
-  {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations'},
-  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers'},
-  {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations'},
-  {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures'},
-  {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics'}
-];
-
 /* ---------- state ---------- */
 const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns

@@ -17,6 +17,12 @@ need('src/game/game.js', "from '../shared/registry'", 'the import from the share
 need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the student backend');
 
 for (const ex of ['export const SKILLS', 'export const SKILL_ORDER', 'export const STATIONS', 'export const UNLOCK_AT', 'export const MIS', 'export function statusFromRecent']) need('src/shared/registry.ts', ex);
+need('src/shared/registry.ts', 'export const REWARDS', 'the reward registry');
+const rewardRegistry = read('src/shared/registry.ts');
+const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
+const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 7)) problems.push('src/shared/registry.ts should define REWARDS.length === 86');
+if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);
 for (const m of ['export function renderClassReport', 'export function openDetail']) need('src/teacher/report.ts', m);
