@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pet Town</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@500;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/game.css">
+</head>
+<body>
+<div class="awning" aria-hidden="true"></div>
+<header class="topbar">
+  <h1 id="townTitle">Pet Town</h1>
+  <div class="chips">
+    <span class="chip power" id="powerChip" hidden>⚡ <span id="powerVal">×1</span> tips</span>
+    <span class="chip" title="Coins">🪙 <span id="coinCount">0</span></span>
+    <button class="iconbtn" id="musicBtn" title="Music">🎵</button>
+    <button class="iconbtn" id="muteBtn" title="Sound effects">🔊</button>
+  </div>
+</header>
+<main>
+  <section id="scr-loading" hidden><div class="loading">🐾 Opening Pet Town…</div></section>
+  <section id="scr-join" hidden><div id="joinWrap"></div></section>
+  <section id="scr-name" hidden>
+    <div class="card">
+      <div class="big-emoji">🐾</div>
+      <h2>Welcome to Pet Town!</h2>
+      <p>Type your first name. Your teacher will see it on your reports.</p>
+      <label for="nameInput">Your first name</label>
+      <input id="nameInput" class="textin" maxlength="20" autocomplete="off">
+      <p class="preview" id="namePreview">Your Pet Town</p>
+      <div class="row"><button class="btn berry" id="nameSave">Move in</button></div>
+    </div>
+  </section>
+
+  <section id="scr-home" hidden>
+    <div class="plaza">
+      <div class="plaza-pet" id="plazaPet">🐱</div>
+      <div class="plaza-decor" id="plazaDecor"></div>
+      <div class="plaza-stats"><span id="dayChip">Day 1</span><span id="ordersChip">0 orders</span></div>
+    </div>
+    <div class="town" id="town"></div>
+  </section>
+
+  <section id="scr-cafe" hidden>
+    <div class="backrow"><h2>☕ Pet Café</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <p class="muted" style="margin-top:0">Khan Academy 6th grade, Unit 1: Ratios. Each station opens after 6 orders at the one before it.</p>
+    <div class="stations" id="stations"></div>
+  </section>
+
+  <section id="scr-shift" hidden>
+    <div class="shift-top">
+      <div class="dots" id="dots" aria-label="Customers served"></div>
+      <strong id="shiftStation"></strong>
+      <button class="link" id="leaveShift">Close the café early</button>
+    </div>
+    <div class="shift-grid">
+      <div>
+        <div class="customer">
+          <div class="cust-emoji" id="custEmoji">🐻</div>
+          <div class="cust-name" id="custName"></div>
+          <div class="bubble" id="custBubble" aria-live="polite"></div>
+        </div>
+        <div class="patience"><div class="patience-fill" id="patience"></div></div>
+        <p class="patience-label">Speedy service earns a bigger tip</p>
+        <div class="helper"><span class="hp" id="helperPet">🐱</span><p id="helperSay"></p></div>
+      </div>
+      <div>
+        <div class="board" id="board"></div>
+        <div class="board-actions" id="boardActions"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="scr-sprint" hidden>
+    <div class="sprint-card">
+      <div class="timer"><div class="timer-fill" id="timerFill"></div></div>
+      <div class="sprint-stats"><span>✅ <span id="spCorrect">0</span> correct</span><span><span id="spTime">60</span> sec</span></div>
+      <div class="fact" id="factText">Ready?</div>
+      <input id="spInput" inputmode="numeric" autocomplete="off" aria-label="Your answer" hidden>
+      <div id="spStartWrap"><button class="btn butter" id="spStart">Start the sprint</button></div>
+      <p class="muted" id="spNote">Answer as many as you can in 60 seconds. Every right answer powers up your tips.</p>
+      <div class="row" style="margin-top:14px"><button class="link" id="spQuit">Stop and go back</button></div>
+    </div>
+  </section>
+
+  <section id="scr-summary" hidden><div class="card" id="summaryCard"></div></section>
+  <section id="scr-shop" hidden><div id="shopWrap"></div></section>
+  <section id="scr-hall" hidden><div id="hallWrap"></div></section>
+  <section id="scr-parent" hidden><div id="parentWrap"></div></section>
+</main>
+
+<div id="practice" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="prTitle">
+  <div class="modal-card">
+    <div class="pr-head"><span class="pr-pet" id="prPet">🐱</span><div><h2 id="prTitle">Let's practice!</h2><p id="prWhy"></p></div></div>
+    <div class="ladder" id="ladder"></div>
+    <p class="pr-hint" id="prHint" aria-live="polite"></p>
+    <div class="pr-done" id="prDone" hidden></div>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/src/game/game.js"></script>
+</body>
+</html>
