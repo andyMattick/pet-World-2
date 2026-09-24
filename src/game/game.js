@@ -779,6 +779,7 @@ $('#stations').addEventListener('click', e => { const b = e.target.closest('[dat
 
 /* ---------- shift engine ---------- */
 let shift = null, order = null;
+let patienceTimer = null;
 function startShift(station){
   shift = {station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), lastSkill:null};
   $('#helperPet').textContent = petEmoji();
@@ -788,10 +789,19 @@ function startShift(station){
 function renderDots(){ let h = ''; for (let i=1;i<=shift.total;i++) h += `<i class="${i < shift.n ? 'done' : i === shift.n ? 'now' : ''}"></i>`; $('#dots').innerHTML = h; }
 function setHelper(msg){ $('#helperSay').textContent = petName() + ': ' + msg; }
 function startPatience(seconds, fromPct){
-  const p = $('#patience'); p.style.transition = 'none'; p.style.width = (fromPct == null ? 100 : fromPct) + '%'; void p.offsetWidth;
-  p.style.transition = `width ${seconds}s linear`; p.style.width = '0%';
+  const p = $('#patience'), label = $('#patienceLabel'), total = order && order.limit || seconds;
+  if (patienceTimer) clearInterval(patienceTimer);
+  const endAt = performance.now() + seconds * 1000;
+  const tick = () => {
+    const left = Math.max(0, (endAt - performance.now()) / 1000), pct = Math.max(0, left / total);
+    p.classList.toggle('tip-warn', pct <= .5 && pct > .2); p.classList.toggle('tip-danger', pct <= .2);
+    label.textContent = left > 0 ? `⏱ ${Math.ceil(left)}s for a speed bonus` : 'No speed bonus, but take your time!';
+    if (!left) { clearInterval(patienceTimer); patienceTimer = null; }
+  };
+  p.classList.remove('tip-warn','tip-danger'); p.style.transition = 'none'; p.style.width = (fromPct == null ? 100 : fromPct) + '%'; void p.offsetWidth;
+  p.style.transition = `width ${seconds}s linear`; p.style.width = '0%'; tick(); patienceTimer = setInterval(tick, 100);
 }
-function freezePatience(){ const p = $('#patience'); const w = getComputedStyle(p).width; p.style.transition = 'none'; p.style.width = w; }
+function freezePatience(){ const p = $('#patience'); if (patienceTimer) { clearInterval(patienceTimer); patienceTimer = null; } const w = getComputedStyle(p).width; p.style.transition = 'none'; p.style.width = w; }
 function chooseSkill(){
   const W = {new:3, struggling:5, practicing:3, mastered:1};
   const skills = STATIONS[shift.station-1].skills;
@@ -1251,6 +1261,8 @@ function heatTable(store){
 }
 function renderParent(){
   const [ca, cc, ma, mc] = ccTotals(), pct = (c,a) => a ? Math.round(100*c/a) : null, cP = pct(cc,ca), mP = pct(mc,ma);
+  let setupA = 0, setupC = 0;
+  Object.values(S.ks).forEach(K => Object.values(K).forEach(e => { if (e.t === 'setup') { setupA += e.a; setupC += e.c; } }));
   let verdict = 'Not enough data yet. After a few shifts this shows whether the ideas or the arithmetic is harder.';
   if (ca >= 8 && ma >= 8) verdict = cP + 8 < mP ? `Understanding the ratio is the harder part (${cP}% vs ${mP}%). The arithmetic is fine. The trouble is seeing the relationship.`
     : mP + 8 < cP ? `The arithmetic is the harder part (${mP}% vs ${cP}%). The ideas are there, but facts slow things down. The Sprint Track helps most.`
@@ -1271,6 +1283,7 @@ function renderParent(){
     <div class="panel"><h3>Ideas or arithmetic?</h3><div class="stats">
       <div class="stat"><b>${cP === null ? '–' : cP + '%'}</b>idea steps right on the first try (${cc} of ${ca})</div>
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
+    <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>

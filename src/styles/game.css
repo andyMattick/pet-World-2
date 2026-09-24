@@ -110,6 +110,8 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .bubble::before{content:""; position:absolute; top:-12px; left:50%; margin-left:-10px; border:10px solid transparent; border-bottom-color:var(--edge); border-top:0}
 .patience{height:16px; border:3px solid var(--edge); border-radius:999px; background:var(--surface); overflow:hidden; margin-top:14px}
 .patience-fill{height:100%; width:100%; background:var(--mint)}
+.patience-fill.tip-warn{background:var(--butter)}
+.patience-fill.tip-danger{background:#F28C28}
 .patience-label{margin:4px 0 0; font-size:.85rem; color:var(--ink-soft); text-align:center}
 .helper{display:flex; gap:10px; align-items:flex-start; margin-top:16px; background:var(--surface); border:3px dashed var(--ink-soft); border-radius:16px; padding:10px 12px}
 .helper .hp{font-size:2.2rem; line-height:1}

@@ -91,14 +91,16 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[]) {
 export function openDetail(r: StudentReport) {
   if (!r) return;
   const st = sStats(r);
+  let setupA = 0, setupC = 0;
+  Object.values(r.s || {}).forEach(steps => Object.values(steps).forEach(v => { if (v[3] === 's') { setupA += v[0]; setupC += v[1]; } }));
   let h = `<div class="row noprint" style="justify-content:space-between; margin-top:0"><h2 id="dTitle" style="margin:0">${esc(r.n)}</h2>
     <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dClose">Close</button></span></div>
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
-    <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div></div>`;
+    <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
   ORDER.forEach(k => {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
-    const stepTxt = Object.entries(steps).filter(([, v]) => v[3] !== 's').map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
+    const stepTxt = Object.entries(steps).map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 's' ? 'count' : v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
     h += `<tr><td>${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
   });
   h += '</table><div class="two" style="margin-top:14px"><div><h2>Mix-ups</h2>';
