@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, BUILDINGS } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -31,20 +31,13 @@ const RECIPES = [
 ];
 const COUNTABLES = [['🍓','strawberries'],['🫐','blueberries'],['🍪','cookies'],['🧁','cupcakes'],['🍩','donuts'],['🥕','carrots'],['🍎','apples'],['🍌','bananas'],['🥨','pretzels'],['🍋','lemons'],['🍒','cherries'],['🥐','croissants']];
 const CUSTOMERS = [['🐻','Biscuit'],['🐶','Waffles'],['🐭','Pip'],['🐨','Koko'],['🐯','Tigerlily'],['🦁','Leo'],['🐮','Daisy'],['🐷','Truffle'],['🐸','Ribbit'],['🐵','Coco'],['🐔','Nugget'],['🦉','Hoot'],['🦔','Spike'],['🦦','Otto'],['🐤','Sunny'],['🐢','Shelly'],['🦝','Bandit'],['🐑','Fluff']];
-const PETS = [
-  ['cat','🐱','Mochi the cat',0],['bunny','🐰','Clover the bunny',40],['hamster','🐹','Peanut the hamster',60],
-  ['penguin','🐧','Pebble the penguin',100],['fox','🦊','Maple the fox',150],['panda','🐼','Dumpling the panda',220],['unicorn','🦄','Sparkle the unicorn',350]
-];
-const DECOR = [
-  ['tulips','🌷','Tulip vase',20],['plant','🪴','Leafy plant',30],['teddy','🧸','Teddy bear',45],['balloons','🎈','Balloons',50],
-  ['frame','🖼️','Fancy painting',70],['cake','🎂','Cake display',90],['lights','✨','Twinkle lights',110],['rainbow','🌈','Rainbow sign',160],['crown','👑','Golden crown',250]
-];
+
 /* ---------- state ---------- */
 const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
-const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0,
-  owned:['cat'], decor:[], pet:'cat', muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
+const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
+  owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, ks:{}, kr:{}, kn:{}, mis:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
@@ -55,6 +48,9 @@ function normalize(raw){
   ['facts','divFacts','practiceLog','ks','kr','kn','mis'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
   if (!Array.isArray(s.owned) || !s.owned.length) s.owned = ['cat'];
   if (!Array.isArray(s.decor)) s.decor = [];
+  if (!Array.isArray(s.unlocked)) s.unlocked = [];
+  if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
+  s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   return s;
 }
@@ -120,6 +116,40 @@ function statusFromRecent(r){
 }
 const skillStatus = sk => statusFromRecent(S.kr[sk] || '');
 const lvlOf = sk => { const n = S.kn[sk] || 0; return n < 4 ? 1 : n < 10 ? 2 : 3; };
+let unlockQueue = [];
+function unitOpen(unit){
+  const building = BUILDINGS.find(b => b.id === unit);
+  return !!(building && building.open);
+}
+function ruleMet(reward){
+  const rule = reward.unlock;
+  if (rule.type === 'start') return true;
+  if (rule.type === 'unit') return unitOpen(reward.unit);
+  if (rule.type === 'station') return reward.unit === 'cafe' && (S.cafe.st[rule.station] || 0) >= UNLOCK_AT;
+  if (rule.type === 'mastery') return rule.skills.every(skill => skillStatus(skill) === 'mastered');
+  if (rule.type === 'unitMastery') {
+    const skills = UNIT_SKILLS[reward.unit] || [];
+    return skills.length > 0 && skills.every(skill => skillStatus(skill) === 'mastered');
+  }
+  if (rule.type === 'sprint') return S.sprintBest >= rule.best;
+  if (rule.type === 'streak') return S.bestStreak >= rule.n;
+  return false;
+}
+function available(reward){ return unitOpen(reward.unit) && ruleMet(reward); }
+function owns(reward){ return reward.kind === 'pet' ? S.owned.includes(reward.id) : S.decor.includes(reward.id); }
+function checkUnlocks({announce = false} = {}){
+  const fresh = [];
+  REWARDS.forEach(reward => {
+    if (!available(reward) || S.unlocked.includes(reward.id)) return;
+    S.unlocked.push(reward.id); fresh.push(reward.id);
+    if (reward.price === 0 && !owns(reward)) {
+      (reward.kind === 'pet' ? S.owned : S.decor).push(reward.id);
+    }
+    if (announce) unlockQueue.push(reward.id);
+    else if (!S.seenUnlocks.includes(reward.id)) S.seenUnlocks.push(reward.id);
+  });
+  return fresh;
+}
 function ccTotals(){
   let ca=0, cc=0, ma=0, mc=0;
   Object.values(S.ks).forEach(K => Object.values(K).forEach(e => {
@@ -535,8 +565,9 @@ ppw(lvl){
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-const petEmoji = () => (PETS.find(p => p[0] === S.pet) || PETS[0])[1];
-const petName = () => (PETS.find(p => p[0] === S.pet) || PETS[0])[2].split(' ')[0];
+const petReward = () => REWARDS.find(r => r.kind === 'pet' && r.id === S.pet) || REWARDS.find(r => r.kind === 'pet');
+const petEmoji = () => petReward().emoji;
+const petName = () => petReward().name.split(' ')[0];
 const fmtPow = p => p.toFixed(2).replace(/0$/,'').replace(/\.0$/,'');
 const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
 
@@ -680,7 +711,7 @@ $('#nameSave').addEventListener('click', () => {
 function renderHome(){
   $('#plazaPet').textContent = petEmoji();
   $('#plazaDecor').innerHTML = S.decor.length
-    ? S.decor.map(id => { const d = DECOR.find(x => x[0] === id); return d ? `<span title="${esc(d[2])}">${d[1]}</span>` : ''; }).join('')
+    ? S.decor.map(id => { const d = REWARDS.find(r => r.kind === 'decor' && r.id === id); return d ? `<span title="${esc(d.name)}">${d.emoji}</span>` : ''; }).join('')
     : '<span class="empty">Earn coins in the shops, then decorate your town at the Pet Shop!</span>';
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
@@ -920,8 +951,10 @@ function completeOrder(){
   let tip = 4 + p.steps.length*2 + Math.max(0, Math.round(6 * (1 - secs/order.limit)));
   if (perfect) { S.streak++; tip += Math.min(5, S.streak); S.perfect++; shift.perfect++; }
   else tip = Math.max(3, tip - order.tries - order.hints);
+  S.bestStreak = Math.max(S.bestStreak || 0, S.streak);
   tip = Math.round(tip * shift.power);
   S.coins += tip; S.orders++; shift.earned += tip; shift.missed.push(...order.missed);
+  checkUnlocks({announce:true});
   Backend.log('problems', {shop:'cafe', station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
   save(); updateHeader();
   const n = $('#chalkNote'); n.className = 'chalk-note good';
@@ -1062,6 +1095,7 @@ function endSprint(){
   const pw = Math.round((1 + Math.min(run.correct, 20)*0.05)*100)/100;
   S.power = Math.max(S.power, pw);
   const best = run.correct > S.sprintBest; if (best) S.sprintBest = run.correct;
+  checkUnlocks({announce:true});
   save(); updateHeader();
   Backend.log('sprints', {correct:run.correct}); Backend.flush();
   const seen = new Set(), chips = [];
@@ -1085,16 +1119,16 @@ $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; sho
 /* ---------- pet shop ---------- */
 function renderShop(){
   let h = `<div class="backrow"><h2>🛍️ Pet Shop</h2><button class="btn small" data-go="home">Back to town</button></div><h3>Pets</h3><div class="shopgrid">`;
-  PETS.forEach(([id, em, name, price]) => {
-    const own = S.owned.includes(id), active = S.pet === id;
-    h += `<div class="item ${active ? 'active' : ''}"><div class="item-emoji">${em}</div><div class="item-name">${esc(name)}</div>${own
+  REWARDS.filter(r => r.kind === 'pet' && r.unit === 'cafe').forEach(reward => {
+    const {id, emoji, name, price} = reward, own = S.owned.includes(id), active = S.pet === id;
+    h += `<div class="item ${active ? 'active' : ''}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
       ? (active ? '<span class="tag">Your helper</span>' : `<button class="btn small mint" data-pet="${id}">Choose</button>`)
       : `<button class="btn small butter" data-buypet="${id}" ${S.coins < price ? 'disabled' : ''}>Buy for 🪙 ${price}</button>`}</div>`;
   });
   h += '</div><h3>Decorations for the town square</h3><div class="shopgrid">';
-  DECOR.forEach(([id, em, name, price]) => {
-    const own = S.decor.includes(id);
-    h += `<div class="item"><div class="item-emoji">${em}</div><div class="item-name">${esc(name)}</div>${own
+  REWARDS.filter(r => r.kind === 'decor' && r.unit === 'cafe').forEach(reward => {
+    const {id, emoji, name, price} = reward, own = S.decor.includes(id);
+    h += `<div class="item"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(name)}</div>${own
       ? '<span class="tag">In your town</span>' : `<button class="btn small butter" data-buydecor="${id}" ${S.coins < price ? 'disabled' : ''}>Buy for 🪙 ${price}</button>`}</div>`;
   });
   $('#shopWrap').innerHTML = h + '</div>';
@@ -1102,8 +1136,8 @@ function renderShop(){
 $('#shopWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled || b.dataset.go) return;
   if (b.dataset.pet) { S.pet = b.dataset.pet; save(); sfx('good'); toast(petName() + ' is your helper now!'); }
-  if (b.dataset.buypet) { const p = PETS.find(x => x[0] === b.dataset.buypet); if (p && S.coins >= p[3]) { S.coins -= p[3]; S.owned.push(p[0]); S.pet = p[0]; save(); sfx('coin'); toast(p[2] + ' moved to town!'); } }
-  if (b.dataset.buydecor) { const d = DECOR.find(x => x[0] === b.dataset.buydecor); if (d && S.coins >= d[3]) { S.coins -= d[3]; S.decor.push(d[0]); save(); sfx('coin'); toast(d[2] + ' is in the town square!'); } }
+  if (b.dataset.buypet) { const p = REWARDS.find(r => r.kind === 'pet' && r.unit === 'cafe' && r.id === b.dataset.buypet); if (p && S.coins >= p.price) { S.coins -= p.price; S.owned.push(p.id); S.pet = p.id; save(); sfx('coin'); toast(p.name + ' moved to town!'); } }
+  if (b.dataset.buydecor) { const d = REWARDS.find(r => r.kind === 'decor' && r.unit === 'cafe' && r.id === b.dataset.buydecor); if (d && S.coins >= d.price) { S.coins -= d.price; S.decor.push(d.id); save(); sfx('coin'); toast(d.name + ' is in the town square!'); } }
   updateHeader(); renderShop();
 });
 
@@ -1254,12 +1288,13 @@ function enterAs(me){
   const remote = me.state && typeof me.state === 'object' ? me.state : null;
   S = (remote && (remote.savedAt || 0) > (local.savedAt || 0)) ? normalize(remote) : local;
   S.name = me.name; S.minStation = me.min_station || 1;
+  checkUnlocks({announce:false});
   save(); show('home');
 }
 
 /* ---------- boot ---------- */
 (async function boot(){
-  if (!Backend.enabled) { S = loadState(LOCAL_KEY); if (!S.name) openName(); else show('home'); return; }
+  if (!Backend.enabled) { S = loadState(LOCAL_KEY); checkUnlocks({announce:false}); save(); if (!S.name) openName(); else show('home'); return; }
   show('loading');
   let me = null;
   try { me = await Backend.restore(); } catch(e){}
