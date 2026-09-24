@@ -742,9 +742,12 @@ function renderHome(){
   $('#ordersChip').textContent = S.orders + ' orders served';
   let h = '';
   BUILDINGS.forEach(b => {
+    const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
+    const decor = b.open ? rewards.filter(r => r.kind === 'decor' && owns(r)).slice(0,4).map(r => `<span title="${esc(r.name)}">${r.emoji}</span>`).join('') : '';
+    const progress = `<span class="tile-collection">Collection: ${owned} of ${rewards.length}</span>${decor ? `<span class="tile-decor">${decor}</span>` : ''}`;
     h += b.open
-      ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span></button>`
-      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span><span class="soon">Opening soon</span></div>`;
+      ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}</button>`
+      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">Opening soon</span></div>`;
   });
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   h += `<button class="tile service" data-open="shop"><span class="te">🛍️</span><span class="tn">Pet Shop</span><span class="tu">Pets and decorations</span></button>`;
@@ -1259,10 +1262,16 @@ function renderParent(){
   }).join('')).join('');
   const mis = Object.entries(S.mis).sort((a,b) => b[1].n - a[1].n);
   const log = Object.entries(S.practiceLog).map(([t,v]) => ({t, n:(v.miss||0)+(v.slow||0)+(v.sprint||0), v})).filter(x => x.n).sort((a,b) => b.n - a.n);
+  const collections = BUILDINGS.filter(b => b.open).map(b => {
+    const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
+    return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
+  }).join('');
+  const legendary = REWARDS.filter(r => r.legendary && owns(r));
   $('#parentWrap').innerHTML = `<div class="backrow"><h2>Progress report: ${esc(S.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="panel"><h3>Ideas or arithmetic?</h3><div class="stats">
       <div class="stat"><b>${cP === null ? '–' : cP + '%'}</b>idea steps right on the first try (${cc} of ${ca})</div>
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
+    <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>
     <div class="two"><div class="panel"><h3>Times tables</h3>
