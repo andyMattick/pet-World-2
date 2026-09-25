@@ -1502,6 +1502,17 @@ function renderParent(){
   }).join('')).join('');
   const mis = Object.entries(S.mis).sort((a,b) => b[1].n - a[1].n);
   const log = Object.entries(S.drillLog).map(([id,v]) => ({id, label:drillLabel(id), n:(v.miss||0)+(v.slow||0)+(v.sprint||0), v})).filter(x => x.n).sort((a,b) => b.n - a.n);
+  const drillSettingsNow = drillSettings(), drillStatus = v => v.reteach ? 'reteach' : v.popups && (v.missesAfter || 0) < v.popups ? 'helping' : 'watching';
+  const drillHistory = log.length ? '<ul class="list">' + log.map(x => `<li><b>${esc(x.label)}</b>: ${x.n} time${x.n === 1 ? '' : 's'} <span class="tag">${drillStatus(x.v)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet. A pop-up appears after a missed fact or one that takes more than about 10 seconds.</p>';
+  const settingSummary = !drillSettingsNow.enabled ? 'Your teacher turned practice pop-ups off.' : drillSettingsNow.timeScale > 1 ? `Your teacher set pop-ups to extra time (×${drillSettingsNow.timeScale}).` : `Your teacher set pop-ups to ${drillSettingsNow.slow.mode} timing.`;
+  const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
+  const localDrillControls = !Backend.me ? `<div class="parent-drill-settings">
+    <label><input type="checkbox" id="parentDrillEnabled" ${drillSettingsNow.enabled ? 'checked' : ''}> Enable practice pop-ups</label>
+    <h4>Drill types</h4>${Object.entries(DRILLS).filter(([,d]) => d.unit === 'all' || openUnits.has(d.unit)).map(([type,d]) => `<label><input type="checkbox" data-parent-drill-type="${type}" ${drillSettingsNow.types[type] === false ? '' : 'checked'}> ${esc(d.name)}</label>`).join('')}
+    <h4>Triggers</h4><label><input type="checkbox" id="parentTriggerMiss" ${drillSettingsNow.triggers.miss ? 'checked' : ''}> Missed answer</label><label><input type="checkbox" id="parentTriggerSlow" ${drillSettingsNow.triggers.slow ? 'checked' : ''}> Slow answer</label><label><input type="checkbox" id="parentTriggerSprint" ${drillSettingsNow.triggers.sprint ? 'checked' : ''}> End of sprint</label>
+    <h4>Slow timing</h4><select id="parentSlowMode"><option value="adaptive" ${drillSettingsNow.slow.mode === 'adaptive' ? 'selected' : ''}>Adaptive</option><option value="fixed" ${drillSettingsNow.slow.mode === 'fixed' ? 'selected' : ''}>Fixed</option></select>
+    <label>Idea seconds <input id="parentSlowIdea" type="number" min="5" max="60" value="${drillSettingsNow.slow.idea}"></label><label>Arithmetic seconds <input id="parentSlowArith" type="number" min="5" max="60" value="${drillSettingsNow.slow.arith}"></label><label>Sprint seconds <input id="parentSlowSprint" type="number" min="3" max="20" value="${drillSettingsNow.slow.sprint}"></label><label>Max pop-ups per shift <input id="parentMaxPerShift" type="number" min="1" max="5" value="${drillSettingsNow.maxPerShift}"></label>
+    <div class="row"><button class="btn small primary" id="saveParentDrills">Save</button><button class="btn small" id="resetParentDrills">Reset to defaults</button></div></div>` : `<p class="muted">${settingSummary}</p>`;
   const collections = BUILDINGS.filter(b => b.open).map(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
     return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
@@ -1519,12 +1530,23 @@ function renderParent(){
       <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small ${heatView === 'facts' ? 'mint' : ''}" data-heat="facts">Multiplying</button><button class="btn small ${heatView === 'divFacts' ? 'mint' : ''}" data-heat="divFacts">Dividing</button></div>
       <div class="heatwrap" style="margin-top:10px">${heatTable(heatView)}</div>
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
-    <div class="panel"><h3>Practice pop-ups</h3>${log.length ? '<ul class="list">' + log.map(x => `<li><b>${esc(x.label)}</b>: ${x.n} time${x.n === 1 ? '' : 's'}</li>`).join('') + '</ul>' : '<p class="muted">None yet. A pop-up appears after a missed fact or one that takes more than about 10 seconds.</p>'}
+    <div class="panel"><h3>Practice pop-ups</h3>${localDrillControls}${drillHistory}
       <h3>Settings</h3>
       ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every café station</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
+  if ($('#saveParentDrills')) $('#saveParentDrills').addEventListener('click', () => {
+    const types = {}; $$('[data-parent-drill-type]').forEach(input => { types[input.dataset.parentDrillType] = input.checked; });
+    S.drillSettings = mergeDrillSettings({
+      enabled: $('#parentDrillEnabled').checked, types,
+      triggers: {miss:$('#parentTriggerMiss').checked, slow:$('#parentTriggerSlow').checked, sprint:$('#parentTriggerSprint').checked},
+      slow: {mode:$('#parentSlowMode').value, idea:+$('#parentSlowIdea').value, arith:+$('#parentSlowArith').value, sprint:+$('#parentSlowSprint').value},
+      timeScale:drillSettingsNow.timeScale, maxPerShift:+$('#parentMaxPerShift').value
+    });
+    save(); renderParent();
+  });
+  if ($('#resetParentDrills')) $('#resetParentDrills').addEventListener('click', () => { S.drillSettings = {}; save(); renderParent(); });
   let armed = false, armT;
   $('#resetBtn').addEventListener('click', e => {
     if (!armed) { armed = true; e.target.textContent = 'Click again to erase everything'; armT = setTimeout(() => { armed = false; e.target.textContent = 'Reset all progress'; }, 4000); return; }
