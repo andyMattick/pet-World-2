@@ -989,14 +989,15 @@ function startShift(station){
 }
 function renderDots(){ let h = ''; for (let i=1;i<=shift.total;i++) h += `<i class="${i < shift.n ? 'done' : i === shift.n ? 'now' : ''}"></i>`; $('#dots').innerHTML = h; }
 function setHelper(msg){ $('#helperSay').textContent = petName() + ': ' + msg; }
-function startPatience(seconds, fromPct){
+function startPatience(seconds, fromPct, showStartCue = false){
   const p = $('#patience'), label = $('#patienceLabel'), total = order && order.limit || seconds;
   if (patienceTimer) clearInterval(patienceTimer);
   const endAt = performance.now() + seconds * 1000;
+  const cueUntil = showStartCue ? performance.now() + 600 : 0;
   const tick = () => {
     const left = Math.max(0, (endAt - performance.now()) / 1000), pct = Math.max(0, left / total);
     p.classList.toggle('tip-warn', pct <= .5 && pct > .2); p.classList.toggle('tip-danger', pct <= .2);
-    label.textContent = left > 0 ? `⏱ ${Math.ceil(left)}s for a speed bonus` : 'No speed bonus, but take your time!';
+    label.textContent = cueUntil && performance.now() < cueUntil ? '⏱ Speed bonus running' : left > 0 ? `⏱ ${Math.ceil(left)}s for a speed bonus` : 'No speed bonus, but take your time!';
     if (!left) { clearInterval(patienceTimer); patienceTimer = null; }
   };
   p.classList.remove('tip-warn','tip-danger'); p.style.transition = 'none'; p.style.width = (fromPct == null ? 100 : fromPct) + '%'; void p.offsetWidth;
@@ -1059,10 +1060,11 @@ function nextCustomer(){
     if (order !== currentOrder || order.done) return;
     const startedAt = performance.now();
     order.start = startedAt; order.p.steps[0].t0 = startedAt; order.p.steps[order.i].t0 = startedAt;
-    startPatience(order.limit);
+    const patience = $('#patience'); patience.classList.remove('reading','tip-warn','tip-danger','start-pulse'); void patience.offsetWidth; patience.classList.add('start-pulse');
+    startPatience(order.limit, undefined, true);
   }, readingSeconds * 1000);
-  const patience = $('#patience'); patience.classList.remove('tip-warn','tip-danger'); patience.style.transition = 'none'; patience.style.width = '100%';
-  $('#patienceLabel').textContent = 'Read your order, then start when you are ready.';
+  const patience = $('#patience'); patience.classList.remove('tip-warn','tip-danger','start-pulse'); patience.classList.add('reading'); patience.style.transition = 'none'; patience.style.width = '100%';
+  $('#patienceLabel').textContent = '📖 Reading time: take a look at the order.';
 }
 const slotEl = id => document.querySelector(`#board [data-slot="${id}"]`);
 function numInput(id, label){ return `<input class="cell" id="${id}" inputmode="decimal" autocomplete="off" maxlength="6" aria-label="${esc(label)}">`; }
@@ -1241,7 +1243,8 @@ function queueDrill(st, reason){
   order.pending = drill;
 }
 function completeOrder(){
-  cancelReadFirst(order); order.done = true; freezePatience();
+  const wasReading = order.start === null; cancelReadFirst(order); order.done = true; freezePatience();
+  if (wasReading) { const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; }
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
   const before = STATIONS.map(s => stationOpen(s.id));
@@ -1279,7 +1282,7 @@ function endShift(){
   show('summary'); $('#sumAgain').addEventListener('click', () => startShift(station));
   sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
 }
-$('#leaveShift').addEventListener('click', () => { cancelReadFirst(order); freezePatience(); shift = null; order = null; show('cafe'); });
+$('#leaveShift').addEventListener('click', () => { cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; shift = null; order = null; show('cafe'); });
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
