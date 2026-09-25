@@ -1161,6 +1161,13 @@ $('#leaveShift').addEventListener('click', () => { freezePatience(); shift = nul
 let pr = null;
 const DRILL_IMPL = {
   times:{
+    sprintItem(key){
+      let pair;
+      if (sp.queue.length && Math.random() < 0.5) pair = sp.queue.shift();
+      else for (let t=0;t<5;t++) { pair = weightedPick(ALLPAIRS, p => factWeight(p[0], p[1])); if (!sp.cur || fkey(...pair) !== fkey(...sp.cur)) break; }
+      if (Math.random() < 0.5) pair = [pair[1], pair[0]];
+      return {prompt:`${pair[0]} × ${pair[1]}`, answer:String(pair[0] * pair[1]), drillId:`times:${Math.max(pair[0], pair[1])}`, fact:{x:pair[0], y:pair[1]}};
+    },
     build(drill, {short = false} = {}){
     const table = +drill.key, top = Math.max(10, drill.other);
     const start = short ? Math.min(Math.max(1, drill.other - 2), top - 4) : 1;
@@ -1271,7 +1278,8 @@ function sprintTick(){
   if (left <= 0) endSprint();
 }
 $('#spInput').addEventListener('input', e => {
-  e.target.value = e.target.value.replace(/\D/g,'');
+  const currentAnswer = sp?.item?.answer || (sp?.cur ? String(sp.cur[0] * sp.cur[1]) : ''), allowText = /[./-]/.test(currentAnswer);
+  e.target.value = e.target.value.replace(allowText ? /[^\d./-]/g : /\D/g,'');
   if (!sp || sp.lock || !e.target.value) return;
   const answer = String(sp.cur[0] * sp.cur[1]);
   if (e.target.value.length >= answer.length && e.target.value !== answer) {
