@@ -141,7 +141,7 @@ function ruleMet(reward){
 }
 function available(reward){ return unitOpen(reward.unit) && ruleMet(reward); }
 function owns(reward){ return reward.kind === 'pet' ? S.owned.includes(reward.id) : S.decor.includes(reward.id); }
-function checkSetCompletions(){
+function checkSetCompletions({announce = false} = {}){
   const bonuses = [];
   BUILDINGS.forEach(building => {
     const rewards = REWARDS.filter(reward => reward.unit === building.id);
@@ -149,13 +149,16 @@ function checkSetCompletions(){
       const key = `${building.id}:${kind}`, set = rewards.filter(reward => reward.kind === kind);
       if (set.length && set.every(owns) && !S.completedSets.includes(key)) {
         S.completedSets.push(key); S.coins += 50; bonuses.push(`${kind === 'pet' ? 'Pets' : 'Decorations'} +50`);
+        if (announce) unlockQueue.push({kind:'set', id:key, unit:building.id, setKind:kind});
       }
     });
     if (rewards.length && rewards.every(owns) && !S.completedSets.includes(`${building.id}:all`)) {
-      S.completedSets.push(`${building.id}:all`); S.coins += 100; bonuses.push(`${building.name} Master +100`);
+      const key = `${building.id}:all`;
+      S.completedSets.push(key); S.coins += 100; bonuses.push(`${building.name} Master +100`);
+      if (announce) unlockQueue.push({kind:'set', id:key, unit:building.id, setKind:'all'});
     }
   });
-  if (bonuses.length) toast('Set complete! ' + bonuses.join(', ') + ' 🪙');
+  if (bonuses.length && !announce) toast('Set complete! ' + bonuses.join(', ') + ' 🪙');
   return bonuses.length;
 }
 function checkUnlocks({announce = false} = {}){
@@ -169,28 +172,47 @@ function checkUnlocks({announce = false} = {}){
     if (announce) unlockQueue.push(reward.id);
     else if (!S.seenUnlocks.includes(reward.id)) S.seenUnlocks.push(reward.id);
   });
-  checkSetCompletions();
+  checkSetCompletions({announce});
   return fresh;
+}
+function unlockPreviewHTML(reward, entry){
+  const unit = entry.unit || reward.unit, kind = entry.kind === 'set' ? entry.setKind : reward.kind;
+  const items = kind === 'all' ? REWARDS.filter(item => item.unit === unit) : REWARDS.filter(item => item.unit === unit && item.kind === kind);
+  return `<div class="unlock-preview-row">${items.map(item => `<span class="unlock-preview-box${item.id === (reward && reward.id) ? ' new' : ''}">${owns(item) ? item.emoji : '•'}</span>`).join('')}</div>`;
 }
 function showNextUnlock(){
   if (!unlockQueue.length || (order && !order.done) || pr) return;
-  const id = unlockQueue.shift(), reward = REWARDS.find(r => r.id === id);
-  if (!reward) { showNextUnlock(); return; }
-  unlockActive = id;
-  if (!S.seenUnlocks.includes(id)) { S.seenUnlocks.push(id); save(); }
-  const building = BUILDINGS.find(b => b.id === reward.unit);
-  $('#unlockEmoji').textContent = reward.emoji;
-  $('#unlockTitle').textContent = `New in the ${building ? building.name : reward.unit}!`;
-  $('#unlockMessage').textContent = reward.name;
+  const next = unlockQueue.shift(), entry = typeof next === 'string' ? {kind:'reward', id:next} : next, reward = entry.kind === 'set' ? null : REWARDS.find(r => r.id === entry.id);
+  if (entry.kind !== 'set' && !reward) { showNextUnlock(); return; }
+  unlockActive = entry;
+  if (reward && !S.seenUnlocks.includes(reward.id)) { S.seenUnlocks.push(reward.id); save(); }
+  const building = BUILDINGS.find(b => b.id === (entry.unit || reward.unit));
+  const isSet = entry.kind === 'set';
+  $('#unlockModal').classList.toggle('gold', isSet || !!reward?.legendary);
+  $('#unlockEmoji').textContent = isSet ? (building?.emoji || '🎉') : reward.emoji;
+  $('#unlockTitle').textContent = isSet ? 'Set complete!' : reward.legendary ? 'LEGENDARY!' : reward.kind === 'pet' ? 'New pet!' : 'New decoration!';
+  $('#unlockMessage').textContent = isSet ? `${building ? building.name : entry.unit} ${entry.setKind === 'all' ? 'Master' : entry.setKind === 'pet' ? 'Pets' : 'Decorations'}` : reward.name;
+  $('#unlockPreview').innerHTML = unlockPreviewHTML(reward, entry);
+  $('#unlockHelper').hidden = isSet || !reward || reward.kind !== 'pet' || reward.price > 0;
+  $('#unlockDisplay').hidden = isSet || !reward || reward.kind !== 'decor' || reward.price > 0;
+  $('#unlockShop').hidden = isSet || !reward || reward.price <= 0;
+  const confettiCount = isSet || reward?.legendary ? 40 : 30;
+  $('#unlockConfetti').innerHTML = reduceMotion() ? '' : Array.from({length:confettiCount}, (_,i) => `<span style="--x:${rand(-48,48)}%;--delay:${(i % 10) * .05}s">${pick(['🎉','✨',isSet ? '⭐' : reward.emoji])}</span>`).join('');
   $('#unlockModal').hidden = false; $('main').inert = true;
-  $('#unlockSee').focus();
+  sfx('unlock'); $('#unlockKeep').focus();
 }
-function closeUnlock(openShop){
-  const id = unlockActive;
+function closeUnlock(action = 'keep'){
+  const entry = unlockActive, reward = entry && entry.kind === 'reward' ? REWARDS.find(item => item.id === entry.id) : null;
   $('#unlockModal').hidden = true; $('main').inert = false;
-  if (openShop) {
+  if (action === 'helper' && reward?.kind === 'pet') { S.pet = reward.id; save(); }
+  if (action === 'display' && reward?.kind === 'decor') {
+    const slot = S.displayed.findIndex(id => id === null);
+    if (slot >= 0) { S.displayed[slot] = reward.id; save(); }
+    if (!$('#scr-home').hidden) renderHome();
+  }
+  if (action === 'shop' && reward) {
     renderShop(); show('shop');
-    setTimeout(() => { const item = document.getElementById('reward-' + id); if (item) item.scrollIntoView({block:'center'}); }, 0);
+    setTimeout(() => { const item = document.getElementById('reward-' + reward.id); if (item) item.scrollIntoView({block:'center'}); }, 0);
   }
   unlockActive = null;
   setTimeout(showNextUnlock, 0);
@@ -615,7 +637,9 @@ const petEmoji = () => petReward().emoji;
 const petName = () => petReward().name.split(' ')[0];
 const fmtPow = p => p.toFixed(2).replace(/0$/,'').replace(/\.0$/,'');
 const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
-$('#unlockSee').addEventListener('click', () => closeUnlock(true));
+$('#unlockHelper').addEventListener('click', () => closeUnlock('helper'));
+$('#unlockDisplay').addEventListener('click', () => closeUnlock('display'));
+$('#unlockShop').addEventListener('click', () => closeUnlock('shop'));
 $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
@@ -660,7 +684,7 @@ function sfx(kind){
   if (S.muted) return;
   try {
     const ctx = getCtx();
-    const notes = {good:[660,880], coin:[988,1319,1568], bad:[240,190], tick:[523]}[kind] || [523];
+    const notes = {good:[660,880], coin:[988,1319,1568], unlock:[523,659,784,1047], bad:[240,190], tick:[523]}[kind] || [523];
     notes.forEach((f,i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = kind === 'bad' ? 'triangle' : 'sine'; o.frequency.value = f;
@@ -1324,7 +1348,7 @@ $('#shopWrap').addEventListener('click', e => {
       S.coins -= reward.price;
       (reward.kind === 'pet' ? S.owned : S.decor).push(reward.id);
       if (reward.kind === 'pet') S.pet = reward.id;
-      const completed = checkSetCompletions();
+      const completed = checkSetCompletions({announce:true});
       save(); sfx('coin'); if (!completed) toast(reward.kind === 'pet' ? reward.name + ' moved to town!' : reward.name + ' is in the town square!');
     }
   }

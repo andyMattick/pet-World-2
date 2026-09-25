@@ -110,11 +110,15 @@
 </div>
 <div id="unlockModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="unlockTitle">
   <div class="modal-card unlock-card">
+    <div id="unlockConfetti" class="unlock-confetti" aria-hidden="true"></div>
     <div class="unlock-emoji" id="unlockEmoji">🎁</div>
     <h2 id="unlockTitle">New reward!</h2>
     <p id="unlockMessage"></p>
-    <div class="row">
-      <button class="btn berry" id="unlockSee">See it</button>
+    <div id="unlockPreview" class="unlock-preview"></div>
+    <div class="row" id="unlockActions">
+      <button class="btn berry" id="unlockHelper" hidden>Make it my helper</button>
+      <button class="btn mint" id="unlockDisplay" hidden>Put it on display</button>
+      <button class="btn butter" id="unlockShop" hidden>Go to the shop</button>
       <button class="btn" id="unlockKeep">Keep playing</button>
     </div>
   </div>

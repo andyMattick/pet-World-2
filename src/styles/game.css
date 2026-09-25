@@ -315,11 +315,21 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 
 .modal{position:fixed; inset:0; background:rgba(42,27,36,.55); display:flex; align-items:center; justify-content:center; padding:16px; z-index:70; overflow-y:auto}
 .modal-card{background:var(--surface); border:3px solid var(--edge); border-radius:24px; padding:20px 22px; width:min(560px,100%); box-shadow:0 8px 0 var(--edge); max-height:calc(100% - 20px); overflow-y:auto}
-.unlock-card{text-align:center}
-.unlock-emoji{font-size:5rem; line-height:1; margin-bottom:8px}
+.unlock-card{position:relative; text-align:center; overflow:hidden}
+.unlock-card.gold{border-color:#D39A16; box-shadow:0 0 24px rgba(211,154,22,.65), 0 8px 0 #A76F00}
+.unlock-emoji{position:relative; z-index:1; width:7rem; height:7rem; display:flex; align-items:center; justify-content:center; margin:0 auto 8px; font-size:6rem; line-height:1}
+.unlock-emoji::before{content:""; position:absolute; inset:3px; z-index:-1; border-radius:50%; background:var(--butter); box-shadow:0 0 0 12px rgba(255,215,106,.25), 0 0 28px rgba(228,87,122,.35)}
 .unlock-card h2{margin:0 0 8px; color:var(--berry-deep)}
 .unlock-card p{margin:0}
 .unlock-card .row{justify-content:center; margin-top:18px}
+.unlock-confetti{position:absolute; inset:0; pointer-events:none; z-index:2; overflow:hidden}
+.unlock-confetti span{position:absolute; left:var(--x); top:-1.5rem; font-size:1.35rem; animation:unlockFall 1.5s ease-in forwards; animation-delay:var(--delay);}
+.unlock-card.gold .unlock-confetti span{animation-duration:2.2s}
+@keyframes unlockFall{0%{transform:translateY(-10px) rotate(0deg); opacity:0}15%{opacity:1}100%{transform:translateY(580px) rotate(420deg); opacity:0}}
+.unlock-preview{margin:10px auto 0; min-height:34px}
+.unlock-preview-row{display:flex; justify-content:center; gap:5px; flex-wrap:wrap}
+.unlock-preview-box{width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:2px solid var(--mint); border-radius:6px; background:var(--surface); font-size:1.2rem}
+.unlock-preview-box.new{border-color:#D39A16; box-shadow:0 0 7px rgba(211,154,22,.8); transform:scale(1.12)}
 .pr-head{display:flex; gap:14px; align-items:center}
 .pr-pet{font-size:3.4rem; line-height:1}
 .pr-head h2{margin:0; font-size:1.7rem; color:var(--berry-deep)}
