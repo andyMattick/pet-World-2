@@ -1017,9 +1017,17 @@ function nextCustomer(){
   order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:performance.now(), pending:null};
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
-  $('#custBubble').textContent = p.bubble;
+  const ticketText = esc(p.bubble), questionEnd = ticketText.lastIndexOf('?');
+  const questionStart = questionEnd < 0 ? -1 : Math.max(ticketText.lastIndexOf('.', questionEnd - 1), ticketText.lastIndexOf('!', questionEnd - 1), ticketText.lastIndexOf('?', questionEnd - 1)) + 1;
+  const ticketLead = questionStart > 0 ? ticketText.slice(0, questionStart).trim() : '';
+  const ticketQuestion = questionStart >= 0 ? ticketText.slice(questionStart).trim() : ticketText;
+  const boldNumbers = text => text.replace(/\b\d+(?:\.\d+)?\b/g, '<b>$&</b>');
+  const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
+  $('#custBubble').textContent = pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
   setHelper(p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
+    <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div class="ticket-question">${ticketLead ? boldNumbers(ticketLead) + ' ' : ''}<span class="ticket-find">❓ Find: ${boldNumbers(ticketQuestion)}</span></div></div>
+    <div class="plan" id="plan" aria-label="Order plan">${plan}</div>
     <div class="visual">${p.visual}</div><div class="done-list" id="doneList"></div>
     <div class="step-prompt" id="stepPrompt"></div><div class="step-input" id="stepInput"></div><div class="chalk-note" id="chalkNote" aria-live="polite"></div>`;
   $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
@@ -1064,6 +1072,7 @@ function numberPad(input, onSubmit){
 }
 function activateStep(i){
   order.i = i; const st = order.p.steps[i]; st.t0 = performance.now();
+  $$('#plan .chip').forEach((chip, index) => chip.classList.toggle('now', index === i));
   $('#stepPrompt').innerHTML = `<span class="stepnum">Step ${i+1} of ${order.p.steps.length}</span>${esc(st.prompt)}`;
   const box = $('#stepInput'); box.innerHTML = '';
   $('#checkBtn').hidden = st.kind === 'choice';
@@ -1164,6 +1173,7 @@ function submit(v){
 }
 function stepRight(st, v){
   const note = $('#chalkNote'); note.className = 'chalk-note good'; note.textContent = pick(['Yes!','Nice!','Correct!','You got it!']);
+  const planStep = $(`#plan [data-plan-step="${order.i}"]`); if (planStep) planStep.classList.add('done');
   if (st.slot) { const sl = slotEl(st.slot); sl.classList.remove('active'); sl.classList.add('filled'); sl.innerHTML = `<span class="slotval">${fmtV(v, st)}</span>`; }
   else if (st.kind === 'choice') {
     $$('#stepInput .opt').forEach((b,k) => { b.disabled = true; if (k === v) b.classList.add('yes'); });
