@@ -1,10 +1,10 @@
 /* Teacher app: sign in, manage classes and rosters, print PIN cards, live class dashboard. */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
-import { STATIONS } from '../shared/registry';
+import { BUILDINGS, DRILLS, mergeDrillSettings, STATIONS, type DrillSettings } from '../shared/registry';
 import { renderClassReport, esc, type StudentReport } from './report';
 
-interface ClassRow { id: string; name: string; join_code: string; min_station: number; created_at: string }
+interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; created_at: string }
 interface StudentRow { id: string; display_name: string; failed_attempts: number; locked_until: string | null }
 interface NewPin { name: string; pin: string }
 
@@ -48,7 +48,7 @@ function renderAuth(msg = '') {
 
 /* ---------- classes ---------- */
 async function loadClasses(selectId?: string) {
-  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,created_at').order('created_at');
+  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,created_at').order('created_at');
   if (error) { renderAuth(error.message); return; }
   classes = (data || []) as ClassRow[];
   current = classes.find(c => c.id === (selectId || current?.id)) || classes[0] || null;
@@ -167,6 +167,9 @@ function printCards(pins: NewPin[]) {
 /* ---------- class settings ---------- */
 function renderSettings() {
   const pane = $('#pane'), cls = current!;
+  const settings = mergeDrillSettings(cls.drill_settings);
+  const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
+  const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="two">
     <div class="card"><h2>How students join</h2>
       <p>1. Go to <a href="${esc(gameUrl())}" target="_blank" rel="noopener">${esc(gameUrl())}</a></p>
@@ -180,11 +183,55 @@ function renderSettings() {
       <p class="muted">Later stations still open on their own after 6 orders at the one before.</p>
       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>
-      <button class="btn small" id="delCls">Delete this class</button></div></div>`;
+      <button class="btn small" id="delCls">Delete this class</button></div>
+    <div class="card"><h2>Practice pop-ups</h2>
+      <label><input type="checkbox" id="drillEnabled" ${settings.enabled ? 'checked' : ''}> Enable practice pop-ups</label>
+      <h3>Drill types</h3>${drillTypes.map(([type, drill]) => `<label><input type="checkbox" data-drill-type="${type}" ${settings.types[type] === false ? '' : 'checked'}> ${esc(drill.name)}</label>`).join('')}
+      <h3>Triggers</h3>
+      <label><input type="checkbox" id="triggerMiss" ${settings.triggers.miss ? 'checked' : ''}> Missed answer</label>
+      <label><input type="checkbox" id="triggerSlow" ${settings.triggers.slow ? 'checked' : ''}> Slow answer</label>
+      <label><input type="checkbox" id="triggerSprint" ${settings.triggers.sprint ? 'checked' : ''}> End of sprint</label>
+      <h3>Slow timing</h3>
+      <label for="slowMode">Mode</label><select id="slowMode"><option value="adaptive" ${settings.slow.mode === 'adaptive' ? 'selected' : ''}>Adaptive</option><option value="fixed" ${settings.slow.mode === 'fixed' ? 'selected' : ''}>Fixed</option></select>
+      <label for="slowIdea">Idea seconds</label><input id="slowIdea" type="number" min="5" max="60" step="1" value="${settings.slow.idea}">
+      <label for="slowArith">Arithmetic seconds</label><input id="slowArith" type="number" min="5" max="60" step="1" value="${settings.slow.arith}">
+      <label for="slowSprint">Sprint seconds</label><input id="slowSprint" type="number" min="3" max="20" step="1" value="${settings.slow.sprint}">
+      <label for="maxPerShift">Max pop-ups per shift</label><input id="maxPerShift" type="number" min="1" max="5" step="1" value="${settings.maxPerShift}">
+      <div class="row"><button class="btn primary" id="saveDrills">Save</button><button class="btn" id="resetDrills">Reset to defaults</button><span class="status" id="drillMsg"></span></div>
+    </div></div>`;
   $('#saveCls').addEventListener('click', async () => {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
     const { error } = await sb!.from('classes').update({ name, min_station }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
+    await loadClasses(cls.id);
+  });
+  $('#saveDrills').addEventListener('click', async () => {
+    const types: Record<string, boolean> = {};
+    pane.querySelectorAll<HTMLInputElement>('[data-drill-type]').forEach(input => { types[input.dataset.drillType!] = input.checked; });
+    const drill_settings: DrillSettings = {
+      enabled: ($('#drillEnabled') as HTMLInputElement).checked,
+      types,
+      triggers: {
+        miss: ($('#triggerMiss') as HTMLInputElement).checked,
+        slow: ($('#triggerSlow') as HTMLInputElement).checked,
+        sprint: ($('#triggerSprint') as HTMLInputElement).checked
+      },
+      slow: {
+        mode: ($('#slowMode') as HTMLSelectElement).value as 'fixed' | 'adaptive',
+        idea: +($('#slowIdea') as HTMLInputElement).value,
+        arith: +($('#slowArith') as HTMLInputElement).value,
+        sprint: +($('#slowSprint') as HTMLInputElement).value
+      },
+      timeScale: settings.timeScale,
+      maxPerShift: +($('#maxPerShift') as HTMLInputElement).value
+    };
+    const { error } = await sb!.from('classes').update({ drill_settings: mergeDrillSettings(drill_settings) }).eq('id', cls.id);
+    if (error) { $('#drillMsg').textContent = error.message; return; }
+    await loadClasses(cls.id);
+  });
+  $('#resetDrills').addEventListener('click', async () => {
+    const { error } = await sb!.from('classes').update({ drill_settings: {} }).eq('id', cls.id);
+    if (error) { $('#drillMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
   let armed = false;
