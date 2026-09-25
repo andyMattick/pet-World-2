@@ -224,6 +224,42 @@ h3{margin:22px 0 10px; font-size:1.3rem}
 .reward-ribbon{position:absolute; top:8px; left:-28px; transform:rotate(-8deg); background:#D39A16; color:#fff; padding:2px 30px; font-size:.75rem; font-weight:800}
 .reward-new{position:absolute; top:8px; right:8px; background:var(--berry); color:#fff; border-radius:999px; padding:2px 7px; font-size:.78rem; font-weight:800}
 .reward-soon{background:var(--bg)}
+.book-tabs{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 12px; margin-bottom:4px}
+.book-tab{flex:0 0 auto; display:flex; align-items:center; gap:5px; border:3px solid var(--edge); border-radius:12px; padding:7px 10px; background:var(--surface); color:var(--ink); cursor:pointer; font-weight:700}
+.book-tab.active{background:var(--mint); color:var(--mint-ink)}
+.book-page{position:relative; background:var(--surface); border:3px solid var(--edge); border-radius:22px; padding:18px; overflow:hidden}
+.book-page-complete{border:5px solid #D39A16; box-shadow:0 0 18px rgba(211,154,22,.4)}
+.book-page-soon{filter:grayscale(80%); opacity:.72}
+.book-soon-banner{background:var(--butter); color:#4A2E2A; border:2px solid var(--edge); border-radius:10px; padding:6px 10px; font-weight:800; text-align:center; margin-bottom:12px}
+.book-page-head{display:flex; align-items:center; gap:12px; border-bottom:3px solid var(--dot); padding-bottom:12px; margin-bottom:14px}
+.book-building{font-size:3.4rem; line-height:1}
+.book-page-head h2{margin:0; font-size:1.7rem}
+.book-page-head p{margin:2px 0 0; color:var(--ink-soft); font-weight:700}
+.book-stamp{margin-left:auto; border:3px solid #D39A16; color:#A76F00; border-radius:50%; padding:8px 10px; text-align:center; font-size:.78rem; font-weight:800; transform:rotate(8deg)}
+.book-row{border:3px dashed var(--dot); border-radius:16px; padding:12px; margin-top:12px}
+.book-row.complete{border:4px solid #D39A16; box-shadow:inset 0 0 0 2px #F3C75F}
+.book-row-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px}
+.book-row-head h3{margin:0; font-size:1.25rem}
+.book-row-head span{color:var(--ink-soft); font-weight:700}
+.book-complete{margin-left:auto; background:var(--butter); color:#4A2E2A; border-radius:999px; padding:3px 10px; font-size:.85rem}
+.book-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,110px)); gap:10px; align-items:stretch}
+.book-box{position:relative; width:100%; min-width:0; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:7px 5px; border-radius:12px; background:var(--surface); color:var(--ink); cursor:pointer; overflow:hidden}
+.book-owned{border:2px solid var(--mint)}
+.book-ready{border:2px dashed var(--berry); animation:bookPulse 1.7s ease-in-out infinite}
+.book-locked,.book-soon{border:2px dashed var(--ink-soft)}
+.book-locked .book-emoji,.book-soon .book-emoji{filter:brightness(0) opacity(.25)}
+.book-ready .book-emoji{font-size:2.35rem}
+.book-emoji{font-size:3rem; line-height:1}
+.book-name{font-size:.76rem; line-height:1.1; font-weight:700; max-width:100%; overflow-wrap:anywhere}
+.book-price{background:var(--butter); color:#4A2E2A; border-radius:999px; padding:1px 5px; font-size:.7rem; font-weight:800}
+.book-get{color:var(--berry-deep); font-size:.78rem; font-weight:800}
+.book-lock{position:absolute; top:5px; right:6px; font-size:1rem}
+.book-new-dot{position:absolute; top:4px; left:4px; background:var(--berry); color:#fff; border-radius:999px; padding:1px 4px; font-size:.62rem; font-weight:800}
+.book-legendary{min-width:110px; border:4px solid #D39A16; box-shadow:0 0 10px rgba(211,154,22,.4)}
+.book-legendary.book-locked .book-emoji,.book-legendary.book-soon .book-emoji{filter:brightness(0) opacity(.25)}
+.book-hint{min-height:1.5em; margin:12px 2px 0; padding:7px 10px; background:var(--butter); border:2px solid var(--edge); border-radius:10px; font-weight:700}
+@keyframes bookPulse{50%{box-shadow:0 0 0 4px rgba(228,87,122,.18)}}
+@media (max-width:600px){.book-page{padding:12px}.book-grid{grid-template-columns:repeat(auto-fill,84px);gap:8px}.book-legendary{min-width:96px}.book-page-head h2{font-size:1.4rem}.book-stamp{font-size:.68rem;padding:6px 7px}}
 .tag{font-size:.85rem; font-weight:700; padding:4px 10px; border-radius:10px; background:var(--bg); color:var(--ink)}
 .panel{background:var(--surface); border:3px solid var(--edge); border-radius:20px; padding:18px; margin-bottom:16px}
 .panel h3{margin-top:0}

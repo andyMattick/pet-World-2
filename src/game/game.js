@@ -37,7 +37,7 @@ const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
-  owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
+  owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, ks:{}, kr:{}, kn:{}, mis:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
@@ -50,6 +50,8 @@ function normalize(raw){
   if (!Array.isArray(s.decor)) s.decor = [];
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
+  if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
+  if (!Array.isArray(s.completedSets)) s.completedSets = [];
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   return s;
@@ -137,6 +139,23 @@ function ruleMet(reward){
 }
 function available(reward){ return unitOpen(reward.unit) && ruleMet(reward); }
 function owns(reward){ return reward.kind === 'pet' ? S.owned.includes(reward.id) : S.decor.includes(reward.id); }
+function checkSetCompletions(){
+  const bonuses = [];
+  BUILDINGS.forEach(building => {
+    const rewards = REWARDS.filter(reward => reward.unit === building.id);
+    ['pet','decor'].forEach(kind => {
+      const key = `${building.id}:${kind}`, set = rewards.filter(reward => reward.kind === kind);
+      if (set.length && set.every(owns) && !S.completedSets.includes(key)) {
+        S.completedSets.push(key); S.coins += 50; bonuses.push(`${kind === 'pet' ? 'Pets' : 'Decorations'} +50`);
+      }
+    });
+    if (rewards.length && rewards.every(owns) && !S.completedSets.includes(`${building.id}:all`)) {
+      S.completedSets.push(`${building.id}:all`); S.coins += 100; bonuses.push(`${building.name} Master +100`);
+    }
+  });
+  if (bonuses.length) toast('Set complete! ' + bonuses.join(', ') + ' 🪙');
+  return bonuses.length;
+}
 function checkUnlocks({announce = false} = {}){
   const fresh = [];
   REWARDS.forEach(reward => {
@@ -148,6 +167,7 @@ function checkUnlocks({announce = false} = {}){
     if (announce) unlockQueue.push(reward.id);
     else if (!S.seenUnlocks.includes(reward.id)) S.seenUnlocks.push(reward.id);
   });
+  checkSetCompletions();
   return fresh;
 }
 function showNextUnlock(){
@@ -596,13 +616,15 @@ const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
 $('#unlockSee').addEventListener('click', () => closeUnlock(true));
 $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
-const SCREENS = ['loading','join','name','home','cafe','shift','sprint','summary','shop','hall','parent'];
+let bookUnit = 'cafe';
+const SCREENS = ['loading','join','name','home','cafe','shift','sprint','book','summary','shop','hall','parent'];
 function show(id){
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
   Music.setTempo(id === 'sprint' ? 132 : 96);
   updateHeader();
   if (id === 'home') renderHome();
   if (id === 'cafe') renderCafe();
+  if (id === 'book') renderBook(bookUnit);
   window.scrollTo(0,0);
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
@@ -751,6 +773,8 @@ function renderHome(){
   });
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   h += `<button class="tile service" data-open="shop"><span class="te">🛍️</span><span class="tn">Pet Shop</span><span class="tu">Pets and decorations</span></button>`;
+  const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
+  h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">📒</span><span class="tn">Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
   $('#town').innerHTML = h;
 }
@@ -760,6 +784,7 @@ $('#town').addEventListener('click', e => {
   if (id === 'cafe') show('cafe');
   else if (id === 'sprint') openSprint();
   else if (id === 'shop') { renderShop(); show('shop'); }
+  else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
 });
 
@@ -1214,6 +1239,50 @@ function renderShop(){
   });
   $('#shopWrap').innerHTML = h;
 }
+function renderBook(unit){
+  const building = BUILDINGS.find(b => b.id === unit) || BUILDINGS[0];
+  bookUnit = building.id;
+  const rewards = REWARDS.filter(reward => reward.unit === building.id), owned = rewards.filter(owns).length;
+  const newIds = new Set(rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id));
+  const hint = reward => {
+    if (!building.open) return `Opens with the ${building.name}.`;
+    const rule = reward.unlock;
+    if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
+    if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
+    if (rule.type === 'unitMastery') return `Master every ${building.name} skill`;
+    if (rule.type === 'sprint') return `Reach ${rule.best} in the Fact Sprint`;
+    if (rule.type === 'streak') return `Get ${rule.n} perfect orders in a row`;
+    return 'Available from the beginning';
+  };
+  const box = reward => {
+    const state = !building.open ? 'soon' : owns(reward) ? 'owned' : available(reward) ? 'ready' : 'locked';
+    const complete = S.completedSets.includes(`${building.id}:${reward.kind}`);
+    const classes = `book-box book-${state}${reward.legendary ? ' book-legendary' : ''}${newIds.has(reward.id) ? ' book-new' : ''}`;
+    const hintText = hint(reward);
+    const action = state === 'ready' ? `data-book-open="${reward.id}"` : `data-book-hint="${esc(hintText)}"`;
+    return `<button type="button" class="${classes}" ${action} aria-label="${esc(reward.name)}"><span class="book-emoji">${reward.emoji}</span><span class="book-name">${esc(reward.name)}</span>${state === 'ready' ? `<span class="book-price">🪙 ${reward.price}</span><span class="book-get">Get it!</span>` : state === 'locked' ? '<span class="book-lock">🔒</span>' : ''}${newIds.has(reward.id) ? '<span class="book-new-dot">New!</span>' : ''}</button>`;
+  };
+  const row = (kind, label) => {
+    const set = rewards.filter(reward => reward.kind === kind), count = set.filter(owns).length, complete = count === set.length;
+    return `<section class="book-row${complete ? ' complete' : ''}"><div class="book-row-head"><h3>${label}</h3><span>${count} of ${set.length}</span>${complete ? '<strong class="book-complete">✓ Complete!</strong>' : ''}</div><div class="book-grid">${set.map(box).join('')}</div></section>`;
+  };
+  const tabs = BUILDINGS.map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
+  const pageComplete = rewards.length && rewards.every(owns);
+  const pageClass = `${!building.open ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
+  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div><div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!building.open ? `<div class="book-soon-banner">Opens with the ${building.name}.</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${pageComplete ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
+  const seen = rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id);
+  if (seen.length) { S.seenCollection.push(...seen); save(); }
+}
+$('#bookWrap').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.bookUnit) { renderBook(b.dataset.bookUnit); return; }
+  if (b.dataset.bookOpen) {
+    renderShop(); show('shop');
+    setTimeout(() => { const item = document.getElementById('reward-' + b.dataset.bookOpen); if (item) item.scrollIntoView({block:'center'}); }, 0);
+    return;
+  }
+  if (b.dataset.bookHint) $('#bookHint').textContent = b.dataset.bookHint;
+});
 $('#shopWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b || b.disabled || b.dataset.go) return;
   if (b.dataset.pet) {
@@ -1226,7 +1295,8 @@ $('#shopWrap').addEventListener('click', e => {
       S.coins -= reward.price;
       (reward.kind === 'pet' ? S.owned : S.decor).push(reward.id);
       if (reward.kind === 'pet') S.pet = reward.id;
-      save(); sfx('coin'); toast(reward.kind === 'pet' ? reward.name + ' moved to town!' : reward.name + ' is in the town square!');
+      const completed = checkSetCompletions();
+      save(); sfx('coin'); if (!completed) toast(reward.kind === 'pet' ? reward.name + ' moved to town!' : reward.name + ' is in the town square!');
     }
   }
   updateHeader(); renderShop();
