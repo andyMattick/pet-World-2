@@ -1395,18 +1395,6 @@ function rewardTileHTML(reward, state){
   const emoji = owned || buyable ? reward.emoji : reward.emoji;
   return `<div class="reward-tile ${classes.join(' ')}" id="reward-${reward.id}">${reward.legendary ? '<span class="reward-ribbon">Legendary</span>' : ''}${locked ? '<span class="reward-lock reward-lock-corner">🔒</span>' : ''}<div class="reward-emoji">${emoji}</div><div class="reward-name">${esc(reward.name)}</div>${action}<span class="reward-new" hidden>New!</span></div>`;
 }
-function renderShop(){
-  let h = '<div class="backrow"><h2>🛍️ Pet Shop</h2><button class="btn small" data-go="home">Back to town</button></div>';
-  BUILDINGS.forEach(building => {
-    h += `<section><h3>${building.emoji} ${building.name}${building.open ? '' : ' (Coming soon)'}</h3><div class="shopgrid">`;
-    REWARDS.filter(reward => reward.unit === building.id).forEach(reward => {
-      const state = owns(reward) ? 'owned' : !building.open ? 'soon' : available(reward) ? 'buyable' : 'locked';
-      h += rewardTileHTML(reward, state);
-    });
-    h += '</div></section>';
-  });
-  $('#shopWrap').innerHTML = h;
-}
 function renderBook(unit){
   const building = BUILDINGS.find(b => b.id === unit) || BUILDINGS[0];
   bookUnit = building.id;
@@ -1477,16 +1465,6 @@ $('#bookWrap').addEventListener('click', e => {
   }
   if (b.dataset.bookHint) $('#bookHint').textContent = b.dataset.bookHint;
 });
-$('#shopWrap').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b || b.disabled || b.dataset.go) return;
-  if (b.dataset.pet) {
-    const reward = REWARDS.find(r => r.id === b.dataset.pet);
-    if (reward?.kind === 'pet' && owns(reward)) { S.pet = reward.id; save(); sfx('good'); toast(petName() + ' is your helper now!'); }
-  }
-  if (b.dataset.buypet || b.dataset.buydecor) buyReward(b.dataset.buypet || b.dataset.buydecor);
-  updateHeader(); renderShop();
-});
-
 /* ---------- town hall (reports) ---------- */
 function renderHall(){
   const me = Backend.me;

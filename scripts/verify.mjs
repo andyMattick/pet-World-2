@@ -12,7 +12,7 @@ if (game && lines < 1100) problems.push(`src/game/game.js has only ${lines} line
 for (const g of ['basic', 'tape', 'groups', 'dnlCreate', 'dnl', 'dnlTable', 'table', 'equiv', 'word', 'realworld', 'understand', 'coord', 'units', 'ppw']) {
   if (game && !new RegExp(`\\n${g}\\(lvl\\)\\{`).test(game)) problems.push(`src/game/game.js is missing the "${g}" problem generator`);
 }
-for (const fn of ['function submit(', 'function completeOrder(', 'function openPractice(', 'function enterAs(', 'function openJoin(', 'function renderShop(', 'function renderHall(', 'function renderParent(']) need('src/game/game.js', fn);
+for (const fn of ['function submit(', 'function completeOrder(', 'function openPractice(', 'function openJoin(', 'function buyReward(', 'function renderHall(', 'function renderParent(']) need('src/game/game.js', fn);
 need('src/game/game.js', 'function renderBook(', 'the Sticker Book renderer');
 need('src/game/game.js', 'function rewardTileHTML(', 'the shared reward tile renderer');
 if (game.includes('plazaDecor')) problems.push('src/game/game.js still uses the old #plazaDecor emoji list');

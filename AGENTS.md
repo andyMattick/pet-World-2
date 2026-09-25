@@ -30,7 +30,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 
 | File | What must stay |
 |---|---|
-| `src/game/game.js` | About 1,280 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`. Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `renderShop`, `renderHall`, `renderParent`; Fact Sprint and drill mixing stay intact. |
+| `src/game/game.js` | About 1,280 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`. Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `renderHall`, `renderParent`; Fact Sprint and drill mixing stay intact. |
 | `src/shared/registry.ts` | Exports `SKILLS`, `SKILL_ORDER`, `STATIONS`, `UNLOCK_AT`, `MIS`, `statusFromRecent`, `DRILLS`, `drillLabel`, `DrillSettings`, `DEFAULT_DRILL_SETTINGS`, `mergeDrillSettings`, `drillTypeOn`. |
 | `src/lib/supabase.ts` | Exports `backendConfigured` and `makeClient`. |
 | `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`, `refreshSettings`; student settings fields stay live and separate from saved state. |
