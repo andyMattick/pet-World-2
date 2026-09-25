@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -1006,12 +1006,12 @@ function submit(v){
   if (first || newMis) logAttempt(st, v, ok, slow, first, newMis, ms, ex);
   if ((!ok || slow) && st.type !== 'setup') {
     if (first) order.missed.push(`${SKILLS[order.p.skill].name}: ${st.name.toLowerCase()}`);
-    if (st.fact && (!ok ? first : true)) queuePractice(st.fact, ok ? 'slow' : 'miss');
+    if ((!ok ? first : true)) queueDrill(st, ok ? 'slow' : 'miss');
   }
   if (ok) stepRight(st, v); else stepWrong(st, v, misId);
   save();
   if (order.pending) {
-    const p = order.pending; order.pending = null; shift.practiced.add(p.table);
+    const p = order.pending; order.pending = null; shift.practiced.add(p.type + ':' + p.key);
     setTimeout(() => openPractice(p, () => ok ? advance() : refocus(st)), ok ? 500 : 800);
     return;
   }
@@ -1047,14 +1047,19 @@ function hint(){
   const st = order.p.steps[order.i]; order.hints++;
   setHelper(st.hint ? st.hint() : 'Read the question again, one part at a time.'); sfx('tick'); refocus(st);
 }
-function queuePractice(fact, reason){
+function queueDrill(st, reason){
   if (order.pending) return;
-  const {x, y, div} = fact;
-  const weakness = n => { let a = 0, w = 0; ['facts','divFacts'].forEach(stn => Object.entries(S[stn]).forEach(([k,f]) => { if (k.split('x').map(Number).includes(n)) { a += f.a; w += f.a - f.c + (f.s||0); } })); return a ? w/a : 0; };
-  const table = div ? x : (weakness(y) > weakness(x) ? y : x), other = table === x ? y : x;
-  if (table < 2 || table > 12 || other < 1 || other > 12 || shift.practiced.has(table)) return;
-  const text = div ? `${x*y} ÷ ${x} = ${y}` : `${x} × ${y} = ${x*y}`;
-  order.pending = {table, other, reason, div:!!div, text};
+  let drill;
+  if (st.drill) drill = {...st.drill, key:String(st.drill.key), reason};
+  else if (st.fact) {
+    const {x, y, div} = st.fact;
+    const weakness = n => { let a = 0, w = 0; ['facts','divFacts'].forEach(stn => Object.entries(S[stn]).forEach(([k,f]) => { if (k.split('x').map(Number).includes(n)) { a += f.a; w += f.a - f.c + (f.s||0); } })); return a ? w/a : 0; };
+    const table = div ? x : (weakness(y) > weakness(x) ? y : x), other = table === x ? y : x;
+    if (table < 2 || table > 12 || other < 1 || other > 12) return;
+    drill = {type:'times', key:String(table), other, reason, div:!!div, text:div ? `${x*y} ÷ ${x} = ${y}` : `${x} × ${y} = ${x*y}`};
+  } else return;
+  if (shift.practiced.has(drill.type + ':' + drill.key)) return;
+  order.pending = drill;
 }
 function completeOrder(){
   order.done = true; freezePatience();
@@ -1099,51 +1104,67 @@ $('#leaveShift').addEventListener('click', () => { freezePatience(); shift = nul
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
-function openPractice(p, onClose){
-  const top = Math.max(10, p.other);
-  pr = {p, onClose, i:1, top, wrongs:0, opened:performance.now()};
+const DRILL_IMPL = {
+  times(drill){
+    const table = +drill.key, top = Math.max(10, drill.other);
+    return {
+      title: DRILLS[drill.type].kidTitle(drill.key),
+      why: drill.reason === 'miss' ? `That one was ${drill.text}. Counting up by ${table}s makes it easier.`
+        : drill.reason === 'slow' ? `You got ${drill.text}, but it took a while. Let's make the ${table}s faster!`
+        : `The ${table}s were tricky in that sprint. Let's practice them!`,
+      rows: Array.from({length:top}, (_,i) => ({label:`${table} × ${i+1} =`, answer:String(table*(i+1))})),
+      targetIndex: drill.other - 1,
+      hint(rowIndex, wrongs){
+        const answer = this.rows[rowIndex].answer;
+        return wrongs >= 2 ? `It's ${answer}. Type ${answer}.` : rowIndex === 0 ? 'Anything times 1 stays the same.' : `Add ${table} to ${table*rowIndex}.`;
+      },
+      finishLine: `You counted all the way to ${table} × ${top}! +3 🪙`,
+      tieLine: drill.div ? `${table*drill.other} ÷ ${table} = ${drill.other}, because ${table} × ${drill.other} = ${table*drill.other}.` : `${table} × ${drill.other} = ${table*drill.other}. Now you know it!`
+    };
+  }
+};
+function openPractice(drill, onClose){
+  const impl = DRILL_IMPL[drill.type]; if (!impl) return;
+  const model = impl(drill);
+  pr = {drill, model, onClose, i:0, wrongs:0, opened:performance.now()};
   const shiftOn = !$('#scr-shift').hidden && order && !order.done;
   if (shiftOn) { freezePatience(); pr.pausedOrder = order; }
   $('#prPet').textContent = petEmoji();
-  $('#prTitle').textContent = `Let's practice the ${p.table}s!`;
-  $('#prWhy').textContent = p.reason === 'miss' ? `That one was ${p.text}. Counting up by ${p.table}s makes it easier.`
-    : p.reason === 'slow' ? `You got ${p.text}, but it took a while. Let's make the ${p.table}s faster!`
-    : `The ${p.table}s were tricky in that sprint. Let's practice them!`;
+  $('#prTitle').textContent = model.title;
+  $('#prWhy').textContent = model.why;
   $('#prDone').hidden = true; $('#prHint').textContent = '';
-  let h = ''; for (let k=1;k<=top;k++) h += `<div class="lrow${k === p.other ? ' target' : ''}" id="lr${k}"><span>${p.table} × ${k} =</span><span class="ans" id="la${k}"></span></div>`;
-  $('#ladder').innerHTML = h;
-  const log = S.practiceLog[p.table] = S.practiceLog[p.table] || {miss:0, slow:0, sprint:0};
-  log[p.reason] = (log[p.reason] || 0) + 1; save();
-  Backend.log('practice_popups', {times_table:p.table, reason:p.reason});
+  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
+  const key = drill.key, log = S.practiceLog[key] = S.practiceLog[key] || {miss:0, slow:0, sprint:0};
+  log[drill.reason] = (log[drill.reason] || 0) + 1; save();
+  Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null, reason:drill.reason});
   $('main').inert = true; $('#practice').hidden = false;
   ladderStep();
 }
 function ladderStep(){
-  const k = pr.i, row = $('#lr'+k);
-  $$('.lrow.now').forEach(r => r.classList.remove('now')); row.classList.add('now');
-  $('#la'+k).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="3" aria-label="${pr.p.table} times ${k}">`;
+  const row = pr.model.rows[pr.i], rowEl = $('#lr'+pr.i);
+  $$('.lrow.now').forEach(r => r.classList.remove('now')); rowEl.classList.add('now');
+  $('#la'+pr.i).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="${esc(row.label)}">`;
   const inp = $('#lin');
-  inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g,''); inp.classList.remove('wrong'); });
+  const allowText = /[./-]/.test(row.answer);
+  inp.addEventListener('input', () => { inp.value = inp.value.replace(allowText ? /[^\d./-]/g : /\D/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ladderCheck(); } });
-  inp.focus(); if (row.scrollIntoView) row.scrollIntoView({block:'nearest'});
+  inp.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
 }
 function ladderCheck(){
   const inp = $('#lin'); if (!inp || !inp.value) return;
-  const k = pr.i, t = pr.p.table, ans = t*k;
-  if (parseInt(inp.value, 10) === ans) {
-    $('#la'+k).textContent = ans; $('#lr'+k).classList.remove('now'); $('#lr'+k).classList.add('done');
-    $('#prHint').textContent = ''; pr.wrongs = 0; sfx(k === pr.p.other ? 'good' : 'tick');
-    if (k < pr.top) { pr.i++; ladderStep(); } else ladderDone();
+  const row = pr.model.rows[pr.i], answer = String(row.answer).trim();
+  if (inp.value.trim() === answer) {
+    $('#la'+pr.i).textContent = answer; $('#lr'+pr.i).classList.remove('now'); $('#lr'+pr.i).classList.add('done');
+    $('#prHint').textContent = ''; pr.wrongs = 0; sfx(pr.i === pr.model.targetIndex ? 'good' : 'tick');
+    if (pr.i + 1 < pr.model.rows.length) { pr.i++; ladderStep(); } else ladderDone();
   } else {
     pr.wrongs++; sfx('bad'); inp.classList.remove('wrong'); void inp.offsetWidth; inp.classList.add('wrong'); inp.select();
-    $('#prHint').textContent = pr.wrongs >= 2 ? `It's ${ans}. Type ${ans}.` : k === 1 ? 'Anything times 1 stays the same.' : `Add ${t} to ${t*(k-1)}.`;
+    $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs);
   }
 }
 function ladderDone(){
-  const p = pr.p, t = p.table, o = p.other, prod = t*o;
-  const line = p.div ? `${prod} ÷ ${t} = ${o}, because ${t} × ${o} = ${prod}.` : `${t} × ${o} = ${prod}. Now you know it!`;
   S.coins += 3; save(); updateHeader();
-  $('#prDone').innerHTML = `<p>You counted all the way to ${t} × ${pr.top}! +3 🪙</p><p class="big">${line}</p><button class="btn berry" id="prClose">${pr.pausedOrder ? 'Back to the order' : 'Keep going'}</button>`;
+  $('#prDone').innerHTML = `<p>${pr.model.finishLine}</p><p class="big">${pr.model.tieLine}</p><button class="btn berry" id="prClose">${pr.pausedOrder ? 'Back to the order' : 'Keep going'}</button>`;
   $('#prDone').hidden = false; sfx('coin');
   $('#prClose').addEventListener('click', closePractice); $('#prClose').focus();
 }
@@ -1245,7 +1266,7 @@ function endSprint(){
     const count = {}; trouble.forEach(([x,y]) => { count[x] = (count[x]||0) + 1; if (y !== x) count[y] = (count[y]||0) + 1; });
     const table = +Object.keys(count).sort((a,b) => count[b] - count[a] || b - a)[0];
     const f = trouble.find(([x,y]) => x === table || y === table), other = f[0] === table ? f[1] : f[0];
-    setTimeout(() => openPractice({table, other, reason:'sprint', div:false, text:`${table} × ${other} = ${table*other}`}, () => $('#sumCafe').focus()), 900);
+    setTimeout(() => openPractice({type:'times', key:String(table), other, reason:'sprint', div:false, text:`${table} × ${other} = ${table*other}`}, () => $('#sumCafe').focus()), 900);
   } else setTimeout(showNextUnlock, 0);
 }
 $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; show('home'); });
