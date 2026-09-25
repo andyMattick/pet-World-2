@@ -1,5 +1,5 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
-import { SKILLS, SKILL_ORDER as ORDER, STATIONS, MIS, statusFromRecent } from '../shared/registry';
+import { SKILLS, SKILL_ORDER as ORDER, STATIONS, MIS, statusFromRecent, drillLabel } from '../shared/registry';
 
 export interface StudentReport {
   id: string; n: string; cl?: string; t: number; o: number; pf: number; tm: number;
@@ -8,7 +8,7 @@ export interface StudentReport {
   cc: [number, number, number, number];
   m: Record<string, [number, string[]]>;
   f: [string, number, number, number][]; df: [string, number, number, number][];
-  p: Record<string, { miss?: number; slow?: number; sprint?: number }>; sp: number;
+  p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: Record<string, { miss?: number; slow?: number; sprint?: number }>; sp: number;
 }
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
@@ -28,6 +28,7 @@ export function ago(t: number) {
   return Math.round(h / 24) + ' days ago';
 }
 const pctTxt = (v: number | null) => v == null ? '–' : v + '%';
+const drillHistory = (r: StudentReport) => r.dr && Object.keys(r.dr).length ? r.dr : Object.fromEntries(Object.entries(r.p || {}).map(([key, value]) => ['times:' + key, value]));
 
 export function renderClassReport(el: HTMLElement, list: StudentReport[]) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
@@ -75,12 +76,12 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[]) {
   const facts: Record<string, { miss: number; who: Set<string> }> = {}, tables: Record<string, number> = {};
   list.forEach(r => {
     (r.f || []).forEach(([key, a, c, s]) => { facts[key] = facts[key] || { miss: 0, who: new Set() }; facts[key].miss += a - c + s; facts[key].who.add(r.n); });
-    Object.entries(r.p || {}).forEach(([t, v]) => { tables[t] = (tables[t] || 0) + (v.miss || 0) + (v.slow || 0) + (v.sprint || 0); });
+    Object.entries(drillHistory(r)).forEach(([id, v]) => { tables[id] = (tables[id] || 0) + (v.miss || 0) + (v.slow || 0) + (v.sprint || 0); });
   });
   const tf = Object.entries(facts).filter(([, v]) => v.miss > 0).sort((a, b) => b[1].miss - a[1].miss).slice(0, 10);
   const tt = Object.entries(tables).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  h += `<div class="card"><h2>Times tables across the class</h2>
-    ${tt.length ? `<p style="margin-top:0">Tables that triggered the most practice pop-ups: ${tt.map(([t, c]) => `<span class="chip">${t}s (${c})</span>`).join('')}</p>` : ''}
+  h += `<div class="card"><h2>Most-triggered practice pop-ups</h2>
+    ${tt.length ? `<p style="margin-top:0">${tt.map(([id, c]) => `<span class="chip">${esc(drillLabel(id))} (${c})</span>`).join('')}</p>` : ''}
     ${tf.length ? '<table class="steptable"><tr><th>Fact</th><th>Misses or slow</th><th>Students</th></tr>' + tf.map(([k, v]) => { const [x, y] = k.split('x').map(Number); return `<tr><td>${x} × ${y} = ${x * y}</td><td>${v.miss}</td><td>${[...v.who].map(esc).join(', ')}</td></tr>`; }).join('') + '</table>' : '<p class="muted">No times-table trouble yet.</p>'}</div></div>`;
   el.innerHTML = h;
   el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!)));
@@ -107,7 +108,7 @@ export function openDetail(r: StudentReport) {
   h += st.mis.length ? '<ul>' + st.mis.map(([id, v]) => `<li><b>${esc(MIS[id] ? MIS[id].name : id)}</b> (${v[0]})${(v[1] || []).map(x => `<div class="muted">${esc(x)}</div>`).join('')}</li>`).join('') + '</ul>' : '<p class="muted">None spotted.</p>';
   const f = (r.f || []).map(([k, a, c, s]) => { const [x, y] = k.split('x'); return `<span class="chip">${x}×${y}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
   const df = (r.df || []).map(([k, a, c, s]) => { const [x, y] = k.split('x').map(Number); return `<span class="chip">${x * y}÷${x}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
-  const pl = Object.entries(r.p || {}).map(([t, v]) => `<span class="chip">${t}s: ${(v.miss || 0) + (v.slow || 0) + (v.sprint || 0)}</span>`).join('');
+  const pl = Object.entries(drillHistory(r)).map(([id, v]) => `<span class="chip">${esc(drillLabel(id))}: ${(v.miss || 0) + (v.slow || 0) + (v.sprint || 0)}</span>`).join('');
   h += `</div><div><h2>Times tables</h2><p><b>Multiplying</b><br>${f || '<span class="muted">No trouble</span>'}</p><p><b>Finding the multiplier (dividing)</b><br>${df || '<span class="muted">No trouble</span>'}</p><p><b>Practice pop-ups</b><br>${pl || '<span class="muted">None</span>'}</p></div></div>`;
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
   $('#dClose').focus();

@@ -1140,7 +1140,8 @@ function openPractice(drill, onClose){
   $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
   const id = drill.type + ':' + drill.key, log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
   log[drill.reason] = (log[drill.reason] || 0) + 1; save();
-  Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null, reason:drill.reason});
+  Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null,
+    drill_type:drill.type, drill_key:String(drill.key), reason:drill.reason});
   $('main').inert = true; $('#practice').hidden = false;
   ladderStep();
 }
