@@ -403,7 +403,7 @@ basic(lvl){
   const tray = shuffle([...Array(x).fill(X[0]), ...Array(y).fill(Y[0])]);
   const target = whole ? [x, x+y] : [x, y];
   const secondName = whole ? 'all the treats' : `${Y[0]} ${Y[1]}`;
-  return {
+  const p = {
     title:'The treat tray', ctx:`${x} ${X[1]}, ${y} ${Y[1]}${whole ? ', part to whole' : ''}`,
     bubble:`What's the ratio of ${X[1]} to ${whole ? 'all the treats' : Y[1]} on this tray?`,
     helper:'Count carefully, then write the numbers in the order they asked.',
@@ -418,6 +418,8 @@ basic(lvl){
         hint:() => `The first number is the ${X[1]}. The second is ${secondName}.`}
     ]
   };
+  if (lvl >= 2) { const extra = simplestStep(target, [X[0], whole ? '🧺' : Y[0]]); if (extra) p.steps.push(extra); }
+  return p;
 },
 
 /* ---------- Station 2 ---------- */
@@ -546,6 +548,7 @@ dnlTable(lvl){
 
 /* ---------- Station 3 ---------- */
 table(lvl){
+  if (lvl >= 2 && Math.random() < 0.35) return tableDown(lvl);
   const r = pick(RECIPES), items = r.items;
   const cfg = [{base:5,rows:2},{base:8,rows:3},{base:10,rows:3}][lvl-1];
   const pairs = []; for (let x=2;x<=cfg.base;x++) for (let k=2;k<=kTop(lvl);k++) pairs.push([x,k]);
@@ -575,6 +578,7 @@ table(lvl){
 },
 
 equiv(lvl){
+  if (lvl >= 2 && Math.random() < 0.3) return simplestChoice(lvl);
   const r = pick(RECIPES), [A, B] = r.items;
   const [a, b] = coprimePair(lvl === 1 ? 5 : 7, lvl === 1 ? 5 : 7, 2);
   const k = pickK(a, 2, kTop(lvl));
