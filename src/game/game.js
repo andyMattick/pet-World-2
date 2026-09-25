@@ -1173,8 +1173,9 @@ function endSprint(){
 $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; show('home'); });
 
 /* ---------- pet shop ---------- */
-function renderShop(){
-  const hint = (reward, building) => {
+function rewardTileHTML(reward, state){
+  const building = BUILDINGS.find(b => b.id === reward.unit);
+  const hint = () => {
     if (!building.open) return `Opens with the ${building.name}.`;
     const rule = reward.unlock;
     if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
@@ -1184,28 +1185,31 @@ function renderShop(){
     if (rule.type === 'streak') return `Get ${rule.n} perfect orders in a row`;
     return 'Available from the beginning';
   };
-  const item = (reward, building) => {
-    const owned = owns(reward), active = reward.kind === 'pet' && S.pet === reward.id;
-    const unlocked = available(reward);
-    const classes = ['item'];
-    if (active) classes.push('active');
-    if (reward.legendary) classes.push('legendary');
-    let action;
-    if (owned) action = reward.kind === 'pet'
-      ? (active ? '<span class="tag">Your helper</span>' : `<button class="btn small mint" data-pet="${reward.id}">Choose</button>`)
-      : '<span class="tag">In your town</span>';
-    else if (unlocked && reward.price > 0) {
-      const data = reward.kind === 'pet' ? 'data-buypet' : 'data-buydecor';
-      action = `<button class="btn small butter" ${data}="${reward.id}" ${S.coins < reward.price ? 'disabled' : ''}>Buy for 🪙 ${reward.price}</button>`;
-    } else if (unlocked) action = '<span class="tag">Earned when unlocked</span>';
-    else action = `<span class="tag">🔒 ${esc(hint(reward, building))}</span>`;
-    const emoji = unlocked || owned ? reward.emoji : `<span style="opacity:.35">${reward.emoji}</span> 🔒`;
-    return `<div class="${classes.join(' ')}" id="reward-${reward.id}"><div class="item-emoji">${emoji}</div><div class="item-name">${esc(reward.name)}</div>${action}</div>`;
-  };
+  const owned = state === 'owned', buyable = state === 'buyable', locked = state === 'locked';
+  const active = owned && reward.kind === 'pet' && S.pet === reward.id;
+  const classes = ['reward-tile', `reward-${state}`];
+  if (active) classes.push('active');
+  if (reward.legendary) classes.push('legendary');
+  let action;
+  if (owned) action = reward.kind === 'pet'
+    ? (active ? '<span class="tag">Your helper</span>' : `<button class="btn small mint" data-pet="${reward.id}">Choose</button>`)
+    : '<span class="tag">In your town</span>';
+  else if (buyable) {
+    const data = reward.kind === 'pet' ? 'data-buypet' : 'data-buydecor';
+    action = `<span class="reward-price">🪙 ${reward.price}</span><button class="btn small butter" ${data}="${reward.id}" ${S.coins < reward.price ? 'disabled' : ''}>Buy for 🪙 ${reward.price}</button>`;
+  } else if (locked || state === 'soon') action = `<span class="reward-hint"><span class="reward-lock">🔒</span>${esc(hint())}</span>`;
+  else action = '<span class="tag">Earned when unlocked</span>';
+  const emoji = owned || buyable ? reward.emoji : reward.emoji;
+  return `<div class="reward-tile ${classes.join(' ')}" id="reward-${reward.id}">${reward.legendary ? '<span class="reward-ribbon">Legendary</span>' : ''}${locked ? '<span class="reward-lock reward-lock-corner">🔒</span>' : ''}<div class="reward-emoji">${emoji}</div><div class="reward-name">${esc(reward.name)}</div>${action}<span class="reward-new" hidden>New!</span></div>`;
+}
+function renderShop(){
   let h = '<div class="backrow"><h2>🛍️ Pet Shop</h2><button class="btn small" data-go="home">Back to town</button></div>';
   BUILDINGS.forEach(building => {
     h += `<section><h3>${building.emoji} ${building.name}${building.open ? '' : ' (Coming soon)'}</h3><div class="shopgrid">`;
-    REWARDS.filter(reward => reward.unit === building.id).forEach(reward => { h += item(reward, building); });
+    REWARDS.filter(reward => reward.unit === building.id).forEach(reward => {
+      const state = owns(reward) ? 'owned' : !building.open ? 'soon' : available(reward) ? 'buyable' : 'locked';
+      h += rewardTileHTML(reward, state);
+    });
     h += '</div></section>';
   });
   $('#shopWrap').innerHTML = h;
