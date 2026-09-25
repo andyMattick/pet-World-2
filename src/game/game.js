@@ -1093,8 +1093,8 @@ function openSprint(){
 }
 function stopSprintTimer(){ if (spTimer) { clearInterval(spTimer); spTimer = null; } }
 $('#spStart').addEventListener('click', () => {
-  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], cur:null, shown:0, lock:false};
-  $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spNote').textContent = 'Type the answer and press Enter';
+  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], cur:null, shown:0, lock:false, hadWrong:false, wrongValue:''};
+  $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
   nextFact(); spTimer = setInterval(sprintTick, 100);
 });
 function nextFact(){
@@ -1102,7 +1102,7 @@ function nextFact(){
   if (sp.queue.length && Math.random() < 0.5) pair = sp.queue.shift();
   else for (let t=0;t<5;t++) { pair = weightedPick(ALLPAIRS, p => factWeight(p[0], p[1])); if (!sp.cur || fkey(...pair) !== fkey(...sp.cur)) break; }
   if (Math.random() < 0.5) pair = [pair[1], pair[0]];
-  sp.cur = pair; sp.shown = performance.now(); sp.lock = false;
+  sp.cur = pair; sp.shown = performance.now(); sp.lock = false; sp.hadWrong = false; sp.wrongValue = '';
   const ft = $('#factText'); ft.classList.remove('oops'); ft.textContent = `${pair[0]} × ${pair[1]}`;
   const inp = $('#spInput'); inp.value = ''; inp.disabled = false; inp.focus();
 }
@@ -1111,22 +1111,39 @@ function sprintTick(){
   $('#spTime').textContent = Math.ceil(left/1000); $('#timerFill').style.width = (left/600) + '%';
   if (left <= 0) endSprint();
 }
-$('#spInput').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g,''); });
-$('#spInput').addEventListener('keydown', e => {
-  if (e.key !== 'Enter' || !sp || sp.lock) return; e.preventDefault();
-  const inp = $('#spInput'); if (!inp.value) return;
-  const [x, y] = sp.cur, ok = parseInt(inp.value, 10) === x*y, ms = performance.now() - sp.shown, slow = ok && ms > SLOW_MS.sprint;
-  logFact(x, y, ok, ms, 'facts', slow); if (slow) sp.slow.push([x,y]);
-  Backend.log('attempts', {shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:ok, first_try:true, slow,
-    answer:inp.value.slice(0,6), expected:String(x*y), misconception:null, context:null, fact_a:x, fact_b:y, fact_div:false, ms:Math.round(ms)});
+$('#spInput').addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g,'');
+  if (!sp || sp.lock || !e.target.value) return;
+  const answer = String(sp.cur[0] * sp.cur[1]);
+  if (e.target.value.length >= answer.length && e.target.value !== answer) {
+    sp.hadWrong = true; sp.wrongValue = e.target.value;
+  } else if (e.target.value === answer) {
+    sprintAnswer(e.target.value, {corrected:sp.hadWrong});
+  }
+});
+function sprintAnswer(value, {corrected = false} = {}) {
+  if (!sp || sp.lock || !value) return;
+  sp.lock = true;
+  const inp = $('#spInput'), [x, y] = sp.cur, ok = parseInt(value, 10) === x*y;
+  const ms = performance.now() - sp.shown, slow = ok && ms > SLOW_MS.sprint;
+  const loggedCorrect = ok && !corrected, loggedAnswer = corrected ? sp.wrongValue : value;
+  logFact(x, y, loggedCorrect, ms, 'facts', slow); if (slow) sp.slow.push([x,y]);
+  Backend.log('attempts', {shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
+    answer:loggedAnswer.slice(0,6), expected:String(x*y), misconception:null, context:null, fact_a:x, fact_b:y, fact_div:false, ms:Math.round(ms)});
   if (ok) {
+    if (corrected) { sp.missed.push([x,y]); sp.queue.push([x,y]); }
     sp.correct++; $('#spCorrect').textContent = sp.correct; sfx('good');
     inp.classList.add('flash-good'); setTimeout(() => inp.classList.remove('flash-good'), 150); nextFact();
   } else {
-    sp.missed.push([x,y]); sp.queue.push([x,y]); sfx('bad'); sp.lock = true; inp.disabled = true;
+    sp.missed.push([x,y]); sp.queue.push([x,y]); sfx('bad'); inp.disabled = true;
     const ft = $('#factText'); ft.classList.add('oops'); ft.textContent = `${x} × ${y} = ${x*y}`;
     setTimeout(() => { if (sp) nextFact(); }, 1300);
   }
+}
+$('#spInput').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !sp || sp.lock) return; e.preventDefault();
+  const inp = $('#spInput'); if (!inp.value) return;
+  sprintAnswer(inp.value);
 });
 function endSprint(){
   stopSprintTimer(); if (!sp) return;
