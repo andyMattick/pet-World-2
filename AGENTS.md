@@ -38,7 +38,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 | `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`, `refreshSettings`; student settings fields stay live and separate from saved state. |
 | `src/teacher/main.ts` | Supabase email sign-in, classes, roster with PIN cards, settings, live dashboard. |
 | `src/teacher/report.ts` | Exports `renderClassReport`, `openDetail`. |
-| `supabase/migrations/*.sql` | Tables `classes, students, student_sessions, saves, problems, attempts, practice_popups, sprints`. Functions `add_students, reset_pin, class_report, class_roster, claim_student, my_student`. |
+| `supabase/migrations/*.sql` | Tables `classes, students, student_sessions, saves, problems, attempts, practice_popups, sprints`. Functions `add_students, reset_pin, reset_student, class_report, class_roster, claim_student, my_student`; teacher-tools columns `pin_plain, reset_at` stay intact. |
 
 **Do not invent new tables or functions** (for example a `learning_events` table) when existing ones already cover the job. If a new table is truly needed, add a **new** migration file. Never edit a migration that has already been run.
 
