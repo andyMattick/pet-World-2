@@ -1357,6 +1357,17 @@ function endSprint(){
 $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; show('home'); });
 
 /* ---------- pet shop ---------- */
+function buyReward(id){
+  const reward = REWARDS.find(r => r.id === id);
+  if (!reward || reward.price <= 0 || !available(reward) || owns(reward) || S.coins < reward.price) return false;
+  S.coins -= reward.price;
+  (reward.kind === 'pet' ? S.owned : S.decor).push(reward.id);
+  if (reward.kind === 'pet') S.pet = reward.id;
+  const completed = checkSetCompletions({announce:true});
+  save(); sfx('coin');
+  if (!completed) toast(reward.kind === 'pet' ? reward.name + ' moved to town!' : reward.name + ' is in the town square!');
+  return true;
+}
 function rewardTileHTML(reward, state){
   const building = BUILDINGS.find(b => b.id === reward.unit);
   const hint = () => {
@@ -1418,8 +1429,23 @@ function renderBook(unit){
     const complete = S.completedSets.includes(`${building.id}:${reward.kind}`);
     const classes = `book-box book-${state}${reward.legendary ? ' book-legendary' : ''}${newIds.has(reward.id) ? ' book-new' : ''}`;
     const hintText = hint(reward);
-    const action = state === 'ready' ? `data-book-open="${reward.id}"` : `data-book-hint="${esc(hintText)}"`;
-    return `<button type="button" class="${classes}" ${action} aria-label="${esc(reward.name)}"><span class="book-emoji">${reward.emoji}</span><span class="book-name">${esc(reward.name)}</span>${state === 'ready' ? `<span class="book-price">🪙 ${reward.price}</span><span class="book-get">Get it!</span>` : state === 'locked' ? '<span class="book-lock">🔒</span>' : ''}${newIds.has(reward.id) ? '<span class="book-new-dot">New!</span>' : ''}</button>`;
+    const active = state === 'owned' && reward.kind === 'pet' && S.pet === reward.id;
+    const displayed = state === 'owned' && reward.kind === 'decor' && S.displayed.includes(reward.id);
+    const action = state === 'ready'
+      ? `data-book-buy="${reward.id}"${S.coins < reward.price ? ' disabled' : ''}`
+      : state === 'owned' && reward.kind === 'pet' && !active
+        ? `data-book-helper="${reward.id}"`
+        : state === 'owned' && reward.kind === 'decor'
+          ? `data-book-display="${reward.id}"`
+          : `data-book-hint="${esc(hintText)}"`;
+    const actionText = state === 'ready'
+      ? (S.coins < reward.price ? `Need ${reward.price - S.coins} more 🪙` : 'Buy')
+      : state === 'owned' && reward.kind === 'pet'
+        ? (active ? 'My helper' : 'Make it my helper')
+        : state === 'owned' && reward.kind === 'decor'
+          ? (displayed ? 'Take it off display' : 'Put it on display')
+          : '';
+    return `<button type="button" class="${classes}${active ? ' active' : ''}" ${action} aria-label="${esc(reward.name)}${actionText ? ': ' + actionText : ''}"><span class="book-emoji">${reward.emoji}</span><span class="book-name">${esc(reward.name)}</span>${state === 'ready' ? `<span class="book-price">🪙 ${reward.price}</span>` : state === 'locked' ? '<span class="book-lock">🔒</span>' : ''}${actionText ? `<span class="book-get">${actionText}</span>` : ''}${newIds.has(reward.id) ? '<span class="book-new-dot">New!</span>' : ''}</button>`;
   };
   const row = (kind, label) => {
     const set = rewards.filter(reward => reward.kind === kind), count = set.filter(owns).length, complete = count === set.length;
@@ -1435,10 +1461,21 @@ function renderBook(unit){
 $('#bookWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.bookUnit) { renderBook(b.dataset.bookUnit); return; }
-  if (b.dataset.bookOpen) {
-    renderShop(); show('shop');
-    setTimeout(() => { const item = document.getElementById('reward-' + b.dataset.bookOpen); if (item) item.scrollIntoView({block:'center'}); }, 0);
-    return;
+  if (b.dataset.bookBuy) { buyReward(b.dataset.bookBuy); updateHeader(); renderBook(bookUnit); return; }
+  if (b.dataset.bookHelper) {
+    const reward = REWARDS.find(r => r.id === b.dataset.bookHelper);
+    if (reward?.kind === 'pet' && owns(reward)) { S.pet = reward.id; save(); sfx('good'); toast(petName() + ' is your helper now!'); }
+    updateHeader(); renderBook(bookUnit); return;
+  }
+  if (b.dataset.bookDisplay) {
+    const id = b.dataset.bookDisplay, slot = S.displayed.indexOf(id);
+    if (slot >= 0) { S.displayed[slot] = null; save(); toast('Decoration taken off display.'); }
+    else {
+      const empty = S.displayed.findIndex(item => item === null);
+      if (empty >= 0) { S.displayed[empty] = id; save(); toast('Decoration is on display!'); }
+      else toast('Your display case is full.');
+    }
+    renderBook(bookUnit); return;
   }
   if (b.dataset.bookHint) $('#bookHint').textContent = b.dataset.bookHint;
 });
@@ -1448,16 +1485,7 @@ $('#shopWrap').addEventListener('click', e => {
     const reward = REWARDS.find(r => r.id === b.dataset.pet);
     if (reward?.kind === 'pet' && owns(reward)) { S.pet = reward.id; save(); sfx('good'); toast(petName() + ' is your helper now!'); }
   }
-  if (b.dataset.buypet || b.dataset.buydecor) {
-    const id = b.dataset.buypet || b.dataset.buydecor, reward = REWARDS.find(r => r.id === id);
-    if (reward && reward.price > 0 && available(reward) && !owns(reward) && S.coins >= reward.price) {
-      S.coins -= reward.price;
-      (reward.kind === 'pet' ? S.owned : S.decor).push(reward.id);
-      if (reward.kind === 'pet') S.pet = reward.id;
-      const completed = checkSetCompletions({announce:true});
-      save(); sfx('coin'); if (!completed) toast(reward.kind === 'pet' ? reward.name + ' moved to town!' : reward.name + ' is in the town square!');
-    }
-  }
+  if (b.dataset.buypet || b.dataset.buydecor) buyReward(b.dataset.buypet || b.dataset.buydecor);
   updateHeader(); renderShop();
 });
 
