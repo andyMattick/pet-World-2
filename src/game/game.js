@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel, mergeDrillSettings } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -231,7 +231,18 @@ function ccTotals(){
   return [ca, cc, ma, mc];
 }
 function stationOpen(n){ return n === 1 || (!Backend.me && S.unlockAll) || n <= S.minStation || (S.cafe.st[n-1]||0) >= UNLOCK_AT; }
-function drillSettings(){ return Backend.me ? mergeDrillSettings(Backend.me.class_drills, Backend.me.student_drills) : mergeDrillSettings(S.drillSettings); }
+let appliedDrillReset = '';
+function drillSettings(){
+  const settings = Backend.me ? mergeDrillSettings(Backend.me.class_drills, Backend.me.student_drills) : mergeDrillSettings(S.drillSettings);
+  if (settings.resetAt && settings.resetAt !== appliedDrillReset) {
+    const resetAt = Date.parse(settings.resetAt);
+    Object.values(S.drillLog).forEach(log => {
+      if (log.reteach && (!log.reteachAt || !resetAt || log.reteachAt < resetAt)) { log.reteach = false; delete log.reteachAt; }
+    });
+    appliedDrillReset = settings.resetAt; save();
+  }
+  return settings;
+}
 function recordPace(kind, ms){ const list = S.pace[kind]; if (!list) return; list.push(ms); if (list.length > 20) list.splice(0, list.length - 20); }
 function slowLimit(kind){
   const fallback = SLOW_MS[kind] || SLOW_MS.compute;
@@ -241,6 +252,28 @@ function slowLimit(kind){
   const sorted = times.slice().sort((a,b) => a - b), mid = Math.floor(sorted.length / 2);
   const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   return Math.min(2 * seconds * 1000, Math.max(0.6 * seconds * 1000, 1.8 * median)) * scale;
+}
+function drillId(drill){ return drill.type + ':' + drill.key; }
+function drillArea(drill){ return drill.type === 'times' ? factStatus(+drill.key, drill.other, drill.div ? 'divFacts' : 'facts') : 'new'; }
+function updateReteach(log){
+  if (log.popups >= 3 && log.missesAfter >= log.popups) { log.reteach = true; log.reteachAt = Date.now(); }
+}
+function shouldDrill(drill, reason){
+  const settings = drillSettings(), id = drillId(drill), area = drillArea(drill), log = S.drillLog[id] || {};
+  if (!drillTypeOn(settings, drill.type)) return false;
+  if (!settings.triggers[reason]) return false;
+  if (shift && shift.popups >= settings.maxPerShift) return false;
+  if (shift && shift.practiced.has(id)) return false;
+  if (log.reteach) return false;
+  if (reason === 'miss' && area === 'solid' && shift && !shift.drillMisses.has(id)) { shift.drillMisses.add(id); return false; }
+  if (reason === 'slow' && area === 'work' && shift && shift.popups > 0) return false;
+  drill.short = reason === 'slow' && (area === 'close' || area === 'solid');
+  return true;
+}
+function recordDrillPopup(drill){
+  const id = drillId(drill), log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
+  log.popups = (log.popups || 0) + 1; log.missesAfter = 0;
+  if (shift) shift.popups++;
 }
 
 /* ===================== PROBLEM GENERATORS =====================
@@ -877,7 +910,7 @@ let shift = null, order = null;
 let patienceTimer = null;
 function startShift(station){
   void Backend.refreshSettings();
-  shift = {station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), lastSkill:null};
+  shift = {station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = STATIONS[station-1].emoji + ' ' + STATIONS[station-1].name;
   show('shift'); nextCustomer();
@@ -1077,7 +1110,10 @@ function queueDrill(st, reason){
     if (table < 2 || table > 12 || other < 1 || other > 12) return;
     drill = {type:'times', key:String(table), other, reason, div:!!div, text:div ? `${x*y} ÷ ${x} = ${y}` : `${x} × ${y} = ${x*y}`};
   } else return;
-  if (shift.practiced.has(drill.type + ':' + drill.key)) return;
+  const log = S.drillLog[drillId(drill)] = S.drillLog[drillId(drill)] || {miss:0, slow:0, sprint:0};
+  if (reason === 'miss' && log.popups) { log.missesAfter = (log.missesAfter || 0) + 1; updateReteach(log); }
+  if (!shouldDrill(drill, reason)) return;
+  recordDrillPopup(drill);
   order.pending = drill;
 }
 function completeOrder(){
@@ -1124,15 +1160,18 @@ $('#leaveShift').addEventListener('click', () => { freezePatience(); shift = nul
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
 const DRILL_IMPL = {
-  times(drill){
+  times:{
+    build(drill, {short = false} = {}){
     const table = +drill.key, top = Math.max(10, drill.other);
+    const start = short ? Math.min(Math.max(1, drill.other - 2), top - 4) : 1;
+    const count = short ? 5 : top;
     return {
       title: DRILLS[drill.type].kidTitle(drill.key),
       why: drill.reason === 'miss' ? `That one was ${drill.text}. Counting up by ${table}s makes it easier.`
         : drill.reason === 'slow' ? `You got ${drill.text}, but it took a while. Let's make the ${table}s faster!`
         : `The ${table}s were tricky in that sprint. Let's practice them!`,
-      rows: Array.from({length:top}, (_,i) => ({label:`${table} × ${i+1} =`, answer:String(table*(i+1))})),
-      targetIndex: drill.other - 1,
+      rows: Array.from({length:count}, (_,i) => { const k = start + i; return {label:`${table} × ${k} =`, answer:String(table*k)}; }),
+      targetIndex: drill.other - start,
       hint(rowIndex, wrongs){
         const answer = this.rows[rowIndex].answer;
         return wrongs >= 2 ? `It's ${answer}. Type ${answer}.` : rowIndex === 0 ? 'Anything times 1 stays the same.' : `Add ${table} to ${table*rowIndex}.`;
@@ -1140,11 +1179,12 @@ const DRILL_IMPL = {
       finishLine: `You counted all the way to ${table} × ${top}! +3 🪙`,
       tieLine: drill.div ? `${table*drill.other} ÷ ${table} = ${drill.other}, because ${table} × ${drill.other} = ${table*drill.other}.` : `${table} × ${drill.other} = ${table*drill.other}. Now you know it!`
     };
+    }
   }
 };
 function openPractice(drill, onClose){
   const impl = DRILL_IMPL[drill.type]; if (!impl) return;
-  const model = impl(drill);
+  const model = impl.build(drill, {short:!!drill.short});
   pr = {drill, model, onClose, i:0, wrongs:0, opened:performance.now()};
   const shiftOn = !$('#scr-shift').hidden && order && !order.done;
   if (shiftOn) { freezePatience(); pr.pausedOrder = order; }
@@ -1287,7 +1327,9 @@ function endSprint(){
     const count = {}; trouble.forEach(([x,y]) => { count[x] = (count[x]||0) + 1; if (y !== x) count[y] = (count[y]||0) + 1; });
     const table = +Object.keys(count).sort((a,b) => count[b] - count[a] || b - a)[0];
     const f = trouble.find(([x,y]) => x === table || y === table), other = f[0] === table ? f[1] : f[0];
-    setTimeout(() => openPractice({type:'times', key:String(table), other, reason:'sprint', div:false, text:`${table} × ${other} = ${table*other}`}, () => $('#sumCafe').focus()), 900);
+    const drill = {type:'times', key:String(table), other, reason:'sprint', div:false, text:`${table} × ${other} = ${table*other}`};
+    if (shouldDrill(drill, 'sprint')) { recordDrillPopup(drill); setTimeout(() => openPractice(drill, () => $('#sumCafe').focus()), 900); }
+    else setTimeout(showNextUnlock, 0);
   } else setTimeout(showNextUnlock, 0);
 }
 $('#spQuit').addEventListener('click', () => { stopSprintTimer(); sp = null; show('home'); });
@@ -1552,13 +1594,14 @@ function enterAs(me){
   const remote = me.state && typeof me.state === 'object' ? me.state : null;
   S = (remote && (remote.savedAt || 0) > (local.savedAt || 0)) ? normalize(remote) : local;
   S.name = me.name; S.minStation = me.min_station || 1;
+  drillSettings();
   checkUnlocks({announce:false});
   save(); show('home');
 }
 
 /* ---------- boot ---------- */
 (async function boot(){
-  if (!Backend.enabled) { S = loadState(LOCAL_KEY); checkUnlocks({announce:false}); save(); if (!S.name) openName(); else show('home'); return; }
+  if (!Backend.enabled) { S = loadState(LOCAL_KEY); drillSettings(); checkUnlocks({announce:false}); save(); if (!S.name) openName(); else show('home'); return; }
   show('loading');
   let me = null;
   try { me = await Backend.restore(); } catch(e){}
