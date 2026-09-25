@@ -1300,7 +1300,7 @@ $('#spInput').addEventListener('input', e => {
 function sprintAnswer(value, {corrected = false} = {}) {
   if (!sp || sp.lock || !value) return;
   sp.lock = true;
-  const inp = $('#spInput'), item = sp.item, times = !!item.fact, [x, y] = item.fact || [], answer = String(item.answer).trim(), ok = times ? parseInt(value, 10) === x*y : value.trim() === answer;
+  const inp = $('#spInput'), item = sp.item, times = !!item.fact, x = item.fact?.x, y = item.fact?.y, answer = String(item.answer).trim(), ok = times ? parseInt(value, 10) === x*y : value.trim() === answer;
   const ms = performance.now() - sp.shown; recordPace('sprint', ms);
   const slow = ok && ms > slowLimit('sprint');
   const loggedCorrect = ok && !corrected, loggedAnswer = corrected ? sp.wrongValue : value;
