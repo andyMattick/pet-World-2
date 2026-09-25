@@ -27,6 +27,7 @@ export const SKILL_ORDER = Object.keys(SKILLS);
 export interface DrillType {
   name: string;                          // for teachers: "Times tables"
   unit: string;                          // building id, or 'all'
+  sprintUnlock?: { unit: string; station: number };
   teacherLabel: (key: string) => string; // "7s times table"
   kidTitle: (key: string) => string;     // "Let's practice the 7s!"
 }
