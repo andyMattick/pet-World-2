@@ -4,7 +4,7 @@ import { makeClient } from './supabase';
 export interface StudentInfo {
   student_id: string; name: string; class_id: string; class_name: string; min_station: number;
   class_drills: Record<string, unknown> | null; student_drills: Record<string, unknown> | null;
-  state: Record<string, unknown> | null; saved_at: string | null;
+  state: Record<string, unknown> | null; saved_at: string | null; reset_at: string | null;
 }
 export interface RosterEntry { out_id: string; out_name: string; out_class: string }
 export type JoinResult = 'ok' | 'bad_pin' | 'locked' | 'not_found' | 'no_session' | 'error';
@@ -76,6 +76,7 @@ class StudentBackend {
     this.me.class_drills = next.class_drills;
     this.me.student_drills = next.student_drills;
     this.me.min_station = next.min_station;
+    this.me.reset_at = next.reset_at;
   }
 
   async signOut() {

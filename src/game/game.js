@@ -39,7 +39,7 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  cafe:{st:{1:0,2:0,3:0,4:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
+  cafe:{st:{1:0,2:0,3:0,4:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
   const f = fresh(), s = Object.assign(f, raw || {});
@@ -58,6 +58,7 @@ function normalize(raw){
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
+  s.resetSeen = typeof s.resetSeen === 'string' ? s.resetSeen : null;
   if (!Array.isArray(raw?.displayed)) s.displayed = s.decor.slice(0,8);
   s.displayed = Array.from({length:8}, (_,i) => s.decor.includes(s.displayed[i]) ? s.displayed[i] : null);
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
@@ -975,13 +976,21 @@ function renderCafe(){
       <button class="btn ${open ? 'berry' : ''}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : 'Locked'}</button></div>`;
   }).join('');
 }
-$('#stations').addEventListener('click', e => { const b = e.target.closest('[data-station]'); if (b && !b.disabled) startShift(+b.dataset.station); });
+$('#stations').addEventListener('click', e => { const b = e.target.closest('[data-station]'); if (b && !b.disabled) void startShift(+b.dataset.station); });
 
 /* ---------- shift engine ---------- */
 let shift = null, order = null;
 let patienceTimer = null;
-function startShift(station){
-  void Backend.refreshSettings();
+function resetTown(resetAt){
+  const me = Backend.me;
+  S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, resetSeen:resetAt});
+}
+async function startShift(station){
+  await Backend.refreshSettings();
+  const resetAt = Backend.me?.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
+  if (resetAt && Number.isFinite(resetMs) && resetMs > (Date.parse(S.resetSeen || '') || 0)) {
+    resetTown(resetAt); save(); toast('Your teacher reset your town. Fresh start!'); show('home'); return;
+  }
   shift = {station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = STATIONS[station-1].emoji + ' ' + STATIONS[station-1].name;
@@ -1803,8 +1812,12 @@ function enterAs(me){
   storeKey = 'pettown:v1:' + me.student_id;
   const local = loadState(storeKey);
   const remote = me.state && typeof me.state === 'object' ? me.state : null;
-  S = (remote && (remote.savedAt || 0) > (local.savedAt || 0)) ? normalize(remote) : local;
-  S.name = me.name; S.minStation = me.min_station || 1;
+  const resetAt = me.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
+  if (resetAt && Number.isFinite(resetMs) && (local.savedAt || 0) < resetMs) resetTown(resetAt);
+  else {
+    S = (remote && (remote.savedAt || 0) > (local.savedAt || 0)) ? normalize(remote) : local;
+    S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
+  }
   drillSettings();
   checkUnlocks({announce:false});
   save(); show('home');
