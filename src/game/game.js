@@ -217,8 +217,7 @@ function closeUnlock(action = 'keep'){
     if (!$('#scr-home').hidden) renderHome();
   }
   if (action === 'shop' && reward) {
-    renderShop(); show('shop');
-    setTimeout(() => { const item = document.getElementById('reward-' + reward.id); if (item) item.scrollIntoView({block:'center'}); }, 0);
+    renderBook(reward.unit); show('book');
   }
   unlockActive = null;
   setTimeout(showNextUnlock, 0);
@@ -851,9 +850,8 @@ function renderHome(){
       : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">Opening soon</span></div>`;
   });
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
-  h += `<button class="tile service" data-open="shop"><span class="te">🛍️</span><span class="tn">Pet Shop</span><span class="tu">Pets and decorations</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
-  h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">📒</span><span class="tn">Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
+  h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
   $('#town').innerHTML = h;
 }
@@ -886,7 +884,7 @@ $('#town').addEventListener('click', e => {
   const id = b.dataset.open;
   if (id === 'cafe') show('cafe');
   else if (id === 'sprint') openSprint();
-  else if (id === 'shop') { renderShop(); show('shop'); }
+  else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
 });
