@@ -1,5 +1,8 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
-import { SKILLS, SKILL_ORDER as ORDER, STATIONS, MIS, statusFromRecent, drillLabel } from '../shared/registry';
+import { SKILLS, SKILL_ORDER as ORDER, STATIONS, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
+
+type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
+type SaveStudentDrills = (id: string, settings: Partial<DrillSettings> | null) => Promise<void>;
 
 export interface StudentReport {
   id: string; n: string; cl?: string; t: number; o: number; pf: number; tm: number;
@@ -8,7 +11,7 @@ export interface StudentReport {
   cc: [number, number, number, number];
   m: Record<string, [number, string[]]>;
   f: [string, number, number, number][]; df: [string, number, number, number][];
-  p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: Record<string, { miss?: number; slow?: number; sprint?: number }>; sp: number;
+  p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: DrillHistory; ds?: Partial<DrillSettings> | null; dl?: DrillHistory; sp: number;
 }
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
@@ -28,9 +31,9 @@ export function ago(t: number) {
   return Math.round(h / 24) + ' days ago';
 }
 const pctTxt = (v: number | null) => v == null ? '–' : v + '%';
-const drillHistory = (r: StudentReport) => r.dr && Object.keys(r.dr).length ? r.dr : Object.fromEntries(Object.entries(r.p || {}).map(([key, value]) => ['times:' + key, value]));
+const drillHistory = (r: StudentReport): DrillHistory => r.dl && Object.keys(r.dl).length ? r.dl : r.dr && Object.keys(r.dr).length ? r.dr : Object.fromEntries(Object.entries(r.p || {}).map(([key, value]) => ['times:' + key, value]));
 
-export function renderClassReport(el: HTMLElement, list: StudentReport[]) {
+export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
   const played = list.filter(r => r.o > 0);
   const n = list.length, orders = list.reduce((s, r) => s + (r.o || 0), 0);
@@ -55,7 +58,8 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[]) {
       ${arr[0].ex ? `<div class="muted" style="margin-top:6px"><i>Example: ${esc(arr[0].ex)}</i></div>` : ''}
       ${MIS[id].skills.length ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
     : '<p class="muted">No mix-ups spotted yet.</p>';
-  h += '</div>';
+  const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
+  h += `</div><div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
 
   h += `<div class="card"><h2>Skill grid</h2><div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
   STATIONS.forEach(st => { h += `<th class="stn" colspan="${st.skills.length}">${st.id}. ${esc(st.name)}</th>`; });
@@ -84,12 +88,12 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[]) {
     ${tt.length ? `<p style="margin-top:0">${tt.map(([id, c]) => `<span class="chip">${esc(drillLabel(id))} (${c})</span>`).join('')}</p>` : ''}
     ${tf.length ? '<table class="steptable"><tr><th>Fact</th><th>Misses or slow</th><th>Students</th></tr>' + tf.map(([k, v]) => { const [x, y] = k.split('x').map(Number); return `<tr><td>${x} × ${y} = ${x * y}</td><td>${v.miss}</td><td>${[...v.who].map(esc).join(', ')}</td></tr>`; }).join('') + '</table>' : '<p class="muted">No times-table trouble yet.</p>'}</div></div>`;
   el.innerHTML = h;
-  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!)));
+  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills)));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
 }
 
-export function openDetail(r: StudentReport) {
+export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDrills) {
   if (!r) return;
   const st = sStats(r);
   let setupA = 0, setupC = 0;
@@ -109,8 +113,25 @@ export function openDetail(r: StudentReport) {
   const f = (r.f || []).map(([k, a, c, s]) => { const [x, y] = k.split('x'); return `<span class="chip">${x}×${y}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
   const df = (r.df || []).map(([k, a, c, s]) => { const [x, y] = k.split('x').map(Number); return `<span class="chip">${x * y}÷${x}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
   const pl = Object.entries(drillHistory(r)).map(([id, v]) => `<span class="chip">${esc(drillLabel(id))}: ${(v.miss || 0) + (v.slow || 0) + (v.sprint || 0)}</span>`).join('');
+  const mode = r.ds == null ? 'class' : r.ds.enabled === false ? 'off' : r.ds.timeScale === 2 ? '2' : r.ds.timeScale === 1.5 ? '1.5' : 'advanced';
+  let currentOverride: Partial<DrillSettings> | null = r.ds ? {...r.ds} : null;
+  const historyRows = Object.entries(drillHistory(r)).map(([id, v]) => {
+    const status = v.reteach ? 'reteach' : (v.popups && (v.missesAfter || 0) < v.popups ? 'helping' : 'watching');
+    return `<tr><td>${esc(drillLabel(id))}</td><td>${v.popups || 0}</td><td>${v.missesAfter || 0}</td><td>${status === 'reteach' ? '<b>reteach</b>' : status}</td>${status === 'reteach' ? `<td><button class="btn small" data-clear-drill="${esc(id)}">Clear</button></td>` : '<td></td>'}</tr>`;
+  }).join('');
   h += `</div><div><h2>Times tables</h2><p><b>Multiplying</b><br>${f || '<span class="muted">No trouble</span>'}</p><p><b>Finding the multiplier (dividing)</b><br>${df || '<span class="muted">No trouble</span>'}</p><p><b>Practice pop-ups</b><br>${pl || '<span class="muted">None</span>'}</p></div></div>`;
+  h += `<div class="card"><h2>Practice pop-ups for ${esc(r.n)}</h2><label for="studentDrillMode">Mode</label><select id="studentDrillMode"><option value="class" ${mode === 'class' ? 'selected' : ''}>Use class settings</option><option value="1.5" ${mode === '1.5' ? 'selected' : ''}>Extra time ×1.5</option><option value="2" ${mode === '2' ? 'selected' : ''}>Extra time ×2</option><option value="off" ${mode === 'off' ? 'selected' : ''}>Pop-ups off</option><option value="advanced" ${mode === 'advanced' ? 'selected' : ''}>Custom override</option></select><details><summary>Advanced</summary><p class="muted">Individual drill settings are stored with this student's override.</p></details><table class="steptable"><tr><th>Drill</th><th>Pop-ups</th><th>Misses after</th><th>Status</th><th></th></tr>${historyRows || '<tr><td colspan="5" class="muted">No drill history yet.</td></tr>'}</table><p class="status" id="studentDrillMsg"></p></div>`;
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
+  $('#studentDrillMode').addEventListener('change', async e => {
+    if (!onSaveStudentDrills) return;
+    const value = (e.target as HTMLSelectElement).value;
+    const settings = value === 'class' ? null : value === '1.5' ? {timeScale:1.5} : value === '2' ? {timeScale:2} : value === 'off' ? {enabled:false} : (r.ds || {});
+    try { await onSaveStudentDrills(r.id, settings); currentOverride = settings; $('#studentDrillMsg').textContent = 'Saved.'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-clear-drill]').forEach(b => b.addEventListener('click', async () => {
+    if (!onSaveStudentDrills) return;
+    try { await onSaveStudentDrills(r.id, {...(currentOverride || {}), resetAt:new Date().toISOString()}); b.disabled = true; b.textContent = 'Cleared'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
+  }));
   $('#dClose').focus();
   $('#dClose').addEventListener('click', closeDetail);
   $('#dPrint').addEventListener('click', () => window.print());
