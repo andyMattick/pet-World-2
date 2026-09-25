@@ -26,6 +26,8 @@ need('src/game/game.js', 'function shouldDrill(', 'the drill settings gate');
 need('src/game/game.js', 'function slowLimit(', 'the adaptive slow limit');
 need('src/game/game.js', 'function sprintAnswer(', 'the Sprint answer handler');
 need('src/game/game.js', 'sprintItem(', 'Sprint drill question generation');
+need('src/game/game.js', 'pointer: coarse', 'touch-device number pad support');
+need('src/game/game.js', 'function numberPad(', 'the reusable number pad');
 need('src/game/game.js', "from '../shared/registry'", 'the import from the shared registry');
 need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the student backend');
 
