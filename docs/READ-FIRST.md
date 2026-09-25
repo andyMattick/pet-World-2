@@ -69,21 +69,14 @@ Don't change timing yet. Commit: `Order ticket and step plan`
 
 ### Step 2: Read first
 
-1. In `nextCustomer()`, **don't** call `activateStep(0)` or `startPatience(...)` right away. Instead:
-   - hide `#stepPrompt`, `#stepInput`, `#checkBtn`, and `#hintBtn`
-   - show a **"I'm ready, let's start!"** button in `#boardActions`, added after 1.5 seconds
-   - leave the tip bar full and still
-2. **Starting the order** (the button or Enter) must:
-   - set `order.start = performance.now()`
-   - call `startPatience(order.limit)`
-   - show the hidden parts
-   - call `activateStep(0)`
-   - replace the start button with the normal Check and Hint buttons
-3. Make sure **leaving the shift** or the **practice pop-up** can't happen during the reading phase in a way that breaks timers. The practice pop-up can't open before any answer anyway.
+1. When a customer arrives, show the ticket, plan strip, picture, first step, and Check/Hint immediately. Orders start without a start button or countdown.
+2. Set `order.start` and the first step's `t0` after `readSeconds * timeScale` seconds, using the teacher's adjustable reading-time setting. During that allowance, the tip bar is full and blue with the label **"📖 Reading time: take a look at the order."**
+3. When the allowance ends, start the tip timer and normal step timing. Remove the blue reading cue, pulse the bar once, show **"⏱ Speed bonus running"**, then continue with the normal seconds, yellow, and orange states. If `readSeconds` is 0, start immediately and skip the reading cue.
+4. Make sure **leaving the shift** or completing an order during the reading allowance cancels the delayed start and resets the tip bar for the next order. Reading time never costs tip coins, and it never counts toward slow-answer pop-ups.
 
 **Browser test:**
-- Wait 10 seconds on the reading screen, then start. The tip bar is still full, and the first step's slow timer starts from the click.
-- Enter works once the button appears, but not before.
+- On a new order, the first step and Check/Hint are immediately available. Set reading time to 0 and confirm the timer starts immediately; set it above 0 and confirm the blue cue stays full until the allowance ends.
+- Confirm the delayed start removes the blue cue, pulses once, and changes the label to speed-bonus text before the normal seconds countdown.
 - Every station's problem types still work: tray, tape, number lines, tables, choices, and grid.
 
 Commit: `Read the order before starting`
@@ -106,7 +99,7 @@ Commit: `Verify covers read-first orders`
 
 1. **Every order** shows the full question on a cream ticket at the top of the board, with numbers in bold and a "❓ Find:" line when the question has one.
 2. **The plan strip** lists every step, highlights the current one, and checks off finished ones.
-3. **Reading time is free:** the tip bar doesn't move and the step timer doesn't run until **I'm ready, let's start!** is clicked. The button appears after 1.5 seconds.
+3. **Reading time is adjustable and free:** the first step and Check/Hint show immediately, while the full blue tip bar reads **"📖 Reading time: take a look at the order."** for `readSeconds × timeScale` seconds. It then pulses, reads **"⏱ Speed bonus running"**, and starts the normal timer; zero starts immediately without the blue cue.
 4. **The ticket stays visible** during all steps, on a laptop and on a phone.
 5. **Read it to me** reads the question aloud, stops when the order ends, and is hidden where speech isn't supported.
 6. **Nothing else changes:** answers, hints, mix-up detection, pop-ups, and rewards all work as before.

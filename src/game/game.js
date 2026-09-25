@@ -1016,6 +1016,19 @@ function cancelReadFirst(target){
   if (target.readyTimer) { clearTimeout(target.readyTimer); target.readyTimer = null; }
   if (target.readyKey) { document.removeEventListener('keydown', target.readyKey); target.readyKey = null; }
 }
+function stopOrderSpeech(){
+  if (typeof speechSynthesis === 'undefined') return;
+  speechSynthesis.cancel(); if (order) order.speaking = false;
+}
+function readOrder(){
+  if (!order || typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return;
+  if (order.speaking) { stopOrderSpeech(); return; }
+  const currentOrder = order, utterance = new SpeechSynthesisUtterance(currentOrder.p.bubble);
+  utterance.rate = .95; currentOrder.speaking = true;
+  utterance.onend = () => { if (order === currentOrder) currentOrder.speaking = false; };
+  utterance.onerror = utterance.onend;
+  speechSynthesis.cancel(); speechSynthesis.speak(utterance);
+}
 function ticketHTML(text){
   const bold = s => s.replace(/(&#?[a-z0-9]+;)|(\d+(?:\.\d+)?)/gi, (m, ent, num) => ent ? ent : `<b>${num}</b>`);
   const safe = esc(text);
@@ -1027,22 +1040,24 @@ function ticketHTML(text){
 }
 function nextCustomer(){
   if (shift.n >= shift.total) { endShift(); return; }
-  cancelReadFirst(order);
+  stopOrderSpeech(); cancelReadFirst(order);
   shift.n++; renderDots();
   const c = pick(CUSTOMERS), sk = chooseSkill(); shift.lastSkill = sk;
   const p = GEN[sk](lvlOf(sk)); p.skill = sk;
-  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null};
+  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null, speaking:false};
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
   $('#custBubble').textContent = pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
   setHelper(p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
-    <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div></div>
+    <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div><button class="ticket-read" id="readOrderBtn" type="button" hidden>🔊 Read it to me</button></div>
     <div class="plan" id="plan" aria-label="Order plan">${plan}</div>
     <div class="visual">${p.visual}</div><div class="done-list" id="doneList"></div>
     <div class="step-prompt" id="stepPrompt"></div><div class="step-input" id="stepInput"></div><div class="chalk-note" id="chalkNote" aria-live="polite"></div>`;
   $('#ticketText').innerHTML = ticketHTML(p.bubble);
+  const readButton = $('#readOrderBtn');
+  if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) { readButton.hidden = false; readButton.addEventListener('click', readOrder); }
   $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
   $('#checkBtn').addEventListener('click', checkCurrent);
   $('#hintBtn').addEventListener('click', hint);
@@ -1247,7 +1262,7 @@ function queueDrill(st, reason){
   order.pending = drill;
 }
 function completeOrder(){
-  const wasReading = order.start === null; cancelReadFirst(order); order.done = true; freezePatience();
+  stopOrderSpeech(); const wasReading = order.start === null; cancelReadFirst(order); order.done = true; freezePatience();
   if (wasReading) { const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; }
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
@@ -1286,7 +1301,7 @@ function endShift(){
   show('summary'); $('#sumAgain').addEventListener('click', () => startShift(station));
   sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
 }
-$('#leaveShift').addEventListener('click', () => { cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; shift = null; order = null; show('cafe'); });
+$('#leaveShift').addEventListener('click', () => { stopOrderSpeech(); cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; shift = null; order = null; show('cafe'); });
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
