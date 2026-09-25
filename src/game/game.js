@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -38,7 +38,7 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  facts:{}, divFacts:{}, practiceLog:{}, ks:{}, kr:{}, kn:{}, mis:{},
+  facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, ks:{}, kr:{}, kn:{}, mis:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
@@ -46,6 +46,10 @@ function normalize(raw){
   s.cafe = Object.assign({st:{}}, s.cafe || {}); s.cafe.st = Object.assign({1:0,2:0,3:0,4:0}, s.cafe.st || {});
   s.sync = Object.assign(fresh().sync, s.sync || {});
   ['facts','divFacts','practiceLog','ks','kr','kn','mis'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
+  if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'drillLog') || !s.drillLog || typeof s.drillLog !== 'object') {
+    s.drillLog = {};
+    Object.entries(s.practiceLog).forEach(([key, value]) => { s.drillLog['times:' + key] = value; });
+  }
   if (!Array.isArray(s.owned) || !s.owned.length) s.owned = ['cat'];
   if (!Array.isArray(s.decor)) s.decor = [];
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
@@ -224,7 +228,7 @@ function ccTotals(){
   }));
   return [ca, cc, ma, mc];
 }
-function stationOpen(n){ return n === 1 || S.unlockAll || n <= S.minStation || (S.cafe.st[n-1]||0) >= UNLOCK_AT; }
+function stationOpen(n){ return n === 1 || (!Backend.me && S.unlockAll) || n <= S.minStation || (S.cafe.st[n-1]||0) >= UNLOCK_AT; }
 
 /* ===================== PROBLEM GENERATORS =====================
    Each returns {title, bubble, helper, visual, ctx, steps:[...]}
@@ -1134,7 +1138,7 @@ function openPractice(drill, onClose){
   $('#prWhy').textContent = model.why;
   $('#prDone').hidden = true; $('#prHint').textContent = '';
   $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
-  const key = drill.key, log = S.practiceLog[key] = S.practiceLog[key] || {miss:0, slow:0, sprint:0};
+  const id = drill.type + ':' + drill.key, log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
   log[drill.reason] = (log[drill.reason] || 0) + 1; save();
   Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null, reason:drill.reason});
   $('main').inert = true; $('#practice').hidden = false;
@@ -1438,7 +1442,7 @@ function renderParent(){
     return `<div class="skillrow"><div><span class="pill p-${s}">${s}</span><b>${esc(SKILLS[sk].name)}</b> <span class="muted">${n} tried${steps ? '. ' + esc(steps) : ''}</span></div><a href="${SKILLS[sk].url}" target="_blank" rel="noopener">Khan practice</a></div>`;
   }).join('')).join('');
   const mis = Object.entries(S.mis).sort((a,b) => b[1].n - a[1].n);
-  const log = Object.entries(S.practiceLog).map(([t,v]) => ({t, n:(v.miss||0)+(v.slow||0)+(v.sprint||0), v})).filter(x => x.n).sort((a,b) => b.n - a.n);
+  const log = Object.entries(S.drillLog).map(([id,v]) => ({id, label:drillLabel(id), n:(v.miss||0)+(v.slow||0)+(v.sprint||0), v})).filter(x => x.n).sort((a,b) => b.n - a.n);
   const collections = BUILDINGS.filter(b => b.open).map(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
     return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
@@ -1456,13 +1460,12 @@ function renderParent(){
       <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small ${heatView === 'facts' ? 'mint' : ''}" data-heat="facts">Multiplying</button><button class="btn small ${heatView === 'divFacts' ? 'mint' : ''}" data-heat="divFacts">Dividing</button></div>
       <div class="heatwrap" style="margin-top:10px">${heatTable(heatView)}</div>
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
-    <div class="panel"><h3>Times-table pop-ups</h3>${log.length ? '<ul class="list">' + log.map(x => `<li><b>${x.t}s</b>: ${x.n} time${x.n === 1 ? '' : 's'}</li>`).join('') + '</ul>' : '<p class="muted">None yet. A pop-up appears after a missed fact or one that takes more than about 10 seconds.</p>'}
+    <div class="panel"><h3>Practice pop-ups</h3>${log.length ? '<ul class="list">' + log.map(x => `<li><b>${esc(x.label)}</b>: ${x.n} time${x.n === 1 ? '' : 's'}</li>`).join('') + '</ul>' : '<p class="muted">None yet. A pop-up appears after a missed fact or one that takes more than about 10 seconds.</p>'}
       <h3>Settings</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every café station</label>
-      ${Backend.me ? `<p class="muted">Your teacher has unlocked stations 1 to ${S.minStation}.</p>` : ''}
+      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every café station</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
-  $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
+  if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
   let armed = false, armT;
   $('#resetBtn').addEventListener('click', e => {
     if (!armed) { armed = true; e.target.textContent = 'Click again to erase everything'; armT = setTimeout(() => { armed = false; e.target.textContent = 'Reset all progress'; }, 4000); return; }
