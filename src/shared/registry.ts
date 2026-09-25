@@ -44,6 +44,51 @@ export function drillLabel(id: string): string {
   return d ? d.teacherLabel(key) : id;
 }
 
+export interface DrillSettings {
+  enabled: boolean;
+  types: Record<string, boolean>;
+  triggers: { miss: boolean; slow: boolean; sprint: boolean };
+  slow: { mode: 'fixed' | 'adaptive'; idea: number; arith: number; sprint: number };
+  timeScale: number;
+  maxPerShift: number;
+  resetAt?: string;
+}
+export const DEFAULT_DRILL_SETTINGS: DrillSettings = {
+  enabled: true,
+  types: {},
+  triggers: { miss: true, slow: true, sprint: true },
+  slow: { mode: 'adaptive', idea: 15, arith: 10, sprint: 6 },
+  timeScale: 1,
+  maxPerShift: 3
+};
+const clampNum = (v: unknown, lo: number, hi: number, dflt: number) => {
+  const n = typeof v === 'number' && isFinite(v) ? v : dflt;
+  return Math.min(hi, Math.max(lo, n));
+};
+/** Built-in defaults, then class settings, then student override. Values are range-checked. */
+export function mergeDrillSettings(...layers: (Partial<DrillSettings> | null | undefined)[]): DrillSettings {
+  const out: DrillSettings = JSON.parse(JSON.stringify(DEFAULT_DRILL_SETTINGS));
+  for (const l of layers) {
+    if (!l || typeof l !== 'object') continue;
+    if (typeof l.enabled === 'boolean') out.enabled = l.enabled;
+    if (l.types && typeof l.types === 'object') Object.assign(out.types, l.types);
+    if (l.triggers && typeof l.triggers === 'object') Object.assign(out.triggers, l.triggers);
+    if (l.slow && typeof l.slow === 'object') Object.assign(out.slow, l.slow);
+    if (l.timeScale !== undefined) out.timeScale = l.timeScale as number;
+    if (l.maxPerShift !== undefined) out.maxPerShift = l.maxPerShift as number;
+    if (typeof l.resetAt === 'string') out.resetAt = l.resetAt;
+  }
+  out.slow.mode = out.slow.mode === 'fixed' ? 'fixed' : 'adaptive';
+  out.slow.idea = clampNum(out.slow.idea, 5, 60, 15);
+  out.slow.arith = clampNum(out.slow.arith, 5, 60, 10);
+  out.slow.sprint = clampNum(out.slow.sprint, 3, 20, 6);
+  out.timeScale = clampNum(out.timeScale, 1, 3, 1);
+  out.maxPerShift = Math.round(clampNum(out.maxPerShift, 1, 5, 3));
+  return out;
+}
+/** A drill type is on unless explicitly set to false. */
+export const drillTypeOn = (s: DrillSettings, type: string) => s.enabled && s.types[type] !== false;
+
 export interface Station { id: number; name: string; emoji: string; kid: string; skills: string[] }
 export const STATIONS: Station[] = [
   { id: 1, name: 'The Counter',  emoji: '🧺', kid: 'Write ratios from a tray of treats', skills: ['basic'] },
