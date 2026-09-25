@@ -1282,11 +1282,12 @@ function openPractice(drill, onClose){
 function ladderStep(){
   const row = pr.model.rows[pr.i], rowEl = $('#lr'+pr.i);
   $$('.lrow.now').forEach(r => r.classList.remove('now')); rowEl.classList.add('now');
-  $('#la'+pr.i).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="${esc(row.label)}">`;
+  $('#la'+pr.i).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="${esc(row.label)}"><button class="btn small" id="prCheck" type="button">Check</button>`;
   const inp = $('#lin');
   const allowText = /[./-]/.test(row.answer);
   inp.addEventListener('input', () => { inp.value = inp.value.replace(allowText ? /[^\d./-]/g : /\D/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ladderCheck(); } });
+  $('#prCheck').addEventListener('click', ladderCheck);
   inp.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
 }
 function ladderCheck(){
@@ -1324,7 +1325,7 @@ let sp = null, spTimer = null;
 function openSprint(){
   stopSprintTimer(); sp = null;
   $('#factText').textContent = 'Ready?'; $('#factText').classList.remove('oops');
-  $('#spInput').hidden = true; $('#spStartWrap').hidden = false;
+  $('#spInput').hidden = true; $('#spCheck').hidden = true; $('#spStartWrap').hidden = false;
   $('#spCorrect').textContent = '0'; $('#spTime').textContent = '60'; $('#timerFill').style.width = '100%';
   $('#spNote').textContent = 'Answer as many as you can in 60 seconds. Every right answer powers up your tips.';
   show('sprint'); setTimeout(() => $('#spStart').focus(), 60);
@@ -1332,7 +1333,7 @@ function openSprint(){
 function stopSprintTimer(){ if (spTimer) { clearInterval(spTimer); spTimer = null; } }
 $('#spStart').addEventListener('click', () => {
   sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:''};
-  $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
+  $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spCheck').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
   nextFact(); spTimer = setInterval(sprintTick, 100);
 });
 function sprintDrillTypes(){
@@ -1398,6 +1399,10 @@ function sprintAnswer(value, {corrected = false} = {}) {
 $('#spInput').addEventListener('keydown', e => {
   if (e.key !== 'Enter' || !sp || sp.lock) return; e.preventDefault();
   const inp = $('#spInput'); if (!inp.value) return;
+  sprintAnswer(inp.value);
+});
+$('#spCheck').addEventListener('click', () => {
+  const inp = $('#spInput'); if (!sp || sp.lock || !inp.value) return;
   sprintAnswer(inp.value);
 });
 function endSprint(){
