@@ -18,6 +18,9 @@ need('src/game/game.js', 'function rewardTileHTML(', 'the shared reward tile ren
 if (game.includes('plazaDecor')) problems.push('src/game/game.js still uses the old #plazaDecor emoji list');
 need('src/shared/registry.ts', 'export const DRILLS', 'the drill registry');
 need('src/shared/registry.ts', 'export function drillLabel', 'the drill label helper');
+need('src/shared/registry.ts', 'export function mergeDrillSettings', 'the drill settings merger');
+need('src/game/game.js', 'function shouldDrill(', 'the drill settings gate');
+need('src/game/game.js', 'function slowLimit(', 'the adaptive slow limit');
 need('src/game/game.js', "from '../shared/registry'", 'the import from the shared registry');
 need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the student backend');
 
@@ -37,6 +40,7 @@ const migDir = 'supabase/migrations';
 const sql = existsSync(migDir) ? readdirSync(migDir).filter(f => f.endsWith('.sql')).map(f => readFileSync(`${migDir}/${f}`, 'utf8')).join('\n') : '';
 if (!sql) problems.push('No SQL migrations found in supabase/migrations');
 if (sql && !sql.includes('drill_type')) problems.push('Database migration is missing drill_type');
+if (sql && !sql.includes('drill_settings')) problems.push('Database migration is missing drill_settings');
 for (const t of ['classes', 'students', 'student_sessions', 'saves', 'problems', 'attempts', 'practice_popups', 'sprints']) if (sql && !sql.includes(`create table public.${t}`)) problems.push(`Database migration is missing table "${t}"`);
 for (const f of ['add_students', 'reset_pin', 'class_report', 'class_roster', 'claim_student', 'my_student']) if (sql && !sql.includes(`function public.${f}(`)) problems.push(`Database migration is missing function "${f}"`);
 

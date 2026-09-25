@@ -31,9 +31,9 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 | File | What must stay |
 |---|---|
 | `src/game/game.js` | About 1,280 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`. Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `renderShop`, `renderHall`, `renderParent`. |
-| `src/shared/registry.ts` | Exports `SKILLS`, `SKILL_ORDER`, `STATIONS`, `UNLOCK_AT`, `MIS`, `statusFromRecent`, `DRILLS`, `drillLabel`. |
+| `src/shared/registry.ts` | Exports `SKILLS`, `SKILL_ORDER`, `STATIONS`, `UNLOCK_AT`, `MIS`, `statusFromRecent`, `DRILLS`, `drillLabel`, `DrillSettings`, `DEFAULT_DRILL_SETTINGS`, `mergeDrillSettings`, `drillTypeOn`. |
 | `src/lib/supabase.ts` | Exports `backendConfigured` and `makeClient`. |
-| `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`. |
+| `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`, `refreshSettings`; student settings fields stay live and separate from saved state. |
 | `src/teacher/main.ts` | Supabase email sign-in, classes, roster with PIN cards, settings, live dashboard. |
 | `src/teacher/report.ts` | Exports `renderClassReport`, `openDetail`. |
 | `supabase/migrations/*.sql` | Tables `classes, students, student_sessions, saves, problems, attempts, practice_popups, sprints`. Functions `add_students, reset_pin, class_report, class_roster, claim_student, my_student`. |
