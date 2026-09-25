@@ -24,6 +24,26 @@ export const SKILLS: Record<string, Skill> = {
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
+export interface DrillType {
+  name: string;                          // for teachers: "Times tables"
+  unit: string;                          // building id, or 'all'
+  teacherLabel: (key: string) => string; // "7s times table"
+  kidTitle: (key: string) => string;     // "Let's practice the 7s!"
+}
+export const DRILLS: Record<string, DrillType> = {
+  times:        { name: 'Times tables', unit: 'all',    teacherLabel: k => `${k}s times table`,       kidTitle: k => `Let's practice the ${k}s!` },
+  placeValue:   { name: 'Place value',  unit: 'bakery', teacherLabel: k => `Place value (${k})`,      kidTitle: () => "Let's line up the places!" },
+  decimalShift: { name: 'Moving the decimal', unit: 'bakery', teacherLabel: k => `Multiplying by ${k}`, kidTitle: k => `Let's slide the decimal (× ${k})!` },
+  reciprocal:   { name: 'Reciprocals',  unit: 'bakery', teacherLabel: () => 'Flipping fractions',     kidTitle: () => "Let's flip some fractions!" },
+  simplify:     { name: 'Simplifying',  unit: 'bakery', teacherLabel: k => `Simplifying by ${k}`,     kidTitle: k => `Let's simplify by ${k}!` }
+};
+/** "times:7" → "7s times table" */
+export function drillLabel(id: string): string {
+  const i = id.indexOf(':'), type = i < 0 ? 'times' : id.slice(0, i), key = i < 0 ? id : id.slice(i + 1);
+  const d = DRILLS[type];
+  return d ? d.teacherLabel(key) : id;
+}
+
 export interface Station { id: number; name: string; emoji: string; kid: string; skills: string[] }
 export const STATIONS: Station[] = [
   { id: 1, name: 'The Counter',  emoji: '🧺', kid: 'Write ratios from a tray of treats', skills: ['basic'] },
