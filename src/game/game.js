@@ -803,7 +803,7 @@ $('#displayCaseWrap').addEventListener('click', e => {
 $('#displayPickerOptions').addEventListener('click', e => {
   const button = e.target.closest('button'); if (!button) return;
   if (pickerMode === 'pet' && button.dataset.pickerId) { S.pet = button.dataset.pickerId; save(); closeDisplayPicker(); renderHome(); updateHeader(); return; }
-  if (pickerMode === 'decor' && button.dataset.pickerRemove) { S.displayed[pickerSlot] = null; save(); closeDisplayPicker(); renderHome(); return; }
+  if (pickerMode === 'decor' && button.dataset.pickerRemove !== undefined) { S.displayed[pickerSlot] = null; save(); closeDisplayPicker(); renderHome(); return; }
   if (pickerMode === 'decor' && button.dataset.pickerId) { S.displayed[pickerSlot] = button.dataset.pickerId; save(); closeDisplayPicker(); renderHome(); }
 });
 $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
