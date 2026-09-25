@@ -3,6 +3,7 @@ import { makeClient } from './supabase';
 
 export interface StudentInfo {
   student_id: string; name: string; class_id: string; class_name: string; min_station: number;
+  class_drills: Record<string, unknown> | null; student_drills: Record<string, unknown> | null;
   state: Record<string, unknown> | null; saved_at: string | null;
 }
 export interface RosterEntry { out_id: string; out_name: string; out_class: string }
@@ -65,6 +66,16 @@ class StudentBackend {
     if (error) return 'error';
     if (data !== 'ok') return data as JoinResult;
     return (await this.restore()) ? 'ok' : 'error';
+  }
+
+  async refreshSettings() {
+    if (!this.sb || !this.me) return;
+    const { data, error } = await this.sb.rpc('my_student');
+    if (error || !data) return;
+    const next = data as StudentInfo;
+    this.me.class_drills = next.class_drills;
+    this.me.student_drills = next.student_drills;
+    this.me.min_station = next.min_station;
   }
 
   async signOut() {

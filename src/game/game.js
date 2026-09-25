@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel, mergeDrillSettings } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -38,7 +38,7 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, ks:{}, kr:{}, kn:{}, mis:{},
+  facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
@@ -50,6 +50,8 @@ function normalize(raw){
     s.drillLog = {};
     Object.entries(s.practiceLog).forEach(([key, value]) => { s.drillLog['times:' + key] = value; });
   }
+  s.pace = Object.assign({idea:[], arith:[], sprint:[]}, s.pace || {});
+  ['idea','arith','sprint'].forEach(k => { s.pace[k] = Array.isArray(s.pace[k]) ? s.pace[k].slice(-20) : []; });
   if (!Array.isArray(s.owned) || !s.owned.length) s.owned = ['cat'];
   if (!Array.isArray(s.decor)) s.decor = [];
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
@@ -229,6 +231,17 @@ function ccTotals(){
   return [ca, cc, ma, mc];
 }
 function stationOpen(n){ return n === 1 || (!Backend.me && S.unlockAll) || n <= S.minStation || (S.cafe.st[n-1]||0) >= UNLOCK_AT; }
+function drillSettings(){ return Backend.me ? mergeDrillSettings(Backend.me.class_drills, Backend.me.student_drills) : mergeDrillSettings(S.drillSettings); }
+function recordPace(kind, ms){ const list = S.pace[kind]; if (!list) return; list.push(ms); if (list.length > 20) list.splice(0, list.length - 20); }
+function slowLimit(kind){
+  const fallback = SLOW_MS[kind] || SLOW_MS.compute;
+  const settings = drillSettings(), seconds = settings.slow[kind] || fallback / 1000, scale = settings.timeScale || 1;
+  const times = S.pace[kind] || [];
+  if (settings.slow.mode !== 'adaptive' || times.length < 5) return seconds * 1000 * scale || fallback;
+  const sorted = times.slice().sort((a,b) => a - b), mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return Math.min(2 * seconds * 1000, Math.max(0.6 * seconds * 1000, 1.8 * median)) * scale;
+}
 
 /* ===================== PROBLEM GENERATORS =====================
    Each returns {title, bubble, helper, visual, ctx, steps:[...]}
@@ -863,6 +876,7 @@ $('#stations').addEventListener('click', e => { const b = e.target.closest('[dat
 let shift = null, order = null;
 let patienceTimer = null;
 function startShift(station){
+  void Backend.refreshSettings();
   shift = {station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = STATIONS[station-1].emoji + ' ' + STATIONS[station-1].name;
@@ -988,7 +1002,8 @@ function submit(v){
   if (st.kind === 'choice') ok = !!(st.options[v] && st.options[v].ok);
   else ok = st.eq ? st.eq(v) : v === st.answer;
   const ms = performance.now() - st.t0;
-  const slow = ok && first && st.type !== 'setup' && ms > (st.type === 'concept' ? SLOW_MS.concept : SLOW_MS.compute);
+  if (first && st.type !== 'setup') recordPace(STEP_TYPE[st.type], ms);
+  const slow = ok && first && st.type !== 'setup' && ms > slowLimit(STEP_TYPE[st.type]);
   if (first) {
     recordStep(order.p.skill, st, ok, slow);
     if (st.fact) logFact(st.fact.x, st.fact.y, ok, 0, st.fact.div ? 'divFacts' : 'facts', slow);
@@ -1229,7 +1244,8 @@ function sprintAnswer(value, {corrected = false} = {}) {
   if (!sp || sp.lock || !value) return;
   sp.lock = true;
   const inp = $('#spInput'), [x, y] = sp.cur, ok = parseInt(value, 10) === x*y;
-  const ms = performance.now() - sp.shown, slow = ok && ms > SLOW_MS.sprint;
+  const ms = performance.now() - sp.shown; recordPace('sprint', ms);
+  const slow = ok && ms > slowLimit('sprint');
   const loggedCorrect = ok && !corrected, loggedAnswer = corrected ? sp.wrongValue : value;
   logFact(x, y, loggedCorrect, ms, 'facts', slow); if (slow) sp.slow.push([x,y]);
   Backend.log('attempts', {shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
