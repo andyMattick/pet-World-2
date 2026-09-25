@@ -61,3 +61,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 2. Tell the owner your plan in a few sentences: which files, and what changes in each.
 3. Make the change in small steps, running `npm run verify` along the way.
 4. Report what you changed, what you tested, and anything you couldn't test.
+
+## Rewards display
+
+Keep `renderBook()` and `rewardTileHTML()` in `src/game/game.js`. Open-building town tiles show their mini sticker strips; locked building tiles show no sticker extras.

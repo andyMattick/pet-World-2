@@ -794,8 +794,8 @@ function renderHome(){
   let h = '';
   BUILDINGS.forEach(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
-    const decor = b.open ? rewards.filter(r => r.kind === 'decor' && owns(r)).slice(0,4).map(r => `<span title="${esc(r.name)}">${r.emoji}</span>`).join('') : '';
-    const progress = `<span class="tile-collection">Collection: ${owned} of ${rewards.length}</span>${decor ? `<span class="tile-decor">${decor}</span>` : ''}`;
+    const stickers = b.open ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
+    const progress = b.open ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
     h += b.open
       ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}</button>`
       : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">Opening soon</span></div>`;

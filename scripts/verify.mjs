@@ -13,6 +13,9 @@ for (const g of ['basic', 'tape', 'groups', 'dnlCreate', 'dnl', 'dnlTable', 'tab
   if (game && !new RegExp(`\\n${g}\\(lvl\\)\\{`).test(game)) problems.push(`src/game/game.js is missing the "${g}" problem generator`);
 }
 for (const fn of ['function submit(', 'function completeOrder(', 'function openPractice(', 'function enterAs(', 'function openJoin(', 'function renderShop(', 'function renderHall(', 'function renderParent(']) need('src/game/game.js', fn);
+need('src/game/game.js', 'function renderBook(', 'the Sticker Book renderer');
+need('src/game/game.js', 'function rewardTileHTML(', 'the shared reward tile renderer');
+if (game.includes('plazaDecor')) problems.push('src/game/game.js still uses the old #plazaDecor emoji list');
 need('src/game/game.js', "from '../shared/registry'", 'the import from the shared registry');
 need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the student backend');
 

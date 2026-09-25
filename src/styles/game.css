@@ -106,7 +106,9 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .tile .tn{font-weight:800; font-size:1.15rem}
 .tile .tu{font-size:.85rem; color:var(--ink-soft)}
 .tile-collection{font-size:.82rem; font-weight:700; color:var(--berry-deep)}
-.tile-decor{display:flex; gap:4px; min-height:1.5em; font-size:1.2rem}
+.tile-stickers{display:grid; grid-template-columns:repeat(8,10px); gap:3px; justify-content:center; max-width:100%; margin-top:2px}
+.tile-stickers i{width:10px; height:10px; border:1px solid var(--berry-deep); border-radius:3px; background:var(--surface)}
+.tile-stickers i.filled{background:var(--mint); border-color:var(--mint-ink)}
 .tile.locked{cursor:default; opacity:.72; box-shadow:0 3px 0 var(--edge)}
 .tile.locked:active{transform:none}
 .tile .soon{background:var(--butter); color:#4A2E2A; font-weight:800; font-size:.8rem; border-radius:8px; padding:1px 8px}
