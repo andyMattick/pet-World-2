@@ -1009,19 +1009,29 @@ function chooseSkill(){
   let list = skills.filter(s => s !== shift.lastSkill); if (!list.length) list = skills;
   return weightedPick(list, s => W[skillStatus(s)]);
 }
+function cancelReadFirst(target){
+  if (!target) return;
+  if (target.readTimer) { clearInterval(target.readTimer); target.readTimer = null; }
+  if (target.readyTimer) { clearTimeout(target.readyTimer); target.readyTimer = null; }
+  if (target.readyKey) { document.removeEventListener('keydown', target.readyKey); target.readyKey = null; }
+}
+function cancelReadCountdown(target){
+  if (target?.readTimer) { clearInterval(target.readTimer); target.readTimer = null; }
+}
 function nextCustomer(){
   if (shift.n >= shift.total) { endShift(); return; }
+  cancelReadFirst(order);
   shift.n++; renderDots();
   const c = pick(CUSTOMERS), sk = chooseSkill(); shift.lastSkill = sk;
   const p = GEN[sk](lvlOf(sk)); p.skill = sk;
-  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null};
+  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null, readyTimer:null, readyKey:null};
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
-  const ticketText = esc(p.bubble), questionEnd = ticketText.lastIndexOf('?');
+  const ticketText = p.bubble, questionEnd = ticketText.lastIndexOf('?');
   const questionStart = questionEnd < 0 ? -1 : Math.max(ticketText.lastIndexOf('.', questionEnd - 1), ticketText.lastIndexOf('!', questionEnd - 1), ticketText.lastIndexOf('?', questionEnd - 1)) + 1;
   const ticketLead = questionStart > 0 ? ticketText.slice(0, questionStart).trim() : '';
   const ticketQuestion = questionStart >= 0 ? ticketText.slice(questionStart).trim() : ticketText;
-  const boldNumbers = text => text.replace(/\b\d+(?:\.\d+)?\b/g, '<b>$&</b>');
+  const boldNumbers = text => esc(text).replace(/\b\d+(?:\.\d+)?\b/g, '<b>$&</b>');
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
   $('#custBubble').textContent = pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
   setHelper(p.helper || 'Take it one step at a time.');
@@ -1042,7 +1052,7 @@ function nextCustomer(){
   const currentOrder = order;
   const beginOrder = () => {
     if (order !== currentOrder || order.done || order.start !== null) return;
-    document.removeEventListener('keydown', onReadyKey);
+    cancelReadFirst(currentOrder);
     order.start = performance.now();
     startPatience(order.limit);
     $('#stepPrompt').hidden = false; $('#stepInput').hidden = false;
@@ -1052,14 +1062,26 @@ function nextCustomer(){
     activateStep(0);
   };
   const onReadyKey = e => { if (e.key === 'Enter') { e.preventDefault(); beginOrder(); } };
+  currentOrder.readyKey = onReadyKey;
+  const countdownTotal = Math.ceil(2 * (drillSettings().timeScale || 1));
+  const countdownStart = performance.now();
+  $('#boardActions').innerHTML = '<span id="readCountdown">Starting in ' + countdownTotal + '…</span><button class="btn" id="waitReadingBtn">Wait, I\'m still reading</button>';
+  $('#waitReadingBtn').addEventListener('click', () => {
+    if (order !== currentOrder || order.start !== null) return;
+    cancelReadCountdown(currentOrder); $('#readCountdown').textContent = 'Take your time.'; $('#waitReadingBtn').hidden = true;
+  });
   const readyTimer = setTimeout(() => {
     if (order !== currentOrder || order.done) return;
-    $('#boardActions').innerHTML = '<button class="btn berry" id="readyBtn">I\'m ready, let\'s start!</button>';
+    $('#boardActions').insertAdjacentHTML('beforeend', '<button class="btn berry" id="readyBtn">I\'m ready, let\'s start!</button>');
     $('#readyBtn').addEventListener('click', beginOrder);
-    $('#readyBtn').focus();
-    document.addEventListener('keydown', onReadyKey);
+    if (order.start === null) { $('#readyBtn').focus(); document.addEventListener('keydown', onReadyKey); }
   }, 1500);
   order.readyTimer = readyTimer;
+  order.readTimer = setInterval(() => {
+    if (order !== currentOrder || order.start !== null) { cancelReadFirst(currentOrder); return; }
+    const left = countdownTotal - (performance.now() - countdownStart) / 1000;
+    if (left <= 0) beginOrder(); else $('#readCountdown').textContent = `Starting in ${Math.ceil(left)}…`;
+  }, 100);
   const patience = $('#patience'); patience.classList.remove('tip-warn','tip-danger'); patience.style.transition = 'none'; patience.style.width = '100%';
   $('#patienceLabel').textContent = 'Read your order, then start when you are ready.';
 }
@@ -1278,7 +1300,7 @@ function endShift(){
   show('summary'); $('#sumAgain').addEventListener('click', () => startShift(station));
   sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
 }
-$('#leaveShift').addEventListener('click', () => { if (order?.readyTimer) clearTimeout(order.readyTimer); freezePatience(); shift = null; order = null; show('cafe'); });
+$('#leaveShift').addEventListener('click', () => { cancelReadFirst(order); freezePatience(); shift = null; order = null; show('cafe'); });
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
