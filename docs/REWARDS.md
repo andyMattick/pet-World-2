@@ -1,180 +1,114 @@
-# Reward system expansion: unlock animals and decorations by unit
+# Rewards: unlock animals and decorations by unit
 
-Build spec for expanding Pet Town's rewards. It's written so Claude Code (or any developer) can implement it directly. Read the whole file before starting.
+**Status: planned, not built yet.** This is the design. The step-by-step build plan is in [`TASK-rewards.md`](TASK-rewards.md).
 
 ## Goal
 
-Rewards should follow **learning**, not just time played. Today, coins buy any pet or decoration. After this change:
+Rewards follow **learning**, not just time played.
 
-- **Each unit (building) has its own themed set** of animals and decorations. The set is locked until the student reaches that unit.
-- **Some items are earned, not bought.** Mastering a skill, finishing a station, or mastering a whole unit gives the student an item for free.
-- **Coins still matter.** Once a set is unlocked, most of its items are bought with coins as they are today.
-- **Every unit has one legendary item** for mastering all of its skills. It's the thing students chase.
+- Each unit (building in town) has its **own themed set** of animals and decorations.
+- A set is **visible from day one** but locked until its unit opens. The student can see what's coming.
+- Inside an open unit, items unlock by **finishing stations**, **mastering skills**, **streaks**, and **Fact Sprint scores**.
+- Most unlocked items are then **bought with coins**. Some are **earned free** and can't be bought.
+- Every unit has a **legendary pet and a legendary decoration**, granted for mastering every skill in the unit.
 
-Keep rewards **cosmetic only**. Pets and decorations never make problems easier or give points. That keeps the diagnostics fair and teachers comfortable.
+Rewards are **cosmetic only**. They never change problems, scores, hints, or diagnostics.
 
-## Where things are now
+## Unlock rules
 
-| What | Where |
+| Rule | Met when |
 |---|---|
-| `PETS`, `DECOR` arrays | `src/game/game.js` (top of file) |
-| Owned items | `S.owned` (pet ids), `S.decor` (decoration ids), `S.pet` (active helper) |
-| Shop screen | `renderShop()` and its click handler in `src/game/game.js` |
-| Town square display | `renderHome()` fills `#plazaDecor` |
-| Skill mastery | `skillStatus(skill)` (uses `statusFromRecent` from `src/shared/registry.ts`) |
-| Station progress | `S.cafe.st[stationId]` (orders served at each station) |
-| Buildings (units) | `BUILDINGS` in `src/game/game.js` |
+| `start` | Always |
+| `unit` | That unit's building is open (`BUILDINGS[...].open === true`) |
+| `station` | The student has served `UNLOCK_AT` (6) orders at that station of that unit |
+| `mastery` | Every listed skill has status `mastered` |
+| `unitMastery` | Every skill in that unit has status `mastered` |
+| `sprint` | `S.sprintBest >= best` |
+| `streak` | `S.bestStreak >= n` (longest run of perfect orders) |
 
-## 1. Move rewards into the shared registry
+- An item is **available** when its unit is open **and** its rule is met.
+- Available items with `price: 0` are **granted automatically**. Available items with a price can be **bought**.
+- Items in units that aren't open show as **Coming soon**, for example "Opens with the Bakery."
 
-Replace the `PETS` and `DECOR` arrays with one `REWARDS` list in `src/shared/registry.ts`. The dashboard can then show what each student has earned. Keep every existing id so current saves still work.
+### Existing saves
 
-```ts
-export type UnlockRule =
-  | { type: 'start' }                                   // available from the beginning
-  | { type: 'unit'; unit: string }                      // the unit's building is open (e.g. 'cafe', 'bakery')
-  | { type: 'station'; unit: string; station: number }  // served UNLOCK_AT orders at that station
-  | { type: 'mastery'; skills: string[]; count?: number } // mastered `count` of these skills (default: all)
-  | { type: 'unitMastery'; unit: string }                // every skill in the unit mastered
-  | { type: 'sprint'; best: number }                    // personal best in the Fact Sprint
-  | { type: 'streak'; n: number };                      // perfect orders in a row
+- Anything a student already owns **stays owned**, even if they haven't met its new rule. Rules only gate buying and granting.
+- The unicorn and crown used to be buyable, and now they're unit-mastery rewards. A student who already bought them keeps them.
+- When a student signs in, grant anything they've already earned, **without** a celebration pop-up for past achievements. Show pop-ups only for new unlocks from then on.
 
-export interface Reward {
-  id: string;            // stable forever: saves store this
-  kind: 'pet' | 'decor';
-  emoji: string;
-  name: string;          // "Clover the bunny"
-  unit: string;          // which building's set it belongs to
-  unlock: UnlockRule;    // when it appears (or is granted)
-  price: number;         // 0 = granted free when unlocked
-  legendary?: boolean;
-}
-```
+## The exact item list
 
-Each unit's skills should also be listed in the registry, so `unitMastery` knows what to check. Add a `UNITS` map, for example `UNITS.cafe = ['basic','tape', …,'ppw']`, and fill it in as each shop is built.
+Use this list as written. **Do not invent, rename, or re-id items.** Existing ids (`cat`, `bunny`, `tulips`, and so on) must stay the same, because saves store them.
 
-## 2. The unit sets
+### Emoji compatibility
 
-Use emoji that render on Chromebooks and older iPads: Unicode 13 or earlier, no skin tones, no combined emoji. Prices assume about 80 to 120 coins per 5-customer shift, so a normal item costs one or two shifts.
+Some school Chromebooks run older systems, so every new item below uses emoji from Unicode 12 or earlier, with no skin tones and no combined sequences. One **existing** item, `plant` 🪴, is Unicode 13. Keep it, but if it shows as a box on a Chromebook, change only its emoji to 🌿.
 
-### Unit 1: Pet Café (live now)
+### Unit 1: Pet Café (open now)
 
-Keep all existing items so nobody loses anything. Only a few rules change:
+| id | kind | emoji | name | rule | price |
+|---|---|---|---|---|---|
+| cat | pet | 🐱 | Mochi the cat | start | 0 |
+| bunny | pet | 🐰 | Clover the bunny | start | 40 |
+| hamster | pet | 🐹 | Peanut the hamster | start | 60 |
+| penguin | pet | 🐧 | Pebble the penguin | station cafe 2 | 100 |
+| fox | pet | 🦊 | Maple the fox | station cafe 3 | 150 |
+| panda | pet | 🐼 | Dumpling the panda | station cafe 4 | 220 |
+| unicorn | pet | 🦄 | Sparkle the unicorn | unitMastery cafe (**legendary**) | 0 |
+| tulips | decor | 🌷 | Tulip vase | start | 20 |
+| plant | decor | 🪴 | Leafy plant | start | 30 |
+| teddy | decor | 🧸 | Teddy bear | start | 45 |
+| balloons | decor | 🎈 | Balloons | start | 50 |
+| frame | decor | 🖼️ | Fancy painting | mastery basic | 0 |
+| cake | decor | 🎂 | Cake display | mastery table, equiv | 90 |
+| lights | decor | ✨ | Twinkle lights | streak 5 | 110 |
+| rainbow | decor | 🌈 | Rainbow sign | sprint 25 | 160 |
+| crown | decor | 👑 | Golden crown | unitMastery cafe (**legendary**) | 0 |
 
-| id | Item | Rule | Price |
-|---|---|---|---|
-| cat | 🐱 Mochi the cat | start | 0 |
-| bunny | 🐰 Clover the bunny | start | 40 |
-| hamster | 🐹 Peanut the hamster | start | 60 |
-| penguin | 🐧 Pebble the penguin | station cafe/2 | 100 |
-| fox | 🦊 Maple the fox | station cafe/3 | 150 |
-| panda | 🐼 Dumpling the panda | station cafe/4 | 220 |
-| unicorn | 🦄 Sparkle the unicorn | unitMastery cafe (**legendary**) | 0 |
-| tulips, plant, teddy, balloons | existing decorations | start | as now |
-| frame | 🖼️ Fancy painting | mastery ['basic'] | 0 (earned) |
-| cake | 🎂 Cake display | mastery ['table','equiv'] | 90 |
-| lights | ✨ Twinkle lights | streak 5 | 110 |
-| rainbow | 🌈 Rainbow sign | sprint 25 | 160 |
-| crown | 👑 Golden crown | unitMastery cafe | 250 |
+### Units 2 to 8 (Coming soon)
 
-**Migration rule:** if a save already owns an item whose rule it hasn't met, it keeps the item. Rules only gate buying.
+These units don't have skills yet. Until each one is built, its items use only `unit`, `station`, and `unitMastery` rules. When a unit is built, its developer may change **only the rules** (for example, to add a `mastery` rule for a specific skill), never the ids.
 
-### Unit 2: Bakery
+| Unit (building id) | Pets (welcome, st 2, st 3, st 4, legendary) | Decorations (welcome, st 2, st 3, st 4, legendary) |
+|---|---|---|
+| Bakery (`bakery`) | 🦔 Crumb the hedgehog, 🐭 Nibbles the mouse, 🐥 Sunny the chick, 🐻 Honey the bear, 🦝 Sprinkles the raccoon | 🍞 Bread basket, 🥐 Croissant sign, 🥧 Pie window, 🥨 Pretzel garland, 🏅 Baker's gold medal |
+| Market Stall (`market`) | 🐐 Gus the goat, 🦜 Kiwi the parrot, 🐢 Slowpoke the turtle, 🦙 Lulu the llama, 🐓 Rocco the rooster | 🍉 Melon stand, 🌽 Corn crate, 🧺 Picnic basket, 🏷️ Price tags, ⚖️ Golden scale |
+| Clock Tower (`clock`) | 🦉 Hoot the owl, 🦇 Midnight the bat, 🐿️ Acorn the chipmunk, 🦅 Soar the eagle, 🐉 Ember the dragon | 🕯️ Candles, 🔔 Tower bell, ⏳ Hourglass, 🌙 Moon banner, 🕰️ Golden clock |
+| Ice Rink (`rink`) | 🦌 Frost the reindeer, 🐺 Howl the wolf, 🐋 Splash the whale, 🦈 Finn the shark, 🦢 Crystal the swan | ⛸️ Skates, 🧣 Scarf rack, ☃️ Snowman, 🏒 Hockey sticks, 🥇 Gold medal |
+| Potion Lab (`potion`) | 🐸 Fizz the frog, 🐍 Noodle the snake, 🦎 Zap the lizard, 🐙 Inky the octopus, 🦋 Glimmer the butterfly | 🧪 Flasks, 🔮 Crystal ball, 📜 Spell scroll, 🕸️ Cobwebs, ⚗️ Golden cauldron |
+| Pet Houses (`houses`) | 🐌 Shelly the snail, 🐞 Dot the ladybug, 🐝 Buzz the bee, 🦡 Digger the badger, 🦚 Jewel the peacock | 🌻 Sunflower patch, 🧱 Brick pile, 🏕️ Camp tent, 🏠 Tiny house, 🏰 Castle |
+| Pet Show (`show`) | 🐩 Fifi the poodle, 🐈 Duchess the show cat, 🦒 Tallulah the giraffe, 🦓 Stripes the zebra, 🦁 King the lion | 🎀 Ribbons, 📊 Score board, 🎪 Show tent, 🎺 Trumpet, 🏆 Grand trophy |
 
-| id | Item | Rule | Price |
-|---|---|---|---|
-| hedgehog | 🦔 Crumb the hedgehog | unit bakery | 0 (welcome gift) |
-| mouse | 🐭 Nibbles the mouse | unit bakery | 60 |
-| chick | 🐥 Sunny the chick | station bakery/2 | 120 |
-| bear | 🐻 Honey the bear | station bakery/3 | 180 |
-| raccoon | 🦝 Sprinkles the raccoon (legendary) | unitMastery bakery | 0 |
-| bread | 🍞 Bread basket | unit bakery | 30 |
-| croissant | 🥐 Croissant sign | unit bakery | 45 |
-| pie | 🥧 Pie window | mastery (fraction division skills) | 0 |
-| pretzel | 🥨 Pretzel garland | streak 5 | 90 |
-| goldwhisk | 🏅 Golden rolling pin | unitMastery bakery | 250 |
+Rules and prices for every column in units 2 to 8:
 
-### Unit 3: Market Stall
+| Column | Rule | Price |
+|---|---|---|
+| welcome | `unit` | 0 (free gift when the unit opens) |
+| st 2 | `station` 2 | pets 100, decor 60 |
+| st 3 | `station` 3 | pets 150, decor 90 |
+| st 4 | `station` 4 | pets 200, decor 120 |
+| legendary | `unitMastery` | 0 (**legendary**) |
 
-Animals: 🐐 goat (welcome gift), 🦜 parrot, 🐢 turtle, 🦙 llama, and 🐓 a legendary rooster. Decorations: 🍉 melon stand, 🌽 corn crate, 🧺 picnic basket, 🏷️ price tags (earned for the "better buy" skill), and ⚖️ a golden scale (unit mastery).
+The ids follow the pattern `<buildingId>_<pet|decor>_<slot>`, where slot is `welcome`, `s2`, `s3`, `s4`, or `legend`. For example, `bakery_pet_welcome` or `show_decor_legend`. The exact TypeScript is in `TASK-rewards.md`.
 
-### Unit 4: Clock Tower
+## What the student sees
 
-Animals: 🦉 owl (welcome gift), 🦇 bat, 🐿️ squirrel, 🦅 eagle, and 🐉 a legendary dragon. Decorations: 🕯️ candles, 🔔 bell, ⏳ hourglass (earned for order of operations), 🌙 moon banner, and 🕰️ a golden clock (unit mastery).
+- **Unlock pop-up:** when something new becomes available or is granted, show a small celebration card **after** the current order finishes, never in the middle of one. It shows the emoji and a message like "New in the Pet Café: Pebble the penguin!", with **See it** (opens the shop) and **Keep playing** buttons. Queue multiple unlocks and show one at a time.
+- **Shop:** one section per building, in town order.
+  - Unlocked but unowned items show their price and a Buy button.
+  - Locked items show the emoji faded, with 🔒 and a kid-friendly hint: "Serve 6 orders at Recipe Cards," "Master every Pet Café skill," "Get 5 perfect orders in a row," "Reach 25 in the Fact Sprint."
+  - Items in closed units show "Opens with the Bakery."
+  - Legendary items get a gold border.
+- **Town map:** each building tile shows "Collection: 9 of 16." Open buildings also show up to 4 owned decorations from their set along the bottom of the tile.
 
-### Unit 5: Ice Rink
+## What the grown-ups see
 
-Animals: 🐻‍❄️ is a combined emoji, so avoid it. Use 🦭 seal (welcome gift), 🐺 wolf, 🦌 reindeer, 🐋 whale, and ❄️ a legendary snow spirit. Decorations: ⛸️ skates, 🧣 scarf rack, ☃️ snowman (earned for comparing negatives), 🏒 hockey sticks, and 🥇 a gold medal (unit mastery).
+- The **progress report** (`renderParent`) gets a Rewards line: collections, legendary items earned, and longest streak.
+- No leaderboards or class comparisons, anywhere.
 
-### Units 6 and 7: Potion Lab
+## Rules that keep it healthy
 
-Animals: 🐸 frog wizard (welcome gift), 🐍 snake, 🦎 lizard, 🐙 octopus, and 🧙 a legendary wizard pet. Decorations: 🧪 flasks, 🔮 crystal ball, 📜 scroll (earned for one-step equations), 🕸️ cobwebs, and ⚗️ a golden cauldron (unit mastery).
-
-### Units 8 to 10: Pet Houses
-
-Animals: 🦫 beaver (welcome gift), 🐌 snail, 🐞 ladybug, 🦋 butterfly, and 🦚 a legendary peacock. Decorations: 🧱 bricks, 🪵 logs, 🏕️ tent (earned for area of triangles), 🌻 garden, and 🏰 a castle (unit mastery).
-
-### Unit 11: Pet Show
-
-Animals: 🐩 poodle (welcome gift), 🐈 show cat, 🦒 giraffe, 🦓 zebra, and 🦁 a legendary lion. Decorations: 🎀 ribbons, 📊 score board (earned for dot plots), 🎪 tent, 🎺 trumpet, and 🏆 a grand trophy (unit mastery).
-
-Adjust names and items when each unit is built. Keep the pattern: a free welcome animal, 2 or 3 coin animals gated by stations, 1 or 2 items earned by mastery, a streak or sprint item, and a legendary pet plus a golden decoration for unit mastery.
-
-**Before shipping each set:** check every emoji in the game on a school Chromebook. Some newer ones (🦫, 🦭, 🪵) need recent ChromeOS. Swap any that show as boxes.
-
-## 3. Unlock logic
-
-Add one pure function (no DOM) near the stats code in `src/game/game.js`:
-
-```js
-// returns true when the student has met the rule
-function ruleMet(rule) { … }
-// items newly available or newly granted since the last check
-function checkUnlocks() { … }
-```
-
-- `unit`: the building is open. The café is always open. Later buildings open when their shop ships, or through a teacher setting later.
-- `station`: `S.cafe.st[n] >= UNLOCK_AT`. Generalize this to `S.shops[unit].st[n]` when the Bakery arrives.
-- `mastery`: count the listed skills where `skillStatus(skill) === 'mastered'`. The rule is met when that count reaches `count` (or all of them).
-- `unitMastery`: same check, using every skill in `UNITS[unit]`.
-- `sprint`: `S.sprintBest >= best`.
-- `streak`: track `S.bestStreak = Math.max(S.bestStreak, S.streak)` in `completeOrder()`, then check `S.bestStreak >= n`.
-
-Call `checkUnlocks()` at the end of `completeOrder()`, `endSprint()`, and `enterAs()`. Calling it in `enterAs()` means existing players get anything they already earned.
-
-Store what's been announced in `S.unlocked` (an array of reward ids). An item appears in the shop when its rule is met. If its price is 0, add it straight to `S.owned` or `S.decor`. Add `bestStreak` and `unlocked` to `fresh()` and `normalize()`.
-
-## 4. What students see
-
-- **Unlock moment:** when `checkUnlocks()` finds something new, show a small celebration card after the order: the item's emoji, "New in the Bakery: Crumb the hedgehog!", and a **See it** button to the shop. Show one card at a time, queue the rest, and never interrupt an order in progress.
-- **Shop:** group items by unit, with a tab or heading for each building. Show locked items as silhouettes: the emoji at low opacity with a 🔒. Each locked item gets a kid-friendly hint from its rule, for example:
-  - "Master Ratio tables and Equivalent ratios"
-  - "Get 5 perfect orders in a row"
-  - "Reach 25 in the Fact Sprint"
-  Never hide locked items. Seeing the goal is the point.
-- **Legendary items** get a gold border and a short line about the whole unit ("Master every skill in the Pet Café").
-- **Town map:** each building tile shows the decorations from its own set, 3 or 4 small emoji along the bottom. The plaza keeps the student's favorite decorations and active pet.
-- **Collection progress:** show "Café collection: 9 of 16" on each building tile. Finishing a collection is a strong motivator.
-
-## 5. Teacher and parent view
-
-- The grown-ups progress report gets a **Rewards** row: legendary items earned and collections completed.
-- Optionally, the teacher dashboard gets a small column showing legendary items earned per unit. It's a quick sign of full unit mastery. The server `saves.state` already holds `owned`, `decor`, and `unlocked`, so `class_report()` can read `state->'unlocked'`. No new table is needed.
-- Don't add a leaderboard. Public comparisons discourage the students who most need the practice.
-
-## 6. Rules that keep it healthy
-
-- Earned items can't be bought, and bought items never block learning.
-- No random loot boxes or chance-based rewards.
-- Prices don't inflate over time, and coins are never taken away (except by spending).
-- Restoring from a backup code keeps everything in it. `checkUnlocks()` runs after restore.
-
-## 7. Acceptance checks
-
-1. A fresh student sees the Café set with the start items for sale. Later-unit sets are visible but locked, with hints.
-2. Serving 6 orders at station 2 makes the penguin buyable, and a celebration card appears once.
-3. Mastering every café skill (you can test by setting `S.kr` values in the console) grants the unicorn and makes the crown buyable.
-4. A save that already owns the fox before station 3 is unlocked keeps the fox.
-5. Reloading, switching devices, or restoring a backup never shows the same celebration twice.
-6. `npm run typecheck` and `npm run build` pass.
-7. Every new emoji renders on a school Chromebook.
+- No random or chance-based rewards.
+- Coins are never taken away, except when the student spends them.
+- Prices never change based on the student's progress.
+- Earned (price 0) items can't be bought, so a student who hasn't mastered the skill can't skip ahead.
