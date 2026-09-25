@@ -1041,6 +1041,27 @@ function wireNum(inp, onEnter){
   inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^\d.]/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); onEnter(); } });
 }
+function numberPad(input, onSubmit){
+  if (!matchMedia('(pointer: coarse)').matches) return null;
+  const existing = input.nextElementSibling;
+  if (existing?.classList.contains('number-pad')) { existing.hidden = false; return existing; }
+  input.readOnly = true;
+  const pad = document.createElement('div'); pad.className = 'number-pad'; pad.setAttribute('aria-label', 'Number pad');
+  ['7','8','9','4','5','6','1','2','3','⌫','0','✓'].forEach(key => {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'number-key'; button.textContent = key;
+    button.setAttribute('aria-label', key === '⌫' ? 'Delete' : key === '✓' ? 'Check' : key);
+    button.addEventListener('click', () => {
+      sfx('tick');
+      if (key === '⌫') input.value = input.value.slice(0, -1);
+      else if (key !== '✓') input.value += key;
+      if (key !== '✓') input.dispatchEvent(new Event('input', {bubbles:true}));
+      else onSubmit();
+    });
+    pad.appendChild(button);
+  });
+  input.insertAdjacentElement('afterend', pad);
+  return pad;
+}
 function activateStep(i){
   order.i = i; const st = order.p.steps[i]; st.t0 = performance.now();
   $('#stepPrompt').innerHTML = `<span class="stepnum">Step ${i+1} of ${order.p.steps.length}</span>${esc(st.prompt)}`;
@@ -1288,6 +1309,8 @@ function ladderStep(){
   inp.addEventListener('input', () => { inp.value = inp.value.replace(allowText ? /[^\d./-]/g : /\D/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ladderCheck(); } });
   $('#prCheck').addEventListener('click', ladderCheck);
+  const pad = numberPad(inp, ladderCheck);
+  if (pad) $('#prCheck').insertAdjacentElement('afterend', pad);
   inp.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
 }
 function ladderCheck(){
@@ -1326,6 +1349,11 @@ function openSprint(){
   stopSprintTimer(); sp = null;
   $('#factText').textContent = 'Ready?'; $('#factText').classList.remove('oops');
   $('#spInput').hidden = true; $('#spCheck').hidden = true; $('#spStartWrap').hidden = false;
+  const pad = numberPad($('#spInput'), () => {
+    const inp = $('#spInput'); if (!sp || sp.lock || !inp.value) return;
+    sprintAnswer(inp.value);
+  });
+  if (pad) pad.hidden = true;
   $('#spCorrect').textContent = '0'; $('#spTime').textContent = '60'; $('#timerFill').style.width = '100%';
   $('#spNote').textContent = 'Answer as many as you can in 60 seconds. Every right answer powers up your tips.';
   show('sprint'); setTimeout(() => $('#spStart').focus(), 60);
@@ -1334,6 +1362,7 @@ function stopSprintTimer(){ if (spTimer) { clearInterval(spTimer); spTimer = nul
 $('#spStart').addEventListener('click', () => {
   sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:''};
   $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spCheck').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
+  const pad = $('#spInput').nextElementSibling; if (pad?.classList.contains('number-pad')) pad.hidden = false;
   nextFact(); spTimer = setInterval(sprintTick, 100);
 });
 function sprintDrillTypes(){
@@ -1711,6 +1740,7 @@ function askPin(){
   };
   $('#pinGo').addEventListener('click', go);
   pin.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  numberPad(pin, go);
   $('#notMe').addEventListener('click', pickName);
   setTimeout(() => pin.focus(), 50);
 }
