@@ -3,6 +3,7 @@ import { SKILLS, SKILL_ORDER as ORDER, STATIONS, MIS, statusFromRecent, drillLab
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
 type SaveStudentDrills = (id: string, settings: Partial<DrillSettings> | null) => Promise<void>;
+type ResetStudent = (id: string, clearHistory: boolean) => Promise<void>;
 
 export interface StudentReport {
   id: string; n: string; cl?: string; t: number; o: number; pf: number; tm: number;
@@ -33,7 +34,7 @@ export function ago(t: number) {
 const pctTxt = (v: number | null) => v == null ? '–' : v + '%';
 const drillHistory = (r: StudentReport): DrillHistory => r.dl && Object.keys(r.dl).length ? r.dl : r.dr && Object.keys(r.dr).length ? r.dr : Object.fromEntries(Object.entries(r.p || {}).map(([key, value]) => ['times:' + key, value]));
 
-export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills) {
+export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
   const played = list.filter(r => r.o > 0);
   const n = list.length, orders = list.reduce((s, r) => s + (r.o || 0), 0);
@@ -88,18 +89,18 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     ${tt.length ? `<p style="margin-top:0">${tt.map(([id, c]) => `<span class="chip">${esc(drillLabel(id))} (${c})</span>`).join('')}</p>` : ''}
     ${tf.length ? '<table class="steptable"><tr><th>Fact</th><th>Misses or slow</th><th>Students</th></tr>' + tf.map(([k, v]) => { const [x, y] = k.split('x').map(Number); return `<tr><td>${x} × ${y} = ${x * y}</td><td>${v.miss}</td><td>${[...v.who].map(esc).join(', ')}</td></tr>`; }).join('') + '</table>' : '<p class="muted">No times-table trouble yet.</p>'}</div></div>`;
   el.innerHTML = h;
-  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills)));
+  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent)));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
 }
 
-export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDrills) {
+export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent) {
   if (!r) return;
   const st = sStats(r);
   let setupA = 0, setupC = 0;
   Object.values(r.s || {}).forEach(steps => Object.values(steps).forEach(v => { if (v[3] === 's') { setupA += v[0]; setupC += v[1]; } }));
   let h = `<div class="row noprint" style="justify-content:space-between; margin-top:0"><h2 id="dTitle" style="margin:0">${esc(r.n)}</h2>
-    <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dClose">Close</button></span></div>
+    <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dReset">Reset</button> <button class="btn small" id="dClose">Close</button></span></div><div id="studentResetPanel" class="reset-panel" hidden></div>
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
@@ -134,6 +135,23 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     const readSeconds = +(e.target as HTMLInputElement).value;
     const settings = {...(r.ds || {}), readSeconds};
     try { await onSaveStudentDrills(r.id, settings); currentOverride = settings; $('#studentDrillMsg').textContent = 'Saved.'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
+  });
+  $('#dReset').addEventListener('click', () => {
+    if (!onResetStudent) return;
+    const panel = $('#studentResetPanel'); panel.hidden = false;
+    panel.innerHTML = `<strong>Reset ${esc(r.n)}?</strong><p>Reset town clears the town but keeps learning history. Reset everything also erases learning history.</p><div class="row"><button class="btn small primary" data-detail-reset-town>Reset town</button><button class="btn small" data-detail-reset-all>Reset everything</button><button class="btn small" data-detail-reset-cancel>Cancel</button></div><p class="status" id="studentResetMsg"></p>`;
+    let armed = false, armTimer: ReturnType<typeof setTimeout> | null = null;
+    const finish = async (clearHistory: boolean) => {
+      panel.querySelectorAll<HTMLButtonElement>('button').forEach(b => { b.disabled = true; });
+      try { await onResetStudent(r.id, clearHistory); closeDetail(); } catch (error) { $('#studentResetMsg').textContent = String(error); panel.querySelectorAll<HTMLButtonElement>('button').forEach(b => { b.disabled = false; }); }
+    };
+    panel.querySelector('[data-detail-reset-town]')?.addEventListener('click', () => { void finish(false); });
+    panel.querySelector('[data-detail-reset-all]')?.addEventListener('click', e => {
+      const button = e.currentTarget as HTMLButtonElement;
+      if (!armed) { armed = true; button.textContent = `Click again to erase all of ${r.n}'s history`; armTimer = setTimeout(() => { armed = false; button.textContent = 'Reset everything'; }, 5000); return; }
+      if (armTimer) clearTimeout(armTimer); void finish(true);
+    });
+    panel.querySelector('[data-detail-reset-cancel]')?.addEventListener('click', () => { if (armTimer) clearTimeout(armTimer); panel.hidden = true; panel.innerHTML = ''; });
   });
   document.querySelectorAll<HTMLButtonElement>('[data-clear-drill]').forEach(b => b.addEventListener('click', async () => {
     if (!onSaveStudentDrills) return;

@@ -93,11 +93,15 @@ async function renderDashboard() {
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
-  renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills);
+  renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); });
   startLive(cls.id);
 }
 async function saveStudentDrills(id: string, settings: Partial<DrillSettings> | null) {
   const { error } = await sb!.from('students').update({ drill_settings: settings }).eq('id', id);
+  if (error) throw error;
+}
+async function resetStudent(id: string, clearHistory: boolean) {
+  const { error } = await sb!.rpc('reset_student', { p_student: id, p_clear_history: clearHistory });
   if (error) throw error;
 }
 function startLive(classId: string) {
@@ -127,7 +131,7 @@ async function renderRoster(newPins: NewPin[] = []) {
         <div class="row"><button class="btn primary" id="addNames">Add and make PINs</button></div><p class="status" id="rosterMsg"></p></div>
       <div class="card"><h2>Roster (${students.length})</h2>
         ${students.length ? `<div class="row roster-tools"><button class="btn small" id="copyClassList" data-label="Copy class list">Copy class list</button><button class="btn small" id="printAllCards">Print all PIN cards</button></div><textarea id="classListFallback" class="copy-fallback" hidden readonly aria-label="Class list to copy"></textarea><table class="steptable"><thead><tr><th>Student</th><th>PIN</th><th></th></tr></thead><tbody>${students.map(s => `<tr><td>${esc(s.display_name)}${s.locked_until && new Date(s.locked_until) > new Date() ? ' <span class="tag" style="background:var(--work)">locked</span>' : ''}</td><td>${s.pin_plain ? `<span class="pin">${esc(s.pin_plain)}</span>` : '<span class="muted">(click New PIN to show)</span>'}</td>
-          <td style="text-align:right"><button class="btn small" data-reset="${s.id}" data-name="${esc(s.display_name)}">New PIN</button> <button class="btn small" data-del="${s.id}">Remove</button></td></tr>`).join('')}</tbody></table>`
+          <td style="text-align:right"><button class="btn small" data-reset="${s.id}" data-name="${esc(s.display_name)}">New PIN</button> <button class="btn small" data-reset-student="${s.id}" data-name="${esc(s.display_name)}">Reset</button> <button class="btn small" data-del="${s.id}">Remove</button></td></tr><tr data-reset-row="${s.id}" hidden><td colspan="3"><div class="reset-panel" data-reset-panel="${s.id}"></div></td></tr>`).join('')}</tbody></table>`
           : '<p class="muted">No students yet.</p>'}
       </div></div>`;
   $('#addNames').addEventListener('click', async () => {
@@ -153,12 +157,35 @@ async function renderRoster(newPins: NewPin[] = []) {
       if (e4) alertMain(e4.message); else void renderRoster();
     });
   });
+  pane.querySelectorAll<HTMLButtonElement>('[data-reset-student]').forEach(b => b.addEventListener('click', () => {
+    const row = pane.querySelector(`[data-reset-row="${b.dataset.resetStudent}"]`) as HTMLElement;
+    showResetPanel(row.querySelector('.reset-panel') as HTMLElement, b.dataset.resetStudent!, b.dataset.name || '', async clearHistory => {
+      await resetStudent(b.dataset.resetStudent!, clearHistory); await renderRoster(); $('#rosterMsg').textContent = `${b.dataset.name || 'Student'} was reset.`;
+    });
+  }));
   const pb = document.getElementById('printCards');
   if (pb) pb.addEventListener('click', () => printCards(newPins));
   const copyClassList = document.getElementById('copyClassList');
   if (copyClassList) copyClassList.addEventListener('click', () => { void copyText(classListText(cls, students), copyClassList as HTMLButtonElement, $('#classListFallback') as HTMLTextAreaElement); });
   const printAll = document.getElementById('printAllCards');
   if (printAll) printAll.addEventListener('click', () => printCards(students.filter(s => s.pin_plain).map(s => ({name:s.display_name, pin:s.pin_plain!}))));
+}
+function showResetPanel(host: HTMLElement, id: string, name: string, onReset: (clearHistory: boolean) => Promise<void>) {
+  const row = host.closest('[data-reset-row]') as HTMLElement;
+  row.hidden = false;
+  host.innerHTML = `<strong>Reset ${esc(name)}?</strong><p>Reset town clears the town but keeps learning history. Reset everything also erases learning history.</p><div class="row"><button class="btn small primary" data-reset-town>Reset town</button><button class="btn small" data-reset-all>Reset everything</button><button class="btn small" data-reset-cancel>Cancel</button></div><p class="status" data-reset-status></p>`;
+  let armed = false, armTimer: ReturnType<typeof setTimeout> | null = null;
+  const finish = async (clearHistory: boolean) => {
+    host.querySelectorAll<HTMLButtonElement>('button').forEach(b => { b.disabled = true; });
+    try { await onReset(clearHistory); } catch (error) { const status = host.querySelector('[data-reset-status]') as HTMLElement; status.textContent = String(error); host.querySelectorAll<HTMLButtonElement>('button').forEach(b => { b.disabled = false; }); }
+  };
+  host.querySelector('[data-reset-town]')?.addEventListener('click', () => { void finish(false); });
+  host.querySelector('[data-reset-all]')?.addEventListener('click', e => {
+    const button = e.currentTarget as HTMLButtonElement;
+    if (!armed) { armed = true; button.textContent = `Click again to erase all of ${name}'s history`; armTimer = setTimeout(() => { armed = false; button.textContent = 'Reset everything'; }, 5000); return; }
+    if (armTimer) clearTimeout(armTimer); void finish(true);
+  });
+  host.querySelector('[data-reset-cancel]')?.addEventListener('click', () => { if (armTimer) clearTimeout(armTimer); row.hidden = true; host.innerHTML = ''; });
 }
 function classListText(cls: ClassRow, students: StudentRow[]) {
   return [`Pet Town — ${cls.name}`, `Go to: ${gameUrl()}`, `Class code: ${cls.join_code}`, '', ...students.map(s => `${s.display_name} — PIN ${s.pin_plain || '(click New PIN to show)'}`)].join('\n');
