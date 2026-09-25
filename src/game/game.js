@@ -1014,7 +1014,7 @@ function nextCustomer(){
   shift.n++; renderDots();
   const c = pick(CUSTOMERS), sk = chooseSkill(); shift.lastSkill = sk;
   const p = GEN[sk](lvlOf(sk)); p.skill = sk;
-  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:performance.now(), pending:null};
+  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null};
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
   const ticketText = esc(p.bubble), questionEnd = ticketText.lastIndexOf('?');
@@ -1030,9 +1030,8 @@ function nextCustomer(){
     <div class="plan" id="plan" aria-label="Order plan">${plan}</div>
     <div class="visual">${p.visual}</div><div class="done-list" id="doneList"></div>
     <div class="step-prompt" id="stepPrompt"></div><div class="step-input" id="stepInput"></div><div class="chalk-note" id="chalkNote" aria-live="polite"></div>`;
-  $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
-  $('#checkBtn').addEventListener('click', checkCurrent);
-  $('#hintBtn').addEventListener('click', hint);
+  $('#boardActions').innerHTML = '';
+  $('#stepPrompt').hidden = true; $('#stepInput').hidden = true;
   const svg = $('#gridsvg');
   if (svg) svg.addEventListener('click', e => {
     const c = e.target.closest('.ghit'); if (!c) return;
@@ -1040,8 +1039,29 @@ function nextCustomer(){
     submit([+c.dataset.x, +c.dataset.y]);
   });
   order.limit = p.steps.length * 12;
-  startPatience(order.limit);
-  activateStep(0);
+  const currentOrder = order;
+  const beginOrder = () => {
+    if (order !== currentOrder || order.done || order.start !== null) return;
+    document.removeEventListener('keydown', onReadyKey);
+    order.start = performance.now();
+    startPatience(order.limit);
+    $('#stepPrompt').hidden = false; $('#stepInput').hidden = false;
+    $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
+    $('#checkBtn').addEventListener('click', checkCurrent);
+    $('#hintBtn').addEventListener('click', hint);
+    activateStep(0);
+  };
+  const onReadyKey = e => { if (e.key === 'Enter') { e.preventDefault(); beginOrder(); } };
+  const readyTimer = setTimeout(() => {
+    if (order !== currentOrder || order.done) return;
+    $('#boardActions').innerHTML = '<button class="btn berry" id="readyBtn">I\'m ready, let\'s start!</button>';
+    $('#readyBtn').addEventListener('click', beginOrder);
+    $('#readyBtn').focus();
+    document.addEventListener('keydown', onReadyKey);
+  }, 1500);
+  order.readyTimer = readyTimer;
+  const patience = $('#patience'); patience.classList.remove('tip-warn','tip-danger'); patience.style.transition = 'none'; patience.style.width = '100%';
+  $('#patienceLabel').textContent = 'Read your order, then start when you are ready.';
 }
 const slotEl = id => document.querySelector(`#board [data-slot="${id}"]`);
 function numInput(id, label){ return `<input class="cell" id="${id}" inputmode="decimal" autocomplete="off" maxlength="6" aria-label="${esc(label)}">`; }
@@ -1258,7 +1278,7 @@ function endShift(){
   show('summary'); $('#sumAgain').addEventListener('click', () => startShift(station));
   sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
 }
-$('#leaveShift').addEventListener('click', () => { freezePatience(); shift = null; order = null; show('cafe'); });
+$('#leaveShift').addEventListener('click', () => { if (order?.readyTimer) clearTimeout(order.readyTimer); freezePatience(); shift = null; order = null; show('cafe'); });
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
