@@ -1263,23 +1263,13 @@ $('#spStart').addEventListener('click', () => {
   $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
   nextFact(); spTimer = setInterval(sprintTick, 100);
 });
-function sprintDrillTypes(){
-  return Object.keys(DRILL_IMPL).filter(type => {
-    const d = DRILLS[type], unlock = !d.sprintUnlock || (S[d.sprintUnlock.unit]?.st?.[d.sprintUnlock.station] || 0) > 0;
-    return unlock && drillTypeOn(drillSettings(), type);
-  });
-}
-function sprintDrillKey(type){
-  const keys = Object.keys(S.drillLog).filter(id => id.startsWith(type + ':')).map(id => id.slice(type.length + 1));
-  if (!keys.length) return 'default';
-  return weightedPick(keys, key => { const log = S.drillLog[type + ':' + key]; return 1 + (log.miss||0) + (log.slow||0); });
-}
 function nextFact(){
-  const types = sprintDrillTypes(), otherTypes = types.filter(type => type !== 'times');
-  let type = 'times'; if (otherTypes.length && Math.random() >= 0.6) type = weightedPick(otherTypes, drillType => 1 + Object.entries(S.drillLog).filter(([id]) => id.startsWith(drillType + ':')).reduce((sum,[,log]) => sum + (log.miss||0) + (log.slow||0), 0));
-  const item = DRILL_IMPL[type].sprintItem(sprintDrillKey(type));
-  sp.item = item; sp.cur = item.fact ? [item.fact.x, item.fact.y] : null; sp.shown = performance.now(); sp.lock = false; sp.hadWrong = false; sp.wrongValue = '';
-  const ft = $('#factText'); ft.classList.remove('oops'); ft.textContent = item.prompt;
+  let pair;
+  if (sp.queue.length && Math.random() < 0.5) pair = sp.queue.shift();
+  else for (let t=0;t<5;t++) { pair = weightedPick(ALLPAIRS, p => factWeight(p[0], p[1])); if (!sp.cur || fkey(...pair) !== fkey(...sp.cur)) break; }
+  if (Math.random() < 0.5) pair = [pair[1], pair[0]];
+  sp.cur = pair; sp.shown = performance.now(); sp.lock = false; sp.hadWrong = false; sp.wrongValue = '';
+  const ft = $('#factText'); ft.classList.remove('oops'); ft.textContent = `${pair[0]} × ${pair[1]}`;
   const inp = $('#spInput'); inp.value = ''; inp.disabled = false; inp.focus();
 }
 function sprintTick(){
@@ -1291,7 +1281,7 @@ $('#spInput').addEventListener('input', e => {
   const currentAnswer = sp?.item?.answer || (sp?.cur ? String(sp.cur[0] * sp.cur[1]) : ''), allowText = /[./-]/.test(currentAnswer);
   e.target.value = e.target.value.replace(allowText ? /[^\d./-]/g : /\D/g,'');
   if (!sp || sp.lock || !e.target.value) return;
-  const answer = String(sp.item?.answer || (sp.cur ? sp.cur[0] * sp.cur[1] : '')).trim();
+  const answer = String(sp.cur[0] * sp.cur[1]);
   if (e.target.value.length >= answer.length && e.target.value !== answer) {
     sp.hadWrong = true; sp.wrongValue = e.target.value;
   } else if (e.target.value === answer) {
@@ -1301,26 +1291,20 @@ $('#spInput').addEventListener('input', e => {
 function sprintAnswer(value, {corrected = false} = {}) {
   if (!sp || sp.lock || !value) return;
   sp.lock = true;
-  const inp = $('#spInput'), item = sp.item, times = !!item.fact, [x, y] = item.fact || [], answer = String(item.answer).trim(), ok = times ? parseInt(value, 10) === x*y : value.trim() === answer;
+  const inp = $('#spInput'), [x, y] = sp.cur, ok = parseInt(value, 10) === x*y;
   const ms = performance.now() - sp.shown; recordPace('sprint', ms);
   const slow = ok && ms > slowLimit('sprint');
   const loggedCorrect = ok && !corrected, loggedAnswer = corrected ? sp.wrongValue : value;
-  const wrong = times ? [x,y] : {type:item.drillId.split(':')[0], key:item.drillId.split(':').slice(1).join(':'), prompt:item.prompt, answer:item.answer};
-  if (times) { logFact(x, y, loggedCorrect, ms, 'facts', slow); if (slow) sp.slow.push(wrong); }
-  else if (slow) sp.slow.push(wrong);
-  const type = item.drillId.split(':')[0], key = item.drillId.slice(type.length + 1);
-  Backend.log('attempts', times
-    ? {shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
-      answer:loggedAnswer.slice(0,6), expected:String(x*y), misconception:null, context:null, fact_a:x, fact_b:y, fact_div:false, ms:Math.round(ms)}
-    : {shop:'sprint', skill:'drill:' + type, step:key, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
-      answer:loggedAnswer.slice(0,60), expected:answer, misconception:null, context:null, fact_a:null, fact_b:null, fact_div:null, ms:Math.round(ms)});
+  logFact(x, y, loggedCorrect, ms, 'facts', slow); if (slow) sp.slow.push([x,y]);
+  Backend.log('attempts', {shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
+    answer:loggedAnswer.slice(0,6), expected:String(x*y), misconception:null, context:null, fact_a:x, fact_b:y, fact_div:false, ms:Math.round(ms)});
   if (ok) {
-    if (corrected) { sp.missed.push(wrong); if (times) sp.queue.push([x,y]); }
+    if (corrected) { sp.missed.push([x,y]); sp.queue.push([x,y]); }
     sp.correct++; $('#spCorrect').textContent = sp.correct; sfx('good');
     inp.classList.add('flash-good'); setTimeout(() => inp.classList.remove('flash-good'), 150); nextFact();
   } else {
-    sp.missed.push(wrong); if (times) sp.queue.push([x,y]); sfx('bad'); inp.disabled = true;
-    const ft = $('#factText'); ft.classList.add('oops'); ft.textContent = times ? `${x} × ${y} = ${x*y}` : `${item.prompt} = ${item.answer}`;
+    sp.missed.push([x,y]); sp.queue.push([x,y]); sfx('bad'); inp.disabled = true;
+    const ft = $('#factText'); ft.classList.add('oops'); ft.textContent = `${x} × ${y} = ${x*y}`;
     setTimeout(() => { if (sp) nextFact(); }, 1300);
   }
 }
@@ -1339,7 +1323,7 @@ function endSprint(){
   save(); updateHeader();
   Backend.log('sprints', {correct:run.correct}); Backend.flush();
   const seen = new Set(), chips = [];
-  run.missed.forEach(entry => { const id = Array.isArray(entry) ? fkey(entry[0], entry[1]) : `${entry.type}:${entry.key}`; if (!seen.has(id)) { seen.add(id); chips.push(Array.isArray(entry) ? `<span>${entry[0]} × ${entry[1]} = ${entry[0]*entry[1]}</span>` : `<span>${entry.prompt} = ${entry.answer}</span>`); } });
+  run.missed.forEach(([x,y]) => { const k = fkey(x,y); if (!seen.has(k)) { seen.add(k); chips.push(`<span>${x} × ${y} = ${x*y}</span>`); } });
   $('#summaryCard').innerHTML = `<div class="big-emoji">⚡</div><h2>${run.correct} correct!</h2>
     ${best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.sprintBest}</p>`}
     <p>Your tips are powered up <b>×${fmtPow(S.power)}</b> for your next café shift.</p>
@@ -1348,9 +1332,10 @@ function endSprint(){
   show('summary'); sfx('coin'); setTimeout(() => $('#sumCafe').focus(), 60);
   const trouble = run.missed.concat(run.slow);
   if (trouble.length) {
-    const count = {}; trouble.forEach(entry => { if (Array.isArray(entry)) { count[`times:${entry[0]}`] = (count[`times:${entry[0]}`]||0) + 1; if (entry[1] !== entry[0]) count[`times:${entry[1]}`] = (count[`times:${entry[1]}`]||0) + 1; } else { const id = `${entry.type}:${entry.key}`; count[id] = (count[id]||0) + 1; } });
-    const id = Object.keys(count).sort((a,b) => count[b] - count[a] || a.localeCompare(b))[0], sep = id.indexOf(':'), type = id.slice(0, sep), key = id.slice(sep + 1), f = trouble.find(entry => (Array.isArray(entry) ? entry[0] === +key || entry[1] === +key : `${entry.type}:${entry.key}` === id));
-    const drill = type === 'times' ? {type, key, other:Array.isArray(f) ? (f[0] === +key ? f[1] : f[0]) : 1, reason:'sprint', div:false, text:Array.isArray(f) ? `${f[0]} × ${f[1]} = ${f[0]*f[1]}` : ''} : {type, key, reason:'sprint', text:f.prompt};
+    const count = {}; trouble.forEach(([x,y]) => { count[x] = (count[x]||0) + 1; if (y !== x) count[y] = (count[y]||0) + 1; });
+    const table = +Object.keys(count).sort((a,b) => count[b] - count[a] || b - a)[0];
+    const f = trouble.find(([x,y]) => x === table || y === table), other = f[0] === table ? f[1] : f[0];
+    const drill = {type:'times', key:String(table), other, reason:'sprint', div:false, text:`${table} × ${other} = ${table*other}`};
     if (shouldDrill(drill, 'sprint')) { recordDrillPopup(drill); setTimeout(() => openPractice(drill, () => $('#sumCafe').focus()), 900); }
     else setTimeout(showNextUnlock, 0);
   } else setTimeout(showNextUnlock, 0);
