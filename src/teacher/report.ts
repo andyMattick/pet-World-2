@@ -120,12 +120,19 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     return `<tr><td>${esc(drillLabel(id))}</td><td>${v.popups || 0}</td><td>${v.missesAfter || 0}</td><td>${status === 'reteach' ? '<b>reteach</b>' : status}</td>${status === 'reteach' ? `<td><button class="btn small" data-clear-drill="${esc(id)}">Clear</button></td>` : '<td></td>'}</tr>`;
   }).join('');
   h += `</div><div><h2>Times tables</h2><p><b>Multiplying</b><br>${f || '<span class="muted">No trouble</span>'}</p><p><b>Finding the multiplier (dividing)</b><br>${df || '<span class="muted">No trouble</span>'}</p><p><b>Practice pop-ups</b><br>${pl || '<span class="muted">None</span>'}</p></div></div>`;
-  h += `<div class="card"><h2>Practice pop-ups for ${esc(r.n)}</h2><label for="studentDrillMode">Mode</label><select id="studentDrillMode"><option value="class" ${mode === 'class' ? 'selected' : ''}>Use class settings</option><option value="1.5" ${mode === '1.5' ? 'selected' : ''}>Extra time ×1.5</option><option value="2" ${mode === '2' ? 'selected' : ''}>Extra time ×2</option><option value="off" ${mode === 'off' ? 'selected' : ''}>Pop-ups off</option><option value="advanced" ${mode === 'advanced' ? 'selected' : ''}>Custom override</option></select><details><summary>Advanced</summary><p class="muted">Individual drill settings are stored with this student's override.</p></details><table class="steptable"><tr><th>Drill</th><th>Pop-ups</th><th>Misses after</th><th>Status</th><th></th></tr>${historyRows || '<tr><td colspan="5" class="muted">No drill history yet.</td></tr>'}</table><p class="status" id="studentDrillMsg"></p></div>`;
+  h += `<div class="card"><h2>Practice pop-ups for ${esc(r.n)}</h2><label for="studentDrillMode">Mode</label><select id="studentDrillMode"><option value="class" ${mode === 'class' ? 'selected' : ''}>Use class settings</option><option value="1.5" ${mode === '1.5' ? 'selected' : ''}>Extra time ×1.5</option><option value="2" ${mode === '2' ? 'selected' : ''}>Extra time ×2</option><option value="off" ${mode === 'off' ? 'selected' : ''}>Pop-ups off</option><option value="advanced" ${mode === 'advanced' ? 'selected' : ''}>Custom override</option></select><details open><summary>Advanced</summary><p class="muted">Individual drill settings are stored with this student's override.</p><label for="studentReadSeconds">Reading time before the tip timer starts</label><input id="studentReadSeconds" type="number" min="0" max="20" step="1" value="${r.ds?.readSeconds ?? ''}"></details><table class="steptable"><tr><th>Drill</th><th>Pop-ups</th><th>Misses after</th><th>Status</th><th></th></tr>${historyRows || '<tr><td colspan="5" class="muted">No drill history yet.</td></tr>'}</table><p class="status" id="studentDrillMsg"></p></div>`;
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
   $('#studentDrillMode').addEventListener('change', async e => {
     if (!onSaveStudentDrills) return;
     const value = (e.target as HTMLSelectElement).value;
-    const settings = value === 'class' ? null : value === '1.5' ? {timeScale:1.5} : value === '2' ? {timeScale:2} : value === 'off' ? {enabled:false} : (r.ds || {});
+    const readSeconds = +($('#studentReadSeconds') as HTMLInputElement).value;
+    const settings = value === 'class' ? null : value === '1.5' ? {timeScale:1.5} : value === '2' ? {timeScale:2} : value === 'off' ? {enabled:false} : {...(r.ds || {}), readSeconds};
+    try { await onSaveStudentDrills(r.id, settings); currentOverride = settings; $('#studentDrillMsg').textContent = 'Saved.'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
+  });
+  $('#studentReadSeconds').addEventListener('change', async e => {
+    if (!onSaveStudentDrills || ($('#studentDrillMode') as HTMLSelectElement).value !== 'advanced') return;
+    const readSeconds = +(e.target as HTMLInputElement).value;
+    const settings = {...(r.ds || {}), readSeconds};
     try { await onSaveStudentDrills(r.id, settings); currentOverride = settings; $('#studentDrillMsg').textContent = 'Saved.'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
   });
   document.querySelectorAll<HTMLButtonElement>('[data-clear-drill]').forEach(b => b.addEventListener('click', async () => {

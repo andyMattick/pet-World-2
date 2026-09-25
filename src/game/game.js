@@ -1055,16 +1055,20 @@ function nextCustomer(){
   order.limit = p.steps.length * 12;
   const currentOrder = order;
   activateStep(0);
-  const readingSeconds = 5 * (drillSettings().timeScale || 1);
-  order.readTimer = setTimeout(() => {
+  const settings = drillSettings(), readingSeconds = settings.readSeconds * (settings.timeScale || 1);
+  const startTiming = () => {
     if (order !== currentOrder || order.done) return;
     const startedAt = performance.now();
     order.start = startedAt; order.p.steps[0].t0 = startedAt; order.p.steps[order.i].t0 = startedAt;
     const patience = $('#patience'); patience.classList.remove('reading','tip-warn','tip-danger','start-pulse'); void patience.offsetWidth; patience.classList.add('start-pulse');
     startPatience(order.limit, undefined, true);
-  }, readingSeconds * 1000);
-  const patience = $('#patience'); patience.classList.remove('tip-warn','tip-danger','start-pulse'); patience.classList.add('reading'); patience.style.transition = 'none'; patience.style.width = '100%';
-  $('#patienceLabel').textContent = '📖 Reading time: take a look at the order.';
+  };
+  const patience = $('#patience'); patience.classList.remove('reading','tip-warn','tip-danger','start-pulse'); patience.style.transition = 'none'; patience.style.width = '100%';
+  if (readingSeconds > 0) {
+    order.readTimer = setTimeout(startTiming, readingSeconds * 1000);
+    patience.classList.add('reading');
+    $('#patienceLabel').textContent = '📖 Reading time: take a look at the order.';
+  } else startTiming();
 }
 const slotEl = id => document.querySelector(`#board [data-slot="${id}"]`);
 function numInput(id, label){ return `<input class="cell" id="${id}" inputmode="decimal" autocomplete="off" maxlength="6" aria-label="${esc(label)}">`; }
@@ -1679,7 +1683,7 @@ function renderParent(){
     <h4>Drill types</h4>${Object.entries(DRILLS).filter(([,d]) => d.unit === 'all' || openUnits.has(d.unit)).map(([type,d]) => `<label><input type="checkbox" data-parent-drill-type="${type}" ${drillSettingsNow.types[type] === false ? '' : 'checked'}> ${esc(d.name)}</label>`).join('')}
     <h4>Triggers</h4><label><input type="checkbox" id="parentTriggerMiss" ${drillSettingsNow.triggers.miss ? 'checked' : ''}> Missed answer</label><label><input type="checkbox" id="parentTriggerSlow" ${drillSettingsNow.triggers.slow ? 'checked' : ''}> Slow answer</label><label><input type="checkbox" id="parentTriggerSprint" ${drillSettingsNow.triggers.sprint ? 'checked' : ''}> End of sprint</label>
     <h4>Slow timing</h4><select id="parentSlowMode"><option value="adaptive" ${drillSettingsNow.slow.mode === 'adaptive' ? 'selected' : ''}>Adaptive</option><option value="fixed" ${drillSettingsNow.slow.mode === 'fixed' ? 'selected' : ''}>Fixed</option></select>
-    <label>Idea seconds <input id="parentSlowIdea" type="number" min="5" max="60" value="${drillSettingsNow.slow.idea}"></label><label>Arithmetic seconds <input id="parentSlowArith" type="number" min="5" max="60" value="${drillSettingsNow.slow.arith}"></label><label>Sprint seconds <input id="parentSlowSprint" type="number" min="3" max="20" value="${drillSettingsNow.slow.sprint}"></label><label>Max pop-ups per shift <input id="parentMaxPerShift" type="number" min="1" max="5" value="${drillSettingsNow.maxPerShift}"></label>
+    <label>Idea seconds <input id="parentSlowIdea" type="number" min="5" max="60" value="${drillSettingsNow.slow.idea}"></label><label>Arithmetic seconds <input id="parentSlowArith" type="number" min="5" max="60" value="${drillSettingsNow.slow.arith}"></label><label>Sprint seconds <input id="parentSlowSprint" type="number" min="3" max="20" value="${drillSettingsNow.slow.sprint}"></label><label>Reading time before the tip timer starts <input id="parentReadSeconds" type="number" min="0" max="20" step="1" value="${drillSettingsNow.readSeconds}"></label><label>Max pop-ups per shift <input id="parentMaxPerShift" type="number" min="1" max="5" value="${drillSettingsNow.maxPerShift}"></label>
     <div class="row"><button class="btn small primary" id="saveParentDrills">Save</button><button class="btn small" id="resetParentDrills">Reset to defaults</button></div></div>` : `<p class="muted">${settingSummary}</p>`;
   const collections = BUILDINGS.filter(b => b.open).map(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
@@ -1710,6 +1714,7 @@ function renderParent(){
       enabled: $('#parentDrillEnabled').checked, types,
       triggers: {miss:$('#parentTriggerMiss').checked, slow:$('#parentTriggerSlow').checked, sprint:$('#parentTriggerSprint').checked},
       slow: {mode:$('#parentSlowMode').value, idea:+$('#parentSlowIdea').value, arith:+$('#parentSlowArith').value, sprint:+$('#parentSlowSprint').value},
+      readSeconds:+$('#parentReadSeconds').value,
       timeScale:drillSettingsNow.timeScale, maxPerShift:+$('#parentMaxPerShift').value
     });
     save(); renderParent();

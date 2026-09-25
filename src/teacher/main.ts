@@ -200,6 +200,7 @@ function renderSettings() {
       <label for="slowIdea">Idea seconds</label><input id="slowIdea" type="number" min="5" max="60" step="1" value="${settings.slow.idea}">
       <label for="slowArith">Arithmetic seconds</label><input id="slowArith" type="number" min="5" max="60" step="1" value="${settings.slow.arith}">
       <label for="slowSprint">Sprint seconds</label><input id="slowSprint" type="number" min="3" max="20" step="1" value="${settings.slow.sprint}">
+      <label for="readSeconds">Reading time before the tip timer starts</label><input id="readSeconds" type="number" min="0" max="20" step="1" value="${settings.readSeconds}">
       <label for="maxPerShift">Max pop-ups per shift</label><input id="maxPerShift" type="number" min="1" max="5" step="1" value="${settings.maxPerShift}">
       <div class="row"><button class="btn primary" id="saveDrills">Save</button><button class="btn" id="resetDrills">Reset to defaults</button><span class="status" id="drillMsg"></span></div>
     </div></div>`;
@@ -226,6 +227,7 @@ function renderSettings() {
         arith: +($('#slowArith') as HTMLInputElement).value,
         sprint: +($('#slowSprint') as HTMLInputElement).value
       },
+      readSeconds: +($('#readSeconds') as HTMLInputElement).value,
       timeScale: settings.timeScale,
       maxPerShift: +($('#maxPerShift') as HTMLInputElement).value
     };

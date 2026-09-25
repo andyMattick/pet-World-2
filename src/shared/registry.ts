@@ -50,6 +50,7 @@ export interface DrillSettings {
   types: Record<string, boolean>;
   triggers: { miss: boolean; slow: boolean; sprint: boolean };
   slow: { mode: 'fixed' | 'adaptive'; idea: number; arith: number; sprint: number };
+  readSeconds: number;
   timeScale: number;
   maxPerShift: number;
   resetAt?: string;
@@ -59,6 +60,7 @@ export const DEFAULT_DRILL_SETTINGS: DrillSettings = {
   types: {},
   triggers: { miss: true, slow: true, sprint: true },
   slow: { mode: 'adaptive', idea: 15, arith: 10, sprint: 6 },
+  readSeconds: 5,
   timeScale: 1,
   maxPerShift: 3
 };
@@ -75,6 +77,7 @@ export function mergeDrillSettings(...layers: (Partial<DrillSettings> | null | u
     if (l.types && typeof l.types === 'object') Object.assign(out.types, l.types);
     if (l.triggers && typeof l.triggers === 'object') Object.assign(out.triggers, l.triggers);
     if (l.slow && typeof l.slow === 'object') Object.assign(out.slow, l.slow);
+    if (l.readSeconds !== undefined) out.readSeconds = l.readSeconds as number;
     if (l.timeScale !== undefined) out.timeScale = l.timeScale as number;
     if (l.maxPerShift !== undefined) out.maxPerShift = l.maxPerShift as number;
     if (typeof l.resetAt === 'string') out.resetAt = l.resetAt;
@@ -83,6 +86,7 @@ export function mergeDrillSettings(...layers: (Partial<DrillSettings> | null | u
   out.slow.idea = clampNum(out.slow.idea, 5, 60, 15);
   out.slow.arith = clampNum(out.slow.arith, 5, 60, 10);
   out.slow.sprint = clampNum(out.slow.sprint, 3, 20, 6);
+  out.readSeconds = clampNum(out.readSeconds, 0, 20, 5);
   out.timeScale = clampNum(out.timeScale, 1, 3, 1);
   out.maxPerShift = Math.round(clampNum(out.maxPerShift, 1, 5, 3));
   return out;
