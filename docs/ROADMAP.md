@@ -24,12 +24,12 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 ### Checklist
 
 - [x] 1. Sprint auto-advance: step A1
-- [ ] 2. Rewards display (5 steps)
+- [X] 2. Rewards display (5 steps)
   - [x] Step 1: shared reward tiles
-  - [ ] Step 2: Sticker Book with boxes to fill
-  - [ ] Step 3: town square display case
-  - [ ] Step 4: bigger celebration
-  - [ ] Step 5: sticker strips on town tiles, and verify
+  - [X] Step 2: Sticker Book with boxes to fill
+  - [X] Step 3: town square display case
+  - [X] Step 4: bigger celebration
+  - [X] Step 5: sticker strips on town tiles, and verify
 - [ ] 3. Drills: steps 1 through 5. At step 4, the owner runs `20260925000000_drills.sql` in Supabase
 - [ ] 4. Drill settings: steps 1 through 6. At step 1, the owner runs `20260926000000_drill_settings.sql` in Supabase
 - [ ] 5. Sprint skill mix: steps B1 through B4
