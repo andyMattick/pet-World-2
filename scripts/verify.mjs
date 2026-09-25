@@ -15,6 +15,9 @@ for (const g of ['basic', 'tape', 'groups', 'dnlCreate', 'dnl', 'dnlTable', 'tab
 for (const fn of ['function submit(', 'function completeOrder(', 'function openPractice(', 'function openJoin(', 'function buyReward(', 'function renderHall(', 'function renderParent(']) need('src/game/game.js', fn);
 need('src/game/game.js', 'function renderBook(', 'the Sticker Book renderer');
 need('src/game/game.js', 'function rewardTileHTML(', 'the shared reward tile renderer');
+need('src/game/game.js', 'function tableDown(', 'the scale-down table generator');
+need('src/game/game.js', 'function simplestStep(', 'the simplest-form step helper');
+need('src/game/game.js', 'function simplestChoice(', 'the simplest-form choice helper');
 if (game.includes('plazaDecor')) problems.push('src/game/game.js still uses the old #plazaDecor emoji list');
 need('src/shared/registry.ts', 'export const DRILLS', 'the drill registry');
 need('src/shared/registry.ts', 'export function drillLabel', 'the drill label helper');
@@ -28,6 +31,7 @@ need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the stud
 
 for (const ex of ['export const SKILLS', 'export const SKILL_ORDER', 'export const STATIONS', 'export const UNLOCK_AT', 'export const MIS', 'export function statusFromRecent']) need('src/shared/registry.ts', ex);
 need('src/shared/registry.ts', 'export const REWARDS', 'the reward registry');
+need('src/shared/registry.ts', 'notSimplest:', 'the simplest-form misconception');
 const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
