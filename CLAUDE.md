@@ -26,6 +26,8 @@ Pet Town: 6th grade math practice games (Khan Academy order), with step-level di
 
 See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next planned feature.
 
+`docs/READ-FIRST.md` defines the café order ticket, plan, adjustable reading allowance, and read-aloud support. Keep those behaviors in the existing game flow without changing problem generators.
+
 ## Protected files: edit carefully, never replace
 
 | File | What must stay |
