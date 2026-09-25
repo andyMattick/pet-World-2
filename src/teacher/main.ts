@@ -5,7 +5,7 @@ import { BUILDINGS, DRILLS, mergeDrillSettings, STATIONS, type DrillSettings } f
 import { renderClassReport, esc, type StudentReport } from './report';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; created_at: string }
-interface StudentRow { id: string; display_name: string; failed_attempts: number; locked_until: string | null }
+interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
 interface NewPin { name: string; pin: string }
 
 const sb = makeClient('pt-teacher');
@@ -115,7 +115,7 @@ function stopLive() { if (channel) { void sb?.removeChannel(channel); channel = 
 /* ---------- roster and PIN cards ---------- */
 async function renderRoster(newPins: NewPin[] = []) {
   const pane = $('#pane'), cls = current!;
-  const { data, error } = await sb!.from('students').select('id,display_name,failed_attempts,locked_until').eq('class_id', cls.id).order('display_name');
+  const { data, error } = await sb!.from('students').select('id,display_name,pin_plain,failed_attempts,locked_until').eq('class_id', cls.id).order('display_name');
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   const students = (data || []) as StudentRow[];
   pane.innerHTML = `
@@ -126,8 +126,8 @@ async function renderRoster(newPins: NewPin[] = []) {
         <textarea id="names" style="font-family:inherit; font-size:.95rem; min-height:160px" placeholder="Maya M.&#10;Ben T.&#10;Carmen R."></textarea>
         <div class="row"><button class="btn primary" id="addNames">Add and make PINs</button></div><p class="status" id="rosterMsg"></p></div>
       <div class="card"><h2>Roster (${students.length})</h2>
-        ${students.length ? `<table class="steptable">${students.map(s => `<tr><td>${esc(s.display_name)}${s.locked_until && new Date(s.locked_until) > new Date() ? ' <span class="tag" style="background:var(--work)">locked</span>' : ''}</td>
-          <td style="text-align:right"><button class="btn small" data-reset="${s.id}" data-name="${esc(s.display_name)}">New PIN</button> <button class="btn small" data-del="${s.id}">Remove</button></td></tr>`).join('')}</table>`
+        ${students.length ? `<div class="row roster-tools"><button class="btn small" id="copyClassList" data-label="Copy class list">Copy class list</button><button class="btn small" id="printAllCards">Print all PIN cards</button></div><textarea id="classListFallback" class="copy-fallback" hidden readonly aria-label="Class list to copy"></textarea><table class="steptable"><thead><tr><th>Student</th><th>PIN</th><th></th></tr></thead><tbody>${students.map(s => `<tr><td>${esc(s.display_name)}${s.locked_until && new Date(s.locked_until) > new Date() ? ' <span class="tag" style="background:var(--work)">locked</span>' : ''}</td><td>${s.pin_plain ? `<span class="pin">${esc(s.pin_plain)}</span>` : '<span class="muted">(click New PIN to show)</span>'}</td>
+          <td style="text-align:right"><button class="btn small" data-reset="${s.id}" data-name="${esc(s.display_name)}">New PIN</button> <button class="btn small" data-del="${s.id}">Remove</button></td></tr>`).join('')}</tbody></table>`
           : '<p class="muted">No students yet.</p>'}
       </div></div>`;
   $('#addNames').addEventListener('click', async () => {
@@ -155,6 +155,21 @@ async function renderRoster(newPins: NewPin[] = []) {
   });
   const pb = document.getElementById('printCards');
   if (pb) pb.addEventListener('click', () => printCards(newPins));
+  const copyClassList = document.getElementById('copyClassList');
+  if (copyClassList) copyClassList.addEventListener('click', () => { void copyText(classListText(cls, students), copyClassList as HTMLButtonElement, $('#classListFallback') as HTMLTextAreaElement); });
+  const printAll = document.getElementById('printAllCards');
+  if (printAll) printAll.addEventListener('click', () => printCards(students.filter(s => s.pin_plain).map(s => ({name:s.display_name, pin:s.pin_plain!}))));
+}
+function classListText(cls: ClassRow, students: StudentRow[]) {
+  return [`Pet Town — ${cls.name}`, `Go to: ${gameUrl()}`, `Class code: ${cls.join_code}`, '', ...students.map(s => `${s.display_name} — PIN ${s.pin_plain || '(click New PIN to show)'}`)].join('\n');
+}
+async function copyText(text: string, button: HTMLButtonElement, fallback: HTMLTextAreaElement) {
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = 'Copied!'; setTimeout(() => { button.textContent = button.dataset.label || 'Copy'; }, 2000);
+  } catch {
+    fallback.hidden = false; fallback.value = text; fallback.focus(); fallback.select(); button.textContent = 'Select text';
+  }
 }
 function pinCard(name: string, pin: string) {
   return `<div class="pincard"><div class="muted">${esc(current!.name)}</div><div class="nm">${esc(name)}</div>
@@ -179,7 +194,7 @@ function renderSettings() {
       <p>1. Go to <a href="${esc(gameUrl())}" target="_blank" rel="noopener">${esc(gameUrl())}</a></p>
       <p>2. Type the class code:</p><p class="joincode">${esc(cls.join_code)}</p>
       <p>3. Pick their name and type their 4-digit PIN.</p>
-      <p class="muted">Signing in on a new computer brings their town with them.</p></div>
+      <p class="muted">Signing in on a new computer brings their town with them.</p><div class="row"><button class="btn small" id="copyJoin" data-label="Copy join instructions">Copy join instructions</button></div><textarea id="joinFallback" class="copy-fallback" hidden readonly aria-label="Join instructions to copy"></textarea></div>
     <div class="card"><h2>Class settings</h2>
       <label for="cName">Class name</label><input type="text" id="cName" maxlength="60" value="${esc(cls.name)}">
       <label for="cStation">Unlock the café through</label>
@@ -210,6 +225,7 @@ function renderSettings() {
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
+  $('#copyJoin').addEventListener('click', () => { void copyText(`Go to: ${gameUrl()}\nClass code: ${cls.join_code}`, $('#copyJoin') as HTMLButtonElement, $('#joinFallback') as HTMLTextAreaElement); });
   $('#saveDrills').addEventListener('click', async () => {
     const types: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-drill-type]').forEach(input => { types[input.dataset.drillType!] = input.checked; });
