@@ -1011,12 +1011,18 @@ function chooseSkill(){
 }
 function cancelReadFirst(target){
   if (!target) return;
-  if (target.readTimer) { clearInterval(target.readTimer); target.readTimer = null; }
+  if (target.readTimer) { clearTimeout(target.readTimer); target.readTimer = null; }
   if (target.readyTimer) { clearTimeout(target.readyTimer); target.readyTimer = null; }
   if (target.readyKey) { document.removeEventListener('keydown', target.readyKey); target.readyKey = null; }
 }
-function cancelReadCountdown(target){
-  if (target?.readTimer) { clearInterval(target.readTimer); target.readTimer = null; }
+function ticketHTML(text){
+  const bold = s => s.replace(/(&#?[a-z0-9]+;)|(\d+(?:\.\d+)?)/gi, (m, ent, num) => ent ? ent : `<b>${num}</b>`);
+  const safe = esc(text);
+  const parts = (safe.match(/[^.!?]+[.!?]*/g) || [safe]).map(s => s.trim()).filter(Boolean);
+  let qi = -1; parts.forEach((s, i) => { if (s.endsWith('?')) qi = i; });
+  const story = parts.filter((_, i) => i !== qi).join(' ');
+  return (story ? `<div class="ticket-story">${bold(story)}</div>` : '') +
+    (qi >= 0 ? `<div class="ticket-find">❓ Find: ${bold(parts[qi])}</div>` : '');
 }
 function nextCustomer(){
   if (shift.n >= shift.total) { endShift(); return; }
@@ -1024,24 +1030,21 @@ function nextCustomer(){
   shift.n++; renderDots();
   const c = pick(CUSTOMERS), sk = chooseSkill(); shift.lastSkill = sk;
   const p = GEN[sk](lvlOf(sk)); p.skill = sk;
-  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null, readyTimer:null, readyKey:null};
+  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null};
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
-  const ticketText = p.bubble, questionEnd = ticketText.lastIndexOf('?');
-  const questionStart = questionEnd < 0 ? -1 : Math.max(ticketText.lastIndexOf('.', questionEnd - 1), ticketText.lastIndexOf('!', questionEnd - 1), ticketText.lastIndexOf('?', questionEnd - 1)) + 1;
-  const ticketLead = questionStart > 0 ? ticketText.slice(0, questionStart).trim() : '';
-  const ticketQuestion = questionStart >= 0 ? ticketText.slice(questionStart).trim() : ticketText;
-  const boldNumbers = text => esc(text).replace(/\b\d+(?:\.\d+)?\b/g, '<b>$&</b>');
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
   $('#custBubble').textContent = pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
   setHelper(p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
-    <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div class="ticket-question">${ticketLead ? boldNumbers(ticketLead) + ' ' : ''}<span class="ticket-find">❓ Find: ${boldNumbers(ticketQuestion)}</span></div></div>
+    <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div></div>
     <div class="plan" id="plan" aria-label="Order plan">${plan}</div>
     <div class="visual">${p.visual}</div><div class="done-list" id="doneList"></div>
     <div class="step-prompt" id="stepPrompt"></div><div class="step-input" id="stepInput"></div><div class="chalk-note" id="chalkNote" aria-live="polite"></div>`;
-  $('#boardActions').innerHTML = '';
-  $('#stepPrompt').hidden = true; $('#stepInput').hidden = true;
+  $('#ticketText').innerHTML = ticketHTML(p.bubble);
+  $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
+  $('#checkBtn').addEventListener('click', checkCurrent);
+  $('#hintBtn').addEventListener('click', hint);
   const svg = $('#gridsvg');
   if (svg) svg.addEventListener('click', e => {
     const c = e.target.closest('.ghit'); if (!c) return;
@@ -1050,38 +1053,14 @@ function nextCustomer(){
   });
   order.limit = p.steps.length * 12;
   const currentOrder = order;
-  const beginOrder = () => {
-    if (order !== currentOrder || order.done || order.start !== null) return;
-    cancelReadFirst(currentOrder);
-    order.start = performance.now();
-    startPatience(order.limit);
-    $('#stepPrompt').hidden = false; $('#stepInput').hidden = false;
-    $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
-    $('#checkBtn').addEventListener('click', checkCurrent);
-    $('#hintBtn').addEventListener('click', hint);
-    activateStep(0);
-  };
-  const onReadyKey = e => { if (e.key === 'Enter') { e.preventDefault(); beginOrder(); } };
-  currentOrder.readyKey = onReadyKey;
-  const countdownTotal = Math.ceil(2 * (drillSettings().timeScale || 1));
-  const countdownStart = performance.now();
-  $('#boardActions').innerHTML = '<span id="readCountdown">Starting in ' + countdownTotal + '…</span><button class="btn" id="waitReadingBtn">Wait, I\'m still reading</button>';
-  $('#waitReadingBtn').addEventListener('click', () => {
-    if (order !== currentOrder || order.start !== null) return;
-    cancelReadCountdown(currentOrder); $('#readCountdown').textContent = 'Take your time.'; $('#waitReadingBtn').hidden = true;
-  });
-  const readyTimer = setTimeout(() => {
+  activateStep(0);
+  const readingSeconds = 5 * (drillSettings().timeScale || 1);
+  order.readTimer = setTimeout(() => {
     if (order !== currentOrder || order.done) return;
-    $('#boardActions').insertAdjacentHTML('beforeend', '<button class="btn berry" id="readyBtn">I\'m ready, let\'s start!</button>');
-    $('#readyBtn').addEventListener('click', beginOrder);
-    if (order.start === null) { $('#readyBtn').focus(); document.addEventListener('keydown', onReadyKey); }
-  }, 1500);
-  order.readyTimer = readyTimer;
-  order.readTimer = setInterval(() => {
-    if (order !== currentOrder || order.start !== null) { cancelReadFirst(currentOrder); return; }
-    const left = countdownTotal - (performance.now() - countdownStart) / 1000;
-    if (left <= 0) beginOrder(); else $('#readCountdown').textContent = `Starting in ${Math.ceil(left)}…`;
-  }, 100);
+    const startedAt = performance.now();
+    order.start = startedAt; order.p.steps[0].t0 = startedAt; order.p.steps[order.i].t0 = startedAt;
+    startPatience(order.limit);
+  }, readingSeconds * 1000);
   const patience = $('#patience'); patience.classList.remove('tip-warn','tip-danger'); patience.style.transition = 'none'; patience.style.width = '100%';
   $('#patienceLabel').textContent = 'Read your order, then start when you are ready.';
 }
@@ -1178,9 +1157,9 @@ function submit(v){
   let ok;
   if (st.kind === 'choice') ok = !!(st.options[v] && st.options[v].ok);
   else ok = st.eq ? st.eq(v) : v === st.answer;
-  const ms = performance.now() - st.t0;
-  if (first && st.type !== 'setup') recordPace(STEP_TYPE[st.type], ms);
-  const slow = ok && first && st.type !== 'setup' && ms > slowLimit(STEP_TYPE[st.type]);
+  const timingStarted = order.start !== null, ms = timingStarted ? performance.now() - st.t0 : 0;
+  if (first && timingStarted && st.type !== 'setup') recordPace(STEP_TYPE[st.type], ms);
+  const slow = timingStarted && ok && first && st.type !== 'setup' && ms > slowLimit(STEP_TYPE[st.type]);
   if (first) {
     recordStep(order.p.skill, st, ok, slow);
     if (st.fact) logFact(st.fact.x, st.fact.y, ok, 0, st.fact.div ? 'divFacts' : 'facts', slow);
@@ -1262,12 +1241,12 @@ function queueDrill(st, reason){
   order.pending = drill;
 }
 function completeOrder(){
-  order.done = true; freezePatience();
+  cancelReadFirst(order); order.done = true; freezePatience();
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
   const before = STATIONS.map(s => stationOpen(s.id));
   S.cafe.st[shift.station] = (S.cafe.st[shift.station]||0) + 1;
-  const secs = (performance.now() - order.start) / 1000;
+  const secs = order.start === null ? 0 : (performance.now() - order.start) / 1000;
   S.timeMs += Math.min(secs, 300) * 1000;
   let tip = 4 + p.steps.length*2 + Math.max(0, Math.round(6 * (1 - secs/order.limit)));
   if (perfect) { S.streak++; tip += Math.min(5, S.streak); S.perfect++; shift.perfect++; }
