@@ -39,7 +39,7 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, ks:{}, kr:{}, kn:{}, mis:{},
-  cafe:{st:{1:0,2:0,3:0,4:0}}, minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
+  cafe:{st:{1:0,2:0,3:0,4:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
   const f = fresh(), s = Object.assign(f, raw || {});
@@ -52,6 +52,8 @@ function normalize(raw){
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
+  if (!Array.isArray(raw?.displayed)) s.displayed = s.decor.slice(0,8);
+  s.displayed = Array.from({length:8}, (_,i) => s.decor.includes(s.displayed[i]) ? s.displayed[i] : null);
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   return s;
@@ -756,10 +758,13 @@ $('#nameSave').addEventListener('click', () => {
 
 /* ---------- town ---------- */
 function renderHome(){
-  $('#plazaPet').textContent = petEmoji();
-  $('#plazaDecor').innerHTML = S.decor.length
-    ? S.decor.map(id => { const d = REWARDS.find(r => r.kind === 'decor' && r.id === id); return d ? `<span title="${esc(d.name)}">${d.emoji}</span>` : ''; }).join('')
-    : '<span class="empty">Earn coins in the shops, then decorate your town at the Pet Shop!</span>';
+  const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
+  const ownedDecor = S.decor.map(id => REWARDS.find(reward => reward.id === id)).filter(Boolean);
+  const stickerCount = REWARDS.filter(owns).length;
+  const slots = displayed.map((reward, i) => reward
+    ? `<button type="button" class="display-slot filled" data-case-slot="${i}" aria-label="${esc(reward.name)}"><span>${reward.emoji}</span><small>${esc(reward.name)}</small></button>`
+    : `<button type="button" class="display-slot empty" data-case-slot="${i}" aria-label="Empty display slot"><span>+</span><small>${ownedDecor.length < 8 ? 'Earn more in the café!' : 'Add a decoration'}</small></button>`).join('');
+  $('#displayCaseWrap').innerHTML = `<div class="display-case"><button type="button" class="helper-box" data-case-pet aria-label="Choose helper pet"><span class="helper-box-emoji">${helper.emoji}</span><strong>My helper</strong><small>${esc(helper.name)}</small></button><div class="case-main"><div class="display-shelves">${slots}</div></div></div><button type="button" class="display-progress" data-open="book">📒 Sticker Book: ${stickerCount} of ${REWARDS.length} stickers</button>`;
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   let h = '';
@@ -778,6 +783,30 @@ function renderHome(){
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
   $('#town').innerHTML = h;
 }
+let pickerMode = '', pickerSlot = -1;
+function openDisplayPicker(mode, slot){
+  pickerMode = mode; pickerSlot = slot == null ? -1 : slot;
+  const options = mode === 'pet'
+    ? REWARDS.filter(reward => reward.kind === 'pet' && owns(reward)).map(reward => `<button type="button" class="picker-option" data-picker-id="${reward.id}"><span>${reward.emoji}</span>${esc(reward.name)}</button>`).join('')
+    : REWARDS.filter(reward => reward.kind === 'decor' && owns(reward) && (!S.displayed.includes(reward.id) || S.displayed[pickerSlot] === reward.id)).map(reward => `<button type="button" class="picker-option" data-picker-id="${reward.id}"><span>${reward.emoji}</span>${esc(reward.name)}</button>`).join('');
+  $('#displayPickerTitle').textContent = mode === 'pet' ? 'Choose your helper' : 'Choose a decoration';
+  $('#displayPickerOptions').innerHTML = (mode === 'decor' && pickerSlot >= 0 && S.displayed[pickerSlot]) ? `<button type="button" class="picker-option picker-remove" data-picker-remove>Remove from display</button>${options}` : options;
+  $('#displayPicker').hidden = false; $('main').inert = true;
+}
+function closeDisplayPicker(){ $('#displayPicker').hidden = true; $('main').inert = false; pickerMode = ''; pickerSlot = -1; }
+$('#displayCaseWrap').addEventListener('click', e => {
+  const button = e.target.closest('button'); if (!button) return;
+  if (button.dataset.open === 'book') { show('book'); return; }
+  if (button.dataset.casePet !== undefined) { openDisplayPicker('pet'); return; }
+  if (button.dataset.caseSlot !== undefined) { openDisplayPicker('decor', +button.dataset.caseSlot); }
+});
+$('#displayPickerOptions').addEventListener('click', e => {
+  const button = e.target.closest('button'); if (!button) return;
+  if (pickerMode === 'pet' && button.dataset.pickerId) { S.pet = button.dataset.pickerId; save(); closeDisplayPicker(); renderHome(); updateHeader(); return; }
+  if (pickerMode === 'decor' && button.dataset.pickerRemove) { S.displayed[pickerSlot] = null; save(); closeDisplayPicker(); renderHome(); return; }
+  if (pickerMode === 'decor' && button.dataset.pickerId) { S.displayed[pickerSlot] = button.dataset.pickerId; save(); closeDisplayPicker(); renderHome(); }
+});
+$('#displayPickerClose').addEventListener('click', closeDisplayPicker);
 $('#town').addEventListener('click', e => {
   const b = e.target.closest('[data-open]'); if (!b) return;
   const id = b.dataset.open;

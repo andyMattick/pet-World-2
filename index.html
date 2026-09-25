@@ -38,8 +38,7 @@
 
   <section id="scr-home" hidden>
     <div class="plaza">
-      <div class="plaza-pet" id="plazaPet">🐱</div>
-      <div class="plaza-decor" id="plazaDecor"></div>
+      <div id="displayCaseWrap"></div>
       <div class="plaza-stats"><span id="dayChip">Day 1</span><span id="ordersChip">0 orders</span></div>
     </div>
     <div class="town" id="town"></div>
@@ -94,6 +93,13 @@
   <section id="scr-parent" hidden><div id="parentWrap"></div></section>
 </main>
 
+<div id="displayPicker" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="displayPickerTitle">
+  <div class="modal-card picker-card">
+    <h2 id="displayPickerTitle">Choose a pet</h2>
+    <div id="displayPickerOptions" class="picker-options"></div>
+    <div class="row"><button class="btn small" id="displayPickerClose">Close</button></div>
+  </div>
+</div>
 <div id="practice" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="prTitle">
   <div class="modal-card">
     <div class="pr-head"><span class="pr-pet" id="prPet">🐱</span><div><h2 id="prTitle">Let's practice!</h2><p id="prWhy"></p></div></div>
