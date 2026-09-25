@@ -22,6 +22,9 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 | 5 | **Sprint includes unlocked skills** | `SPRINT.md`, Part B | #3, #4 | medium |
 | 6 | **Merge the Pet Shop and Sticker Book** into one screen | `SHOP-BOOK.md` | #2 | small |
 | 7 | **Scaling down and simplest form** in the café (ratio tables going down, simplest form at the Counter and Kitchen) | `SIMPLIFY.md` | nothing | small |
+| 8 | **Phones and tablets:** on-screen number pad, Check buttons, ladder auto-advance, small-screen layout | `PHONE.md` | nothing | medium |
+| 9 | **Read the order first:** a prominent question ticket, a visible step plan, reading time that doesn't cost tips, read-aloud | `READ-FIRST.md` | nothing | medium |
+| 10 | **Teacher tools:** copy the class list with PINs, print all PIN cards, reset a student | `TEACHER-TOOLS.md` + run `20260927000000_teacher_tools.sql` | #4 | medium |
 
 ### Checklist
 
@@ -30,8 +33,11 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 - [x] 3. Drills: steps 1 through 5. At step 4, the owner runs `20260925000000_drills.sql` in Supabase
 - [x] 4. Drill settings: steps 1 through 6. At step 1, the owner runs `20260926000000_drill_settings.sql` in Supabase
 - [x] 5. Sprint skill mix: steps B1 through B4
-- [ ] 6. Shop and Sticker Book merge: steps 1 through 3
-- [ ] 7. Scaling down and simplest form: steps 1 through 4
+- [x] 6. Shop and Sticker Book merge: steps 1 through 3
+- [x] 7. Scaling down and simplest form: steps 1 through 4
+- [ ] 8. **Phones and tablets: steps 1 through 4 (do next)**
+- [ ] 9. Read the order first: steps 1 through 4
+- [ ] 10. Teacher tools: steps 1 through 5. At step 1, the owner runs `20260927000000_teacher_tools.sql` in Supabase
 
 ## Before other teachers or classes use it
 
