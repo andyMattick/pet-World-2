@@ -323,6 +323,76 @@ function gridSVG(max, xl, yl, star){
   return `<div class="gridwrap"><svg id="gridsvg" viewBox="0 0 ${W} ${W}" width="${W}" height="${W}" role="img" aria-label="Coordinate grid" data-max="${max}" data-pad="${pad}" data-top="${top}">${g}</svg></div>`;
 }
 
+const divisorsOf = n => { const d = []; for (let i = 2; i <= n; i++) if (n % i === 0) d.push(i); return d; };
+/* extra step for GEN.basic: only when the ratio can be simplified */
+function simplestStep(target, labels){
+  const g = gcd(target[0], target[1]);
+  if (g < 2) return null;
+  const s = [target[0] / g, target[1] / g];
+  return {name:'Simplest form', type:'concept', kind:'ratio', labels,
+    prompt:`Now write ${target[0]} : ${target[1]} in simplest form.`, answer:s,
+    eq:v => Array.isArray(v) && v[0] === s[0] && v[1] === s[1],
+    fact:{x:g, y:s[0] > 1 ? s[0] : s[1], div:true},
+    mis:v => !Array.isArray(v) ? null
+      : (v[0] === s[1] && v[1] === s[0]) ? 'reversed'
+      : (v[0] * s[1] === v[1] * s[0] && gcd(v[0], v[1]) > 1) ? 'notSimplest'
+      : ((v[0] === s[0] && v[1] === target[1]) || (v[0] === target[0] && v[1] === s[1])) ? 'oneSideOnly'
+      : null,
+    hint:() => `What number goes into both ${target[0]} and ${target[1]}? Divide both by it.`};
+}
+/* scale-down ratio table: start from a big batch and divide */
+function tableDown(lvl){
+  const r = pick(RECIPES), items = r.items;
+  const [a, b] = coprimePair(lvl <= 2 ? 5 : 8, lvl <= 2 ? 5 : 8, 1);
+  const m = weightedPick([4, 6, 8, 9, 10, 12].filter(x => x <= (lvl <= 2 ? 8 : 12)), x => factWeight(a > 1 ? a : b, x));
+  const top = [a*m, b*m];
+  const divs = divisorsOf(m).filter(d => d < m);
+  const rowDivs = shuffle(divs).slice(0, lvl <= 2 ? 1 : 2).sort((p, q) => p - q);
+  rowDivs.push(m);                                  // last row: all the way down to simplest form
+  let tb = `<table class="ratio"><thead><tr><th>divide<br>by</th><th><span class="e">${items[0][0]}</span><br>${esc(items[0][1])}</th><th><span class="e">${items[1][0]}</span><br>${esc(items[1][1])}</th></tr></thead><tbody>
+    <tr class="base"><td>big batch</td><td>${top[0]}</td><td>${top[1]}</td></tr>`;
+  const steps = [];
+  rowDivs.forEach((d, ri) => {
+    const vals = [top[0]/d, top[1]/d], g = Math.random() < 0.5 ? 0 : 1, bl = 1 - g;
+    const last = d === m;
+    tb += `<tr><td><span class="times">÷</span>${slot('f'+ri)}</td>${[0,1].map(c => c === g ? `<td>${vals[c]}</td>` : `<td>${slot('v'+ri)}</td>`).join('')}</tr>`;
+    steps.push({name:'Find the divisor', type:'concept', kind:'num', slot:'f'+ri,
+      prompt:`Row ${ri+2}: the big batch was divided by what number?${last ? ' (This row is the smallest possible recipe.)' : ''}`,
+      answer:d, fact:{x:vals[g], y:d, div:true},
+      mis:v => v === top[g] - vals[g] ? 'additive' : null,
+      hint:() => `${items[g][0]} went from ${top[g]} down to ${vals[g]}. ${top[g]} ÷ what = ${vals[g]}?`});
+    steps.push({name:'Divide', type:'compute', kind:'num', slot:'v'+ri,
+      prompt:`Row ${ri+2}: how many ${items[bl][0]} ${items[bl][1]}?`,
+      answer:vals[bl], fact:{x:d, y:vals[bl], div:true},
+      mis:v => v === top[bl] - (top[g] - vals[g]) ? 'additive' : v === top[bl] ? 'oneSideOnly' : null,
+      hint:() => `This row is ÷${d}. ${top[bl]} ÷ ${d} = ?`});
+  });
+  tb += '</tbody></table>';
+  return {title:`${r.name} (smaller batches)`, ctx:`${top[0]}:${top[1]}, ${rowDivs.map(d => '÷'+d).join(' ')}`,
+    bubble:pick(["I made way too much! Can you shrink my recipe?", "I only need a small batch today. Help me scale it down!", "Let's find the smallest version of this recipe."]),
+    helper:'Going down works the same way: find what the row was divided by, then divide the other amount.', visual:tb, steps};
+}
+/* extra choice problem for GEN.equiv at level 2+ */
+function simplestChoice(lvl){
+  const r = pick(RECIPES), [A, B] = r.items;
+  const [a, b] = coprimePair(lvl <= 2 ? 5 : 7, lvl <= 2 ? 5 : 7, 2);
+  const g = pickK(a, 2, lvl <= 2 ? 6 : 9), big = [a*g, b*g];
+  const halfway = divisorsOf(g).filter(d => d < g);
+  const opts = [{v:[a, b], ok:true, mis:null}, {v:[b, a], ok:false, mis:'reversed'}];
+  if (halfway.length) { const d = pick(halfway); opts.push({v:[big[0]/d, big[1]/d], ok:false, mis:'notSimplest'}); }
+  opts.push({v:[a, big[1]], ok:false, mis:'oneSideOnly'});
+  const shown = shuffle(opts).map(o => ({html:`${o.v[0]} ${A[0]} : ${o.v[1]} ${B[0]}`, text:`${o.v[0]}:${o.v[1]}`, ok:o.ok, mis:o.mis}));
+  return {title:'Simplest recipe', ctx:`${big[0]}:${big[1]}`,
+    bubble:`My recipe card says ${big[0]} ${A[1]} to ${big[1]} ${B[1]}. What's the simplest way to write that?`,
+    helper:'Simplest form: divide both numbers by the biggest number that goes into both.',
+    visual:`<div style="text-align:center; font-size:1.8rem">${big[0]} ${A[0]} : ${big[1]} ${B[0]}</div>`,
+    steps:[
+      {name:'Pick simplest form', type:'concept', kind:'choice', prompt:`Which is ${big[0]} : ${big[1]} in simplest form?`, options:shown,
+        hint:() => `What's the biggest number that goes into both ${big[0]} and ${big[1]}?`},
+      {name:'Name the divisor', type:'compute', kind:'num', prompt:'Both numbers were divided by what?', answer:g, fact:{x:a, y:g},
+        mis:v => v === big[0] - a ? 'additive' : null, hint:() => `${big[0]} ÷ what = ${a}?`}
+    ]};
+}
 const GEN = {
 /* ---------- Station 1 ---------- */
 basic(lvl){
