@@ -1078,9 +1078,12 @@ function renderShopFloor(shop){
     const key = assessKey(config.id, st.id);
     return !!S.quizzes[key]?.passed || Backend.me?.quiz_overrides?.[key] === 'excused';
   });
-  const testPassed = unitTestPassed(config.id);
+  const testKey = assessKey(config.id, null), testReviewSkills = reviewSkillsNeeded(testKey), testPassed = unitTestPassed(config.id);
+  const testReviewStation = config.stations.find(st => st.skills.some(skill => testReviewSkills.includes(skill)))?.id ?? 1;
   const unitTestCard = !allStationsBuilt ? '' : `<div class="station unit-test${allStationQuizzesPassed || testPassed ? '' : ' locked'}">
     <div class="se">🏆</div><h3>Unit Test</h3>${testPassed ? '<p class="muted" style="margin:0">✅ Unit Test passed</p>'
+      : testReviewSkills.length ? `<p class="muted" style="margin:0">🔁 Review: ${testReviewSkills.length} skill${testReviewSkills.length === 1 ? '' : 's'} to practice</p><button class="btn" data-review-key="${esc(testKey)}" data-review-station="${testReviewStation}" data-shop="${config.id}">Review practice</button>`
+      : S.quizzes[testKey]?.tries && reviewComplete(testKey) ? `<button class="btn" data-unit-test data-shop="${config.id}">Retake unit test</button>`
       : allStationQuizzesPassed ? `<p class="muted" style="margin:0">Every station quiz is passed.</p><button class="btn berry" data-unit-test data-shop="${config.id}">Start Unit Test</button>`
       : '<p class="muted" style="margin:0">Pass every station quiz first</p>'}</div>`;
   $('#stations').innerHTML = unitTestCard + config.stations.map(st => {
