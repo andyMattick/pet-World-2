@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -39,11 +39,12 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  cafe:{st:{1:0,2:0,3:0,4:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
+  cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
   const f = fresh(), s = Object.assign(f, raw || {});
   s.cafe = Object.assign({st:{}}, s.cafe || {}); s.cafe.st = Object.assign({1:0,2:0,3:0,4:0}, s.cafe.st || {});
+  s.bakery = Object.assign({st:{}}, s.bakery || {}); s.bakery.st = Object.assign({1:0,2:0,3:0,4:0,5:0}, s.bakery.st || {});
   s.sync = Object.assign(fresh().sync, s.sync || {});
   ['facts','divFacts','practiceLog','ks','kr','kn','mis'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'drillLog') || !s.drillLog || typeof s.drillLog !== 'object') {
@@ -230,7 +231,14 @@ function ccTotals(){
   }));
   return [ca, cc, ma, mc];
 }
-function stationOpen(n){ return n === 1 || (!Backend.me && S.unlockAll) || n <= S.minStation || (S.cafe.st[n-1]||0) >= UNLOCK_AT; }
+function shopProgress(shop){ return S[shop]; }
+function stationOpen(shop, n){
+  const stations = SHOPS[shop]?.stations || [], station = stations.find(s => s.id === n), progress = shopProgress(shop);
+  if (!station || !station.skills.length) return false;
+  if (n === 1) return true;
+  const cafeOverrides = shop === 'cafe';
+  return (cafeOverrides && ((!Backend.me && S.unlockAll) || n <= S.minStation)) || (progress?.st?.[n-1] || 0) >= UNLOCK_AT;
+}
 let appliedDrillReset = '';
 function drillSettings(){
   const settings = Backend.me ? mergeDrillSettings(Backend.me.class_drills, Backend.me.student_drills) : mergeDrillSettings(S.drillSettings);
@@ -967,7 +975,7 @@ $('#town').addEventListener('click', e => {
 /* ---------- café stations ---------- */
 function renderCafe(){
   $('#stations').innerHTML = STATIONS.map(st => {
-    const open = stationOpen(st.id), done = S.cafe.st[st.id] || 0;
+    const open = stationOpen('cafe', st.id), done = S.cafe.st[st.id] || 0;
     const prev = st.id > 1 ? (S.cafe.st[st.id-1] || 0) : 0;
     const lock = open ? '' : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${STATIONS[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
     const skills = st.skills.map(sk => { const s = skillStatus(sk); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}</li>`; }).join('');
@@ -1275,7 +1283,7 @@ function completeOrder(){
   if (wasReading) { const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; }
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
-  const before = STATIONS.map(s => stationOpen(s.id));
+  const before = STATIONS.map(s => stationOpen('cafe', s.id));
   S.cafe.st[shift.station] = (S.cafe.st[shift.station]||0) + 1;
   const secs = order.start === null ? 0 : (performance.now() - order.start) / 1000;
   S.timeMs += Math.min(secs, 300) * 1000;
@@ -1293,7 +1301,7 @@ function completeOrder(){
   $('#stepPrompt').innerHTML = ''; $('#stepInput').innerHTML = '';
   $('#custBubble').textContent = pick(['Yum! That looks perfect.','Wow, just right!','My friends are going to love this!','Thank you so much!']) + ` Here's ${tip} 🪙`;
   sfx('coin'); coinBurst($('#board'), Math.ceil(tip/3));
-  STATIONS.forEach((s,i) => { if (!before[i] && stationOpen(s.id)) setTimeout(() => toast(`New station open: ${s.name}!`), 900); });
+  STATIONS.forEach((s,i) => { if (!before[i] && stationOpen('cafe', s.id)) setTimeout(() => toast(`New station open: ${s.name}!`), 900); });
   const last = shift.n >= shift.total;
   $('#boardActions').innerHTML = `<button class="btn mint" id="nextBtn">${last ? 'Close up for the day' : 'Next customer'}</button>`;
   $('#nextBtn').addEventListener('click', nextCustomer); setTimeout(() => $('#nextBtn').focus(), 60); setTimeout(showNextUnlock, 0);
