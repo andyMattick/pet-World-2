@@ -1010,7 +1010,7 @@ async function startShift(shop, station){
   shift = {shop:config.id, station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
-  $('#leaveShift').textContent = `Close the ${config.name.toLowerCase()} early`;
+  $('#leaveShift').textContent = config.id === 'bakery' ? 'Close the bakery early' : 'Close the café early';
   show('shift'); nextCustomer();
 }
 function renderDots(){ let h = ''; for (let i=1;i<=shift.total;i++) h += `<i class="${i < shift.n ? 'done' : i === shift.n ? 'now' : ''}"></i>`; $('#dots').innerHTML = h; }
@@ -1117,19 +1117,20 @@ function wireNum(inp, onEnter){
   inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^\d.]/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); onEnter(); } });
 }
-function numberPad(input, onSubmit){
+function numberPad(input, onSubmit, {decimal = false} = {}){
   if (!matchMedia('(pointer: coarse)').matches) return null;
   const existing = input.nextElementSibling;
   if (existing?.classList.contains('number-pad')) { existing.hidden = false; return existing; }
   input.readOnly = true;
   const pad = document.createElement('div'); pad.className = 'number-pad'; pad.setAttribute('aria-label', 'Number pad');
-  ['7','8','9','4','5','6','1','2','3','⌫','0','✓'].forEach(key => {
+  const keys = ['7','8','9','4','5','6','1','2','3','⌫','0']; if (decimal) keys.push('.'); keys.push('✓');
+  keys.forEach(key => {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'number-key'; button.textContent = key;
     button.setAttribute('aria-label', key === '⌫' ? 'Delete' : key === '✓' ? 'Check' : key);
     button.addEventListener('click', () => {
       sfx('tick');
       if (key === '⌫') input.value = input.value.slice(0, -1);
-      else if (key !== '✓') input.value += key;
+      else if (key !== '✓' && (key !== '.' || !input.value.includes('.'))) input.value += key;
       if (key !== '✓') input.dispatchEvent(new Event('input', {bubbles:true}));
       else onSubmit();
     });
@@ -1147,7 +1148,7 @@ function activateStep(i){
   if (st.kind === 'num') {
     const html = numInput('cur', st.prompt);
     if (st.slot) { const sl = slotEl(st.slot); sl.classList.add('active'); sl.innerHTML = html; } else box.innerHTML = html;
-    const inp = $('#cur'); wireNum(inp, checkCurrent); setTimeout(() => inp.focus(), 40);
+    const inp = $('#cur'); wireNum(inp, checkCurrent); numberPad(inp, checkCurrent, {decimal:String(st.answer).includes('.')}); setTimeout(() => inp.focus(), 40);
   } else if (st.kind === 'ratio') {
     box.innerHTML = `<span class="rlbl">${st.labels[0]}</span>${numInput('curA','first number')}<span class="colon">:</span>${numInput('curB','second number')}<span class="rlbl">${st.labels[1]}</span>`;
     wireNum($('#curA'), () => { if (!$('#curB').value) $('#curB').focus(); else checkCurrent(); });
