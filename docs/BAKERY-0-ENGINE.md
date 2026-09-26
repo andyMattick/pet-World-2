@@ -17,7 +17,7 @@ In `src/shared/registry.ts`, **add** the following. Don't change any existing ex
 ```ts
 export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
 export const BAKERY_STATIONS: Station[] = [
-  { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
+  { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: [] },
   { id: 2, name: 'Sharing Pans',  emoji: '🥧', kid: 'Divide fractions and whole numbers', skills: [] },
   { id: 3, name: 'Boxing Treats', emoji: '📦', kid: 'Divide fractions by fractions', skills: [] },
   { id: 4, name: 'The Register',  emoji: '🧾', kid: 'Multiply decimals, long division', skills: [] },
@@ -31,7 +31,7 @@ export const SHOPS: Record<string, Shop> = {
 
 - Add `shop?: string` to the `Skill` interface. Existing skills don't need it; a missing shop means `'cafe'`.
 - Add `export const shopOfSkill = (id: string) => SKILLS[id]?.shop || 'cafe';`.
-- A station with an empty `skills` list is **not built yet**. It shows as "Coming soon" and can't be opened.
+- A station with an empty `skills` list is **not built yet**. It shows as "Coming soon" and can't be opened. **All 5 Bakery stations start empty.** `BAKERY-1-SCALE.md` fills in station 1 when its skills exist, so nothing ever looks up a skill that isn't in `SKILLS`.
 
 Commit: `Add shop registry`
 
@@ -57,9 +57,11 @@ In `src/game/game.js`:
    - `chooseSkill()` picks from `SHOPS[shift.shop].stations`.
    - `completeOrder()` counts the order in `shopProgress(shift.shop).st`.
    - Every `Backend.log` from an order uses `shop: shift.shop` instead of `'cafe'`.
+   - The "New station open!" check in `completeOrder()` uses `SHOPS[shift.shop].stations` and `stationOpen(shift.shop, …)` instead of the café's `STATIONS`, so every shop gets the pop-up.
    - The shift header shows the right shop and station.
    - "Another shift" returns to the same shop and station.
-5. **Rewards:** in `ruleMet()`, a `station` rule for any unit now checks `shopProgress(unit).st[n] >= UNLOCK_AT`. Keep `BUILDINGS.bakery.open` **false** in this step.
+5. **Rewards:** in `ruleMet()`, a `station` rule for any unit now checks `shopProgress(unit).st[n] >= UNLOCK_AT`.
+6. **Leave `BUILDINGS` alone.** It's a **list** of building objects, not a lookup table, and the Bakery entry (`{id:'bakery', …}`) has no `open` field, which is what keeps it closed. Don't turn the list into an object, and don't add `open` to the Bakery in this plan.
 
 **Browser test:** the café plays exactly as before, station unlocks still work, and old saves load.
 
@@ -89,13 +91,15 @@ In `scripts/verify.mjs`, **add** checks without removing any:
 
 Update the protected-files table in exactly `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md`, keeping them identical.
 
+**Remove the stray copies:** if `docs/AGENTS.md` or `docs/CLAUDE.md` exist, delete them with `git rm`. The real instruction files live only at the repo root and in `.github/`. Then add a check to `scripts/verify.mjs` that **fails if either `docs/AGENTS.md` or `docs/CLAUDE.md` exists**, so the copies can't come back.
+
 Commit: `Verify covers multiple shops`
 
 ## Acceptance checks
 
 1. The café is unchanged: stations, unlocks, the teacher's starting station, rewards, and the dashboard all work as before.
 2. Old saves and backup codes load, and the café progress is intact.
-3. The Bakery tile is still "Opening soon" until `BAKERY-1-SCALE.md` opens it.
+3. The Bakery tile is still "Opening soon" until `BAKERY-1-SCALE.md` opens it. The 🥐 dashboard tab loads without errors even though every Bakery station is still empty.
 4. The dashboard shows ☕ and 🥐 tabs. The café tab looks the same as today's grid.
 5. The number pad shows `.` only when an answer needs it.
 6. `npm run verify`, `npm run typecheck`, and `npm run build` pass, with no red Console errors.

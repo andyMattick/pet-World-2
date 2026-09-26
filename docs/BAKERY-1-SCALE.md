@@ -42,8 +42,11 @@ In `src/shared/registry.ts`, **add**, without changing anything existing:
    estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec'] },
    wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord'] },
    ```
-3. **`UNIT_SKILLS.bakery = ['addDec', 'subDec', 'decWord']`.** Later Bakery plans add their skills to this list.
-4. **In `DRILLS`,** give `placeValue` the field `sprintUnlock: { unit: 'bakery', station: 1 }`.
+3. **In `BAKERY_STATIONS`, change station 1's `skills: []` to `skills: ['addDec', 'subDec', 'decWord']`.** Edit that one line of the list; don't rebuild the list.
+4. **`UNIT_SKILLS.bakery = ['addDec', 'subDec', 'decWord']`.** Later Bakery plans add their skills to this list.
+5. **In `DRILLS`,** give `placeValue` the field `sprintUnlock: { unit: 'bakery', station: 1 }`.
+
+Do items 1 and 3 in the **same commit**, so station 1 never names a skill that doesn't exist.
 
 Commit: `Bakery station 1 registry`
 
@@ -216,7 +219,7 @@ Commit: `Bakery station 1 generators`
 
 ### Step 3: Open the Bakery
 
-1. In `BUILDINGS`, set `bakery.open = true`.
+1. In the `BUILDINGS` **list**, find the Bakery entry (`{id:'bakery', …}`) and add `open: true` to it. Change nothing else, and keep `BUILDINGS` a list.
 2. The Bakery tile now opens `renderShopFloor('bakery')`, with **The Scale** open and stations 2 to 5 showing **Coming soon**.
 3. The Bakery's welcome rewards (🦔 hedgehog and 🍞 bread basket) are granted by the existing unlock logic the first time a student opens the town after this change. That's expected.
 
