@@ -39,7 +39,7 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:null,
+  review:{}, quizzes:{}, stationsOpenedBefore:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
@@ -47,7 +47,7 @@ function normalize(raw){
   s.cafe = Object.assign({st:{}}, s.cafe || {}); s.cafe.st = Object.assign({1:0,2:0,3:0,4:0}, s.cafe.st || {});
   s.bakery = Object.assign({st:{}}, s.bakery || {}); s.bakery.st = Object.assign({1:0,2:0,3:0,4:0,5:0}, s.bakery.st || {});
   ['review','quizzes'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
-  if (s.stationsOpenedBefore === null) {
+  if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
       shop.stations.filter(st => st.skills.length && (st.id === 1 || (shop.id === 'cafe' && st.id <= s.minStation) || (s[shop.id]?.st?.[st.id-1] || 0) >= UNLOCK_AT)).map(st => st.id)
     ]));
@@ -464,6 +464,20 @@ function reviewCredit(S, skill, perfect){       // call after every practice pro
   for (const key of Object.keys(S.review)) if (S.review[key][skill] > 0) S.review[key][skill]--;
 }
 const reviewDone = (S, key) => !S.review[key] || Object.values(S.review[key]).every(v => v <= 0);
+const HELPER_STEP = /multiplier|divisor|jump/i;
+function answerStepsFor(p){
+  const s = p.steps;
+  if (Array.isArray(p.answerSteps) && p.answerSteps.length) return p.answerSteps.map(i => s[i]).filter(Boolean);
+  const fills = s.filter(st => st.slot && !HELPER_STEP.test(st.name));
+  if (fills.length) return fills;
+  const plots = s.filter(st => st.kind === 'grid');
+  if (plots.length) return [...plots, s[s.length - 1]];
+  const choice = s.findIndex(st => st.kind === 'choice');
+  if (choice === 0 && s.length > 1 && /name the (multiplier|divisor)/i.test(s[s.length - 1].name)) return [s[choice]];
+  const last = s[s.length - 1];
+  if (/simplest form/i.test(last.name) && s.length > 1) return [s[s.length - 2], last];
+  return [last];
+}
 
 const GEN = {
 /* ---------- Station 1 ---------- */
@@ -1070,13 +1084,39 @@ async function startShift(shop, station){
   if (resetAt && Number.isFinite(resetMs) && resetMs > (Date.parse(S.resetSeen || '') || 0)) {
     resetTown(resetAt); save(); toast('Your teacher reset your town. Fresh start!'); show('home'); return;
   }
-  shift = {shop:config.id, station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
+  shift = {shop:config.id, station, mode:'practice', n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
   $('#leaveShift').textContent = config.id === 'bakery' ? 'Close the bakery early' : 'Close the café early';
   show('shift'); nextCustomer();
 }
-function renderDots(){ let h = ''; for (let i=1;i<=shift.total;i++) h += `<i class="${i < shift.n ? 'done' : i === shift.n ? 'now' : ''}"></i>`; $('#dots').innerHTML = h; }
+async function startAssessment(shop, station){
+  const config = SHOPS[shop]; if (!config) return;
+  const isTest = station == null, stationConfig = isTest ? null : config.stations.find(st => st.id === station);
+  const skills = isTest ? config.stations.flatMap(st => st.skills) : stationConfig?.skills || [];
+  if (!skills.length) return;
+  await Backend.refreshSettings();
+  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
+  const plan = isTest
+    ? assessmentPlan(skills, settings.testPerSkill, settings.testMin, settings.testMax)
+    : assessmentPlan(skills, settings.quizPerSkill, settings.quizMin, settings.quizMax);
+  if (!plan.length) return;
+  shift = {shop:config.id, station, mode:isTest ? 'test' : 'quiz', plan, results:[], showSteps:settings.showSteps,
+    n:0, total:plan.length, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
+  $('#helperPet').textContent = petEmoji();
+  $('#shiftStation').textContent = isTest ? `${config.emoji} ${config.name} · Unit Test` : `${config.emoji} ${config.name} · ${stationConfig.emoji} ${stationConfig.name}`;
+  $('#leaveShift').textContent = config.id === 'bakery' ? 'Close the bakery early' : 'Close the café early';
+  show('shift'); nextCustomer();
+}
+function renderDots(){
+  if (shift.mode === 'quiz' || shift.mode === 'test') {
+    $('#dots').textContent = `Question ${shift.n} of ${shift.total}`;
+    $('#dots').setAttribute('aria-label', 'Assessment progress');
+    return;
+  }
+  $('#dots').setAttribute('aria-label', 'Customers served');
+  let h = ''; for (let i=1;i<=shift.total;i++) h += `<i class="${i < shift.n ? 'done' : i === shift.n ? 'now' : ''}"></i>`; $('#dots').innerHTML = h;
+}
 function setHelper(msg){ $('#helperSay').textContent = petName() + ': ' + msg; }
 function startPatience(seconds, fromPct, showStartCue = false){
   const p = $('#patience'), label = $('#patienceLabel'), total = order && order.limit || seconds;
@@ -1131,9 +1171,11 @@ function nextCustomer(){
   if (shift.n >= shift.total) { endShift(); return; }
   stopOrderSpeech(); cancelReadFirst(order);
   shift.n++; renderDots();
-  const c = pick(CUSTOMERS), sk = chooseSkill(); shift.lastSkill = sk;
-  const p = GEN[sk](lvlOf(sk)); p.skill = sk;
-  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null, speaking:false};
+  const c = pick(CUSTOMERS), assessment = shift.mode === 'quiz' || shift.mode === 'test';
+  const sk = assessment ? shift.plan[shift.n-1] : chooseSkill(); shift.lastSkill = sk;
+  const p = GEN[sk](assessment ? Math.max(2, lvlOf(sk)) : lvlOf(sk)); p.skill = sk;
+  if (assessment && !shift.showSteps) p.steps = answerStepsFor(p);
+  order = {p, cust:c, i:0, tries:0, hints:0, missed:[], done:false, start:null, pending:null, readTimer:null, speaking:false, assessmentCorrect:true};
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
@@ -1141,7 +1183,7 @@ function nextCustomer(){
   setHelper(p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
     <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div><button class="ticket-read" id="readOrderBtn" type="button" hidden>🔊 Read it to me</button></div>
-    <div class="plan" id="plan" aria-label="Order plan">${plan}</div>
+    <div class="plan" id="plan" aria-label="Order plan"${assessment && !shift.showSteps ? ' hidden' : ''}>${plan}</div>
     <div class="visual">${p.visual}</div><div class="done-list" id="doneList"></div>
     <div class="step-prompt" id="stepPrompt"></div><div class="step-input" id="stepInput"></div><div class="chalk-note" id="chalkNote" aria-live="polite"></div>`;
   $('#ticketText').innerHTML = ticketHTML(p.bubble);
@@ -1262,6 +1304,21 @@ function logAttempt(st, v, ok, slow, first, misId, ms, context){
     misconception:misId || null, context:context ? context.slice(0,300) : null,
     fact_a:st.fact ? st.fact.x : null, fact_b:st.fact ? st.fact.y : null, fact_div:st.fact ? !!st.fact.div : null, ms:Math.round(ms)});
 }
+function completeAssessmentQuestion(correct, delay = 0){
+  if (!order || !shift || (shift.mode !== 'quiz' && shift.mode !== 'test')) return;
+  const currentOrder = order;
+  currentOrder.done = true;
+  shift.results.push({skill:currentOrder.p.skill, correct});
+  save();
+  const next = () => {
+    if (order !== currentOrder || !shift) return;
+    if (shift.n < shift.total) { nextCustomer(); return; }
+    $('#stepPrompt').innerHTML = '';
+    $('#stepInput').innerHTML = '';
+    $('#boardActions').innerHTML = '';
+  };
+  if (delay) setTimeout(next, delay); else next();
+}
 function submit(v){
   if (!order || order.done || pr) return;
   const st = order.p.steps[order.i], first = !st.tried; st.tried = true;
@@ -1290,6 +1347,18 @@ function submit(v){
     }
   }
   if (first || newMis) logAttempt(st, v, ok, slow, first, newMis, ms, ex);
+  if (shift.mode === 'quiz' || shift.mode === 'test') {
+    if (!ok) {
+      order.assessmentCorrect = false;
+      const note = $('#chalkNote'); note.className = 'chalk-note'; note.textContent = 'Answer saved';
+      completeAssessmentQuestion(false, 500);
+      return;
+    }
+    stepRight(st, v); save();
+    if (order.i + 1 < order.p.steps.length) advance();
+    else completeAssessmentQuestion(order.assessmentCorrect);
+    return;
+  }
   if ((!ok || slow) && st.type !== 'setup') {
     if (first) order.missed.push(`${SKILLS[order.p.skill].name}: ${st.name.toLowerCase()}`);
     if ((!ok ? first : true)) queueDrill(st, ok ? 'slow' : 'miss');
