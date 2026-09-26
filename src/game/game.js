@@ -251,7 +251,7 @@ function stationOpen(shop, n){
   const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
   if (settings.requireQuiz) {
     const previousKey = assessKey(shop, n - 1);
-    return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || (shop === 'cafe' && n <= S.minStation);
+    return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || (shop === 'cafe' && n <= S.minStation) || (shop === 'cafe' && !Backend.me && S.unlockAll);
   }
   const cafeOverrides = shop === 'cafe';
   return (cafeOverrides && ((!Backend.me && S.unlockAll) || n <= S.minStation)) || (progress?.st?.[n-1] || 0) >= UNLOCK_AT;
