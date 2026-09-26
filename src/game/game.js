@@ -140,6 +140,10 @@ function unitOpen(unit){
   const building = BUILDINGS.find(b => b.id === unit);
   return !!(building && building.open);
 }
+function unitTestPassed(unit){
+  const key = `${unit}:test`;
+  return !!S.quizzes[key]?.passed || Backend.me?.quiz_overrides?.[key] === 'excused';
+}
 function ruleMet(reward){
   const rule = reward.unlock;
   if (rule.type === 'start') return true;
@@ -147,6 +151,7 @@ function ruleMet(reward){
   if (rule.type === 'station') return (shopProgress(reward.unit)?.st?.[rule.station] || 0) >= UNLOCK_AT;
   if (rule.type === 'mastery') return rule.skills.every(skill => skillStatus(skill) === 'mastered');
   if (rule.type === 'unitMastery') {
+    if (unitTestPassed(reward.unit)) return true;
     const skills = UNIT_SKILLS[reward.unit] || [];
     return skills.length > 0 && skills.every(skill => skillStatus(skill) === 'mastered');
   }
@@ -1068,7 +1073,17 @@ function renderShopFloor(shop){
   currentShop = config.id;
   $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
   $('#scr-cafe > p').textContent = settings.requireQuiz ? `${config.unitLabel}. Pass each station quiz to open the next station.` : `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
-  $('#stations').innerHTML = config.stations.map(st => {
+  const allStationsBuilt = config.stations.every(st => st.skills.length > 0);
+  const allStationQuizzesPassed = allStationsBuilt && config.stations.every(st => {
+    const key = assessKey(config.id, st.id);
+    return !!S.quizzes[key]?.passed || Backend.me?.quiz_overrides?.[key] === 'excused';
+  });
+  const testPassed = unitTestPassed(config.id);
+  const unitTestCard = !allStationsBuilt ? '' : `<div class="station unit-test${allStationQuizzesPassed || testPassed ? '' : ' locked'}">
+    <div class="se">🏆</div><h3>Unit Test</h3>${testPassed ? '<p class="muted" style="margin:0">✅ Unit Test passed</p>'
+      : allStationQuizzesPassed ? `<p class="muted" style="margin:0">Every station quiz is passed.</p><button class="btn berry" data-unit-test data-shop="${config.id}">Start Unit Test</button>`
+      : '<p class="muted" style="margin:0">Pass every station quiz first</p>'}</div>`;
+  $('#stations').innerHTML = unitTestCard + config.stations.map(st => {
     const open = stationOpen(config.id, st.id), done = progress.st[st.id] || 0;
     const prev = st.id > 1 ? (progress.st[st.id-1] || 0) : 0;
     const quizKey = assessKey(config.id, st.id), quiz = S.quizzes[quizKey], override = Backend.me?.quiz_overrides?.[quizKey];
@@ -1091,6 +1106,8 @@ function renderShopFloor(shop){
   }).join('');
 }
 $('#stations').addEventListener('click', e => {
+  const unitTest = e.target.closest('[data-unit-test]');
+  if (unitTest && !unitTest.disabled) { void startAssessment(unitTest.dataset.shop, null); return; }
   const review = e.target.closest('[data-review-key]');
   if (review && !review.disabled) { void startShift(review.dataset.shop, +review.dataset.reviewStation, review.dataset.reviewKey); return; }
   const quiz = e.target.closest('[data-quiz]');
@@ -1361,6 +1378,7 @@ function finishAssessment(){
   if (result.passed) delete S.review[key];
   else startReview(S, key, result.review, finished.settings);
   const payout = result.passed ? (finished.mode === 'test' ? 150 : 50) : 10;
+  if (finished.mode === 'test' && result.passed) checkUnlocks({announce:true});
   S.coins += payout; save(); updateHeader();
   const skillIds = [...new Set(finished.plan)];
   const skillRows = skillIds.map(skill => {
@@ -1375,6 +1393,7 @@ function finishAssessment(){
     <ul class="list">${skillRows}</ul><div class="row">${reviewButton}${retakeButton}<button class="btn" id="backToAssessmentShop">Back to the shop</button></div>`;
   shift = null; order = null; currentShop = shop;
   show('summary');
+  if (finished.mode === 'test' && result.passed) setTimeout(showNextUnlock, 0);
   if (!result.passed && !reviewComplete(key)) $('#reviewAssessment').addEventListener('click', () => { void startShift(shop, reviewStation, key); });
   if (!result.passed && reviewComplete(key)) $('#retakeAssessment').addEventListener('click', () => { void startAssessment(shop, station); });
   $('#backToAssessmentShop').addEventListener('click', () => show('cafe'));
@@ -1845,8 +1864,9 @@ function renderBook(unit){
   };
   const tabs = BUILDINGS.map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
   const pageComplete = rewards.length && rewards.every(owns);
+  const masterStamp = pageComplete || unitTestPassed(building.id);
   const pageClass = `${!building.open ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
-  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div><div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!building.open ? `<div class="book-soon-banner">Opens with the ${building.name}.</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${pageComplete ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
+  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div><div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!building.open ? `<div class="book-soon-banner">Opens with the ${building.name}.</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
   const seen = rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id);
   if (seen.length) { S.seenCollection.push(...seen); save(); }
 }

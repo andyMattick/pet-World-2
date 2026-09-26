@@ -120,6 +120,7 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .station .se{font-size:2.6rem; line-height:1}
 .station h3{margin:0; font-size:1.3rem}
 .station.locked{opacity:.6}
+.station.unit-test{grid-column:1 / -1}
 .skilllist{list-style:none; margin:0; padding:0; font-size:.92rem; display:flex; flex-direction:column; gap:3px}
 .pill{display:inline-block; font-size:.75rem; font-weight:800; border-radius:8px; padding:0 7px; margin-right:6px; color:#4A2E2A}
 .p-mastered{background:var(--st-solid)} .p-practicing{background:var(--st-close)} .p-struggling{background:var(--st-work)} .p-new{background:var(--st-new); color:var(--ink-soft)}
