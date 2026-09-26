@@ -1148,7 +1148,7 @@ function activateStep(i){
   if (st.kind === 'num') {
     const html = numInput('cur', st.prompt);
     if (st.slot) { const sl = slotEl(st.slot); sl.classList.add('active'); sl.innerHTML = html; } else box.innerHTML = html;
-    const inp = $('#cur'); wireNum(inp, checkCurrent); numberPad(inp, checkCurrent, {decimal:String(st.answer).includes('.')}); setTimeout(() => inp.focus(), 40);
+    const inp = $('#cur'); wireNum(inp, checkCurrent); setTimeout(() => inp.focus(), 40);
   } else if (st.kind === 'ratio') {
     box.innerHTML = `<span class="rlbl">${st.labels[0]}</span>${numInput('curA','first number')}<span class="colon">:</span>${numInput('curB','second number')}<span class="rlbl">${st.labels[1]}</span>`;
     wireNum($('#curA'), () => { if (!$('#curB').value) $('#curB').focus(); else checkCurrent(); });
