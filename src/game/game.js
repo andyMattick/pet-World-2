@@ -239,10 +239,20 @@ function ccTotals(){
   return [ca, cc, ma, mc];
 }
 function shopProgress(shop){ return S[shop]; }
+function reviewSkillsNeeded(key){
+  if (Backend.me?.quiz_overrides?.[key] === 'cleared') return [];
+  return Object.entries(S.review[key] || {}).filter(([, count]) => count > 0).map(([skill]) => skill);
+}
+function reviewComplete(key){ return Backend.me?.quiz_overrides?.[key] === 'cleared' || reviewDone(S, key); }
 function stationOpen(shop, n){
   const stations = SHOPS[shop]?.stations || [], station = stations.find(s => s.id === n), progress = shopProgress(shop);
   if (!station || !station.skills.length) return false;
   if (n === 1) return true;
+  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
+  if (settings.requireQuiz) {
+    const previousKey = assessKey(shop, n - 1);
+    return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || (shop === 'cafe' && n <= S.minStation);
+  }
   const cafeOverrides = shop === 'cafe';
   return (cafeOverrides && ((!Backend.me && S.unlockAll) || n <= S.minStation)) || (progress?.st?.[n-1] || 0) >= UNLOCK_AT;
 }
@@ -1054,22 +1064,40 @@ $('#town').addEventListener('click', e => {
 /* ---------- shop stations ---------- */
 function renderShopFloor(shop){
   const config = SHOPS[shop] || SHOPS.cafe, progress = shopProgress(config.id) || {st:{}};
+  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
   currentShop = config.id;
   $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
-  $('#scr-cafe > p').textContent = `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
+  $('#scr-cafe > p').textContent = settings.requireQuiz ? `${config.unitLabel}. Pass each station quiz to open the next station.` : `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
   $('#stations').innerHTML = config.stations.map(st => {
     const open = stationOpen(config.id, st.id), done = progress.st[st.id] || 0;
     const prev = st.id > 1 ? (progress.st[st.id-1] || 0) : 0;
+    const quizKey = assessKey(config.id, st.id), quiz = S.quizzes[quizKey], override = Backend.me?.quiz_overrides?.[quizKey];
+    const reviewSkills = reviewSkillsNeeded(quizKey), passed = !!quiz?.passed || override === 'excused';
+    const mastered = st.skills.length > 0 && st.skills.every(skill => skillStatus(skill) === 'mastered');
     const lock = !st.skills.length
       ? '<p class="muted" style="margin:0">Coming soon</p>'
-      : open ? '' : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${config.stations[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
+      : open ? '' : settings.requireQuiz
+        ? `<p class="muted" style="margin:0">Pass the ${esc(config.stations[st.id-2]?.name || 'previous station')} quiz to open this station.</p>`
+        : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${config.stations[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
     const skills = st.skills.map(sk => { const s = skillStatus(sk); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}</li>`; }).join('');
+    let quizCard = '';
+    if (passed) quizCard = `<p class="muted" style="margin:0">✅ Quiz passed${quiz?.best ? ` (${quiz.best}%)` : ''}</p>`;
+    else if (reviewSkills.length) quizCard = `<p class="muted" style="margin:0">🔁 Review: ${reviewSkills.length} skill${reviewSkills.length === 1 ? '' : 's'} to practice</p><button class="btn" data-review-key="${esc(quizKey)}" data-review-station="${st.id}" data-shop="${config.id}">Review practice</button>`;
+    else if (quiz?.tries) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">Retake quiz</button>`;
+    else if (open && mastered) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">📝 Station Quiz</button>`;
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button></div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}</div>`;
   }).join('');
 }
-$('#stations').addEventListener('click', e => { const b = e.target.closest('[data-station]'); if (b && !b.disabled) void startShift(b.dataset.shop, +b.dataset.station); });
+$('#stations').addEventListener('click', e => {
+  const review = e.target.closest('[data-review-key]');
+  if (review && !review.disabled) { void startShift(review.dataset.shop, +review.dataset.reviewStation, review.dataset.reviewKey); return; }
+  const quiz = e.target.closest('[data-quiz]');
+  if (quiz && !quiz.disabled) { void startAssessment(quiz.dataset.shop, +quiz.dataset.quiz); return; }
+  const station = e.target.closest('[data-station]');
+  if (station && !station.disabled) void startShift(station.dataset.shop, +station.dataset.station);
+});
 
 /* ---------- shift engine ---------- */
 let shift = null, order = null;
@@ -1078,14 +1106,14 @@ function resetTown(resetAt){
   const me = Backend.me;
   S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, resetSeen:resetAt});
 }
-async function startShift(shop, station, reviewSkills = null){
+async function startShift(shop, station, reviewKey = null){
   const config = SHOPS[shop] || SHOPS.cafe;
   await Backend.refreshSettings();
   const resetAt = Backend.me?.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
   if (resetAt && Number.isFinite(resetMs) && resetMs > (Date.parse(S.resetSeen || '') || 0)) {
     resetTown(resetAt); save(); toast('Your teacher reset your town. Fresh start!'); show('home'); return;
   }
-  shift = {shop:config.id, station, mode:'practice', reviewSkills, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
+  shift = {shop:config.id, station, mode:'practice', reviewKey, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
   $('#leaveShift').textContent = config.id === 'bakery' ? 'Close the bakery early' : 'Close the café early';
@@ -1136,7 +1164,7 @@ function startPatience(seconds, fromPct, showStartCue = false){
 function freezePatience(){ const p = $('#patience'); if (patienceTimer) { clearInterval(patienceTimer); patienceTimer = null; } const w = getComputedStyle(p).width; p.style.transition = 'none'; p.style.width = w; }
 function chooseSkill(){
   const W = {new:3, struggling:5, practicing:3, mastered:1};
-  const skills = shift.reviewSkills || SHOPS[shift.shop].stations[shift.station-1].skills;
+  const skills = shift.reviewKey ? reviewSkillsNeeded(shift.reviewKey) : SHOPS[shift.shop].stations[shift.station-1].skills;
   let list = skills.filter(s => s !== shift.lastSkill); if (!list.length) list = skills;
   return weightedPick(list, s => W[skillStatus(s)]);
 }
@@ -1169,6 +1197,7 @@ function ticketHTML(text){
     (qi >= 0 ? `<div class="ticket-find">❓ Find: ${bold(parts[qi])}</div>` : '');
 }
 function nextCustomer(){
+  if (shift.mode === 'practice' && shift.reviewKey && reviewComplete(shift.reviewKey)) { endShift(); return; }
   if (shift.n >= shift.total) { endShift(); return; }
   stopOrderSpeech(); cancelReadFirst(order);
   shift.n++; renderDots();
@@ -1339,15 +1368,15 @@ function finishAssessment(){
     return `<li>${correct ? '✓' : '✗'} ${esc(SKILLS[skill].name)}${!correct && result.passed ? ' <span class="muted">Keep practicing</span>' : ''}</li>`;
   }).join('');
   const reviewStation = station ?? config.stations.find(st => st.skills.some(skill => result.review.includes(skill)))?.id ?? 1;
-  const reviewButton = !result.passed ? '<button class="btn berry" id="reviewAssessment">Review practice</button>' : '';
-  const retakeButton = !result.passed && reviewDone(S, key) ? '<button class="btn" id="retakeAssessment">Retake</button>' : '';
+  const reviewButton = !result.passed && !reviewComplete(key) ? '<button class="btn berry" id="reviewAssessment">Review practice</button>' : '';
+  const retakeButton = !result.passed && reviewComplete(key) ? '<button class="btn" id="retakeAssessment">Retake</button>' : '';
   $('#summaryCard').innerHTML = `<div class="big-emoji">${result.passed ? '✅' : '📝'}</div><h2>${finished.mode === 'test' ? 'Unit Test' : 'Station Quiz'} ${result.passed ? 'passed' : 'complete'}</h2>
     <p>Score: <b>${result.score} of ${result.total} (${percent}%)</b></p><p>${result.passed ? `You earned ${payout} 🪙.` : `You earned ${payout} 🪙. Practice the missed skills before your retake.`}</p>
     <ul class="list">${skillRows}</ul><div class="row">${reviewButton}${retakeButton}<button class="btn" id="backToAssessmentShop">Back to the shop</button></div>`;
   shift = null; order = null; currentShop = shop;
   show('summary');
-  if (!result.passed) $('#reviewAssessment').addEventListener('click', () => { void startShift(shop, reviewStation, result.review); });
-  if (!result.passed && reviewDone(S, key)) $('#retakeAssessment').addEventListener('click', () => { void startAssessment(shop, station); });
+  if (!result.passed && !reviewComplete(key)) $('#reviewAssessment').addEventListener('click', () => { void startShift(shop, reviewStation, key); });
+  if (!result.passed && reviewComplete(key)) $('#retakeAssessment').addEventListener('click', () => { void startAssessment(shop, station); });
   $('#backToAssessmentShop').addEventListener('click', () => show('cafe'));
 }
 function submit(v){
@@ -1467,6 +1496,7 @@ function completeOrder(){
   if (wasReading) { const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; }
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
+  reviewCredit(S, p.skill, perfect);
   const stations = SHOPS[shift.shop].stations, progress = shopProgress(shift.shop);
   const before = stations.map(s => stationOpen(shift.shop, s.id));
   progress.st[shift.station] = (progress.st[shift.station]||0) + 1;
@@ -1495,14 +1525,19 @@ function endShift(){
   const pw = shift.power; S.day++; S.power = 1; save(); updateHeader(); Backend.flush();
   const miss = [...new Set(shift.missed)];
   const shop = shift.shop, config = SHOPS[shop];
+  const reviewKey = shift.reviewKey, reviewFinished = !!reviewKey && reviewComplete(reviewKey);
+  const retakeStation = reviewKey?.endsWith(':test') ? null : Number(reviewKey?.slice(reviewKey.lastIndexOf(':') + 1));
+  const retakeLabel = reviewKey?.endsWith(':test') ? 'Retake unit test' : 'Retake quiz';
   $('#summaryCard').innerHTML = `<div class="big-emoji">🌙</div><h2>${config.name} closed for the day</h2>
     <p>You earned <b>${shift.earned}</b> coins${pw > 1 ? ` with a ×${fmtPow(pw)} sprint boost` : ''}.</p>
     <p>Perfect orders: <b>${shift.perfect}</b> of ${shift.total}</p>
     ${miss.length ? `<p class="muted">Keep practicing</p><div class="factchips">${miss.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : '<p>No mistakes today. Amazing!</p>'}
-    <div class="row"><button class="btn berry" id="sumAgain">Another shift</button><button class="btn" data-go="home">Back to town</button></div>`;
-  const station = shift.station, reviewSkills = shift.reviewSkills; shift = null; currentShop = shop;
-  show('summary'); $('#sumAgain').addEventListener('click', () => startShift(shop, station, reviewSkills));
-  sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
+    <div class="row">${reviewFinished ? `<button class="btn berry" id="sumRetakeQuiz">${retakeLabel}</button>` : '<button class="btn berry" id="sumAgain">Another shift</button>'}<button class="btn" data-go="home">Back to town</button></div>`;
+  const station = shift.station, nextButton = reviewFinished ? '#sumRetakeQuiz' : '#sumAgain'; shift = null; currentShop = shop;
+  show('summary');
+  if (reviewFinished) $('#sumRetakeQuiz').addEventListener('click', () => { void startAssessment(shop, retakeStation); });
+  else $('#sumAgain').addEventListener('click', () => { void startShift(shop, station, reviewKey); });
+  sfx('good'); setTimeout(() => $(nextButton).focus(), 60);
 }
 $('#leaveShift').addEventListener('click', () => {
   if (shift && (shift.mode === 'quiz' || shift.mode === 'test')) {
