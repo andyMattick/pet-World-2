@@ -113,8 +113,10 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     list.forEach(r => {
       const st = sStats(r);
       h += `<tr><td><button class="namebtn" data-id="${esc(r.id)}">${esc(r.n)}</button></td>`;
-      shopSkills.forEach(k => { const e = (r.k || {})[k]; const s = statusFromRecent(e ? e[1] : ''); h += `<td class="cell s-${s}" title="${esc(SKILLS[k].name)}: ${s}${e ? `, ${e[0]} tried` : ''}">${e ? e[0] : ''}</td>`; });
-      shopStations.forEach(({station}) => { h += `<td>${assessmentCell(r, shop.id, station.id, 'quiz')}</td>`; });
+      shopStations.forEach(({station, skills}) => {
+        skills.forEach(k => { const e = (r.k || {})[k]; const s = statusFromRecent(e ? e[1] : ''); h += `<td class="cell s-${s}" title="${esc(SKILLS[k].name)}: ${s}${e ? `, ${e[0]} tried` : ''}">${e ? e[0] : ''}</td>`; });
+        h += `<td>${assessmentCell(r, shop.id, station.id, 'quiz')}</td>`;
+      });
       h += `<td>${assessmentCell(r, shop.id, null, 'test')}</td>`;
       h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td></tr>`;
     });
