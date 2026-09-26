@@ -41,6 +41,7 @@ need('src/game/game.js', "from '../shared/registry'", 'the import from the share
 need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the student backend');
 
 for (const ex of ['export const SKILLS', 'export const SKILL_ORDER', 'export const STATIONS', 'export const UNLOCK_AT', 'export const MIS', 'export function statusFromRecent']) need('src/shared/registry.ts', ex);
+for (const ex of ['export interface QuizSettings', 'export const QUIZ_DEFAULTS', 'export function quizSettings']) need('src/shared/registry.ts', ex);
 need('src/shared/registry.ts', 'export const REWARDS', 'the reward registry');
 need('src/shared/registry.ts', 'notSimplest:', 'the simplest-form misconception');
 need('src/shared/registry.ts', 'export const SHOPS', 'the shop registry');

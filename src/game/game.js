@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
 import { Backend } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -253,7 +253,7 @@ function stationOpen(shop, n){
   const stations = SHOPS[shop]?.stations || [], station = stations.find(s => s.id === n), progress = shopProgress(shop);
   if (!station || !station.skills.length) return false;
   if (n === 1) return true;
-  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
+  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   if (settings.requireQuiz) {
     const previousKey = assessKey(shop, n - 1);
     return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || (shop === 'cafe' && n <= S.minStation) || (shop === 'cafe' && !Backend.me && S.unlockAll);
@@ -426,33 +426,6 @@ function simplestChoice(lvl){
     ]};
 }
 /* ===== Station quizzes and unit tests: rules (no DOM) ===== */
-const QUIZ_DEFAULTS = {
-  passPct: 80,        // % of problems fully right to pass
-  quizPerSkill: 2,    // problems per skill in a station quiz
-  quizMin: 6, quizMax: 10,
-  testPerSkill: 1,    // problems per skill in a unit test
-  testMin: 8, testMax: 16,
-  reviewPerfect: 2,   // perfect practice problems needed per missed skill before a retake
-  requireQuiz: true,  // the next station opens after passing this station's quiz (instead of 6 orders)
-  showSteps: false    // false: quizzes ask only for the answer; true: quizzes keep the practice steps
-};
-const clampInt = (v, lo, hi, d) => { const n = Math.round(typeof v === 'number' && isFinite(v) ? v : d); return Math.min(hi, Math.max(lo, n)); };
-function quizSettings(raw){
-  const r = raw && typeof raw === 'object' ? raw : {}, d = QUIZ_DEFAULTS;
-  const s = {
-    passPct: clampInt(r.passPct, 50, 100, d.passPct),
-    quizPerSkill: clampInt(r.quizPerSkill, 1, 4, d.quizPerSkill),
-    quizMin: clampInt(r.quizMin, 3, 20, d.quizMin), quizMax: clampInt(r.quizMax, 3, 20, d.quizMax),
-    testPerSkill: clampInt(r.testPerSkill, 1, 3, d.testPerSkill),
-    testMin: clampInt(r.testMin, 4, 30, d.testMin), testMax: clampInt(r.testMax, 4, 30, d.testMax),
-    reviewPerfect: clampInt(r.reviewPerfect, 1, 5, d.reviewPerfect),
-    requireQuiz: typeof r.requireQuiz === 'boolean' ? r.requireQuiz : d.requireQuiz,
-    showSteps: typeof r.showSteps === 'boolean' ? r.showSteps : d.showSteps
-  };
-  if (s.quizMax < s.quizMin) s.quizMax = s.quizMin;
-  if (s.testMax < s.testMin) s.testMax = s.testMin;
-  return s;
-}
 /* list of skill ids, one per question: every skill appears, spread evenly, shuffled */
 function assessmentPlan(skills, perSkill, min, max){
   if (!skills.length) return [];
@@ -1069,7 +1042,7 @@ $('#town').addEventListener('click', e => {
 /* ---------- shop stations ---------- */
 function renderShopFloor(shop){
   const config = SHOPS[shop] || SHOPS.cafe, progress = shopProgress(config.id) || {st:{}};
-  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
+  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   currentShop = config.id;
   $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
   $('#scr-cafe > p').textContent = settings.requireQuiz ? `${config.unitLabel}. Pass each station quiz to open the next station.` : `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
@@ -1145,7 +1118,7 @@ async function startAssessment(shop, station){
   const skills = isTest ? config.stations.flatMap(st => st.skills) : stationConfig?.skills || [];
   if (!skills.length) return;
   await Backend.refreshSettings();
-  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings);
+  const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   const plan = isTest
     ? assessmentPlan(skills, settings.testPerSkill, settings.testMin, settings.testMax)
     : assessmentPlan(skills, settings.quizPerSkill, settings.quizMin, settings.quizMax);

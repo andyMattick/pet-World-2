@@ -1,39 +1,12 @@
 /* Teacher app: sign in, manage classes and rosters, print PIN cards, live class dashboard. */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
-import { BUILDINGS, DRILLS, mergeDrillSettings, STATIONS, type DrillSettings } from '../shared/registry';
+import { BUILDINGS, DRILLS, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, esc, type StudentReport } from './report';
 
-interface QuizSettings {
-  passPct: number; quizPerSkill: number; quizMin: number; quizMax: number;
-  testPerSkill: number; testMin: number; testMax: number; reviewPerfect: number;
-  requireQuiz: boolean; showSteps: boolean;
-}
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
 interface NewPin { name: string; pin: string }
-
-function parseQuizSettings(raw: Partial<QuizSettings> | null): QuizSettings {
-  const clamp = (value: unknown, min: number, max: number, fallback: number) => {
-    const number = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback;
-    return Math.max(min, Math.min(max, number));
-  };
-  const settings: QuizSettings = {
-    passPct: clamp(raw?.passPct, 50, 100, 80),
-    quizPerSkill: clamp(raw?.quizPerSkill, 1, 4, 2),
-    quizMin: clamp(raw?.quizMin, 3, 20, 6),
-    quizMax: clamp(raw?.quizMax, 3, 20, 10),
-    testPerSkill: clamp(raw?.testPerSkill, 1, 3, 1),
-    testMin: clamp(raw?.testMin, 4, 30, 8),
-    testMax: clamp(raw?.testMax, 4, 30, 16),
-    reviewPerfect: clamp(raw?.reviewPerfect, 1, 5, 2),
-    requireQuiz: typeof raw?.requireQuiz === 'boolean' ? raw.requireQuiz : true,
-    showSteps: typeof raw?.showSteps === 'boolean' ? raw.showSteps : false
-  };
-  if (settings.quizMax < settings.quizMin) settings.quizMax = settings.quizMin;
-  if (settings.testMax < settings.testMin) settings.testMax = settings.testMin;
-  return settings;
-}
 
 const sb = makeClient('pt-teacher');
 const app = document.getElementById('app') as HTMLElement;
@@ -241,7 +214,7 @@ function printCards(pins: NewPin[]) {
 function renderSettings() {
   const pane = $('#pane'), cls = current!;
   const settings = mergeDrillSettings(cls.drill_settings);
-  const quizzes = parseQuizSettings(cls.quiz_settings);
+  const quizzes = quizSettings(cls.quiz_settings || QUIZ_DEFAULTS);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="two">
@@ -327,15 +300,15 @@ function renderSettings() {
     await loadClasses(cls.id);
   });
   $('#saveQuizSettings').addEventListener('click', async () => {
-    const quiz_settings = parseQuizSettings({
-      passPct: +($('#quizPassPct') as HTMLInputElement).value,
-      quizPerSkill: +($('#quizPerSkill') as HTMLInputElement).value,
-      quizMin: +($('#quizMin') as HTMLInputElement).value,
-      quizMax: +($('#quizMax') as HTMLInputElement).value,
-      testPerSkill: +($('#testPerSkill') as HTMLInputElement).value,
-      testMin: +($('#testMin') as HTMLInputElement).value,
-      testMax: +($('#testMax') as HTMLInputElement).value,
-      reviewPerfect: +($('#reviewPerfect') as HTMLInputElement).value,
+    const quiz_settings = quizSettings({
+      passPct: ($('#quizPassPct') as HTMLInputElement).valueAsNumber,
+      quizPerSkill: ($('#quizPerSkill') as HTMLInputElement).valueAsNumber,
+      quizMin: ($('#quizMin') as HTMLInputElement).valueAsNumber,
+      quizMax: ($('#quizMax') as HTMLInputElement).valueAsNumber,
+      testPerSkill: ($('#testPerSkill') as HTMLInputElement).valueAsNumber,
+      testMin: ($('#testMin') as HTMLInputElement).valueAsNumber,
+      testMax: ($('#testMax') as HTMLInputElement).valueAsNumber,
+      reviewPerfect: ($('#reviewPerfect') as HTMLInputElement).valueAsNumber,
       requireQuiz: ($('#requireQuiz') as HTMLInputElement).checked,
       showSteps: ($('#quizShowSteps') as HTMLSelectElement).value === 'true'
     });

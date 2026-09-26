@@ -94,6 +94,51 @@ export function mergeDrillSettings(...layers: (Partial<DrillSettings> | null | u
 /** A drill type is on unless explicitly set to false. */
 export const drillTypeOn = (s: DrillSettings, type: string) => s.enabled && s.types[type] !== false;
 
+export interface QuizSettings {
+  passPct: number;
+  quizPerSkill: number;
+  quizMin: number;
+  quizMax: number;
+  testPerSkill: number;
+  testMin: number;
+  testMax: number;
+  reviewPerfect: number;
+  requireQuiz: boolean;
+  showSteps: boolean;
+}
+export const QUIZ_DEFAULTS: QuizSettings = {
+  passPct: 80,
+  quizPerSkill: 2,
+  quizMin: 6,
+  quizMax: 10,
+  testPerSkill: 1,
+  testMin: 8,
+  testMax: 16,
+  reviewPerfect: 2,
+  requireQuiz: true,
+  showSteps: false
+};
+const clampInt = (value: unknown, min: number, max: number, fallback: number) => {
+  const number = Math.round(typeof value === 'number' && isFinite(value) ? value : fallback);
+  return Math.min(max, Math.max(min, number));
+};
+export function quizSettings(raw: Partial<QuizSettings> | null | undefined): QuizSettings {
+  const r = raw && typeof raw === 'object' ? raw : {}, d = QUIZ_DEFAULTS;
+  const settings: QuizSettings = {
+    passPct: clampInt(r.passPct, 50, 100, d.passPct),
+    quizPerSkill: clampInt(r.quizPerSkill, 1, 4, d.quizPerSkill),
+    quizMin: clampInt(r.quizMin, 3, 20, d.quizMin), quizMax: clampInt(r.quizMax, 3, 20, d.quizMax),
+    testPerSkill: clampInt(r.testPerSkill, 1, 3, d.testPerSkill),
+    testMin: clampInt(r.testMin, 4, 30, d.testMin), testMax: clampInt(r.testMax, 4, 30, d.testMax),
+    reviewPerfect: clampInt(r.reviewPerfect, 1, 5, d.reviewPerfect),
+    requireQuiz: typeof r.requireQuiz === 'boolean' ? r.requireQuiz : d.requireQuiz,
+    showSteps: typeof r.showSteps === 'boolean' ? r.showSteps : d.showSteps
+  };
+  if (settings.quizMax < settings.quizMin) settings.quizMax = settings.quizMin;
+  if (settings.testMax < settings.testMin) settings.testMax = settings.testMin;
+  return settings;
+}
+
 export interface Station { id: number; name: string; emoji: string; kid: string; skills: string[] }
 export const STATIONS: Station[] = [
   { id: 1, name: 'The Counter',  emoji: '🧺', kid: 'Write ratios from a tray of treats', skills: ['basic'] },
