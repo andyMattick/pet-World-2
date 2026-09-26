@@ -2,6 +2,7 @@
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
+interface AssessmentHistory { shop: string; station: number | null; kind: 'quiz' | 'test'; score: number; total: number; passed: boolean; missed: string[]; t: number }
 type SaveStudentDrills = (id: string, settings: Partial<DrillSettings> | null) => Promise<void>;
 type ResetStudent = (id: string, clearHistory: boolean) => Promise<void>;
 
@@ -13,6 +14,7 @@ export interface StudentReport {
   m: Record<string, [number, string[]]>;
   f: [string, number, number, number][]; df: [string, number, number, number][];
   p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: DrillHistory; ds?: Partial<DrillSettings> | null; dl?: DrillHistory; sp: number;
+  qz?: AssessmentHistory[]; qx?: Record<string, string> | null;
 }
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
@@ -34,6 +36,19 @@ export function ago(t: number) {
 }
 const pctTxt = (v: number | null) => v == null ? '–' : v + '%';
 const drillHistory = (r: StudentReport): DrillHistory => r.dl && Object.keys(r.dl).length ? r.dl : r.dr && Object.keys(r.dr).length ? r.dr : Object.fromEntries(Object.entries(r.p || {}).map(([key, value]) => ['times:' + key, value]));
+function assessmentCell(r: StudentReport, shop: string, station: number | null, kind: 'quiz' | 'test') {
+  const key = station == null ? `${shop}:test` : `${shop}:${station}`;
+  if (r.qx?.[key] === 'excused') return '✅ excused';
+  const attempts = (r.qz || []).filter(a => a.shop === shop && a.station === station && a.kind === kind);
+  if (!attempts.length) return '—';
+  const bestOf = (rows: AssessmentHistory[]) => rows.reduce((best, row) => row.score * best.total > best.score * row.total ? row : best);
+  const passed = attempts.filter(a => a.passed);
+  const best = bestOf(passed.length ? passed : attempts);
+  if (passed.length) return `✅ ${best.score}/${best.total}`;
+  const latest = attempts.reduce((a, b) => a.t >= b.t ? a : b);
+  const inReview = r.qx?.[key] !== 'cleared' && !!latest.missed?.length;
+  return `${inReview ? '🔁 ' : ''}${best.score}/${best.total}`;
+}
 
 export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
@@ -41,7 +56,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   const shopStations = shop.stations.map(st => ({
     station: st,
     skills: ORDER.filter(k => shopOfSkill(k) === shop.id && SKILLS[k].st === st.id)
-  })).filter(group => group.skills.length);
+  }));
   const shopSkills = shopStations.flatMap(group => group.skills);
   const played = list.filter(r => r.o > 0);
   const n = list.length, orders = list.reduce((s, r) => s + (r.o || 0), 0);
@@ -66,24 +81,44 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
       ${arr[0].ex ? `<div class="muted" style="margin-top:6px"><i>Example: ${esc(arr[0].ex)}</i></div>` : ''}
       ${MIS[id].skills.length ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${SHOPS[shopOfSkill(s)].emoji} ${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
     : '<p class="muted">No mix-ups spotted yet.</p>';
+  const inReview = list.flatMap(r => {
+    const latest = new Map<string, AssessmentHistory>();
+    (r.qz || []).forEach(a => {
+      const key = `${a.shop}:${a.station == null ? 'test' : a.station}`;
+      if (!latest.has(key) || latest.get(key)!.t <= a.t) latest.set(key, a);
+    });
+    return [...latest.entries()].flatMap(([key, a]) => {
+      if (a.passed || r.qx?.[key] === 'cleared' || r.qx?.[key] === 'excused' || !a.missed?.length) return [];
+      return [{student: r.n, assessment: a}];
+    });
+  });
+  const reviewGroups = inReview.length ? '<div class="groups">' + inReview.map(({student, assessment}) => {
+    const shopEmoji = SHOPS[assessment.shop]?.emoji || '';
+    const name = assessment.kind === 'test' ? 'Unit Test' : `Station ${assessment.station} Quiz`;
+    const missed = assessment.missed.map(skill => `${SHOPS[shopOfSkill(skill)]?.emoji || shopEmoji} ${esc(SKILLS[skill]?.name || skill)}`).join(', ');
+    return `<div class="group"><h3>${esc(student)} · ${shopEmoji} ${name}</h3><div class="who">${missed}</div></div>`;
+  }).join('') + '</div>' : '<p class="muted">No students are in review after a quiz.</p>';
+  h += `</div><div class="card"><h2>In review after a quiz</h2>${reviewGroups}</div>`;
   const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
-  h += `</div><div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
+  h += `<div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
 
   h += `<div class="card"><h2>Skill grid</h2><div class="row noprint" role="tablist" aria-label="Shop">${Object.values(SHOPS).map(s => `<button class="btn small${s.id === shop.id ? ' mint' : ''}" type="button" role="tab" aria-selected="${s.id === shop.id}" data-report-shop="${s.id}">${s.emoji} ${s.id === 'cafe' ? 'Café' : esc(s.name)}</button>`).join('')}</div>`;
-  if (shopSkills.length) {
+  if (!shopSkills.length) h += `<p class="muted">No ${esc(shop.name)} skills are built yet.</p>`;
+  if (shopStations.length) {
     h += `<div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
-    shopStations.forEach(({station}) => { const skills = shopSkills.filter(k => SKILLS[k].st === station.id); h += `<th class="stn" colspan="${skills.length}">${station.id}. ${esc(station.name)}</th>`; });
-    h += `<th colspan="5"></th></tr><tr><th>Student</th>${shopSkills.map(k => `<th class="sk" title="${esc(SKILLS[k].name)}">${esc(SKILLS[k].short)}</th>`).join('')}
-      <th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th></tr></thead><tbody>`;
+    shopStations.forEach(({station, skills}) => { h += `<th class="stn" colspan="${skills.length + 1}">${station.id}. ${esc(station.name)}</th>`; });
+    h += `<th class="stn" rowspan="2">Unit Test</th><th colspan="5"></th></tr><tr><th>Student</th>`;
+    shopStations.forEach(({skills}) => { h += skills.map(k => `<th class="sk" title="${esc(SKILLS[k].name)}">${esc(SKILLS[k].short)}</th>`).join('') + '<th class="sk" title="Station quiz">Quiz</th>'; });
+    h += `<th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th></tr></thead><tbody>`;
     list.forEach(r => {
       const st = sStats(r);
       h += `<tr><td><button class="namebtn" data-id="${esc(r.id)}">${esc(r.n)}</button></td>`;
       shopSkills.forEach(k => { const e = (r.k || {})[k]; const s = statusFromRecent(e ? e[1] : ''); h += `<td class="cell s-${s}" title="${esc(SKILLS[k].name)}: ${s}${e ? `, ${e[0]} tried` : ''}">${e ? e[0] : ''}</td>`; });
+      shopStations.forEach(({station}) => { h += `<td>${assessmentCell(r, shop.id, station.id, 'quiz')}</td>`; });
+      h += `<td>${assessmentCell(r, shop.id, null, 'test')}</td>`;
       h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td></tr>`;
     });
     h += `</tbody></table></div>`;
-  } else {
-    h += `<p class="muted">No ${esc(shop.name)} skills are built yet.</p>`;
   }
   h += `<div class="legend"><span><i class="s-mastered"></i>Mastered (4+ tries, 75% of last 8 perfect)</span><span><i class="s-practicing"></i>Practicing</span><span><i class="s-struggling"></i>Struggling</span><span><i class="s-new"></i>Not started</span><span>Numbers are problems tried.</span></div>
     <div class="row noprint"><button class="btn small" id="csv">Download CSV</button><button class="btn small" id="printDash">Print</button></div></div>`;

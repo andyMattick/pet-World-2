@@ -92,7 +92,7 @@ async function renderDashboard() {
   const { data, error } = await sb!.rpc('class_report', { p_class: cls.id });
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
-  pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
+  pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
   renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); });
   startLive(cls.id);
 }
@@ -107,11 +107,13 @@ async function resetStudent(id: string, clearHistory: boolean) {
 function startLive(classId: string) {
   if (channel && channel.topic.endsWith(classId)) return;
   stopLive();
+  const refresh = () => {
+    if (reloadTimer) clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(() => { if (tab === 'dashboard' && current?.id === classId) void renderDashboard(); }, 3000);
+  };
   channel = sb!.channel('class-' + classId)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'problems', filter: `class_id=eq.${classId}` }, () => {
-      if (reloadTimer) clearTimeout(reloadTimer);
-      reloadTimer = setTimeout(() => { if (tab === 'dashboard' && current?.id === classId) void renderDashboard(); }, 3000);
-    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'problems', filter: `class_id=eq.${classId}` }, refresh)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assessments', filter: `class_id=eq.${classId}` }, refresh)
     .subscribe();
 }
 function stopLive() { if (channel) { void sb?.removeChannel(channel); channel = null; } }
