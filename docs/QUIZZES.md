@@ -182,28 +182,30 @@ Commit after each step with the message given. Before each commit, run `npm run 
    - `review: {}`
    - `quizzes: {}`, where each key (`assessKey`) maps to `{passed, best, tries, lastAt}`
    - `stationsOpenedBefore: null`
-4. **Grandfather existing progress:** the first time `normalize()` sees `stationsOpenedBefore === null`, record every station currently open in each shop, for example `{cafe:[1,2,3], bakery:[1]}`.
+4. **Grandfather existing progress:** the first time `normalize()` sees `stationsOpenedBefore === null`, record the stations open under the old rule without calling `stationOpen()`. Only include stations with skills: station 1 is open, and any later station is open when its previous station has at least `UNLOCK_AT` orders. In the café, also include stations at or below `minStation`. For example: `{cafe:[1,2,3], bakery:[1]}`.
 5. In `src/lib/studentBackend.ts`, add `quiz_settings` and `quiz_overrides` to `StudentInfo`, and refresh them in `refreshSettings()`. The game reads its rules with `quizSettings(Backend.me?.quiz_settings)`, or `quizSettings(S.quizSettings)` in local mode.
 
 Commit: `Quiz rules and state`
 
-### Step 2: Quiz mode in the shift engine
+### Step 2a: Start an assessment and ask questions
 
 1. Add `startAssessment(shop, station)`, where `station` is `null` for a unit test.
-   - Build the question list with `assessmentPlan()`.
-   - Store `shift.mode = 'quiz'` or `'test'`, the plan, and the results.
-   - Reuse the existing shift screen and generators. Each problem uses `GEN[skill](Math.max(2, lvlOf(skill)))`.
-2. **While `shift.mode !== 'practice'`:**
-   - Hide the Hint button, helper tips, the tip bar, and the reading cue.
-   - `shouldDrill()` returns false.
-   - No tips, streak changes, or reward unlock checks happen per problem.
-   - **Unless `showSteps` is on, replace the problem's steps with `answerStepsFor(p)`** before the first step activates (`order.p.steps = answerStepsFor(order.p)`), and hide the plan strip. Blanks for skipped steps stay empty in the picture.
-   - One try per answer: a wrong answer records the result, briefly shows "Answer saved" (no right answer), and moves to the next problem.
-   - Replace the customer dots with "Question X of N."
-   - `recordProblem()` / `kr` are **not** updated.
-   - `recordStep()`, mix-up recording, and fact stats **are** updated, since they're useful to teachers.
-3. **Leaving mid-assessment** asks for confirmation, then discards it with no record.
-4. **At the end:**
+    - Build the question list with `assessmentPlan()`.
+    - Store `shift.mode = 'quiz'` or `'test'`, the plan, and the results.
+    - Reuse the existing shift screen and generators. Each problem uses `GEN[skill](Math.max(2, lvlOf(skill)))`.
+2. Unless `showSteps` is on, replace the problem's steps with `answerStepsFor(p)` before the first step activates (`order.p.steps = answerStepsFor(order.p)`). Hide the plan strip; blanks for skipped steps stay empty in the picture.
+3. One try per answer: a wrong answer records the result, briefly shows "Answer saved" (no right answer), and moves to the next problem.
+4. Replace the customer dots with **"Question X of N."**
+5. `recordProblem()` / `kr` are **not** updated. `recordStep()`, mix-up recording, and fact stats **are** updated, since they're useful to teachers.
+
+### Step 2b: Assessment behavior and results
+
+1. **While `shift.mode !== 'practice'`:**
+    - Hide the Hint button, helper tips, the tip bar, and the reading cue.
+    - `shouldDrill()` returns false.
+    - No tips, streak changes, or reward unlock checks happen per problem.
+2. **Leaving mid-assessment** asks for confirmation, then discards it with no record.
+3. **At the end:**
    - Run `gradeAssessment()`.
    - Update `S.quizzes[key]`.
    - Call `startReview()` on a fail, or clear the review on a pass.
@@ -233,9 +235,9 @@ Commit: `Unit tests`
 
 ### Step 5: Logging
 
-1. When signed in, add `mode: shift.mode || 'practice'` to every `attempts` and `problems` log.
+1. In quiz and test mode, do **not** log to `problems` at all. Keep `mode: shift.mode || 'practice'` on `attempts` logs. The `assessments` row is the quiz or test record.
 2. At the end of an assessment, log `Backend.log('assessments', {shop, station, kind, score, total, passed, missed_skills: missed})`. Add `'assessments'` to the backend's table list.
-3. In the teacher report, practice statistics must **exclude** quiz and test rows. The SQL already counts all modes in `s`, `cc`, and `k`; that's acceptable for now. Label quiz results separately in the detail view from `qz`.
+3. In the teacher report, practice statistics must **exclude** quiz and test rows. Label quiz results separately in the detail view from `qz`.
 
 Commit: `Log quizzes and tests`
 
