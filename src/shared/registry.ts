@@ -5,7 +5,7 @@
  */
 const KB = 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-ratios-prop-topic/';
 
-export interface Skill { name: string; short: string; st: number; url: string }
+export interface Skill { name: string; short: string; st: number; url: string; shop?: string }
 export const SKILLS: Record<string, Skill> = {
   basic:      { name: 'Basic ratios', short: 'Basic', st: 1, url: KB + 'intro-to-ratios/e/representing-ratios' },
   tape:       { name: 'Ratios with tape diagrams', short: 'Tape diagrams', st: 2, url: KB + 'visualize-ratios/e/ratios-with-tape-diagrams' },
@@ -101,6 +101,19 @@ export const STATIONS: Station[] = [
   { id: 3, name: 'The Kitchen',  emoji: '🍳', kid: 'Ratio tables, equivalent ratios, word problems', skills: ['table', 'equiv', 'word', 'realworld', 'understand'] },
   { id: 4, name: 'Deliveries',   emoji: '🛵', kid: 'Coordinate plane, units, part-part-whole', skills: ['coord', 'units', 'ppw'] }
 ];
+export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
+export const BAKERY_STATIONS: Station[] = [
+  { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: [] },
+  { id: 2, name: 'Sharing Pans',  emoji: '🥧', kid: 'Divide fractions and whole numbers', skills: [] },
+  { id: 3, name: 'Boxing Treats', emoji: '📦', kid: 'Divide fractions by fractions', skills: [] },
+  { id: 4, name: 'The Register',  emoji: '🧾', kid: 'Multiply decimals, long division', skills: [] },
+  { id: 5, name: 'Bulk Orders',   emoji: '🚚', kid: 'Divide decimals', skills: [] }
+];
+export const SHOPS: Record<string, Shop> = {
+  cafe:   { id: 'cafe',   name: 'Pet Café', emoji: '☕', unitLabel: 'Khan Academy 6th grade, Unit 1: Ratios', stations: STATIONS },
+  bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS }
+};
+export const shopOfSkill = (id: string) => SKILLS[id]?.shop || 'cafe';
 export const UNLOCK_AT = 6;
 
 export type UnlockRule =
