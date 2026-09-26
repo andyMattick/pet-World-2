@@ -4,9 +4,36 @@ import { makeClient } from '../lib/supabase';
 import { BUILDINGS, DRILLS, mergeDrillSettings, STATIONS, type DrillSettings } from '../shared/registry';
 import { renderClassReport, esc, type StudentReport } from './report';
 
-interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; created_at: string }
+interface QuizSettings {
+  passPct: number; quizPerSkill: number; quizMin: number; quizMax: number;
+  testPerSkill: number; testMin: number; testMax: number; reviewPerfect: number;
+  requireQuiz: boolean; showSteps: boolean;
+}
+interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
 interface NewPin { name: string; pin: string }
+
+function parseQuizSettings(raw: Partial<QuizSettings> | null): QuizSettings {
+  const clamp = (value: unknown, min: number, max: number, fallback: number) => {
+    const number = typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : fallback;
+    return Math.max(min, Math.min(max, number));
+  };
+  const settings: QuizSettings = {
+    passPct: clamp(raw?.passPct, 50, 100, 80),
+    quizPerSkill: clamp(raw?.quizPerSkill, 1, 4, 2),
+    quizMin: clamp(raw?.quizMin, 3, 20, 6),
+    quizMax: clamp(raw?.quizMax, 3, 20, 10),
+    testPerSkill: clamp(raw?.testPerSkill, 1, 3, 1),
+    testMin: clamp(raw?.testMin, 4, 30, 8),
+    testMax: clamp(raw?.testMax, 4, 30, 16),
+    reviewPerfect: clamp(raw?.reviewPerfect, 1, 5, 2),
+    requireQuiz: typeof raw?.requireQuiz === 'boolean' ? raw.requireQuiz : true,
+    showSteps: typeof raw?.showSteps === 'boolean' ? raw.showSteps : false
+  };
+  if (settings.quizMax < settings.quizMin) settings.quizMax = settings.quizMin;
+  if (settings.testMax < settings.testMin) settings.testMax = settings.testMin;
+  return settings;
+}
 
 const sb = makeClient('pt-teacher');
 const app = document.getElementById('app') as HTMLElement;
@@ -48,7 +75,7 @@ function renderAuth(msg = '') {
 
 /* ---------- classes ---------- */
 async function loadClasses(selectId?: string) {
-  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,created_at').order('created_at');
+  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,quiz_settings,created_at').order('created_at');
   if (error) { renderAuth(error.message); return; }
   classes = (data || []) as ClassRow[];
   current = classes.find(c => c.id === (selectId || current?.id)) || classes[0] || null;
@@ -214,6 +241,7 @@ function printCards(pins: NewPin[]) {
 function renderSettings() {
   const pane = $('#pane'), cls = current!;
   const settings = mergeDrillSettings(cls.drill_settings);
+  const quizzes = parseQuizSettings(cls.quiz_settings);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="two">
@@ -230,6 +258,21 @@ function renderSettings() {
       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>
       <button class="btn small" id="delCls">Delete this class</button></div>
+    <div class="card"><h2>Quizzes and tests</h2>
+      <label for="quizShowSteps">Quiz style</label><select id="quizShowSteps"><option value="false" ${quizzes.showSteps ? '' : 'selected'}>Answer only</option><option value="true" ${quizzes.showSteps ? 'selected' : ''}>Show steps</option></select>
+      <label for="quizPassPct">Pass mark (%)</label><input type="number" id="quizPassPct" min="50" max="100" step="1" value="${quizzes.passPct}">
+      <h3>Station quizzes</h3>
+      <label for="quizPerSkill">Problems per skill</label><input type="number" id="quizPerSkill" min="1" max="4" step="1" value="${quizzes.quizPerSkill}">
+      <label for="quizMin">Minimum quiz problems</label><input type="number" id="quizMin" min="3" max="20" step="1" value="${quizzes.quizMin}">
+      <label for="quizMax">Maximum quiz problems</label><input type="number" id="quizMax" min="3" max="20" step="1" value="${quizzes.quizMax}">
+      <h3>Unit tests</h3>
+      <label for="testPerSkill">Problems per skill</label><input type="number" id="testPerSkill" min="1" max="3" step="1" value="${quizzes.testPerSkill}">
+      <label for="testMin">Minimum test problems</label><input type="number" id="testMin" min="4" max="30" step="1" value="${quizzes.testMin}">
+      <label for="testMax">Maximum test problems</label><input type="number" id="testMax" min="4" max="30" step="1" value="${quizzes.testMax}">
+      <label for="reviewPerfect">Perfect review problems per missed skill</label><input type="number" id="reviewPerfect" min="1" max="5" step="1" value="${quizzes.reviewPerfect}">
+      <label><input type="checkbox" id="requireQuiz" ${quizzes.requireQuiz ? 'checked' : ''}> Passing a station quiz opens the next station</label>
+      <div class="row"><button class="btn primary" id="saveQuizSettings">Save</button><button class="btn" id="resetQuizSettings">Reset to defaults</button><span class="status" id="quizSettingsMsg"></span></div>
+    </div>
     <div class="card"><h2>Practice pop-ups</h2>
       <label><input type="checkbox" id="drillEnabled" ${settings.enabled ? 'checked' : ''}> Enable practice pop-ups</label>
       <h3>Drill types</h3>${drillTypes.map(([type, drill]) => `<label><input type="checkbox" data-drill-type="${type}" ${settings.types[type] === false ? '' : 'checked'}> ${esc(drill.name)}</label>`).join('')}
@@ -281,6 +324,28 @@ function renderSettings() {
   $('#resetDrills').addEventListener('click', async () => {
     const { error } = await sb!.from('classes').update({ drill_settings: {} }).eq('id', cls.id);
     if (error) { $('#drillMsg').textContent = error.message; return; }
+    await loadClasses(cls.id);
+  });
+  $('#saveQuizSettings').addEventListener('click', async () => {
+    const quiz_settings = parseQuizSettings({
+      passPct: +($('#quizPassPct') as HTMLInputElement).value,
+      quizPerSkill: +($('#quizPerSkill') as HTMLInputElement).value,
+      quizMin: +($('#quizMin') as HTMLInputElement).value,
+      quizMax: +($('#quizMax') as HTMLInputElement).value,
+      testPerSkill: +($('#testPerSkill') as HTMLInputElement).value,
+      testMin: +($('#testMin') as HTMLInputElement).value,
+      testMax: +($('#testMax') as HTMLInputElement).value,
+      reviewPerfect: +($('#reviewPerfect') as HTMLInputElement).value,
+      requireQuiz: ($('#requireQuiz') as HTMLInputElement).checked,
+      showSteps: ($('#quizShowSteps') as HTMLSelectElement).value === 'true'
+    });
+    const { error } = await sb!.from('classes').update({ quiz_settings }).eq('id', cls.id);
+    if (error) { $('#quizSettingsMsg').textContent = error.message; return; }
+    await loadClasses(cls.id);
+  });
+  $('#resetQuizSettings').addEventListener('click', async () => {
+    const { error } = await sb!.from('classes').update({ quiz_settings: {} }).eq('id', cls.id);
+    if (error) { $('#quizSettingsMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
   let armed = false;
