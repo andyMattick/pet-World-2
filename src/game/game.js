@@ -274,6 +274,7 @@ function updateReteach(log){
   if (log.popups >= 3 && log.missesAfter >= log.popups) { log.reteach = true; log.reteachAt = Date.now(); }
 }
 function shouldDrill(drill, reason){
+  if (shift && shift.mode !== 'practice') return false;
   const settings = drillSettings(), id = drillId(drill), area = drillArea(drill), log = S.drillLog[id] || {};
   if (!drillTypeOn(settings, drill.type)) return false;
   if (!settings.triggers[reason]) return false;
@@ -1077,14 +1078,14 @@ function resetTown(resetAt){
   const me = Backend.me;
   S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, resetSeen:resetAt});
 }
-async function startShift(shop, station){
+async function startShift(shop, station, reviewSkills = null){
   const config = SHOPS[shop] || SHOPS.cafe;
   await Backend.refreshSettings();
   const resetAt = Backend.me?.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
   if (resetAt && Number.isFinite(resetMs) && resetMs > (Date.parse(S.resetSeen || '') || 0)) {
     resetTown(resetAt); save(); toast('Your teacher reset your town. Fresh start!'); show('home'); return;
   }
-  shift = {shop:config.id, station, mode:'practice', n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
+  shift = {shop:config.id, station, mode:'practice', reviewSkills, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
   $('#leaveShift').textContent = config.id === 'bakery' ? 'Close the bakery early' : 'Close the café early';
@@ -1101,11 +1102,11 @@ async function startAssessment(shop, station){
     ? assessmentPlan(skills, settings.testPerSkill, settings.testMin, settings.testMax)
     : assessmentPlan(skills, settings.quizPerSkill, settings.quizMin, settings.quizMax);
   if (!plan.length) return;
-  shift = {shop:config.id, station, mode:isTest ? 'test' : 'quiz', plan, results:[], showSteps:settings.showSteps,
+  shift = {shop:config.id, station, mode:isTest ? 'test' : 'quiz', plan, results:[], settings, showSteps:settings.showSteps,
     n:0, total:plan.length, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
   $('#shiftStation').textContent = isTest ? `${config.emoji} ${config.name} · Unit Test` : `${config.emoji} ${config.name} · ${stationConfig.emoji} ${stationConfig.name}`;
-  $('#leaveShift').textContent = config.id === 'bakery' ? 'Close the bakery early' : 'Close the café early';
+  $('#leaveShift').textContent = isTest ? 'Leave the test' : 'Leave the quiz';
   show('shift'); nextCustomer();
 }
 function renderDots(){
@@ -1135,7 +1136,7 @@ function startPatience(seconds, fromPct, showStartCue = false){
 function freezePatience(){ const p = $('#patience'); if (patienceTimer) { clearInterval(patienceTimer); patienceTimer = null; } const w = getComputedStyle(p).width; p.style.transition = 'none'; p.style.width = w; }
 function chooseSkill(){
   const W = {new:3, struggling:5, practicing:3, mastered:1};
-  const skills = SHOPS[shift.shop].stations[shift.station-1].skills;
+  const skills = shift.reviewSkills || SHOPS[shift.shop].stations[shift.station-1].skills;
   let list = skills.filter(s => s !== shift.lastSkill); if (!list.length) list = skills;
   return weightedPick(list, s => W[skillStatus(s)]);
 }
@@ -1180,7 +1181,7 @@ function nextCustomer(){
   $('#custName').textContent = c[1];
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
   $('#custBubble').textContent = pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
-  setHelper(p.helper || 'Take it one step at a time.');
+  if (!assessment) setHelper(p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
     <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div><button class="ticket-read" id="readOrderBtn" type="button" hidden>🔊 Read it to me</button></div>
     <div class="plan" id="plan" aria-label="Order plan"${assessment && !shift.showSteps ? ' hidden' : ''}>${plan}</div>
@@ -1190,6 +1191,10 @@ function nextCustomer(){
   const readButton = $('#readOrderBtn');
   if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) { readButton.hidden = false; readButton.addEventListener('click', readOrder); }
   $('#boardActions').innerHTML = '<button class="btn berry" id="checkBtn">Check</button><button class="btn" id="hintBtn">Hint</button>';
+  $('#hintBtn').hidden = assessment;
+  $('#patience').parentElement.hidden = assessment;
+  $('#patienceLabel').hidden = assessment;
+  $('#helperPet').parentElement.hidden = assessment;
   $('#checkBtn').addEventListener('click', checkCurrent);
   $('#hintBtn').addEventListener('click', hint);
   const svg = $('#gridsvg');
@@ -1201,6 +1206,7 @@ function nextCustomer(){
   order.limit = p.steps.length * 12;
   const currentOrder = order;
   activateStep(0);
+  if (assessment) return;
   const settings = drillSettings(), readingSeconds = settings.readSeconds * (settings.timeScale || 1);
   const startTiming = () => {
     if (order !== currentOrder || order.done) return;
@@ -1313,14 +1319,39 @@ function completeAssessmentQuestion(correct, delay = 0){
   const next = () => {
     if (order !== currentOrder || !shift) return;
     if (shift.n < shift.total) { nextCustomer(); return; }
-    $('#stepPrompt').innerHTML = '';
-    $('#stepInput').innerHTML = '';
-    $('#boardActions').innerHTML = '';
+    finishAssessment();
   };
   if (delay) setTimeout(next, delay); else next();
 }
+function finishAssessment(){
+  if (!shift || (shift.mode !== 'quiz' && shift.mode !== 'test')) return;
+  const finished = shift, shop = finished.shop, station = finished.station, config = SHOPS[shop];
+  const result = gradeAssessment(finished.results, finished.settings), key = assessKey(shop, station);
+  const previous = S.quizzes[key] || {}, percent = Math.round(100 * result.score / result.total);
+  S.quizzes[key] = {passed:result.passed, best:Math.max(previous.best || 0, percent), tries:(previous.tries || 0) + 1, lastAt:Date.now()};
+  if (result.passed) delete S.review[key];
+  else startReview(S, key, result.review, finished.settings);
+  const payout = result.passed ? (finished.mode === 'test' ? 150 : 50) : 10;
+  S.coins += payout; save(); updateHeader();
+  const skillIds = [...new Set(finished.plan)];
+  const skillRows = skillIds.map(skill => {
+    const correct = finished.results.filter(item => item.skill === skill).every(item => item.correct);
+    return `<li>${correct ? '✓' : '✗'} ${esc(SKILLS[skill].name)}${!correct && result.passed ? ' <span class="muted">Keep practicing</span>' : ''}</li>`;
+  }).join('');
+  const reviewStation = station ?? config.stations.find(st => st.skills.some(skill => result.review.includes(skill)))?.id ?? 1;
+  const reviewButton = !result.passed ? '<button class="btn berry" id="reviewAssessment">Review practice</button>' : '';
+  const retakeButton = !result.passed && reviewDone(S, key) ? '<button class="btn" id="retakeAssessment">Retake</button>' : '';
+  $('#summaryCard').innerHTML = `<div class="big-emoji">${result.passed ? '✅' : '📝'}</div><h2>${finished.mode === 'test' ? 'Unit Test' : 'Station Quiz'} ${result.passed ? 'passed' : 'complete'}</h2>
+    <p>Score: <b>${result.score} of ${result.total} (${percent}%)</b></p><p>${result.passed ? `You earned ${payout} 🪙.` : `You earned ${payout} 🪙. Practice the missed skills before your retake.`}</p>
+    <ul class="list">${skillRows}</ul><div class="row">${reviewButton}${retakeButton}<button class="btn" id="backToAssessmentShop">Back to the shop</button></div>`;
+  shift = null; order = null; currentShop = shop;
+  show('summary');
+  if (!result.passed) $('#reviewAssessment').addEventListener('click', () => { void startShift(shop, reviewStation, result.review); });
+  if (!result.passed && reviewDone(S, key)) $('#retakeAssessment').addEventListener('click', () => { void startAssessment(shop, station); });
+  $('#backToAssessmentShop').addEventListener('click', () => show('cafe'));
+}
 function submit(v){
-  if (!order || order.done || pr) return;
+  if (!order || order.done || order.assessmentPending || pr) return;
   const st = order.p.steps[order.i], first = !st.tried; st.tried = true;
   let ok;
   if (st.kind === 'choice') ok = !!(st.options[v] && st.options[v].ok);
@@ -1348,15 +1379,21 @@ function submit(v){
   }
   if (first || newMis) logAttempt(st, v, ok, slow, first, newMis, ms, ex);
   if (shift.mode === 'quiz' || shift.mode === 'test') {
+    order.assessmentPending = true;
+    const note = $('#chalkNote'); note.className = 'chalk-note'; note.textContent = 'Answer saved';
     if (!ok) {
       order.assessmentCorrect = false;
-      const note = $('#chalkNote'); note.className = 'chalk-note'; note.textContent = 'Answer saved';
       completeAssessmentQuestion(false, 500);
       return;
     }
-    stepRight(st, v); save();
-    if (order.i + 1 < order.p.steps.length) advance();
-    else completeAssessmentQuestion(order.assessmentCorrect);
+    save();
+    const currentOrder = order;
+    setTimeout(() => {
+      if (order !== currentOrder || !shift) return;
+      currentOrder.assessmentPending = false;
+      if (currentOrder.i + 1 < currentOrder.p.steps.length) advance();
+      else completeAssessmentQuestion(currentOrder.assessmentCorrect);
+    }, 500);
     return;
   }
   if ((!ok || slow) && st.type !== 'setup') {
@@ -1458,11 +1495,18 @@ function endShift(){
     <p>Perfect orders: <b>${shift.perfect}</b> of ${shift.total}</p>
     ${miss.length ? `<p class="muted">Keep practicing</p><div class="factchips">${miss.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : '<p>No mistakes today. Amazing!</p>'}
     <div class="row"><button class="btn berry" id="sumAgain">Another shift</button><button class="btn" data-go="home">Back to town</button></div>`;
-  const station = shift.station; shift = null; currentShop = shop;
-  show('summary'); $('#sumAgain').addEventListener('click', () => startShift(shop, station));
+  const station = shift.station, reviewSkills = shift.reviewSkills; shift = null; currentShop = shop;
+  show('summary'); $('#sumAgain').addEventListener('click', () => startShift(shop, station, reviewSkills));
   sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
 }
-$('#leaveShift').addEventListener('click', () => { stopOrderSpeech(); cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; currentShop = shift?.shop || currentShop; shift = null; order = null; show('cafe'); });
+$('#leaveShift').addEventListener('click', () => {
+  if (shift && (shift.mode === 'quiz' || shift.mode === 'test')) {
+    const name = shift.mode === 'test' ? 'test' : 'quiz';
+    if (!confirm(`Leave the ${name}? Your answers won't count. You'll start fresh next time.`)) return;
+    stopOrderSpeech(); cancelReadFirst(order); currentShop = shift.shop; shift = null; order = null; show('cafe'); return;
+  }
+  stopOrderSpeech(); cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; currentShop = shift?.shop || currentShop; shift = null; order = null; show('cafe');
+});
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;

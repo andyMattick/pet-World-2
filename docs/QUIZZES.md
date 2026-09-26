@@ -15,6 +15,7 @@ Read `AGENTS.md` first. **Edit in place, never rewrite a file.**
   - no Hint button, no helper tips, no practice pop-ups
   - no tip timer or reading cue
   - **one try per answer**, and a wrong answer ends that problem, with no answer shown, so answers can't leak
+  - right and wrong answers both show a neutral **"Answer saved"** with no sound; ✓/✗ appears only on the summary
   - **"Question 3 of 10"** at the top, and no plan strip
 
 **What counts as "the answer"** depends on the problem:
