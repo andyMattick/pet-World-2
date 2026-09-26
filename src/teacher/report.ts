@@ -1,5 +1,5 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
-import { SKILLS, SKILL_ORDER as ORDER, STATIONS, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
+import { SKILLS, SKILL_ORDER as ORDER, SHOPS, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
 type SaveStudentDrills = (id: string, settings: Partial<DrillSettings> | null) => Promise<void>;
@@ -17,6 +17,7 @@ export interface StudentReport {
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
 export const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
+let reportShop = 'cafe';
 
 function sStats(r: StudentReport) {
   const cc = r.cc || [0, 0, 0, 0];
@@ -36,6 +37,12 @@ const drillHistory = (r: StudentReport): DrillHistory => r.dl && Object.keys(r.d
 
 export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
+  const shop = SHOPS[reportShop] || SHOPS.cafe;
+  const shopStations = shop.stations.map(st => ({
+    station: st,
+    skills: ORDER.filter(k => shopOfSkill(k) === shop.id && SKILLS[k].st === st.id)
+  })).filter(group => group.skills.length);
+  const shopSkills = shopStations.flatMap(group => group.skills);
   const played = list.filter(r => r.o > 0);
   const n = list.length, orders = list.reduce((s, r) => s + (r.o || 0), 0);
   let ci = 0, cc = 0, ca = 0, cac = 0;
@@ -57,26 +64,32 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
       <div class="who">${arr.sort((a, b) => b.n - a.n).map(x => `<span class="chip">${esc(x.r.n)} (${x.n})</span>`).join('')}</div>
       <div class="muted">${esc(MIS[id].tip)}</div>
       ${arr[0].ex ? `<div class="muted" style="margin-top:6px"><i>Example: ${esc(arr[0].ex)}</i></div>` : ''}
-      ${MIS[id].skills.length ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
+      ${MIS[id].skills.length ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${SHOPS[shopOfSkill(s)].emoji} ${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
     : '<p class="muted">No mix-ups spotted yet.</p>';
   const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
   h += `</div><div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
 
-  h += `<div class="card"><h2>Skill grid</h2><div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
-  STATIONS.forEach(st => { h += `<th class="stn" colspan="${st.skills.length}">${st.id}. ${esc(st.name)}</th>`; });
-  h += `<th colspan="5"></th></tr><tr><th>Student</th>${ORDER.map(k => `<th class="sk" title="${esc(SKILLS[k].name)}">${esc(SKILLS[k].short)}</th>`).join('')}
-    <th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th></tr></thead><tbody>`;
-  list.forEach(r => {
-    const st = sStats(r);
-    h += `<tr><td><button class="namebtn" data-id="${esc(r.id)}">${esc(r.n)}</button></td>`;
-    ORDER.forEach(k => { const e = (r.k || {})[k]; const s = statusFromRecent(e ? e[1] : ''); h += `<td class="cell s-${s}" title="${esc(SKILLS[k].name)}: ${s}${e ? `, ${e[0]} tried` : ''}">${e ? e[0] : ''}</td>`; });
-    h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td></tr>`;
-  });
-  h += `</tbody></table></div><div class="legend"><span><i class="s-mastered"></i>Mastered (4+ tries, 75% of last 8 perfect)</span><span><i class="s-practicing"></i>Practicing</span><span><i class="s-struggling"></i>Struggling</span><span><i class="s-new"></i>Not started</span><span>Numbers are problems tried.</span></div>
+  h += `<div class="card"><h2>Skill grid</h2><div class="row noprint" role="tablist" aria-label="Shop">${Object.values(SHOPS).map(s => `<button class="btn small${s.id === shop.id ? ' mint' : ''}" type="button" role="tab" aria-selected="${s.id === shop.id}" data-report-shop="${s.id}">${s.emoji} ${s.id === 'cafe' ? 'Café' : esc(s.name)}</button>`).join('')}</div>`;
+  if (shopSkills.length) {
+    h += `<div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
+    shopStations.forEach(({station}) => { const skills = shopSkills.filter(k => SKILLS[k].st === station.id); h += `<th class="stn" colspan="${skills.length}">${station.id}. ${esc(station.name)}</th>`; });
+    h += `<th colspan="5"></th></tr><tr><th>Student</th>${shopSkills.map(k => `<th class="sk" title="${esc(SKILLS[k].name)}">${esc(SKILLS[k].short)}</th>`).join('')}
+      <th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th></tr></thead><tbody>`;
+    list.forEach(r => {
+      const st = sStats(r);
+      h += `<tr><td><button class="namebtn" data-id="${esc(r.id)}">${esc(r.n)}</button></td>`;
+      shopSkills.forEach(k => { const e = (r.k || {})[k]; const s = statusFromRecent(e ? e[1] : ''); h += `<td class="cell s-${s}" title="${esc(SKILLS[k].name)}: ${s}${e ? `, ${e[0]} tried` : ''}">${e ? e[0] : ''}</td>`; });
+      h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td></tr>`;
+    });
+    h += `</tbody></table></div>`;
+  } else {
+    h += `<p class="muted">No ${esc(shop.name)} skills are built yet.</p>`;
+  }
+  h += `<div class="legend"><span><i class="s-mastered"></i>Mastered (4+ tries, 75% of last 8 perfect)</span><span><i class="s-practicing"></i>Practicing</span><span><i class="s-struggling"></i>Struggling</span><span><i class="s-new"></i>Not started</span><span>Numbers are problems tried.</span></div>
     <div class="row noprint"><button class="btn small" id="csv">Download CSV</button><button class="btn small" id="printDash">Print</button></div></div>`;
 
   const needs = ORDER.map(k => ({ k, who: list.filter(r => statusFromRecent(((r.k || {})[k] || [])[1] || '') === 'struggling') })).filter(x => x.who.length).sort((a, b) => b.who.length - a.who.length);
-  h += `<div class="two"><div class="card"><h2>Skills to reteach or assign</h2>${needs.length ? needs.map(x => `<p style="margin:0 0 10px"><b>${esc(SKILLS[x.k].name)}</b>: ${x.who.map(r => esc(r.n)).join(', ')}<br><a href="${SKILLS[x.k].url}" target="_blank" rel="noopener">Assign on Khan Academy</a></p>`).join('') : '<p class="muted">Nobody is struggling on a skill right now.</p>'}</div>`;
+  h += `<div class="two"><div class="card"><h2>Skills to reteach or assign</h2>${needs.length ? needs.map(x => `<p style="margin:0 0 10px"><b>${SHOPS[shopOfSkill(x.k)].emoji} ${esc(SKILLS[x.k].name)}</b>: ${x.who.map(r => esc(r.n)).join(', ')}<br><a href="${SKILLS[x.k].url}" target="_blank" rel="noopener">Assign on Khan Academy</a></p>`).join('') : '<p class="muted">Nobody is struggling on a skill right now.</p>'}</div>`;
 
   const facts: Record<string, { miss: number; who: Set<string> }> = {}, tables: Record<string, number> = {};
   list.forEach(r => {
@@ -89,6 +102,10 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     ${tt.length ? `<p style="margin-top:0">${tt.map(([id, c]) => `<span class="chip">${esc(drillLabel(id))} (${c})</span>`).join('')}</p>` : ''}
     ${tf.length ? '<table class="steptable"><tr><th>Fact</th><th>Misses or slow</th><th>Students</th></tr>' + tf.map(([k, v]) => { const [x, y] = k.split('x').map(Number); return `<tr><td>${x} × ${y} = ${x * y}</td><td>${v.miss}</td><td>${[...v.who].map(esc).join(', ')}</td></tr>`; }).join('') + '</table>' : '<p class="muted">No times-table trouble yet.</p>'}</div></div>`;
   el.innerHTML = h;
+  el.querySelectorAll<HTMLButtonElement>('[data-report-shop]').forEach(b => b.addEventListener('click', () => {
+    reportShop = b.dataset.reportShop || 'cafe';
+    renderClassReport(el, list, onSaveStudentDrills, onResetStudent);
+  }));
   el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent)));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
@@ -107,7 +124,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   ORDER.forEach(k => {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
     const stepTxt = Object.entries(steps).map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 's' ? 'count' : v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
-    h += `<tr><td>${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
+    h += `<tr><td>${SHOPS[shopOfSkill(k)].emoji} ${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
   });
   h += '</table><div class="two" style="margin-top:14px"><div><h2>Mix-ups</h2>';
   h += st.mis.length ? '<ul>' + st.mis.map(([id, v]) => `<li><b>${esc(MIS[id] ? MIS[id].name : id)}</b> (${v[0]})${(v[1] || []).map(x => `<div class="muted">${esc(x)}</div>`).join('')}</li>`).join('') + '</ul>' : '<p class="muted">None spotted.</p>';
