@@ -39,12 +39,19 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:null,
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
   const f = fresh(), s = Object.assign(f, raw || {});
   s.cafe = Object.assign({st:{}}, s.cafe || {}); s.cafe.st = Object.assign({1:0,2:0,3:0,4:0}, s.cafe.st || {});
   s.bakery = Object.assign({st:{}}, s.bakery || {}); s.bakery.st = Object.assign({1:0,2:0,3:0,4:0,5:0}, s.bakery.st || {});
+  ['review','quizzes'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
+  if (s.stationsOpenedBefore === null) {
+    s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
+      shop.stations.filter(st => st.skills.length && (st.id === 1 || (shop.id === 'cafe' && st.id <= s.minStation) || (s[shop.id]?.st?.[st.id-1] || 0) >= UNLOCK_AT)).map(st => st.id)
+    ]));
+  }
   s.sync = Object.assign(fresh().sync, s.sync || {});
   ['facts','divFacts','practiceLog','ks','kr','kn','mis'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'drillLog') || !s.drillLog || typeof s.drillLog !== 'object') {
@@ -402,6 +409,62 @@ function simplestChoice(lvl){
         mis:v => v === big[0] - a ? 'additive' : null, hint:() => `${big[0]} ÷ what = ${a}?`}
     ]};
 }
+/* ===== Station quizzes and unit tests: rules (no DOM) ===== */
+const QUIZ_DEFAULTS = {
+  passPct: 80,        // % of problems fully right to pass
+  quizPerSkill: 2,    // problems per skill in a station quiz
+  quizMin: 6, quizMax: 10,
+  testPerSkill: 1,    // problems per skill in a unit test
+  testMin: 8, testMax: 16,
+  reviewPerfect: 2,   // perfect practice problems needed per missed skill before a retake
+  requireQuiz: true,  // the next station opens after passing this station's quiz (instead of 6 orders)
+  showSteps: false    // false: quizzes ask only for the answer; true: quizzes keep the practice steps
+};
+const clampInt = (v, lo, hi, d) => { const n = Math.round(typeof v === 'number' && isFinite(v) ? v : d); return Math.min(hi, Math.max(lo, n)); };
+function quizSettings(raw){
+  const r = raw && typeof raw === 'object' ? raw : {}, d = QUIZ_DEFAULTS;
+  const s = {
+    passPct: clampInt(r.passPct, 50, 100, d.passPct),
+    quizPerSkill: clampInt(r.quizPerSkill, 1, 4, d.quizPerSkill),
+    quizMin: clampInt(r.quizMin, 3, 20, d.quizMin), quizMax: clampInt(r.quizMax, 3, 20, d.quizMax),
+    testPerSkill: clampInt(r.testPerSkill, 1, 3, d.testPerSkill),
+    testMin: clampInt(r.testMin, 4, 30, d.testMin), testMax: clampInt(r.testMax, 4, 30, d.testMax),
+    reviewPerfect: clampInt(r.reviewPerfect, 1, 5, d.reviewPerfect),
+    requireQuiz: typeof r.requireQuiz === 'boolean' ? r.requireQuiz : d.requireQuiz,
+    showSteps: typeof r.showSteps === 'boolean' ? r.showSteps : d.showSteps
+  };
+  if (s.quizMax < s.quizMin) s.quizMax = s.quizMin;
+  if (s.testMax < s.testMin) s.testMax = s.testMin;
+  return s;
+}
+/* list of skill ids, one per question: every skill appears, spread evenly, shuffled */
+function assessmentPlan(skills, perSkill, min, max){
+  if (!skills.length) return [];
+  let n = Math.min(max, Math.max(min, skills.length * perSkill));
+  n = Math.max(n, skills.length);                      // never leave a skill out
+  const order = shuffle(skills.slice()), out = [];
+  for (let i = 0; i < n; i++) out.push(order[i % order.length]);
+  return shuffle(out);
+}
+/* results: [{skill, correct}] — a problem is correct only if every step was right on the first try */
+function gradeAssessment(results, settings){
+  const total = results.length, score = results.filter(r => r.correct).length;
+  const passed = total > 0 && score * 100 >= settings.passPct * total;
+  const missed = [...new Set(results.filter(r => !r.correct).map(r => r.skill))];
+  return {score, total, passed, missed, review: passed ? [] : missed};
+}
+/* review tracking: S.review[key] = {skillId: perfectStillNeeded} */
+const assessKey = (shop, station) => station == null ? `${shop}:test` : `${shop}:${station}`;
+function startReview(S, key, skills, settings){
+  if (!skills.length) { delete S.review[key]; return; }
+  S.review[key] = Object.fromEntries(skills.map(sk => [sk, settings.reviewPerfect]));
+}
+function reviewCredit(S, skill, perfect){       // call after every practice problem
+  if (!perfect) return;
+  for (const key of Object.keys(S.review)) if (S.review[key][skill] > 0) S.review[key][skill]--;
+}
+const reviewDone = (S, key) => !S.review[key] || Object.values(S.review[key]).every(v => v <= 0);
+
 const GEN = {
 /* ---------- Station 1 ---------- */
 basic(lvl){
