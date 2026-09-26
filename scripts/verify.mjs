@@ -8,7 +8,7 @@ const need = (file, text, what) => { const s = read(file); if (s && !s.includes(
 
 const game = read('src/game/game.js');
 const lines = game.split('\n').length;
-if (game && lines < 1100) problems.push(`src/game/game.js has only ${lines} lines (expected about 1,280). It may have been replaced.`);
+if (game && lines < 1100) problems.push(`src/game/game.js has only ${lines} lines (expected about 1,850). It may have been replaced.`);
 for (const g of ['basic', 'tape', 'groups', 'dnlCreate', 'dnl', 'dnlTable', 'table', 'equiv', 'word', 'realworld', 'understand', 'coord', 'units', 'ppw']) {
   if (game && !new RegExp(`\\n${g}\\(lvl\\)\\{`).test(game)) problems.push(`src/game/game.js is missing the "${g}" problem generator`);
 }
@@ -21,6 +21,9 @@ need('src/game/game.js', 'function rewardTileHTML(', 'the shared reward tile ren
 need('src/game/game.js', 'function tableDown(', 'the scale-down table generator');
 need('src/game/game.js', 'function simplestStep(', 'the simplest-form step helper');
 need('src/game/game.js', 'function simplestChoice(', 'the simplest-form choice helper');
+need('src/game/game.js', 'function renderShopFloor(', 'the shared shop floor renderer');
+need('src/game/game.js', 'function shopProgress(', 'per-shop progress');
+need('src/game/game.js', 'shift.shop', 'the current shop on each shift');
 if (game.includes('plazaDecor')) problems.push('src/game/game.js still uses the old #plazaDecor emoji list');
 need('src/shared/registry.ts', 'export const DRILLS', 'the drill registry');
 need('src/shared/registry.ts', 'export function drillLabel', 'the drill label helper');
@@ -40,6 +43,9 @@ need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the stud
 for (const ex of ['export const SKILLS', 'export const SKILL_ORDER', 'export const STATIONS', 'export const UNLOCK_AT', 'export const MIS', 'export function statusFromRecent']) need('src/shared/registry.ts', ex);
 need('src/shared/registry.ts', 'export const REWARDS', 'the reward registry');
 need('src/shared/registry.ts', 'notSimplest:', 'the simplest-form misconception');
+need('src/shared/registry.ts', 'export const SHOPS', 'the shop registry');
+need('src/shared/registry.ts', 'export const BAKERY_STATIONS', 'the Bakery station registry');
+need('src/shared/registry.ts', 'export const shopOfSkill', 'the skill-to-shop lookup');
 const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
@@ -62,6 +68,7 @@ if (sql && !sql.includes('function public.reset_student(')) problems.push('Datab
 const allSrc = ['src/game/game.js', 'src/teacher/main.ts', 'src/lib/supabase.ts', 'src/lib/studentBackend.ts'].map(p => existsSync(p) ? readFileSync(p, 'utf8') : '').join('\n');
 if (allSrc.includes('learning_events')) problems.push('Code writes to a "learning_events" table, which is not part of this project\'s database. This is a sign of a placeholder rewrite.');
 if (allSrc.includes('window.prompt(')) problems.push('Code uses window.prompt(). The real teacher app uses forms. This is a sign of a placeholder rewrite.');
+for (const file of ['docs/AGENTS.md', 'docs/CLAUDE.md']) if (existsSync(file)) problems.push(`${file} is a stray copy of repository instructions and must not exist.`);
 
 if (problems.length) {
   console.error('\n❌ Pet Town verify FAILED. Do not commit.\n');
