@@ -137,7 +137,7 @@ function ruleMet(reward){
   const rule = reward.unlock;
   if (rule.type === 'start') return true;
   if (rule.type === 'unit') return unitOpen(reward.unit);
-  if (rule.type === 'station') return reward.unit === 'cafe' && (S.cafe.st[rule.station] || 0) >= UNLOCK_AT;
+  if (rule.type === 'station') return (shopProgress(reward.unit)?.st?.[rule.station] || 0) >= UNLOCK_AT;
   if (rule.type === 'mastery') return rule.skills.every(skill => skillStatus(skill) === 'mastered');
   if (rule.type === 'unitMastery') {
     const skills = UNIT_SKILLS[reward.unit] || [];
@@ -775,13 +775,14 @@ $('#unlockShop').addEventListener('click', () => closeUnlock('shop'));
 $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
+let currentShop = 'cafe';
 const SCREENS = ['loading','join','name','home','cafe','shift','sprint','book','summary','shop','hall','parent'];
 function show(id){
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
   Music.setTempo(id === 'sprint' ? 132 : 96);
   updateHeader();
   if (id === 'home') renderHome();
-  if (id === 'cafe') renderCafe();
+  if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') renderBook(bookUnit);
   window.scrollTo(0,0);
 }
@@ -965,26 +966,32 @@ $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
 $('#town').addEventListener('click', e => {
   const b = e.target.closest('[data-open]'); if (!b) return;
   const id = b.dataset.open;
-  if (id === 'cafe') show('cafe');
+  if (SHOPS[id] && BUILDINGS.some(building => building.id === id && building.open)) { currentShop = id; show('cafe'); }
   else if (id === 'sprint') openSprint();
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
 });
 
-/* ---------- café stations ---------- */
-function renderCafe(){
-  $('#stations').innerHTML = STATIONS.map(st => {
-    const open = stationOpen('cafe', st.id), done = S.cafe.st[st.id] || 0;
-    const prev = st.id > 1 ? (S.cafe.st[st.id-1] || 0) : 0;
-    const lock = open ? '' : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${STATIONS[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
+/* ---------- shop stations ---------- */
+function renderShopFloor(shop){
+  const config = SHOPS[shop] || SHOPS.cafe, progress = shopProgress(config.id) || {st:{}};
+  currentShop = config.id;
+  $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
+  $('#scr-cafe > p').textContent = `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
+  $('#stations').innerHTML = config.stations.map(st => {
+    const open = stationOpen(config.id, st.id), done = progress.st[st.id] || 0;
+    const prev = st.id > 1 ? (progress.st[st.id-1] || 0) : 0;
+    const lock = !st.skills.length
+      ? '<p class="muted" style="margin:0">Coming soon</p>'
+      : open ? '' : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${config.stations[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
     const skills = st.skills.map(sk => { const s = skillStatus(sk); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}</li>`; }).join('');
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : 'Locked'}</button></div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button></div>`;
   }).join('');
 }
-$('#stations').addEventListener('click', e => { const b = e.target.closest('[data-station]'); if (b && !b.disabled) void startShift(+b.dataset.station); });
+$('#stations').addEventListener('click', e => { const b = e.target.closest('[data-station]'); if (b && !b.disabled) void startShift(b.dataset.shop, +b.dataset.station); });
 
 /* ---------- shift engine ---------- */
 let shift = null, order = null;
@@ -993,15 +1000,17 @@ function resetTown(resetAt){
   const me = Backend.me;
   S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, resetSeen:resetAt});
 }
-async function startShift(station){
+async function startShift(shop, station){
+  const config = SHOPS[shop] || SHOPS.cafe;
   await Backend.refreshSettings();
   const resetAt = Backend.me?.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
   if (resetAt && Number.isFinite(resetMs) && resetMs > (Date.parse(S.resetSeen || '') || 0)) {
     resetTown(resetAt); save(); toast('Your teacher reset your town. Fresh start!'); show('home'); return;
   }
-  shift = {station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
+  shift = {shop:config.id, station, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
-  $('#shiftStation').textContent = STATIONS[station-1].emoji + ' ' + STATIONS[station-1].name;
+  $('#shiftStation').textContent = config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
+  $('#leaveShift').textContent = `Close the ${config.name.toLowerCase()} early`;
   show('shift'); nextCustomer();
 }
 function renderDots(){ let h = ''; for (let i=1;i<=shift.total;i++) h += `<i class="${i < shift.n ? 'done' : i === shift.n ? 'now' : ''}"></i>`; $('#dots').innerHTML = h; }
@@ -1023,7 +1032,7 @@ function startPatience(seconds, fromPct, showStartCue = false){
 function freezePatience(){ const p = $('#patience'); if (patienceTimer) { clearInterval(patienceTimer); patienceTimer = null; } const w = getComputedStyle(p).width; p.style.transition = 'none'; p.style.width = w; }
 function chooseSkill(){
   const W = {new:3, struggling:5, practicing:3, mastered:1};
-  const skills = STATIONS[shift.station-1].skills;
+  const skills = SHOPS[shift.shop].stations[shift.station-1].skills;
   let list = skills.filter(s => s !== shift.lastSkill); if (!list.length) list = skills;
   return weightedPick(list, s => W[skillStatus(s)]);
 }
@@ -1184,7 +1193,7 @@ function logAttempt(st, v, ok, slow, first, misId, ms, context){
   // called for every first try, and for later tries only when they reveal a new mix-up
   if (!Backend.me) return;
   const right = st.kind === 'choice' ? (st.options.find(o => o.ok) || {}).text : fmtV(st.answer, st);
-  Backend.log('attempts', {shop:'cafe', skill:order.p.skill, step:st.name, step_type:STEP_TYPE[st.type] || 'setup',
+  Backend.log('attempts', {shop:shift.shop, skill:order.p.skill, step:st.name, step_type:STEP_TYPE[st.type] || 'setup',
     correct:ok, first_try:first, slow, answer:String(fmtV(v, st)).slice(0,60), expected:String(right).slice(0,60),
     misconception:misId || null, context:context ? context.slice(0,300) : null,
     fact_a:st.fact ? st.fact.x : null, fact_b:st.fact ? st.fact.y : null, fact_div:st.fact ? !!st.fact.div : null, ms:Math.round(ms)});
@@ -1283,8 +1292,9 @@ function completeOrder(){
   if (wasReading) { const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; }
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
-  const before = STATIONS.map(s => stationOpen('cafe', s.id));
-  S.cafe.st[shift.station] = (S.cafe.st[shift.station]||0) + 1;
+  const stations = SHOPS[shift.shop].stations, progress = shopProgress(shift.shop);
+  const before = stations.map(s => stationOpen(shift.shop, s.id));
+  progress.st[shift.station] = (progress.st[shift.station]||0) + 1;
   const secs = order.start === null ? 0 : (performance.now() - order.start) / 1000;
   S.timeMs += Math.min(secs, 300) * 1000;
   let tip = 4 + p.steps.length*2 + Math.max(0, Math.round(6 * (1 - secs/order.limit)));
@@ -1294,14 +1304,14 @@ function completeOrder(){
   tip = Math.round(tip * shift.power);
   S.coins += tip; S.orders++; shift.earned += tip; shift.missed.push(...order.missed);
   checkUnlocks({announce:true});
-  Backend.log('problems', {shop:'cafe', station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
+  Backend.log('problems', {shop:shift.shop, station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
   save(); updateHeader();
   const n = $('#chalkNote'); n.className = 'chalk-note good';
   n.textContent = perfect ? 'Perfect order!' + (S.streak > 1 ? ` ${S.streak} in a row!` : '') : 'Order up!';
   $('#stepPrompt').innerHTML = ''; $('#stepInput').innerHTML = '';
   $('#custBubble').textContent = pick(['Yum! That looks perfect.','Wow, just right!','My friends are going to love this!','Thank you so much!']) + ` Here's ${tip} 🪙`;
   sfx('coin'); coinBurst($('#board'), Math.ceil(tip/3));
-  STATIONS.forEach((s,i) => { if (!before[i] && stationOpen('cafe', s.id)) setTimeout(() => toast(`New station open: ${s.name}!`), 900); });
+  stations.forEach((s,i) => { if (!before[i] && stationOpen(shift.shop, s.id)) setTimeout(() => toast(`New station open: ${s.name}!`), 900); });
   const last = shift.n >= shift.total;
   $('#boardActions').innerHTML = `<button class="btn mint" id="nextBtn">${last ? 'Close up for the day' : 'Next customer'}</button>`;
   $('#nextBtn').addEventListener('click', nextCustomer); setTimeout(() => $('#nextBtn').focus(), 60); setTimeout(showNextUnlock, 0);
@@ -1309,16 +1319,17 @@ function completeOrder(){
 function endShift(){
   const pw = shift.power; S.day++; S.power = 1; save(); updateHeader(); Backend.flush();
   const miss = [...new Set(shift.missed)];
-  $('#summaryCard').innerHTML = `<div class="big-emoji">🌙</div><h2>Café closed for the day</h2>
+  const shop = shift.shop, config = SHOPS[shop];
+  $('#summaryCard').innerHTML = `<div class="big-emoji">🌙</div><h2>${config.name} closed for the day</h2>
     <p>You earned <b>${shift.earned}</b> coins${pw > 1 ? ` with a ×${fmtPow(pw)} sprint boost` : ''}.</p>
     <p>Perfect orders: <b>${shift.perfect}</b> of ${shift.total}</p>
     ${miss.length ? `<p class="muted">Keep practicing</p><div class="factchips">${miss.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : '<p>No mistakes today. Amazing!</p>'}
     <div class="row"><button class="btn berry" id="sumAgain">Another shift</button><button class="btn" data-go="home">Back to town</button></div>`;
-  const station = shift.station; shift = null;
-  show('summary'); $('#sumAgain').addEventListener('click', () => startShift(station));
+  const station = shift.station; shift = null; currentShop = shop;
+  show('summary'); $('#sumAgain').addEventListener('click', () => startShift(shop, station));
   sfx('good'); setTimeout(() => $('#sumAgain').focus(), 60);
 }
-$('#leaveShift').addEventListener('click', () => { stopOrderSpeech(); cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; shift = null; order = null; show('cafe'); });
+$('#leaveShift').addEventListener('click', () => { stopOrderSpeech(); cancelReadFirst(order); freezePatience(); const patience = $('#patience'); patience.classList.remove('reading','start-pulse','tip-warn','tip-danger'); patience.style.width = '100%'; $('#patienceLabel').textContent = ''; currentShop = shift?.shop || currentShop; shift = null; order = null; show('cafe'); });
 
 /* ---------- times-table practice pop-up ---------- */
 let pr = null;
