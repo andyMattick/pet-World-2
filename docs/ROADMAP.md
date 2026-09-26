@@ -25,6 +25,10 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 | 8 | **Phones and tablets:** on-screen number pad, Check buttons, ladder auto-advance, small-screen layout | `PHONE.md` | nothing | medium |
 | 9 | **Read the order first:** a prominent question ticket, a visible step plan, reading time that doesn't cost tips, read-aloud | `READ-FIRST.md` | nothing | medium |
 | 10 | **Teacher tools:** copy the class list with PINs, print all PIN cards, reset a student | `TEACHER-TOOLS.md` + run `20260927000000_teacher_tools.sql` | #4 | medium |
+| 11 | **Unit 2: Bakery** (5 stations, 16 Khan skills) | `BAKERY.md`, then `BAKERY-0-ENGINE.md`, `BAKERY-1-SCALE.md`, … | #3, #4 | large |
+| 12 | **Practice time:** sign-ins and active minutes per student, weekly totals, and a 4-week chart on the dashboard | `PRACTICE-TIME.md` + run `20260929000000_practice_time.sql` | quizzes SQL | medium |
+| 13 | **Music:** 4 tracks to choose from, a volume slider, and a teacher "Allow music" switch | `MUSIC.md` | #12 SQL for step 3 only | small |
+| 14 | **4th grade version** (follows the workbook, with Khan links, same class features) | planned after the Bakery starts | #11 step 0 | large |
 
 ### Checklist
 
@@ -35,9 +39,28 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 - [x] 5. Sprint skill mix: steps B1 through B4
 - [x] 6. Shop and Sticker Book merge: steps 1 through 3
 - [x] 7. Scaling down and simplest form: steps 1 through 4
-- [ ] 8. **Phones and tablets: steps 1 through 4 (do next)**
-- [ ] 9. Read the order first: steps 1 through 4
+- [x] 8. Phones and tablets: steps 1 through 4
+- [x] 9. Read the order first: steps 1 through 4, plus read-aloud and adjustable reading time
 - [ ] 10. Teacher tools: steps 1 through 5. At step 1, the owner runs `20260927000000_teacher_tools.sql` in Supabase
+- [ ] 11. Bakery
+  - [ ] Step 0: engine for more than one shop (`BAKERY-0-ENGINE.md`, 5 steps)
+  - [ ] Station quizzes and unit tests for every shop (`QUIZZES.md`, 7 steps; run `20260928000000_quizzes.sql` after the teacher-tools SQL)
+  - [ ] Station 1: The Scale (`BAKERY-1-SCALE.md`, 4 steps)
+  - [ ] Stations 2 to 5 (plans to come)
+- [ ] 12. Practice time: steps 1 through 5
+- [ ] 13. Music: steps 1 through 4
+- [ ] 14. 4th grade version (plan to come)
+
+## Database files, in the order they must be run
+
+1. `20260923000000_pet_town.sql` ✅
+2. `20260925000000_drills.sql` ✅
+3. `20260926000000_drill_settings.sql` ✅
+4. `20260927000000_teacher_tools.sql` (item 10)
+5. `20260928000000_quizzes.sql` (quizzes)
+6. `20260929000000_practice_time.sql` (item 12)
+
+All six were run in this order on real PostgreSQL 16 with no errors, and tested as a teacher, a student, and a stranger.
 
 ## Before other teachers or classes use it
 
@@ -49,5 +72,4 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 
 ## After that
 
-- [ ] **Unit 2: Bakery.** Decimals, dividing fractions, multiplying and dividing decimals, in Khan's order. Includes its drills (place value, moving the decimal, reciprocals, simplifying) and turns on its reward set. A plan will be written when we get there
 - [ ] Selling: TPT listing or a teacher sign-up page
