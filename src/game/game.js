@@ -1386,6 +1386,7 @@ function submit(v){
       completeAssessmentQuestion(false, 500);
       return;
     }
+    stepRight(st, v, {quiet:true});
     save();
     const currentOrder = order;
     setTimeout(() => {
@@ -1409,17 +1410,21 @@ function submit(v){
   }
   if (ok) advance();
 }
-function stepRight(st, v){
-  const note = $('#chalkNote'); note.className = 'chalk-note good'; note.textContent = pick(['Yes!','Nice!','Correct!','You got it!']);
-  const planStep = $(`#plan [data-plan-step="${order.i}"]`); if (planStep) planStep.classList.add('done');
+function stepRight(st, v, {quiet = false} = {}){
+  if (!quiet) {
+    const note = $('#chalkNote'); note.className = 'chalk-note good'; note.textContent = pick(['Yes!','Nice!','Correct!','You got it!']);
+    const planStep = $(`#plan [data-plan-step="${order.i}"]`); if (planStep) planStep.classList.add('done');
+  }
   if (st.slot) { const sl = slotEl(st.slot); sl.classList.remove('active'); sl.classList.add('filled'); sl.innerHTML = `<span class="slotval">${fmtV(v, st)}</span>`; }
   else if (st.kind === 'choice') {
-    $$('#stepInput .opt').forEach((b,k) => { b.disabled = true; if (k === v) b.classList.add('yes'); });
-    $('#doneList').insertAdjacentHTML('beforeend', `<div>✓ ${esc(st.name)}: ${esc(st.options[v].text)}</div>`);
-  } else $('#doneList').insertAdjacentHTML('beforeend', `<div>✓ ${esc(st.name)}: ${esc(fmtV(v, st))}</div>`);
+    if (!quiet) {
+      $$('#stepInput .opt').forEach((b,k) => { b.disabled = true; if (k === v) b.classList.add('yes'); });
+      $('#doneList').insertAdjacentHTML('beforeend', `<div>✓ ${esc(st.name)}: ${esc(st.options[v].text)}</div>`);
+    }
+  } else if (!quiet) $('#doneList').insertAdjacentHTML('beforeend', `<div>✓ ${esc(st.name)}: ${esc(fmtV(v, st))}</div>`);
   if (st.kind === 'grid') plotDot(v, 'gdot');
   if (st.fill) $$('#board ' + st.fill.sel).forEach(b => { b.textContent = st.fill.text; b.classList.add('filled'); });
-  sfx('good');
+  if (!quiet) sfx('good');
 }
 function stepWrong(st, v, misId){
   order.tries++; S.streak = 0;
