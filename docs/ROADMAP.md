@@ -41,7 +41,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`. Give the
 - [x] 7. Scaling down and simplest form: steps 1 through 4
 - [x] 8. Phones and tablets: steps 1 through 4
 - [x] 9. Read the order first: steps 1 through 4, plus read-aloud and adjustable reading time
-- [ ] 10. Teacher tools: steps 1 through 5. At step 1, the owner runs `20260927000000_teacher_tools.sql` in Supabase
+- [X] 10. Teacher tools: steps 1 through 5. At step 1, the owner runs `20260927000000_teacher_tools.sql` in Supabase
 - [ ] 11. Bakery
   - [ ] Step 0: engine for more than one shop (`BAKERY-0-ENGINE.md`, 5 steps)
   - [ ] Station quizzes and unit tests for every shop (`QUIZZES.md`, 7 steps; run `20260928000000_quizzes.sql` after the teacher-tools SQL)
