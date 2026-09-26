@@ -1354,7 +1354,7 @@ function logAttempt(st, v, ok, slow, first, misId, ms, context){
   // called for every first try, and for later tries only when they reveal a new mix-up
   if (!Backend.me) return;
   const right = st.kind === 'choice' ? (st.options.find(o => o.ok) || {}).text : fmtV(st.answer, st);
-  Backend.log('attempts', {shop:shift.shop, skill:order.p.skill, step:st.name, step_type:STEP_TYPE[st.type] || 'setup',
+  Backend.log('attempts', {mode:shift.mode || 'practice', shop:shift.shop, skill:order.p.skill, step:st.name, step_type:STEP_TYPE[st.type] || 'setup',
     correct:ok, first_try:first, slow, answer:String(fmtV(v, st)).slice(0,60), expected:String(right).slice(0,60),
     misconception:misId || null, context:context ? context.slice(0,300) : null,
     fact_a:st.fact ? st.fact.x : null, fact_b:st.fact ? st.fact.y : null, fact_div:st.fact ? !!st.fact.div : null, ms:Math.round(ms)});
@@ -1380,6 +1380,7 @@ function finishAssessment(){
   S.quizzes[key] = {passed:result.passed, best:Math.max(previous.best || 0, percent), tries:(previous.tries || 0) + 1, lastAt:Date.now()};
   if (result.passed) delete S.review[key];
   else startReview(S, key, result.review, finished.settings);
+  Backend.log('assessments', {shop, station, kind:finished.mode, score:result.score, total:result.total, passed:result.passed, missed_skills:result.missed});
   const payout = result.passed ? (finished.mode === 'test' ? 150 : 50) : 10;
   if (finished.mode === 'test' && result.passed) checkUnlocks({announce:true});
   S.coins += payout; save(); updateHeader();
@@ -1531,7 +1532,7 @@ function completeOrder(){
   tip = Math.round(tip * shift.power);
   S.coins += tip; S.orders++; shift.earned += tip; shift.missed.push(...order.missed);
   checkUnlocks({announce:true});
-  Backend.log('problems', {shop:shift.shop, station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
+  if (shift.mode === 'practice') Backend.log('problems', {shop:shift.shop, station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
   save(); updateHeader();
   const n = $('#chalkNote'); n.className = 'chalk-note good';
   n.textContent = perfect ? 'Perfect order!' + (S.streak > 1 ? ` ${S.streak} in a row!` : '') : 'Order up!';
@@ -1731,9 +1732,9 @@ function sprintAnswer(value, {corrected = false} = {}) {
   else if (slow) sp.slow.push(wrong);
   const type = item.drillId.split(':')[0], key = item.drillId.slice(type.length + 1);
   Backend.log('attempts', times
-    ? {shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
+    ? {mode:shift?.mode || 'practice', shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
       answer:loggedAnswer.slice(0,6), expected:String(x*y), misconception:null, context:null, fact_a:x, fact_b:y, fact_div:false, ms:Math.round(ms)}
-    : {shop:'sprint', skill:'drill:' + type, step:key, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
+    : {mode:shift?.mode || 'practice', shop:'sprint', skill:'drill:' + type, step:key, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
       answer:loggedAnswer.slice(0,60), expected:answer, misconception:null, context:null, fact_a:null, fact_b:null, fact_div:null, ms:Math.round(ms)});
   if (ok) {
     if (corrected) { sp.missed.push(wrong); if (times) sp.queue.push([x,y]); }

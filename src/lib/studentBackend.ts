@@ -9,7 +9,7 @@ export interface StudentInfo {
 }
 export interface RosterEntry { out_id: string; out_name: string; out_class: string }
 export type JoinResult = 'ok' | 'bad_pin' | 'locked' | 'not_found' | 'no_session' | 'error';
-type Table = 'attempts' | 'problems' | 'practice_popups' | 'sprints';
+type Table = 'attempts' | 'problems' | 'practice_popups' | 'sprints' | 'assessments';
 
 const QUEUE_KEY = 'pettown:queue:';
 
