@@ -5,7 +5,7 @@ export interface StudentInfo {
   student_id: string; name: string; class_id: string; class_name: string; min_station: number;
   class_drills: Record<string, unknown> | null; student_drills: Record<string, unknown> | null;
   quiz_settings: Record<string, unknown>; quiz_overrides: Record<string, unknown> | null;
-  game_settings?: { openUnits?: string[]; [key: string]: unknown } | null;
+  game_settings?: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null;
   state: Record<string, unknown> | null; saved_at: string | null; reset_at: string | null;
 }
 export interface RosterEntry { out_id: string; out_name: string; out_class: string }

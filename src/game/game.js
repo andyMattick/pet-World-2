@@ -1027,8 +1027,10 @@ function updateHeader(){
   $('#powerVal').textContent = '×' + fmtPow(S.power);
   $('#muteBtn').textContent = S.muted ? '🔇' : '🔊';
   $('#muteBtn').setAttribute('aria-label', S.muted ? 'Turn sound effects on' : 'Turn sound effects off');
-  $('#musicBtn').classList.toggle('off', !S.music);
-  $('#musicBtn').setAttribute('aria-label', S.music ? 'Music settings (music is on)' : 'Music settings (music is off)');
+  const allowed = musicAllowed();
+  $('#musicBtn').textContent = allowed ? '🎵' : '🔇';
+  $('#musicBtn').classList.toggle('off', !S.music || !allowed);
+  $('#musicBtn').setAttribute('aria-label', !allowed ? 'Music: your teacher turned music off' : S.music ? 'Music settings (music is on)' : 'Music settings (music is off)');
 }
 let toastTimer;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
@@ -1132,7 +1134,9 @@ const Music = (() => {
   };
 })();
 function applyMusicPrefs(){ Music.setTrack(S.musicTrack); Music.setVolume(S.musicVolume); }
-function kickMusic(){ if (S.music && !document.hidden) { applyMusicPrefs(); Music.start(); } }
+/* a teacher can turn music off for the whole class (MUSIC.md step 3) */
+function musicAllowed(){ return Backend.me?.game_settings?.allowMusic !== false; }
+function kickMusic(){ if (!musicAllowed()) { Music.stop(); return; } if (S.music && !document.hidden) { applyMusicPrefs(); Music.start(); } }
 ['pointerdown','keydown'].forEach(ev => document.addEventListener(ev, kickMusic));
 document.addEventListener('visibilitychange', () => { if (document.hidden) Music.stop(); else kickMusic(); });
 $('#muteBtn').addEventListener('click', () => { S.muted = !S.muted; save(); updateHeader(); if (!S.muted) sfx('tick'); });
@@ -1158,16 +1162,17 @@ function closeMusicMenu(returnFocus){
   $('#musicMenu').hidden = true; $('#musicBtn').setAttribute('aria-expanded', 'false');
   if (returnFocus) $('#musicBtn').focus();
 }
-$('#musicBtn').addEventListener('click', e => { e.stopPropagation(); if ($('#musicMenu').hidden) openMusicMenu(); else closeMusicMenu(false); });
+$('#musicBtn').addEventListener('click', e => { e.stopPropagation(); if (!musicAllowed()) { Music.stop(); toast('Your teacher turned music off.'); return; } if ($('#musicMenu').hidden) openMusicMenu(); else closeMusicMenu(false); });
 $('#musicMenu').addEventListener('click', e => {
   const b = e.target.closest('[data-track]'); if (!b) return;
+  if (!musicAllowed()) { closeMusicMenu(false); return; }
   S.musicTrack = b.dataset.track;
   if (!S.music) S.music = true;              // choosing a track starts music if it was off
   save(); updateHeader(); applyMusicPrefs(); Music.start();
   renderMusicMenu(); $(`#musicMenu [data-track="${S.musicTrack}"]`).focus();
 });
 $('#musicMenu').addEventListener('change', e => {
-  if (e.target.id === 'mmOn') { S.music = e.target.checked; save(); updateHeader(); if (S.music) { applyMusicPrefs(); Music.start(); } else Music.stop(); }
+  if (e.target.id === 'mmOn') { S.music = e.target.checked; save(); updateHeader(); if (S.music && musicAllowed()) { applyMusicPrefs(); Music.start(); } else Music.stop(); }
   if (e.target.id === 'mmVol') save();
 });
 $('#musicMenu').addEventListener('input', e => { if (e.target.id === 'mmVol') { S.musicVolume = Number(e.target.value); Music.setVolume(S.musicVolume); } });
