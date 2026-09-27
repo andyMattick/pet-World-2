@@ -992,6 +992,107 @@ ppw(lvl){
 }
 };
 Object.assign(GEN, SCALE_GEN);
+/* ===== Bakery station 2: Sharing Pans (divide fractions and whole numbers) =====
+   A fraction answer is [whole, numerator, denominator] from the three boxes (whole number only: [w, 0, 1]).
+   All math is whole numbers, so nothing rounds. */
+const FRAC = {
+  imp: v => [v[0] * v[2] + v[1], v[2]],
+  red: (p, q) => { const g = gcd(p, q) || 1; return [p / g, q / g]; },
+  ok: v => Array.isArray(v) && v.length === 3 && v.every(x => Number.isInteger(x) && x >= 0) && v[2] > 0,
+  same: (v, p, q) => FRAC.ok(v) && FRAC.imp(v)[0] * q === p * FRAC.imp(v)[1],
+  canon: v => FRAC.ok(v) && (v[1] === 0 ? v[2] === 1 : v[1] < v[2] && gcd(v[1], v[2]) === 1),
+  simplest: (p, q) => { const [a, b] = FRAC.red(p, q); return b === 1 ? [a, 0, 1] : [Math.floor(a / b), a % b, b]; },
+  fmt: v => !Array.isArray(v) ? String(v) : v[1] === 0 ? String(v[0]) : (v[0] ? `${v[0]} ` : '') + `${v[1]}/${v[2]}`,
+  txt: (a, b) => `${a}/${b}`,
+  part: (b, many) => { const n = ['', '', 'half', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'][b] || `1/${b} part`;
+    return !many ? n : b === 2 ? 'halves' : n + 's'; }
+};
+/* the first known wrong answer that matches v; wrongs: [[misId, p, q]] */
+function fracMis(v, p, q, wrongs){
+  if (!FRAC.ok(v)) return null;
+  const hit = wrongs.find(([, wp, wq]) => wp * q !== p * wq && FRAC.same(v, wp, wq));
+  return hit ? hit[0] : null;
+}
+function fracSimplestStep(p, q){
+  const ans = FRAC.simplest(p, q), [rp, rq] = FRAC.red(p, q), over = rq > 1 && rp > rq;
+  const right = v => FRAC.canon(v) && FRAC.same(v, p, q);
+  return {name:'Simplest form', type:'concept', kind:'frac', answer:ans, eq:right, skipIf:right,
+    prompt:ans[1] === 0 ? 'Now write it as a whole number.' : over ? 'Now write it as a mixed number in simplest form.' : 'Now write it in simplest form.',
+    mis:v => !FRAC.same(v, p, q) ? null : v[1] >= v[2] ? 'notMixed' : 'notSimplest',
+    hint:() => ans[1] === 0 ? `How many wholes is ${FRAC.txt(p, q)}? Put it in the whole-number box.`
+      : over ? `${rp}/${rq}: how many times does ${rq} go into ${rp}? That's the whole number. What's left over goes on top.`
+      : 'What number goes into both the top and the bottom? Divide both by it.'};
+}
+function panHTML(b, a, e){
+  return `<div class="pan" aria-label="A pan cut into ${b} equal pieces, ${a} left">${Array.from({length:b}, (_, i) => `<span${i < a ? ' class="full"' : ''}>${i < a ? e : ''}</span>`).join('')}</div>`;
+}
+function cupsHTML(n, a, b, e){
+  return `<div class="cups" aria-label="${n} cups, each cut into ${b} equal parts">${Array.from({length:n}, () => `<span class="cup">${'<i></i>'.repeat(b)}</span>`).join('')}</div><div class="cups-note">${e} 1 serving = ${FRAC.txt(a, b)} cup</div>`;
+}
+function fracIdeaSteps(sharing, eqs){
+  return [
+    {name:'What are we doing?', type:'concept', kind:'choice', prompt:'Are we sharing into equal groups, or finding how many fit?',
+      options:shuffle([
+        {html:'Sharing it equally', text:'sharing', ok:sharing, mis:sharing ? null : 'reversedDivision'},
+        {html:'Finding how many fit', text:'how many fit', ok:!sharing, mis:sharing ? 'reversedDivision' : null}]),
+      hint:() => sharing ? 'Friends are splitting one amount. That is sharing.' : 'We keep taking out one serving at a time. How many servings fit?'},
+    {name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?',
+      options:shuffle(eqs.map(([t, ok, mis]) => ({html:t, text:t, ok, mis}))),
+      hint:() => 'Start with the amount you have, then divide by the size of each share or serving.'}
+  ];
+}
+const PAN_TREATS = [['🍫','brownies'],['🥧','pie'],['🍰','cake'],['🍞','cornbread'],['🍪','cookie bars'],['🧁','crumb cake']];
+const BATTERS = [['🧁','muffin','batter'],['🥞','pancake','batter'],['🍰','cake','frosting'],['🍪','cookie','dough']];
+const PANS_GEN = {
+  fracDivWhole(lvl){
+    let a = 1, b = 2, k = 2;
+    for (let t = 0; t < 200; t++){
+      b = lvl === 1 ? rand(2, 5) : rand(3, lvl === 2 ? 8 : 10);
+      a = lvl === 1 ? 1 : rand(2, b - 1);
+      k = rand(2, lvl === 1 ? 4 : 6);
+      if (gcd(a, b) !== 1) continue;
+      if (lvl === 2 && (gcd(a, k) !== 1 || b * k > 40)) continue;    // level 2: already simplest
+      if (lvl === 3 && gcd(a, k) === 1) continue;                     // level 3: needs simplifying
+      break;
+    }
+    const [e, n] = pick(PAN_TREATS), p = a, q = b * k, fr = FRAC.txt(a, b);
+    const steps = fracIdeaSteps(true, [[`${fr} ÷ ${k}`, true, null], [`${k} ÷ ${fr}`, false, 'reversedDivision'], [`${fr} × ${k}`, false, 'divAsMult']]);
+    steps.push({name:'Divide', type:'compute', kind:'frac', prompt:`${fr} ÷ ${k} = ?`, answer:FRAC.simplest(p, q),
+      eq:v => FRAC.same(v, p, q), fact:{x:b, y:k},
+      mis:v => fracMis(v, p, q, [['divAsMult', a * k, b], ['reversedDivision', b * k, a]]),
+      hint:() => `Cut each ${FRAC.part(b)} of the pan into ${k} equal pieces. Now the whole pan has ${b} × ${k} pieces.`});
+    steps.push(fracSimplestStep(p, q));               // skipped when the answer was already in simplest form
+    return {title:'Sharing Pans', ctx:`${fr} ÷ ${k}`,
+      bubble:`There's ${fr} of a pan of ${n} left. ${k} friends share it equally. What fraction of the whole pan does each friend get?`,
+      helper:'Sharing a fraction makes each share smaller than what you started with.',
+      visual:`${panHTML(b, a, e)}<div class="cups-note">${'🧒'.repeat(k)} share it</div>`, steps};
+  },
+  wholeDivFrac(lvl){
+    let a = 1, b = 2, N = 2;
+    for (let t = 0; t < 200; t++){
+      b = rand(2, lvl === 1 ? 4 : lvl === 2 ? 6 : 8);
+      a = lvl === 1 ? 1 : rand(2, b - 1);
+      if (a >= b || gcd(a, b) !== 1) continue;
+      N = lvl === 1 ? rand(2, 5) : lvl === 2 ? a * rand(1, 3) : rand(2, 9);
+      if (N > 12 || N < 2) continue;
+      if (lvl === 3 && (N * b) % a === 0) continue;                   // level 3: answer is a mixed number
+      break;
+    }
+    const [e, thing, stuff] = pick(BATTERS), p = N * b, q = a, fr = FRAC.txt(a, b);
+    const steps = fracIdeaSteps(false, [[`${N} ÷ ${fr}`, true, null], [`${fr} ÷ ${N}`, false, 'reversedDivision'], [`${N} × ${fr}`, false, 'divAsMult']]);
+    steps.push({name:'Divide', type:'compute', kind:'frac', prompt:`${N} ÷ ${fr} = ?`, answer:FRAC.simplest(p, q),
+      eq:v => FRAC.same(v, p, q), fact:{x:N, y:b},
+      mis:v => fracMis(v, p, q, [['divAsMult', N * a, b], ['denomOnly', N * b, 1], ['numerOnly', N, a], ['reversedDivision', a, N * b]]),
+      hint:() => a === 1 ? `Each cup holds ${b} servings. How many servings in ${N} cups?` : `Each cup has ${b} ${FRAC.part(b, true)}, so ${N} cups have ${N} × ${b} of them. Each serving uses ${a} of them.`});
+    steps.push(fracSimplestStep(p, q));               // skipped when the answer was already in simplest form
+    const part = (N * b) % a !== 0;
+    return {title:'Sharing Pans', ctx:`${N} ÷ ${fr}`,
+      bubble:`I have ${N} cups of ${stuff}. Each ${thing} uses ${fr} cup. How many ${thing}s can I make?${part ? ' (Part of one counts too.)' : ''}`,
+      helper:'Dividing by a fraction smaller than 1 gives you more than you started with.',
+      visual:cupsHTML(N, a, b, e), steps};
+  }
+};
+Object.assign(GEN, PANS_GEN);
 
 /* ===================== UI ===================== */
 const $ = s => document.querySelector(s);
@@ -1540,6 +1641,16 @@ function activateStep(i){
   } else if (st.kind === 'grid') {
     box.innerHTML = `<span style="font-size:1.1rem">Or type it: (</span>${numInput('gx','x')}<span>,</span>${numInput('gy','y')}<span>)</span>`;
     wireNum($('#gx'), () => $('#gy').focus()); wireNum($('#gy'), checkCurrent);
+  } else if (st.kind === 'frac') {
+    const fin = (id, label) => `<input class="cell sm" id="${id}" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="${label}">`;
+    box.innerHTML = `<span class="fracin">${fin('fracW','whole number (leave empty if none)')}<span class="fstack">${fin('fracN','top number')}<span class="fbar"></span>${fin('fracD','bottom number')}</span></span><span class="frac-tip">Whole number box: fill only if you need it.</span>`;
+    const [w, n, d] = ['#fracW', '#fracN', '#fracD'].map(id => $(id));
+    [w, n, d].forEach(inp => {
+      inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, ''); inp.classList.remove('wrong'); });
+      inp.addEventListener('keydown', e => { if (e.key !== 'Enter') return; e.preventDefault();
+        if (inp === w && !n.value && !d.value && w.value) checkCurrent(); else if (inp !== d && !(inp === w ? n : d).value) (inp === w ? n : d).focus(); else checkCurrent(); });
+    });
+    setTimeout(() => n.focus(), 40);
   }
 }
 function readCurrent(st){
@@ -1547,15 +1658,20 @@ function readCurrent(st){
   if (st.kind === 'num') return num('#cur');
   if (st.kind === 'ratio') { const a = num('#curA'), b = num('#curB'); return (a === null || b === null) ? null : [a, b]; }
   if (st.kind === 'grid') { const x = num('#gx'), y = num('#gy'); return (x === null || y === null) ? null : [x, y]; }
+  if (st.kind === 'frac') {
+    const w = num('#fracW'), n = num('#fracN'), d = num('#fracD');
+    if (n === null && d === null) return w === null ? null : [w, 0, 1];
+    return (n === null || d === null) ? null : [w || 0, n, d];
+  }
   return null;
 }
 function checkCurrent(){
   if (!order || order.done || pr) return;
   const st = order.p.steps[order.i], v = readCurrent(st);
-  if (v === null) { const f = $('#cur') || $('#curA') || $('#gx'); if (f) f.focus(); return; }
+  if (v === null) { const f = $('#cur') || $('#curA') || $('#gx') || ['#fracN', '#fracD'].map(id => $(id)).find(el => el && !el.value); if (f) f.focus(); return; }
   submit(v);
 }
-const fmtV = (v, st) => st.kind === 'choice' ? (st.options[v] ? st.options[v].text : '?') : Array.isArray(v) ? (st.kind === 'grid' ? `(${v[0]}, ${v[1]})` : `${v[0]}:${v[1]}`) : String(v);
+const fmtV = (v, st) => st.kind === 'frac' ? FRAC.fmt(v) : st.kind === 'choice' ? (st.options[v] ? st.options[v].text : '?') : Array.isArray(v) ? (st.kind === 'grid' ? `(${v[0]}, ${v[1]})` : `${v[0]}:${v[1]}`) : String(v);
 function gridXY(x, y){
   const svg = $('#gridsvg'); const max = +svg.dataset.max, pad = +svg.dataset.pad, top = +svg.dataset.top, W = 330, sz = (W - pad - top) / max;
   return [pad + x*sz, W - pad - y*sz];
@@ -1667,7 +1783,8 @@ function submit(v){
     setTimeout(() => {
       if (order !== currentOrder || !shift) return;
       currentOrder.assessmentPending = false;
-      if (currentOrder.i + 1 < currentOrder.p.steps.length) advance();
+      const j = nextStepIndex(true);
+      if (j < currentOrder.p.steps.length) activateStep(j);
       else completeAssessmentQuestion(currentOrder.assessmentCorrect);
     }, 500);
     return;
@@ -1686,6 +1803,7 @@ function submit(v){
   if (ok) advance();
 }
 function stepRight(st, v, {quiet = false} = {}){
+  order.lastV = v;
   if (!quiet) {
     const note = $('#chalkNote'); note.className = 'chalk-note good'; note.textContent = pick(['Yes!','Nice!','Correct!','You got it!']);
     const planStep = $(`#plan [data-plan-step="${order.i}"]`); if (planStep) planStep.classList.add('done');
@@ -1712,9 +1830,22 @@ function stepWrong(st, v, misId){
 }
 function refocus(st){
   if (st.kind === 'choice') { const b = $$('#stepInput .opt').find(x => !x.disabled); if (b) b.focus(); return; }
-  const el = $('#cur') || $('#curA') || $('#gx'); if (el) { el.focus(); if (el.select) el.select(); }
+  const el = $('#cur') || $('#curA') || $('#gx') || $('#fracN'); if (el) { el.focus(); if (el.select) el.select(); }
 }
-function advance(){ if (order.i + 1 < order.p.steps.length) activateStep(order.i + 1); else completeOrder(); }
+/* next step to show; a step with skipIf is passed over when the step before already did its job */
+function nextStepIndex(quiet){
+  const steps = order.p.steps;
+  let j = order.i + 1;
+  while (j < steps.length && steps[j].skipIf && steps[j].skipIf(order.lastV)) {
+    if (!quiet) {
+      const chip = $(`#plan [data-plan-step="${j}"]`); if (chip) chip.classList.add('done');
+      $('#doneList').insertAdjacentHTML('beforeend', `<div>✓ ${esc(steps[j].name)}: already done</div>`);
+    }
+    j++;
+  }
+  return j;
+}
+function advance(){ const j = nextStepIndex(false); if (j < order.p.steps.length) activateStep(j); else completeOrder(); }
 function hint(){
   if (!order || order.done) return;
   const st = order.p.steps[order.i]; order.hints++;

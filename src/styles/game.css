@@ -132,8 +132,8 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .dots{display:flex; gap:8px}
 .dots i{width:16px; height:16px; border-radius:50%; border:3px solid var(--edge); background:var(--surface)}
 .dots i.done{background:var(--mint)} .dots i.now{background:var(--butter)}
-.shift-grid{display:grid; grid-template-columns:270px 1fr; gap:22px; align-items:start}
-@media (max-width:860px){.shift-grid{grid-template-columns:1fr}}
+.shift-grid{display:grid; grid-template-columns:270px minmax(0, 1fr); gap:22px; align-items:start}
+@media (max-width:860px){.shift-grid{grid-template-columns:minmax(0, 1fr)}}
 .customer{display:flex; flex-direction:column; align-items:center; gap:8px}
 .cust-emoji{font-size:5rem; line-height:1}
 .cust-emoji.enter{animation:enter .45s ease-out}
@@ -189,6 +189,19 @@ input.cell.wrong{border:2px solid var(--bad); color:var(--bad); animation:shake 
 .slotval{color:var(--mint); font-weight:700}
 .rlbl{font-size:1.6rem}
 .colon{font-size:2rem; padding:0 2px}
+.fracin{display:inline-flex; align-items:center; gap:6px}
+.fstack{display:inline-flex; flex-direction:column; align-items:center; gap:3px}
+.fbar{display:block; width:100%; height:3px; background:var(--chalk); border-radius:2px}
+.frac-tip{width:100%; font-size:1rem; color:var(--chalk-dim)}
+.pan{display:grid; grid-auto-flow:column; grid-auto-columns:1fr; max-width:360px; height:70px; margin:0 auto; border:3px solid var(--chalk); border-radius:10px; overflow:hidden}
+.pan span{display:flex; align-items:center; justify-content:center; font-size:1.5rem; border-left:2px dashed var(--chalk-dim)}
+.pan span:first-child{border-left:none}
+.pan span.full{background:rgba(255,213,128,.18)}
+.cups{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:420px; margin:0 auto}
+.cup{display:flex; width:70px; height:34px; border:2px solid var(--chalk); border-radius:6px; overflow:hidden}
+.cup i{flex:1; border-left:1px dashed var(--chalk-dim)}
+.cup i:first-child{border-left:none}
+.cups-note{text-align:center; margin-top:6px; font-size:1.2rem; color:var(--butter)}
 .opts{display:flex; flex-wrap:wrap; gap:10px; width:100%}
 .opt{font-family:var(--chalkfont); font-size:1.3rem; color:var(--chalk); background:rgba(255,255,255,.06); border:2px dashed var(--chalk-dim); border-radius:12px; padding:8px 14px; cursor:pointer; text-align:left}
 .opt:hover:not(:disabled){border-style:solid; border-color:var(--butter)}
