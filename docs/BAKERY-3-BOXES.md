@@ -1,6 +1,6 @@
 # Bakery station 3: Boxing Treats (divide fractions by fractions)
 
-**Status: draft plan.** The generator code isn't written yet. Before any building starts, it gets written and stress-tested and pasted into this file. Needs the fraction answers from `BAKERY-2-PANS.md`. Read `AGENTS.md` and `docs/BAKERY.md` first. **Edit in place, never rewrite a file.**
+**Status: built.** The generators are `BOXES_GEN` in `src/game/game.js` (stress-tested: 180,000 problems, every answer checked against an independent calculation, every mix-up checked to fire only on its own wrong answer). It uses the fraction answers from `BAKERY-2-PANS.md`. Read `AGENTS.md` and `docs/BAKERY.md` first. **Edit in place, never rewrite a file.**
 
 ## Khan skills (Khan's order)
 
@@ -16,14 +16,13 @@ Khan links are in `BAKERY.md`.
 ## What students get
 
 - **Stories:** boxing treats: how many boxes of a given size fit, or how much goes in each box.
-- **Steps:**
-  1. *Idea:* "How many boxes fit?" or "How much in each box?" (choice). `fracInterp` problems are mostly this step: match the story, picture, or equation.
-  2. *Idea (level 1 to 2):* a common-denominator picture (8 eighths, groups of 1 eighth), or "multiply by the flip" (choice of method is shown, not asked, at level 1).
-  3. *Arithmetic:* the flipped divisor, e.g. 1/8 → 8/1 (only when the method is "multiply by the flip").
-  4. *Arithmetic:* the answer (fraction or mixed number, from station 2's input).
-  5. *Arithmetic:* simplest form, when needed.
-- **Mixed numbers (`mixedDiv`)** add a first arithmetic step: "Write 2 1/2 as a fraction" → 5/2.
-- **Levels:** level 1 has answers that are whole numbers (3/4 ÷ 1/8). Level 2 has fraction answers (2/3 ÷ 3/4 = 8/9). Level 3 has mixed numbers on both sides and answers that need simplifying.
+- **Steps as built:**
+  - `fracDiv`: *More or less than 1?* (choice) → *Flip the divisor* → *Multiply* → *Simplest form*. Level 1 shows the common-denominator picture (3/4 as 6 eighths).
+  - `mixedDiv`: *Write as a fraction* (once, or twice at level 3 when both numbers are mixed) → *Flip the divisor* → *Multiply* → *Simplest form*.
+  - `fracInterp`: *Match the story* or *Match the equation* (choice) → *Solve* → *Simplest form*. Its quizzes keep the matching step, so interpreting is tested, not just computing.
+  - `fracWord`: *Pick the equation* → *Flip the divisor* → *Multiply* → *Simplest form*. Some level 2 and 3 stories ask "how much for one whole" (3/4 pound fills 2/5 of a tin).
+  - The simplest-form step is skipped when the answer was already in simplest form, as in station 2.
+- **Levels:** level 1 has whole-number answers with a unit divisor (3/4 ÷ 1/8 = 6). Level 2 has fraction answers already in lowest terms (they may still need writing as a mixed number). Level 3 has answers that need simplifying, and for `mixedDiv`, mixed numbers on both sides.
 
 ## Mix-ups to catch
 
