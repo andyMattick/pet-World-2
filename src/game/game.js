@@ -528,7 +528,7 @@ function columnHTML(a, b, op, byPoint){
   if (byPoint) {
     const [wa, fa = ''] = a.split('.'), [wb, fb = ''] = b.split('.');
     const W = Math.max(wa.length, wb.length), F = Math.max(fa.length, fb.length);
-    const cells = (w, f) => [...w.padStart(W, ' '), ...(F ? [f.length ? '.' : ' '] : []), ...f.padEnd(F, ' ')];
+    const cells = (w, f) => [...w.padStart(W, ' '), ...(F ? ['.'] : []), ...f.padEnd(F, '0')];   // trailing zeros fill the empty places (1.7 → 1.70)
     rows = [cells(wa, fa), cells(wb, fb)];
   } else {
     const L = Math.max(a.length, b.length);
