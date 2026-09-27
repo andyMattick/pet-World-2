@@ -71,6 +71,12 @@ need('src/game/game.js', 'Object.assign(GEN, BULK_GEN)', 'the Bulk Orders genera
 need('src/game/game.js', 'function longDivisionDec(', 'long division with a decimal point');
 need('src/shared/registry.ts', 'divDec3:', 'the divDec3 skill');
 need('src/shared/registry.ts', 'remainderNotDecimal:', 'the remainderNotDecimal mix-up');
+need('src/shared/registry.ts', 'export const NEIGHBORHOODS', 'the neighborhoods list');
+need('src/shared/registry.ts', "export const DEFAULT_HOME = 'g6'", 'the 6th grade default home (every older save is 6th grade)');
+{ const reg = read('src/shared/registry.ts'); for (const shop of ['cafe', 'bakery']) if (reg && !new RegExp(`id:'${shop}'[^\\n]*hood:'g6'`).test(reg)) problems.push(`src/shared/registry.ts: the ${shop} must stay in the 6th grade neighborhood (hood:'g6')`); }
+need('src/game/game.js', 'home:DEFAULT_HOME', 'the home grade in a fresh save');
+need('src/game/game.js', 'if (!validHood(s.home)) s.home = DEFAULT_HOME;', 'older saves defaulting to 6th grade');
+need('src/game/game.js', 'function hoodSwitchHTML(', 'the neighborhood switcher');
 need('src/shared/registry.ts', 'mixed:        {', 'the mixed-number drill type');
 need('src/game/game.js', 'const BOXES_GEN', 'the Boxing Treats generators');
 need('src/game/game.js', '  reciprocal:{', 'the reciprocal practice pop-up');
@@ -82,7 +88,7 @@ need('src/game/game.js', 'function ladderRight(', 'tap-to-answer rows in practic
 need('src/shared/registry.ts', 'story:        {', 'the word-problem drill type');
 need('src/game/game.js', 'function digitBoxesHTML(', 'the answer boxes under lined-up decimals');
 need('src/game/game.js', "input.setAttribute('inputmode', 'none')", 'typing on a real keyboard with the number pad showing');
-need('src/game/game.js', 'unitTestPassed(BUILDINGS[i - 1].id)', 'shops opening only after the unit test of the shop before');
+need('src/game/game.js', 'return unitTestPassed(prev.id);', 'shops opening only after the unit test of the shop before (in the same neighborhood)');
 const decSteps = game.match(/function decSteps\([\s\S]*?\n}/)?.[0] || '';
 if (decSteps && /lvl === 1 \|\|/.test(decSteps)) problems.push('src/game/game.js: decSteps still shows the line-up step at level 1 regardless of decimal places');
 

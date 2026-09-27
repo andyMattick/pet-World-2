@@ -251,16 +251,38 @@ export const REWARDS: Reward[] = [
       }))))
 ];
 
-export const BUILDINGS = [
-  {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', open:true},
-  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers', open:true},
-  {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages'},
-  {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations'},
-  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers'},
-  {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations'},
-  {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures'},
-  {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics'}
+/* Neighborhoods: one town per student, one neighborhood per grade or course (docs/NEIGHBORHOODS.md).
+   Progress is saved by shop and skill id, so adding a neighborhood never touches what's already saved. */
+export interface Neighborhood { id: string; name: string; emoji: string }
+export const NEIGHBORHOODS: Neighborhood[] = [
+  { id: 'g4', name: '4th grade', emoji: '🍋' },
+  { id: 'g6', name: '6th grade', emoji: '☕' }
 ];
+export const DEFAULT_HOME = 'g6';
+export interface Building { id: string; emoji: string; name: string; unit: string; hood: string; open?: boolean }
+export const BUILDINGS: Building[] = [
+  {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', hood:'g6', open:true},
+  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers', hood:'g6', open:true},
+  {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages', hood:'g6'},
+  {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations', hood:'g6'},
+  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers', hood:'g6'},
+  {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations', hood:'g6'},
+  {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures', hood:'g6'},
+  {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6'},
+  {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4'},
+  {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4'},
+  {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4'},
+  {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4'},
+  {id:'art',      emoji:'🎨', name:'Art Studio',     unit:'Geometry', hood:'g4'}
+];
+export const buildingsIn = (hood: string) => BUILDINGS.filter(b => b.hood === hood);
+export const hoodOf = (id: string) => BUILDINGS.find(b => b.id === id)?.hood || DEFAULT_HOME;
+/* the building before this one in its own neighborhood (null for the first, which is always open) */
+export function prevBuilding(id: string): Building | null { const b = BUILDINGS.find(x => x.id === id); if (!b) return null; const list = buildingsIn(b.hood), i = list.indexOf(b); return i > 0 ? list[i - 1] : null; }
+export function nextBuilding(id: string): Building | null { const b = BUILDINGS.find(x => x.id === id); if (!b) return null; const list = buildingsIn(b.hood), i = list.indexOf(b); return list[i + 1] || null; }
+/* neighborhoods with at least one built shop; the switcher and grade pickers appear once there are two */
+export const builtHoods = () => NEIGHBORHOODS.filter(n => BUILDINGS.some(b => b.hood === n.id && b.open));
+export const validHood = (id: unknown) => typeof id === 'string' && NEIGHBORHOODS.some(n => n.id === id);
 
 export interface Misconception { name: string; kid: string; tip: string; skills: string[] }
 export const MIS: Record<string, Misconception> = {

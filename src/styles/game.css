@@ -489,3 +489,13 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .mm-track b{margin-left:auto}
 .mm-vol{display:flex; flex-direction:column; gap:2px; margin-top:10px; font-weight:700}
 .mm-vol input{width:100%; min-height:44px; accent-color:var(--berry)}
+
+/* neighborhoods */
+.hood-switch{grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:4px}
+.hood-tab{font:inherit; font-weight:700; min-height:44px; padding:8px 16px; border-radius:999px; border:3px solid var(--edge); background:var(--surface); color:inherit; cursor:pointer}
+.hood-tab.active{background:var(--butter); color:#4A2E2A}
+.hood-tab small{font-weight:600; opacity:.75; margin-left:4px}
+#homeWrap{display:block; margin-top:10px}
+#homeWrap select{margin-top:4px}
+.book-trophies{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px}
+.book-trophy{background:var(--butter); color:#4A2E2A; border-radius:999px; padding:4px 12px; font-weight:700}

@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -36,7 +36,7 @@ const CUSTOMERS = [['🐻','Biscuit'],['🐶','Waffles'],['🐭','Pip'],['🐨',
 const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
-const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, sprintPick:['times'], bestStreak:0,
+const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
@@ -65,6 +65,7 @@ function normalize(raw){
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.sprintPick)) s.sprintPick = ['times'];
+  if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
@@ -144,18 +145,18 @@ let unlockQueue = [], unlockActive = null;
    in BUILDINGS order has its Unit Test passed or excused, or when the teacher opens it for the
    class (game_settings.openUnits), or in local mode with "Unlock every station". The café is always open. */
 function unitOpen(unit){
-  const i = BUILDINGS.findIndex(b => b.id === unit), building = BUILDINGS[i];
+  const building = BUILDINGS.find(b => b.id === unit), prev = prevBuilding(unit);
   if (!building || !building.open) return false;
-  if (i === 0) return true;
+  if (!prev) return true;                                    // the first shop of every neighborhood is open
   if (!Backend.me && S.unlockAll) return true;
   const classOpen = Backend.me?.game_settings?.openUnits;
   if (Array.isArray(classOpen) && classOpen.includes(unit)) return true;
-  return unitTestPassed(BUILDINGS[i - 1].id);
+  return unitTestPassed(prev.id);
 }
 /* what a locked building says: built ones name the unit test that opens them */
 function unitLockedText(building){
-  const i = BUILDINGS.findIndex(b => b.id === building.id);
-  return building.open && i > 0 ? `Pass the ${BUILDINGS[i - 1].name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`;
+  const prev = prevBuilding(building.id);
+  return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`;
 }
 function unitTestPassed(unit){
   const key = `${unit}:test`;
@@ -194,6 +195,10 @@ function checkSetCompletions({announce = false} = {}){
       S.completedSets.push(key); S.coins += 100; bonuses.push(`${building.name} Master +100`);
       if (announce) unlockQueue.push({kind:'set', id:key, unit:building.id, setKind:'all'});
     }
+  });
+  hoodTrophies().forEach(n => {
+    const key = `hood:${n.id}`;
+    if (!S.completedSets.includes(key)) { S.completedSets.push(key); S.coins += 200; bonuses.push(`${n.name} trophy +200`); if (announce) toast(`🏆 ${n.name} trophy! Every unit test passed. +200 🪙`); }
   });
   if (bonuses.length && !announce) toast('Set complete! ' + bonuses.join(', ') + ' 🪙');
   return bonuses.length;
@@ -1938,15 +1943,35 @@ async function unpackCode(code){
 const backupCode = () => packCode('PTS', JSON.stringify(S));
 
 /* ---------- name ---------- */
-function openName(){ $('#nameInput').value = S.name; updatePreview(); show('name'); setTimeout(() => $('#nameInput').focus(), 50); }
+function openName(){
+  $('#nameInput').value = S.name; updatePreview();
+  const hoods = builtHoods(), wrap = $('#homeWrap');                // local mode asks for the grade once there are two to pick from
+  wrap.hidden = hoods.length < 2 || !!Backend.me;
+  $('#homeSelect').innerHTML = hoods.map(n => `<option value="${n.id}" ${n.id === S.home ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('');
+  show('name'); setTimeout(() => $('#nameInput').focus(), 50);
+}
 function updatePreview(){ const v = $('#nameInput').value.trim(); $('#namePreview').textContent = v ? v + "'s Pet Town" : 'Your Pet Town'; }
 $('#nameInput').addEventListener('input', updatePreview);
 $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('#nameSave').click(); });
 $('#nameSave').addEventListener('click', () => {
   const v = $('#nameInput').value.trim().slice(0,20);
   if (!v) { toast('Type your name first'); $('#nameInput').focus(); return; }
-  S.name = v; save(); sfx('good'); show('home');
+  S.name = v; if (!$('#homeWrap').hidden && validHood($('#homeSelect').value)) { S.home = $('#homeSelect').value; viewHood = null; }
+  save(); sfx('good'); show('home');
 });
+
+/* ---------- neighborhoods ---------- */
+/* the class (or grown-up) sets the home grade; local mode uses the one picked when the town was named */
+function homeHood(){ const cls = Backend.me?.game_settings?.home; return validHood(cls) ? cls : S.home; }
+let viewHood = null;                                         // the neighborhood on screen; starts at home each visit
+const currentHood = () => viewHood && builtHoods().some(n => n.id === viewHood) ? viewHood : homeHood();
+function hoodSwitchHTML(){
+  const hoods = builtHoods(); if (hoods.length < 2) return '';
+  const home = homeHood(), sorted = [...hoods.filter(n => n.id === home), ...hoods.filter(n => n.id !== home)];
+  return `<div class="hood-switch" role="tablist" aria-label="Neighborhood">${sorted.map(n => `<button type="button" role="tab" class="hood-tab${n.id === currentHood() ? ' active' : ''}" aria-selected="${n.id === currentHood()}" data-hood="${n.id}">${n.emoji} ${esc(n.name)}${n.id === home ? ' <small>home</small>' : ''}</button>`).join('')}</div>`;
+}
+/* a grade trophy for the Sticker Book once every unit test in a neighborhood is passed */
+function hoodTrophies(){ return NEIGHBORHOODS.filter(n => { const list = buildingsIn(n.id); return list.length && list.every(b => b.open && unitTestPassed(b.id)); }); }
 
 /* ---------- town ---------- */
 function renderHome(){
@@ -1959,15 +1984,15 @@ function renderHome(){
   $('#displayCaseWrap').innerHTML = `<div class="display-case"><button type="button" class="helper-box" data-case-pet aria-label="Choose helper pet"><span class="helper-box-emoji">${helper.emoji}</span><strong>My helper</strong><small>${esc(helper.name)}</small></button><div class="case-main"><div class="display-shelves">${slots}</div></div></div><button type="button" class="display-progress" data-open="book">📒 Sticker Book: ${stickerCount} of ${REWARDS.length} stickers</button>`;
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
-  let h = '';
-  BUILDINGS.forEach(b => {
+  let h = hoodSwitchHTML();
+  buildingsIn(currentHood()).forEach(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
     const open = unitOpen(b.id);
     const stickers = open ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
     const progress = open ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
     h += open
       ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}</button>`
-      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${BUILDINGS[BUILDINGS.indexOf(b) - 1]?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
+      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
   });
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
@@ -2000,6 +2025,7 @@ $('#displayPickerOptions').addEventListener('click', e => {
 });
 $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
 $('#town').addEventListener('click', e => {
+  const hood = e.target.closest('[data-hood]'); if (hood) { viewHood = hood.dataset.hood; sfx('tick'); renderHome(); const t = $(`#town [data-hood="${viewHood}"]`); if (t) t.focus(); return; }
   const b = e.target.closest('[data-open]'); if (!b) return;
   const id = b.dataset.open;
   if (SHOPS[id] && unitOpen(id)) {
@@ -2377,7 +2403,7 @@ function finishAssessment(){
   const payout = result.passed ? (finished.mode === 'test' ? 150 : 50) : 10;
   if (finished.mode === 'test' && result.passed) checkUnlocks({announce:true});
   if (finished.mode === 'test' && result.passed) {
-    const next = BUILDINGS[BUILDINGS.findIndex(b => b.id === shop) + 1];
+    const next = nextBuilding(shop);
     if (next && unitOpen(next.id)) setTimeout(() => toast(`${next.emoji} The ${next.name} is open!`), 900);
   }
   S.coins += payout; save(); updateHeader();
@@ -3155,11 +3181,13 @@ function renderBook(unit){
     const set = rewards.filter(reward => reward.kind === kind), count = set.filter(owns).length, complete = count === set.length;
     return `<section class="book-row${complete ? ' complete' : ''}"><div class="book-row-head"><h3>${label}</h3><span>${count} of ${set.length}</span>${complete ? '<strong class="book-complete">✓ Complete!</strong>' : ''}</div><div class="book-grid">${set.map(box).join('')}</div></section>`;
   };
-  const tabs = BUILDINGS.map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
+  const bookHoods = new Set(builtHoods().map(n => n.id));
+  const tabs = BUILDINGS.filter(b => bookHoods.has(b.hood)).map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
   const pageComplete = rewards.length && rewards.every(owns);
   const masterStamp = pageComplete || unitTestPassed(building.id);
   const pageClass = `${!unitOpen(building.id) ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
-  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div><div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!unitOpen(building.id) ? `<div class="book-soon-banner">${esc(unitLockedText(building))}</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
+  const trophies = NEIGHBORHOODS.filter(n => S.completedSets.includes(`hood:${n.id}`)).map(n => `<span class="book-trophy">🏆 ${esc(n.name)}</span>`).join('');
+  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div>${trophies ? `<div class="book-trophies">${trophies}</div>` : ''}<div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!unitOpen(building.id) ? `<div class="book-soon-banner">${esc(unitLockedText(building))}</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
   const seen = rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id);
   if (seen.length) { S.seenCollection.push(...seen); save(); }
 }

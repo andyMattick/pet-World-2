@@ -1,7 +1,7 @@
 /* Teacher app: sign in, manage classes and rosters, print PIN cards, live class dashboard. */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
-import { BUILDINGS, DRILLS, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
+import { BUILDINGS, DRILLS, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, esc, type StudentReport } from './report';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; created_at: string }
@@ -234,7 +234,8 @@ function renderSettings() {
       <label for="cStation">Unlock the café through</label>
       <select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>
       <p class="muted">Later stations still open on their own after 6 orders at the one before.</p>
-      ${BUILDINGS.slice(1).filter(b => b.open).map(b => { const prev = BUILDINGS[BUILDINGS.indexOf(b) - 1]; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}
+      ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
+      ${BUILDINGS.filter(b => b.open && prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>
@@ -274,7 +275,8 @@ function renderSettings() {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
     const openUnits = [...pane.querySelectorAll<HTMLInputElement>('[data-open-unit]')].filter(input => input.checked).map(input => input.dataset.openUnit!);
     const allowMusic = ($('#allowMusic') as HTMLInputElement).checked;
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic };
+    const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
