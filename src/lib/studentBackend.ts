@@ -119,12 +119,15 @@ class StudentBackend {
     const batch = this.queue.slice(0, 200);
     const byTable = new Map<Table, Record<string, unknown>[]>();
     batch.forEach(q => { const list = byTable.get(q.table) || []; list.push(q.row); byTable.set(q.table, list); });
-    let ok = true;
+    const retryTables = new Set<Table>();
     for (const [table, rows] of byTable) {
       const { error } = await this.sb.from(table).insert(rows);
-      if (error) { ok = false; break; }
+      // A Postgres error code means Supabase rejected the data; drop it and move on.
+      // No code (a network/fetch failure) means try again later.
+      if (error && !error.code) retryTables.add(table);
     }
-    if (ok) { this.queue.splice(0, batch.length); this.persistQueue(); }
+    this.queue = [...batch.filter(q => retryTables.has(q.table)), ...this.queue.slice(batch.length)];
+    this.persistQueue();
     this.flushing = false;
   }
 
