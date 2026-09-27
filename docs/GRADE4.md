@@ -4,16 +4,28 @@
 
 ## Goal
 
-A 4th grade version of Pet Town, first for a student at home, with the same class features (class code and PIN, teacher dashboard, quizzes, practice time, music). It follows the **Sadlier *Progress Mathematics* Grade 4** workbook in chapter order, with a Khan Academy 4th grade practice link for every skill.
+A 4th grade version of Pet Town, first for a student at home (in a family account, below), with the same class features (class code and PIN, teacher dashboard, quizzes, practice time, music). It follows the **Sadlier *Progress Mathematics* Grade 4** workbook in chapter order, with a Khan Academy 4th grade practice link for every skill.
 
 It uses the **same game engine** as the 6th grade town: shops, stations, step-by-step orders, mix-ups, drills, quizzes, and rewards. Only the content is new.
 
-## Owner decisions needed before building
+## Owner decisions
 
-1. **Confirm the workbook.** This plan uses Sadlier *Progress Mathematics* Grade 4 (36 lessons in 5 units, below). If it's the older *Progress in Mathematics* textbook, the chapter order is different, and the shop map needs redoing.
-2. **Shop names and themes.** The names below are placeholders.
-3. **At home or in a class?** At home works in local mode with no setup. A class needs a teacher to create a 4th grade class (step G4-0).
-4. **Reading level.** Should read-aloud be on by default for 4th graders?
+1. **Workbook: not confirmed yet.** This plan uses Sadlier *Progress Mathematics* Grade 4 (36 lessons in 5 units, below). The owner checks the lesson titles against the workbook later. The Lemonade Stand (lessons 1 to 5) is built first and doesn't depend on the uncertain lessons.
+2. **Shop names:** the names below are final.
+3. **Home, with class features:** the at-home student gets the class features (saves, dashboard, quizzes) through a **family account** (see below).
+4. **Read-aloud:** off by default. Students turn it on themselves.
+5. **Order:** the Bakery (stations 2 to 5) is finished first, then 4th grade starts with G4-0 and the Lemonade Stand.
+
+## Family accounts (part of step G4-0)
+
+Lets a student play at home without a teacher's class:
+
+- A grown-up signs up in the teacher app with email, the same as a teacher, and picks **Family** instead of **Class**. It asks for the grade (4th or 6th).
+- That makes a private family code. The kids join with the family code, their name, and a PIN, exactly like a class, so saves, quizzes, practice time, and the dashboard all work unchanged.
+- The grown-up sees the same dashboard, with family wording ("Your kids" instead of "Class").
+- A grown-up sets it up, not the child, which keeps it right for kids under 13.
+- Database: a `kind` of `'class'` or `'family'` (`'class'` by default) can live in `classes.game_settings`, so no new table is needed. If a new column turns out to be cleaner, it goes in a **new** migration file.
+- A family can have both a 4th grader and a 6th grader, so the course is chosen **per student** in a family (in a class it's per class).
 
 ## Sadlier units → shops
 
@@ -87,6 +99,7 @@ The 6th grade town is built as "one town, many shops". A 4th grade town needs a 
 - **Courses in the registry:** `COURSES = { g6: { name: '6th grade', shops: ['cafe', 'bakery', …] }, g4: { name: '4th grade', shops: ['lemonade', 'toys', …] } }`. `BUILDINGS`, `SHOPS`, and rewards are grouped by course.
 - **Which course a town follows:**
   - Class: `classes.game_settings.course` (`'g6'` by default), set by the teacher when creating the class. This needs no database change, because `game_settings` is already there.
+  - Family: set per student when the grown-up adds a kid (stored with the student's settings).
   - Local mode: the grown-ups pick 4th or 6th grade when naming the town.
   - Saved as `S.course`. Old saves are `'g6'`.
 - **The town screen, Sticker Book, unit tests, and shop-opening rule** read the course's shops instead of all shops. "Opens after the unit test of the shop before" uses the course's order.
@@ -109,7 +122,7 @@ Each is built inside the station plan that first needs it, the same way the Bake
 
 | Plan | What |
 |---|---|
-| `GRADE4-0-COURSES.md` | Courses in the engine, course choice for classes and local towns, dashboard tabs |
+| `GRADE4-0-COURSES.md` | Courses in the engine, course choice for classes, families, and local towns, family accounts, dashboard tabs |
 | `GRADE4-1-LEMONADE.md` | Lemonade Stand, 4 stations, and its reward set |
 | `GRADE4-2-TOYS.md` | Toy Shop, 4 stations |
 | `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations (after the Bakery's fraction answers exist) |

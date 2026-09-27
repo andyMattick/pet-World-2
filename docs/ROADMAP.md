@@ -34,11 +34,11 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
 | 1 | **Bakery stations 2 to 5** | `BAKERY-2-PANS.md` · `BAKERY-3-BOXES.md` · `BAKERY-4-REGISTER.md` · `BAKERY-5-BULK.md` (draft plans) | The Scale | large |
-| 2 | **4th grade version** (follows the Sadlier workbook, with Khan links, same class features) | `GRADE4.md` (draft plan) | nothing (can go before or after the Bakery) | large |
+| 2 | **4th grade version** (follows the Sadlier workbook, with Khan links, same class features, and family accounts for home) | `GRADE4.md` (draft plan) | the Bakery | large |
 
 Draft plans have the skills, steps, mix-ups, drills, and build steps. Before each one is built, its generator code gets written and stress-tested and pasted into the plan, like `BAKERY-1-SCALE.md`.
 
-**Owner decisions still open:** mixed-number answers in the Bakery (`BAKERY-2-PANS.md`), and for 4th grade: confirm the workbook and lesson titles, shop names, at home or in a class, read-aloud default (`GRADE4.md`).
+**Owner decisions made:** the Bakery comes first; mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a family account; read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
 
 ### Checklist
 
@@ -46,8 +46,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [ ] 1b. Bakery station 3, Boxing Treats, with the reciprocal and simplify drills
 - [ ] 1c. Bakery station 4, The Register, with the long-division layout
 - [ ] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
-- [ ] 2a. 4th grade: owner decisions (workbook, shop names, home or class)
-- [ ] 2b. 4th grade: courses in the engine (`GRADE4-0-COURSES.md`, to be written)
+- [x] 2a. 4th grade: owner decisions (shop names, family accounts, read-aloud off), except checking lesson titles against the workbook
+- [ ] 2b. 4th grade: courses in the engine and family accounts (`GRADE4-0-COURSES.md`, to be written)
 - [ ] 2c. 4th grade: one shop at a time, Lemonade Stand first
 
 ## Database files, in the order they were run

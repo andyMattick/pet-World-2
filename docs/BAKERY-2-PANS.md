@@ -27,7 +27,8 @@ Khan links are in `BAKERY.md`.
 The first station that needs them, so this plan builds them for the whole Bakery:
 
 - A new step kind, `frac`: a small whole-number box, a numerator box, and a denominator box, drawn as a real fraction bar. The whole-number box shows only when the answer can be a mixed number.
-- Accepted answers: any **equivalent** fraction or mixed number counts as right for the arithmetic step (`6/8` = `3/4`). The simplest-form step afterwards checks form.
+- Accepted answers: any **equivalent** fraction or mixed number counts as right for the arithmetic step (`6/8` = `3/4`, `15/2` = `7 1/2`). The simplest-form step afterwards checks form.
+- **Mixed numbers are required** in simplest form when the answer is more than 1 (owner decision): `15/2` is right for the arithmetic step, and the simplest-form step then asks for `7 1/2`.
 - On phones, the boxes use the phone's number keyboard (`inputmode="numeric"`), like the café.
 - It has to work in the quiz's answer-only mode (`answerStepsFor`) and in the dashboard's step names.
 - The fraction math uses whole numbers only (numerator and denominator), never decimals, so nothing rounds.
@@ -64,10 +65,10 @@ Unchanged: the station 2 Bakery rewards in `REWARDS.md` unlock when this station
 
 1. Station 2 opens after the Scale quiz is passed (or 6 orders when quizzes aren't required).
 2. Every problem's answer matches an independent calculation, at all 3 levels.
-3. `3/4`, `6/8`, and `0 3/4` are all accepted where the answer is 3/4. The simplest-form step then asks for `3/4`.
+3. `3/4`, `6/8`, and `0 3/4` are all accepted where the answer is 3/4. The simplest-form step then asks for `3/4`. Where the answer is 7 1/2, `15/2` is accepted first, and the simplest-form step asks for `7 1/2`.
 4. Each mix-up gets its message, and none fires on a right answer.
 5. Works at iPhone SE size, in quizzes (answer only), and on the dashboard's 🥐 tab.
 
-## Open questions for the owner
+## Owner decisions
 
-- Should mixed-number answers be *required* when the answer is over 1 (Khan accepts improper fractions), or just accepted?
+- Mixed numbers are required in simplest form when the answer is more than 1.
