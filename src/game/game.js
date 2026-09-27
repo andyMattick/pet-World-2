@@ -545,6 +545,34 @@ function estimateOptions(a, b, op){
     {html:`about ${DEC.fmt(est * 100)}`, text:`about ${DEC.fmt(est * 100)}`, ok:false, mis:'estimateOff'}
   ]);
 }
+/* one answer box per column, under the lined-up problem (step kind 'digits') */
+function digitLayout(a, b, op, exactK){
+  const [wa, fa = ''] = a.split('.'), [wb, fb = ''] = b.split('.');
+  const F = Math.max(fa.length, fb.length), W = Math.max(wa.length, wb.length) + (op === '+' ? 1 : 0);
+  const [wr, fr = ''] = DEC.fmt(exactK).split('.');
+  return {a, b, op, F, W, top:[wa.padStart(W, ' '), fa.padEnd(F, '0')], bot:[wb.padStart(W, ' '), fb.padEnd(F, '0')],
+    ans:[wr.padStart(W, ' '), fr.padEnd(F, '0')]};
+}
+const INT_PLACES = ['ones', 'tens', 'hundreds', 'thousands'];
+function digitBoxesHTML(d){
+  const cell = ch => `<td>${ch === ' ' ? '' : esc(ch)}</td>`;
+  const row = ([w, f]) => [...w].map(cell).join('') + (d.F ? '<td>.</td>' + [...f].map(cell).join('') : '');
+  const boxes = (cls, extra) => { let h = '';
+    for (let i = 0; i < d.W; i++) h += `<td><input class="${cls}" data-p="i${d.W - 1 - i}" ${extra} aria-label="${cls === 'dig' ? INT_PLACES[d.W - 1 - i] || 'digit' : 'carry'}"></td>`;
+    if (d.F) { h += `<td>${cls === 'dig' ? '.' : ''}</td>`; for (let i = 0; i < d.F; i++) h += `<td><input class="${cls}" data-p="f${i}" ${extra} aria-label="${cls === 'dig' ? PLACE_NAMES[i + 1] : 'carry'}"></td>`; }
+    return h; };
+  return `<table class="colmath digits"><tr class="carry-row"><td></td>${boxes('carry', 'tabindex="-1" maxlength="2" inputmode="numeric" autocomplete="off"')}</tr>
+    <tr><td></td>${row(d.top)}</tr><tr class="opline"><td>${d.op === '+' ? '+' : '−'}</td>${row(d.bot)}</tr>
+    <tr><td></td>${boxes('dig', 'maxlength="1" inputmode="numeric" autocomplete="off"')}</tr></table>
+    <div class="frac-tip">Fill the answer from the right. The small boxes on top are for carrying or borrowing, if you want them.</div>`;
+}
+/* columns that don't match the right answer, rightmost first */
+function wrongDigitCols(d){
+  const want = {}; [...d.ans[0]].forEach((c, i) => { want['i' + (d.W - 1 - i)] = c; }); [...d.ans[1]].forEach((c, i) => { want['f' + i] = c; });
+  return $$('#stepInput input.dig').filter(inp => { const w = want[inp.dataset.p], v = inp.value;
+    return w === ' ' ? !(v === '' || v === '0') : v !== w; }).reverse();
+}
+const placeOf = p => p[0] === 'i' ? INT_PLACES[+p.slice(1)] || 'left' : PLACE_NAMES[+p.slice(1) + 1];
 function decSteps(a, b, op, lvl, withEstimate){
   const ka = DEC.k(a), kb = DEC.k(b), exact = op === '+' ? ka + kb : ka - kb;
   const wrongRA = rightAlignK(a, b, op);
@@ -562,7 +590,7 @@ function decSteps(a, b, op, lvl, withEstimate){
     hint:() => 'The decimal points must make one straight column.'});
   steps.push({name:op === '+' ? 'Add' : 'Subtract', type:'compute', kind:'num', prompt:`${a} ${op === '+' ? '+' : '−'} ${b} = ?`,
     answer:DEC.fmt(exact), eq:DEC.eq(exact), drill:lineUp, slowOK:true,           // slow is fine here: they may work it on paper
-    work:columnHTML(a, b, op, true),
+    kind:'digits', dig:digitLayout(a, b, op, exact),
     mis:v => { if (typeof v !== 'number') return null; const k = Math.round(v * 1000);
       if (k === wrongRA && wrongRA !== exact) return 'rightAlign';
       if (k === wrongCol && wrongCol !== exact) return op === '+' ? 'noRegroup' : 'smallerFromLarger';
@@ -1044,18 +1072,19 @@ function panHTML(b, a, e){
 function cupsHTML(n, a, b, e){
   return `<div class="cups" aria-label="${n} cups, each cut into ${b} equal parts">${Array.from({length:n}, () => `<span class="cup">${'<i></i>'.repeat(b)}</span>`).join('')}</div><div class="cups-note">${e} 1 serving = ${FRAC.txt(a, b)} cup</div>`;
 }
-function fracIdeaSteps(sharing, eqs){
+/* whole, part, then the problem. wp: [right whole/part, wrong whole/part]; eqs: [text, ok, mis, sameAs?] */
+function fracIdeaSteps(wp, eqs){
   return [
-    {name:'What are we doing?', type:'concept', kind:'choice', prompt:'Are we sharing into equal groups, or finding how many fit?', drill:{type:'story', key:'divide'},
-      options:shuffle([
-        {html:'Sharing it equally', text:'sharing', ok:sharing, mis:sharing ? null : 'reversedDivision'},
-        {html:'Finding how many fit', text:'how many fit', ok:!sharing, mis:sharing ? 'reversedDivision' : null}]),
-      hint:() => sharing ? 'Friends are splitting one amount. That is sharing.' : 'We keep taking out one serving at a time. How many servings fit?'},
+    {name:'Whole and part', type:'concept', kind:'choice', prompt:"What's the whole, and what's the part?", drill:{type:'story', key:'divide'},
+      options:shuffle([{html:wp[0], text:wp[0], ok:true, mis:null}, {html:wp[1], text:wp[1], ok:false, mis:'reversedDivision'}]),
+      hint:() => 'The whole is everything we start with. The part is one share, one serving, or the number of equal parts.'},
     {name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?', drill:{type:'story', key:'divide'},
-      options:shuffle(eqs.map(([t, ok, mis]) => ({html:t, text:t, ok, mis}))),
-      hint:() => 'Start with the amount you have, then divide by the size of each share or serving.'}
+      options:shuffle(eqs.map(([t, ok, mis, same]) => ({html:t, text:same ? `${t} (same as ${same})` : t, ok, mis}))),
+      hint:() => 'Whole ÷ part: divide the whole by the size of one part, or by the number of parts.'}
   ];
 }
+/* a ÷ c/d written as multiplying by the flip */
+const flipText = (a, c, d) => `${a} × ${c === 1 ? d : `${d}/${c}`}`;
 const PAN_TREATS = [['🍫','brownies'],['🥧','pie'],['🍰','cake'],['🍞','cornbread'],['🍪','cookie bars'],['🧁','crumb cake']];
 const BATTERS = [['🧁','muffin','batter'],['🥞','pancake','batter'],['🍰','cake','frosting'],['🍪','cookie','dough']];
 const PANS_GEN = {
@@ -1071,7 +1100,8 @@ const PANS_GEN = {
       break;
     }
     const [e, n] = pick(PAN_TREATS), p = a, q = b * k, fr = FRAC.txt(a, b);
-    const steps = fracIdeaSteps(true, [[`${fr} ÷ ${k}`, true, null], [`${k} ÷ ${fr}`, false, 'reversedDivision'], [`${fr} × ${k}`, false, 'divAsMult']]);
+    const steps = fracIdeaSteps([`Whole: ${fr} of a pan. It's split into ${k} equal parts, one for each friend.`, `Whole: ${k} pans. Each part is ${fr} of a pan.`],
+      [[`${fr} ÷ ${k}`, true, null, `${fr} × 1/${k}`], [`${k} ÷ ${fr}`, false, 'reversedDivision'], [`${fr} × ${k}`, false, 'divAsMult']]);
     steps.push({name:'Divide', type:'compute', kind:'frac', prompt:`${fr} ÷ ${k} = ?`, answer:FRAC.simplest(p, q),
       eq:v => FRAC.same(v, p, q), fact:{x:b, y:k},
       mis:v => fracMis(v, p, q, [['divAsMult', a * k, b], ['reversedDivision', b * k, a]]),
@@ -1094,7 +1124,8 @@ const PANS_GEN = {
       break;
     }
     const [e, thing, stuff] = pick(BATTERS), p = N * b, q = a, fr = FRAC.txt(a, b);
-    const steps = fracIdeaSteps(false, [[`${N} ÷ ${fr}`, true, null], [`${fr} ÷ ${N}`, false, 'reversedDivision'], [`${N} × ${fr}`, false, 'divAsMult']]);
+    const steps = fracIdeaSteps([`Whole: ${N} cups of ${stuff}. Part: one ${thing} uses ${fr} cup.`, `Whole: ${fr} cup of ${stuff}. It's split into ${N} equal parts.`],
+      [[`${N} ÷ ${fr}`, true, null, flipText(N, a, b)], [`${fr} ÷ ${N}`, false, 'reversedDivision'], [`${N} × ${fr}`, false, 'divAsMult']]);
     steps.push({name:'Divide', type:'compute', kind:'frac', prompt:`${N} ÷ ${fr} = ?`, answer:FRAC.simplest(p, q),
       eq:v => FRAC.same(v, p, q), fact:{x:N, y:b},
       mis:v => fracMis(v, p, q, [['divAsMult', N * a, b], ['denomOnly', N * b, 1], ['numerOnly', N, a], ['reversedDivision', a, N * b]]),
@@ -1207,9 +1238,9 @@ const BOXES_GEN = {
     const storyFirst = Math.random() < 0.5;
     const pickStep = storyFirst
       ? {name:'Match the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?', drill:{type:'story', key:'divide'},
-          options:shuffle([{html:eq, text:eq, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
+          options:shuffle([{html:eq, text:`${eq} (same as ${flipText(`${a}/${b}`, c, d)})`, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
                            {html:`${a}/${b} × ${c}/${d}`, text:`${a}/${b} × ${c}/${d}`, ok:false, mis:'divAsMult'}]),
-          hint:() => 'Start with the amount you have. Divide by the size of one box.'}
+          hint:() => 'Whole: the amount you have. Part: one box. Whole ÷ part.'}
       : {name:'Match the story', type:'concept', kind:'choice', prompt:`Which story matches ${eq}?`, drill:{type:'story', key:'divide'},
           options:shuffle([{html:S.how, text:'how many boxes fit', ok:true, mis:null}, {html:S.rev, text:'the numbers swapped', ok:false, mis:'reversedDivision'},
                            {html:S.of, text:'a fraction of an amount', ok:false, mis:'divAsMult'}]),
@@ -1229,9 +1260,9 @@ const BOXES_GEN = {
       : `We have ${a}/${b} ${unit} of ${what}. Each bag holds ${c}/${d} ${unit}. How many bags can we fill?${P % Q ? ' (Part of a bag counts too.)' : ''}`;
     const eq = `${a}/${b} ÷ ${c}/${d}`;
     const steps = [{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?', drill:{type:'story', key:'divide'},
-        options:shuffle([{html:eq, text:eq, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
+        options:shuffle([{html:eq, text:`${eq} (same as ${flipText(`${a}/${b}`, c, d)})`, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
                          {html:`${a}/${b} × ${c}/${d}`, text:`${a}/${b} × ${c}/${d}`, ok:false, mis:'divAsMult'}]),
-        hint:() => perWhole ? `${a}/${b} is only ${c}/${d} of the tin. Divide by ${c}/${d} to find the whole.` : 'Start with how much we have. Divide by the size of one bag.'},
+        hint:() => perWhole ? `The whole tin is what we want. We know a part: ${a}/${b} pound is ${c}/${d} of it. Divide by ${c}/${d}.` : 'Whole: how much we have. Part: one bag. Whole ÷ part.'},
       flipStep(c, d, a, b), flipMultiplyStep(a, b, c, d), fracSimplestStep(P, Q)];
     return {title:'Boxing Treats', ctx:eq, bubble, helper:'Find the equation first, then keep, change, flip.',
       visual:`<div style="text-align:center; font-size:1.8rem">${e}</div>`, steps};
@@ -1746,7 +1777,7 @@ function numberPad(input, onSubmit, {decimal = false} = {}){
   if (!matchMedia('(pointer: coarse)').matches) return null;
   const existing = input.nextElementSibling;
   if (existing?.classList.contains('number-pad')) { existing.hidden = false; return existing; }
-  input.readOnly = true;
+  input.setAttribute('inputmode', 'none');            // no phone keyboard over the pad, but a real keyboard still types
   const pad = document.createElement('div'); pad.className = 'number-pad'; pad.setAttribute('aria-label', 'Number pad');
   const keys = ['7','8','9','4','5','6','1','2','3','⌫','0']; if (decimal) keys.push('.'); keys.push('✓');
   keys.forEach(key => {
@@ -1780,12 +1811,26 @@ function activateStep(i){
     wireNum($('#curB'), checkCurrent);
     setTimeout(() => $('#curA').focus(), 40);
   } else if (st.kind === 'choice') {
-    box.innerHTML = `<div class="opts">${st.options.map((o,k) => `<button class="opt" data-k="${k}">${o.html}</button>`).join('')}</div>`;
+    box.innerHTML = `<div class="opts">${st.options.map((o,k) => `<button class="opt" data-k="${k}"><span class="okey" aria-hidden="true">${k + 1}</span>${o.html}</button>`).join('')}</div>`;
     box.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => { if (!b.disabled) submit(+b.dataset.k); }));
     setTimeout(() => { const f = box.querySelector('.opt'); if (f) f.focus(); }, 40);
   } else if (st.kind === 'grid') {
     box.innerHTML = `<span style="font-size:1.1rem">Or type it: (</span>${numInput('gx','x')}<span>,</span>${numInput('gy','y')}<span>)</span>`;
     wireNum($('#gx'), () => $('#gy').focus()); wireNum($('#gy'), checkCurrent);
+  } else if (st.kind === 'digits') {
+    box.innerHTML = digitBoxesHTML(st.dig);
+    const digs = $$('#stepInput input.dig'), move = (inp, dir) => { const k = digs.indexOf(inp) + dir; if (digs[k]) { digs[k].focus(); digs[k].select(); } };
+    digs.forEach(inp => {
+      inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, '').slice(-1); inp.classList.remove('wrong'); if (inp.value) move(inp, -1); });
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); checkCurrent(); }
+        else if (e.key === 'Backspace' && !inp.value) { e.preventDefault(); move(inp, 1); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); move(inp, -1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); move(inp, 1); }
+      });
+    });
+    $$('#stepInput input.carry').forEach(inp => inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, ''); }));
+    setTimeout(() => digs[digs.length - 1].focus(), 40);
   } else if (st.kind === 'frac') {
     const fin = (id, label) => `<input class="cell sm" id="${id}" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="${label}">`;
     box.innerHTML = `<span class="fracin">${fin('fracW','whole number (leave empty if none)')}<span class="fstack">${fin('fracN','top number')}<span class="fbar"></span>${fin('fracD','bottom number')}</span></span><span class="frac-tip">Whole number box: fill only if you need it.</span>`;
@@ -1803,6 +1848,12 @@ function readCurrent(st){
   if (st.kind === 'num') return num('#cur');
   if (st.kind === 'ratio') { const a = num('#curA'), b = num('#curB'); return (a === null || b === null) ? null : [a, b]; }
   if (st.kind === 'grid') { const x = num('#gx'), y = num('#gy'); return (x === null || y === null) ? null : [x, y]; }
+  if (st.kind === 'digits') {
+    const val = p => ($(`#stepInput input.dig[data-p="${p}"]`) || {}).value || '';
+    let w = ''; for (let i = st.dig.W - 1; i >= 0; i--) { const c = val('i' + i); if (!c && w) return null; w += c; }
+    let f = ''; for (let i = 0; i < st.dig.F; i++) { const c = val('f' + i); if (!c) return null; f += c; }
+    return Number(`${w || '0'}${f ? '.' + f : ''}`);
+  }
   if (st.kind === 'frac') {
     const w = num('#fracW'), n = num('#fracN'), d = num('#fracD');
     if (n === null && d === null) return w === null ? null : [w, 0, 1];
@@ -1813,7 +1864,7 @@ function readCurrent(st){
 function checkCurrent(){
   if (!order || order.done || pr) return;
   const st = order.p.steps[order.i], v = readCurrent(st);
-  if (v === null) { const f = $('#cur') || $('#curA') || $('#gx') || ['#fracN', '#fracD'].map(id => $(id)).find(el => el && !el.value); if (f) f.focus(); return; }
+  if (v === null) { const f = $('#cur') || $('#curA') || $('#gx') || ['#fracN', '#fracD'].map(id => $(id)).find(el => el && !el.value) || $$('#stepInput input.dig').reverse().find(el => !el.value); if (f) f.focus(); return; }
   submit(v);
 }
 const fmtV = (v, st) => st.kind === 'frac' ? FRAC.fmt(v) : st.kind === 'choice' ? (st.options[v] ? st.options[v].text : '?') : Array.isArray(v) ? (st.kind === 'grid' ? `(${v[0]}, ${v[1]})` : `${v[0]}:${v[1]}`) : String(v);
@@ -1968,6 +2019,11 @@ function stepWrong(st, v, misId){
   order.tries++; S.streak = 0;
   const note = $('#chalkNote'); note.className = 'chalk-note oops';
   note.textContent = (misId && MIS[misId]) ? MIS[misId].kid : 'Not quite. Try again, or tap Hint.';
+  if (st.kind === 'digits') {
+    const bad = wrongDigitCols(st.dig);
+    bad.forEach(inp => { inp.classList.remove('wrong'); void inp.offsetWidth; inp.classList.add('wrong'); });
+    if (bad.length) note.textContent += ` Check the ${placeOf(bad[0].dataset.p)} column.`;
+  }
   if (st.kind === 'choice') { const b = $$('#stepInput .opt')[v]; if (b) { b.disabled = true; b.classList.add('no'); } }
   else if (st.kind === 'grid') plotDot(v, 'gbad');
   $$('#board input.cell').forEach(inp => { inp.classList.remove('wrong'); void inp.offsetWidth; inp.classList.add('wrong'); });
@@ -1975,7 +2031,7 @@ function stepWrong(st, v, misId){
 }
 function refocus(st){
   if (st.kind === 'choice') { const b = $$('#stepInput .opt').find(x => !x.disabled); if (b) b.focus(); return; }
-  const el = $('#cur') || $('#curA') || $('#gx') || $('#fracN'); if (el) { el.focus(); if (el.select) el.select(); }
+  const el = $('#cur') || $('#curA') || $('#gx') || $('#fracN') || $('#stepInput input.dig.wrong') || $$('#stepInput input.dig').pop(); if (el) { el.focus(); if (el.select) el.select(); }
 }
 /* next step to show; a step with skipIf is passed over when the step before already did its job */
 function nextStepIndex(quiet){
@@ -2243,7 +2299,7 @@ const DRILL_IMPL = {
 /* short stories for the story drill; each row: {label, options, answer (index), tip} */
 function storyRows(kind, n){
   const rows = [];
-  const add = (label, right, wrongs, tip) => { const opts = shuffle([right, ...wrongs]); rows.push({label, options:opts, answer:String(opts.indexOf(right)), tip}); };
+  const add = (label, right, wrongs, tip, also) => { const opts = shuffle([right, ...wrongs]); rows.push({label, options:opts, answer:String(opts.indexOf(right)), tip, also}); };
   const makers = kind === 'addSub' ? [
     () => { const a = randDec(2, 15, 2), b = randDec(1, 9, 2); add(`Ana has $${a}. She earns $${b} more. How much does she have now?`, `${a} + ${b}`, [`${a} − ${b}`], 'Earning more puts money together.'); },
     () => { const b = randDec(1, 4, 1), a = randDec(5, 12, 2); add(`A ribbon is ${a} m long. We cut off ${b} m. How much is left?`, `${a} − ${b}`, [`${a} + ${b}`, `${b} − ${a}`], 'Cutting off takes away. Start with the whole ribbon.'); },
@@ -2252,11 +2308,11 @@ function storyRows(kind, n){
     () => { const a = randDec(3, 9, 1), b = randDec(1, 2, 2); add(`A jug holds ${a} L of lemonade. We pour out ${b} L. How much is still in the jug?`, `${a} − ${b}`, [`${a} + ${b}`], 'Pouring out takes away.'); },
     () => { const a = randDec(1, 5, 1), b = randDec(1, 5, 2); add(`Sam walks ${a} km to the park and then ${b} km to the bakery. How far does he walk?`, `${a} + ${b}`, [`${a} − ${b}`], 'Two trips put together make the whole walk.'); }
   ] : [
-    () => { const [a, b] = properFrac(2, 6), d = b * rand(2, 3); add(`We have ${a}/${b} pound of fudge. Each box holds 1/${d} pound. How many boxes can we fill?`, `${a}/${b} ÷ 1/${d}`, [`1/${d} ÷ ${a}/${b}`, `${a}/${b} × 1/${d}`], 'How many boxes fit: start with the fudge, divide by one box.'); },
-    () => { const [a, b] = properFrac(2, 6), k = rand(2, 5); add(`${a}/${b} of a pan of brownies is shared equally by ${k} friends. How much of the pan does each friend get?`, `${a}/${b} ÷ ${k}`, [`${k} ÷ ${a}/${b}`, `${a}/${b} × ${k}`], 'Sharing splits the amount you have into equal parts.'); },
-    () => { const [a, b] = properFrac(2, 5), N = rand(2, 6); add(`We have ${N} cups of batter. Each muffin uses ${a}/${b} cup. How many muffins can we make?`, `${N} ÷ ${a}/${b}`, [`${a}/${b} ÷ ${N}`, `${N} × ${a}/${b}`], 'How many muffins fit: start with the batter, divide by one muffin.'); },
-    () => { const [a, b] = properFrac(2, 6), [c, d] = properFrac(2, 5); add(`What is ${c}/${d} of ${a}/${b} pound of nuts?`, `${c}/${d} × ${a}/${b}`, [`${a}/${b} ÷ ${c}/${d}`], '"Of" a known amount means multiply. Nothing is being shared or fitted.'); },
-    () => { const [a, b] = properFrac(2, 6); let c, d; do { [c, d] = properFrac(2, 5); } while (c * b === a * d); add(`${a}/${b} pound of berries fills ${c}/${d} of a tin. How many pounds fill the whole tin?`, `${a}/${b} ÷ ${c}/${d}`, [`${c}/${d} ÷ ${a}/${b}`, `${a}/${b} × ${c}/${d}`], 'A part of the tin is known. Divide by that part to find one whole tin.'); }
+    () => { const [a, b] = properFrac(2, 6), d = b * rand(2, 3); add(`We have ${a}/${b} pound of fudge. Each box holds 1/${d} pound. How many boxes can we fill?`, `${a}/${b} ÷ 1/${d}`, [`1/${d} ÷ ${a}/${b}`, `${a}/${b} × 1/${d}`], 'Whole: the fudge. Part: one box. Whole ÷ part.', `${a}/${b} × ${d}`); },
+    () => { const [a, b] = properFrac(2, 6), k = rand(2, 5); add(`${a}/${b} of a pan of brownies is shared equally by ${k} friends. How much of the pan does each friend get?`, `${a}/${b} ÷ ${k}`, [`${k} ÷ ${a}/${b}`, `${a}/${b} × ${k}`], `Whole: the brownies. It's split into ${k} equal parts. Whole ÷ number of parts.`, `${a}/${b} × 1/${k}`); },
+    () => { const [a, b] = properFrac(2, 5), N = rand(2, 6); add(`We have ${N} cups of batter. Each muffin uses ${a}/${b} cup. How many muffins can we make?`, `${N} ÷ ${a}/${b}`, [`${a}/${b} ÷ ${N}`, `${N} × ${a}/${b}`], 'Whole: the batter. Part: one muffin. Whole ÷ part.', flipText(N, a, b)); },
+    () => { const [a, b] = properFrac(2, 6), [c, d] = properFrac(2, 5); add(`What is ${c}/${d} of ${a}/${b} pound of nuts?`, `${c}/${d} × ${a}/${b}`, [`${a}/${b} ÷ ${c}/${d}`], '"Of" a known amount means multiply. No whole is being split into parts.'); },
+    () => { const [a, b] = properFrac(2, 6); let c, d; do { [c, d] = properFrac(2, 5); } while (c * b === a * d); add(`${a}/${b} pound of berries fills ${c}/${d} of a tin. How many pounds fill the whole tin?`, `${a}/${b} ÷ ${c}/${d}`, [`${c}/${d} ÷ ${a}/${b}`, `${a}/${b} × ${c}/${d}`], `The whole tin is what we want. We know a part: ${a}/${b} pound is ${c}/${d} of it. Divide by ${c}/${d}.`, flipText(`${a}/${b}`, c, d)); }
   ];
   const order = shuffle(makers.map((m, i) => i));
   for (let i = 0; i < n; i++) makers[order[i % makers.length]]();
@@ -2284,9 +2340,9 @@ function ladderStep(){
   const row = pr.model.rows[pr.i], rowEl = $('#lr'+pr.i);
   $$('.lrow.now').forEach(r => r.classList.remove('now')); rowEl.classList.add('now');
   if (row.options) {                                   // a choice row: tap the right one
-    $('#la'+pr.i).innerHTML = row.options.map((o, k) => `<button class="btn small lopt" type="button" data-k="${k}">${esc(o)}</button>`).join('');
+    $('#la'+pr.i).innerHTML = row.options.map((o, k) => `<button class="btn small lopt" type="button" data-k="${k}"><span class="okey" aria-hidden="true">${k + 1}</span>${esc(o)}</button>`).join('');
     $$('#la' + pr.i + ' .lopt').forEach(b => b.addEventListener('click', () => {
-      if (+b.dataset.k === +row.answer) ladderRight(row.options[+row.answer]);
+      if (+b.dataset.k === +row.answer) ladderRight(row.options[+row.answer] + (row.also ? ` (same as ${row.also})` : ''));
       else { pr.wrongs++; sfx('bad'); b.disabled = true; $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs); }
     }));
     const first = $('#la' + pr.i + ' .lopt'); if (first) first.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
@@ -2312,6 +2368,14 @@ function ladderCheck(){
     $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs);
   }
 }
+/* number keys 1 to 9 pick a choice, in orders and in practice pop-ups */
+document.addEventListener('keydown', e => {
+  if (!/^[1-9]$/.test(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  const sel = pr ? '#la' + pr.i + ' .lopt' : (order && !order.done && order.p.steps[order.i]?.kind === 'choice' && !$('#scr-shift').hidden) ? '#stepInput .opt' : null;
+  const b = sel && $$(sel)[+e.key - 1];
+  if (b && !b.disabled) { e.preventDefault(); b.click(); }
+});
 function ladderRight(text){
   $('#la'+pr.i).textContent = text; $('#lr'+pr.i).classList.remove('now'); $('#lr'+pr.i).classList.add('done');
   $('#prHint').textContent = ''; pr.wrongs = 0; sfx(pr.i === pr.model.targetIndex ? 'good' : 'tick');

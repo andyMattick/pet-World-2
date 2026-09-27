@@ -221,6 +221,16 @@ table.ratio tr.base td{color:var(--butter)}
 .colmath{border-collapse:collapse; margin:4px auto; font-family:var(--chalkfont); font-size:1.6rem; color:var(--chalk)}
 .colmath td{width:1.1em; text-align:center; padding:1px 0}
 .colmath tr:last-child td{border-bottom:2px solid var(--chalk)}
+.colmath.digits{font-size:1.35rem; margin:2px 0 4px}
+.colmath.digits td{width:1.55em; padding:1px 1px}
+.colmath.digits tr:last-child td{border-bottom:none}
+.colmath.digits tr.opline td{border-bottom:2px solid var(--chalk)}
+.colmath.digits input{width:1.35em; font:inherit; text-align:center; color:var(--chalk); background:rgba(255,255,255,.08); border:2px dashed var(--chalk-dim); border-radius:6px; padding:1px 0}
+.colmath.digits input:focus{outline:3px solid var(--butter); outline-offset:1px; border-style:solid}
+.colmath.digits input.wrong{border:2px solid var(--bad); color:var(--bad); animation:shake .35s}
+.colmath.digits input.carry{font-size:.7em; width:1.6em; border-width:1px; opacity:.85}
+.okey{display:inline-block; min-width:1.3em; margin-right:.45em; padding:0 .3em; border-radius:6px; font-size:.75em; text-align:center; background:rgba(255,255,255,.15); vertical-align:middle}
+.lrow .okey{background:rgba(0,0,0,.08)}
 table.mini{border-collapse:collapse; font-size:1.15rem; margin:2px 0}
 table.mini th, table.mini td{padding:1px 10px; text-align:center; border:1px solid rgba(244,241,230,.35)}
 table.mini th{font-weight:400}

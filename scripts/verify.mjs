@@ -67,6 +67,8 @@ need('src/game/game.js', '  lineUp:{', 'the lining-up practice pop-up');
 need('src/game/game.js', '  story:{', 'the word-problem practice pop-up');
 need('src/game/game.js', 'function ladderRight(', 'tap-to-answer rows in practice pop-ups');
 need('src/shared/registry.ts', 'story:        {', 'the word-problem drill type');
+need('src/game/game.js', 'function digitBoxesHTML(', 'the answer boxes under lined-up decimals');
+need('src/game/game.js', "input.setAttribute('inputmode', 'none')", 'typing on a real keyboard with the number pad showing');
 need('src/game/game.js', 'unitTestPassed(BUILDINGS[i - 1].id)', 'shops opening only after the unit test of the shop before');
 const decSteps = game.match(/function decSteps\([\s\S]*?\n}/)?.[0] || '';
 if (decSteps && /lvl === 1 \|\|/.test(decSteps)) problems.push('src/game/game.js: decSteps still shows the line-up step at level 1 regardless of decimal places');
