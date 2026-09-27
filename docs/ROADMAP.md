@@ -29,6 +29,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Bakery station 4: The Register, with multiplication rows (required on levels 1 and 2, optional on level 3), the long-division bus stop, optional carry and borrow boxes, answer-only quizzes, and the moving-the-decimal pop-up (`BAKERY-4-REGISTER.md`)
 - [x] Bakery station 5: Bulk Orders, with the decimal point drawn straight up in the long-division layout (`BAKERY-5-BULK.md`). **The Bakery is done:** all 5 stations and the 🏆 Bakery Unit Test (16 questions, played end to end)
 - [x] Word-problem pop-up for the Café: ratio stories (`story:ratio` in `DRILLS.md`)
+- [x] Neighborhoods engine: one town, a neighborhood per grade, home grade, switcher, and grade trophies (`NEIGHBORHOODS-0-ENGINE.md`). Older saves open as 6th grade
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -43,7 +44,6 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
-| 2 | **Neighborhoods**: one town per student, one neighborhood per grade (4th to 8th, then Algebra 1, Geometry, Algebra 2, Precalculus, Calculus), with a home grade, and nothing lost when a grade is added | `NEIGHBORHOODS.md` (plan) | the Bakery | medium |
 | 3 | **4th grade neighborhood** (follows the Sadlier workbook, with Khan links, same class features, and family accounts for home) | `GRADE4.md` (draft plan) | Neighborhoods | large |
 | 4 | **7th grade neighborhood** (for next school year) | to be written | Neighborhoods | large |
 | 5 | **Big reviews** (fluency practice like times tables): addition and subtraction facts for younger kids, order of operations, integer rules, and more, each added with the neighborhood that needs it | `NEIGHBORHOODS.md` (list) | as listed | small each |
@@ -60,7 +60,7 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
 - [x] 2a. 4th grade: owner decisions (shop names, family accounts, read-aloud off), except checking lesson titles against the workbook
 - [x] 1e. Word-problem practice for the Café (ratio stories)
-- [ ] 2. Neighborhoods in the engine: home grade, switcher, dashboard tabs (`NEIGHBORHOODS-0-ENGINE.md`, to be written)
+- [x] 2. Neighborhoods in the engine: home grade, switcher, grade trophy (`NEIGHBORHOODS-0-ENGINE.md`). Dashboard tabs by neighborhood come with the first 4th grade shop
 - [ ] 3a. 4th grade: family accounts
 - [ ] 3b. 4th grade: one shop at a time, Lemonade Stand first
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year

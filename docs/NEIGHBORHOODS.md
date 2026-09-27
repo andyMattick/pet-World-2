@@ -1,6 +1,6 @@
 # Neighborhoods: one town, every grade
 
-**Status: plan (owner decision).** No code yet. Read `AGENTS.md` first. **Edit in place, never rewrite a file.**
+**Status: engine built** (`NEIGHBORHOODS-0-ENGINE.md`). No second neighborhood is built yet, so the switcher stays hidden. Read `AGENTS.md` first. **Edit in place, never rewrite a file.**
 
 ## The decision
 
@@ -18,7 +18,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
 |---|---|---|
 | 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`) | plan |
 | 5th grade | Khan 5th grade | later |
-| **6th grade** | Khan 6th grade: Café ✅, Bakery (stations 1 to 3 ✅), Market, Clock Tower, Ice Rink, Potion Lab, Pet Houses, Pet Show | building |
+| **6th grade** | Khan 6th grade: Café ✅, Bakery ✅, Market, Clock Tower, Ice Rink, Potion Lab, Pet Houses, Pet Show | building |
 | 7th grade | Khan 7th grade (needed for next school year) | next year |
 | 8th grade | Khan 8th grade | later |
 | Algebra 1 | Khan Algebra 1 | later |
@@ -29,7 +29,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
 
 The order of Geometry and Algebra 2 can follow the school's sequence. Neighborhoods don't depend on each other, so any order works.
 
-## Engine changes (one plan, `NEIGHBORHOODS-0-ENGINE.md`, written before building)
+## Engine changes (built: see `NEIGHBORHOODS-0-ENGINE.md`)
 
 - **Registry:** `NEIGHBORHOODS = { g4: {name:'4th grade', shops:[…]}, g6: {name:'6th grade', shops:['cafe','bakery', …]}, … }`. `BUILDINGS`, `SHOPS`, unit tests, and reward sets are grouped by neighborhood. Every skill and shop id stays unique.
 - **Save:** add `S.home` (default `'g6'`, so every existing save keeps working unchanged). Progress keeps living under shop and skill ids, so adding neighborhoods changes nothing that's already saved.
@@ -48,13 +48,13 @@ Big reviews are the quick, rote-memory skills that sit under many problems (like
 | Times tables and division facts | 3 to 6 | ✅ built |
 | Decimal place value | 5 to 6 | ✅ built (mixed places) |
 | Lining up decimals | 5 to 6 | ✅ built |
-| Word problems to math (story → equation) | all | ✅ built (Bakery); Café ratio stories next |
+| Word problems to math (story → equation) | all | ✅ built (Bakery and Café ratio stories) |
 | Simplifying fractions, mixed numbers, reciprocals | 4 to 7 | ✅ built |
 | **Addition facts to 20** | K to 3 | not yet (needed for younger kids) |
 | **Subtraction facts to 20** | K to 3 | not yet |
 | Whole-number place value and rounding | 3 to 4 | with 4th grade |
 | Equivalent fractions, compare fractions | 3 to 5 | with 4th grade |
-| Multiply and divide by 10, 100, 1000 (moving the decimal) | 5 to 6 | with Bakery station 4 |
+| Multiply and divide by 10, 100, 1000 (moving the decimal) | 5 to 6 | ✅ built (Bakery station 4) |
 | Factors, multiples, primes, GCF and LCM | 4 to 6 | with 4th grade / 6th grade |
 | Fraction, decimal, percent equivalents (1/4 = 0.25 = 25%) | 6 to 7 | with the Market |
 | **Order of operations** | 5 to 7 | with the Clock Tower |
