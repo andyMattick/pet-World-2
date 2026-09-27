@@ -79,6 +79,11 @@ for (const t of ['classes', 'students', 'student_sessions', 'saves', 'problems',
 for (const f of ['add_students', 'reset_pin', 'class_report', 'class_roster', 'claim_student', 'my_student']) if (sql && !sql.includes(`function public.${f}(`)) problems.push(`Database migration is missing function "${f}"`);
 if (sql && !sql.includes('function public.reset_student(')) problems.push('Database migration is missing function "reset_student"');
 if (sql && !sql.includes('create table if not exists public.assessments')) problems.push('Database migration is missing table "assessments"');
+if (sql && !sql.includes('create table if not exists public.practice_sessions')) problems.push('Database migration is missing table "practice_sessions"');
+for (const m of ["'session_start'", "'session_ping'", 'export class ActivityTracker', 'async startSession(']) need('src/lib/studentBackend.ts', m);
+need('src/game/game.js', 'townTracker', 'practice time kept in the town');
+need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
+need('src/teacher/main.ts', 'p_tz', "the teacher's time zone for practice time");
 
 const allSrc = ['src/game/game.js', 'src/teacher/main.ts', 'src/lib/supabase.ts', 'src/lib/studentBackend.ts'].map(p => existsSync(p) ? readFileSync(p, 'utf8') : '').join('\n');
 if (allSrc.includes('learning_events')) problems.push('Code writes to a "learning_events" table, which is not part of this project\'s database. This is a sign of a placeholder rewrite.');
