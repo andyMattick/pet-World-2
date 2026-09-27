@@ -57,8 +57,9 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   const shopStations = shop.stations.map(st => ({
     station: st,
     skills: ORDER.filter(k => shopOfSkill(k) === shop.id && SKILLS[k].st === st.id)
-  }));
+  })).filter(g => g.skills.length > 0);
   const shopSkills = shopStations.flatMap(group => group.skills);
+  const allStationsBuilt = shop.stations.every(st => st.skills.length > 0);
   const played = list.filter(r => r.o > 0);
   const n = list.length, orders = list.reduce((s, r) => s + (r.o || 0), 0);
   let ci = 0, cc = 0, ca = 0, cac = 0;
@@ -108,7 +109,8 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   if (shopStations.length) {
     h += `<div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
     shopStations.forEach(({station, skills}) => { h += `<th class="stn" colspan="${skills.length + 1}">${station.id}. ${esc(station.name)}</th>`; });
-    h += `<th class="stn" rowspan="2">Unit Test</th><th colspan="5"></th></tr><tr><th>Student</th>`;
+    if (allStationsBuilt) h += `<th class="stn" rowspan="2">Unit Test</th>`;
+    h += `<th colspan="5"></th></tr><tr><th>Student</th>`;
     shopStations.forEach(({skills}) => { h += skills.map(k => `<th class="sk" title="${esc(SKILLS[k].name)}">${esc(SKILLS[k].short)}</th>`).join('') + '<th class="sk" title="Station quiz">Quiz</th>'; });
     h += `<th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th></tr></thead><tbody>`;
     list.forEach(r => {
@@ -118,7 +120,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
         skills.forEach(k => { const e = (r.k || {})[k]; const s = statusFromRecent(e ? e[1] : ''); h += `<td class="cell s-${s}" title="${esc(SKILLS[k].name)}: ${s}${e ? `, ${e[0]} tried` : ''}">${e ? e[0] : ''}</td>`; });
         h += `<td>${assessmentCell(r, shop.id, station.id, 'quiz')}</td>`;
       });
-      h += `<td>${assessmentCell(r, shop.id, null, 'test')}</td>`;
+      h += allStationsBuilt ? `<td>${assessmentCell(r, shop.id, null, 'test')}</td>` : '';
       h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td></tr>`;
     });
     h += `</tbody></table></div>`;
