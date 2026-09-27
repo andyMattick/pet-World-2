@@ -42,11 +42,9 @@ All six database files were run in order on real PostgreSQL 16, then tested as a
 
 Commit after each step. Before each commit, run `npm run verify`, `npm run typecheck`, and `npm run build`, and **test in a real browser with the Console open, including at iPhone SE size**. Then `git push` and paste `git log -1 --stat`.
 
-### Step 1: Database
+### Step 1: Database ✅ done
 
-Add the migration file exactly as given. **The owner runs it in Supabase** after the quizzes file.
-
-Commit: `Add practice time migration`
+The migration file is in the repo and has been run in Supabase. Nothing to do.
 
 ### Step 2: Tracking in the game (signed in)
 
@@ -56,6 +54,8 @@ In `src/lib/studentBackend.ts`, add a small tracker:
 - **Every 15 seconds,** if the tab is visible and `Date.now() - lastInput < 60000`, add 15 to `pendingSeconds`.
 - **Every 60 seconds,** and when the tab becomes hidden, if `pendingSeconds > 0`: call `session_ping(id, pendingSeconds)` and reset the counter. If it returns false (the session was closed), call `startSession()`, then report again. If the call fails (offline), keep the seconds and try next time.
 - **When the student switches player or signs out,** send the last report and stop.
+
+- **One tracker, started once:** build the activity tracker once (a small class or closure) that counts active seconds and calls a callback for each 60-second report. `startSession()` first stops any running tracker (timers and listeners), so calling it twice never double-counts. Step 3 reuses the same tracker for local mode.
 
 In `game.js`, call `Backend.startSession()` in `enterAs()`.
 
@@ -101,6 +101,6 @@ Commit: `Verify covers practice time`
 2. The teacher sees Last signed in, Today, and This week for every student, plus a 4-week chart and recent sessions in the detail view.
 3. Students with no sign-in in 7 days are highlighted.
 4. "Today" matches the teacher's local day.
-5. Offline play keeps the seconds and sends them later.
+5. Offline play keeps the seconds and sends them later. The database accepts at most 90 seconds per report, so long offline stretches are only partly counted.
 6. Local mode shows practice time in the progress report.
 7. `npm run verify`, `npm run typecheck`, and `npm run build` pass, with no red Console errors.
