@@ -538,7 +538,7 @@ function decSteps(a, b, op, lvl, withEstimate){
   if (withEstimate && lvl >= 2) steps.push({name:'Estimate', type:'concept', kind:'choice',
     prompt:'About how much will the answer be? Round each number to the nearest whole number first.',
     options:estimateOptions(a, b, op), hint:() => `${a} is about ${Math.round(ka / 1000)}, and ${b} is about ${Math.round(kb / 1000)}.`});
-  if (lvl === 1 || DEC.places(a) !== DEC.places(b)) steps.push({name:'Line up the decimals', type:'concept', kind:'choice',
+  if (DEC.places(a) !== DEC.places(b)) steps.push({name:'Line up the decimals', type:'concept', kind:'choice',
     prompt:'Which one is set up correctly?', drill,
     options:shuffle([
       {html:columnHTML(a, b, op, true), text:'decimal points lined up', ok:true, mis:null},

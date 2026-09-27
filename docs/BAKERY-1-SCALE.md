@@ -14,7 +14,7 @@ It uses **exact decimal math** (whole numbers of thousandths), so answers never 
 
 | Skill | Problems | Steps | Mix-ups caught |
 |---|---|---|---|
-| **addDec** Adding decimals | Weighing two ingredients on the scale (kg) | Estimate (level 2+) → Line up the decimals (when the numbers have different decimal places, and always at level 1) → Add | Lining up right edges (`rightAlign`), not carrying (`noRegroup`), estimate off by 10× (`estimateOff`) |
+| **addDec** Adding decimals | Weighing two ingredients on the scale (kg) | Estimate (level 2+) → Line up the decimals (when the numbers have different decimal places) → Add | Lining up right edges (`rightAlign`), not carrying (`noRegroup`), estimate off by 10× (`estimateOff`) |
 | **subDec** Subtracting decimals | How much is left in a bag | Estimate (level 2+) → Line up the decimals → Subtract | `rightAlign`, subtracting the smaller digit from the larger in each column (`smallerFromLarger`), `estimateOff` |
 | **decWord** Word problems | Prices, making change from a bill, ribbon lengths | Pick the operation → Line up the decimals → Add or subtract | Choosing the wrong operation (`wrongOperation`), plus the above |
 
@@ -117,7 +117,7 @@ function decSteps(a, b, op, lvl, withEstimate){
   if (withEstimate && lvl >= 2) steps.push({name:'Estimate', type:'concept', kind:'choice',
     prompt:'About how much will the answer be? Round each number to the nearest whole number first.',
     options:estimateOptions(a, b, op), hint:() => `${a} is about ${Math.round(ka / 1000)}, and ${b} is about ${Math.round(kb / 1000)}.`});
-  if (lvl === 1 || DEC.places(a) !== DEC.places(b)) steps.push({name:'Line up the decimals', type:'concept', kind:'choice',
+  if (DEC.places(a) !== DEC.places(b)) steps.push({name:'Line up the decimals', type:'concept', kind:'choice',
     prompt:'Which one is set up correctly?', drill,
     options:shuffle([
       {html:columnHTML(a, b, op, true), text:'decimal points lined up', ok:true, mis:null},
