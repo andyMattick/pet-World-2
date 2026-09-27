@@ -27,6 +27,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Each new shop opens after the Unit Test of the shop before it, with a teacher switch to open it early
 - [x] Practice time (`PRACTICE-TIME.md`): active minutes tracked in the game and the town, a progress-report panel, and teacher dashboard columns, weekly card, and 4-week chart
 - [x] Music (`MUSIC.md`): 4 tracks, a music menu with volume, and a teacher Allow music switch
+- [x] Draft plans written for Bakery stations 2 to 5 (`BAKERY-2-PANS.md` to `BAKERY-5-BULK.md`) and the 4th grade version (`GRADE4.md`)
 
 ## Next up
 
