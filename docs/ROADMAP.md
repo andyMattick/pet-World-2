@@ -26,6 +26,9 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Bakery station 1: The Scale (`BAKERY-1-SCALE.md`)
 - [x] Bakery station 2: Sharing Pans, with fraction answer boxes and the simplify and mixed-number practice pop-ups (`BAKERY-2-PANS.md`)
 - [x] Bakery station 3: Boxing Treats, with the reciprocal practice pop-up (`BAKERY-3-BOXES.md`)
+- [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
+- [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
+- [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
 - [x] Pop-up rule: quick practice on the earliest part of a problem (`DRILLS.md`). The Scale shows the lined-up numbers when adding and subtracting, a new lining-up pop-up and a word-problem pop-up, and the place-value pop-up mixes tenths, hundredths, and thousandths
 - [x] Each new shop opens after the Unit Test of the shop before it, with a teacher switch to open it early
 - [x] Practice time (`PRACTICE-TIME.md`): active minutes tracked in the game and the town, a progress-report panel, and teacher dashboard columns, weekly card, and 4-week chart

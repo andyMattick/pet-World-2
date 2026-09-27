@@ -16,7 +16,7 @@ Khan links are in `BAKERY.md`.
 - **Stories:** sharing part of a pan among friends (fraction ÷ whole), and "how many servings fit" (whole ÷ fraction).
 - **A picture on every order:** a pan split into parts, or a tape diagram of cups, so the division can be seen.
 - **Steps, split into idea and arithmetic steps like the café:**
-  1. *Idea:* "Are we sharing into groups, or finding how many fit?" (choice)
+  1. *Idea:* "What's the whole, and what's the part?" (choice, owner wording). For example "Whole: 4 cups of batter. Part: one muffin uses 2/3 cup." The equation step's hint is "Whole ÷ part", and the right equation is shown with its flip afterwards ("4 ÷ 2/3, same as 4 × 3/2").
   2. *Idea:* pick the matching picture or equation (choice). At level 1, the picture is filled in for them.
   3. *Arithmetic:* the answer as a fraction.
   4. *Arithmetic:* simplest form. It's always in the plan, and it's marked "already done" (skipped) when step 3's answer was already in simplest form. It uses the `notSimplest` and `notMixed` mix-ups.
