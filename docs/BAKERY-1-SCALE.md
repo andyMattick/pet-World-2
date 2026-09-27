@@ -201,14 +201,18 @@ function placeValueRows(key){
 It uses functions already in `game.js`: `rand`, `pick`, `shuffle`, and `esc`. Don't add copies.
 
 2. **Right after the `GEN` object ends,** add `Object.assign(GEN, SCALE_GEN);`.
-3. **Add a `placeValue` entry to `DRILL_IMPL`:**
-   - Build its rows from `placeValueRows(key)`.
-   - The title comes from `DRILLS.placeValue.kidTitle`.
-   - The why line reads, for a miss: "That one needed the {key} place. Let's find some {key} digits!" For a slow answer: "Let's get faster at finding the {key} place!"
-   - Hints: a first wrong try shows "Count places after the decimal point: tenths, hundredths, thousandths." A second wrong try shows "It's X. Type X."
-   - The finish line is "Nice! Decimal places line up by their names."
-   - Its `sprintItem(key)` returns one row as a prompt and answer, with the prompt "Which digit is in the {key} place of 57.382?"
-4. **Add `.colmath` styles to `src/styles/game.css`:**
+3. **In `numInput()`, raise `maxlength` from 6 to 8.** Level 3 answers like `104.567` have 7 characters.
+4. **Add a `placeValue` entry to `DRILL_IMPL`, matching the shape of `DRILL_IMPL.times`:**
+   - `build(drill, {short})` returns `{title, why, rows, targetIndex, hint(rowIndex, wrongs), finishLine, tieLine}`.
+     - `rows` come from `placeValueRows(key)`: 3 rows when `short` is true, 6 otherwise.
+     - `targetIndex` is `0`.
+     - `title` comes from `DRILLS.placeValue.kidTitle`.
+     - `why`, for a miss: "That one needed the {key} place. Let's find some {key} digits!" For a slow answer: "Let's get faster at finding the {key} place!"
+     - `hint(rowIndex, wrongs)`: a first wrong try shows "Count places after the decimal point: tenths, hundredths, thousandths." A second wrong try shows "It's X. Type X."
+     - `finishLine` is "Nice! Decimal places line up by their names."
+     - `tieLine` is "The {key} place is {n} after the decimal point." (`n` is 1 for tenths, 2 for hundredths, 3 for thousandths.)
+   - `sprintItem(key)` returns `{prompt, answer, drillId:'placeValue:'+key}`, using a random number each time (not always `57.382`), with the prompt "Which digit is in the {key} place of {n}?"
+5. **Add `.colmath` styles to `src/styles/game.css`:**
    - The table uses the chalk font at 1.6rem, with each cell about 1.1em wide and centered.
    - The second row has a chalk line under it (`border-bottom:2px solid`).
    - Choice buttons containing `.colmath` stay readable at iPhone SE size.
@@ -229,7 +233,7 @@ Commit: `Bakery station 1 generators`
 - The two "Line up the decimals" choices look different, and the right one has the points in one column.
 - Answering by lining up right edges (for example, 12.433 for 3.47 + 12.086) shows "Line up the decimal points, not the last digits."
 - A miss opens the **place-value drill**, not a times-table ladder.
-- The number pad shows a `.` key.
+- At iPhone SE size, the number pad shows a `.` key — that's the phone's own decimal keyboard on the text input, not the on-screen `numberPad`. Don't attach `numberPad` to Scale steps.
 - On the teacher dashboard, the 🥐 tab shows the three skills.
 
 Commit: `Open the Bakery: The Scale`
