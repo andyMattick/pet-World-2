@@ -1094,6 +1094,136 @@ const PANS_GEN = {
   }
 };
 Object.assign(GEN, PANS_GEN);
+/* ===== Bakery station 3: Boxing Treats (divide fractions by fractions) ===== */
+const fracStr = (w, n, d) => w ? `${w} ${n}/${d}` : `${n}/${d}`;
+/* a proper fraction n/d in lowest terms, d from dMin..dMax */
+function properFrac(dMin, dMax){
+  for (let t = 0; t < 100; t++){ const d = rand(dMin, dMax), n = rand(1, d - 1); if (gcd(n, d) === 1) return [n, d]; }
+  return [1, 2];
+}
+function flipStep(c, d, firstP, firstQ){
+  return {name:'Flip the divisor', type:'concept', kind:'frac', prompt:`Dividing by ${c}/${d} is the same as multiplying by what?`,
+    answer:FRAC.simplest(d, c), eq:v => FRAC.same(v, d, c), drill:{type:'reciprocal', key:'flip'},
+    mis:v => FRAC.same(v, c, d) && c !== d ? 'noFlip' : FRAC.same(v, firstQ, firstP) && firstQ * c !== d * firstP ? 'flipWrong' : null,
+    hint:() => `Swap the top and bottom of ${c}/${d}.`};
+}
+/* the multiply step for p1/q1 ÷ c/d */
+function flipMultiplyStep(p1, q1, c, d, extraWrongs = []){
+  const P = p1 * d, Q = q1 * c;
+  return {name:'Multiply', type:'compute', kind:'frac', prompt:`${FRAC.txt(p1, q1)} × ${FRAC.txt(d, c)} = ?`, answer:FRAC.simplest(P, Q),
+    eq:v => FRAC.same(v, P, Q), fact:{x:p1, y:d},
+    mis:v => fracMis(v, P, Q, [...extraWrongs, ['noFlip', p1 * c, q1 * d], ['flipWrong', q1 * c, p1 * d]]),
+    hint:() => `Multiply the tops (${p1} × ${d}) and the bottoms (${q1} × ${c}).`};
+}
+function biggerStep(a, b, c, d){
+  const more = a * d > b * c;        // more than 1 when more than one c/d fits in a/b
+  return {name:'More or less than 1?', type:'concept', kind:'choice', prompt:`Will ${FRAC.txt(a, b)} ÷ ${FRAC.txt(c, d)} be more or less than 1?`,
+    options:shuffle([
+      {html:'More than 1', text:'more than 1', ok:more, mis:null},
+      {html:'Less than 1', text:'less than 1', ok:!more, mis:null}]),
+    hint:() => `Which is bigger, ${FRAC.txt(a, b)} or ${FRAC.txt(c, d)}? If ${FRAC.txt(c, d)} fits more than once, the answer is more than 1.`};
+}
+/* numbers for a ÷ b by level: lvl 1 whole answers with a unit divisor, lvl 2 fraction answers, lvl 3 answers that need simplifying */
+function fracDivNumbers(lvl){
+  for (let t = 0; t < 300; t++){
+    let a, b, c, d;
+    if (lvl === 1) { [a, b] = properFrac(2, 6); c = 1; d = b * rand(2, 3); }
+    else { [a, b] = properFrac(2, 9); [c, d] = properFrac(2, lvl === 2 ? 9 : 12); }
+    if (a * d === b * c) continue;                         // same fraction: answer 1
+    const P = a * d, Q = b * c, g = gcd(P, Q);
+    if (lvl === 1 && P % Q) continue;
+    if (lvl === 2 && (Q / g === 1 || g > 1)) continue;     // a fraction, already simplest
+    if (lvl === 3 && (g === 1 || Q / g === 1)) continue;   // needs simplifying, not whole
+    if (lvl >= 2 && (P > 99 || Q > 99)) continue;
+    return [a, b, c, d];
+  }
+  return lvl === 1 ? [3, 4, 1, 8] : lvl === 2 ? [2, 3, 3, 4] : [5, 6, 2, 9];
+}
+const BOX_TREATS = [['🍬','fudge','pound'],['🍪','cookie dough','pound'],['🥜','trail mix','pound'],['🍫','chocolate','pound'],['🍓','berries','pound']];
+function boxesStory(a, b, c, d){
+  const [e, what, unit] = pick(BOX_TREATS);
+  return {e, how:`We have ${FRAC.txt(a, b)} ${unit} of ${what}. Each box holds ${FRAC.txt(c, d)} ${unit}. How many boxes can we fill?`,
+    rev:`We have ${FRAC.txt(c, d)} ${unit} of ${what}. Each box holds ${FRAC.txt(a, b)} ${unit}. How many boxes can we fill?`,
+    of:`What is ${FRAC.txt(c, d)} of ${FRAC.txt(a, b)} ${unit} of ${what}?`};
+}
+const BOXES_GEN = {
+  fracDiv(lvl){
+    const [a, b, c, d] = fracDivNumbers(lvl), P = a * d, Q = b * c;
+    const steps = [biggerStep(a, b, c, d), flipStep(c, d, a, b), flipMultiplyStep(a, b, c, d), fracSimplestStep(P, Q)];
+    const e = pick(BOX_TREATS)[0];
+    return {title:'Boxing Treats', ctx:`${a}/${b} ÷ ${c}/${d}`,
+      bubble:`Can you work out ${a}/${b} ÷ ${c}/${d} for my boxes?`,
+      helper:'Keep the first fraction, change ÷ to ×, and flip the second fraction.',
+      visual:lvl === 1 ? `${panHTML(d, a * d / b, e)}<div class="cups-note">${a}/${b} = ${a * d / b}/${d}. How many ${c}/${d}s fit?</div>`
+        : `<div style="text-align:center; font-size:1.8rem">${e} ${a}/${b} ÷ ${c}/${d}</div>`, steps};
+  },
+  mixedDiv(lvl){
+    let W, r, b, c, d, X = 0;
+    for (let t = 0; t < 300; t++){
+      W = rand(1, lvl === 3 ? 4 : 5); [r, b] = properFrac(2, lvl === 1 ? 4 : 6);
+      if (lvl === 1) { c = 1; d = b * rand(1, 3); if (d < 2) continue; }
+      else if (lvl === 2) { [c, d] = properFrac(2, 8); }
+      else { X = rand(1, 2); let s; [s, d] = properFrac(2, 5); c = X * d + s; }
+      const P = (W * b + r) * d, Q = b * c;
+      if (P === Q) continue;
+      if (lvl === 1 && P % Q) continue;
+      if (lvl >= 2 && (P % Q === 0 || P > 150 || Q > 150)) continue;
+      break;
+    }
+    const p1 = W * b + r, P = p1 * d, Q = b * c, [e, what] = pick(BOX_TREATS);
+    const first = fracStr(W, r, b), second = X ? fracStr(X, c - X * d, d) : FRAC.txt(c, d);
+    const steps = [{name:'Write as a fraction', type:'setup', kind:'frac', prompt:`Write ${first} as a fraction.`, answer:[0, p1, b],
+      eq:v => FRAC.same(v, p1, b), fact:{x:W, y:b},
+      mis:v => FRAC.same(v, r, b) || FRAC.same(v, W + r, b) ? 'mixedAsParts' : null,
+      hint:() => `${W} whole${W > 1 ? 's' : ''} = ${W} × ${b} = ${W * b} ${FRAC.part(b, true)}. Add the ${r} more.`}];
+    if (X) steps.push({name:'Write as a fraction', type:'setup', kind:'frac', prompt:`Write ${second} as a fraction.`, answer:[0, c, d],
+      eq:v => FRAC.same(v, c, d), fact:{x:X, y:d},
+      mis:v => FRAC.same(v, c - X * d, d) || FRAC.same(v, X + c - X * d, d) ? 'mixedAsParts' : null,
+      hint:() => `${X} whole${X > 1 ? 's' : ''} = ${X * d} ${FRAC.part(d, true)}. Add the ${c - X * d} more.`});
+    steps.push(flipStep(c, d, p1, b));
+    steps.push(flipMultiplyStep(p1, b, c, d, X ? [] : [['mixedAsParts', W * b * c + r * d, b * c]]));
+    steps.push(fracSimplestStep(P, Q));
+    return {title:'Boxing Treats', ctx:`${first} ÷ ${second}`,
+      bubble:`I have ${first} pounds of ${what}. Each box holds ${second} pound${X ? 's' : ''}. How many boxes can I fill?${P % Q ? ' (Part of a box counts too.)' : ''}`,
+      helper:'Turn mixed numbers into fractions first. Then keep, change, flip.',
+      visual:`<div style="text-align:center; font-size:1.8rem">${e} ${first} ÷ ${second}</div>`, steps};
+  },
+  fracInterp(lvl){
+    const [a, b, c, d] = fracDivNumbers(lvl), P = a * d, Q = b * c, S = boxesStory(a, b, c, d), eq = `${a}/${b} ÷ ${c}/${d}`;
+    const storyFirst = Math.random() < 0.5;
+    const pickStep = storyFirst
+      ? {name:'Match the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?',
+          options:shuffle([{html:eq, text:eq, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
+                           {html:`${a}/${b} × ${c}/${d}`, text:`${a}/${b} × ${c}/${d}`, ok:false, mis:'divAsMult'}]),
+          hint:() => 'Start with the amount you have. Divide by the size of one box.'}
+      : {name:'Match the story', type:'concept', kind:'choice', prompt:`Which story matches ${eq}?`,
+          options:shuffle([{html:S.how, text:'how many boxes fit', ok:true, mis:null}, {html:S.rev, text:'the numbers swapped', ok:false, mis:'reversedDivision'},
+                           {html:S.of, text:'a fraction of an amount', ok:false, mis:'divAsMult'}]),
+          hint:() => `${eq} asks: how many ${c}/${d}s fit in ${a}/${b}?`};
+    const steps = [pickStep, {...flipMultiplyStep(a, b, c, d), name:'Solve', prompt:`${eq} = ?`,
+      hint:() => `Keep ${a}/${b}, change ÷ to ×, flip ${c}/${d} to ${d}/${c}.`}, fracSimplestStep(P, Q)];
+    return {title:'Boxing Treats', ctx:eq, answerSteps:[0, 1, 2],
+      bubble:storyFirst ? S.how : `My recipe card just says ${eq}. What does that mean?`,
+      helper:'Dividing by a fraction asks how many of that size fit.',
+      visual:`<div style="text-align:center; font-size:1.8rem">${S.e} ${storyFirst ? '?' : eq}</div>`, steps};
+  },
+  fracWord(lvl){
+    const [a, b, c, d] = fracDivNumbers(lvl), P = a * d, Q = b * c, [e, what, unit] = pick(BOX_TREATS);
+    const perWhole = lvl >= 2 && Math.random() < 0.4;      // "how much for 1 whole" story
+    const bubble = perWhole
+      ? `${a}/${b} ${unit} of ${what} fills ${c}/${d} of a big tin. How many ${unit}s fill the whole tin?`
+      : `We have ${a}/${b} ${unit} of ${what}. Each bag holds ${c}/${d} ${unit}. How many bags can we fill?${P % Q ? ' (Part of a bag counts too.)' : ''}`;
+    const eq = `${a}/${b} ÷ ${c}/${d}`;
+    const steps = [{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?',
+        options:shuffle([{html:eq, text:eq, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
+                         {html:`${a}/${b} × ${c}/${d}`, text:`${a}/${b} × ${c}/${d}`, ok:false, mis:'divAsMult'}]),
+        hint:() => perWhole ? `${a}/${b} is only ${c}/${d} of the tin. Divide by ${c}/${d} to find the whole.` : 'Start with how much we have. Divide by the size of one bag.'},
+      flipStep(c, d, a, b), flipMultiplyStep(a, b, c, d), fracSimplestStep(P, Q)];
+    return {title:'Boxing Treats', ctx:eq, bubble, helper:'Find the equation first, then keep, change, flip.',
+      visual:`<div style="text-align:center; font-size:1.8rem">${e}</div>`, steps};
+  }
+};
+Object.assign(GEN, BOXES_GEN);
 
 /* ===================== UI ===================== */
 const $ = s => document.querySelector(s);
@@ -2030,6 +2160,31 @@ const DRILL_IMPL = {
       },
       finishLine: 'You found all the wholes! +3 🪙',
       tieLine: `Divide the top by the bottom. The answer is the whole number, and what's left over goes on top.`
+    };
+    }
+  },
+  reciprocal:{
+    sprintItem(){
+      if (Math.random() < 0.25) { const n = rand(2, 12); return {prompt:`Flip ${n}: 1/?`, answer:String(n), drillId:'reciprocal:flip'}; }
+      const [n, d] = properFrac(2, 12); return {prompt:`Flip ${n}/${d}: ?/${n}`, answer:String(d), drillId:'reciprocal:flip'};
+    },
+    build(drill, {short = false} = {}){
+    const rows = [], seen = new Set();
+    for (let t = 0; rows.length < (short ? 3 : 6) && t < 80; t++){
+      const whole = rows.length === 2, [n, d] = whole ? [rand(2, 9), 1] : properFrac(2, 12);
+      if (seen.has(n + '/' + d)) continue; seen.add(n + '/' + d);
+      rows.push(whole ? {label:`Flip ${n}. It's 1/?`, answer:String(n)} : {label:`Flip ${n}/${d}. It's ?/${n}`, answer:String(d)});
+    }
+    return {
+      title: DRILLS[drill.type].kidTitle(drill.key),
+      why: drill.reason === 'slow' ? "Let's get faster at flipping fractions." : 'To divide by a fraction, you multiply by its flip. Let\'s practice flipping!',
+      rows, targetIndex: 0,
+      hint(rowIndex, wrongs){
+        const r = this.rows[rowIndex];
+        return wrongs >= 2 ? `It's ${r.answer}. Type ${r.answer}.` : /1\/\?/.test(r.label) ? 'A whole number is over 1. Flip it and it goes on the bottom.' : 'The bottom number moves to the top.';
+      },
+      finishLine: 'You flipped them all! +3 🪙',
+      tieLine: 'Flip means swap the top and bottom. 3/5 flipped is 5/3.'
     };
     }
   }
