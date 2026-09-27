@@ -1,6 +1,6 @@
 # Bakery station 4: The Register (multiply decimals, long division)
 
-**Status: ready to build.** The generator code is written and pasted below (stress-tested: 240,000 problems, every product and quotient checked against an independent whole-number calculation, every mix-up checked to fire on its own wrong answer and never on the right one). Read `AGENTS.md` and `docs/BAKERY.md` first. **Edit in place, never rewrite a file.**
+**Status: built.** The generators are `REGISTER_GEN` in `src/game/game.js` (stress-tested: 240,000 problems, every product and quotient checked against an independent whole-number calculation, every mix-up checked to fire on its own wrong answer and never on the right one). The layouts are `mulRowsHTML` and `ldivHTML`, checked at iPhone SE size. Read `AGENTS.md` and `docs/BAKERY.md` first. **Edit in place, never rewrite a file.**
 
 ## Khan skills (Khan's order)
 
@@ -71,7 +71,7 @@ Unchanged: the station 4 Bakery rewards in `REWARDS.md`.
 
 ## Generator code (stress-tested)
 
-Paste this into `src/game/game.js` after `BOXES_GEN`, then `Object.assign(GEN, REGISTER_GEN);`. It uses the existing `rand`, `pick`, and `shuffle`.
+Pasted into `src/game/game.js` after `BOXES_GEN`, then `Object.assign(GEN, REGISTER_GEN);`. It uses the existing `rand`, `pick`, and `shuffle`.
 
 **What the test run found (20,000 problems per skill and level):**
 
@@ -86,7 +86,7 @@ Paste this into `src/game/game.js` after `BOXES_GEN`, then `Object.assign(GEN, R
 
 **New step kinds the layout build (step 1) has to draw:**
 - `mulrow`: the multiplication layout `st.mul` (`top`, `bot`, `A`, `B`, `rows`, `sum`), with answer boxes under row `st.row` (a number, or `'sum'` for the add step). Rows already done show filled in. Optional carry boxes on every row.
-- `ldiv`: the bus-stop layout `st.div` (`N`, `d`, `work` rows with `col`, `cur`, `qd`, `mul`, `sub`), with the answer going into `st.slot` (`{step, part:'q'|'mul'|'sub'}`). `st.boxes` is true on levels 2 and 3, for the optional carry and borrow boxes. Bring-down digits appear by themselves after each subtract.
+- `ldiv`: the bus-stop layout `st.div` (`N`, `d`, `work` rows with `col`, `cur`, `qd`, `mul`, `sub`), with the answer going into `st.cell` (`{step, part:'q'|'mul'|'sub'}`; named `cell`, not `slot`, because `slot` already means a board slot). `st.boxes` is true on levels 2 and 3, for the optional carry and borrow boxes. Bring-down digits appear by themselves after each subtract.
 - `qr`: two boxes, quotient and remainder, read as `[q, r]`. Only in quizzes (practice skips the final answer step).
 - `decimal:true` on a `num` step turns on the number pad's decimal key.
 
@@ -150,12 +150,12 @@ function mulSteps(L, lvl, withEstimate, a, b){
       hint:() => 'Add each column from the right, and carry when a column makes 10 or more.'});
   }
   steps.push({name:'Count the decimal places', type:'concept', kind:'num', prompt:`How many digits are after the decimal points in ${L.top} and ${L.bot} altogether?`,
-    answer:n, eq:v => v === n, drill:{type:'decimalShift', key:'places'},
+    answer:n, eq:v => v === n, drill:{type:'decimalShift', key:String(Math.pow(10, Math.min(3, Math.max(1, n))))},
     mis:v => (v === L.maxPlaces && v !== n) ? 'pointLikeAdding' : null,
     hint:() => `${L.top} has ${XD.parse(L.top).p}, and ${L.bot} has ${XD.parse(L.bot).p}. Add them.`});
   const ans = XD.fmt(AB, n);
   steps.push({name:'Place the point', type:'compute', kind:'num', prompt:`${a} × ${b} = ?`, answer:ans, eq:XD.eq(AB, n), decimal:true,
-    drill:{type:'decimalShift', key:'places'},
+    drill:{type:'decimalShift', key:String(Math.pow(10, Math.min(3, Math.max(1, n))))},
     mis:v => { if (typeof v !== 'number') return null; const right = XD.eq(AB, n);
       if (right(v)) return null;
       if (XD.eq(AB, L.maxPlaces)(v)) return 'pointLikeAdding';
@@ -183,7 +183,7 @@ function longDivision(N, d){
 function divSteps(D, lvl){
   const steps = [], d = D.d, boxes = lvl >= 2;             // levels 2 and 3 get the optional carry and borrow boxes
   D.work.forEach((w, i) => {
-    steps.push({name:`Digit ${i + 1}`, type:'concept', kind:'ldiv', div:D, slot:{step:i, part:'q'}, boxes,
+    steps.push({name:`Digit ${i + 1}`, type:'concept', kind:'ldiv', div:D, cell:{step:i, part:'q'}, boxes,
       prompt: w.cur < d ? `How many ${d}s fit in ${w.cur}?` : `How many ${d}s fit in ${w.cur}? Write the digit on top.`,
       answer:w.qd, eq:v => v === w.qd,
       mis:v => { if (typeof v !== 'number' || v === w.qd) return null;
@@ -193,10 +193,10 @@ function divSteps(D, lvl){
         return null; },
       hint:() => w.cur < d ? `${w.cur} is less than ${d}, so no ${d}s fit. Write 0.` : `Round ${d} to ${Math.round(d / 10) * 10}. About how many of those fit in ${w.cur}? Then check: that many ${d}s can't be more than ${w.cur}.`});
     if (w.qd === 0) return;                                 // a zero digit needs no multiply or subtract row
-    steps.push({name:'Multiply', type:'compute', kind:'ldiv', div:D, slot:{step:i, part:'mul'}, boxes,
+    steps.push({name:'Multiply', type:'compute', kind:'ldiv', div:D, cell:{step:i, part:'mul'}, boxes,
       prompt:`${w.qd} × ${d} = ?`, answer:w.mul, eq:v => v === w.mul, fact: d <= 12 ? {x:w.qd, y:d} : {x:w.qd, y:d % 10 || 10},
       hint:() => `${w.qd} × ${d}: multiply the ones, then the tens.`});
-    steps.push({name:'Subtract', type:'compute', kind:'ldiv', div:D, slot:{step:i, part:'sub'}, boxes,
+    steps.push({name:'Subtract', type:'compute', kind:'ldiv', div:D, cell:{step:i, part:'sub'}, boxes,
       prompt:`${w.cur} − ${w.mul} = ?`, answer:w.sub, eq:v => v === w.sub,
       hint:() => `Subtract from the right. If the answer is ${d} or more, the digit on top was too small.`});
   });
@@ -247,9 +247,9 @@ const REGISTER_GEN = {
       visual:`<div style="text-align:center; font-size:1.6rem">${x} × ${y} = ${P}<br>${a} × ${b} = ?</div>`,
       steps:[
         {name:'Count the decimal places', type:'concept', kind:'num', prompt:`How many digits are after the decimal points in ${a} and ${b} altogether?`,
-          answer:n, eq:v => v === n, drill:{type:'decimalShift', key:'places'}, mis:v => (v === max && v !== n) ? 'pointLikeAdding' : null,
+          answer:n, eq:v => v === n, drill:{type:'decimalShift', key:String(Math.pow(10, Math.min(3, Math.max(1, n))))}, mis:v => (v === max && v !== n) ? 'pointLikeAdding' : null,
           hint:() => `${a} has ${pa}, and ${b} has ${pb}. Add them.`},
-        {name:'Place the point', type:'compute', kind:'num', prompt:`${a} × ${b} = ?`, answer:ans, eq:XD.eq(P, n), decimal:true, drill:{type:'decimalShift', key:'places'},
+        {name:'Place the point', type:'compute', kind:'num', prompt:`${a} × ${b} = ?`, answer:ans, eq:XD.eq(P, n), decimal:true, drill:{type:'decimalShift', key:String(Math.pow(10, Math.min(3, Math.max(1, n))))},
           mis:v => { if (typeof v !== 'number' || XD.eq(P, n)(v)) return null;
             if (max !== n && XD.eq(P, max)(v)) return 'pointLikeAdding';
             if (XD.eq(P, n - 1)(v) || XD.eq(P, n + 1)(v)) return 'placesMiscount';

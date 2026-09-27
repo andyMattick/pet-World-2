@@ -58,6 +58,14 @@ need('src/shared/registry.ts', 'reversedDivision:', 'the reversedDivision mix-up
 need('src/shared/registry.ts', 'notMixed:', 'the notMixed mix-up');
 need('src/game/game.js', '  simplify:{', 'the simplify practice pop-up');
 need('src/game/game.js', '  mixed:{', 'the mixed-number practice pop-up');
+need('src/game/game.js', 'const REGISTER_GEN', 'the Register generators');
+need('src/game/game.js', 'Object.assign(GEN, REGISTER_GEN)', 'the Register generators merged into GEN');
+need('src/game/game.js', 'function mulRowsHTML(', 'the multiplication rows layout');
+need('src/game/game.js', 'function ldivHTML(', 'the long-division layout');
+need('src/game/game.js', "st.kind === 'qr'", 'the quotient and remainder answer boxes');
+need('src/game/game.js', '  decimalShift:{', 'the moving-the-decimal practice pop-up');
+need('src/shared/registry.ts', 'mulDec:', 'the mulDec skill');
+need('src/shared/registry.ts', 'missingZero:', 'the missingZero mix-up');
 need('src/shared/registry.ts', 'mixed:        {', 'the mixed-number drill type');
 need('src/game/game.js', 'const BOXES_GEN', 'the Boxing Treats generators');
 need('src/game/game.js', '  reciprocal:{', 'the reciprocal practice pop-up');
