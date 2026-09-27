@@ -279,6 +279,12 @@ function reviewSkillsNeeded(key){
   return Object.entries(S.review[key] || {}).filter(([, count]) => count > 0).map(([skill]) => skill);
 }
 function reviewComplete(key){ return reviewCleared(key) || reviewDone(S, key); }
+/* stations the teacher opened for the class: the café through min_station, other shops through game_settings.minStations */
+function minStationFor(shop){
+  if (shop === 'cafe') return S.minStation || 1;
+  const m = Backend.me?.game_settings?.minStations?.[shop];
+  return Number.isInteger(m) && m > 0 ? m : 1;
+}
 function stationOpen(shop, n){
   const stations = SHOPS[shop]?.stations || [], station = stations.find(s => s.id === n), progress = shopProgress(shop);
   if (!station || !station.skills.length) return false;
@@ -286,10 +292,9 @@ function stationOpen(shop, n){
   const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   if (settings.requireQuiz) {
     const previousKey = assessKey(shop, n - 1);
-    return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || (shop === 'cafe' && n <= S.minStation) || (shop === 'cafe' && !Backend.me && S.unlockAll);
+    return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || n <= minStationFor(shop) || (!Backend.me && S.unlockAll);
   }
-  const cafeOverrides = shop === 'cafe';
-  return (cafeOverrides && ((!Backend.me && S.unlockAll) || n <= S.minStation)) || (progress?.st?.[n-1] || 0) >= UNLOCK_AT;
+  return (!Backend.me && S.unlockAll) || n <= minStationFor(shop) || (progress?.st?.[n-1] || 0) >= UNLOCK_AT;
 }
 let appliedDrillReset = '';
 function drillSettings(){
@@ -1432,7 +1437,7 @@ const REGISTER_GEN = {
     }
     const a = XD.fmt(x, pa), b = XD.fmt(y, pb), P = x * y, n = pa + pb, ans = XD.fmt(P, n), max = Math.max(pa, pb);
     return {title:'The Register', ctx:`${a} × ${b}, from ${x} × ${y}`,
-      bubble:`You know ${x} × ${y} = ${P}. So what is ${a} × ${b}?`,
+      bubble:`You know ${x} × ${y} = ${P}. What is ${a} × ${b}?`,
       helper:'The digits are the same. Only the decimal point moves.',
       visual:`<div style="text-align:center; font-size:1.6rem">${x} × ${y} = ${P}<br>${a} × ${b} = ?</div>`,
       steps:[
@@ -2184,7 +2189,7 @@ function readOrder(){
 function ticketHTML(text){
   const bold = s => s.replace(/(&#?[a-z0-9]+;)|(\d+(?:\.\d+)?)/gi, (m, ent, num) => ent ? ent : `<b>${num}</b>`);
   const safe = esc(text);
-  const parts = (safe.match(/[^.!?]+[.!?]*/g) || [safe]).map(s => s.trim()).filter(Boolean);
+  const parts = (safe.match(/(?:[^.!?]|[.!?](?=\S))+[.!?]*/g) || [safe]).map(s => s.trim()).filter(Boolean);   // a point inside a number (2.4) is not the end of a sentence
   let qi = -1; parts.forEach((s, i) => { if (s.endsWith('?')) qi = i; });
   const story = parts.filter((_, i) => i !== qi).join(' ');
   return (story ? `<div class="ticket-story">${bold(story)}</div>` : '') +
