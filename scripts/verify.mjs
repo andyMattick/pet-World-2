@@ -44,6 +44,13 @@ need('src/game/game.js', 'function gradeAssessment(', 'the quiz/test grader');
 need('src/game/game.js', 'function startAssessment(', 'the quiz/test starter');
 need('src/game/game.js', 'function answerStepsFor(', 'the quiz/test answer-step helper');
 need('src/game/game.js', 'shift.mode', 'quiz/test shift mode');
+need('src/game/game.js', 'const SCALE_GEN', 'the Scale generators');
+need('src/game/game.js', 'const DEC = {', 'the exact decimal math helpers');
+need('src/game/game.js', 'function placeValueRows(', 'the place-value drill rows');
+need('src/shared/registry.ts', 'addDec:', 'the addDec skill');
+need('src/shared/registry.ts', 'rightAlign:', 'the rightAlign mix-up');
+const decSteps = game.match(/function decSteps\([\s\S]*?\n}/)?.[0] || '';
+if (decSteps && /lvl === 1 \|\|/.test(decSteps)) problems.push('src/game/game.js: decSteps still shows the line-up step at level 1 regardless of decimal places');
 
 for (const ex of ['export const SKILLS', 'export const SKILL_ORDER', 'export const STATIONS', 'export const UNLOCK_AT', 'export const MIS', 'export function statusFromRecent']) need('src/shared/registry.ts', ex);
 for (const ex of ['export interface QuizSettings', 'export const QUIZ_DEFAULTS', 'export function quizSettings']) need('src/shared/registry.ts', ex);
