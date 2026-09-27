@@ -24,6 +24,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Small fixes: quiz wording, log queue
 - [x] Owner review of quizzes on the live site
 - [x] Bakery station 1: The Scale (`BAKERY-1-SCALE.md`)
+- [x] Bakery station 2: Sharing Pans, with fraction answer boxes (`BAKERY-2-PANS.md`)
 - [x] Each new shop opens after the Unit Test of the shop before it, with a teacher switch to open it early
 - [x] Practice time (`PRACTICE-TIME.md`): active minutes tracked in the game and the town, a progress-report panel, and teacher dashboard columns, weekly card, and 4-week chart
 - [x] Music (`MUSIC.md`): 4 tracks, a music menu with volume, and a teacher Allow music switch
@@ -42,7 +43,7 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 
 ### Checklist
 
-- [ ] 1a. Bakery station 2, Sharing Pans, with fraction answers
+- [x] 1a. Bakery station 2, Sharing Pans, with fraction answers
 - [ ] 1b. Bakery station 3, Boxing Treats, with the reciprocal and simplify drills
 - [ ] 1c. Bakery station 4, The Register, with the long-division layout
 - [ ] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
