@@ -39,6 +39,11 @@ need('src/game/game.js', 'pointer: coarse', 'touch-device number pad support');
 need('src/game/game.js', 'function numberPad(', 'the reusable number pad');
 need('src/game/game.js', "from '../shared/registry'", 'the import from the shared registry');
 need('src/game/game.js', "from '../lib/studentBackend'", 'the import of the student backend');
+need('src/game/game.js', 'function assessmentPlan(', 'the quiz/test question planner');
+need('src/game/game.js', 'function gradeAssessment(', 'the quiz/test grader');
+need('src/game/game.js', 'function startAssessment(', 'the quiz/test starter');
+need('src/game/game.js', 'function answerStepsFor(', 'the quiz/test answer-step helper');
+need('src/game/game.js', 'shift.mode', 'quiz/test shift mode');
 
 for (const ex of ['export const SKILLS', 'export const SKILL_ORDER', 'export const STATIONS', 'export const UNLOCK_AT', 'export const MIS', 'export function statusFromRecent']) need('src/shared/registry.ts', ex);
 for (const ex of ['export interface QuizSettings', 'export const QUIZ_DEFAULTS', 'export function quizSettings']) need('src/shared/registry.ts', ex);
@@ -65,6 +70,7 @@ if (sql && !sql.includes('drill_settings')) problems.push('Database migration is
 for (const t of ['classes', 'students', 'student_sessions', 'saves', 'problems', 'attempts', 'practice_popups', 'sprints']) if (sql && !sql.includes(`create table public.${t}`)) problems.push(`Database migration is missing table "${t}"`);
 for (const f of ['add_students', 'reset_pin', 'class_report', 'class_roster', 'claim_student', 'my_student']) if (sql && !sql.includes(`function public.${f}(`)) problems.push(`Database migration is missing function "${f}"`);
 if (sql && !sql.includes('function public.reset_student(')) problems.push('Database migration is missing function "reset_student"');
+if (sql && !sql.includes('create table if not exists public.assessments')) problems.push('Database migration is missing table "assessments"');
 
 const allSrc = ['src/game/game.js', 'src/teacher/main.ts', 'src/lib/supabase.ts', 'src/lib/studentBackend.ts'].map(p => existsSync(p) ? readFileSync(p, 'utf8') : '').join('\n');
 if (allSrc.includes('learning_events')) problems.push('Code writes to a "learning_events" table, which is not part of this project\'s database. This is a sign of a placeholder rewrite.');
