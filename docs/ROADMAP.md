@@ -2,7 +2,7 @@
 
 Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
-**How we work:** the owner gives the AI coder **one step at a time**. After each push, Claude reviews the diff and tests it in a browser before the next step starts. The coder's reply always ends with `git log -1 --stat`.
+**How we work:** one step at a time. Each step is reviewed and tested in a browser before the next one starts, and every commit runs `npm run verify`, `npm run typecheck`, and `npm run build`.
 
 ## Done
 
@@ -20,33 +20,26 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Read the order first, read-aloud, adjustable reading time (`READ-FIRST.md`)
 - [x] Teacher tools: copy and print logins, reset a student (`TEACHER-TOOLS.md`)
 - [x] Bakery step 0: the engine runs more than one shop, the decimal key, and dashboard shop tabs (`BAKERY-0-ENGINE.md`)
-- [x] Quizzes, steps 1 to 6b (`QUIZZES.md`): rules and state, quiz and test mode, station cards and quiz unlocking, unit tests, logging, the teacher settings card, and dashboard quiz columns
+- [x] Quizzes, steps 1 to 7 (`QUIZZES.md`): rules and state, quiz and test mode, station cards and quiz unlocking, unit tests, logging, the teacher settings card, dashboard quiz columns, student history with Excuse quiz and Clear review, and verify checks
+- [x] Small fixes: quiz wording, log queue
+- [x] Owner review of quizzes on the live site
+- [x] Bakery station 1: The Scale (`BAKERY-1-SCALE.md`)
 
 ## Next up
 
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
-| 1 | **Owner review: quizzes on the live site.** Hard-refresh the game on the production address and confirm the new version loads. You should see "Pass each station quiz to open the next station", and 📝 Station Quiz on The Counter for a student with Basic ratios mastered. Play one quiz as Abi. | — | 6b | small |
-| 2 | **Small fixes** (one commit each): (a) "the The Kitchen quiz" wording; (b) log queue: a rejected batch shouldn't block every later log | — | nothing | small |
-| 3 | **Quizzes 6c:** student detail quiz history, **Excuse quiz**, **Clear review** | `QUIZZES.md` step 6 | 6b | medium |
-| 4 | **Quizzes 7:** verify checks for quizzes | `QUIZZES.md` step 7 | 6c | small |
-| 5 | **Bakery station 1: The Scale** (add, subtract, decimal word problems; opens the Bakery) | `BAKERY-1-SCALE.md` | #4 | medium |
-| 6 | **Practice time:** sign-ins and active minutes, weekly totals, 4-week chart | `PRACTICE-TIME.md` | SQL already run | medium |
-| 7 | **Music:** 4 tracks, a volume slider, and a teacher "Allow music" switch | `MUSIC.md` | #6 | small |
-| 8 | **Bakery stations 2 to 5** | plans to come | #5 | large |
-| 9 | **4th grade version** (follows the workbook, with Khan links, same class features) | plan to come | #5 | large |
+| 1 | **Practice time:** sign-ins and active minutes, weekly totals, 4-week chart | `PRACTICE-TIME.md` | SQL already run | medium |
+| 2 | **Music:** 4 tracks, a volume slider, and a teacher "Allow music" switch | `MUSIC.md` | #1 | small |
+| 3 | **Bakery stations 2 to 5** | plans to come | The Scale | large |
+| 4 | **4th grade version** (follows the workbook, with Khan links, same class features) | plan to come | The Scale | large |
 
 ### Checklist
 
-- [X] 1. Owner review of quizzes on the live site
-- [X] 2. Small fixes: (a) wording, (b) log queue
-- [X] 3. Quizzes 6c
-- [X] 4. Quizzes 7
-- [X] 5. The Scale: steps 1 through 4. Step 1 fills `BAKERY_STATIONS[0].skills` in the same commit that adds the skills. The last step adds `open: true` to the Bakery entry in the `BUILDINGS` **list**
-- [ ] 6. Practice time: steps 1 through 5
-- [ ] 7. Music: steps 1 through 4
-- [ ] 8. Bakery stations 2 to 5 (plans to come)
-- [ ] 9. 4th grade version (plan to come)
+- [ ] 1. Practice time: steps 2 through 5 (step 1, the database file, is done)
+- [ ] 2. Music: steps 1 through 4
+- [ ] 3. Bakery stations 2 to 5 (plans to come)
+- [ ] 4. 4th grade version (plan to come)
 
 ## Database files, in the order they were run
 
@@ -65,6 +58,7 @@ All six are run in Supabase. Never edit one of these files. Any change goes in a
 - During quizzes, right and wrong answers both show a neutral "Answer saved". ✓/✗ appears only on the summary.
 - Quiz and test problems are **not** logged to `problems`, so the teacher's skill grid stays practice-only. Quiz results live in `assessments`.
 - Quiz settings rules live in one place (`registry.ts`) and are shared by the game and the teacher app.
+- The Scale's line-up step only appears when the two numbers have different decimal places; otherwise both choices look the same.
 
 ## Before other teachers or classes use it
 
