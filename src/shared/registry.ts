@@ -20,7 +20,10 @@ export const SKILLS: Record<string, Skill> = {
   understand: { name: 'Understand equivalent ratios in the real world', short: 'Understand', st: 3, url: KB + 'cc-6th-equivalent-ratios/e/understand-equivalent-ratios' },
   coord:      { name: 'Ratios on coordinate plane', short: 'Coordinate plane', st: 4, url: KB + 'cc-6th-ratio-word-problems/e/ratios-on-coordinate-plane' },
   units:      { name: 'Ratios and units of measurement', short: 'Units', st: 4, url: KB + 'cc-6th-ratio-word-problems/e/ratios-and-units-of-measurement' },
-  ppw:        { name: 'Part-part-whole ratios', short: 'Part-part-whole', st: 4, url: KB + 'cc-6th-ratio-word-problems/e/part-part-whole-ratios' }
+  ppw:        { name: 'Part-part-whole ratios', short: 'Part-part-whole', st: 4, url: KB + 'cc-6th-ratio-word-problems/e/part-part-whole-ratios' },
+  addDec:  { name: 'Adding decimals', short: 'Add decimals', st: 1, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-add-decimals/e/adding_decimals_2' },
+  subDec:  { name: 'Subtracting decimals', short: 'Subtract decimals', st: 1, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-sub-decimals/e/subtracting_decimals_2' },
+  decWord: { name: 'Adding & subtracting decimals word problems', short: 'Decimal word problems', st: 1, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-add-sub-decimals-word-problems/e/adding_and_subtracting_decimals_word_problems' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -33,7 +36,7 @@ export interface DrillType {
 }
 export const DRILLS: Record<string, DrillType> = {
   times:        { name: 'Times tables', unit: 'all',    teacherLabel: k => `${k}s times table`,       kidTitle: k => `Let's practice the ${k}s!` },
-  placeValue:   { name: 'Place value',  unit: 'bakery', teacherLabel: k => `Place value (${k})`,      kidTitle: () => "Let's line up the places!" },
+  placeValue:   { name: 'Place value',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 1 }, teacherLabel: k => `Place value (${k})`,      kidTitle: () => "Let's line up the places!" },
   decimalShift: { name: 'Moving the decimal', unit: 'bakery', teacherLabel: k => `Multiplying by ${k}`, kidTitle: k => `Let's slide the decimal (× ${k})!` },
   reciprocal:   { name: 'Reciprocals',  unit: 'bakery', teacherLabel: () => 'Flipping fractions',     kidTitle: () => "Let's flip some fractions!" },
   simplify:     { name: 'Simplifying',  unit: 'bakery', teacherLabel: k => `Simplifying by ${k}`,     kidTitle: k => `Let's simplify by ${k}!` }
@@ -148,7 +151,7 @@ export const STATIONS: Station[] = [
 ];
 export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
 export const BAKERY_STATIONS: Station[] = [
-  { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: [] },
+  { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
   { id: 2, name: 'Sharing Pans',  emoji: '🥧', kid: 'Divide fractions and whole numbers', skills: [] },
   { id: 3, name: 'Boxing Treats', emoji: '📦', kid: 'Divide fractions by fractions', skills: [] },
   { id: 4, name: 'The Register',  emoji: '🧾', kid: 'Multiply decimals, long division', skills: [] },
@@ -179,7 +182,7 @@ export interface Reward {
 /** Skills belonging to each unit. Add a unit's skills when that unit is built. */
 export const UNIT_SKILLS: Record<string, string[]> = {
   cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
-  bakery: [], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  bakery: ['addDec', 'subDec', 'decWord'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -260,7 +263,12 @@ export const MIS: Record<string, Misconception> = {
   notSimplest: { name: 'Stops before simplest form', kid: 'Can you divide both numbers again?', tip: 'Ask: is there any number besides 1 that divides both? Divide by the biggest one (the GCF), or keep dividing until nothing does.', skills: ['basic', 'equiv', 'table'] },
   coordSwap:        { name: 'Swaps x and y on the coordinate plane', kid: 'Go across first (x), then up (y).', tip: 'Say "across, then up" and check the axis labels before plotting.', skills: ['coord'] },
   unitsDirection:   { name: 'Multiplies when they should divide (or the reverse) converting units', kid: 'Should the number get bigger or smaller?', tip: 'Going to a smaller unit means more of them, so multiply.', skills: ['units'] },
-  factSlip:         { name: 'Times-table slip (off by one group)', kid: 'So close! Check that times fact.', tip: 'The method is right. Drill the specific facts (see the times-table section).', skills: [] }
+  factSlip:         { name: 'Times-table slip (off by one group)', kid: 'So close! Check that times fact.', tip: 'The method is right. Drill the specific facts (see the times-table section).', skills: [] },
+  rightAlign:        { name: 'Lines up right edges instead of decimal points', kid: 'Line up the decimal points, not the last digits.', tip: 'Have students write the numbers on grid paper with the decimal points in one column, and fill empty places with zeros.', skills: ['addDec', 'subDec'] },
+  noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec'] },
+  smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec'] },
+  estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec'] },
+  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord'] }
 };
 
 /** Mastery rule shared by game and dashboard: 4+ tries and 75% of the last 8 perfect. */
