@@ -126,7 +126,7 @@ Each is built inside the station plan that first needs it, the same way the Bake
 |---|---|
 | `NEIGHBORHOODS-0-ENGINE.md` | Neighborhoods in the engine (see `NEIGHBORHOODS.md`). Built |
 | `GRADE4-1-LEMONADE.md` | Lemonade Stand, 4 stations, and its reward set. Built |
-| `GRADE4-2-TOYS.md` | Toy Shop, 4 stations |
+| `GRADE4-2-TOYS.md` | Toy Shop, 4 stations. Stations 1 and 2 built |
 | `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations (after the Bakery's fraction answers exist) |
 | `GRADE4-4-GARDEN.md` | Garden Center, 4 stations |
 | `GRADE4-5-ART.md` | Art Studio, 3 stations |
