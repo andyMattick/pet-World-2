@@ -27,6 +27,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Bakery station 2: Sharing Pans, with fraction answer boxes and the simplify and mixed-number practice pop-ups (`BAKERY-2-PANS.md`)
 - [x] Bakery station 3: Boxing Treats, with the reciprocal practice pop-up (`BAKERY-3-BOXES.md`)
 - [x] Bakery station 4: The Register, with multiplication rows (required on levels 1 and 2, optional on level 3), the long-division bus stop, optional carry and borrow boxes, answer-only quizzes, and the moving-the-decimal pop-up (`BAKERY-4-REGISTER.md`)
+- [x] Bakery station 5: Bulk Orders, with the decimal point drawn straight up in the long-division layout (`BAKERY-5-BULK.md`). **The Bakery is done:** all 5 stations and the 🏆 Bakery Unit Test (16 questions, played end to end)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -41,7 +42,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
-| 1 | **Bakery stations 2 to 5** | `BAKERY-2-PANS.md` · `BAKERY-3-BOXES.md` · `BAKERY-4-REGISTER.md` · `BAKERY-5-BULK.md` (draft plans) | The Scale | large |
+| 1 | **Word-problem practice for the Café** (ratio stories, checklist 1e) | to be written | the Café | small |
 | 2 | **Neighborhoods**: one town per student, one neighborhood per grade (4th to 8th, then Algebra 1, Geometry, Algebra 2, Precalculus, Calculus), with a home grade, and nothing lost when a grade is added | `NEIGHBORHOODS.md` (plan) | the Bakery | medium |
 | 3 | **4th grade neighborhood** (follows the Sadlier workbook, with Khan links, same class features, and family accounts for home) | `GRADE4.md` (draft plan) | Neighborhoods | large |
 | 4 | **7th grade neighborhood** (for next school year) | to be written | Neighborhoods | large |
@@ -49,14 +50,14 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 Draft plans have the skills, steps, mix-ups, drills, and build steps. Before each one is built, its generator code gets written and stress-tested and pasted into the plan, like `BAKERY-1-SCALE.md`.
 
-**Owner decisions made:** the Bakery comes first; mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a family account; read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
+**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a family account; read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
 
 ### Checklist
 
 - [x] 1a. Bakery station 2, Sharing Pans, with fraction answers
 - [x] 1b. Bakery station 3, Boxing Treats, with the reciprocal drill
 - [x] 1c. Bakery station 4, The Register, with the long-division layout
-- [ ] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
+- [x] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
 - [x] 2a. 4th grade: owner decisions (shop names, family accounts, read-aloud off), except checking lesson titles against the workbook
 - [ ] 1e. Word-problem practice for the Café (ratio stories)
 - [ ] 2. Neighborhoods in the engine: home grade, switcher, dashboard tabs (`NEIGHBORHOODS-0-ENGINE.md`, to be written)

@@ -66,6 +66,11 @@ need('src/game/game.js', "st.kind === 'qr'", 'the quotient and remainder answer 
 need('src/game/game.js', '  decimalShift:{', 'the moving-the-decimal practice pop-up');
 need('src/shared/registry.ts', 'mulDec:', 'the mulDec skill');
 need('src/shared/registry.ts', 'missingZero:', 'the missingZero mix-up');
+need('src/game/game.js', 'const BULK_GEN', 'the Bulk Orders generators');
+need('src/game/game.js', 'Object.assign(GEN, BULK_GEN)', 'the Bulk Orders generators merged into GEN');
+need('src/game/game.js', 'function longDivisionDec(', 'long division with a decimal point');
+need('src/shared/registry.ts', 'divDec3:', 'the divDec3 skill');
+need('src/shared/registry.ts', 'remainderNotDecimal:', 'the remainderNotDecimal mix-up');
 need('src/shared/registry.ts', 'mixed:        {', 'the mixed-number drill type');
 need('src/game/game.js', 'const BOXES_GEN', 'the Boxing Treats generators');
 need('src/game/game.js', '  reciprocal:{', 'the reciprocal practice pop-up');
