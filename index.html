@@ -17,7 +17,8 @@
   <div class="chips">
     <span class="chip power" id="powerChip" hidden>⚡ <span id="powerVal">×1</span> tips</span>
     <span class="chip" title="Coins">🪙 <span id="coinCount">0</span></span>
-    <button class="iconbtn" id="musicBtn" title="Music">🎵</button>
+    <button class="iconbtn" id="musicBtn" title="Music" aria-haspopup="dialog" aria-expanded="false" aria-controls="musicMenu">🎵</button>
+    <div id="musicMenu" class="music-menu" hidden role="dialog" aria-label="Music"></div>
     <button class="iconbtn" id="muteBtn" title="Sound effects">🔊</button>
   </div>
 </header>

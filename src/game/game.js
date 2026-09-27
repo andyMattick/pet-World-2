@@ -1028,8 +1028,7 @@ function updateHeader(){
   $('#muteBtn').textContent = S.muted ? '🔇' : '🔊';
   $('#muteBtn').setAttribute('aria-label', S.muted ? 'Turn sound effects on' : 'Turn sound effects off');
   $('#musicBtn').classList.toggle('off', !S.music);
-  $('#musicBtn').setAttribute('aria-label', S.music ? 'Turn music off' : 'Turn music on');
-  $('#musicBtn').setAttribute('aria-pressed', String(S.music));
+  $('#musicBtn').setAttribute('aria-label', S.music ? 'Music settings (music is on)' : 'Music settings (music is off)');
 }
 let toastTimer;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
@@ -1138,7 +1137,43 @@ function kickMusic(){ if (S.music && !document.hidden) { applyMusicPrefs(); Musi
 document.addEventListener('visibilitychange', () => { if (document.hidden) Music.stop(); else kickMusic(); });
 $('#muteBtn').addEventListener('click', () => { S.muted = !S.muted; save(); updateHeader(); if (!S.muted) sfx('tick'); });
 $('#musicBtn').addEventListener('pointerdown', e => e.stopPropagation());
-$('#musicBtn').addEventListener('click', e => { e.stopPropagation(); S.music = !S.music; save(); updateHeader(); if (S.music) { applyMusicPrefs(); Music.start(); } else Music.stop(); });
+/* ---------- music menu (MUSIC.md step 2): tracks, volume, and music on/off ---------- */
+function renderMusicMenu(){
+  $('#musicMenu').innerHTML = `<div class="mm-head"><b>Music</b><label class="mm-switch"><input type="checkbox" id="mmOn" ${S.music ? 'checked' : ''}> Music on</label></div>
+    <div class="mm-tracks" role="radiogroup" aria-label="Track">${Object.entries(TRACKS).map(([id, t]) => `<button type="button" class="mm-track${id === S.musicTrack ? ' on' : ''}" role="radio" aria-checked="${id === S.musicTrack}" data-track="${id}"><span aria-hidden="true">${t.emoji}</span> ${esc(t.name)}${id === S.musicTrack ? '<b aria-hidden="true">✓</b>' : ''}</button>`).join('')}</div>
+    <label class="mm-vol" for="mmVol">Volume <input type="range" id="mmVol" min="0" max="100" step="5" value="${S.musicVolume}"></label>`;
+}
+function openMusicMenu(){
+  const menu = $('#musicMenu'), r = $('#musicBtn').getBoundingClientRect();
+  renderMusicMenu(); menu.hidden = false;
+  const w = menu.offsetWidth, top = r.bottom + 8;
+  menu.style.top = top + 'px';
+  menu.style.left = Math.max(12, Math.min(r.right - w, innerWidth - w - 12)) + 'px';
+  menu.style.maxHeight = Math.max(160, innerHeight - top - 12) + 'px';
+  $('#musicBtn').setAttribute('aria-expanded', 'true');
+  ($('#musicMenu .mm-track.on') || $('#mmOn')).focus();
+}
+function closeMusicMenu(returnFocus){
+  if ($('#musicMenu').hidden) return;
+  $('#musicMenu').hidden = true; $('#musicBtn').setAttribute('aria-expanded', 'false');
+  if (returnFocus) $('#musicBtn').focus();
+}
+$('#musicBtn').addEventListener('click', e => { e.stopPropagation(); if ($('#musicMenu').hidden) openMusicMenu(); else closeMusicMenu(false); });
+$('#musicMenu').addEventListener('click', e => {
+  const b = e.target.closest('[data-track]'); if (!b) return;
+  S.musicTrack = b.dataset.track;
+  if (!S.music) S.music = true;              // choosing a track starts music if it was off
+  save(); updateHeader(); applyMusicPrefs(); Music.start();
+  renderMusicMenu(); $(`#musicMenu [data-track="${S.musicTrack}"]`).focus();
+});
+$('#musicMenu').addEventListener('change', e => {
+  if (e.target.id === 'mmOn') { S.music = e.target.checked; save(); updateHeader(); if (S.music) { applyMusicPrefs(); Music.start(); } else Music.stop(); }
+  if (e.target.id === 'mmVol') save();
+});
+$('#musicMenu').addEventListener('input', e => { if (e.target.id === 'mmVol') { S.musicVolume = Number(e.target.value); Music.setVolume(S.musicVolume); } });
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#musicMenu, #musicBtn')) closeMusicMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMusicMenu(true); });
+window.addEventListener('scroll', () => closeMusicMenu(false), {passive:true});
 
 function b64u(bytes){ let s = ''; for (let i=0;i<bytes.length;i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 /* replace the whole town with another save (from the account or a backup code) */

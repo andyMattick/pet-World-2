@@ -429,3 +429,13 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .pt-day{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; gap:2px}
 .pt-bar{display:block; width:100%; min-height:2px; background:var(--mint); border-radius:4px 4px 0 0}
 .pt-day small{font-size:.7rem; color:var(--ink-soft)}
+.music-menu{position:fixed; z-index:65; width:min(280px, calc(100vw - 24px)); overflow-y:auto; background:var(--surface); color:var(--ink); border:3px solid var(--edge); border-radius:18px; box-shadow:0 6px 0 var(--edge); padding:12px}
+.mm-head{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px}
+.mm-switch{display:flex; align-items:center; gap:6px; min-height:44px; font-weight:700; cursor:pointer}
+.mm-switch input{width:22px; height:22px; accent-color:var(--berry)}
+.mm-tracks{display:flex; flex-direction:column; gap:6px}
+.mm-track{display:flex; align-items:center; gap:8px; min-height:44px; padding:6px 12px; border:2px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink); font:inherit; font-weight:700; text-align:left; cursor:pointer}
+.mm-track.on{background:var(--mint); color:var(--mint-ink)}
+.mm-track b{margin-left:auto}
+.mm-vol{display:flex; flex-direction:column; gap:2px; margin-top:10px; font-weight:700}
+.mm-vol input{width:100%; min-height:44px; accent-color:var(--berry)}
