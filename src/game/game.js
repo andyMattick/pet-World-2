@@ -2233,6 +2233,7 @@ function enterAs(me){
   drillSettings();
   checkUnlocks({announce:false});
   save(); show('home');
+  void Backend.startSession();
 }
 
 /* ---------- boot ---------- */

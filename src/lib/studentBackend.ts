@@ -14,6 +14,62 @@ type Table = 'attempts' | 'problems' | 'practice_popups' | 'sprints' | 'assessme
 const QUEUE_KEY = 'pettown:queue:';
 
 /**
+ * Counts active practice time: every 15 seconds, if the tab is visible and the student
+ * tapped, clicked, or typed in the last minute, 15 seconds are added. About once a minute,
+ * and when the tab is hidden, the seconds are handed to `onReport`. If it returns false
+ * (for example, offline), the seconds are kept for the next report.
+ * Used for signed-in students (session_ping) and, in local mode, for the town's own log.
+ */
+export class ActivityTracker {
+  private tickTimer: ReturnType<typeof setInterval> | null = null;
+  private reportTimer: ReturnType<typeof setInterval> | null = null;
+  private lastInput = 0;
+  private pending = 0;
+  private reporting = false;
+  private readonly onInput = () => { this.lastInput = Date.now(); };
+  private readonly onVisibility = () => { if (document.hidden) void this.report(); };
+
+  constructor(private readonly onReport: (seconds: number) => Promise<boolean> | boolean) {}
+
+  start() {
+    this.stop();
+    this.lastInput = Date.now();
+    for (const type of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(type, this.onInput, { passive: true });
+    document.addEventListener('visibilitychange', this.onVisibility);
+    this.tickTimer = setInterval(() => {
+      if (!document.hidden && Date.now() - this.lastInput < 60000) this.pending += 15;
+    }, 15000);
+    this.reportTimer = setInterval(() => { void this.report(); }, 60000);
+  }
+
+  /** Hand pending seconds to onReport; keep them if the report fails. */
+  async report() {
+    if (this.reporting || this.pending <= 0) return;
+    this.reporting = true;
+    const seconds = this.pending; this.pending = 0;
+    let ok = false;
+    try { ok = await this.onReport(seconds); } catch { ok = false; }
+    if (!ok) this.pending += seconds;
+    this.reporting = false;
+  }
+
+  stop() {
+    if (this.tickTimer) clearInterval(this.tickTimer);
+    if (this.reportTimer) clearInterval(this.reportTimer);
+    this.tickTimer = this.reportTimer = null;
+    for (const type of ['pointerdown', 'keydown', 'touchstart']) document.removeEventListener(type, this.onInput);
+    document.removeEventListener('visibilitychange', this.onVisibility);
+  }
+}
+
+/** Rough device type for practice sessions. */
+export function deviceType(): 'phone' | 'tablet' | 'computer' {
+  const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  if (!coarse) return 'computer';
+  return Math.min(screen.width, screen.height) < 700 ? 'phone' : 'tablet';
+}
+
+/**
  * Everything the game needs from Supabase, for a signed-in student:
  * join with class code + name + PIN, load/save the town, and log learning events.
  * Events are queued in localStorage so nothing is lost if the Wi-Fi drops.
@@ -26,6 +82,8 @@ class StudentBackend {
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private saving = false;
   private pendingState: Record<string, unknown> | null = null;
+  private sessionId: number | null = null;
+  private tracker: ActivityTracker | null = null;
 
   get enabled() { return !!this.sb; }
 
@@ -82,7 +140,52 @@ class StudentBackend {
     this.me.reset_at = next.reset_at;
   }
 
+  /**
+   * Start counting practice time for the signed-in student. Any earlier tracker is
+   * stopped first, so calling this twice never double-counts.
+   */
+  async startSession() {
+    this.tracker?.stop();
+    this.tracker = null;
+    this.sessionId = null;
+    if (!this.sb || !this.me) return;
+    const tracker = new ActivityTracker(seconds => this.ping(seconds));
+    this.tracker = tracker;
+    tracker.start();
+    await this.openSession();
+  }
+
+  private async openSession(): Promise<boolean> {
+    if (!this.sb || !this.me) return false;
+    const { data, error } = await this.sb.rpc('session_start', { p_device: deviceType() });
+    if (error || typeof data !== 'number') return false;
+    this.sessionId = data;
+    return true;
+  }
+
+  /** Report active seconds. Returns false to keep them for the next report (offline, no session yet). */
+  private async ping(seconds: number): Promise<boolean> {
+    if (!this.sb || !this.me) return true;           // signed out: nothing to report to
+    if (this.sessionId === null && !(await this.openSession())) return false;
+    const { data, error } = await this.sb.rpc('session_ping', { p_id: this.sessionId, p_active: seconds });
+    if (error) return false;
+    if (data === true) return true;
+    // the session was closed after 30 idle minutes: start a new one and report there
+    if (!(await this.openSession())) return false;
+    const again = await this.sb.rpc('session_ping', { p_id: this.sessionId, p_active: seconds });
+    return !again.error && again.data === true;
+  }
+
+  /** Send the last report and stop counting. */
+  async endSession() {
+    const tracker = this.tracker;
+    this.tracker = null;
+    if (tracker) { await tracker.report(); tracker.stop(); }
+    this.sessionId = null;
+  }
+
   async signOut() {
+    await this.endSession();
     await this.flush(); await this.pushSave();
     this.me = null; this.queue = [];
     if (this.sb) await this.sb.auth.signOut();
