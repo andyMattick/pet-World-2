@@ -16,7 +16,11 @@ export interface StudentReport {
   f: [string, number, number, number][]; df: [string, number, number, number][];
   p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: DrillHistory; ds?: Partial<DrillSettings> | null; dl?: DrillHistory; sp: number;
   qz?: AssessmentHistory[]; qx?: Record<string, string> | null;
+  ss?: PracticeSummary;
 }
+/* practice time from class_report(): minutes today and in the last 7 days, daily minutes for 4 weeks,
+   and the 10 most recent sessions as [start ms, last seen ms, active seconds, device] */
+interface PracticeSummary { last: number | null; today: number; week: number; days: [string, number][]; recent: [number, number, number, string | null][] }
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
 export const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
@@ -36,6 +40,18 @@ export function ago(t: number) {
   return Math.round(h / 24) + ' days ago';
 }
 const pctTxt = (v: number | null) => v == null ? '–' : v + '%';
+const WEEK_MS = 7 * 86400000;
+const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+/* "today 3:42 PM", "yesterday 8:05 AM", "4 days ago", or "never" */
+export function signedInTxt(t?: number | null) {
+  if (!t) return 'never';
+  const d = new Date(t), days = Math.round((dayStart(new Date()) - dayStart(d)) / 86400000);
+  const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return days <= 0 ? `today ${time}` : days === 1 ? `yesterday ${time}` : `${days} days ago`;
+}
+const noRecentSignIn = (r: StudentReport) => !r.ss?.last || Date.now() - r.ss.last > WEEK_MS;
+const minTxt = (m?: number) => m == null ? '–' : `${m} min`;
 const drillHistory = (r: StudentReport): DrillHistory => r.dl && Object.keys(r.dl).length ? r.dl : r.dr && Object.keys(r.dr).length ? r.dr : Object.fromEntries(Object.entries(r.p || {}).map(([key, value]) => ['times:' + key, value]));
 function assessmentCell(r: StudentReport, shop: string, station: number | null, kind: 'quiz' | 'test') {
   const key = station == null ? `${shop}:test` : `${shop}:${station}`;
@@ -101,6 +117,8 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     return `<div class="group"><h3>${esc(student)} · ${shopEmoji} ${name}</h3><div class="who">${missed}</div></div>`;
   }).join('') + '</div>' : '<p class="muted">No students are in review after a quiz.</p>';
   h += `</div><div class="card"><h2>In review after a quiz</h2>${reviewGroups}</div>`;
+  const byWeek = [...list].sort((a, b) => (a.ss?.week || 0) - (b.ss?.week || 0) || a.n.localeCompare(b.n));
+  h += `<div class="card"><h2>Practice time this week</h2><p class="muted" style="margin-top:0">Active minutes in the last 7 days, least first. Only time with the game on screen and a tap or key press in the last minute counts.</p>${list.length ? '<table class="steptable"><tr><th>Student</th><th>Last 7 days</th><th>Today</th><th>Last signed in</th></tr>' + byWeek.map(r => `<tr class="${noRecentSignIn(r) ? 'stale' : ''}"><td>${esc(r.n)}</td><td>${minTxt(r.ss?.week ?? 0)}</td><td>${minTxt(r.ss?.today ?? 0)}</td><td>${signedInTxt(r.ss?.last)}${noRecentSignIn(r) ? ' <span class="tag stale-tag">no sign-in in 7 days</span>' : ''}</td></tr>`).join('') + '</table>' : '<p class="muted">No students yet.</p>'}</div>`;
   const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
   h += `<div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
 
@@ -110,9 +128,9 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     h += `<div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
     shopStations.forEach(({station, skills}) => { h += `<th class="stn" colspan="${skills.length + 1}">${station.id}. ${esc(station.name)}</th>`; });
     if (allStationsBuilt) h += `<th class="stn" rowspan="2">Unit Test</th>`;
-    h += `<th colspan="5"></th></tr><tr><th>Student</th>`;
+    h += `<th colspan="8"></th></tr><tr><th>Student</th>`;
     shopStations.forEach(({skills}) => { h += skills.map(k => `<th class="sk" title="${esc(SKILLS[k].name)}">${esc(SKILLS[k].short)}</th>`).join('') + '<th class="sk" title="Station quiz">Quiz</th>'; });
-    h += `<th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th></tr></thead><tbody>`;
+    h += `<th>Ideas</th><th>Arithmetic</th><th>Top mix-up</th><th>Problems</th><th>Last active</th><th>Last signed in</th><th>Today</th><th>This week</th></tr></thead><tbody>`;
     list.forEach(r => {
       const st = sStats(r);
       h += `<tr><td><button class="namebtn" data-id="${esc(r.id)}">${esc(r.n)}</button></td>`;
@@ -121,7 +139,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
         h += `<td>${assessmentCell(r, shop.id, station.id, 'quiz')}</td>`;
       });
       h += allStationsBuilt ? `<td>${assessmentCell(r, shop.id, null, 'test')}</td>` : '';
-      h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td></tr>`;
+      h += `<td>${pctTxt(st.ip)}</td><td>${pctTxt(st.ap)}</td><td>${st.top ? esc(MIS[st.top] ? MIS[st.top].name : st.top) : '–'}</td><td>${r.o || 0}</td><td>${r.o ? ago(r.t) : 'not yet'}</td><td class="${noRecentSignIn(r) ? 'stale' : ''}">${signedInTxt(r.ss?.last)}</td><td>${minTxt(r.ss?.today)}</td><td>${minTxt(r.ss?.week)}</td></tr>`;
     });
     h += `</tbody></table></div>`;
   }
@@ -161,6 +179,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dReset">Reset</button> <button class="btn small" id="dClose">Close</button></span></div><div id="studentResetPanel" class="reset-panel" hidden></div>
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
+  h += practiceHTML(r);
   h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
   ORDER.forEach(k => {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
@@ -277,9 +296,22 @@ export function closeDetail() { $('#detail').hidden = true; }
 $('#detail').addEventListener('click', e => { if ((e.target as HTMLElement).id === 'detail') closeDetail(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#detail').hidden) closeDetail(); });
 
+/* student detail: 4-week bars of daily minutes and the recent sessions */
+function practiceHTML(r: StudentReport) {
+  const ss = r.ss, byDay = new Map((ss?.days || []).map(([d, m]) => [d, m]));
+  const days = Array.from({ length: 28 }, (_, i) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (27 - i)); return { d, mins: byDay.get(dayKey(d)) || 0 }; });
+  const top = Math.max(10, ...days.map(x => x.mins));
+  const bars = days.map(x => `<div class="pt-day${x.d.getDay() === 1 ? ' week-start' : ''}" title="${esc(x.d.toLocaleDateString())}: ${x.mins} min"><span class="pt-bar" style="height:${Math.round(100 * x.mins / top)}%"></span></div>`).join('');
+  const recent = (ss?.recent || []).map(([start, end, secs, device]) => { const s = new Date(start), e = new Date(end);
+    return `<tr><td>${esc(s.toLocaleDateString())}</td><td>${esc(s.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td><td>${esc(e.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td><td>${Math.round(secs / 60)} min</td><td>${esc(device || '–')}</td></tr>`; }).join('');
+  return `<h2>Practice time</h2><div class="summary"><div class="kpi"><b>${minTxt(ss?.today ?? 0)}</b>today</div><div class="kpi"><b>${minTxt(ss?.week ?? 0)}</b>in the last 7 days</div><div class="kpi"><b>${esc(signedInTxt(ss?.last))}</b>last signed in</div></div>
+    <p class="muted" style="margin:10px 0 4px">Active minutes per day, last 4 weeks</p><div class="pt-bars" aria-label="Active minutes per day for the last 4 weeks">${bars}</div>
+    <h3>Recent sessions</h3>${recent ? `<table class="steptable"><tr><th>Date</th><th>Started</th><th>Last active</th><th>Active</th><th>Device</th></tr>${recent}</table>` : '<p class="muted">No sessions yet.</p>'}`;
+}
+
 function downloadCSV(list: StudentReport[]) {
-  const head = ['Student', 'Last active', 'Problems', 'Ideas %', 'Arithmetic %', 'Top mix-up', ...ORDER.map(k => SKILLS[k].name)];
-  const rows = list.map(r => { const s = sStats(r); return [r.n, r.o ? new Date(r.t).toLocaleString() : '', r.o || 0, s.ip ?? '', s.ap ?? '', s.top && MIS[s.top] ? MIS[s.top].name : '', ...ORDER.map(k => statusFromRecent(((r.k || {})[k] || [])[1] || ''))]; });
+  const head = ['Student', 'Last active', 'Last signed in', 'Minutes today', 'Minutes this week', 'Problems', 'Ideas %', 'Arithmetic %', 'Top mix-up', ...ORDER.map(k => SKILLS[k].name)];
+  const rows = list.map(r => { const s = sStats(r); return [r.n, r.o ? new Date(r.t).toLocaleString() : '', r.ss?.last ? new Date(r.ss.last).toLocaleString() : '', r.ss?.today ?? 0, r.ss?.week ?? 0, r.o || 0, s.ip ?? '', s.ap ?? '', s.top && MIS[s.top] ? MIS[s.top].name : '', ...ORDER.map(k => statusFromRecent(((r.k || {})[k] || [])[1] || ''))]; });
   const csv = [head, ...rows].map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'pet-town-class.csv'; a.click();
 }

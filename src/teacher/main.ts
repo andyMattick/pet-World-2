@@ -89,7 +89,7 @@ function renderMain() {
 async function renderDashboard() {
   const pane = $('#pane'), cls = current!;
   if (!pane.innerHTML) pane.innerHTML = '<p class="muted">Loading…</p>';
-  const { data, error } = await sb!.rpc('class_report', { p_class: cls.id });
+  const { data, error } = await sb!.rpc('class_report', { p_class: cls.id, p_tz: Intl.DateTimeFormat().resolvedOptions().timeZone });
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
