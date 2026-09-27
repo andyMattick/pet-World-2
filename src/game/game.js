@@ -1065,10 +1065,11 @@ function renderShopFloor(shop){
     const quizKey = assessKey(config.id, st.id), quiz = S.quizzes[quizKey], override = Backend.me?.quiz_overrides?.[quizKey];
     const reviewSkills = reviewSkillsNeeded(quizKey), passed = !!quiz?.passed || override === 'excused';
     const mastered = st.skills.length > 0 && st.skills.every(skill => skillStatus(skill) === 'mastered');
+    const prevName = config.stations[st.id-2]?.name || 'previous station';
     const lock = !st.skills.length
       ? '<p class="muted" style="margin:0">Coming soon</p>'
       : open ? '' : settings.requireQuiz
-        ? `<p class="muted" style="margin:0">Pass the ${esc(config.stations[st.id-2]?.name || 'previous station')} quiz to open this station.</p>`
+        ? `<p class="muted" style="margin:0">Pass ${prevName.startsWith('The ') ? '' : 'the '}${esc(prevName)} quiz to open this station.</p>`
         : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${config.stations[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
     const skills = st.skills.map(sk => { const s = skillStatus(sk); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}</li>`; }).join('');
     let quizCard = '';
