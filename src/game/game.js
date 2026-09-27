@@ -2,7 +2,7 @@
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
 import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
-import { Backend } from '../lib/studentBackend';
+import { Backend, ActivityTracker } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -39,7 +39,7 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* fill in any fields an older save is missing */
 function normalize(raw){
@@ -64,6 +64,7 @@ function normalize(raw){
   if (!Array.isArray(s.decor)) s.decor = [];
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
+  s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
   s.resetSeen = typeof s.resetSeen === 'string' ? s.resetSeen : null;
@@ -2083,7 +2084,7 @@ function renderHall(){
       <div style="margin-top:8px"><button class="btn small" id="restoreBtn">Restore my town</button></div>
     </div>
     <div class="panel"><h3>For grown-ups</h3><p>See which skills are strong, which step gets stuck, and which times tables need work.</p><button class="btn small" id="toParent">Open the progress report</button></div>`;
-  if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); openJoin(); });
+  if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); openJoin(); });
   if ($('#rename')) $('#rename').addEventListener('click', openName);
   $('#makeBackup').addEventListener('click', async () => { const code = await backupCode(); $('#backupWrap').hidden = false; $('#backupBox').value = code; $('#backupBox').select(); });
   $$('#hallWrap [data-copy]').forEach(b => b.addEventListener('click', async () => {
@@ -2112,6 +2113,29 @@ function heatTable(store){
   const label = {solid:'solid', close:'getting there', work:'needs practice', new:'not seen yet'};
   for (let x=2;x<=12;x++) { g += `<tr><th>${x}</th>`; for (let y=2;y<=12;y++) { const st = factStatus(x,y,store); g += `<td class="st-${st}" title="${store === 'facts' ? `${x} × ${y} = ${x*y}` : `${x*y} ÷ ${x} = ${y}`}: ${label[st]}">${x*y}</td>`; } g += '</tr>'; }
   return g + '</tbody></table>';
+}
+function practiceTimePanel(){
+  const list = S.sessions || [], now = new Date();
+  const midnight = daysAgo => { const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - daysAgo); return d.getTime(); };
+  const minutesBetween = (from, to) => Math.round(list.filter(x => x.start >= from && x.start < to).reduce((a, x) => a + x.active, 0) / 60);
+  const today = minutesBetween(midnight(0), Infinity), week = minutesBetween(midnight(6), Infinity);
+  const last = list.length ? Math.max(...list.map(x => x.start)) : null;
+  const lastTxt = last === null ? 'not yet'
+    : last >= midnight(0) ? 'today ' + new Date(last).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})
+    : last >= midnight(1) ? 'yesterday'
+    : `${Math.round((midnight(0) - new Date(last).setHours(0, 0, 0, 0)) / 86400000)} days ago`;
+  const days = Array.from({length:14}, (_, i) => {
+    const back = 13 - i, from = midnight(back), mins = minutesBetween(from, back === 0 ? Infinity : midnight(back - 1));
+    return {mins, label:new Date(from).toLocaleDateString([], {weekday:'narrow'}), date:new Date(from).toLocaleDateString()};
+  });
+  const top = Math.max(10, ...days.map(d => d.mins));
+  const bars = days.map(d => `<div class="pt-day" title="${esc(d.date)}: ${d.mins} min"><span class="pt-bar" style="height:${Math.round(100 * d.mins / top)}%"></span><small>${esc(d.label)}</small></div>`).join('');
+  return `<div class="panel"><h3>Practice time</h3><div class="stats">
+      <div class="stat"><b>${today} min</b>today</div>
+      <div class="stat"><b>${week} min</b>in the last 7 days</div></div>
+    <p>Last played: <b>${esc(lastTxt)}</b>. Only active time counts: the game has to be on screen, with a tap or key press in the last minute.</p>
+    <div class="pt-bars" aria-label="Minutes practiced each day for the last 14 days">${bars}</div>
+    ${Backend.me ? '<p class="muted">Your teacher sees the full practice history.</p>' : ''}</div>`;
 }
 function renderParent(){
   const [ca, cc, ma, mc] = ccTotals(), pct = (c,a) => a ? Math.round(100*c/a) : null, cP = pct(cc,ca), mP = pct(mc,ma);
@@ -2149,6 +2173,7 @@ function renderParent(){
       <div class="stat"><b>${cP === null ? '–' : cP + '%'}</b>idea steps right on the first try (${cc} of ${ca})</div>
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
+    ${practiceTimePanel()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>
@@ -2238,6 +2263,22 @@ function askPin(){
   setTimeout(() => pin.focus(), 50);
 }
 /* load a signed-in student's town: whichever copy (this computer or the server) is newer wins */
+/* ---------- practice time kept in the town (PRACTICE-TIME.md step 3) ----------
+   Both modes keep the last 30 sessions in S.sessions as {start, end, active} (ms, ms, seconds).
+   Signed-in students also report to Supabase through Backend.startSession(). A new session
+   starts each time the town is opened, and after 30 idle minutes. */
+let localSession = null;
+const townTracker = new ActivityTracker(seconds => {
+  const now = Date.now();
+  if (!localSession || !S.sessions.includes(localSession) || now - localSession.end > 30 * 60000) {
+    localSession = {start: now - seconds * 1000, end: now, active: 0};
+    S.sessions.push(localSession);
+    if (S.sessions.length > 30) S.sessions = S.sessions.slice(-30);
+  }
+  localSession.end = now; localSession.active += seconds; save();
+  return true;
+});
+function startTownTracker(){ localSession = null; townTracker.start(); }
 function enterAs(me){
   storeKey = 'pettown:v1:' + me.student_id;
   const local = loadState(storeKey);
@@ -2251,12 +2292,13 @@ function enterAs(me){
   drillSettings();
   checkUnlocks({announce:false});
   save(); show('home');
+  startTownTracker();
   void Backend.startSession();
 }
 
 /* ---------- boot ---------- */
 (async function boot(){
-  if (!Backend.enabled) { S = loadState(LOCAL_KEY); drillSettings(); checkUnlocks({announce:false}); save(); if (!S.name) openName(); else show('home'); return; }
+  if (!Backend.enabled) { S = loadState(LOCAL_KEY); drillSettings(); checkUnlocks({announce:false}); save(); startTownTracker(); if (!S.name) openName(); else show('home'); return; }
   show('loading');
   let me = null;
   try { me = await Backend.restore(); } catch(e){}

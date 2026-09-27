@@ -425,3 +425,7 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
   .customer .cust-emoji{font-size:3.6rem}
   .helper{margin-top:10px}
 }
+.pt-bars{display:flex; align-items:flex-end; gap:4px; height:96px; margin-top:8px}
+.pt-day{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; gap:2px}
+.pt-bar{display:block; width:100%; min-height:2px; background:var(--mint); border-radius:4px 4px 0 0}
+.pt-day small{font-size:.7rem; color:var(--ink-soft)}
