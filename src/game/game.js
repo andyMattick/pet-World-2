@@ -1476,6 +1476,136 @@ function registerDivision(skill, lvl){
     steps, answerSteps:[steps.length - 1]};
 }
 Object.assign(GEN, REGISTER_GEN);
+
+/* ===== Bakery station 5: Bulk Orders (divide decimals) =====
+   Exact math: every number is a whole number plus a count of decimal places (XD), and the long division runs on
+   whole-number digits with the decimal point drawn straight up from the dividend. */
+/* long division of a decimal dividend by a whole number; s = the dividend's digits (zeros already added), pt = digits before the point */
+function longDivisionDec(s, d, pt){
+  let k = 1, cur = Number(s[0]);
+  while (cur < d && k < pt) { cur = cur * 10 + Number(s[k]); k++; }   // never pass the ones digit, so the point always has a digit above it
+  const work = [];
+  let col = k - 1;
+  for (;;){
+    const qd = Math.floor(cur / d), m = qd * d, r = cur - m;
+    work.push({col, cur, qd, mul:m, sub:r, auto: col === 0 && cur === 0});   // "how many 4s in 0" is filled in for the student
+    if (col + 1 >= s.length) break;
+    col++; cur = r * 10 + Number(s[col]);
+  }
+  const qi = Number(s) / d;                                // exact: s is a multiple of d by construction
+  return {N:s, d, pt, work, q:work.map(w => w.qd), startCol:k - 1, quotient:qi, rem:Number(s) % d, places:s.length - pt};
+}
+/* the dividend written with p decimal places (7 → "700", pt 1, for 7.00) */
+function decDigits(x, p){ const {i, p:xp} = XD.parse(x); const whole = String(i * Math.pow(10, p - xp)).padStart(p + 1, '0'); return {s:whole, pt:whole.length - p}; }
+function bulkSteps(a, b, lvl, skill){
+  const B = XD.parse(b), m = B.p, bw = B.i;                // move the point m places: b becomes the whole number bw
+  const A = XD.parse(a), aMoved = XD.fmt(A.i * (A.p >= m ? 1 : Math.pow(10, m - A.p)), Math.max(0, A.p - m));
+  const Ai = XD.parse(aMoved);
+  let P = Ai.p; while ((Ai.i * Math.pow(10, P - Ai.p)) % bw !== 0) P++;   // quotient places: keep adding zeros until it divides evenly
+  const {s, pt} = decDigits(aMoved, P), D = longDivisionDec(s, bw, pt);
+  const qI = Ai.i * Math.pow(10, P - Ai.p) / bw, ans = XD.fmt(qI, P), right = XD.eq(qI, P);
+  const steps = [];
+  if (m > 0) {
+    const opts = shuffle([{html:`${aMoved} ÷ ${bw}`, text:`${aMoved} ÷ ${bw}`, ok:true, mis:null},
+      {html:`${a} ÷ ${bw}`, text:`${a} ÷ ${bw}`, ok:false, mis:'shiftOneOnly'},
+      {html:`${XD.fmt(A.i, Math.max(0, A.p - m + 1))} ÷ ${bw}`, text:`moved ${m - 1 || 'no'} place${m - 1 === 1 ? '' : 's'}`, ok:false, mis:'pointMisplaced'}]
+      .filter((o, k, arr) => arr.findIndex(x => x.html === o.html) === k));
+    steps.push(lvl === 1
+      ? {name:'Make the divisor whole', type:'concept', kind:'choice', prompt:`Move the decimal point so ${b} becomes a whole number. Which problem is the same as ${a} ÷ ${b}?`, options:opts,
+          drill:{type:'decimalShift', key:String(Math.pow(10, m))}, hint:() => `${b} × ${Math.pow(10, m)} = ${bw}. Do the same to ${a}.`}
+      : {name:'Make the divisor whole', type:'concept', kind:'num', prompt:`Move both points ${m} place${m === 1 ? '' : 's'} to the right: ${a} ÷ ${b} = ? ÷ ${bw}`,
+          answer:aMoved, eq:XD.eq(Ai.i, Ai.p), decimal:true, drill:{type:'decimalShift', key:String(Math.pow(10, m))},
+          mis:v => { if (typeof v !== 'number' || XD.eq(Ai.i, Ai.p)(v)) return null;
+            if (XD.eq(A.i, A.p)(v)) return 'shiftOneOnly';
+            if (XD.eq(Ai.i, Ai.p + 1)(v) || XD.eq(Ai.i, Ai.p - 1)(v)) return 'pointMisplaced';
+            return null; },
+          hint:() => `${b} × ${Math.pow(10, m)} = ${bw}. Now multiply ${a} by ${Math.pow(10, m)} too.`});
+  }
+  if (P > Ai.p) steps.push({name:'Keep dividing', type:'concept', kind:'choice',
+    prompt:`${bw} doesn't go into ${aMoved} evenly. What do we do?`,
+    options:shuffle([{html:`Write ${aMoved} as ${s.slice(0, pt)}.${s.slice(pt)} and keep dividing`, text:'add zeros and keep dividing', ok:true, mis:null},
+      {html:'Stop and write the remainder', text:'stop with a remainder', ok:false, mis:'remainderNotDecimal'}]),
+    hint:() => 'A decimal can have zeros added at the end without changing its value: 7 = 7.0 = 7.00.'});
+  const digits = divSteps(D, lvl);
+  digits.pop();                                            // station 4's final answer step is replaced by placing the point
+  digits.forEach(st => { if (st.kind === 'ldiv' && D.work[st.cell.step].auto) st.skipAuto = true; });
+  steps.push(...digits.filter(st => !st.skipAuto));
+  const stopped = Math.floor(Ai.i / bw), rem = Ai.i % bw;   // stopping early: 7 ÷ 4 = 1 R3, often written 1.3
+  const flat = Number(String(qI).replace(/0/g, '') || '0');
+  steps.push({name:'Place the point', type:'concept', kind:'num', prompt:`${a} ÷ ${b} = ?`, answer:ans, eq:right, decimal:true,
+    drill:{type:'decimalShift', key:'10'},
+    mis:v => { if (typeof v !== 'number' || right(v)) return null;
+      if (m > 0 && Math.abs(v * bw - A.i / Math.pow(10, A.p)) < 1e-9) return 'shiftOneOnly';   // divided the unmoved dividend by the whole divisor
+      if (XD.eq(qI, P + 1)(v) || XD.eq(qI, P - 1)(v) || XD.eq(qI, P + 2)(v) || (P >= 2 && XD.eq(qI, P - 2)(v))) return 'pointMisplaced';
+      if (P > Ai.p && rem && (XD.eq(stopped, Ai.p)(v) || (Ai.p === 0 && (XD.eq(stopped * 10 + rem, 1)(v) || XD.eq(stopped * 100 + rem, 2)(v))))) return 'remainderNotDecimal';
+      if (flat !== qI && (XD.eq(flat, P)(v) || XD.eq(flat, P - 1)(v))) return 'missingZero';
+      return null; },
+    hint:() => 'The point in the answer goes straight up from the point in the dividend.'});
+  return {steps, D, ans, P, aMoved, bw, m};
+}
+const BULK_ITEMS = [['🌾', 'flour'], ['🍬', 'sugar'], ['🧈', 'butter'], ['🍫', 'chocolate chips'], ['🥜', 'nuts'], ['🍓', 'berries']];
+/* a decimal string that is exactly q × b, from whole-number parts */
+const xdMul = (x, y) => { const X = XD.parse(x), Y = XD.parse(y); return XD.fmt(X.i * Y.i, X.p + Y.p); };
+function bulkFits(a, b, lvl){
+  const r = bulkSteps(a, b, lvl);
+  return r.D.N.length + String(r.bw).length <= 7 && r.P <= 3 && r.steps.length <= (lvl === 1 ? 10 : 12) ? r : null;   // fits an iPhone SE, and no order runs past 12 steps
+}
+const BULK_GEN = {
+  divToDec(lvl){
+    let a, b, r;
+    for (let t = 0; t < 400; t++){
+      const d = lvl === 1 ? pick([2, 4, 5]) : lvl === 2 ? pick([4, 5, 8, 20, 25]) : pick([8, 16, 20, 25, 40, 50, 80]);
+      const N = lvl === 1 ? rand(3, 49) : rand(10, lvl === 2 ? 199 : 399);
+      if (N % d === 0) continue;
+      a = String(N); b = String(d); r = bulkFits(a, b, lvl);
+      if (!r) continue;
+      if (lvl === 1 && r.P > 2) continue;
+      if (lvl === 3 && r.P < 2) continue;
+      break;
+    }
+    const [e, item] = pick(BULK_ITEMS);
+    return {title:'Bulk Orders', ctx:`${a} ÷ ${b}`,
+      bubble:`We have ${a} kg of ${item} to split into ${b} equal batches. How many kilograms go in each batch?`,
+      helper:'When it doesn\'t divide evenly, add a point and zeros and keep going.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${e} ${a} kg ÷ ${b}</div>`,
+      steps:r.steps, answerSteps:[r.steps.length - 1]};
+  },
+  divDec2(lvl){ return bulkDecimal('divDec2', lvl); },
+  divDec3(lvl){ return bulkDecimal('divDec3', lvl); }
+};
+function bulkDecimal(skill, lvl){
+  let a, b, r;
+  for (let t = 0; t < 3000; t++){
+    r = null;
+    if (skill === 'divDec2') {
+      b = lvl === 1 ? `0.0${rand(2, 9)}` : lvl === 2 ? `0.${rand(1, 9)}${rand(1, 9)}` : pick([`0.${rand(1, 9)}${rand(1, 9)}`, `${rand(1, 4)}.${rand(0, 9)}${rand(1, 9)}`]);
+      const q = lvl === 1 ? String(rand(3, 99)) : lvl === 2 ? pick([String(rand(2, 60)), `${rand(1, 20)}.${rand(1, 9)}`]) : pick([`${rand(1, 20)}.${rand(1, 9)}`, `${rand(1, 9)}.0${rand(1, 9)}`, `${rand(1, 9)}0.${rand(1, 9)}`, `${rand(1, 9)}.${rand(1, 9)}${rand(1, 9)}`]);
+      a = xdMul(q, b);
+      if (XD.parse(a).p > 2) continue;                                        // hundredths in the problem
+    } else {
+      b = lvl === 1 ? String(rand(2, 9)) : lvl === 2 ? `0.${rand(2, 9)}` : pick([`0.0${rand(2, 9)}`, `0.${rand(1, 9)}${rand(1, 9)}`, `0.00${rand(2, 9)}`]);
+      const q = lvl === 1 ? `0.${rand(0, 9)}${rand(0, 9)}${rand(1, 9)}` : lvl === 2 ? `0.${rand(1, 9)}${rand(1, 9)}` : pick([`${rand(0, 9)}.${rand(0, 9)}${rand(1, 9)}`, `${rand(1, 30)}.0${rand(1, 9)}`]);
+      a = xdMul(q, b);
+      if (lvl < 3 ? XD.parse(a).p !== 3 : XD.parse(a).p < 2 || XD.parse(a).p > 3) continue;   // thousandths in the problem
+    }
+    if (Number(a) < 0.1 || /^0\.00/.test(a)) continue;
+    r = bulkFits(a, b, lvl);
+    if (!r) continue;
+    if (skill === 'divDec2' && XD.parse(a).p > 2) continue;                 // hundredths
+    if (lvl === 3 && !r.D.q.slice(1).includes(0) && Math.random() < 0.5) continue;   // lean toward zeros in the quotient
+    break;
+  }
+  if (!r) { [a, b] = skill === 'divDec2' ? ['3.25', '0.05'] : ['0.378', '0.9']; r = bulkSteps(a, b, lvl); }   // never reached in testing
+  const [e, item] = pick(BULK_ITEMS), whole = !b.includes('.');
+  return {title:'Bulk Orders', ctx:`${a} ÷ ${b}`,
+    bubble: whole ? `We have ${a} kg of ${item} to share equally among ${b} batches. How many kilograms go in each?`
+                  : `We have ${a} kg of ${item}. Each bag holds ${b} kg. How many bags can we fill?`,
+    helper: whole ? 'Divide as usual, and put the point straight up from the dividend\'s point.' : 'Make the divisor a whole number first: move both points the same number of places.',
+    visual:`<div style="text-align:center; font-size:1.6rem">${e} ${a} ÷ ${b}</div>`,
+    steps:r.steps, answerSteps:[r.steps.length - 1]};
+}
+Object.assign(GEN, BULK_GEN);
+
 /* ----- The Register layouts: multiplication rows (kind 'mulrow') and the long-division bus stop (kind 'ldiv') ----- */
 /* digit cells for a number as written (2.45): the point rides on the digit before it, so the digits stay in whole-number columns */
 function writtenCells(str){ const out = []; for (const ch of String(str)) { if (ch === '.') out[out.length - 1].pt = true; else out.push({c:ch}); } return out; }
@@ -1538,9 +1668,10 @@ function ldivHTML(st){
   const blank = () => Array.from({length:cols}, () => ({html:'<td></td>'}));
   const put = (row, endCol, str, cls = '') => { const ds = String(str); [...ds].forEach((ch, k) => { row[col(endCol - ds.length + 1 + k)] = {html:`<td class="${cls}">${ch}</td>`}; }); };
   const putBoxes = (row, endCol, count, small) => { for (let k = 0; k < count; k++) row[col(endCol - count + 1 + k)] = {html:regBox(small, 'digit')}; };
-  const q = blank(); D.work.forEach((w, i) => { if (done(i, 'q')) q[col(w.col)] = {html:`<td>${w.qd}</td>`}; else if (i === at.step && at.part === 'q') q[col(w.col)] = {html:regBox(false, 'quotient digit')}; });
+  const q = blank(); D.work.forEach((w, i) => { if (done(i, 'q') || w.auto) q[col(w.col)] = {html:`<td>${w.qd}</td>`}; else if (i === at.step && at.part === 'q') q[col(w.col)] = {html:regBox(false, 'quotient digit')}; });
   const top = blank(); [...String(D.d)].forEach((ch, k) => { top[1 + k] = {html:`<td>${ch}</td>`}; }); top[1 + dl] = {html:'<td class="brk">)</td>'};
   [...D.N].forEach((ch, c) => { top[col(c)] = {html:`<td class="dvd">${ch}</td>`}; });
+  if (D.pt && D.pt < n) [q, top].forEach(r => { const c = r[col(D.pt - 1)]; c.html = c.html.replace(/<\/td>$/, '<b class="mpt">.</b></td>'); });   // the point, straight up from the dividend's point
   const rows = [q, top]; let curRow = 1;                             // the row holding the number being divided right now
   for (let i = 0; i < D.work.length && i <= at.step; i++) {
     const w = D.work[i], next = D.work[i + 1];

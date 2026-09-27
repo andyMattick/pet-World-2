@@ -33,7 +33,10 @@ export const SKILLS: Record<string, Skill> = {
   mulDecPlace: { name: 'Decimal multiplication place value', short: 'Decimal × place value', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-multiplying-decimals/e/multiplying_decimals_1' },
   mulDec: { name: 'Multiplying decimals', short: 'Multiply decimals', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-multiplying-decimals/e/multiplying_decimals' },
   div2: { name: 'Division by 2 digits', short: 'Divide by 2 digits', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-div-whole-numbers/e/division_3' },
-  divMulti: { name: 'Multi-digit division', short: 'Multi-digit division', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-div-whole-numbers/e/division_4' }
+  divMulti: { name: 'Multi-digit division', short: 'Multi-digit division', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-div-whole-numbers/e/division_4' },
+  divToDec: { name: 'Divide whole numbers to get a decimal', short: 'Whole ÷ to decimal', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals_0.5' },
+  divDec2: { name: 'Dividing decimals: hundredths', short: 'Divide decimals (hundredths)', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals_3' },
+  divDec3: { name: 'Dividing decimals: thousandths', short: 'Divide decimals (thousandths)', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -168,7 +171,7 @@ export const BAKERY_STATIONS: Station[] = [
   { id: 2, name: 'Sharing Pans',  emoji: '🥧', kid: 'Divide fractions and whole numbers', skills: ['fracDivWhole', 'wholeDivFrac'] },
   { id: 3, name: 'Boxing Treats', emoji: '📦', kid: 'Divide fractions by fractions', skills: ['fracDiv', 'mixedDiv', 'fracInterp', 'fracWord'] },
   { id: 4, name: 'The Register',  emoji: '🧾', kid: 'Multiply decimals, long division', skills: ['mulDecPlace', 'mulDec', 'div2', 'divMulti'] },
-  { id: 5, name: 'Bulk Orders',   emoji: '🚚', kid: 'Divide decimals', skills: [] }
+  { id: 5, name: 'Bulk Orders',   emoji: '🚚', kid: 'Divide decimals', skills: ['divToDec', 'divDec2', 'divDec3'] }
 ];
 export const SHOPS: Record<string, Shop> = {
   cafe:   { id: 'cafe',   name: 'Pet Café', emoji: '☕', unitLabel: 'Khan Academy 6th grade, Unit 1: Ratios', stations: STATIONS },
@@ -195,7 +198,7 @@ export interface Reward {
 /** Skills belonging to each unit. Add a unit's skills when that unit is built. */
 export const UNIT_SKILLS: Record<string, string[]> = {
   cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
-  bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -294,7 +297,10 @@ export const MIS: Record<string, Misconception> = {
   partialShift:      { name: 'Forgets to shift the second row', kid: 'The tens row starts one place to the left.', tip: 'Write the placeholder zero in the tens row.', skills: ['mulDec'] },
   quotientTooSmall:  { name: 'Picks a quotient digit that is too small', kid: 'Your remainder is bigger than the divisor. Another one fits.', tip: 'Compare each remainder with the divisor before moving on.', skills: ['div2', 'divMulti'] },
   quotientTooBig:    { name: 'Picks a quotient digit that is too big', kid: 'That many is more than you have. Try one less.', tip: 'Estimate with rounded divisors (12 → 10).', skills: ['div2', 'divMulti'] },
-  missingZero:       { name: 'Leaves out a zero in the quotient', kid: 'When the divisor doesn\'t fit, write a 0 before bringing down.', tip: 'Use a place-value chart for the quotient.', skills: ['div2', 'divMulti'] },
+  missingZero:       { name: 'Leaves out a zero in the quotient', kid: 'When the divisor doesn\'t fit, write a 0 before bringing down.', tip: 'Use a place-value chart for the quotient.', skills: ['div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'] },
+  remainderNotDecimal: { name: 'Stops with a remainder instead of continuing', kid: 'Put a point and a 0 after the number, and keep dividing.', tip: 'Show 7 as 7.00 before starting.', skills: ['divToDec', 'divDec2', 'divDec3'] },
+  shiftOneOnly:      { name: 'Moves the point in the divisor but not the dividend', kid: 'Whatever you do to the divisor, do to the dividend.', tip: 'Write both as a fraction, then multiply top and bottom by 100.', skills: ['divDec2', 'divDec3'] },
+  pointMisplaced:    { name: 'Puts the quotient\'s point in the wrong place', kid: 'Line the point up straight above the dividend\'s point.', tip: 'Estimate: 0.4 ÷ 1 is about 0.4.', skills: ['divToDec', 'divDec2', 'divDec3'] },
   mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] }
 };
 
