@@ -90,6 +90,11 @@ need('src/game/game.js', 'Object.assign(GEN, TOYS2_GEN)', 'the Toy Shop multiply
 need('src/game/game.js', 'function areaHTML(', 'the area model picture');
 need('src/game/game.js', '  factors:{', 'the factor-pair practice pop-up');
 need('src/game/game.js', '  rounding:{', 'the rounding practice pop-up');
+need('src/game/game.js', 'const PIZZA_GEN', 'the Pizza Parlor generators');
+need('src/game/game.js', 'Object.assign(GEN, PIZZA_GEN)', 'the Pizza Parlor generators merged into GEN');
+need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
+need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
+need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');
 need('src/shared/registry.ts', 'mixed:        {', 'the mixed-number drill type');
 need('src/game/game.js', 'const BOXES_GEN', 'the Boxing Treats generators');
 need('src/game/game.js', '  reciprocal:{', 'the reciprocal practice pop-up');
@@ -115,7 +120,7 @@ need('src/shared/registry.ts', 'export const shopOfSkill', 'the skill-to-shop lo
 const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
-if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 9)) problems.push('src/shared/registry.ts should define REWARDS.length === 106');
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 10)) problems.push('src/shared/registry.ts should define REWARDS.length === 116');
 if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);

@@ -86,7 +86,26 @@ export const SKILLS: Record<string, Skill> = {
   areaDiv: { name: 'Divide by 1-digit numbers with area models', short: 'Area models (÷)', st: 4, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/division-with-area-models/e/multi-digit-division-with-visual-models' },
   estQuot: { name: 'Estimate quotients', short: 'Estimate quotients', st: 4, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/estimate-quotients/e/estimate-quotients--3--and-4-digit-divided-by-1-digit-' },
   divBy2345: { name: 'Divide multi-digit numbers by 2, 3, 4, and 5', short: 'Divide by 2 to 5', st: 4, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/multi-digit-division/e/division_1.5' },
-  divBy6789: { name: 'Divide multi-digit numbers by 6, 7, 8, and 9', short: 'Divide by 6 to 9', st: 4, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/multi-digit-division/e/division_2' }
+  divBy6789: { name: 'Divide multi-digit numbers by 6, 7, 8, and 9', short: 'Divide by 6 to 9', st: 4, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/multi-digit-division/e/division_2' },
+  // 4th grade, Pizza Parlor (Sadlier lessons 14 to 25)
+  eqFracModel: { name: 'Equivalent fractions (fraction models)', short: 'Equivalent fractions (models)', st: 1, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-equivalent-fractions-2/e/visualizing-equivalent-fractions' },
+  eqFracLine: { name: 'Equivalent fractions (number lines)', short: 'Equivalent fractions (number lines)', st: 1, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-equivalent-fractions-2/e/equivalent-fractions--number-lines-' },
+  eqFrac: { name: 'Equivalent fractions', short: 'Equivalent fractions', st: 1, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-equivalent-fractions-2/e/equivalent_fractions' },
+  diffWholes: { name: 'Fractions of different wholes', short: 'Different wholes', st: 1, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-equivalent-fractions-2/e/naming-the-whole' },
+  commonDen: { name: 'Common denominators', short: 'Common denominators', st: 1, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-common-denominators/e/common-denominators' },
+  cmpVisual: { name: 'Visually compare fractions with unlike denominators', short: 'Compare fractions (pictures)', st: 2, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-comparing-fractions-with-unlike-denominators-visually/e/visually-comparing-fractions' },
+  cmpBench: { name: 'Compare fractions using benchmarks', short: 'Compare with 1/2', st: 2, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-comparing-fractions-with-unlike-denominators/e/compare-fractions-using-benchmark' },
+  cmpFrac: { name: 'Compare fractions with different numerators and denominators', short: 'Compare fractions', st: 2, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-comparing-fractions-with-unlike-denominators/e/comparing_fractions_2' },
+  cmpFracWord: { name: 'Compare fractions word problems', short: 'Comparing word problems', st: 2, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/comparing-fractions-and-equivalent-fractions/imp-comparing-fractions-with-unlike-denominators/e/compare-fractions-word-problems' },
+  decompVisual: { name: 'Decompose fractions visually', short: 'Break apart (pictures)', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-decomposing-fractions/e/decompose-fractions-visually' },
+  decomp: { name: 'Decompose fractions', short: 'Break apart fractions', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-decomposing-fractions/e/decomposing-fractions' },
+  addLike: { name: 'Add fractions with common denominators', short: 'Add fractions', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-fractions-with-like-denominators/e/adding_fractions_with_common_denominators' },
+  subLike: { name: 'Subtract fractions with common denominators', short: 'Subtract fractions', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-fractions-with-like-denominators/e/subtracting_fractions_with_common_denominators' },
+  fracWordAS: { name: 'Add and subtract fractions word problems', short: 'Fraction word problems', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-fractions-word-problems/e/adding-and-subtracting-fractions-with-like-denominators-word-problems' },
+  mixedImproper: { name: 'Write mixed numbers and improper fractions', short: 'Mixed and improper', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-mixed-numbers/e/converting_mixed_numbers_and_improper_fractions' },
+  mixedAS: { name: 'Add and subtract mixed numbers (no regrouping)', short: 'Mixed numbers', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-mixed-numbers/e/adding_subtracting_mixed_numbers_0.5' },
+  mixedASregroup: { name: 'Add and subtract mixed numbers (with regrouping)', short: 'Mixed numbers (regrouping)', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-mixed-numbers/e/adding-and-subtracting-mixed-numbers-with-like-denominators-2' },
+  mixedWord: { name: 'Add and subtract mixed numbers word problems', short: 'Mixed number word problems', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/adding-and-subtracting-mixed-numbers-word-problems/e/add-and-subtract-mixed-numbers-word-problems--like-denominators-' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -229,6 +248,13 @@ export const TOY_STATIONS: Station[] = [
   { id: 3, name: 'Toy Crates',      emoji: '🧸', kid: 'Multiplying', skills: ['mult1by10s', 'areaMult1', 'distMult', 'estProducts', 'multRegroup', 'areaMult2', 'partialProd2', 'mult2digit'] },
   { id: 4, name: 'Sharing Shelves', emoji: '🗄️', kid: 'Dividing', skills: ['estDiv', 'interpRem', 'divRem', 'divPV', 'areaDiv', 'estQuot', 'divBy2345', 'divBy6789'] }
 ];
+export const PIZZA_STATIONS: Station[] = [
+  { id: 1, name: 'Slices',           emoji: '🍕', kid: 'Equivalent fractions', skills: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen'] },
+  { id: 2, name: 'Which Is Bigger?', emoji: '⚖️', kid: 'Comparing fractions', skills: ['cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord'] },
+  { id: 3, name: 'Toppings',         emoji: '🧀', kid: 'Adding and subtracting fractions and mixed numbers', skills: ['decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord'] },
+  { id: 4, name: 'Party Orders',     emoji: '🎉', kid: 'Multiplying fractions by whole numbers', skills: [] },
+  { id: 5, name: 'Pizza Money',      emoji: '💵', kid: 'Tenths, hundredths, and decimals', skills: [] }
+];
 export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
 export const BAKERY_STATIONS: Station[] = [
   { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
@@ -241,7 +267,8 @@ export const SHOPS: Record<string, Shop> = {
   cafe:   { id: 'cafe',   name: 'Pet Café', emoji: '☕', unitLabel: 'Khan Academy 6th grade, Unit 1: Ratios', stations: STATIONS },
   bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS },
   lemonade: { id: 'lemonade', name: 'Lemonade Stand', emoji: '🍋', unitLabel: 'Sadlier Grade 4, lessons 1 to 5, with Khan Academy 4th grade practice', stations: LEMON_STATIONS },
-  toys: { id: 'toys', name: 'Toy Shop', emoji: '🧸', unitLabel: 'Sadlier Grade 4, lessons 6 to 13, with Khan Academy 4th grade practice', stations: TOY_STATIONS }
+  toys: { id: 'toys', name: 'Toy Shop', emoji: '🧸', unitLabel: 'Sadlier Grade 4, lessons 6 to 13, with Khan Academy 4th grade practice', stations: TOY_STATIONS },
+  pizza: { id: 'pizza', name: 'Pizza Parlor', emoji: '🍕', unitLabel: 'Sadlier Grade 4, lessons 14 to 25, with Khan Academy 4th grade practice', stations: PIZZA_STATIONS }
 };
 export const shopOfSkill = (id: string) => SKILLS[id]?.shop || 'cafe';
 export const UNLOCK_AT = 6;
@@ -266,7 +293,8 @@ export const UNIT_SKILLS: Record<string, string[]> = {
   cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
   bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'],
   lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'],
-  toys: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms', 'roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti', 'mult1by10s', 'areaMult1', 'distMult', 'estProducts', 'multRegroup', 'areaMult2', 'partialProd2', 'mult2digit', 'estDiv', 'interpRem', 'divRem', 'divPV', 'areaDiv', 'estQuot', 'divBy2345', 'divBy6789'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  toys: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms', 'roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti', 'mult1by10s', 'areaMult1', 'distMult', 'estProducts', 'multRegroup', 'areaMult2', 'partialProd2', 'mult2digit', 'estDiv', 'interpRem', 'divRem', 'divPV', 'areaDiv', 'estQuot', 'divBy2345', 'divBy6789'],
+  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -296,6 +324,8 @@ const UNIT_SETS: [string, [string,string][], [string,string][]][] = [
                [['🍋','Lemon crate'],['🥤','Cup tower'],['🧊','Ice bucket'],['⛱️','Sun umbrella'],['🌟','Golden lemon sign']]],
   ['toys', [['🐶','Patch the puppy'],['🐰','Button the bunny'],['🐒','Jojo the monkey'],['🐘','Peanut the elephant'],['🐼','Captain Cuddles the panda']],
            [['🪀','Yo-yo rack'],['🧩','Puzzle wall'],['🚂','Toy train'],['🎠','Carousel'],['🎁','Golden gift box']]],
+  ['pizza', [['🐭','Mozzarella the mouse'],['🐈‍⬛','Pepper the cat'],['🦔','Crust the hedgehog'],['🦝','Basil the raccoon'],['🐲','Oregano the dragon']],
+            [['🧀','Cheese wheel'],['🍅','Tomato basket'],['🫓','Dough board'],['🔥','Pizza oven'],['🏆','Golden pizza peel']]],
   ['market', [['🐐','Gus the goat'],['🦜','Kiwi the parrot'],['🐢','Slowpoke the turtle'],['🦙','Lulu the llama'],['🐓','Rocco the rooster']],
              [['🍉','Melon stand'],['🌽','Corn crate'],['🧺','Picnic basket'],['🏷️','Price tags'],['⚖️','Golden scale']]],
   ['clock',  [['🦉','Hoot the owl'],['🦇','Midnight the bat'],['🐿️','Acorn the chipmunk'],['🦅','Soar the eagle'],['🐉','Ember the dragon']],
@@ -343,7 +373,7 @@ export const BUILDINGS: Building[] = [
   {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6'},
   {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4', open:true},
   {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4', open:true},
-  {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4'},
+  {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4', open:true},
   {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4'},
   {id:'art',      emoji:'🎨', name:'Art Studio',     unit:'Geometry', hood:'g4'}
 ];
@@ -376,14 +406,14 @@ export const MIS: Record<string, Misconception> = {
   factSlip:         { name: 'Times-table slip (off by one group)', kid: 'So close! Check that times fact.', tip: 'The method is right. Drill the specific facts (see the times-table section).', skills: [] },
   rightAlign:        { name: 'Lines up right edges instead of decimal points', kid: 'Line up the decimal points, not the last digits.', tip: 'Have students write the numbers on grid paper with the decimal points in one column, and fill empty places with zeros.', skills: ['addDec', 'subDec'] },
   noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec', 'addMulti'] },
-  smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec', 'subMulti'] },
+  smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec', 'subMulti', 'mixedASregroup'] },
   estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec', 'mulDec'] },
-  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord', 'cmpWord', 'mdWord'] },
+  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord', 'cmpWord', 'mdWord', 'fracWordAS', 'mixedWord'] },
   divAsMult:         { name: 'Multiplies instead of dividing', kid: 'Sharing makes each part smaller, and fitting small servings in makes more of them. Check which way it should go.', tip: 'Before computing, ask "will the answer be more or less than we started with?"', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
   denomOnly:         { name: 'Multiplies by the denominator and forgets the numerator', kid: 'Each serving is more than one piece. How many pieces does one serving use?', tip: 'Count the pieces on the tape diagram, then group them by the size of one serving.', skills: ['wholeDivFrac'] },
   numerOnly:         { name: 'Divides by the numerator and ignores the denominator', kid: 'The serving is not whole cups. It is a fraction of a cup.', tip: 'Compare the size of one serving to 1 whole cup first.', skills: ['wholeDivFrac'] },
   reversedDivision:  { name: 'Divides the other way round', kid: 'Which amount is being split up? Start with that one.', tip: 'Say the story aloud ("how many 2/3-cups fit in 4 cups?") and write the starting amount first.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
-  notMixed:          { name: 'Leaves an improper fraction instead of a mixed number', kid: 'The top is bigger than the bottom. How many wholes are in it?', tip: 'Divide the top by the bottom: the quotient is the whole number and the remainder goes on top.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord'] },
+  notMixed:          { name: 'Leaves an improper fraction instead of a mixed number', kid: 'The top is bigger than the bottom. How many wholes are in it?', tip: 'Divide the top by the bottom: the quotient is the whole number and the remainder goes on top.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord'] },
   flipWrong:         { name: 'Flips the first fraction instead of the divisor', kid: 'Keep the first fraction. Flip the one you divide by.', tip: 'Say "keep, change, flip" while pointing at each part.', skills: ['fracDiv', 'mixedDiv', 'fracWord'] },
   noFlip:            { name: 'Multiplies straight across without flipping', kid: 'Dividing means multiply by the flip of the second fraction.', tip: 'Check with a picture: how many 3/4s fit in 2/3? Fewer than 1, so the answer must be less than 1.', skills: ['fracDiv', 'mixedDiv', 'fracWord'] },
   pointLikeAdding:   { name: 'Keeps one decimal point, like adding', kid: 'When multiplying, count all the decimal places.', tip: 'Estimate first: 2 × 1 is about 2, so 32 can\'t be right.', skills: ['mulDecPlace', 'mulDec'] },
@@ -423,6 +453,16 @@ export const MIS: Record<string, Misconception> = {
   noCarryMult:       { name: 'Forgets to carry when multiplying', kid: 'Write the ones digit and carry the tens to the next place.', tip: 'Write each carry above the next column and add it after multiplying that column.', skills: ['multRegroup'] },
   partialMissing:    { name: 'Leaves out some of the partial products', kid: 'Every part times every part: 2-digit × 2-digit makes four parts.', tip: 'Use the area model: four boxes, four products, then add them all.', skills: ['areaMult2', 'partialProd2'] },
   compatibleNumber:  { name: 'Picks a number that is hard to divide', kid: 'Pick a close number that the divisor goes into evenly, using a times table fact.', tip: 'List multiples of the divisor times 10 or 100 and pick the one nearest the dividend.', skills: ['estDiv', 'estQuot'] },
+  additiveEquiv:     { name: 'Adds the same number to the top and bottom', kid: 'Multiply (or divide) the top and bottom by the same number. Adding changes the size.', tip: 'Show 1/2 and 2/3 (added 1 to both) with fraction bars: they are not equal.', skills: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen'] },
+  onlyOneScaled:     { name: 'Changes only the top or only the bottom', kid: 'Whatever you do to the bottom, do to the top.', tip: 'Cut every slice into the same number of pieces: both counts change.', skills: ['eqFrac'] },
+  wholesMatter:      { name: 'Forgets that fractions depend on the whole', kid: 'Half of a big pizza is more than half of a small pizza.', tip: 'Compare 1/2 of two different-size paper strips.', skills: ['diffWholes'] },
+  benchmarkWrong:    { name: 'Places a fraction on the wrong side of 1/2', kid: 'Half of the bottom number is the middle. Is the top more or less than that?', tip: 'For x/y, compare x with y ÷ 2.', skills: ['cmpBench'] },
+  biggerDenBigger:   { name: 'Thinks a bigger denominator means a bigger fraction', kid: 'More slices means smaller slices. Compare with the same denominator.', tip: 'Fold two equal strips into 3 and into 8: which pieces are bigger?', skills: ['cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord'] },
+  compareFractions:  { name: 'Compares fractions incorrectly', kid: 'Give both the same denominator, then compare the tops.', tip: 'Rewrite both fractions with a common denominator before comparing.', skills: ['cmpVisual', 'cmpBench', 'cmpFrac'] },
+  decomposeSum:      { name: 'Breaks a fraction into parts that don\'t add up', kid: 'The numerators of the parts must add up to the whole numerator.', tip: 'Shade the parts on one fraction bar in two colors.', skills: ['decompVisual', 'decomp'] },
+  addDenominators:   { name: 'Adds the denominators too', kid: 'The slices stay the same size. Add only the tops.', tip: '1/4 + 1/4 is two fourths, not 2/8: show it with fraction bars.', skills: ['addLike', 'fracWordAS'] },
+  improperWrong:     { name: 'Converts a mixed number wrong', kid: 'Wholes × denominator, then add the numerator.', tip: 'Draw each whole as a full bar of pieces and count all the pieces.', skills: ['mixedImproper'] },
+  regroupTen:        { name: 'Regroups a whole as 10 instead of the denominator', kid: 'One whole is d/d, not 10.', tip: 'A whole pizza cut in 8 is 8/8. Borrow 8/8, not 10.', skills: ['mixedASregroup'] },
   mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] }
 };
 

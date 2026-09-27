@@ -514,3 +514,13 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .area-model td{border:2px solid currentColor; min-width:3em; height:2.4em; text-align:center; padding:2px 6px}
 .area-model td.ask{background:rgba(255,215,106,.25)}
 .area-total{text-align:center; font-size:1.2rem; margin-top:4px}
+/* fraction bars and number lines (Pizza Parlor) */
+.frac-pics{display:flex; flex-direction:column; align-items:center; gap:6px}
+.frac-bar{max-width:100%; height:auto}
+.frac-bar .fb-on{fill:var(--butter); stroke:currentColor; stroke-width:2}
+.frac-bar .fb-off{fill:none; stroke:currentColor; stroke-width:2}
+.num-line{max-width:100%; height:auto}
+.num-line .nl-line{stroke:currentColor; stroke-width:2}
+.num-line .nl-text{fill:currentColor; font-size:14px; text-anchor:middle}
+.num-line .nl-small{font-size:11px}
+.num-line .nl-dot{fill:var(--berry); stroke:currentColor; stroke-width:1.5}
