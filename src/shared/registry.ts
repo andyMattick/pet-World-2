@@ -237,7 +237,7 @@ export const REWARDS: Reward[] = [
 
 export const BUILDINGS = [
   {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', open:true},
-  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers'},
+  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers', open:true},
   {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages'},
   {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations'},
   {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers'},
