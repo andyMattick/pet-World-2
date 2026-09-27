@@ -1042,7 +1042,7 @@ $('#town').addEventListener('click', e => {
   const id = b.dataset.open;
   if (SHOPS[id] && BUILDINGS.some(building => building.id === id && building.open)) {
     currentShop = id;
-    void Backend.refreshSettings().then(() => { if (currentShop === id) show('cafe'); });
+    void Backend.refreshSettings().then(() => { if (currentShop === id && !$('#scr-cafe').hidden && !shift) show('cafe'); });
     show('cafe');
   }
   else if (id === 'sprint') openSprint();
