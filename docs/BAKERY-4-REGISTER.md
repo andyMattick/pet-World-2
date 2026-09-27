@@ -242,7 +242,7 @@ const REGISTER_GEN = {
     }
     const a = XD.fmt(x, pa), b = XD.fmt(y, pb), P = x * y, n = pa + pb, ans = XD.fmt(P, n), max = Math.max(pa, pb);
     return {title:'The Register', ctx:`${a} × ${b}, from ${x} × ${y}`,
-      bubble:`You know ${x} × ${y} = ${P}. So what is ${a} × ${b}?`,
+      bubble:`You know ${x} × ${y} = ${P}. What is ${a} × ${b}?`,
       helper:'The digits are the same. Only the decimal point moves.',
       visual:`<div style="text-align:center; font-size:1.6rem">${x} × ${y} = ${P}<br>${a} × ${b} = ?</div>`,
       steps:[

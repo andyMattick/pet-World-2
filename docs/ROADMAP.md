@@ -30,6 +30,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Bakery station 5: Bulk Orders, with the decimal point drawn straight up in the long-division layout (`BAKERY-5-BULK.md`). **The Bakery is done:** all 5 stations and the 🏆 Bakery Unit Test (16 questions, played end to end)
 - [x] Word-problem pop-up for the Café: ratio stories (`story:ratio` in `DRILLS.md`)
 - [x] Neighborhoods engine: one town, a neighborhood per grade, home grade, switcher, and grade trophies (`NEIGHBORHOODS-0-ENGINE.md`). Older saves open as 6th grade
+- [x] Fixes: the dashboard's "field name must not be null" (migration 7), decimals in order tickets (2.4 no longer splits into two sentences), and teachers can open later stations in every shop, not just the Café
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -73,8 +74,9 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 4. `20260927000000_teacher_tools.sql` ✅
 5. `20260928000000_quizzes.sql` ✅
 6. `20260929000000_practice_time.sql` ✅
+7. `20260930000000_report_null_keys.sql` (fixes "field name must not be null" on the dashboard; **run it next**)
 
-All six are run in Supabase. Never edit one of these files. Any change goes in a **new** migration file.
+The first six are run in Supabase. Never edit one of these files. Any change goes in a **new** migration file.
 
 ## Notes from reviews
 
