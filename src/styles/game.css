@@ -499,3 +499,13 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 #homeWrap select{margin-top:4px}
 .book-trophies{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px}
 .book-trophy{background:var(--butter); color:#4A2E2A; border-radius:999px; padding:4px 12px; font-weight:700}
+
+/* place-value pictures (Toy Shop) */
+.pv-pic{display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:flex-end}
+.pv-group{display:flex; flex-direction:column; align-items:center; max-width:9.5em}
+.pv-blocks{font-size:1.3rem; line-height:1.15; letter-spacing:1px; word-break:break-all; text-align:center}
+.pv-group small,.pv-key{font-size:.95rem; opacity:.85}
+.pv-key{text-align:center; margin-top:6px}
+.pv-table{border-collapse:collapse; margin:4px auto; font-size:1.3rem}
+.pv-table th{font-size:.8rem; font-weight:600; padding:2px 6px; border-bottom:2px solid currentColor}
+.pv-table td{text-align:center; padding:4px 6px; font-size:1.6rem}

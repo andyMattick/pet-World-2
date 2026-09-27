@@ -52,7 +52,25 @@ export const SKILLS: Record<string, Skill> = {
   compositeId: { name: 'Identify composite numbers', short: 'Composite numbers', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-prime-and-composite-numbers/e/composite_numbers' },
   primeComp: { name: 'Prime and composite numbers', short: 'Prime or composite', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-prime-and-composite-numbers/e/prime-and-composite-numbers' },
   numPatterns: { name: 'Patterns with numbers', short: 'Number patterns', st: 4, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-math-patterns/e/math-patterns' },
-  shapePatterns: { name: 'Patterns with shapes', short: 'Shape patterns', st: 4, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-math-patterns/e/patterns-with-shapes' }
+  shapePatterns: { name: 'Patterns with shapes', short: 'Shape patterns', st: 4, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-math-patterns/e/patterns-with-shapes' },
+  // 4th grade, Toy Shop (Sadlier lessons 6 to 13)
+  pvBlocks: { name: 'Place value blocks', short: 'Place value blocks', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-intro-to-place-value/e/place-value-blocks' },
+  pvTable: { name: 'Place value tables', short: 'Place value tables', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-intro-to-place-value/e/place-value-tables' },
+  digitValue: { name: 'Identify value of a digit', short: 'Value of a digit', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-intro-to-place-value/e/place_value' },
+  largestSmallest: { name: 'Creating largest or smallest number', short: 'Largest or smallest', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-intro-to-place-value/e/creating-largest-or-smallest-number' },
+  expandedForm: { name: 'Write whole numbers in expanded form', short: 'Expanded form', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-ways-to-write-whole-numbers-expanded-form-and-written-form/e/numbers-in-expanded-form' },
+  writtenForm: { name: 'Write numbers in written form', short: 'Written form', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/writing-whole-numbers-in-written-form/e/numbers-in-written-form' },
+  differentForms: { name: 'Write whole numbers in different forms', short: 'Different forms', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/writing-whole-numbers-in-written-form/e/write-whole-numbers-in-different-forms' },
+  regroup: { name: 'Regroup whole numbers', short: 'Regroup', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-regrouping-whole-numbers/e/regrouping-whole-numbers' },
+  mult10: { name: 'Multiply whole numbers by 10', short: 'Multiply by 10', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-how-10-relates-to-place-value/e/multiplying-by-10' },
+  div10: { name: 'Divide whole numbers by 10', short: 'Divide by 10', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-how-10-relates-to-place-value/e/dividing-whole-numbers-by-10' },
+  compareNums: { name: 'Compare multi-digit numbers', short: 'Compare numbers', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-comparing-multi-digit-numbers/e/comparing-multi-digit-numbers' },
+  compareForms: { name: 'Compare multi-digit numbers written in different forms', short: 'Compare forms', st: 1, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-place-value-and-rounding-2/imp-comparing-multi-digit-numbers/e/comparing-multi-digit-numbers-pv-challenge' },
+  roundNum: { name: 'Round whole numbers', short: 'Round', st: 2, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-addition-and-subtraction-2/imp-rounding-whole-numbers/e/rounding_whole_numbers' },
+  roundPlaces: { name: 'Round whole numbers to different place values', short: 'Round to any place', st: 2, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-addition-and-subtraction-2/imp-rounding-whole-numbers/e/rounding-whole-numbers-2' },
+  roundWord: { name: 'Round whole numbers word problems', short: 'Rounding word problems', st: 2, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-addition-and-subtraction-2/imp-rounding-whole-numbers/e/round-whole-numbers-word-problems' },
+  addMulti: { name: 'Multi-digit addition', short: 'Add', st: 2, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-addition-and-subtraction-2/imp-adding-multi-digit-numbers/e/multi-digit-addition' },
+  subMulti: { name: 'Multi-digit subtraction', short: 'Subtract', st: 2, shop: 'toys', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-addition-and-subtraction-2/imp-subtracting-multi-digit-numbers/e/multi-digit-subtraction' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -187,6 +205,12 @@ export const LEMON_STATIONS: Station[] = [
   { id: 3, name: 'Cup Stacks',    emoji: '🥤', kid: 'Factors, multiples, and primes', skills: ['factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp'] },
   { id: 4, name: 'Sign Patterns', emoji: '🪧', kid: 'Number and shape patterns', skills: ['numPatterns', 'shapePatterns'] }
 ];
+export const TOY_STATIONS: Station[] = [
+  { id: 1, name: 'Stock Room',      emoji: '📦', kid: 'Place value, writing and comparing numbers', skills: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms'] },
+  { id: 2, name: 'Price Tags',      emoji: '🏷️', kid: 'Rounding, adding, and subtracting', skills: ['roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti'] },
+  { id: 3, name: 'Toy Crates',      emoji: '🧸', kid: 'Multiplying', skills: [] },
+  { id: 4, name: 'Sharing Shelves', emoji: '🗄️', kid: 'Dividing', skills: [] }
+];
 export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
 export const BAKERY_STATIONS: Station[] = [
   { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
@@ -198,7 +222,8 @@ export const BAKERY_STATIONS: Station[] = [
 export const SHOPS: Record<string, Shop> = {
   cafe:   { id: 'cafe',   name: 'Pet Café', emoji: '☕', unitLabel: 'Khan Academy 6th grade, Unit 1: Ratios', stations: STATIONS },
   bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS },
-  lemonade: { id: 'lemonade', name: 'Lemonade Stand', emoji: '🍋', unitLabel: 'Sadlier Grade 4, lessons 1 to 5, with Khan Academy 4th grade practice', stations: LEMON_STATIONS }
+  lemonade: { id: 'lemonade', name: 'Lemonade Stand', emoji: '🍋', unitLabel: 'Sadlier Grade 4, lessons 1 to 5, with Khan Academy 4th grade practice', stations: LEMON_STATIONS },
+  toys: { id: 'toys', name: 'Toy Shop', emoji: '🧸', unitLabel: 'Sadlier Grade 4, lessons 6 to 13, with Khan Academy 4th grade practice', stations: TOY_STATIONS }
 };
 export const shopOfSkill = (id: string) => SKILLS[id]?.shop || 'cafe';
 export const UNLOCK_AT = 6;
@@ -222,7 +247,8 @@ export interface Reward {
 export const UNIT_SKILLS: Record<string, string[]> = {
   cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
   bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'],
-  lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'],
+  toys: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms', 'roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -250,6 +276,8 @@ const UNIT_SETS: [string, [string,string][], [string,string][]][] = [
              [['🍞','Bread basket'],['🥐','Croissant sign'],['🥧','Pie window'],['🥨','Pretzel garland'],['🏅',"Baker's gold medal"]]],
   ['lemonade', [['🐤','Zest the duckling'],['🦘','Pogo the kangaroo'],['🐬','Bubbles the dolphin'],['🦩','Rosie the flamingo'],['🦭','Captain the seal']],
                [['🍋','Lemon crate'],['🥤','Cup tower'],['🧊','Ice bucket'],['⛱️','Sun umbrella'],['🌟','Golden lemon sign']]],
+  ['toys', [['🐶','Patch the puppy'],['🐰','Button the bunny'],['🐒','Jojo the monkey'],['🐘','Peanut the elephant'],['🐼','Captain Cuddles the panda']],
+           [['🪀','Yo-yo rack'],['🧩','Puzzle wall'],['🚂','Toy train'],['🎠','Carousel'],['🎁','Golden gift box']]],
   ['market', [['🐐','Gus the goat'],['🦜','Kiwi the parrot'],['🐢','Slowpoke the turtle'],['🦙','Lulu the llama'],['🐓','Rocco the rooster']],
              [['🍉','Melon stand'],['🌽','Corn crate'],['🧺','Picnic basket'],['🏷️','Price tags'],['⚖️','Golden scale']]],
   ['clock',  [['🦉','Hoot the owl'],['🦇','Midnight the bat'],['🐿️','Acorn the chipmunk'],['🦅','Soar the eagle'],['🐉','Ember the dragon']],
@@ -296,7 +324,7 @@ export const BUILDINGS: Building[] = [
   {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures', hood:'g6'},
   {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6'},
   {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4', open:true},
-  {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4'},
+  {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4', open:true},
   {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4'},
   {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4'},
   {id:'art',      emoji:'🎨', name:'Art Studio',     unit:'Geometry', hood:'g4'}
@@ -329,8 +357,8 @@ export const MIS: Record<string, Misconception> = {
   unitsDirection:   { name: 'Multiplies when they should divide (or the reverse) converting units', kid: 'Should the number get bigger or smaller?', tip: 'Going to a smaller unit means more of them, so multiply.', skills: ['units'] },
   factSlip:         { name: 'Times-table slip (off by one group)', kid: 'So close! Check that times fact.', tip: 'The method is right. Drill the specific facts (see the times-table section).', skills: [] },
   rightAlign:        { name: 'Lines up right edges instead of decimal points', kid: 'Line up the decimal points, not the last digits.', tip: 'Have students write the numbers on grid paper with the decimal points in one column, and fill empty places with zeros.', skills: ['addDec', 'subDec'] },
-  noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec'] },
-  smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec'] },
+  noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec', 'addMulti'] },
+  smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec', 'subMulti'] },
   estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec', 'mulDec'] },
   wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord', 'cmpWord', 'mdWord'] },
   divAsMult:         { name: 'Multiplies instead of dividing', kid: 'Sharing makes each part smaller, and fitting small servings in makes more of them. Check which way it should go.', tip: 'Before computing, ask "will the answer be more or less than we started with?"', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
@@ -353,7 +381,7 @@ export const MIS: Record<string, Misconception> = {
   reversedCompare:   { name: 'Puts the numbers the wrong way round in a comparison', kid: 'The bigger amount is the one that is "times as many".', tip: 'Ask which amount is bigger before writing the equation.', skills: ['cmpMult'] },
   moreAsTimes:       { name: 'Multiplies when the story says "more than"', kid: '"More than" adds. "Times as many" multiplies.', tip: 'Compare "3 more than 5" (8) with "3 times as many as 5" (15) side by side.', skills: ['cmpWord'] },
   remainderMeaning:  { name: 'Uses the remainder the wrong way', kid: 'Read the question again: do you need every one, only full groups, or what is left?', tip: 'After dividing, ask what the question wants: round up, drop the remainder, or answer with it.', skills: ['mdWord'] },
-  roundWrong:        { name: 'Rounds in the wrong direction', kid: 'Look at the digit to the right. 5 or more rounds up.', tip: 'Place the number on a number line between the two tens (or hundreds) and see which is closer.', skills: ['estWord'] },
+  roundWrong:        { name: 'Rounds in the wrong direction', kid: 'Look at the digit to the right. 5 or more rounds up.', tip: 'Place the number on a number line between the two tens (or hundreds) and see which is closer.', skills: ['estWord', 'roundNum', 'roundPlaces', 'roundWord'] },
   wrongEquation:     { name: 'Picks an equation that does the steps in the wrong order', kid: 'Tell the story in order, and use parentheses for what happens first.', tip: 'Act out the story and write each step, then join them into one equation.', skills: ['eqWord'] },
   pairsDoubled:      { name: 'Counts each factor pair twice', kid: '3 × 4 and 4 × 3 are the same pair. Count each pair once.', tip: 'List pairs in a T-chart from 1 upward and stop when the pairs start repeating.', skills: ['factorPairs'] },
   notAFactor:        { name: 'Picks a number that isn\'t a factor', kid: 'A factor divides the number with nothing left over.', tip: 'Check with division or skip-counting before choosing.', skills: ['identFactors'] },
@@ -363,6 +391,15 @@ export const MIS: Record<string, Misconception> = {
   oneIsPrime:        { name: 'Thinks 1 is prime', kid: '1 has only one factor, so it is neither prime nor composite.', tip: 'A prime has exactly two factors. 1 has one.', skills: ['primeId', 'compositeId', 'primeComp'] },
   patternWrongRule:  { name: 'Uses the wrong rule for a pattern', kid: 'Check the rule on every step, not just the first one.', tip: 'Have students write the change between each pair of terms.', skills: ['numPatterns', 'shapePatterns'] },
   patternOffByOne:   { name: 'Counts one term too many or too few', kid: 'Count carefully: the first term is number 1.', tip: 'Number the terms in a table (1, 2, 3, …) before extending.', skills: ['numPatterns', 'shapePatterns'] },
+  placeValueRegroup: { name: 'Writes counts side by side instead of regrouping', kid: '10 of a place make 1 of the next place. Regroup first.', tip: 'Build it with blocks and trade 10 of a kind for 1 of the next.', skills: ['pvBlocks', 'regroup'] },
+  placeValueName:    { name: 'Mixes up the names of places', kid: 'Count places from the right: ones, tens, hundreds, thousands.', tip: 'Label a place-value chart and point to each place while naming it.', skills: ['pvTable', 'digitValue'] },
+  digitNotValue:     { name: 'Gives the digit instead of its value', kid: 'The value is the digit times its place: the 4 in 4,302 is worth 4,000.', tip: 'Ask "how much is it worth?" and write the zeros.', skills: ['digitValue', 'expandedForm'] },
+  placeOrder:        { name: 'Puts digits in the wrong order', kid: 'Biggest place first for the largest number. A number can\'t start with 0.', tip: 'Sort the digit cards, then place them one by one on a place-value chart.', skills: ['largestSmallest', 'differentForms'] },
+  numberWords:       { name: 'Misreads a number in words', kid: 'Say the thousands part, then the hundreds, tens, and ones.', tip: 'Split at the comma and read each group of three.', skills: ['writtenForm'] },
+  missingPlaceholder:{ name: 'Leaves out a zero for an empty place', kid: 'Every place needs a digit. An empty place gets a 0.', tip: 'Write expanded parts in a place-value chart so empty places show.', skills: ['differentForms', 'compareForms'] },
+  shiftWrong:        { name: 'Moves the digits the wrong number of places', kid: 'Times 10 adds one 0. Divided by 10 takes one 0 away.', tip: 'Use a place-value chart and slide the digits one place.', skills: ['mult10', 'div10'] },
+  moreDigitsBigger:  { name: 'Compares by the first digit when the numbers have different lengths', kid: 'Count the digits first. More digits means a bigger number.', tip: 'Line both numbers up on a place-value chart before comparing.', skills: ['compareNums'] },
+  compareDigits:     { name: 'Compares the wrong places', kid: 'Start at the left and find the first place where the digits are different.', tip: 'Line the numbers up by place and compare one column at a time from the left.', skills: ['compareNums', 'compareForms'] },
   mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] }
 };
 
