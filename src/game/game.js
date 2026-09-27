@@ -1016,7 +1016,8 @@ function fracMis(v, p, q, wrongs){
 function fracSimplestStep(p, q){
   const ans = FRAC.simplest(p, q), [rp, rq] = FRAC.red(p, q), over = rq > 1 && rp > rq;
   const right = v => FRAC.canon(v) && FRAC.same(v, p, q);
-  return {name:'Simplest form', type:'concept', kind:'frac', answer:ans, eq:right, skipIf:right,
+  const g = gcd(p, q), drill = over ? {type:'mixed', key:rq} : g >= 2 ? {type:'simplify', key:g} : undefined;   // practice pop-up after a miss
+  return {name:'Simplest form', type:'concept', kind:'frac', answer:ans, eq:right, skipIf:right, drill,
     prompt:ans[1] === 0 ? 'Now write it as a whole number.' : over ? 'Now write it as a mixed number in simplest form.' : 'Now write it in simplest form.',
     mis:v => !FRAC.same(v, p, q) ? null : v[1] >= v[2] ? 'notMixed' : 'notSimplest',
     hint:() => ans[1] === 0 ? `How many wholes is ${FRAC.txt(p, q)}? Put it in the whole-number box.`
@@ -1976,6 +1977,59 @@ const DRILL_IMPL = {
       },
       finishLine: 'Nice! Decimal places line up by their names.',
       tieLine: `The ${key} place is ${idx} after the decimal point.`
+    };
+    }
+  },
+  simplify:{
+    sprintItem(key){
+      const k = +key >= 2 ? +key : rand(2, 5), [top, bot] = coprimePair(5, 9, 1).sort((x, y) => x - y);
+      return {prompt:`${top * k}/${bot * k} = ?/${bot}`, answer:String(top), drillId:`simplify:${k}`};
+    },
+    build(drill, {short = false} = {}){
+    const k = Math.max(2, +drill.key || 2), rows = [], seen = new Set();
+    for (let t = 0; rows.length < (short ? 3 : 5) && t < 60; t++){
+      const [top, bot] = coprimePair(5, 9, 1).sort((x, y) => x - y);
+      if (top === bot || seen.has(top + '/' + bot)) continue; seen.add(top + '/' + bot);
+      rows.push({label:`${top * k}/${bot * k} = ?/${bot}`, answer:String(top)});
+    }
+    return {
+      title: DRILLS[drill.type].kidTitle(String(k)),
+      why: drill.reason === 'slow' ? `Let's get faster at dividing the top and bottom by ${k}.` : `That fraction could still be divided by ${k}. Let's practice!`,
+      rows, targetIndex: 0,
+      hint(rowIndex, wrongs){
+        const r = this.rows[rowIndex], top = r.label.split('/')[0];
+        return wrongs >= 2 ? `It's ${r.answer}. Type ${r.answer}.` : `Divide the top by ${k}: ${top} ÷ ${k} = ?`;
+      },
+      finishLine: `You divided top and bottom by ${k} every time! +3 🪙`,
+      tieLine: 'Simplest form: keep dividing until no number bigger than 1 goes into both.'
+    };
+    }
+  },
+  mixed:{
+    sprintItem(key){
+      const d = +key >= 2 ? +key : rand(2, 6), w = rand(1, 9), r = rand(1, d - 1);
+      return {prompt:`${w * d + r}/${d} = ? and ${r}/${d}`, answer:String(w), drillId:`mixed:${d}`};
+    },
+    build(drill, {short = false} = {}){
+    const d = Math.max(2, +drill.key || 2), rows = [], seen = new Set();
+    for (let t = 0; rows.length < (short ? 4 : 6) && t < 60; t++){
+      const w = rand(1, 9), r = rand(1, d - 1), top = w * d + r;
+      if (seen.has(top)) continue; seen.add(top);
+      rows.push({label:`How many wholes in ${top}/${d}?`, answer:String(w)});
+      rows.push({label:`${top}/${d} = ${w} and ?/${d}`, answer:String(r)});
+    }
+    return {
+      title: DRILLS[drill.type].kidTitle(String(d)),
+      why: drill.reason === 'slow' ? "Let's get faster at pulling out the wholes." : 'That answer had wholes hiding inside it. Let\'s find them!',
+      rows, targetIndex: 0,
+      hint(rowIndex, wrongs){
+        const r = this.rows[rowIndex], top = +r.label.match(/(\d+)\/\d+/)[1];
+        if (wrongs >= 2) return `It's ${r.answer}. Type ${r.answer}.`;
+        return rowIndex % 2 === 0 ? `How many ${d}s fit in ${top}? ${d} × ? is as close to ${top} as you can get without going over.`
+          : `Take away the wholes: ${top} − ${d} × ${Math.floor(top / d)} = ?`;
+      },
+      finishLine: 'You found all the wholes! +3 🪙',
+      tieLine: `Divide the top by the bottom. The answer is the whole number, and what's left over goes on top.`
     };
     }
   }

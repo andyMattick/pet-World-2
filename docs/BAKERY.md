@@ -22,8 +22,8 @@ Each station opens after the quiz at the one before it is passed (or after 6 ord
 |---|---|---|
 | `BAKERY-0-ENGINE.md` | Let the game run more than one shop: shared station screen, per-shop progress, logging, dashboard tabs | ✅ built |
 | `BAKERY-1-SCALE.md` | Station 1, with tested generator code, 3 new mix-ups, and the place-value drill | ✅ built |
-| `BAKERY-2-PANS.md` | Station 2 plus the fraction answer type | ✅ built |
-| `BAKERY-3-BOXES.md` | Station 3 plus the reciprocal and simplify drills | draft plan |
+| `BAKERY-2-PANS.md` | Station 2 plus the fraction answer type and the simplify and mixed-number drills | ✅ built |
+| `BAKERY-3-BOXES.md` | Station 3 plus the reciprocal drill | draft plan |
 | `BAKERY-4-REGISTER.md` | Station 4 plus the long-division layout and the decimal-shift drill | draft plan |
 | `BAKERY-5-BULK.md` | Station 5 and the Bakery Unit Test | draft plan |
 

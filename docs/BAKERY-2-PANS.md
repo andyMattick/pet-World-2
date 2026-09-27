@@ -48,7 +48,9 @@ The generator must check that each wrong answer it recognises is different from 
 
 ## Drills
 
-- **Simplify drill** (`simplify`, already registered): after a `notSimplest` miss.
+- **Simplify drill** (`simplify`, key = the number that still divides top and bottom): after a miss at the simplest-form step when the answer is less than 1 or whole. Rows like "12/16 = ?/4".
+- **Mixed-number drill** (`mixed`, key = the bottom number): after a miss at the simplest-form step when the answer is a mixed number. Rows in pairs: "How many wholes in 15/2?" then "15/2 = 7 and ?/2".
+- Both join the Fact Sprint once the student has done an order at station 2, and teachers can turn each one off in drill settings.
 - **Times tables** (existing): after a multiplication fact slip inside a step.
 
 ## Rewards

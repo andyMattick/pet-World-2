@@ -41,7 +41,8 @@ export const DRILLS: Record<string, DrillType> = {
   placeValue:   { name: 'Place value',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 1 }, teacherLabel: k => `Place value (${k})`,      kidTitle: () => "Let's line up the places!" },
   decimalShift: { name: 'Moving the decimal', unit: 'bakery', teacherLabel: k => `Multiplying by ${k}`, kidTitle: k => `Let's slide the decimal (× ${k})!` },
   reciprocal:   { name: 'Reciprocals',  unit: 'bakery', teacherLabel: () => 'Flipping fractions',     kidTitle: () => "Let's flip some fractions!" },
-  simplify:     { name: 'Simplifying',  unit: 'bakery', teacherLabel: k => `Simplifying by ${k}`,     kidTitle: k => `Let's simplify by ${k}!` }
+  simplify:     { name: 'Simplifying',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 2 }, teacherLabel: k => `Simplifying by ${k}`,     kidTitle: k => `Let's simplify by ${k}!` },
+  mixed:        { name: 'Mixed numbers', unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 2 }, teacherLabel: k => `Mixed numbers (over ${k})`, kidTitle: () => "Let's find the wholes!" }
 };
 /** "times:7" → "7s times table" */
 export function drillLabel(id: string): string {

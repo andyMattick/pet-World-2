@@ -40,8 +40,8 @@ Every recognised wrong answer must differ from the right one. **Dividing straigh
 ## Drills
 
 - **Reciprocal drill** (`reciprocal`, already registered): after a `flipWrong` or `noFlip` miss. Rows like "Flip 3/5" → 5/3, and "Flip 4" → 1/4.
-- **Simplify drill** (`simplify`): after `notSimplest`.
-- The two new drills need `DRILL_IMPL` entries with the same shape as `times` (`build` returns `title, why, rows, targetIndex, hint, finishLine, tieLine`, and `sprintItem` returns a `drillId`).
+- **Simplify drill** (`simplify`): after `notSimplest`. Already built in station 2.
+- The reciprocal drill needs `DRILL_IMPL` entries with the same shape as `times` (`build` returns `title, why, rows, targetIndex, hint, finishLine, tieLine`, and `sprintItem` returns a `drillId`).
 
 ## Rewards
 
@@ -49,9 +49,9 @@ Unchanged: the station 3 Bakery rewards in `REWARDS.md`.
 
 ## Build steps (one commit each)
 
-1. **Registry:** 4 skills, the new mix-ups, station 3's `skills` in the **same commit**, `UNIT_SKILLS.bakery`, and `sprintUnlock` for `reciprocal` and `simplify` at Bakery station 3.
+1. **Registry:** 4 skills, the new mix-ups, station 3's `skills` in the **same commit**, `UNIT_SKILLS.bakery`, and `sprintUnlock` for `reciprocal` at Bakery station 3.
 2. **Generators:** paste the tested code.
-3. **Reciprocal and simplify drills:** the two `DRILL_IMPL` entries.
+3. **Reciprocal drill:** the `DRILL_IMPL` entry.
 4. **Verify:** checks for the generators and the two drills; update the three instruction files.
 
 ## Acceptance checks
