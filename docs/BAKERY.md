@@ -14,18 +14,18 @@ The Bakery follows Khan Academy 6th grade Unit 2 in order, as **5 stations cover
 | 4 | 🧾 **The Register** | Decimal multiplication place value · Multiplying decimals · Division by 2 digits · Multi-digit division | long-division layout |
 | 5 | 🚚 **Bulk Orders** | Divide whole numbers to get a decimal · Dividing decimals: hundredths · Dividing decimals: thousandths | long-division layout with decimals |
 
-Each station opens after 6 orders at the one before it, the same as the café.
+Each station opens after the quiz at the one before it is passed (or after 6 orders when the teacher turns quizzes off), the same as the café. The whole Bakery opens after the Café Unit Test.
 
 ## Build order (one plan file each)
 
 | Plan | What | Status |
 |---|---|---|
-| `BAKERY-0-ENGINE.md` | Let the game run more than one shop: shared station screen, per-shop progress, logging, dashboard tabs | **ready** |
-| `BAKERY-1-SCALE.md` | Station 1, with tested generator code, 3 new mix-ups, and the place-value drill | **ready** |
-| `BAKERY-2-PANS.md` | Station 2 plus the fraction answer type | written next |
-| `BAKERY-3-BOXES.md` | Station 3 plus the reciprocal and simplify drills | later |
-| `BAKERY-4-REGISTER.md` | Station 4 plus the long-division layout and the decimal-shift drill | later |
-| `BAKERY-5-BULK.md` | Station 5 | later |
+| `BAKERY-0-ENGINE.md` | Let the game run more than one shop: shared station screen, per-shop progress, logging, dashboard tabs | ✅ built |
+| `BAKERY-1-SCALE.md` | Station 1, with tested generator code, 3 new mix-ups, and the place-value drill | ✅ built |
+| `BAKERY-2-PANS.md` | Station 2 plus the fraction answer type | draft plan |
+| `BAKERY-3-BOXES.md` | Station 3 plus the reciprocal and simplify drills | draft plan |
+| `BAKERY-4-REGISTER.md` | Station 4 plus the long-division layout and the decimal-shift drill | draft plan |
+| `BAKERY-5-BULK.md` | Station 5 and the Bakery Unit Test | draft plan |
 
 Every plan's generator code is written and stress-tested before it reaches the coder. **Paste it as written; don't rewrite generator code.**
 
