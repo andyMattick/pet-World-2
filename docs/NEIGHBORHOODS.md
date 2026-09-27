@@ -33,7 +33,7 @@ The order of Geometry and Algebra 2 can follow the school's sequence. Neighborho
 
 - **Registry:** `NEIGHBORHOODS = { g4: {name:'4th grade', shops:[…]}, g6: {name:'6th grade', shops:['cafe','bakery', …]}, … }`. `BUILDINGS`, `SHOPS`, unit tests, and reward sets are grouped by neighborhood. Every skill and shop id stays unique.
 - **Save:** add `S.home` (default `'g6'`, so every existing save keeps working unchanged). Progress keeps living under shop and skill ids, so adding neighborhoods changes nothing that's already saved.
-- **Town screen:** a neighborhood switcher at the top (home first). "Opens after the unit test of the shop before" works *within* a neighborhood. The first shop of every neighborhood is open.
+- **Town screen:** a neighborhood switcher at the top, in grade order, with the home grade marked. "Opens after the unit test of the shop before" works *within* a neighborhood. The first shop of every neighborhood is open.
 - **Classes:** `classes.game_settings.home` sets a class's home grade. At-home students join a class the grown-up makes (no family accounts). No new tables.
 - **Teacher dashboard:** tabs grouped by neighborhood, home first.
 - **Grade trophy:** passing every unit test in a neighborhood gives a trophy for the Sticker Book.

@@ -2225,7 +2225,7 @@ let viewHood = null;                                         // the neighborhood
 const currentHood = () => viewHood && builtHoods().some(n => n.id === viewHood) ? viewHood : homeHood();
 function hoodSwitchHTML(){
   const hoods = builtHoods(); if (hoods.length < 2) return '';
-  const home = homeHood(), sorted = [...hoods.filter(n => n.id === home), ...hoods.filter(n => n.id !== home)];
+  const home = homeHood(), sorted = hoods;                        // grade order (4th, then 6th), with the home grade marked
   return `<div class="hood-switch" role="tablist" aria-label="Neighborhood">${sorted.map(n => `<button type="button" role="tab" class="hood-tab${n.id === currentHood() ? ' active' : ''}" aria-selected="${n.id === currentHood()}" data-hood="${n.id}">${n.emoji} ${esc(n.name)}${n.id === home ? ' <small>home</small>' : ''}</button>`).join('')}</div>`;
 }
 /* a grade trophy for the Sticker Book once every unit test in a neighborhood is passed */
