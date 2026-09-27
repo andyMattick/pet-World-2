@@ -509,3 +509,8 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .pv-table{border-collapse:collapse; margin:4px auto; font-size:1.3rem}
 .pv-table th{font-size:.8rem; font-weight:600; padding:2px 6px; border-bottom:2px solid currentColor}
 .pv-table td{text-align:center; padding:4px 6px; font-size:1.6rem}
+.area-model{border-collapse:collapse; margin:6px auto; font-size:1.15rem}
+.area-model th{font-weight:700; padding:2px 6px; font-size:1rem}
+.area-model td{border:2px solid currentColor; min-width:3em; height:2.4em; text-align:center; padding:2px 6px}
+.area-model td.ask{background:rgba(255,215,106,.25)}
+.area-total{text-align:center; font-size:1.2rem; margin-top:4px}
