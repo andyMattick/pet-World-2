@@ -36,7 +36,7 @@ const CUSTOMERS = [['🐻','Biscuit'],['🐶','Waffles'],['🐭','Pip'],['🐨',
 const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
-const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
+const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
@@ -64,6 +64,7 @@ function normalize(raw){
   if (!Array.isArray(s.decor)) s.decor = [];
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
+  if (!Array.isArray(s.sprintPick)) s.sprintPick = ['times'];
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
@@ -664,14 +665,21 @@ function placeValueRows(key){
   }
   return rows;
 }
-/* rows for the lining-up drill: how many places both numbers need, then fill in the zeros */
+/* two numbers to line up: one with P decimal places, one with fewer (a whole number when P is 1) */
+function lineUpPair(key){
+  const P = Math.max(1, PLACE_NAMES.indexOf(key)), long = randDec(1, 30, P), shortP = rand(0, P - 1), short = randDec(1, 30, shortP);
+  const padded = shortP ? short + '0'.repeat(P - shortP) : `${short}.${'0'.repeat(P)}`;
+  const [a, b] = Math.random() < 0.5 ? [short, long] : [long, short];
+  const options = shuffle([{html:columnHTML(a, b, '+', true), text:'decimal points lined up', ok:true}, {html:columnHTML(a, b, '+', false), text:'right edges lined up', ok:false}]);
+  return {short, long, padded, a, b, options, answer:String(options.findIndex(o => o.ok))};
+}
+/* rows for the lining-up drill: pick the setup that is lined up correctly, then fill in the zeros */
 function lineUpRows(key, pairs){
-  const P = Math.max(1, PLACE_NAMES.indexOf(key)), rows = [];
+  const rows = [];
   for (let i = 0; i < pairs; i++){
-    const long = randDec(1, 30, P), shortP = rand(0, P - 1), short = randDec(1, 30, shortP);
-    const padded = shortP ? short + '0'.repeat(P - shortP) : `${short}.${'0'.repeat(P)}`;
-    rows.push({label:`Line up ${short} and ${long}. How many decimal places should both have?`, answer:String(P)});
-    rows.push({label:`Fill in the zeros: ${short} →`, answer:padded});
+    const q = lineUpPair(key);
+    rows.push({label:`Which is lined up correctly?`, options:q.options.map(o => o.html), html:true, answer:q.answer, rightText:`${q.a} + ${q.b}: points in one column`});
+    rows.push({label:`Fill in the zeros: ${q.short} →`, answer:q.padded});
   }
   return rows;
 }
@@ -2158,6 +2166,7 @@ const DRILL_IMPL = {
     }
   },
   placeValue:{
+    sprintKeys:['tenths', 'hundredths', 'thousandths'],
     sprintItem(key){
       const row = placeValueRows(key)[0], n = row.label.match(/In ([\d.]+),/)[1];
       return {prompt:`Which digit is in the ${row.place} place of ${n}?`, answer:row.answer, drillId:`placeValue:${row.place}`};
@@ -2259,9 +2268,10 @@ const DRILL_IMPL = {
     }
   },
   lineUp:{
+    sprintKeys:['tenths', 'hundredths', 'thousandths'],
     sprintItem(key){
-      const row = lineUpRows(key === 'default' ? pick(['tenths', 'hundredths', 'thousandths']) : key, 1)[0];
-      return {prompt:row.label.replace(' How many decimal places should both have?', ': how many decimal places?'), answer:row.answer, drillId:`lineUp:${key === 'default' ? 'hundredths' : key}`};
+      const place = ['tenths', 'hundredths', 'thousandths'].includes(key) ? key : pick(['tenths', 'hundredths', 'thousandths']), q = lineUpPair(place);
+      return {prompt:'Which is lined up correctly?', options:q.options, answer:q.answer, drillId:`lineUp:${place}`, reveal:`${q.a} + ${q.b}: line up the points`};
     },
     build(drill, {short = false} = {}){
     const key = PLACE_NAMES.includes(drill.key) && drill.key !== 'ones' ? drill.key : 'hundredths';
@@ -2271,8 +2281,9 @@ const DRILL_IMPL = {
       rows: lineUpRows(key, short ? 2 : 3), targetIndex: 0,
       hint(rowIndex, wrongs){
         const r = this.rows[rowIndex];
+        if (r.options) return wrongs >= 2 ? 'Pick the one where the decimal points make one straight column.' : 'Look at the decimal points. They must be right on top of each other.';
         if (wrongs >= 2) return `It's ${r.answer}. Type ${r.answer}.`;
-        return rowIndex % 2 === 0 ? 'Count the digits after each decimal point. Both numbers need the bigger count.' : 'Add zeros at the end until it has as many decimal places as the other number. A whole number gets a point first.';
+        return 'Add zeros at the end until it has as many decimal places as the other number. A whole number gets a point first.';
       },
       finishLine: 'Lined up! +3 🪙',
       tieLine: 'Give both numbers the same number of decimal places, and the points line up by themselves.'
@@ -2340,9 +2351,9 @@ function ladderStep(){
   const row = pr.model.rows[pr.i], rowEl = $('#lr'+pr.i);
   $$('.lrow.now').forEach(r => r.classList.remove('now')); rowEl.classList.add('now');
   if (row.options) {                                   // a choice row: tap the right one
-    $('#la'+pr.i).innerHTML = row.options.map((o, k) => `<button class="btn small lopt" type="button" data-k="${k}"><span class="okey" aria-hidden="true">${k + 1}</span>${esc(o)}</button>`).join('');
+    $('#la'+pr.i).innerHTML = row.options.map((o, k) => `<button class="btn small lopt" type="button" data-k="${k}"><span class="okey" aria-hidden="true">${k + 1}</span>${row.html ? o : esc(o)}</button>`).join('');
     $$('#la' + pr.i + ' .lopt').forEach(b => b.addEventListener('click', () => {
-      if (+b.dataset.k === +row.answer) ladderRight(row.options[+row.answer] + (row.also ? ` (same as ${row.also})` : ''));
+      if (+b.dataset.k === +row.answer) ladderRight(row.rightText || row.options[+row.answer] + (row.also ? ` (same as ${row.also})` : ''));
       else { pr.wrongs++; sfx('bad'); b.disabled = true; $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs); }
     }));
     const first = $('#la' + pr.i + ' .lopt'); if (first) first.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
@@ -2372,7 +2383,7 @@ function ladderCheck(){
 document.addEventListener('keydown', e => {
   if (!/^[1-9]$/.test(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-  const sel = pr ? '#la' + pr.i + ' .lopt' : (order && !order.done && order.p.steps[order.i]?.kind === 'choice' && !$('#scr-shift').hidden) ? '#stepInput .opt' : null;
+  const sel = pr ? '#la' + pr.i + ' .lopt' : (sp && sp.item?.options && !$('#scr-sprint').hidden) ? '#spOpts .opt' : (order && !order.done && order.p.steps[order.i]?.kind === 'choice' && !$('#scr-shift').hidden) ? '#stepInput .opt' : null;
   const b = sel && $$(sel)[+e.key - 1];
   if (b && !b.disabled) { e.preventDefault(); b.click(); }
 });
@@ -2411,12 +2422,34 @@ function openSprint(){
   });
   if (pad) pad.hidden = true;
   $('#spCorrect').textContent = '0'; $('#spTime').textContent = '60'; $('#timerFill').style.width = '100%';
+  $('#spOpts').hidden = true; $('#spOpts').innerHTML = '';
   $('#spNote').textContent = 'Answer as many as you can in 60 seconds. Every right answer powers up your tips.';
+  renderSprintPick();
   show('sprint'); setTimeout(() => $('#spStart').focus(), 60);
 }
+/* the student picks which skills go in the sprint; more skills earn more coins */
+const sprintCoinsFor = (correct, skills) => Math.round(correct * skills / 2);   // every 2 right answers earn 1 coin per skill picked
+function sprintPicked(){
+  const types = sprintDrillTypes(), picked = (S.sprintPick || []).filter(t => types.includes(t));
+  return picked.length ? picked : [types[0] || 'times'];
+}
+function renderSprintPick(){
+  const types = sprintDrillTypes(), picked = sprintPicked(), wrap = $('#spPick');
+  const n = picked.length;
+  wrap.innerHTML = `${types.length > 1 ? `<p class="sp-pick-q">Which skills do you want in this sprint?</p>
+    <div class="sp-chips">${types.map(t => `<button type="button" class="sp-chip" data-type="${t}" aria-pressed="${picked.includes(t)}">${picked.includes(t) ? '✓ ' : ''}${esc(DRILLS[t].name)}</button>`).join('')}</div>` : ''}
+    <p class="sp-bonus">${n} skill${n === 1 ? '' : 's'}: every 2 right answers earn <b>🪙 ${n}</b>${types.length > n ? '. Pick more skills for more coins!' : ''}</p>`;
+  $$('#spPick .sp-chip').forEach(b => b.addEventListener('click', () => {
+    const t = b.dataset.type, cur = sprintPicked();
+    S.sprintPick = cur.includes(t) ? (cur.length > 1 ? cur.filter(x => x !== t) : cur) : [...cur, t];
+    save(); sfx('tick'); renderSprintPick();
+    const again = $(`#spPick .sp-chip[data-type="${t}"]`); if (again) again.focus();
+  }));
+}
+function sprintPad(){ const pad = $('#spInput').nextElementSibling; return pad?.classList.contains('number-pad') ? pad : null; }
 function stopSprintTimer(){ if (spTimer) { clearInterval(spTimer); spTimer = null; } }
 $('#spStart').addEventListener('click', () => {
-  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:''};
+  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:'', types:sprintPicked()};
   $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spCheck').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
   const pad = $('#spInput').nextElementSibling; if (pad?.classList.contains('number-pad')) pad.hidden = false;
   nextFact(); spTimer = setInterval(sprintTick, 100);
@@ -2430,15 +2463,26 @@ function sprintDrillTypes(){
 }
 function sprintDrillKey(type){
   const keys = Object.keys(S.drillLog).filter(id => id.startsWith(type + ':')).map(id => id.slice(type.length + 1));
-  if (!keys.length) return 'default';
-  return weightedPick(keys, key => { const log = S.drillLog[type + ':' + key]; return 1 + (log.miss||0) + (log.slow||0); });
+  const all = [...new Set([...(DRILL_IMPL[type].sprintKeys || []), ...keys])];   // every place, not only the ones missed before
+  if (!all.length) return 'default';
+  return weightedPick(all, key => { const log = S.drillLog[type + ':' + key] || {}; return 1 + Math.min(2, (log.miss||0) + (log.slow||0)); });
 }
 function nextFact(){
-  const types = sprintDrillTypes(), otherTypes = types.filter(type => type !== 'times');
-  let type = 'times'; if (otherTypes.length && Math.random() >= 0.6) type = weightedPick(otherTypes, drillType => 1 + Object.entries(S.drillLog).filter(([id]) => id.startsWith(drillType + ':')).reduce((sum,[,log]) => sum + (log.miss||0) + (log.slow||0), 0));
+  const types = sp.types;
+  let type = types[0] || 'times';
+  if (types.length > 1) { const others = types.filter(t => t !== sp.lastType); type = pick(others.length ? others : types); }   // take turns, never the same skill twice in a row
+  sp.lastType = type;
   sp.item = DRILL_IMPL[type].sprintItem(sprintDrillKey(type)); sp.shown = performance.now(); sp.lock = false; sp.hadWrong = false; sp.wrongValue = '';
-  const ft = $('#factText'); ft.classList.remove('oops'); ft.textContent = sp.item.prompt;
-  const inp = $('#spInput'); inp.value = ''; inp.disabled = false; inp.focus();
+  const ft = $('#factText'); ft.classList.remove('oops'); ft.classList.toggle('long', sp.item.prompt.length > 14); ft.textContent = sp.item.prompt;
+  const inp = $('#spInput'), opts = $('#spOpts'), choice = !!sp.item.options, pad = sprintPad();
+  inp.hidden = choice; $('#spCheck').hidden = choice; if (pad) pad.hidden = choice; opts.hidden = !choice;
+  if (choice) {
+    opts.innerHTML = sp.item.options.map((o, k) => `<button class="opt" type="button" data-k="${k}"><span class="okey" aria-hidden="true">${k + 1}</span>${o.html}</button>`).join('');
+    $$('#spOpts .opt').forEach(b => b.addEventListener('click', () => sprintAnswer(b.dataset.k)));
+    const first = $('#spOpts .opt'); if (first) first.focus();
+    inp.value = '';
+  } else { opts.innerHTML = ''; inp.value = ''; inp.disabled = false; inp.focus(); }
+  $('#spNote').textContent = choice ? 'Tap the right one, or press its number key.' : 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
 }
 function sprintTick(){
   const left = Math.max(0, sp.end - performance.now());
@@ -2462,8 +2506,8 @@ function sprintAnswer(value, {corrected = false} = {}) {
   const inp = $('#spInput'), item = sp.item, times = !!item.fact, x = item.fact?.x, y = item.fact?.y, answer = String(item.answer).trim(), ok = times ? parseInt(value, 10) === x*y : value.trim() === answer;
   const ms = performance.now() - sp.shown; recordPace('sprint', ms);
   const slow = ok && ms > slowLimit('sprint');
-  const loggedCorrect = ok && !corrected, loggedAnswer = corrected ? sp.wrongValue : value;
-  const wrong = times ? [x,y] : {type:item.drillId.split(':')[0], key:item.drillId.slice(item.drillId.indexOf(':') + 1), prompt:item.prompt, answer:item.answer};
+  const loggedCorrect = ok && !corrected, loggedAnswer = item.options ? (item.options[+value]?.text || value) : corrected ? sp.wrongValue : value;
+  const wrong = times ? [x,y] : {type:item.drillId.split(':')[0], key:item.drillId.slice(item.drillId.indexOf(':') + 1), prompt:item.prompt, answer:item.answer, reveal:item.reveal};
   if (times) { logFact(x, y, loggedCorrect, ms, 'facts', slow); if (slow) sp.slow.push(wrong); }
   else if (slow) sp.slow.push(wrong);
   const type = item.drillId.split(':')[0], key = item.drillId.slice(type.length + 1);
@@ -2471,14 +2515,15 @@ function sprintAnswer(value, {corrected = false} = {}) {
     ? {mode:shift?.mode || 'practice', shop:'sprint', skill:'times-tables', step:`${Math.min(x,y)}x${Math.max(x,y)}`, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
       answer:loggedAnswer.slice(0,6), expected:String(x*y), misconception:null, context:null, fact_a:x, fact_b:y, fact_div:false, ms:Math.round(ms)}
     : {mode:shift?.mode || 'practice', shop:'sprint', skill:'drill:' + type, step:key, step_type:'fact', correct:loggedCorrect, first_try:!corrected, slow,
-      answer:loggedAnswer.slice(0,60), expected:answer, misconception:null, context:null, fact_a:null, fact_b:null, fact_div:null, ms:Math.round(ms)});
+      answer:loggedAnswer.slice(0,60), expected:item.options ? item.options[+answer].text : answer, misconception:null, context:null, fact_a:null, fact_b:null, fact_div:null, ms:Math.round(ms)});
   if (ok) {
     if (corrected) { sp.missed.push(wrong); if (times) sp.queue.push([x,y]); }
     sp.correct++; $('#spCorrect').textContent = sp.correct; sfx('good');
     inp.classList.add('flash-good'); setTimeout(() => inp.classList.remove('flash-good'), 150); nextFact();
   } else {
     sp.missed.push(wrong); if (times) sp.queue.push([x,y]); sfx('bad'); inp.disabled = true;
-    const ft = $('#factText'); ft.classList.add('oops'); ft.textContent = times ? `${x} × ${y} = ${x*y}` : `${item.prompt} = ${item.answer}`;
+    if (item.options) $$('#spOpts .opt').forEach(b => { b.disabled = true; if (+b.dataset.k === +answer) b.classList.add('right'); });
+    const ft = $('#factText'); ft.classList.add('oops'); ft.textContent = times ? `${x} × ${y} = ${x*y}` : item.reveal || `${item.prompt} = ${item.answer}`;
     setTimeout(() => { if (sp) nextFact(); }, 1300);
   }
 }
@@ -2496,14 +2541,16 @@ function endSprint(){
   const run = sp; sp = null;
   const pw = Math.round((1 + Math.min(run.correct, 20)*0.05)*100)/100;
   S.power = Math.max(S.power, pw);
+  const skills = run.types.length, coins = sprintCoinsFor(run.correct, skills); S.coins += coins;
   const best = run.correct > S.sprintBest; if (best) S.sprintBest = run.correct;
   checkUnlocks({announce:true});
   save(); updateHeader();
   Backend.log('sprints', {correct:run.correct}); Backend.flush();
   const seen = new Set(), chips = [];
-  run.missed.forEach(entry => { const id = Array.isArray(entry) ? fkey(entry[0], entry[1]) : `${entry.type}:${entry.key}`; if (!seen.has(id)) { seen.add(id); chips.push(Array.isArray(entry) ? `<span>${entry[0]} × ${entry[1]} = ${entry[0]*entry[1]}</span>` : `<span>${entry.prompt} = ${entry.answer}</span>`); } });
+  run.missed.forEach(entry => { const id = Array.isArray(entry) ? fkey(entry[0], entry[1]) : `${entry.type}:${entry.key}`; if (!seen.has(id)) { seen.add(id); chips.push(Array.isArray(entry) ? `<span>${entry[0]} × ${entry[1]} = ${entry[0]*entry[1]}</span>` : `<span>${esc(entry.reveal || `${entry.prompt} = ${entry.answer}`)}</span>`); } });
   $('#summaryCard').innerHTML = `<div class="big-emoji">⚡</div><h2>${run.correct} correct!</h2>
     ${best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.sprintBest}</p>`}
+    ${coins ? `<p>You earned <b>🪙 ${coins}</b> (${skills} skill${skills === 1 ? '' : 's'}).</p>` : ''}
     <p>Your tips are powered up <b>×${fmtPow(S.power)}</b> for your next café shift.</p>
     ${chips.length ? `<p class="muted">Tricky ones</p><div class="factchips">${chips.join('')}</div>` : ''}
     <div class="row"><button class="btn berry" data-go="cafe" id="sumCafe">Go to the café</button><button class="btn" data-go="home">Back to town</button></div>`;

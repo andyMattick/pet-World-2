@@ -273,6 +273,20 @@ table.mini th{font-weight:400}
 .sprint-stats{display:flex; justify-content:space-between; font-weight:700; margin-top:8px; font-size:1.1rem}
 .fact{font-size:clamp(3rem,10vw,4.6rem); font-weight:800; margin:18px 0 10px; line-height:1.1}
 .fact.oops{color:var(--berry-deep)}
+.fact.long{font-size:clamp(1.4rem,5.5vw,2rem)}
+.sp-pick{margin:4px 0 14px}
+.sp-pick-q{font-weight:700; margin:0 0 8px}
+.sp-chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center}
+.sp-chip{font:inherit; font-weight:700; padding:8px 14px; min-height:44px; border-radius:999px; border:2px solid var(--edge); background:var(--surface); color:inherit; cursor:pointer}
+.sp-chip[aria-pressed="true"]{background:var(--butter); color:#4A2E2A; border-color:var(--butter-deep, var(--edge))}
+.sp-bonus{margin:10px 0 0}
+.sp-opts{justify-content:center; margin:0 0 10px}
+.sp-opts .opt{color:inherit; background:var(--surface); border:2px solid var(--edge); display:flex; align-items:center; gap:10px}
+.sp-opts .opt .colmath{color:inherit; font-family:inherit; margin:0}
+.sp-opts .opt .colmath tr:last-child td{border-bottom-color:currentColor}
+.sp-opts .opt.right{outline:3px solid var(--good, green)}
+.lrow .lopt .colmath{margin:0; font-size:1.2rem; color:inherit; font-family:inherit}
+.lrow .lopt .colmath tr:last-child td{border-bottom-color:currentColor}
 #spInput{font:inherit; font-size:2.4rem; font-weight:800; width:5em; text-align:center; border:3px solid var(--edge); border-radius:16px; padding:6px; background:var(--bg); color:var(--ink)}
 #spInput.flash-good{background:var(--mint); color:var(--mint-ink)}
 .card{max-width:640px; margin:10px auto; background:var(--surface); border:3px solid var(--edge); border-radius:24px; padding:24px; text-align:center}

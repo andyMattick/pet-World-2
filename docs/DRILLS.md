@@ -56,7 +56,7 @@ Today, a missed or slow step with a times-table fact opens a practice ladder for
 |---|---|---|---|
 | `times:N` | all | N × 1 … N × 10 (as now) | missed or slow times-table fact, sprint |
 | `placeValue:tenths` / `hundredths` / `thousandths` | Bakery | 6 rows: "In 38.472, the tenths digit is". The first row asks for the place the problem needed, then the rows mix tenths, hundredths, and thousandths | a miss on the Scale's "Line up the decimals" step |
-| `lineUp:tenths` / `hundredths` / `thousandths` | Bakery | 4 to 6 rows in pairs: "Line up 3.4 and 12.086. How many decimal places should both have?" then "Fill in the zeros: 3.4 → 3.400" | a miss on the Scale's add or subtract step (not slowness: that step shows the lined-up numbers and they may work on paper) |
+| `lineUp:tenths` / `hundredths` / `thousandths` | Bakery | 4 to 6 rows in pairs: "Which is lined up correctly?" (pick between points lined up and right edges lined up) then "Fill in the zeros: 3.4 → 3.400" | a miss on the Scale's add or subtract step (not slowness: that step shows the lined-up numbers and they may work on paper) |
 | `story:addSub` / `divide` | Bakery | 3 to 4 short stories, tap the matching equation ("Ana has $8.86 and earns $1.86 more" → 8.86 + 1.86). Not in the Fact Sprint | a miss on the first step of a word problem: the Scale's "Pick the operation", Sharing Pans' first two steps, Boxing Treats' "Pick the equation" and "Match the story" |
 | `mixed:N` | Bakery | pairs: "How many wholes in 15/2?" then "15/2 = 7 and ?/2" | a miss on a simplest-form step when the answer is a mixed number |
 | `decimalShift:10` / `100` / `1000` | Bakery, Market | 6 rows: 4.5 × 10, 0.45 × 10, 12.3 × 10 … (or ÷) | decimal-point placement mistakes when multiplying or dividing decimals |

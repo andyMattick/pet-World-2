@@ -89,3 +89,13 @@ Update the three instruction files, keeping them identical. Commit: `Verify cove
 - After a drill type is unlocked (you can test by temporarily setting `sprintUnlock` on an existing type), about 40% of questions come from it.
 - Turning a type off in the teacher settings removes it from the sprint at the next sprint.
 - `npm run verify`, `npm run typecheck`, and `npm run build` pass.
+
+## Part C: students pick the skills (built)
+
+Owner review: mixing every skill at once was too much, and the decimal questions were stuck on hundredths.
+
+- **Before the sprint,** the student taps the skills she wants (chips for every unlocked, teacher-allowed type). At least one stays picked, and the choice is saved in `S.sprintPick`.
+- **Only picked skills appear,** taking turns (never the same skill twice in a row). Times tables are no longer forced in.
+- **Coins:** every 2 right answers earn 1 coin per skill picked (`sprintCoinsFor`), shown before the start and on the summary. The tip power-up is unchanged.
+- **Every place:** place value and lining up mix tenths, hundredths, and thousandths (`sprintKeys`), still leaning a little toward places missed before (weight capped at 3 to 1).
+- **Lining up is a choice question:** "Which is lined up correctly?" with the two setups side by side, answered by tapping or pressing 1 or 2. The same question replaces "How many decimal places should both have?" in the lining-up pop-up.

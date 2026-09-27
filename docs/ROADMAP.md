@@ -32,6 +32,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Pop-up rule: quick practice on the earliest part of a problem (`DRILLS.md`). The Scale shows the lined-up numbers when adding and subtracting, a new lining-up pop-up and a word-problem pop-up, and the place-value pop-up mixes tenths, hundredths, and thousandths
 - [x] Each new shop opens after the Unit Test of the shop before it, with a teacher switch to open it early
 - [x] Practice time (`PRACTICE-TIME.md`): active minutes tracked in the game and the town, a progress-report panel, and teacher dashboard columns, weekly card, and 4-week chart
+- [x] Sprint: students pick the skills, more skills earn more coins, every decimal place, and "Which is lined up correctly?" (`SPRINT.md` part C)
 - [x] Music (`MUSIC.md`): 4 tracks, a music menu with volume, and a teacher Allow music switch
 - [x] Draft plans written for Bakery stations 2 to 5 (`BAKERY-2-PANS.md` to `BAKERY-5-BULK.md`) and the 4th grade version (`GRADE4.md`)
 
