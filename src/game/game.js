@@ -244,11 +244,19 @@ function ccTotals(){
   return [ca, cc, ma, mc];
 }
 function shopProgress(shop){ return S[shop]; }
+/* "cleared" (legacy) always counts; "cleared:<epoch>" only counts if newer than the last attempt */
+function reviewClearedAt(key){
+  const v = Backend.me?.quiz_overrides?.[key];
+  if (v === 'cleared') return Infinity;
+  const m = typeof v === 'string' && /^cleared:(\d+)$/.exec(v);
+  return m ? +m[1] : null;
+}
+function reviewCleared(key){ const at = reviewClearedAt(key); return at != null && at > (S.quizzes[key]?.lastAt || 0); }
 function reviewSkillsNeeded(key){
-  if (Backend.me?.quiz_overrides?.[key] === 'cleared') return [];
+  if (reviewCleared(key)) return [];
   return Object.entries(S.review[key] || {}).filter(([, count]) => count > 0).map(([skill]) => skill);
 }
-function reviewComplete(key){ return Backend.me?.quiz_overrides?.[key] === 'cleared' || reviewDone(S, key); }
+function reviewComplete(key){ return reviewCleared(key) || reviewDone(S, key); }
 function stationOpen(shop, n){
   const stations = SHOPS[shop]?.stations || [], station = stations.find(s => s.id === n), progress = shopProgress(shop);
   if (!station || !station.skills.length) return false;
@@ -1032,7 +1040,11 @@ $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
 $('#town').addEventListener('click', e => {
   const b = e.target.closest('[data-open]'); if (!b) return;
   const id = b.dataset.open;
-  if (SHOPS[id] && BUILDINGS.some(building => building.id === id && building.open)) { currentShop = id; show('cafe'); }
+  if (SHOPS[id] && BUILDINGS.some(building => building.id === id && building.open)) {
+    currentShop = id;
+    void Backend.refreshSettings().then(() => { if (currentShop === id) show('cafe'); });
+    show('cafe');
+  }
   else if (id === 'sprint') openSprint();
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');

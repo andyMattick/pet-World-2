@@ -181,8 +181,14 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   h += `<div class="card"><h2>Quizzes and tests for ${esc(r.n)}</h2><div id="quizCard"></div></div>`;
   const quizTargets = Object.values(SHOPS).flatMap(shop => [
     ...shop.stations.filter(st => st.skills.length).map(st => ({ key: `${shop.id}:${st.id}`, label: `${shop.emoji} ${st.name} quiz` })),
-    { key: `${shop.id}:test`, label: `${shop.emoji} ${shop.name} unit test` }
+    ...(shop.stations.every(st => st.skills.length) ? [{ key: `${shop.id}:test`, label: `${shop.emoji} ${shop.name} unit test` }] : [])
   ]);
+  /* plain "cleared" (legacy) always counts; "cleared:<epoch>" only counts if newer than the latest attempt */
+  function clearedAfter(override: string | undefined, latestT: number | undefined) {
+    if (override === 'cleared') return true;
+    const m = typeof override === 'string' && /^cleared:(\d+)$/.exec(override);
+    return !!m && +m[1] > (latestT || 0);
+  }
   function quizControlRow(key: string, label: string) {
     const [shopId, stationPart] = key.split(':');
     const station = stationPart === 'test' ? null : +stationPart;
@@ -190,10 +196,11 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     const latest = attempts.length ? attempts.reduce((a, b) => a.t >= b.t ? a : b) : null;
     const inReview = !!latest && !latest.passed && !!latest.missed?.length;
     const override = overrides[key];
-    const statusTxt = override === 'excused' ? 'Excused' : override === 'cleared' ? 'Review cleared' : inReview ? 'In review' : latest?.passed ? 'Passed' : '—';
+    const cleared = clearedAfter(override, latest?.t);
+    const statusTxt = override === 'excused' ? 'Excused' : cleared ? 'Review cleared' : inReview ? 'In review' : latest?.passed ? 'Passed' : '—';
     const buttons = [
       override !== 'excused' ? `<button class="btn small" data-quiz-excuse="${esc(key)}">Excuse quiz</button>` : '',
-      inReview && override !== 'cleared' ? `<button class="btn small" data-quiz-clear="${esc(key)}">Clear review</button>` : '',
+      inReview && !cleared ? `<button class="btn small" data-quiz-clear="${esc(key)}">Clear review</button>` : '',
       override ? `<button class="btn small" data-quiz-undo="${esc(key)}">Undo</button>` : ''
     ].filter(Boolean).join(' ');
     return `<tr><td>${esc(label)}</td><td>${statusTxt}</td><td>${buttons}</td></tr>`;
@@ -221,7 +228,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     if (!el2) return;
     el2.innerHTML = quizCardHtml();
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-excuse]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizExcuse!, 'excused'); }));
-    el2.querySelectorAll<HTMLButtonElement>('[data-quiz-clear]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizClear!, 'cleared'); }));
+    el2.querySelectorAll<HTMLButtonElement>('[data-quiz-clear]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizClear!, `cleared:${Date.now()}`); }));
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-undo]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizUndo!, null); }));
   }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
