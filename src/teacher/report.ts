@@ -5,6 +5,7 @@ type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: numb
 interface AssessmentHistory { shop: string; station: number | null; kind: 'quiz' | 'test'; score: number; total: number; passed: boolean; missed: string[]; t: number }
 type SaveStudentDrills = (id: string, settings: Partial<DrillSettings> | null) => Promise<void>;
 type ResetStudent = (id: string, clearHistory: boolean) => Promise<void>;
+type SaveQuizOverride = (id: string, overrides: Record<string, string> | null) => Promise<void>;
 
 export interface StudentReport {
   id: string; n: string; cl?: string; t: number; o: number; pf: number; tm: number;
@@ -50,7 +51,7 @@ function assessmentCell(r: StudentReport, shop: string, station: number | null, 
   return `${inReview ? '🔁 ' : ''}${best.score}/${best.total}`;
 }
 
-export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent) {
+export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent, onSaveQuizOverride?: SaveQuizOverride) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
   const shop = SHOPS[reportShop] || SHOPS.cafe;
   const shopStations = shop.stations.map(st => ({
@@ -141,15 +142,16 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   el.innerHTML = h;
   el.querySelectorAll<HTMLButtonElement>('[data-report-shop]').forEach(b => b.addEventListener('click', () => {
     reportShop = b.dataset.reportShop || 'cafe';
-    renderClassReport(el, list, onSaveStudentDrills, onResetStudent);
+    renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
   }));
-  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent)));
+  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride)));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
 }
 
-export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent) {
+export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent, onSaveQuizOverride?: SaveQuizOverride) {
   if (!r) return;
+  let overrides: Record<string, string> = { ...(r.qx || {}) };
   const st = sStats(r);
   let setupA = 0, setupC = 0;
   Object.values(r.s || {}).forEach(steps => Object.values(steps).forEach(v => { if (v[3] === 's') { setupA += v[0]; setupC += v[1]; } }));
@@ -176,7 +178,54 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   }).join('');
   h += `</div><div><h2>Times tables</h2><p><b>Multiplying</b><br>${f || '<span class="muted">No trouble</span>'}</p><p><b>Finding the multiplier (dividing)</b><br>${df || '<span class="muted">No trouble</span>'}</p><p><b>Practice pop-ups</b><br>${pl || '<span class="muted">None</span>'}</p></div></div>`;
   h += `<div class="card"><h2>Practice pop-ups for ${esc(r.n)}</h2><label for="studentDrillMode">Mode</label><select id="studentDrillMode"><option value="class" ${mode === 'class' ? 'selected' : ''}>Use class settings</option><option value="1.5" ${mode === '1.5' ? 'selected' : ''}>Extra time ×1.5</option><option value="2" ${mode === '2' ? 'selected' : ''}>Extra time ×2</option><option value="off" ${mode === 'off' ? 'selected' : ''}>Pop-ups off</option><option value="advanced" ${mode === 'advanced' ? 'selected' : ''}>Custom override</option></select><details open><summary>Advanced</summary><p class="muted">Individual drill settings are stored with this student's override.</p><label for="studentReadSeconds">Reading time before the tip timer starts</label><input id="studentReadSeconds" type="number" min="0" max="20" step="1" value="${r.ds?.readSeconds ?? ''}"></details><table class="steptable"><tr><th>Drill</th><th>Pop-ups</th><th>Misses after</th><th>Status</th><th></th></tr>${historyRows || '<tr><td colspan="5" class="muted">No drill history yet.</td></tr>'}</table><p class="status" id="studentDrillMsg"></p></div>`;
+  h += `<div class="card"><h2>Quizzes and tests for ${esc(r.n)}</h2><div id="quizCard"></div></div>`;
+  const quizTargets = Object.values(SHOPS).flatMap(shop => [
+    ...shop.stations.filter(st => st.skills.length).map(st => ({ key: `${shop.id}:${st.id}`, label: `${shop.emoji} ${st.name} quiz` })),
+    { key: `${shop.id}:test`, label: `${shop.emoji} ${shop.name} unit test` }
+  ]);
+  function quizControlRow(key: string, label: string) {
+    const [shopId, stationPart] = key.split(':');
+    const station = stationPart === 'test' ? null : +stationPart;
+    const attempts = (r.qz || []).filter(a => a.shop === shopId && a.station === station && a.kind === (stationPart === 'test' ? 'test' : 'quiz'));
+    const latest = attempts.length ? attempts.reduce((a, b) => a.t >= b.t ? a : b) : null;
+    const inReview = !!latest && !latest.passed && !!latest.missed?.length;
+    const override = overrides[key];
+    const statusTxt = override === 'excused' ? 'Excused' : override === 'cleared' ? 'Review cleared' : inReview ? 'In review' : latest?.passed ? 'Passed' : '—';
+    const buttons = [
+      override !== 'excused' ? `<button class="btn small" data-quiz-excuse="${esc(key)}">Excuse quiz</button>` : '',
+      inReview && override !== 'cleared' ? `<button class="btn small" data-quiz-clear="${esc(key)}">Clear review</button>` : '',
+      override ? `<button class="btn small" data-quiz-undo="${esc(key)}">Undo</button>` : ''
+    ].filter(Boolean).join(' ');
+    return `<tr><td>${esc(label)}</td><td>${statusTxt}</td><td>${buttons}</td></tr>`;
+  }
+  function quizCardHtml() {
+    const historyRows = [...(r.qz || [])].sort((a, b) => b.t - a.t).map(a => {
+      const shop = SHOPS[a.shop];
+      const label = a.kind === 'test' ? 'Unit Test' : `Station ${a.station}`;
+      const missed = (a.missed || []).map(sk => esc(SKILLS[sk]?.name || sk)).join(', ');
+      return `<tr><td>${new Date(a.t).toLocaleDateString()}</td><td>${shop?.emoji || ''} ${esc(shop?.name || a.shop)}</td><td>${label}</td><td>${a.passed ? '✅' : '✗'} ${a.score}/${a.total}</td><td>${missed || '<span class="muted">none</span>'}</td></tr>`;
+    }).join('');
+    const controlRows = quizTargets.map(t => quizControlRow(t.key, t.label)).join('');
+    return `<h3>History</h3><table class="steptable"><tr><th>Date</th><th>Shop</th><th>Station</th><th>Score</th><th>Missed skills</th></tr>${historyRows || '<tr><td colspan="5" class="muted">No quizzes or tests yet.</td></tr>'}</table>
+      <h3>Overrides</h3><table class="steptable"><tr><th>Quiz</th><th>Status</th><th></th></tr>${controlRows}</table><p class="status" id="studentQuizMsg"></p>`;
+  }
+  async function saveOverride(key: string, value: string | null) {
+    if (!onSaveQuizOverride) return;
+    const next = { ...overrides };
+    if (value) next[key] = value; else delete next[key];
+    try { await onSaveQuizOverride(r.id, Object.keys(next).length ? next : null); overrides = next; renderQuizCard(); }
+    catch (err) { const msg = $('#studentQuizMsg'); if (msg) msg.textContent = String(err); }
+  }
+  function renderQuizCard() {
+    const el2 = $('#quizCard');
+    if (!el2) return;
+    el2.innerHTML = quizCardHtml();
+    el2.querySelectorAll<HTMLButtonElement>('[data-quiz-excuse]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizExcuse!, 'excused'); }));
+    el2.querySelectorAll<HTMLButtonElement>('[data-quiz-clear]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizClear!, 'cleared'); }));
+    el2.querySelectorAll<HTMLButtonElement>('[data-quiz-undo]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizUndo!, null); }));
+  }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
+  renderQuizCard();
   $('#studentDrillMode').addEventListener('change', async e => {
     if (!onSaveStudentDrills) return;
     const value = (e.target as HTMLSelectElement).value;

@@ -93,11 +93,15 @@ async function renderDashboard() {
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
-  renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); });
+  renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
   startLive(cls.id);
 }
 async function saveStudentDrills(id: string, settings: Partial<DrillSettings> | null) {
   const { error } = await sb!.from('students').update({ drill_settings: settings }).eq('id', id);
+  if (error) throw error;
+}
+async function saveQuizOverride(id: string, overrides: Record<string, string> | null) {
+  const { error } = await sb!.from('students').update({ quiz_overrides: overrides }).eq('id', id);
   if (error) throw error;
 }
 async function resetStudent(id: string, clearHistory: boolean) {
