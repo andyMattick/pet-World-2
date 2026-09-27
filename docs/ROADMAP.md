@@ -54,7 +54,7 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 
 - [x] 1a. Bakery station 2, Sharing Pans, with fraction answers
 - [x] 1b. Bakery station 3, Boxing Treats, with the reciprocal drill
-- [ ] 1c. Bakery station 4, The Register, with the long-division layout
+- [ ] 1c. Bakery station 4, The Register, with the long-division layout (generators written and stress-tested in `BAKERY-4-REGISTER.md`; next: the layout)
 - [ ] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
 - [x] 2a. 4th grade: owner decisions (shop names, family accounts, read-aloud off), except checking lesson titles against the workbook
 - [ ] 1e. Word-problem practice for the Café (ratio stories)
