@@ -40,7 +40,10 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
 | 1 | **Bakery stations 2 to 5** | `BAKERY-2-PANS.md` · `BAKERY-3-BOXES.md` · `BAKERY-4-REGISTER.md` · `BAKERY-5-BULK.md` (draft plans) | The Scale | large |
-| 2 | **4th grade version** (follows the Sadlier workbook, with Khan links, same class features, and family accounts for home) | `GRADE4.md` (draft plan) | the Bakery | large |
+| 2 | **Neighborhoods**: one town per student, one neighborhood per grade (4th to 8th, then Algebra 1, Geometry, Algebra 2, Precalculus, Calculus), with a home grade, and nothing lost when a grade is added | `NEIGHBORHOODS.md` (plan) | the Bakery | medium |
+| 3 | **4th grade neighborhood** (follows the Sadlier workbook, with Khan links, same class features, and family accounts for home) | `GRADE4.md` (draft plan) | Neighborhoods | large |
+| 4 | **7th grade neighborhood** (for next school year) | to be written | Neighborhoods | large |
+| 5 | **Big reviews** (fluency practice like times tables): addition and subtraction facts for younger kids, order of operations, integer rules, and more, each added with the neighborhood that needs it | `NEIGHBORHOODS.md` (list) | as listed | small each |
 
 Draft plans have the skills, steps, mix-ups, drills, and build steps. Before each one is built, its generator code gets written and stress-tested and pasted into the plan, like `BAKERY-1-SCALE.md`.
 
@@ -53,8 +56,11 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [ ] 1c. Bakery station 4, The Register, with the long-division layout
 - [ ] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
 - [x] 2a. 4th grade: owner decisions (shop names, family accounts, read-aloud off), except checking lesson titles against the workbook
-- [ ] 2b. 4th grade: courses in the engine and family accounts (`GRADE4-0-COURSES.md`, to be written)
-- [ ] 2c. 4th grade: one shop at a time, Lemonade Stand first
+- [ ] 1e. Word-problem practice for the Café (ratio stories)
+- [ ] 2. Neighborhoods in the engine: home grade, switcher, dashboard tabs (`NEIGHBORHOODS-0-ENGINE.md`, to be written)
+- [ ] 3a. 4th grade: family accounts
+- [ ] 3b. 4th grade: one shop at a time, Lemonade Stand first
+- [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run
 

@@ -14,7 +14,8 @@ It uses the **same game engine** as the 6th grade town: shops, stations, step-by
 2. **Shop names:** the names below are final.
 3. **Home, with class features:** the at-home student gets the class features (saves, dashboard, quizzes) through a **family account** (see below).
 4. **Read-aloud:** off by default. Students turn it on themselves.
-5. **Order:** the Bakery (stations 2 to 5) is finished first, then 4th grade starts with G4-0 and the Lemonade Stand.
+5. **Order:** the Bakery (stations 2 to 5) is finished first, then the neighborhood engine (`NEIGHBORHOODS.md`), then 4th grade starting with the Lemonade Stand.
+6. **4th grade is a neighborhood** in the same town, not a separate town (`NEIGHBORHOODS.md`). A student can move between 4th and 6th grade and keeps all progress.
 
 ## Family accounts (part of step G4-0)
 
@@ -94,7 +95,9 @@ Khan practice links: each skill's exercise URL goes in the registry when its sta
 
 ## Engine changes (step G4-0)
 
-The 6th grade town is built as "one town, many shops". A 4th grade town needs a way to say which course a town follows:
+**Replaced by `NEIGHBORHOODS.md`:** 4th grade is a neighborhood in the same town, with a home grade per student instead of one course per town. The notes below are kept for the family-account details; read "course" as "home grade".
+
+Original notes:
 
 - **Courses in the registry:** `COURSES = { g6: { name: '6th grade', shops: ['cafe', 'bakery', …] }, g4: { name: '4th grade', shops: ['lemonade', 'toys', …] } }`. `BUILDINGS`, `SHOPS`, and rewards are grouped by course.
 - **Which course a town follows:**
@@ -122,7 +125,7 @@ Each is built inside the station plan that first needs it, the same way the Bake
 
 | Plan | What |
 |---|---|
-| `GRADE4-0-COURSES.md` | Courses in the engine, course choice for classes, families, and local towns, family accounts, dashboard tabs |
+| `NEIGHBORHOODS-0-ENGINE.md` | Neighborhoods in the engine (see `NEIGHBORHOODS.md`), then family accounts |
 | `GRADE4-1-LEMONADE.md` | Lemonade Stand, 4 stations, and its reward set |
 | `GRADE4-2-TOYS.md` | Toy Shop, 4 stations |
 | `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations (after the Bakery's fraction answers exist) |
