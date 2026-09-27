@@ -9,7 +9,7 @@
   - Tapping a track switches to it right away.
   - A **volume slider** (0 to 100).
   - A **Music off** switch.
-- The **Fact Sprint** still speeds the current track up: tempo × 1.35, the same as today's jump from 96 to about 130.
+- The **Fact Sprint** still speeds the current track up: tempo × 1.375, the same as today's jump from 96 to 132.
 - **Choices are saved** with the town: `S.musicTrack` (default `'cafe'`) and `S.musicVolume` (default 70). They follow the student between devices when signed in.
 - The 🔊 sound-effects button doesn't change.
 - The menu works at iPhone SE size, with tap targets of at least 44px, and closes when tapping outside it.
@@ -58,9 +58,10 @@ Commit after each step. Before each commit, run `npm run verify`, `npm run typec
 2. Change the `Music` module to play `TRACKS[S.musicTrack] || TRACKS.cafe`, replacing its fixed `CH`, `BASS`, `ARP`, `MA`, and `MB` arrays and its 96/132 tempos:
    - The chord arpeggio uses `track.arp`, where `null` is a rest, and the `track.pad` waveform.
    - The melody uses `track.melA` and `track.melB` with the `track.lead` waveform. For a `square` lead, lower the melody's volume by half, so it isn't harsh.
-   - The tempo is `track.tempo`, or `track.tempo × 1.35` during the sprint (`setTempo` takes a multiplier instead of a number).
-   - Add `Music.setTrack(id)`, which switches at the next bar without stopping, and `Music.setVolume(v)`, where 0 to 100 maps to a master gain of 0 to 0.13 (70 gives about 0.09, today's level).
-3. Add `musicTrack: 'cafe'` and `musicVolume: 70` to `fresh()` and `normalize()`.
+   - The tempo is `track.tempo`, or `track.tempo × 1.375` during the sprint (`setTempo` takes a multiplier instead of a number). 1.375 keeps today's exact sprint speed (96 → 132).
+   - The sprint's hi-hat tick plays when the sprint multiplier is on, not when the tempo is over 110 (Arcade Hop is 128 all the time).
+   - Add `Music.setTrack(id)`, which switches at the next bar without stopping, and `Music.setVolume(v)`, where 0 to 100 maps to a master gain of 0 to 0.13 (70 gives about 0.09, today's level). The gain never goes below 0.0001, because Web Audio's exponential fade can't aim at 0.
+3. Add `musicTrack: 'cafe'` and `musicVolume: 70` to `fresh()` and `normalize()`, and keep both (like `music`) when the grown-ups reset progress.
 
 **Test:** the café tune sounds exactly like before, and the sprint still speeds it up.
 
@@ -77,9 +78,9 @@ Commit: `Music menu`
 
 ### Step 3: Teacher "Allow music"
 
-- In `src/lib/studentBackend.ts`, add `game_settings` to `StudentInfo`, and refresh it in `refreshSettings()`.
+- `game_settings` is already in `StudentInfo` and refreshed in `refreshSettings()` (added for the Bakery gate). Add `allowMusic?: boolean` to its type.
 - In the game, when `Backend.me?.game_settings?.allowMusic === false`, stop the music, keep it off, and make the 🎵 button show 🔇 with the note "Your teacher turned music off" instead of the menu.
-- In the teacher app, add the **Game** card on the Settings tab with the Allow music switch, saved to `classes.game_settings`, and keep any other keys already in it.
+- In the teacher app, add the **Allow music** switch, saved to `classes.game_settings`, keeping the other keys already in it (`openUnits` for the Bakery switch lives there too).
 
 Commit: `Teacher can turn off music`
 

@@ -37,7 +37,7 @@ const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const fresh = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, sprintBest:0, bestStreak:0,
-  owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, streak:0, day:1, orders:0, perfect:0, timeMs:0,
+  owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
@@ -64,6 +64,8 @@ function normalize(raw){
   if (!Array.isArray(s.decor)) s.decor = [];
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
+  if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
+  s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
@@ -1010,7 +1012,7 @@ let currentShop = 'cafe';
 const SCREENS = ['loading','join','name','home','cafe','shift','sprint','book','summary','shop','hall','parent'];
 function show(id){
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
-  Music.setTempo(id === 'sprint' ? 132 : 96);
+  Music.setTempo(id === 'sprint' ? SPRINT_RATE : 1);
   updateHeader();
   if (id === 'home') renderHome();
   if (id === 'cafe') renderShopFloor(currentShop);
@@ -1058,11 +1060,33 @@ function sfx(kind){
     });
   } catch(e){}
 }
+/* Background music tracks. Each is 4 bars of 8 eighth notes, looped.
+   chords: 4 chords (MIDI notes), bass: 4 root notes, arp: which chord note plays on each eighth
+   (null = rest), melA / melB: 32 melody eighths (null = rest). The first loop plays chords only,
+   then melA, melA, melB, repeating (same pattern as the original café tune). */
+const TRACKS = {
+  cafe:   { name: 'Café Stroll', emoji: '☕', tempo: 96, key: 'C major', lead: 'sine', pad: 'triangle',
+    chords: [[60,64,67,72],[57,60,64,69],[53,57,60,65],[55,59,62,67]], bass: [36,33,41,43], arp: [0,1,2,3,2,1,2,1],
+    melA: [76,null,79,null,81,79,76,null, 72,null,76,null,74,null,72,null, 69,null,72,null,74,72,69,null, 71,null,74,null,79,null,null,null],
+    melB: [79,null,76,79,81,null,79,null, 76,null,72,null,76,74,null,null, 72,null,69,72,74,null,76,null, 74,null,71,null,67,null,null,null] },
+  park:   { name: 'Sunny Park', emoji: '🌳', tempo: 108, key: 'G major', lead: 'triangle', pad: 'triangle',
+    chords: [[55,59,62,67],[50,54,57,62],[52,55,59,64],[48,52,55,60]], bass: [43,38,40,36], arp: [0,2,1,3,0,2,1,2],
+    melA: [71,null,74,null,79,null,74,null, 74,null,69,null,74,76,74,null, 71,null,76,null,79,76,71,null, 72,null,76,null,74,72,71,null],
+    melB: [79,null,78,76,74,null,71,null, 69,null,74,null,78,null,74,null, 76,null,79,76,71,null,67,null, 72,74,76,null,72,null,67,null] },
+  stars:  { name: 'Starry Night', emoji: '🌙', tempo: 72, key: 'A minor', lead: 'sine', pad: 'sine',
+    chords: [[57,60,64,69],[53,57,60,65],[48,52,55,60],[55,59,62,67]], bass: [45,41,36,43], arp: [0,null,2,null,1,null,3,null],
+    melA: [76,null,null,null,72,null,null,null, 72,null,null,null,69,null,null,null, 67,null,null,null,72,null,null,null, 74,null,null,null,71,null,null,null],
+    melB: [72,null,74,null,76,null,null,null, 77,null,76,null,72,null,null,null, 76,null,74,null,72,null,null,null, 71,null,null,null,67,null,null,null] },
+  arcade: { name: 'Arcade Hop', emoji: '🕹️', tempo: 128, key: 'C major', lead: 'square', pad: 'triangle',
+    chords: [[60,64,67,72],[57,60,64,69],[50,53,57,62],[55,59,62,67]], bass: [36,33,38,43], arp: [0,1,2,1,3,1,2,1],
+    melA: [72,74,76,79,76,74,72,null, 69,72,76,null,72,69,67,null, 69,72,74,77,74,72,69,null, 71,74,79,null,74,71,67,null],
+    melB: [79,null,79,77,76,null,72,null, 76,null,76,74,72,null,69,null, 74,null,77,76,74,null,72,null, 74,76,74,71,67,null,null,null] }
+};
+const SPRINT_RATE = 1.375;   // the sprint speeds music up from 96 to 132 beats per minute, as before tracks existed
 const Music = (() => {
-  let ctx, master, melBus, timer = null, step = 0, nextTime = 0, tempo = 96, playing = false;
-  const CH = [[60,64,67,72],[57,60,64,69],[53,57,60,65],[55,59,62,67]], BASS = [36,33,41,43], ARP = [0,1,2,3,2,1,2,1];
-  const MA = [76,null,79,null,81,79,76,null, 72,null,76,null,74,null,72,null, 69,null,72,null,74,72,69,null, 71,null,74,null,79,null,null,null];
-  const MB = [79,null,76,79,81,null,79,null, 76,null,72,null,76,74,null,null, 72,null,69,72,74,null,76,null, 74,null,71,null,67,null,null,null];
+  let ctx, master, melBus, timer = null, step = 0, nextTime = 0, rate = 1, playing = false;
+  let track = TRACKS.cafe, pendingTrack = null, volume = 70;
+  const level = () => Math.max(0.0001, 0.13 * volume / 100);   // 70 gives about 0.09; the fade can't aim at exactly 0
   const mtof = m => 440 * Math.pow(2, (m-69)/12);
   function init(){
     ctx = getCtx(); master = ctx.createGain(); master.gain.value = 0.0001;
@@ -1077,33 +1101,44 @@ const Music = (() => {
     o.connect(a); a.connect(bus || master); o.start(t); o.stop(t+dur+0.05);
   }
   function schedule(){
-    const e8 = 60 / tempo / 2;
     while (nextTime < ctx.currentTime + 0.15) {
-      const bar = Math.floor(step/8) % 4, s8 = step % 8, loop = Math.floor(step/32), ch = CH[bar];
-      if (s8 === 0 || s8 === 4) note(BASS[bar], nextTime, e8*3.5, 'sine', 0.45);
-      note(ch[ARP[s8]], nextTime, e8*1.5, 'triangle', 0.09);
-      if (tempo > 110 && s8 % 2 === 0) note(ch[3]+12, nextTime, 0.05, 'square', 0.015);
-      const mel = loop % 4 === 0 ? null : (loop % 4 === 3 ? MB : MA), m = mel && mel[step % 32];
-      if (m) note(m, nextTime, e8*1.8, 'sine', 0.22, melBus);
+      if (pendingTrack && step % 8 === 0) { track = pendingTrack; pendingTrack = null; }   // switch at the next bar
+      const e8 = 60 / (track.tempo * rate) / 2;
+      const bar = Math.floor(step/8) % 4, s8 = step % 8, loop = Math.floor(step/32), ch = track.chords[bar], a = track.arp[s8];
+      if (s8 === 0 || s8 === 4) note(track.bass[bar], nextTime, e8*3.5, 'sine', 0.45);
+      if (a != null) note(ch[a], nextTime, e8*1.5, track.pad, 0.09);
+      if (rate > 1 && s8 % 2 === 0) note(ch[3]+12, nextTime, 0.05, 'square', 0.015);   // sprint tick
+      const mel = loop % 4 === 0 ? null : (loop % 4 === 3 ? track.melB : track.melA), m = mel && mel[step % 32];
+      if (m) note(m, nextTime, e8*1.8, track.lead, track.lead === 'square' ? 0.11 : 0.22, melBus);
       nextTime += e8; step++;
     }
   }
   return {
     start(){ try { if (!ctx) init(); if (playing) return; playing = true; getCtx(); nextTime = ctx.currentTime + 0.05; timer = setInterval(schedule, 25);
       master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), ctx.currentTime);
-      master.gain.exponentialRampToValueAtTime(0.09, ctx.currentTime + 1.2); } catch(e){} },
+      master.gain.exponentialRampToValueAtTime(level(), ctx.currentTime + 1.2); } catch(e){} },
     stop(){ if (!playing || !ctx) return; playing = false; master.gain.cancelScheduledValues(ctx.currentTime);
       master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), ctx.currentTime); master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.4);
       const t = timer; timer = null; setTimeout(() => clearInterval(t), 450); },
-    setTempo(t){ tempo = t; }
+    setTempo(mult){ rate = mult; },
+    /* switch track at the next bar without stopping */
+    setTrack(id){ const t = TRACKS[id] || TRACKS.cafe; if (!playing) { track = t; pendingTrack = null; } else if (t !== track) pendingTrack = t; else pendingTrack = null; },
+    /* 0 to 100; 0 is silent */
+    setVolume(v){
+      const next = Math.min(100, Math.max(0, Math.round(Number(v) || 0)));
+      if (next === volume) return;
+      volume = next;
+      if (playing && ctx) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(Math.max(master.gain.value, 0.0001), ctx.currentTime); master.gain.exponentialRampToValueAtTime(level(), ctx.currentTime + 0.15); }
+    }
   };
 })();
-function kickMusic(){ if (S.music && !document.hidden) Music.start(); }
+function applyMusicPrefs(){ Music.setTrack(S.musicTrack); Music.setVolume(S.musicVolume); }
+function kickMusic(){ if (S.music && !document.hidden) { applyMusicPrefs(); Music.start(); } }
 ['pointerdown','keydown'].forEach(ev => document.addEventListener(ev, kickMusic));
 document.addEventListener('visibilitychange', () => { if (document.hidden) Music.stop(); else kickMusic(); });
 $('#muteBtn').addEventListener('click', () => { S.muted = !S.muted; save(); updateHeader(); if (!S.muted) sfx('tick'); });
 $('#musicBtn').addEventListener('pointerdown', e => e.stopPropagation());
-$('#musicBtn').addEventListener('click', e => { e.stopPropagation(); S.music = !S.music; save(); updateHeader(); if (S.music) Music.start(); else Music.stop(); });
+$('#musicBtn').addEventListener('click', e => { e.stopPropagation(); S.music = !S.music; save(); updateHeader(); if (S.music) { applyMusicPrefs(); Music.start(); } else Music.stop(); });
 
 function b64u(bytes){ let s = ''; for (let i=0;i<bytes.length;i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 /* replace the whole town with another save (from the account or a backup code) */
@@ -2202,7 +2237,7 @@ function renderParent(){
   let armed = false, armT;
   $('#resetBtn').addEventListener('click', e => {
     if (!armed) { armed = true; e.target.textContent = 'Click again to erase everything'; armT = setTimeout(() => { armed = false; e.target.textContent = 'Reset all progress'; }, 4000); return; }
-    clearTimeout(armT); const keep = {muted:S.muted, music:S.music, minStation:S.minStation, name:Backend.me ? S.name : ''};
+    clearTimeout(armT); const keep = {muted:S.muted, music:S.music, musicTrack:S.musicTrack, musicVolume:S.musicVolume, minStation:S.minStation, name:Backend.me ? S.name : ''};
     S = Object.assign(fresh(), keep); save(); toast('Progress reset'); if (Backend.me) show('home'); else openName();
   });
 }
