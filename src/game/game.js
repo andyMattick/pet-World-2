@@ -136,9 +136,22 @@ function statusFromRecent(r){
 const skillStatus = sk => statusFromRecent(S.kr[sk] || '');
 const lvlOf = sk => { const n = S.kn[sk] || 0; return n < 4 ? 1 : n < 10 ? 2 : 3; };
 let unlockQueue = [], unlockActive = null;
+/* A built unit (BUILDINGS entry with open:true) opens for a student once the unit before it
+   in BUILDINGS order has its Unit Test passed or excused, or when the teacher opens it for the
+   class (game_settings.openUnits), or in local mode with "Unlock every station". The café is always open. */
 function unitOpen(unit){
-  const building = BUILDINGS.find(b => b.id === unit);
-  return !!(building && building.open);
+  const i = BUILDINGS.findIndex(b => b.id === unit), building = BUILDINGS[i];
+  if (!building || !building.open) return false;
+  if (i === 0) return true;
+  if (!Backend.me && S.unlockAll) return true;
+  const classOpen = Backend.me?.game_settings?.openUnits;
+  if (Array.isArray(classOpen) && classOpen.includes(unit)) return true;
+  return unitTestPassed(BUILDINGS[i - 1].id);
+}
+/* what a locked building says: built ones name the unit test that opens them */
+function unitLockedText(building){
+  const i = BUILDINGS.findIndex(b => b.id === building.id);
+  return building.open && i > 0 ? `Pass the ${BUILDINGS[i - 1].name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`;
 }
 function unitTestPassed(unit){
   const key = `${unit}:test`;
@@ -1144,11 +1157,12 @@ function renderHome(){
   let h = '';
   BUILDINGS.forEach(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
-    const stickers = b.open ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
-    const progress = b.open ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
-    h += b.open
+    const open = unitOpen(b.id);
+    const stickers = open ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
+    const progress = open ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
+    h += open
       ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}</button>`
-      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">Opening soon</span></div>`;
+      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${BUILDINGS[BUILDINGS.indexOf(b) - 1]?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
   });
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
@@ -1183,7 +1197,7 @@ $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
 $('#town').addEventListener('click', e => {
   const b = e.target.closest('[data-open]'); if (!b) return;
   const id = b.dataset.open;
-  if (SHOPS[id] && BUILDINGS.some(building => building.id === id && building.open)) {
+  if (SHOPS[id] && unitOpen(id)) {
     currentShop = id;
     void Backend.refreshSettings().then(() => { if (currentShop === id && !$('#scr-cafe').hidden && !shift) show('cafe'); });
     show('cafe');
@@ -1512,6 +1526,10 @@ function finishAssessment(){
   Backend.log('assessments', {shop, station, kind:finished.mode, score:result.score, total:result.total, passed:result.passed, missed_skills:result.missed});
   const payout = result.passed ? (finished.mode === 'test' ? 150 : 50) : 10;
   if (finished.mode === 'test' && result.passed) checkUnlocks({announce:true});
+  if (finished.mode === 'test' && result.passed) {
+    const next = BUILDINGS[BUILDINGS.findIndex(b => b.id === shop) + 1];
+    if (next && unitOpen(next.id)) setTimeout(() => toast(`${next.emoji} The ${next.name} is open!`), 900);
+  }
   S.coins += payout; save(); updateHeader();
   const skillIds = [...new Set(finished.plan)];
   const skillRows = skillIds.map(skill => {
@@ -1950,7 +1968,7 @@ function buyReward(id){
 function rewardTileHTML(reward, state){
   const building = BUILDINGS.find(b => b.id === reward.unit);
   const hint = () => {
-    if (!building.open) return `Opens with the ${building.name}.`;
+    if (!unitOpen(building.id)) return unitLockedText(building);
     const rule = reward.unlock;
     if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
     if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
@@ -1982,7 +2000,7 @@ function renderBook(unit){
   const rewards = REWARDS.filter(reward => reward.unit === building.id), owned = rewards.filter(owns).length;
   const newIds = new Set(rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id));
   const hint = reward => {
-    if (!building.open) return `Opens with the ${building.name}.`;
+    if (!unitOpen(building.id)) return unitLockedText(building);
     const rule = reward.unlock;
     if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
     if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
@@ -1992,7 +2010,7 @@ function renderBook(unit){
     return 'Available from the beginning';
   };
   const box = reward => {
-    const state = !building.open ? 'soon' : owns(reward) ? 'owned' : available(reward) ? 'ready' : 'locked';
+    const state = !unitOpen(building.id) ? 'soon' : owns(reward) ? 'owned' : available(reward) ? 'ready' : 'locked';
     const complete = S.completedSets.includes(`${building.id}:${reward.kind}`);
     const classes = `book-box book-${state}${reward.legendary ? ' book-legendary' : ''}${newIds.has(reward.id) ? ' book-new' : ''}`;
     const hintText = hint(reward);
@@ -2021,8 +2039,8 @@ function renderBook(unit){
   const tabs = BUILDINGS.map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
   const pageComplete = rewards.length && rewards.every(owns);
   const masterStamp = pageComplete || unitTestPassed(building.id);
-  const pageClass = `${!building.open ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
-  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div><div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!building.open ? `<div class="book-soon-banner">Opens with the ${building.name}.</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
+  const pageClass = `${!unitOpen(building.id) ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
+  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div><div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!unitOpen(building.id) ? `<div class="book-soon-banner">${esc(unitLockedText(building))}</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
   const seen = rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id);
   if (seen.length) { S.seenCollection.push(...seen); save(); }
 }
@@ -2113,7 +2131,7 @@ function renderParent(){
   const drillSettingsNow = drillSettings(), drillStatus = v => v.reteach ? 'reteach' : v.popups && (v.missesAfter || 0) < v.popups ? 'helping' : 'watching';
   const drillHistory = log.length ? '<ul class="list">' + log.map(x => `<li><b>${esc(x.label)}</b>: ${x.n} time${x.n === 1 ? '' : 's'} <span class="tag">${drillStatus(x.v)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet. A pop-up appears after a missed fact or one that takes more than about 10 seconds.</p>';
   const settingSummary = !drillSettingsNow.enabled ? 'Your teacher turned practice pop-ups off.' : drillSettingsNow.timeScale > 1 ? `Your teacher set pop-ups to extra time (×${drillSettingsNow.timeScale}).` : `Your teacher set pop-ups to ${drillSettingsNow.slow.mode} timing.`;
-  const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
+  const openUnits = new Set(BUILDINGS.filter(b => unitOpen(b.id)).map(b => b.id));
   const localDrillControls = !Backend.me ? `<div class="parent-drill-settings">
     <label><input type="checkbox" id="parentDrillEnabled" ${drillSettingsNow.enabled ? 'checked' : ''}> Enable practice pop-ups</label>
     <h4>Drill types</h4>${Object.entries(DRILLS).filter(([,d]) => d.unit === 'all' || openUnits.has(d.unit)).map(([type,d]) => `<label><input type="checkbox" data-parent-drill-type="${type}" ${drillSettingsNow.types[type] === false ? '' : 'checked'}> ${esc(d.name)}</label>`).join('')}
@@ -2121,7 +2139,7 @@ function renderParent(){
     <h4>Slow timing</h4><select id="parentSlowMode"><option value="adaptive" ${drillSettingsNow.slow.mode === 'adaptive' ? 'selected' : ''}>Adaptive</option><option value="fixed" ${drillSettingsNow.slow.mode === 'fixed' ? 'selected' : ''}>Fixed</option></select>
     <label>Idea seconds <input id="parentSlowIdea" type="number" min="5" max="60" value="${drillSettingsNow.slow.idea}"></label><label>Arithmetic seconds <input id="parentSlowArith" type="number" min="5" max="60" value="${drillSettingsNow.slow.arith}"></label><label>Sprint seconds <input id="parentSlowSprint" type="number" min="3" max="20" value="${drillSettingsNow.slow.sprint}"></label><label>Reading time before the tip timer starts <input id="parentReadSeconds" type="number" min="0" max="20" step="1" value="${drillSettingsNow.readSeconds}"></label><label>Max pop-ups per shift <input id="parentMaxPerShift" type="number" min="1" max="5" value="${drillSettingsNow.maxPerShift}"></label>
     <div class="row"><button class="btn small primary" id="saveParentDrills">Save</button><button class="btn small" id="resetParentDrills">Reset to defaults</button></div></div>` : `<p class="muted">${settingSummary}</p>`;
-  const collections = BUILDINGS.filter(b => b.open).map(b => {
+  const collections = BUILDINGS.filter(b => unitOpen(b.id)).map(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
     return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
   }).join('');
@@ -2140,7 +2158,7 @@ function renderParent(){
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
     <div class="panel"><h3>Practice pop-ups</h3>${localDrillControls}${drillHistory}
       <h3>Settings</h3>
-      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every café station</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
+      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station and shop</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });

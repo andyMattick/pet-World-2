@@ -4,7 +4,7 @@ import { makeClient } from '../lib/supabase';
 import { BUILDINGS, DRILLS, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, esc, type StudentReport } from './report';
 
-interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; created_at: string }
+interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; [key: string]: unknown } | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
 interface NewPin { name: string; pin: string }
 
@@ -48,7 +48,7 @@ function renderAuth(msg = '') {
 
 /* ---------- classes ---------- */
 async function loadClasses(selectId?: string) {
-  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,quiz_settings,created_at').order('created_at');
+  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,quiz_settings,game_settings,created_at').order('created_at');
   if (error) { renderAuth(error.message); return; }
   classes = (data || []) as ClassRow[];
   current = classes.find(c => c.id === (selectId || current?.id)) || classes[0] || null;
@@ -234,6 +234,7 @@ function renderSettings() {
       <label for="cStation">Unlock the café through</label>
       <select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>
       <p class="muted">Later stations still open on their own after 6 orders at the one before.</p>
+      ${BUILDINGS.slice(1).filter(b => b.open).map(b => { const prev = BUILDINGS[BUILDINGS.indexOf(b) - 1]; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}
       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>
       <button class="btn small" id="delCls">Delete this class</button></div>
@@ -270,7 +271,9 @@ function renderSettings() {
     </div></div>`;
   $('#saveCls').addEventListener('click', async () => {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
-    const { error } = await sb!.from('classes').update({ name, min_station }).eq('id', cls.id);
+    const openUnits = [...pane.querySelectorAll<HTMLInputElement>('[data-open-unit]')].filter(input => input.checked).map(input => input.dataset.openUnit!);
+    const game_settings = { ...(cls.game_settings || {}), openUnits };
+    const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });

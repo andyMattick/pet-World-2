@@ -59,6 +59,7 @@ All six are run in Supabase. Never edit one of these files. Any change goes in a
 - Quiz and test problems are **not** logged to `problems`, so the teacher's skill grid stays practice-only. Quiz results live in `assessments`.
 - Quiz settings rules live in one place (`registry.ts`) and are shared by the game and the teacher app.
 - The Scale's line-up step only appears when the two numbers have different decimal places; otherwise both choices look the same.
+- Each new shop opens for a student only after she passes the Unit Test of the shop before it (a teacher can excuse the test, or open the shop for the whole class in Settings). Local mode's "Unlock every station and shop" opens everything.
 
 ## Before other teachers or classes use it
 

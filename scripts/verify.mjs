@@ -49,6 +49,7 @@ need('src/game/game.js', 'const DEC = {', 'the exact decimal math helpers');
 need('src/game/game.js', 'function placeValueRows(', 'the place-value drill rows');
 need('src/shared/registry.ts', 'addDec:', 'the addDec skill');
 need('src/shared/registry.ts', 'rightAlign:', 'the rightAlign mix-up');
+need('src/game/game.js', 'unitTestPassed(BUILDINGS[i - 1].id)', 'shops opening only after the unit test of the shop before');
 const decSteps = game.match(/function decSteps\([\s\S]*?\n}/)?.[0] || '';
 if (decSteps && /lvl === 1 \|\|/.test(decSteps)) problems.push('src/game/game.js: decSteps still shows the line-up step at level 1 regardless of decimal places');
 
