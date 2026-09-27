@@ -36,7 +36,23 @@ export const SKILLS: Record<string, Skill> = {
   divMulti: { name: 'Multi-digit division', short: 'Multi-digit division', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-div-whole-numbers/e/division_4' },
   divToDec: { name: 'Divide whole numbers to get a decimal', short: 'Whole ÷ to decimal', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals_0.5' },
   divDec2: { name: 'Dividing decimals: hundredths', short: 'Divide decimals (hundredths)', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals_3' },
-  divDec3: { name: 'Dividing decimals: thousandths', short: 'Divide decimals (thousandths)', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals' }
+  divDec3: { name: 'Dividing decimals: thousandths', short: 'Divide decimals (thousandths)', st: 5, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-decimals/e/dividing_decimals' },
+  // 4th grade, Lemonade Stand (Sadlier lessons 1 to 5)
+  cmpMult: { name: 'Compare with multiplication', short: 'Compare with ×', st: 1, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-multiplication-and-division-2/imp-comparing-with-multiplication/e/comparing-with-multiplication' },
+  cmpWord: { name: 'Compare with multiplication word problems', short: 'Comparing word problems', st: 1, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-multiplication-and-division-2/imp-comparing-with-multiplication/e/multiplicative-comparison-word-problems' },
+  mdWord: { name: 'Multiplication and division word problems', short: '× and ÷ word problems', st: 2, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/mult-division-word-problems/e/arithmetic_word_problems' },
+  estWord: { name: '2-step estimation word problems', short: 'Estimation word problems', st: 2, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/multi-step-word-problems/e/multi-step-estimation-word-problems' },
+  eqWord: { name: 'Represent multi-step word problems using equations', short: 'Word problem equations', st: 2, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/multi-step-word-problems/e/represent-multi-step-word-problems-using-equations' },
+  multiStep: { name: 'Multi-step word problems with whole numbers', short: 'Multi-step word problems', st: 2, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/division/multi-step-word-problems/e/multi-step-word-problems-with-whole-numbers' },
+  factorPairs: { name: 'Factor pairs', short: 'Factor pairs', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-factors-and-multiples/e/factor-pairs' },
+  identFactors: { name: 'Identify factors', short: 'Identify factors', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-factors-and-multiples/e/identify-factors' },
+  relateFM: { name: 'Relate factors and multiples', short: 'Factors and multiples', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-factors-and-multiples/e/identifying-factors-and-multiples' },
+  identMultiples: { name: 'Identify multiples', short: 'Identify multiples', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-factors-and-multiples/e/identify-multiples' },
+  primeId: { name: 'Identify prime numbers', short: 'Prime numbers', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-prime-and-composite-numbers/e/prime_numbers' },
+  compositeId: { name: 'Identify composite numbers', short: 'Composite numbers', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-prime-and-composite-numbers/e/composite_numbers' },
+  primeComp: { name: 'Prime and composite numbers', short: 'Prime or composite', st: 3, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-prime-and-composite-numbers/e/prime-and-composite-numbers' },
+  numPatterns: { name: 'Patterns with numbers', short: 'Number patterns', st: 4, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-math-patterns/e/math-patterns' },
+  shapePatterns: { name: 'Patterns with shapes', short: 'Shape patterns', st: 4, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-factors-multiples-and-patterns/imp-math-patterns/e/patterns-with-shapes' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -165,6 +181,12 @@ export const STATIONS: Station[] = [
   { id: 3, name: 'The Kitchen',  emoji: '🍳', kid: 'Ratio tables, equivalent ratios, word problems', skills: ['table', 'equiv', 'word', 'realworld', 'understand'] },
   { id: 4, name: 'Deliveries',   emoji: '🛵', kid: 'Coordinate plane, units, part-part-whole', skills: ['coord', 'units', 'ppw'] }
 ];
+export const LEMON_STATIONS: Station[] = [
+  { id: 1, name: 'Pitchers',      emoji: '🫙', kid: 'Compare with multiplication', skills: ['cmpMult', 'cmpWord'] },
+  { id: 2, name: 'Big Orders',    emoji: '📦', kid: 'Word problems with more than one step', skills: ['mdWord', 'estWord', 'eqWord', 'multiStep'] },
+  { id: 3, name: 'Cup Stacks',    emoji: '🥤', kid: 'Factors, multiples, and primes', skills: ['factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp'] },
+  { id: 4, name: 'Sign Patterns', emoji: '🪧', kid: 'Number and shape patterns', skills: ['numPatterns', 'shapePatterns'] }
+];
 export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
 export const BAKERY_STATIONS: Station[] = [
   { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
@@ -175,7 +197,8 @@ export const BAKERY_STATIONS: Station[] = [
 ];
 export const SHOPS: Record<string, Shop> = {
   cafe:   { id: 'cafe',   name: 'Pet Café', emoji: '☕', unitLabel: 'Khan Academy 6th grade, Unit 1: Ratios', stations: STATIONS },
-  bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS }
+  bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS },
+  lemonade: { id: 'lemonade', name: 'Lemonade Stand', emoji: '🍋', unitLabel: 'Sadlier Grade 4, lessons 1 to 5, with Khan Academy 4th grade practice', stations: LEMON_STATIONS }
 };
 export const shopOfSkill = (id: string) => SKILLS[id]?.shop || 'cafe';
 export const UNLOCK_AT = 6;
@@ -198,7 +221,8 @@ export interface Reward {
 /** Skills belonging to each unit. Add a unit's skills when that unit is built. */
 export const UNIT_SKILLS: Record<string, string[]> = {
   cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
-  bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'],
+  lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -224,6 +248,8 @@ const cafeRewards: Reward[] = [
 const UNIT_SETS: [string, [string,string][], [string,string][]][] = [
   ['bakery', [['🦔','Crumb the hedgehog'],['🐭','Nibbles the mouse'],['🐥','Sunny the chick'],['🐻','Honey the bear'],['🦝','Sprinkles the raccoon']],
              [['🍞','Bread basket'],['🥐','Croissant sign'],['🥧','Pie window'],['🥨','Pretzel garland'],['🏅',"Baker's gold medal"]]],
+  ['lemonade', [['🐤','Zest the duckling'],['🦘','Pogo the kangaroo'],['🐬','Bubbles the dolphin'],['🦩','Rosie the flamingo'],['🦭','Captain the seal']],
+               [['🍋','Lemon crate'],['🥤','Cup tower'],['🧊','Ice bucket'],['⛱️','Sun umbrella'],['🌟','Golden lemon sign']]],
   ['market', [['🐐','Gus the goat'],['🦜','Kiwi the parrot'],['🐢','Slowpoke the turtle'],['🦙','Lulu the llama'],['🐓','Rocco the rooster']],
              [['🍉','Melon stand'],['🌽','Corn crate'],['🧺','Picnic basket'],['🏷️','Price tags'],['⚖️','Golden scale']]],
   ['clock',  [['🦉','Hoot the owl'],['🦇','Midnight the bat'],['🐿️','Acorn the chipmunk'],['🦅','Soar the eagle'],['🐉','Ember the dragon']],
@@ -269,7 +295,7 @@ export const BUILDINGS: Building[] = [
   {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations', hood:'g6'},
   {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures', hood:'g6'},
   {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6'},
-  {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4'},
+  {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4', open:true},
   {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4'},
   {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4'},
   {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4'},
@@ -306,7 +332,7 @@ export const MIS: Record<string, Misconception> = {
   noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec'] },
   smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec'] },
   estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec', 'mulDec'] },
-  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord'] },
+  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord', 'cmpWord', 'mdWord'] },
   divAsMult:         { name: 'Multiplies instead of dividing', kid: 'Sharing makes each part smaller, and fitting small servings in makes more of them. Check which way it should go.', tip: 'Before computing, ask "will the answer be more or less than we started with?"', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
   denomOnly:         { name: 'Multiplies by the denominator and forgets the numerator', kid: 'Each serving is more than one piece. How many pieces does one serving use?', tip: 'Count the pieces on the tape diagram, then group them by the size of one serving.', skills: ['wholeDivFrac'] },
   numerOnly:         { name: 'Divides by the numerator and ignores the denominator', kid: 'The serving is not whole cups. It is a fraction of a cup.', tip: 'Compare the size of one serving to 1 whole cup first.', skills: ['wholeDivFrac'] },
@@ -323,6 +349,20 @@ export const MIS: Record<string, Misconception> = {
   remainderNotDecimal: { name: 'Stops with a remainder instead of continuing', kid: 'Put a point and a 0 after the number, and keep dividing.', tip: 'Show 7 as 7.00 before starting.', skills: ['divToDec', 'divDec2', 'divDec3'] },
   shiftOneOnly:      { name: 'Moves the point in the divisor but not the dividend', kid: 'Whatever you do to the divisor, do to the dividend.', tip: 'Write both as a fraction, then multiply top and bottom by 100.', skills: ['divDec2', 'divDec3'] },
   pointMisplaced:    { name: 'Puts the quotient\'s point in the wrong place', kid: 'Line the point up straight above the dividend\'s point.', tip: 'Estimate: 0.4 ÷ 1 is about 0.4.', skills: ['divToDec', 'divDec2', 'divDec3'] },
+  additiveCompare:   { name: 'Adds instead of multiplying in a "times as many" comparison', kid: '"Times as many" means multiply, not add.', tip: 'Draw a bar for the small amount, then that many copies of it for the big amount.', skills: ['cmpMult', 'cmpWord'] },
+  reversedCompare:   { name: 'Puts the numbers the wrong way round in a comparison', kid: 'The bigger amount is the one that is "times as many".', tip: 'Ask which amount is bigger before writing the equation.', skills: ['cmpMult'] },
+  moreAsTimes:       { name: 'Multiplies when the story says "more than"', kid: '"More than" adds. "Times as many" multiplies.', tip: 'Compare "3 more than 5" (8) with "3 times as many as 5" (15) side by side.', skills: ['cmpWord'] },
+  remainderMeaning:  { name: 'Uses the remainder the wrong way', kid: 'Read the question again: do you need every one, only full groups, or what is left?', tip: 'After dividing, ask what the question wants: round up, drop the remainder, or answer with it.', skills: ['mdWord'] },
+  roundWrong:        { name: 'Rounds in the wrong direction', kid: 'Look at the digit to the right. 5 or more rounds up.', tip: 'Place the number on a number line between the two tens (or hundreds) and see which is closer.', skills: ['estWord'] },
+  wrongEquation:     { name: 'Picks an equation that does the steps in the wrong order', kid: 'Tell the story in order, and use parentheses for what happens first.', tip: 'Act out the story and write each step, then join them into one equation.', skills: ['eqWord'] },
+  pairsDoubled:      { name: 'Counts each factor pair twice', kid: '3 × 4 and 4 × 3 are the same pair. Count each pair once.', tip: 'List pairs in a T-chart from 1 upward and stop when the pairs start repeating.', skills: ['factorPairs'] },
+  notAFactor:        { name: 'Picks a number that isn\'t a factor', kid: 'A factor divides the number with nothing left over.', tip: 'Check with division or skip-counting before choosing.', skills: ['identFactors'] },
+  factorMultipleSwap:{ name: 'Mixes up factors and multiples', kid: 'Factors are small and divide in. Multiples are big and come from multiplying.', tip: 'In 3 × 4 = 12, point to the factors (3 and 4) and the multiple (12).', skills: ['identFactors', 'relateFM', 'identMultiples'] },
+  notAMultiple:      { name: 'Picks a number that isn\'t a multiple', kid: 'Skip-count to check if you land on it.', tip: 'Skip-count or divide to check for a remainder.', skills: ['identMultiples'] },
+  primeMixup:        { name: 'Mixes up prime and composite', kid: 'Prime: only 1 and itself. Try dividing by 3, 5, and 7 too, not just 2.', tip: 'Odd numbers like 21, 27, and 51 are composite. Practice dividing by 3.', skills: ['primeId', 'compositeId', 'primeComp'] },
+  oneIsPrime:        { name: 'Thinks 1 is prime', kid: '1 has only one factor, so it is neither prime nor composite.', tip: 'A prime has exactly two factors. 1 has one.', skills: ['primeId', 'compositeId', 'primeComp'] },
+  patternWrongRule:  { name: 'Uses the wrong rule for a pattern', kid: 'Check the rule on every step, not just the first one.', tip: 'Have students write the change between each pair of terms.', skills: ['numPatterns', 'shapePatterns'] },
+  patternOffByOne:   { name: 'Counts one term too many or too few', kid: 'Count carefully: the first term is number 1.', tip: 'Number the terms in a table (1, 2, 3, …) before extending.', skills: ['numPatterns', 'shapePatterns'] },
   mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] }
 };
 

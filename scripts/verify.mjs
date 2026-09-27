@@ -77,6 +77,11 @@ need('src/shared/registry.ts', "export const DEFAULT_HOME = 'g6'", 'the 6th grad
 need('src/game/game.js', 'home:DEFAULT_HOME', 'the home grade in a fresh save');
 need('src/game/game.js', 'if (!validHood(s.home)) s.home = DEFAULT_HOME;', 'older saves defaulting to 6th grade');
 need('src/game/game.js', 'function hoodSwitchHTML(', 'the neighborhood switcher');
+need('src/game/game.js', 'const LEMON_GEN', 'the Lemonade Stand generators');
+need('src/game/game.js', 'Object.assign(GEN, LEMON_GEN)', 'the Lemonade Stand generators merged into GEN');
+need('src/shared/registry.ts', 'export const LEMON_STATIONS', 'the Lemonade Stand stations');
+need('src/shared/registry.ts', 'factorPairs:', 'the factorPairs skill');
+need('src/shared/registry.ts', 'primeMixup:', 'the primeMixup mix-up');
 need('src/shared/registry.ts', 'mixed:        {', 'the mixed-number drill type');
 need('src/game/game.js', 'const BOXES_GEN', 'the Boxing Treats generators');
 need('src/game/game.js', '  reciprocal:{', 'the reciprocal practice pop-up');
@@ -102,7 +107,7 @@ need('src/shared/registry.ts', 'export const shopOfSkill', 'the skill-to-shop lo
 const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
-if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 7)) problems.push('src/shared/registry.ts should define REWARDS.length === 86');
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 8)) problems.push('src/shared/registry.ts should define REWARDS.length === 96');
 if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);
