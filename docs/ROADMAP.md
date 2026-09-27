@@ -26,20 +26,19 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Bakery station 1: The Scale (`BAKERY-1-SCALE.md`)
 - [x] Each new shop opens after the Unit Test of the shop before it, with a teacher switch to open it early
 - [x] Practice time (`PRACTICE-TIME.md`): active minutes tracked in the game and the town, a progress-report panel, and teacher dashboard columns, weekly card, and 4-week chart
+- [x] Music (`MUSIC.md`): 4 tracks, a music menu with volume, and a teacher Allow music switch
 
 ## Next up
 
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
-| 1 | **Music:** 4 tracks, a volume slider, and a teacher "Allow music" switch | `MUSIC.md` | SQL already run | small |
-| 2 | **Bakery stations 2 to 5** | plans to come | The Scale | large |
-| 3 | **4th grade version** (follows the workbook, with Khan links, same class features) | plan to come | The Scale | large |
+| 1 | **Bakery stations 2 to 5** | plans to come | The Scale | large |
+| 2 | **4th grade version** (follows the workbook, with Khan links, same class features) | plan to come | The Scale | large |
 
 ### Checklist
 
-- [ ] 1. Music: steps 1 through 4
-- [ ] 2. Bakery stations 2 to 5 (plans to come)
-- [ ] 3. 4th grade version (plan to come)
+- [ ] 1. Bakery stations 2 to 5 (plans to come)
+- [ ] 2. 4th grade version (plan to come)
 
 ## Database files, in the order they were run
 
