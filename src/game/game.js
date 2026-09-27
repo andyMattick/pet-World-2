@@ -2876,7 +2876,7 @@ function openPractice(drill, onClose){
   $('#prTitle').textContent = model.title;
   $('#prWhy').textContent = model.why;
   $('#prDone').hidden = true; $('#prHint').textContent = '';
-  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}${row.options || row.label.length > 34 ? ' story' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
+  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}${row.options || row.label.length > 34 || model.rows.some(r => r.options) ? ' story' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
   const id = drill.type + ':' + drill.key, log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
   log[drill.reason] = (log[drill.reason] || 0) + 1; save();
   Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null,
