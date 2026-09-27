@@ -1,17 +1,17 @@
 # 4th grade, shop 2: the Toy Shop
 
-**Status: stations 1 and 2 built; stations 3 (Toy Crates, multiplying) and 4 (Sharing Shelves, dividing) to come.** The generators are `TOYS_GEN` in `src/game/game.js` (stress-tested: 1,020,000 problems, 20,000 per skill and level; every answer checked against an independent calculation, including rounding, × and ÷ by 10 and 100, column addition and subtraction, number words, and "uses each digit once"). Read `AGENTS.md`, `GRADE4.md`, and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
+**Status: built (all 4 stations).** The generators are `TOYS_GEN` (stations 1 and 2) and `TOYS2_GEN` (stations 3 and 4) in `src/game/game.js`. Stress-tested: 1,980,000 problems (20,000 per skill and level), every answer checked against an independent calculation. Read `AGENTS.md`, `GRADE4.md`, and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
 
-The Toy Shop opens after the Lemonade Stand Unit Test (or with the teacher's "Open the Toy Shop for everyone"). Its unit test appears once stations 3 and 4 are built.
+The Toy Shop opens after the Lemonade Stand Unit Test (or with the teacher's "Open the Toy Shop for everyone"). With all 4 stations built, the 🏆 Toy Shop Unit Test (33 skills) appears after the station quizzes.
 
-## Stations and skills (Sadlier lessons 6 to 9 so far, Khan's order)
+## Stations and skills (Sadlier lessons 6 to 13, Khan's order)
 
 | # | Station | Skills (ids) |
 |---|---|---|
 | 1 | 📦 Stock Room | Place value blocks (`pvBlocks`), Place value tables (`pvTable`), Identify value of a digit (`digitValue`), Creating largest or smallest number (`largestSmallest`), Write whole numbers in expanded form (`expandedForm`), Write numbers in written form (`writtenForm`), Write whole numbers in different forms (`differentForms`), Regroup whole numbers (`regroup`), Multiply whole numbers by 10 (`mult10`), Divide whole numbers by 10 (`div10`), Compare multi-digit numbers (`compareNums`), Compare multi-digit numbers written in different forms (`compareForms`) |
 | 2 | 🏷️ Price Tags | Round whole numbers (`roundNum`), Round whole numbers to different place values (`roundPlaces`), Round whole numbers word problems (`roundWord`), Multi-digit addition (`addMulti`), Multi-digit subtraction (`subMulti`) |
-| 3 | 🧸 Toy Crates | Lessons 10 and 11, multiplying (to be written) |
-| 4 | 🗄️ Sharing Shelves | Lessons 12 and 13, dividing (to be written) |
+| 3 | 🧸 Toy Crates | Multiply 1-digit numbers by 10, 100, and 1000 (`mult1by10s`), Multiply 2-digits by 1-digit with area models (`areaMult1`), Multiply 3- and 4-digits by 1-digit with distributive property (`distMult`), Estimate products (`estProducts`), Multiply with regrouping (`multRegroup`), Multiply 2-digit numbers with area models (`areaMult2`), Multiply with partial products (`partialProd2`), Multiply 2-digit numbers (`mult2digit`) |
+| 4 | 🗄️ Sharing Shelves | Estimate to divide by 1-digit numbers (`estDiv`), Interpret remainders (`interpRem`), Divide with remainders (`divRem`), Divide using place value (`divPV`), Divide by 1-digit numbers with area models (`areaDiv`), Estimate quotients (`estQuot`), Divide multi-digit numbers by 2, 3, 4, and 5 (`divBy2345`), by 6, 7, 8, and 9 (`divBy6789`) |
 
 Numbers grow with the level: up to 4 digits on level 1, 5 on level 2, and 6 (hundred thousands) on level 3.
 
@@ -25,9 +25,21 @@ Numbers grow with the level: up to 4 digits on level 1, 5 on level 2, and 6 (hun
 - **Rounding:** "between which two?" first, then round, to the nearest ten through ten thousand.
 - **Adding and subtracting:** the Scale's column answer boxes with optional carry and borrow boxes. Levels 2 and 3 always carry or regroup, and level 3 includes subtracting across zeros (80,000 − 2,551).
 
+## Stations 3 and 4: what students get
+
+- **New picture: the area model** (`areaHTML`), drawn with each step: one box per place-value part, the box being worked highlighted. Multiplying finds each part, then adds; dividing finds each part's length from its area, then adds.
+- **Multiplying:** × 10, 100, 1000 (and a missing factor on level 3); break-apart (distributive) with a choice first; estimating (round, then multiply); the standard algorithm with the Register's column boxes and optional carry boxes (one row for × 1-digit; rows, then add, for 2-digit × 2-digit, with rows optional on level 3); partial products in order.
+- **Dividing:** friendly numbers for estimating (a choice, then divide), remainders that must be interpreted, dividing with remainders step by step, place-value splits, area models, and long division by 1-digit numbers on the Register's bus stop (level 3 adds remainders and zeros in the quotient).
+- Answer-only quizzes ask for the final answer only.
+
+## New sprint skills and pop-ups
+
+- **Factor pairs** (`factors`): sprint questions like "36 = 4 × ?", unlocked at Cup Stacks. The pop-up lists every factor pair of a number from 1 up, and opens on a miss in the Lemonade Stand's factor-pair steps.
+- **Rounding** (`rounding`, keys `ten`, `hundred`, `thousand`): sprint questions like "Round 3,220 to the nearest hundred", unlocked at Price Tags. The pop-up opens on a missed rounding step.
+
 ## Mix-ups
 
-New: `placeValueRegroup`, `placeValueName`, `digitNotValue`, `placeOrder`, `numberWords`, `missingPlaceholder`, `shiftWrong`, `moreDigitsBigger`, `compareDigits`. Reused: `noRegroup`, `smallerFromLarger`, `roundWrong`.
+New: `placeValueRegroup`, `placeValueName`, `digitNotValue`, `placeOrder`, `numberWords`, `missingPlaceholder`, `shiftWrong`, `moreDigitsBigger`, `compareDigits`, `addFactors`, `distributeWrong`, `noCarryMult`, `partialMissing`, `compatibleNumber`. Reused: `noRegroup`, `smallerFromLarger`, `roundWrong`, `remainderMeaning`, `quotientTooBig`, `quotientTooSmall`, `missingZero`, `partialShift`.
 
 ## Rewards
 
@@ -230,7 +242,7 @@ function roundSteps(n, place){
   const word = PV_NAMES[place].replace(/s$/, '');
   return [{name:'Between which two?', type:'concept', kind:'choice', prompt:`${commas(n)} is between which two ${PV_NAMES[place]}?`,
       options:choiceOf({text:`${commas(lo)} and ${commas(hi)}`}, [{text:`${commas(lo - unit)} and ${commas(lo)}`, mis:'roundWrong'}, {text:`${commas(hi)} and ${commas(hi + unit)}`, mis:'roundWrong'}]), hint:() => `Keep the digits up to the ${word}s place, then make the rest zeros.`},
-    {name:'Round', type:'concept', kind:'num', prompt:`Round ${commas(n)} to the nearest ${word}.`, answer:r, eq:v => v === r,
+    {name:'Round', type:'concept', kind:'num', prompt:`Round ${commas(n)} to the nearest ${word}.`, answer:r, eq:v => v === r, drill:['ten', 'hundred', 'thousand'].includes(word) ? {type:'rounding', key:word} : undefined,
       mis:v => v !== r && (v === (r === lo ? hi : lo) || v === Math.floor(n / PV_VALUES[place - 1]) * PV_VALUES[place - 1]) ? 'roundWrong' : null,
       hint:() => `Look at the ${PV_NAMES[place - 1]} digit: it's ${look}. ${look >= 5 ? '5 or more rounds up.' : 'Less than 5 rounds down.'}`}];
 }
@@ -239,5 +251,188 @@ function roundProblem(lvl, anyPlace){
   return {title:'Price Tags', ctx:`${commas(n)} to ${PV_VALUES[place]}`, bubble:`Round the price code ${commas(n)} to the nearest ${PV_NAMES[place].replace(/s$/, '')}.`,
     helper:'Find the place, then look at the digit just to its right: 5 or more rounds up.', visual:`<div style="text-align:center; font-size:1.8rem">🏷️ ${commas(n)}</div>`,
     steps:roundSteps(n, Math.min(place, maxPlace))};
+}
+```
+
+### Stations 3 and 4, and the factor and rounding pop-ups
+
+```js
+/* ===== 4th grade, Toy Shop stations 3 and 4 (Sadlier lessons 10 to 13): multiplying and dividing ===== */
+/* area model: a rectangle split by place value; cells hold a value, '?' (being asked), or '' (not yet) */
+function areaHTML(cols, rows, cells, {total = null} = {}){
+  const w = cols.map(c => Math.max(3, Math.min(9, String(c).length * 2 + 1)));
+  const head = `<tr><th></th>${cols.map((c, i) => `<th style="width:${w[i]}em">${commas(c)}</th>`).join('')}</tr>`;
+  const body = rows.map((r, i) => `<tr><th>${commas(r)}</th>${cols.map((c, j) => { const v = cells[i]?.[j]; return `<td class="${v === '?' ? 'ask' : ''}">${v === '?' ? '?' : v === '' || v == null ? '' : commas(v)}</td>`; }).join('')}</tr>`).join('');
+  return `<table class="area-model">${head}${body}</table>${total != null ? `<div class="area-total">Total area: ${commas(total)}</div>` : ''}`;
+}
+const splitPlaces = n => expandedParts(n);
+const TOY_BOX = [['🧸', 'teddy bears'], ['🪀', 'yo-yos'], ['🎲', 'dice'], ['🪁', 'kites'], ['🚂', 'toy trains'], ['🧩', 'puzzles']];
+/* the final answer step: skipped in practice (the layout already shows it), the only step in answer-only quizzes */
+const finalAnswer = (prompt, answer) => answer && Array.isArray(answer)
+  ? {name:'The answer', type:'compute', kind:'qr', prompt, answer, eq:v => Array.isArray(v) && v[0] === answer[0] && v[1] === answer[1], skipIf:() => true}
+  : {name:'The answer', type:'compute', kind:'num', prompt, answer, eq:v => v === answer, skipIf:() => true};
+const TOYS2_GEN = {
+  mult1by10s(lvl){
+    const d = rand(2, 9), p = lvl === 1 ? pick([10, 100]) : pick([10, 100, 1000]), m = lvl === 1 ? 1 : rand(1, 9), f = m * p, ans = d * f;
+    const missing = lvl === 3 && Math.random() < 0.5;
+    return {title:'Toy Crates', ctx:missing ? `${d} × ? = ${ans}` : `${d} × ${f}`, bubble:missing ? `${d} crates hold ${commas(ans)} toys. How many toys are in each crate?` : `There are ${d} crates with ${commas(f)} toys in each. How many toys?`,
+      helper:'Multiply the basic fact, then write the zeros.', visual:`<div style="text-align:center; font-size:1.6rem">${d} × ${missing ? '?' : commas(f)}${missing ? ` = ${commas(ans)}` : ''}</div>`,
+      steps:[missing
+        ? {name:'Missing factor', type:'compute', kind:'num', prompt:`${d} × ? = ${commas(ans)}`, answer:f, eq:v => v === f, fact:{x:d, y:m, div:true}, mis:v => v !== f && (v === f * 10 || v === f / 10) ? 'shiftWrong' : null, hint:() => `${d} × ${m} = ${d * m}. How many zeros are left over?`}
+        : {name:'Multiply', type:'compute', kind:'num', prompt:`${d} × ${commas(f)} = ?`, answer:ans, eq:v => v === ans, fact:{x:d, y:m}, mis:v => v !== ans && (v === ans * 10 || v === ans / 10) ? 'shiftWrong' : null, hint:() => `${d} × ${m} = ${d * m}, then write ${String(p).length - 1} zero${p === 10 ? '' : 's'}.`}]};
+  },
+  areaMult1(lvl){
+    const n = lvl === 1 ? rand(12, 49) : lvl === 2 ? rand(21, 99) : rand(101, 399), d = rand(3, 9), parts = splitPlaces(n), prods = parts.map(p => p * d), total = n * d;
+    const steps = parts.map((p, j) => ({name:`${commas(p)} × ${d}`, type:'compute', kind:'num', prompt:`${commas(p)} × ${d} = ?`, answer:p * d, eq:v => v === p * d,
+      fact:{x:Number(String(p)[0]), y:d}, work:areaHTML(parts, [d], [prods.map((q, k) => k < j ? q : k === j ? '?' : '')]), hint:() => `${String(p)[0]} × ${d}, then the zeros.`}));
+    steps.push({name:'Add the parts', type:'compute', kind:'num', prompt:`${prods.map(commas).join(' + ')} = ?`, answer:total, eq:v => v === total, work:areaHTML(parts, [d], [prods]),
+      mis:v => v !== total && v === n + d ? 'addFactors' : null, hint:() => 'Add the areas of the parts.'});
+    return {title:'Toy Crates', ctx:`${n} × ${d} area`, bubble:`A toy mat is ${n} squares long and ${d} squares wide. How many squares is it?`, helper:'Split the long side by place value, find each part, then add.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${n} × ${d}</div>`, steps, answerSteps:[steps.length - 1]};   // the area model is drawn with each step
+  },
+  distMult(lvl){
+    const n = lvl === 1 ? rand(101, 999) : rand(1001, lvl === 2 ? 4999 : 9999), d = rand(3, 9), parts = splitPlaces(n), total = n * d;
+    const right = parts.map(p => `${commas(p)} × ${d}`).join(' + ');
+    const opts = choiceOf({text:right}, [{text:parts.map(commas).join(' + ') + ` + ${d}`, mis:'distributeWrong'}, {text:`${commas(parts[0])} × ${d} + ${parts.slice(1).map(commas).join(' + ')}`, mis:'distributeWrong'}]);
+    return {title:'Toy Crates', ctx:`${n} × ${d} distributive`, bubble:`Break ${commas(n)} × ${d} into easier parts to find the answer.`, helper:'Split the big number by place value and multiply every part.',
+      visual:`<div style="text-align:center; font-size:1.5rem">${commas(n)} × ${d}</div>`,
+      steps:[{name:'Break it apart', type:'concept', kind:'choice', prompt:`Which is the same as ${commas(n)} × ${d}?`, options:opts, hint:() => `Every part of ${commas(n)} gets multiplied by ${d}.`},
+        ...parts.map(p => ({name:`${commas(p)} × ${d}`, type:'compute', kind:'num', prompt:`${commas(p)} × ${d} = ?`, answer:p * d, eq:v => v === p * d, fact:{x:Number(String(p)[0]), y:d}})),
+        {name:'Add', type:'compute', kind:'num', prompt:`${parts.map(p => commas(p * d)).join(' + ')} = ?`, answer:total, eq:v => v === total}]};
+  },
+  estProducts(lvl){
+    const n = lvl === 1 ? rand(21, 98) : lvl === 2 ? rand(201, 989) : rand(2001, 9899), d = rand(3, 9), place = String(n).length - 1;
+    const unit = PV_VALUES[place], r = Math.round(n / unit) * unit, est = r * d;
+    if (n % unit === 0 || (n % unit) === unit / 2) return TOYS2_GEN.estProducts(lvl);
+    return {title:'Toy Crates', ctx:`about ${n} × ${d}`, bubble:`About how many toys are in ${d} boxes of ${commas(n)}?`, helper:'Round to the biggest place, then multiply.',
+      visual:`<div style="text-align:center; font-size:1.6rem">about ${commas(n)} × ${d}</div>`,
+      steps:[{name:'Round', type:'concept', kind:'num', prompt:`Round ${commas(n)} to the nearest ${PV_NAMES[place].replace(/s$/, '')}.`, answer:r, eq:v => v === r, drill:{type:'rounding', key:PV_NAMES[place].replace(/s$/, '')},
+          mis:v => v !== r && v === (r > n ? r - unit : r + unit) ? 'roundWrong' : null},
+        {name:'Estimate', type:'compute', kind:'num', prompt:`${commas(r)} × ${d} = ?`, answer:est, eq:v => v === est, fact:{x:r / unit, y:d}, mis:v => v !== est && (v === est * 10 || v === est / 10) ? 'shiftWrong' : null}]};
+  },
+  multRegroup(lvl){
+    let a, d;
+    do { a = lvl === 1 ? rand(12, 99) : lvl === 2 ? rand(102, 999) : rand(1002, 9999); d = rand(3, 9); } while (String(a).split('').every(x => Number(x) * d < 10));   // at least one carry
+    const L = mulLayout(String(a), String(d)), total = a * d;
+    return {title:'Toy Crates', ctx:`${a} × ${d}`, bubble:`A shelf holds ${commas(a)} toys. How many toys are on ${d} shelves?`, helper:'Multiply each digit from the right. Carry the tens to the next place.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${commas(a)} × ${d}</div>`,
+      steps:[{name:'Multiply', type:'compute', kind:'mulrow', mul:L, row:0, prompt:`${commas(a)} × ${d} = ?`, answer:total, eq:v => v === total, fact:{x:d, y:Math.max(...String(a).split('').map(Number))}, slowOK:true,
+          mis:v => v !== total && v === Number(String(a).split('').map(x => (Number(x) * d) % 10).join('')) ? 'noCarryMult' : null, hint:() => 'Multiply the ones first. Write the ones digit and carry the tens.'},
+        finalAnswer(`${commas(a)} × ${d} = ?`, total)], answerSteps:[1]};
+  },
+  areaMult2(lvl){
+    const a = lvl === 1 ? rand(11, 29) : rand(21, 99), b = lvl === 1 ? rand(11, 19) : rand(12, 99), A = splitPlaces(a), B = splitPlaces(b);
+    const cells = B.map(r => A.map(c => r * c)), total = a * b, flat = cells.flat(), order = [];
+    B.forEach((r, i) => A.forEach((c, j) => order.push([i, j])));
+    const shown = k => B.map((r, i) => A.map((c, j) => { const idx = order.findIndex(([x, y]) => x === i && y === j); return idx < k ? cells[i][j] : idx === k ? '?' : ''; }));
+    const steps = order.map(([i, j], k) => ({name:`${B[i]} × ${A[j]}`, type:'compute', kind:'num', prompt:`${B[i]} × ${A[j]} = ?`, answer:cells[i][j], eq:v => v === cells[i][j],
+      fact:{x:Number(String(B[i])[0]), y:Number(String(A[j])[0])}, work:areaHTML(A, B, shown(k)), mis:v => v !== cells[i][j] && (v * 10 === cells[i][j] || v === cells[i][j] * 10) ? 'shiftWrong' : null}));
+    steps.push({name:'Add the parts', type:'compute', kind:'num', prompt:`${flat.map(commas).join(' + ')} = ?`, answer:total, eq:v => v === total, work:areaHTML(A, B, cells),
+      mis:v => v !== total && v === (A[0] * B[0] + A[A.length - 1] * B[B.length - 1]) ? 'partialMissing' : null, hint:() => 'Add all four parts.'});
+    return {title:'Toy Crates', ctx:`${a} × ${b} area`, bubble:`The toy rug is ${a} squares by ${b} squares. How many squares is that?`, helper:'Split both numbers into tens and ones. Find all four parts, then add.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
+  },
+  partialProd2(lvl){
+    const a = lvl === 1 ? rand(11, 39) : rand(21, 99), b = lvl === 1 ? rand(11, 29) : rand(12, 99), [at, ao] = [a - a % 10, a % 10], [bt, bo] = [b - b % 10, b % 10];
+    const pairs = [[bo, ao], [bo, at], [bt, ao], [bt, at]].filter(([x, y]) => x && y), total = a * b;
+    const steps = pairs.map(([x, y]) => ({name:`${x} × ${y}`, type:'compute', kind:'num', prompt:`${x} × ${y} = ?`, answer:x * y, eq:v => v === x * y,
+      fact:{x:Number(String(x)[0]), y:Number(String(y)[0])}, mis:v => v !== x * y && (v * 10 === x * y || v === x * y * 10) ? 'shiftWrong' : null}));
+    steps.push({name:'Add the partial products', type:'compute', kind:'num', prompt:`${pairs.map(([x, y]) => commas(x * y)).join(' + ')} = ?`, answer:total, eq:v => v === total,
+      mis:v => v !== total && v === at * bt + ao * bo ? 'partialMissing' : null});
+    return {title:'Toy Crates', ctx:`${a} × ${b} partial products`, bubble:`Find ${a} × ${b} with partial products: multiply every part of one number by every part of the other.`, helper:'Ones × ones, ones × tens, tens × ones, tens × tens. Then add them all.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
+  },
+  mult2digit(lvl){
+    let a, b; do { a = rand(lvl === 1 ? 11 : 21, lvl === 3 ? 99 : 59); b = rand(12, lvl === 1 ? 29 : 99); } while (b % 10 === 0 || Math.floor(b / 10) === 0 || String(b).includes('0'));
+    const L = mulLayout(String(a), String(b)), total = a * b;
+    const steps = mulSteps(L, lvl, false, String(a), String(b)).filter(st => st.kind === 'mulrow');
+    steps.push(finalAnswer(`${a} × ${b} = ?`, total));
+    return {title:'Toy Crates', ctx:`${a} × ${b}`, bubble:`The toy shop orders ${a} boxes of ${b} toys. How many toys?`, helper:'Multiply by the ones digit, then by the tens digit (starting with a zero), then add.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
+  },
+  estDiv(lvl){ return estimateDivision(lvl, false); },
+  estQuot(lvl){ return estimateDivision(lvl, true); },
+  interpRem(lvl){
+    const [e, item] = pick(TOY_BOX), d = rand(3, 9), q = rand(lvl === 1 ? 3 : 8, lvl === 1 ? 9 : 30), r = rand(1, d - 1), N = d * q + r, kind = pick(['all', 'full', 'left']);
+    const story = kind === 'all' ? `${N} ${item} go in boxes of ${d}. How many boxes are needed for all of them?` : kind === 'full' ? `${N} ${item} go in boxes of ${d}. How many boxes are full?` : `${N} ${item} go in boxes of ${d}. How many are left over?`;
+    const ans = kind === 'all' ? q + 1 : kind === 'full' ? q : r;
+    return {title:'Sharing Shelves', ctx:`${N} ÷ ${d} ${kind}`, bubble:story, helper:'Divide, then decide what the remainder means.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${N} ÷ ${d}</div>`,
+      steps:[{name:'Divide', type:'compute', kind:'qr', prompt:`${N} ÷ ${d} = ? R ?`, answer:[q, r], eq:v => Array.isArray(v) && v[0] === q && v[1] === r, hint:() => `${d} × ${q} = ${d * q}.`},
+        {name:'What it means', type:'concept', kind:'num', prompt:kind === 'all' ? 'How many boxes are needed?' : kind === 'full' ? 'How many boxes are full?' : 'How many are left over?', answer:ans, eq:v => v === ans,
+          mis:v => v !== ans && [q, q + 1, r].includes(v) ? 'remainderMeaning' : null, hint:() => kind === 'all' ? `The ${r} extra need one more box.` : kind === 'full' ? `The ${r} extra don't fill a box.` : 'That\'s the remainder.'}], answerSteps:[1]};
+  },
+  divRem(lvl){
+    const d = rand(3, 9), q = rand(lvl === 1 ? 2 : 5, lvl === 1 ? 9 : lvl === 2 ? 12 : 19), r = rand(1, d - 1), N = d * q + r;
+    return {title:'Sharing Shelves', ctx:`${N} ÷ ${d}`, bubble:`Share ${N} marbles equally into ${d} bags. How many in each bag, and how many are left?`, helper:'Find the biggest multiple that fits, then what is left.',
+      visual:`<div style="text-align:center; font-size:1.6rem">🔵 ${N} ÷ ${d}</div>`,
+      steps:[{name:'How many fit', type:'compute', kind:'num', prompt:`How many ${d}s fit in ${N}? (the biggest number that isn't more than ${N})`, answer:q, eq:v => v === q, fact:{x:d, y:q},
+          mis:v => v !== q && (v > q ? 'quotientTooBig' : N - v * d >= d ? 'quotientTooSmall' : null), hint:() => `${d} × ${q} = ${d * q}, and ${d} × ${q + 1} = ${d * (q + 1)} is too many.`},
+        {name:'Remainder', type:'compute', kind:'num', prompt:`${N} − ${d * q} = ?`, answer:r, eq:v => v === r},
+        finalAnswer(`${N} ÷ ${d} = ? R ?`, [q, r])], answerSteps:[2]};
+  },
+  divPV(lvl){
+    const d = rand(2, 9);
+    let parts; do { const q = lvl === 1 ? rand(11, 49) : rand(101, 499); parts = splitPlaces(q); } while (lvl === 1 && parts.length < 2);
+    const q = parts.reduce((s, x) => s + x, 0), N = q * d, dParts = parts.map(p => p * d);
+    return {title:'Sharing Shelves', ctx:`${N} ÷ ${d} place value`, bubble:`Share ${commas(N)} stickers among ${d} friends. Split ${commas(N)} into ${dParts.map(commas).join(' + ')} to make it easier.`, helper:'Divide each part, then add the answers.',
+      visual:`<div style="text-align:center; font-size:1.4rem">${commas(N)} ÷ ${d}<br>= (${dParts.map(commas).join(' + ')}) ÷ ${d}</div>`,
+      steps:[...dParts.map((p, i) => ({name:`${commas(p)} ÷ ${d}`, type:'compute', kind:'num', prompt:`${commas(p)} ÷ ${d} = ?`, answer:parts[i], eq:v => v === parts[i], fact:{x:d, y:Number(String(parts[i])[0]), div:true},
+          mis:v => v !== parts[i] && (v * 10 === parts[i] || v === parts[i] * 10) ? 'shiftWrong' : null})),
+        {name:'Add', type:'compute', kind:'num', prompt:`${parts.join(' + ')} = ?`, answer:q, eq:v => v === q}], answerSteps:[dParts.length]};
+  },
+  areaDiv(lvl){
+    const d = rand(3, 9), q = lvl === 1 ? rand(12, 49) : rand(112, 399), parts = splitPlaces(q).filter(Boolean), areas = parts.map(p => p * d), N = q * d;
+    const steps = parts.map((p, k) => ({name:`${commas(areas[k])} ÷ ${d}`, type:'compute', kind:'num', prompt:`This part has an area of ${commas(areas[k])} and a height of ${d}. How long is it?`, answer:p, eq:v => v === p,
+      fact:{x:d, y:Number(String(p)[0]), div:true}, work:areaHTML(parts.map((x, i) => i < k ? x : '?'), [d], [areas]), mis:v => v !== p && (v * 10 === p || v === p * 10) ? 'shiftWrong' : null}));
+    steps.push({name:'Add the lengths', type:'compute', kind:'num', prompt:`${parts.join(' + ')} = ?`, answer:q, eq:v => v === q, work:areaHTML(parts, [d], [areas])});
+    return {title:'Sharing Shelves', ctx:`${N} ÷ ${d} area`, bubble:`A rug has an area of ${commas(N)} square feet and is ${d} feet wide. How long is it? The area is split into parts to help.`,
+      helper:'Area ÷ width = length. Find each part\'s length, then add.', visual:`<div class="area-total">Total area: ${commas(N)}</div>`, steps, answerSteps:[steps.length - 1]};
+  },
+  divBy2345(lvl){ return toyLongDivision(lvl, [2, 3, 4, 5]); },
+  divBy6789(lvl){ return toyLongDivision(lvl, [6, 7, 8, 9]); }
+};
+function estimateDivision(lvl, big){
+  const d = rand(3, 9), scale = big ? 100 : 10;
+  for (let t = 0; t < 200; t++){
+    const k = rand(2, 9), good = d * k * scale, N = good + pick([-1, 1]) * rand(1, scale - 1);   // near a friendly multiple of d
+    if (N <= 0 || N % d === 0) continue;
+    const easy = w => w % (d * scale) === 0;
+    const wrongs = [Math.round(N / scale) * scale, good + scale, good - scale].filter((w, i, a) => w > 0 && w !== good && !easy(w) && a.indexOf(w) === i).map(w => ({text:commas(w), mis:'compatibleNumber'}));
+    if (wrongs.length < 2) continue;
+    const q = good / d;
+    return {title:'Sharing Shelves', ctx:`about ${N} ÷ ${d}`, bubble:`About how many toys go on each of ${d} shelves if there are ${commas(N)} toys?`, helper:`Pick a number close to ${commas(N)} that ${d} divides easily.`,
+      visual:`<div style="text-align:center; font-size:1.6rem">about ${commas(N)} ÷ ${d}</div>`,
+      steps:[{name:'Friendly number', type:'concept', kind:'choice', prompt:`Which number is close to ${commas(N)} and easy to divide by ${d}?`, options:choiceOf({text:commas(good)}, wrongs.slice(0, 2)),
+          hint:() => `Use a ${d} times table fact: ${d} × ${k} = ${d * k}.`},
+        {name:'Estimate', type:'compute', kind:'num', prompt:`${commas(good)} ÷ ${d} = ?`, answer:q, eq:v => v === q, fact:{x:d, y:k, div:true}, mis:v => v !== q && (v === q * 10 || v * 10 === q) ? 'shiftWrong' : null}]};
+  }
+  return TOYS2_GEN.divRem(lvl);
+}
+function toyLongDivision(lvl, divisors){
+  const d = pick(divisors);
+  for (let t = 0; t < 300; t++){
+    const q = lvl === 1 ? rand(12, 99) : rand(102, 999), r = lvl === 3 && Math.random() < 0.5 ? rand(1, d - 1) : 0, N = q * d + r;
+    if (String(N).length > 4) continue;
+    const D = longDivision(N, d);
+    if (lvl < 3 && D.q.includes(0)) continue;
+    const [e, item] = pick(TOY_BOX), steps = divSteps(D, lvl);
+    return {title:'Sharing Shelves', ctx:`${N} ÷ ${d}`, bubble:r ? `${commas(N)} ${item} are shared equally by ${d} stores. How many does each store get, and how many are left?` : `${commas(N)} ${item} are shared equally by ${d} stores. How many does each store get?`,
+      helper:'One digit at a time: how many fit, multiply, subtract, bring down.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(N)} ÷ ${d}</div>`, steps, answerSteps:[steps.length - 1]};
+  }
+  return TOYS2_GEN.divRem(lvl);
+}
+/* ----- 4th grade sprint and practice pop-ups: factor pairs and rounding ----- */
+function factorRows(n){
+  const N = n || pick([12, 18, 20, 24, 30, 36, 40, 42, 48, 54, 56, 60, 64, 72]), rows = [];
+  for (let f = 1; f * f <= N; f++) if (N % f === 0) rows.push({label:`${N} = ${f} × `, answer:String(N / f)});
+  return rows;
+}
+function roundingRows(key, n){
+  const places = {ten:1, hundred:2, thousand:3}, place = places[key] || pick([1, 2, 3]), rows = [], unit = PV_VALUES[place];
+  for (let i = 0; i < n; i++){
+    let x; do { x = rand(unit + 1, unit * 99); } while (x % unit === 0 || x % unit === unit / 2);
+    rows.push({label:`Round ${commas(x)} to the nearest ${PV_NAMES[place].replace(/s$/, '')}:`, answer:String(Math.round(x / unit) * unit), key:PV_NAMES[place].replace(/s$/, '')});
+  }
+  return rows;
 }
 ```

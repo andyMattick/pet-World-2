@@ -33,6 +33,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Fixes: the dashboard's "field name must not be null" (migration 7), decimals in order tickets (2.4 no longer splits into two sentences), and teachers can open later stations in every shop, not just the Café
 - [x] 4th grade opens: the 🍋 Lemonade Stand, 4 stations and 15 skills (`GRADE4-1-LEMONADE.md`). The town now shows the grade switcher
 - [x] Toy Shop stations 1 and 2: place value (blocks and tables), writing and comparing numbers, rounding, adding and subtracting (`GRADE4-2-TOYS.md`)
+- [x] Toy Shop stations 3 and 4: multiplying and dividing with area models, partial products, and long division by 1-digit numbers, plus factor-pair and rounding sprint skills (`GRADE4-2-TOYS.md`)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -67,7 +68,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 3a. 4th grade at home: no family accounts; a grown-up makes a class and sets its Home grade
 - [x] 3b. 4th grade: the Lemonade Stand (`GRADE4-1-LEMONADE.md`)
 - [x] 3c. 4th grade: the Toy Shop, stations 1 and 2 (`GRADE4-2-TOYS.md`)
-- [ ] 3d. 4th grade: Toy Shop stations 3 and 4 (multiplying and dividing, with area models), then the Pizza Parlor, Garden Center, and Art Studio
+- [x] 3d. 4th grade: Toy Shop stations 3 and 4 (multiplying and dividing, with area models), and the factor-pair and rounding sprint skills
+- [ ] 3e. 4th grade: the Pizza Parlor (fractions), then the Garden Center and Art Studio
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run

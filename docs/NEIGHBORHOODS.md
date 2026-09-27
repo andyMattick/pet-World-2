@@ -16,7 +16,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
 
 | Neighborhood | Follows | Status |
 |---|---|---|
-| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅ | building |
+| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅ | building |
 | 5th grade | Khan 5th grade | later |
 | **6th grade** | Khan 6th grade: Café ✅, Bakery ✅, Market, Clock Tower, Ice Rink, Potion Lab, Pet Houses, Pet Show | building |
 | 7th grade | Khan 7th grade (needed for next school year) | next year |
@@ -52,10 +52,10 @@ Big reviews are the quick, rote-memory skills that sit under many problems (like
 | Simplifying fractions, mixed numbers, reciprocals | 4 to 7 | ✅ built |
 | **Addition facts to 20** | K to 3 | not yet (needed for younger kids) |
 | **Subtraction facts to 20** | K to 3 | not yet |
-| Whole-number place value and rounding | 3 to 4 | with 4th grade |
+| Whole-number place value and rounding | 3 to 4 | ✅ rounding built (Toy Shop) |
 | Equivalent fractions, compare fractions | 3 to 5 | with 4th grade |
 | Multiply and divide by 10, 100, 1000 (moving the decimal) | 5 to 6 | ✅ built (Bakery station 4) |
-| Factors, multiples, primes, GCF and LCM | 4 to 6 | with 4th grade / 6th grade |
+| Factors, multiples, primes, GCF and LCM | 4 to 6 | ✅ factor pairs built (Lemonade Stand); GCF and LCM with 6th grade |
 | Fraction, decimal, percent equivalents (1/4 = 0.25 = 25%) | 6 to 7 | with the Market |
 | **Order of operations** | 5 to 7 | with the Clock Tower |
 | Squares, cubes, and square roots | 6 to 8 | with the Clock Tower |

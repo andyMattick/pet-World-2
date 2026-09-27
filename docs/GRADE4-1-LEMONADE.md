@@ -169,7 +169,7 @@ const LEMON_GEN = {
       pairs = []; for (let f = 1; f * f <= N; f++) if (N % f === 0) pairs.push([f, N / f]);
       if (pairs.length >= (lvl === 1 ? 2 : 3) && pairs.length <= (lvl === 3 ? 6 : 4)) break;
     }
-    const steps = pairs.map(([f, g]) => numStep(`${f} × ?`, 'compute', `${N} = ${f} × ?`, g, {fact:f > 1 ? {x:f, y:g, div:true} : undefined, hint:() => `${N} ÷ ${f} = ?`}));
+    const steps = pairs.map(([f, g]) => numStep(`${f} × ?`, 'compute', `${N} = ${f} × ?`, g, {fact:f > 1 ? {x:f, y:g, div:true} : undefined, drill:{type:'factors', key:'pairs'}, hint:() => `${N} ÷ ${f} = ?`}));
     steps.push(numStep('Count the pairs', 'concept', `How many factor pairs does ${N} have?`, pairs.length,
       {mis:v => { const factors = new Set(pairs.flat()).size; return v !== pairs.length && (v === pairs.length * 2 || v === factors) ? 'pairsDoubled' : null; }, hint:() => `Count the rows you filled: each one is a pair. 3 × 4 and 4 × 3 are the same pair.`}));
     return {title:'Cup Stacks', ctx:`factor pairs of ${N}`, bubble:`I have ${N} cups. What rectangles can I stack them in? Find every factor pair of ${N}.`,
