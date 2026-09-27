@@ -41,12 +41,24 @@ Today, a missed or slow step with a times-table fact opens a practice ladder for
 - **"Once per shift" is tracked per drill id** (`times:7`), not per number.
 - **Drills are logged with their type and key**, in the save, in the database, on the dashboard, and in the progress report.
 
+### The rule for every pop-up (owner decision)
+
+**A pop-up is quick practice that builds rote memory for the earliest part of a problem.** It is not a second copy of the problem.
+
+- Pick the drill for the *first* thing the student has to get right in that step: turning the story into math, lining up the numbers, knowing a fact, flipping a fraction. Not the whole computation.
+- Rows are short and fast: one number or one tap each, 3 to 6 rows.
+- A long computation that a student may work out on paper doesn't open a pop-up just for being slow (the step sets `slowOK`). A miss still does.
+- New stations add their drills to the table below and name the step each one hangs on.
+
 ### Drill catalog
 
 | Drill id | Unit | Ladder | When it triggers |
 |---|---|---|---|
 | `times:N` | all | N × 1 … N × 10 (as now) | missed or slow times-table fact, sprint |
-| `placeValue:tenths` / `hundredths` / `thousandths` | Bakery | 6 rows: "In 3.472, which digit is in the tenths place?" with a new number each row | decimal add/subtract mix-ups (lining up right edges, digit-by-digit subtraction) |
+| `placeValue:tenths` / `hundredths` / `thousandths` | Bakery | 6 rows: "In 38.472, the tenths digit is". The first row asks for the place the problem needed, then the rows mix tenths, hundredths, and thousandths | a miss on the Scale's "Line up the decimals" step |
+| `lineUp:tenths` / `hundredths` / `thousandths` | Bakery | 4 to 6 rows in pairs: "Line up 3.4 and 12.086. How many decimal places should both have?" then "Fill in the zeros: 3.4 → 3.400" | a miss on the Scale's add or subtract step (not slowness: that step shows the lined-up numbers and they may work on paper) |
+| `story:addSub` / `divide` | Bakery | 3 to 4 short stories, tap the matching equation ("Ana has $8.86 and earns $1.86 more" → 8.86 + 1.86). Not in the Fact Sprint | a miss on the first step of a word problem: the Scale's "Pick the operation", Sharing Pans' first two steps, Boxing Treats' "Pick the equation" and "Match the story" |
+| `mixed:N` | Bakery | pairs: "How many wholes in 15/2?" then "15/2 = 7 and ?/2" | a miss on a simplest-form step when the answer is a mixed number |
 | `decimalShift:10` / `100` / `1000` | Bakery, Market | 6 rows: 4.5 × 10, 0.45 × 10, 12.3 × 10 … (or ÷) | decimal-point placement mistakes when multiplying or dividing decimals |
 | `reciprocal:flip` | Bakery | 6 rows: flip 3/4, 2/5, 5/2, 7, 1/6, 1 1/2 (as a fraction) | flipping the wrong fraction in fraction division |
 | `simplify:N` | Bakery | 6 rows: simplify fractions whose common factor is N (6/9, 12/15, …) | answers left unsimplified, GCF slips |
