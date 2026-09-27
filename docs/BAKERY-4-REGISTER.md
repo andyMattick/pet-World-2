@@ -18,14 +18,20 @@ Khan links are in `BAKERY.md`.
 - **Stories:** ringing up orders at the register (price × weight), and packing big batches into boxes (division).
 - **Multiplying decimals, steps:**
   1. *Arithmetic:* multiply as whole numbers (24 × 135 = 3240). The times-table facts inside are drill triggers.
+     - **Short problems** (the bottom number has one digit): one answer box per column, filled right to left, with optional carry boxes on top, like the Scale.
+     - **Longer problems** (the bottom number has two or more digits) split into rows, laid out under the problem:
+       - *Row 1:* 135 × 4 = 540, with optional carry boxes.
+       - *Row 2:* 135 × 2 tens = 2700, with the placeholder zero already shown. A wrong row 2 of 270 is `partialShift`, caught at that row.
+       - *Add the rows:* 540 + 2700 = 3240, with optional carry boxes.
+       - The rows are **required steps on levels 1 and 2**. On **level 3 they're optional**: the student can type the whole product straight into the final row, and the rows count as done.
   2. *Idea:* count the decimal places (1 + 2 = 3).
   3. *Arithmetic:* place the point (3.240, and 3.24 is accepted).
   4. *Idea (level 2+):* check with an estimate ("about 2 × 1 = 2, so 3.24 makes sense").
   - `mulDecPlace` problems are mostly steps 2 and 3, using a given whole-number fact.
 - **Long division, steps:** a new **long-division layout**, one quotient digit at a time:
   1. *Idea:* estimate the digit ("How many 12s in 33?" → 2).
-  2. *Arithmetic:* multiply (2 × 12 = 24).
-  3. *Arithmetic:* subtract (33 − 24 = 9).
+  2. *Arithmetic:* multiply (2 × 12 = 24). On levels 2 and 3, optional carry boxes sit above the multiply row (for 7 × 24, carry the 2).
+  3. *Arithmetic:* subtract (33 − 24 = 9). On levels 2 and 3, optional borrow boxes, like the Scale's subtracting. Level 1 keeps the plain layout.
   4. *Arithmetic:* bring down and repeat.
   - Level 1 has 3-digit dividends with no zero digit in the quotient. Level 3 has 4-digit dividends and zeros in the quotient.
   - Remainders: level 1 to 2 divide evenly. Level 3 can have remainders, answered as "R" boxes.
@@ -35,6 +41,12 @@ Khan links are in `BAKERY.md`.
 - A "bus stop" layout drawn in the board's chalk style, with the quotient row filling in digit by digit, and each multiply/subtract row appearing under the dividend.
 - Each digit step is an ordinary number step pointing at a slot in the layout (like the café's ratio tables), so hints, mix-ups, and logging work unchanged.
 - Quiz answer-only mode asks only for the final quotient (and remainder).
+
+## Carry boxes, rows, and quizzes
+
+- **Carry and borrow boxes are always optional** and never checked or logged. They're scratch space, exactly like the Scale's.
+- **Quizzes and Unit Tests** show only the final answer box: no multiplication rows, no long-division steps, and no carry or borrow boxes (the same as the Scale in quizzes).
+- Reuse the Scale's column answer boxes (`digitBoxesHTML`) for every row, so filling right to left, "check the tens column" messages, and the keyboard all work the same way.
 - Must fit an iPhone SE screen for 4-digit ÷ 2-digit problems.
 
 ## Mix-ups to catch
@@ -70,4 +82,6 @@ Unchanged: the station 4 Bakery rewards in `REWARDS.md`.
 1. Every product and quotient matches an independent calculation, using exact whole-number math (no floating-point rounding).
 2. The long-division layout fits at iPhone SE size for 4-digit ÷ 2-digit.
 3. Each mix-up fires only on its wrong answer.
-4. Quizzes ask only for the final answer.
+4. Quizzes ask only for the final answer, with no rows or carry boxes.
+5. Carry and borrow boxes can be left empty or filled with anything, and the answer still checks the same way.
+6. On level 3, typing the whole product straight into the final row skips the multiplication rows; on levels 1 and 2 the rows are required.
