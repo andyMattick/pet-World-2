@@ -203,6 +203,9 @@ table.ratio td{text-align:center; padding:6px 10px; border-bottom:1px dashed rgb
 table.ratio td+td, table.ratio th+th{border-left:2px solid rgba(244,241,230,.35)}
 table.ratio tr.base td{color:var(--butter)}
 .times{color:var(--butter)}
+.colmath{border-collapse:collapse; margin:4px auto; font-family:var(--chalkfont); font-size:1.6rem; color:var(--chalk)}
+.colmath td{width:1.1em; text-align:center; padding:1px 0}
+.colmath tr:last-child td{border-bottom:2px solid var(--chalk)}
 table.mini{border-collapse:collapse; font-size:1.15rem; margin:2px 0}
 table.mini th, table.mini td{padding:1px 10px; text-align:center; border:1px solid rgba(244,241,230,.35)}
 table.mini th{font-weight:400}
@@ -395,6 +398,7 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
   .opts{gap:8px}
   .opt{padding:10px 14px}
   table.ratio{font-size:1.35rem; min-width:300px}
+  .colmath{font-size:1.3rem}
   .dnl{min-width:440px}
   .modal{padding:12px; align-items:center}
   .modal-card{max-height:calc(100dvh - 24px); padding:16px 14px; border-radius:18px}

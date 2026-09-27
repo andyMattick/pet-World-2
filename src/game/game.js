@@ -476,6 +476,148 @@ function answerStepsFor(p){
   return [last];
 }
 
+/* ===== Bakery station 1: The Scale (add and subtract decimals, word problems) =====
+   Exact decimal math: amounts are whole-number counts of thousandths, so 0.1 + 0.2 is exactly 0.3. */
+const DEC = {
+  k: s => { const [w, f = ''] = String(s).split('.'); return Number(w) * 1000 + Number((f + '000').slice(0, 3)); },
+  fmt: k => { const w = Math.floor(k / 1000), f = String(k % 1000).padStart(3, '0').replace(/0+$/, ''); return w + (f ? '.' + f : ''); },
+  places: s => (String(s).split('.')[1] || '').length,
+  eq: k => v => typeof v === 'number' && isFinite(v) && Math.round(v * 1000) === k
+};
+function randDec(minW, maxW, places){
+  const w = rand(minW, maxW);
+  if (!places) return String(w);
+  let f = ''; for (let i = 0; i < places; i++) f += i === places - 1 ? rand(1, 9) : rand(0, 9);
+  return `${w}.${f}`;
+}
+/* the wrong answers students really give */
+function rightAlignK(a, b, op){            // lines up right edges: 3.47 + 12.086 is done as 347 + 12086
+  const p = Math.max(DEC.places(a), DEC.places(b));
+  const ia = Number(a.replace('.', '')), ib = Number(b.replace('.', ''));
+  const r = op === '+' ? ia + ib : ia - ib;
+  return r * Math.pow(10, 3 - p);
+}
+function columnWiseK(ka, kb, fn){          // digit by digit, no regrouping
+  let out = 0, place = 1, x = ka, y = kb;
+  while (x > 0 || y > 0) { out += fn(x % 10, y % 10) * place; x = Math.floor(x / 10); y = Math.floor(y / 10); place *= 10; }
+  return out;
+}
+const noCarryK = (ka, kb) => columnWiseK(ka, kb, (p, q) => (p + q) % 10);
+const smallerFromLargerK = (ka, kb) => columnWiseK(ka, kb, (p, q) => Math.abs(p - q));
+const PLACE_NAMES = ['ones', 'tenths', 'hundredths', 'thousandths'];
+const deepestPlace = (...nums) => PLACE_NAMES[Math.max(...nums.map(DEC.places))];
+/* vertical setup; byPoint=false shows the mistake (right edges lined up) */
+function columnHTML(a, b, op, byPoint){
+  let rows;
+  if (byPoint) {
+    const [wa, fa = ''] = a.split('.'), [wb, fb = ''] = b.split('.');
+    const W = Math.max(wa.length, wb.length), F = Math.max(fa.length, fb.length);
+    const cells = (w, f) => [...w.padStart(W, ' '), ...(F ? [f.length ? '.' : ' '] : []), ...f.padEnd(F, ' ')];
+    rows = [cells(wa, fa), cells(wb, fb)];
+  } else {
+    const L = Math.max(a.length, b.length);
+    rows = [[...a.padStart(L, ' ')], [...b.padStart(L, ' ')]];
+  }
+  const td = c => `<td>${c === ' ' ? '' : esc(c)}</td>`;
+  return `<table class="colmath"><tr><td></td>${rows[0].map(td).join('')}</tr><tr><td>${op === '+' ? '+' : '−'}</td>${rows[1].map(td).join('')}</tr></table>`;
+}
+function estimateOptions(a, b, op){
+  const ra = Math.round(DEC.k(a) / 1000), rb = Math.round(DEC.k(b) / 1000), est = op === '+' ? ra + rb : ra - rb;
+  return shuffle([
+    {html:`about ${est}`, text:`about ${est}`, ok:true, mis:null},
+    {html:`about ${est * 10}`, text:`about ${est * 10}`, ok:false, mis:'estimateOff'},
+    {html:`about ${DEC.fmt(est * 100)}`, text:`about ${DEC.fmt(est * 100)}`, ok:false, mis:'estimateOff'}
+  ]);
+}
+function decSteps(a, b, op, lvl, withEstimate){
+  const ka = DEC.k(a), kb = DEC.k(b), exact = op === '+' ? ka + kb : ka - kb;
+  const wrongRA = rightAlignK(a, b, op);
+  const wrongCol = op === '+' ? noCarryK(ka, kb) : smallerFromLargerK(ka, kb);
+  const place = deepestPlace(a, b), drill = {type:'placeValue', key:place};
+  const steps = [];
+  if (withEstimate && lvl >= 2) steps.push({name:'Estimate', type:'concept', kind:'choice',
+    prompt:'About how much will the answer be? Round each number to the nearest whole number first.',
+    options:estimateOptions(a, b, op), hint:() => `${a} is about ${Math.round(ka / 1000)}, and ${b} is about ${Math.round(kb / 1000)}.`});
+  if (lvl === 1 || DEC.places(a) !== DEC.places(b)) steps.push({name:'Line up the decimals', type:'concept', kind:'choice',
+    prompt:'Which one is set up correctly?', drill,
+    options:shuffle([
+      {html:columnHTML(a, b, op, true), text:'decimal points lined up', ok:true, mis:null},
+      {html:columnHTML(a, b, op, false), text:'right edges lined up', ok:false, mis:'rightAlign'}]),
+    hint:() => 'The decimal points must make one straight column.'});
+  steps.push({name:op === '+' ? 'Add' : 'Subtract', type:'compute', kind:'num', prompt:`${a} ${op === '+' ? '+' : '−'} ${b} = ?`,
+    answer:DEC.fmt(exact), eq:DEC.eq(exact), drill,
+    mis:v => { if (typeof v !== 'number') return null; const k = Math.round(v * 1000);
+      if (k === wrongRA && wrongRA !== exact) return 'rightAlign';
+      if (k === wrongCol && wrongCol !== exact) return op === '+' ? 'noRegroup' : 'smallerFromLarger';
+      return null; },
+    hint:() => op === '+' ? 'Line up the points. Add each column from the right, and carry when a column makes 10 or more.'
+                          : 'Line up the points and fill empty places with zeros. Subtract from the right, and regroup when the top digit is smaller.'});
+  return {steps, exact};
+}
+function scaleNumbers(lvl, op){
+  const cfg = [{w:[1, 12], p:[1, 2]}, {w:[1, 25], p:[1, 3]}, {w:[2, 60], p:[1, 3]}][lvl - 1];
+  for (let t = 0; t < 80; t++){
+    const a = randDec(cfg.w[0], cfg.w[1], rand(cfg.p[0], cfg.p[1])), b = randDec(cfg.w[0], cfg.w[1], rand(cfg.p[0], cfg.p[1]));
+    if (lvl >= 2 && DEC.places(a) === DEC.places(b) && Math.random() < 0.7) continue;   // mostly uneven decimals from level 2
+    if (op === '-' && Math.round(DEC.k(a) / 1000) - Math.round(DEC.k(b) / 1000) < 1) continue;
+    return [a, b];
+  }
+  return op === '+' ? ['3.4', '1.25'] : ['5.2', '1.75'];
+}
+const BAKERY_WEIGH = [['🌾','flour'],['🍬','sugar'],['🧈','butter'],['🍫','chocolate chips'],['🥜','nuts'],['🍓','berries']];
+const SCALE_GEN = {
+  addDec(lvl){
+    const [a, b] = scaleNumbers(lvl, '+');
+    const [i1, i2] = shuffle(BAKERY_WEIGH).slice(0, 2);
+    return {title:'The Scale', ctx:`${a} + ${b}`,
+      bubble:`I put ${a} kg of ${i1[1]} and ${b} kg of ${i2[1]} in the bowl. How many kilograms is that altogether?`,
+      helper:'Line up the decimal points before you add.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${i1[0]} ${a} kg + ${i2[0]} ${b} kg</div>`,
+      steps:decSteps(a, b, '+', lvl, true).steps};
+  },
+  subDec(lvl){
+    const [a, b] = scaleNumbers(lvl, '-'), [e, n] = pick(BAKERY_WEIGH);
+    return {title:'The Scale', ctx:`${a} − ${b}`,
+      bubble:`The bag had ${a} kg of ${n}. I used ${b} kg. How many kilograms are left?`,
+      helper:'Line up the decimal points, and fill empty places with zeros.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${e} ${a} kg − ${b} kg</div>`,
+      steps:decSteps(a, b, '-', lvl, true).steps};
+  },
+  decWord(lvl){
+    const money = Math.random() < 0.5, op = Math.random() < 0.5 ? '+' : '-';
+    let a, b, bubble;
+    if (money) {
+      const price = () => `${rand(lvl === 1 ? 1 : 3, lvl === 1 ? 9 : 19)}.${String(rand(1, 99)).padStart(2, '0')}`;
+      if (op === '+') { a = price(); b = price();
+        bubble = `A cake costs $${a} and a box of cookies costs $${b}. How much do they cost together?`; }
+      else { b = price(); const bill = [5, 10, 20, 50].find(x => x * 1000 > DEC.k(b) + 1000); a = `${bill}.00`;
+        bubble = `The treats cost $${b}. I paid with a $${bill} bill. How much change should I get?`; }
+    } else {
+      [a, b] = scaleNumbers(lvl, op);
+      bubble = op === '+' ? `One ribbon is ${a} m long and another is ${b} m long. How long are they end to end?`
+                          : `A ribbon is ${a} m long. I cut off ${b} m for a cake box. How much ribbon is left?`;
+    }
+    const opts = [{html:'Add ( + )', text:'Add', ok:op === '+', mis:op === '+' ? null : 'wrongOperation'},
+                  {html:'Subtract ( − )', text:'Subtract', ok:op === '-', mis:op === '-' ? null : 'wrongOperation'}];
+    return {title:money ? 'The Register' : 'Ribbon Table', ctx:`${a} ${op === '+' ? '+' : '−'} ${b} (${money ? 'money' : 'meters'})`, bubble,
+      helper:'Decide what the story is asking, then line up the decimal points.',
+      visual:`<div style="text-align:center; font-size:1.5rem">${money ? '💵' : '🎀'}</div>`,
+      steps:[{name:'Pick the operation', type:'concept', kind:'choice', prompt:'Do we add or subtract?', options:opts,
+        hint:() => op === '+' ? 'The story puts two amounts together.' : 'The story takes an amount away, or finds what is left.'},
+        ...decSteps(a, b, op, Math.max(1, lvl - 1), false).steps]};
+  }
+};
+/* rows for the place-value drill (DRILL_IMPL.placeValue); key is 'ones', 'tenths', 'hundredths' or 'thousandths' */
+function placeValueRows(key){
+  const idx = Math.max(0, PLACE_NAMES.indexOf(key));
+  const rows = [];
+  for (let i = 0; i < 6; i++){
+    const f = `${rand(0, 9)}${rand(0, 9)}${rand(1, 9)}`, n = `${rand(10, 99)}.${f}`;
+    rows.push({label:`In ${n}, the ${PLACE_NAMES[idx]} digit is`, answer:idx === 0 ? n[1] : f[idx - 1]});
+  }
+  return rows;
+}
+
 const GEN = {
 /* ---------- Station 1 ---------- */
 basic(lvl){
@@ -833,6 +975,7 @@ ppw(lvl){
     ]};
 }
 };
+Object.assign(GEN, SCALE_GEN);
 
 /* ===================== UI ===================== */
 const $ = s => document.querySelector(s);
@@ -1258,7 +1401,7 @@ function nextCustomer(){
   } else startTiming();
 }
 const slotEl = id => document.querySelector(`#board [data-slot="${id}"]`);
-function numInput(id, label){ return `<input class="cell" id="${id}" inputmode="decimal" autocomplete="off" maxlength="6" aria-label="${esc(label)}">`; }
+function numInput(id, label){ return `<input class="cell" id="${id}" inputmode="decimal" autocomplete="off" maxlength="8" aria-label="${esc(label)}">`; }
 function wireNum(inp, onEnter){
   inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^\d.]/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); onEnter(); } });
@@ -1585,6 +1728,29 @@ const DRILL_IMPL = {
       },
       finishLine: `You counted all the way to ${table} × ${top}! +3 🪙`,
       tieLine: drill.div ? `${table*drill.other} ÷ ${table} = ${drill.other}, because ${table} × ${drill.other} = ${table*drill.other}.` : `${table} × ${drill.other} = ${table*drill.other}. Now you know it!`
+    };
+    }
+  },
+  placeValue:{
+    sprintItem(key){
+      const row = placeValueRows(key)[0], n = row.label.match(/In ([\d.]+),/)[1];
+      return {prompt:`Which digit is in the ${key} place of ${n}?`, answer:row.answer, drillId:`placeValue:${key}`};
+    },
+    build(drill, {short = false} = {}){
+    const key = drill.key, idx = Math.max(0, PLACE_NAMES.indexOf(key));
+    return {
+      title: DRILLS[drill.type].kidTitle(drill.key),
+      why: drill.reason === 'miss' ? `That one needed the ${key} place. Let's find some ${key} digits!`
+        : drill.reason === 'slow' ? `Let's get faster at finding the ${key} place!`
+        : `That one needed the ${key} place. Let's find some ${key} digits!`,
+      rows: placeValueRows(key).slice(0, short ? 3 : 6),
+      targetIndex: 0,
+      hint(rowIndex, wrongs){
+        const answer = this.rows[rowIndex].answer;
+        return wrongs >= 2 ? `It's ${answer}. Type ${answer}.` : 'Count places after the decimal point: tenths, hundredths, thousandths.';
+      },
+      finishLine: 'Nice! Decimal places line up by their names.',
+      tieLine: `The ${key} place is ${idx} after the decimal point.`
     };
     }
   }
