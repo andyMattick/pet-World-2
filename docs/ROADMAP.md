@@ -38,11 +38,11 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 ### Checklist
 
-- [ ] 1. Owner review of quizzes on the live site
-- [ ] 2. Small fixes: (a) wording, (b) log queue
-- [ ] 3. Quizzes 6c
-- [ ] 4. Quizzes 7
-- [ ] 5. The Scale: steps 1 through 4. Step 1 fills `BAKERY_STATIONS[0].skills` in the same commit that adds the skills. The last step adds `open: true` to the Bakery entry in the `BUILDINGS` **list**
+- [X] 1. Owner review of quizzes on the live site
+- [X] 2. Small fixes: (a) wording, (b) log queue
+- [X] 3. Quizzes 6c
+- [X] 4. Quizzes 7
+- [X] 5. The Scale: steps 1 through 4. Step 1 fills `BAKERY_STATIONS[0].skills` in the same commit that adds the skills. The last step adds `open: true` to the Bakery entry in the `BUILDINGS` **list**
 - [ ] 6. Practice time: steps 1 through 5
 - [ ] 7. Music: steps 1 through 4
 - [ ] 8. Bakery stations 2 to 5 (plans to come)
