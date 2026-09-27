@@ -29,7 +29,11 @@ export const SKILLS: Record<string, Skill> = {
   fracDiv: { name: 'Dividing fractions', short: 'Fraction ÷ fraction', st: 3, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-fractions/e/dividing_fractions_1.5' },
   mixedDiv: { name: 'Divide mixed numbers', short: 'Mixed number ÷', st: 3, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-fractions/e/divide-mixed-numbers' },
   fracInterp: { name: 'Interpret fraction division', short: 'Fraction ÷ stories', st: 3, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-fractions/e/interpret-fraction-division' },
-  fracWord: { name: 'Dividing fractions word problems', short: 'Fraction ÷ word problems', st: 3, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-fractions/e/dividing-fractions-by-fractions-word-problems' }
+  fracWord: { name: 'Dividing fractions word problems', short: 'Fraction ÷ word problems', st: 3, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-dividing-fractions/e/dividing-fractions-by-fractions-word-problems' },
+  mulDecPlace: { name: 'Decimal multiplication place value', short: 'Decimal × place value', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-multiplying-decimals/e/multiplying_decimals_1' },
+  mulDec: { name: 'Multiplying decimals', short: 'Multiply decimals', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-multiplying-decimals/e/multiplying_decimals' },
+  div2: { name: 'Division by 2 digits', short: 'Divide by 2 digits', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-div-whole-numbers/e/division_3' },
+  divMulti: { name: 'Multi-digit division', short: 'Multi-digit division', st: 4, shop: 'bakery', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations/cc-6th-div-whole-numbers/e/division_4' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -43,7 +47,7 @@ export interface DrillType {
 export const DRILLS: Record<string, DrillType> = {
   times:        { name: 'Times tables', unit: 'all',    teacherLabel: k => `${k}s times table`,       kidTitle: k => `Let's practice the ${k}s!` },
   placeValue:   { name: 'Place value',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 1 }, teacherLabel: k => `Place value (${k})`,      kidTitle: () => "Let's line up the places!" },
-  decimalShift: { name: 'Moving the decimal', unit: 'bakery', teacherLabel: k => `Multiplying by ${k}`, kidTitle: k => `Let's slide the decimal (× ${k})!` },
+  decimalShift: { name: 'Moving the decimal', unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 4 }, teacherLabel: k => `Multiplying by ${k}`, kidTitle: k => `Let's slide the decimal (× ${k})!` },
   reciprocal:   { name: 'Reciprocals',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 3 }, teacherLabel: () => 'Flipping fractions',     kidTitle: () => "Let's flip some fractions!" },
   simplify:     { name: 'Simplifying',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 2 }, teacherLabel: k => `Simplifying by ${k}`,     kidTitle: k => `Let's simplify by ${k}!` },
   lineUp:       { name: 'Lining up decimals', unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 1 }, teacherLabel: k => `Lining up decimals (${k})`, kidTitle: () => "Let's line up the decimals!" },
@@ -163,7 +167,7 @@ export const BAKERY_STATIONS: Station[] = [
   { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
   { id: 2, name: 'Sharing Pans',  emoji: '🥧', kid: 'Divide fractions and whole numbers', skills: ['fracDivWhole', 'wholeDivFrac'] },
   { id: 3, name: 'Boxing Treats', emoji: '📦', kid: 'Divide fractions by fractions', skills: ['fracDiv', 'mixedDiv', 'fracInterp', 'fracWord'] },
-  { id: 4, name: 'The Register',  emoji: '🧾', kid: 'Multiply decimals, long division', skills: [] },
+  { id: 4, name: 'The Register',  emoji: '🧾', kid: 'Multiply decimals, long division', skills: ['mulDecPlace', 'mulDec', 'div2', 'divMulti'] },
   { id: 5, name: 'Bulk Orders',   emoji: '🚚', kid: 'Divide decimals', skills: [] }
 ];
 export const SHOPS: Record<string, Shop> = {
@@ -191,7 +195,7 @@ export interface Reward {
 /** Skills belonging to each unit. Add a unit's skills when that unit is built. */
 export const UNIT_SKILLS: Record<string, string[]> = {
   cafe: ['basic','tape','groups','dnlCreate','dnl','dnlTable','table','equiv','word','realworld','understand','coord','units','ppw'],
-  bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -276,7 +280,7 @@ export const MIS: Record<string, Misconception> = {
   rightAlign:        { name: 'Lines up right edges instead of decimal points', kid: 'Line up the decimal points, not the last digits.', tip: 'Have students write the numbers on grid paper with the decimal points in one column, and fill empty places with zeros.', skills: ['addDec', 'subDec'] },
   noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec'] },
   smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec'] },
-  estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec'] },
+  estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec', 'mulDec'] },
   wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord'] },
   divAsMult:         { name: 'Multiplies instead of dividing', kid: 'Sharing makes each part smaller, and fitting small servings in makes more of them. Check which way it should go.', tip: 'Before computing, ask "will the answer be more or less than we started with?"', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
   denomOnly:         { name: 'Multiplies by the denominator and forgets the numerator', kid: 'Each serving is more than one piece. How many pieces does one serving use?', tip: 'Count the pieces on the tape diagram, then group them by the size of one serving.', skills: ['wholeDivFrac'] },
@@ -285,6 +289,12 @@ export const MIS: Record<string, Misconception> = {
   notMixed:          { name: 'Leaves an improper fraction instead of a mixed number', kid: 'The top is bigger than the bottom. How many wholes are in it?', tip: 'Divide the top by the bottom: the quotient is the whole number and the remainder goes on top.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord'] },
   flipWrong:         { name: 'Flips the first fraction instead of the divisor', kid: 'Keep the first fraction. Flip the one you divide by.', tip: 'Say "keep, change, flip" while pointing at each part.', skills: ['fracDiv', 'mixedDiv', 'fracWord'] },
   noFlip:            { name: 'Multiplies straight across without flipping', kid: 'Dividing means multiply by the flip of the second fraction.', tip: 'Check with a picture: how many 3/4s fit in 2/3? Fewer than 1, so the answer must be less than 1.', skills: ['fracDiv', 'mixedDiv', 'fracWord'] },
+  pointLikeAdding:   { name: 'Keeps one decimal point, like adding', kid: 'When multiplying, count all the decimal places.', tip: 'Estimate first: 2 × 1 is about 2, so 32 can\'t be right.', skills: ['mulDecPlace', 'mulDec'] },
+  placesMiscount:    { name: 'Counts decimal places wrong', kid: 'Count the digits after each point and add them.', tip: 'Cover the points, multiply, then count places together.', skills: ['mulDecPlace', 'mulDec'] },
+  partialShift:      { name: 'Forgets to shift the second row', kid: 'The tens row starts one place to the left.', tip: 'Write the placeholder zero in the tens row.', skills: ['mulDec'] },
+  quotientTooSmall:  { name: 'Picks a quotient digit that is too small', kid: 'Your remainder is bigger than the divisor. Another one fits.', tip: 'Compare each remainder with the divisor before moving on.', skills: ['div2', 'divMulti'] },
+  quotientTooBig:    { name: 'Picks a quotient digit that is too big', kid: 'That many is more than you have. Try one less.', tip: 'Estimate with rounded divisors (12 → 10).', skills: ['div2', 'divMulti'] },
+  missingZero:       { name: 'Leaves out a zero in the quotient', kid: 'When the divisor doesn\'t fit, write a 0 before bringing down.', tip: 'Use a place-value chart for the quotient.', skills: ['div2', 'divMulti'] },
   mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] }
 };
 
