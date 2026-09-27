@@ -122,9 +122,12 @@ class StudentBackend {
     const retryTables = new Set<Table>();
     for (const [table, rows] of byTable) {
       const { error } = await this.sb.from(table).insert(rows);
-      // A Postgres error code means Supabase rejected the data; drop it and move on.
-      // No code (a network/fetch failure) means try again later.
-      if (error && !error.code) retryTables.add(table);
+      if (error) {
+        // Only permanent data errors are unfixable by retrying; everything else (auth, RLS, server, network) stays queued.
+        const permanent = /^22|^23/.test(error.code) || error.code === '42703' || error.code === 'PGRST204';
+        if (permanent) console.warn(`[Backend] dropping ${rows.length} row(s) for ${table}: ${error.code}`);
+        else retryTables.add(table);
+      }
     }
     this.queue = [...batch.filter(q => retryTables.has(q.table)), ...this.queue.slice(batch.length)];
     this.persistQueue();
