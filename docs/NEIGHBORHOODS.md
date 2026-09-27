@@ -1,6 +1,6 @@
 # Neighborhoods: one town, every grade
 
-**Status: engine built** (`NEIGHBORHOODS-0-ENGINE.md`). No second neighborhood is built yet, so the switcher stays hidden. Read `AGENTS.md` first. **Edit in place, never rewrite a file.**
+**Status: engine built** (`NEIGHBORHOODS-0-ENGINE.md`). 4th grade has its first shop, so the switcher shows. Read `AGENTS.md` first. **Edit in place, never rewrite a file.**
 
 ## The decision
 
@@ -16,7 +16,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
 
 | Neighborhood | Follows | Status |
 |---|---|---|
-| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`) | plan |
+| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅ | building |
 | 5th grade | Khan 5th grade | later |
 | **6th grade** | Khan 6th grade: Café ✅, Bakery ✅, Market, Clock Tower, Ice Rink, Potion Lab, Pet Houses, Pet Show | building |
 | 7th grade | Khan 7th grade (needed for next school year) | next year |

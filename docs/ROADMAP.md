@@ -31,6 +31,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Word-problem pop-up for the Café: ratio stories (`story:ratio` in `DRILLS.md`)
 - [x] Neighborhoods engine: one town, a neighborhood per grade, home grade, switcher, and grade trophies (`NEIGHBORHOODS-0-ENGINE.md`). Older saves open as 6th grade
 - [x] Fixes: the dashboard's "field name must not be null" (migration 7), decimals in order tickets (2.4 no longer splits into two sentences), and teachers can open later stations in every shop, not just the Café
+- [x] 4th grade opens: the 🍋 Lemonade Stand, 4 stations and 15 skills (`GRADE4-1-LEMONADE.md`). The town now shows the grade switcher
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -63,7 +64,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 1e. Word-problem practice for the Café (ratio stories)
 - [x] 2. Neighborhoods in the engine: home grade, switcher, grade trophy (`NEIGHBORHOODS-0-ENGINE.md`). Dashboard tabs by neighborhood come with the first 4th grade shop
 - [x] 3a. 4th grade at home: no family accounts; a grown-up makes a class and sets its Home grade
-- [ ] 3b. 4th grade: one shop at a time, Lemonade Stand first
+- [x] 3b. 4th grade: the Lemonade Stand (`GRADE4-1-LEMONADE.md`)
+- [ ] 3c. 4th grade: the Toy Shop (`GRADE4-2-TOYS.md`, to be written), then the Pizza Parlor, Garden Center, and Art Studio
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run
@@ -74,9 +76,9 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 4. `20260927000000_teacher_tools.sql` ✅
 5. `20260928000000_quizzes.sql` ✅
 6. `20260929000000_practice_time.sql` ✅
-7. `20260930000000_report_null_keys.sql` (fixes "field name must not be null" on the dashboard; **run it next**)
+7. `20260930000000_report_null_keys.sql` ✅
 
-The first six are run in Supabase. Never edit one of these files. Any change goes in a **new** migration file.
+All seven are run in Supabase. Never edit one of these files. Any change goes in a **new** migration file.
 
 ## Notes from reviews
 
