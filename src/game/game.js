@@ -903,7 +903,7 @@ word(lvl){
     helper:'Find how many batches, then scale the other amount.',
     visual:`<div style="font-size:1.35rem">${c[0]} ${c[1]}'s recipe: <b>${a} ${items[0][0]}</b> for every <b>${b} ${items[1][0]}</b><br>Today: <b>${gv} ${items[g][0]}</b> and <b>? ${items[bl][0]}</b></div>`,
     steps:[
-      {name:'Find the multiplier', type:'concept', kind:'num', prompt:'How many batches is that?', answer:k, fact:{x:base[g], y:k, div:true},
+      {name:'Find the multiplier', type:'concept', kind:'num', prompt:'How many batches is that?', answer:k, fact:{x:base[g], y:k, div:true}, storyDrill:{key:'ratio', mis:['additive']},
         mis:v => v === gv - base[g] ? 'additive' : null, hint:() => `${base[g]} × what = ${gv}?`},
       {name:'Scale the other part', type:'compute', kind:'num', prompt:`How many ${items[bl][0]} ${items[bl][1]}?`, answer:base[bl]*k, fact:{x:base[bl], y:k},
         mis:v => v === base[bl] + (gv - base[g]) ? 'additive' : v === gv ? 'wrongPart' : null, hint:() => `${k} batches × ${base[bl]} = ?`}
@@ -926,7 +926,7 @@ realworld(lvl){
     helper:'Find the multiplier for each amount. Same multiplier means same recipe.',
     visual: `<table class="ratio"><thead><tr><th></th><th><span class="e">${A[0]}</span></th><th><span class="e">${B[0]}</span></th></tr></thead><tbody><tr class="base"><td>recipe</td><td>${a}</td><td>${b}</td></tr><tr><td>${c[0]}</td><td>${x}</td><td>${y}</td></tr></tbody></table>`,
     steps:[
-      {name:'Find the multiplier', type:'concept', kind:'num', prompt:`${A[0]} went from ${a} to ${x}. What was it multiplied by?`, answer:k, fact:{x:a, y:k, div:true},
+      {name:'Find the multiplier', type:'concept', kind:'num', prompt:`${A[0]} went from ${a} to ${x}. What was it multiplied by?`, answer:k, fact:{x:a, y:k, div:true}, storyDrill:{key:'ratio', mis:['additive']},
         mis:v => v === x - a ? 'additive' : null, hint:() => `${a} × what = ${x}?`},
       {name:'Decide if equivalent', type:'concept', kind:'choice', prompt:`Now check the ${B[0]}: is ${b} × ${k} equal to ${y}?`, options:opts,
         hint:() => `${b} × ${k} = ${b*k}. Compare that with ${y}.`}
@@ -1001,7 +1001,7 @@ units(lvl){
     helper:`Remember: 1 ${big} = ${f} ${small}.`,
     visual:`<div style="text-align:center">${miniTable(big + 's', small, [[1, f],[2, 2*f],[3, 3*f]])}</div>`,
     steps:[
-      {name:'Pick the operation', type:'concept', kind:'choice', prompt:`To change ${from} into ${to}, do we multiply or divide by ${f}?`, options:opts,
+      {name:'Pick the operation', type:'concept', kind:'choice', prompt:`To change ${from} into ${to}, do we multiply or divide by ${f}?`, options:opts, drill:{type:'story', key:'ratio'},
         hint:() => bigToSmall ? `A ${big} is bigger, so you need MORE ${small}.` : `A ${big} is bigger, so you need FEWER of them.`},
       {name:'Convert', type:'compute', kind:'num', prompt:`${start} ${from} = how many ${to}?`, answer:ans, fact:f <= 12 ? {x:f, y:n, div:!bigToSmall} : null,
         mis:v => (bigToSmall ? v === n : v === n*f*f) ? 'unitsDirection' : null, hint:() => bigToSmall ? `${n} × ${f} = ?` : `${n*f} ÷ ${f} = ?`}
@@ -1019,7 +1019,7 @@ ppw(lvl){
       helper:'Part + part = whole. Find the value of one part.',
       visual:`<div style="text-align:center; font-size:1.4rem">${A[0]} : ${B[0]} = ${a} : ${b}<br>whole platter = ${T}</div>`,
       steps:[
-        {name:'Count total parts', type:'concept', kind:'num', prompt:'How many parts make up the whole platter?', answer:n,
+        {name:'Count total parts', type:'concept', kind:'num', prompt:'How many parts make up the whole platter?', answer:n, drill:{type:'story', key:'ratio'},
           mis:v => (v === a || v === b || v === a*b) ? 'partsCount' : null, hint:() => `${a} parts + ${b} parts.`},
         {name:'Value of one part', type:'compute', kind:'num', prompt:`${T} treats ÷ ${n} parts = how many in each part?`, answer:u, fact:{x:n, y:u, div:true},
           mis:v => ((T % a === 0 && v === T/a) || (T % b === 0 && v === T/b)) ? 'divideWrong' : null, hint:() => `${T} ÷ ${n} = ?`},
@@ -1034,7 +1034,7 @@ ppw(lvl){
     visual:`<div style="text-align:center; font-size:1.4rem">${A[0]} : ${B[0]} = ${a} : ${b}<br>${askE[0]} = ${G}, whole = ?</div>`,
     steps:[
       {name:'Value of one part', type:'compute', kind:'num', prompt:`${G} ${askE[0]} fill ${askN} parts. How many in each part?`, answer:u, fact:{x:askN, y:u, div:true}, hint:() => `${G} ÷ ${askN} = ?`},
-      {name:'Count total parts', type:'concept', kind:'num', prompt:'How many parts make up the whole platter?', answer:n,
+      {name:'Count total parts', type:'concept', kind:'num', prompt:'How many parts make up the whole platter?', answer:n, drill:{type:'story', key:'ratio'},
         mis:v => (v === a || v === b) ? 'partsCount' : null, hint:() => `${a} + ${b}.`},
       {name:'Find the whole', type:'compute', kind:'num', prompt:'How many treats on the whole platter?', answer:T, fact:{x:n, y:u},
         mis:v => v === G + othN ? 'additive' : v === othN*u ? 'wrongPart' : null, hint:() => `${n} parts × ${u} each.`}
@@ -2449,7 +2449,7 @@ function submit(v){
   }
   if ((!ok || slow) && st.type !== 'setup') {
     if (first) order.missed.push(`${SKILLS[order.p.skill].name}: ${st.name.toLowerCase()}`);
-    if ((!ok ? first : !st.slowOK)) queueDrill(st, ok ? 'slow' : 'miss');
+    if ((!ok ? first : !st.slowOK)) queueDrill(st, ok ? 'slow' : 'miss', misId);
   }
   if (ok) stepRight(st, v); else stepWrong(st, v, misId);
   save();
@@ -2517,10 +2517,11 @@ function hint(){
   const st = order.p.steps[order.i]; order.hints++;
   setHelper(st.hint ? st.hint() : 'Read the question again, one part at a time.'); sfx('tick'); refocus(st);
 }
-function queueDrill(st, reason){
+function queueDrill(st, reason, misId){
   if (order.pending) return;
   let drill;
-  if (st.drill) drill = {...st.drill, key:String(st.drill.key), reason};
+  if (st.storyDrill && misId && st.storyDrill.mis.includes(misId)) drill = {type:'story', key:st.storyDrill.key, reason};   // the story was misread, not the fact
+  else if (st.drill) drill = {...st.drill, key:String(st.drill.key), reason};
   else if (st.fact) {
     const {x, y, div} = st.fact;
     const weakness = n => { let a = 0, w = 0; ['facts','divFacts'].forEach(stn => Object.entries(S[stn]).forEach(([k,f]) => { if (k.split('x').map(Number).includes(n)) { a += f.a; w += f.a - f.c + (f.s||0); } })); return a ? w/a : 0; };
@@ -2770,7 +2771,7 @@ const DRILL_IMPL = {
   },
   story:{
     build(drill, {short = false} = {}){
-    const rows = storyRows(drill.key === 'divide' ? 'divide' : 'addSub', short ? 3 : 4);
+    const rows = storyRows(['divide', 'ratio'].includes(drill.key) ? drill.key : 'addSub', short ? 3 : 4);
     return {
       title: DRILLS[drill.type].kidTitle(drill.key),
       why: drill.reason === 'slow' ? "Let's get quicker at turning stories into math." : 'Every word problem starts by turning the story into math. Let\'s practice just that part!',
@@ -2780,7 +2781,8 @@ const DRILL_IMPL = {
         return wrongs >= 2 ? `It's ${r.options[+r.answer]}.` : r.tip;
       },
       finishLine: 'Story to math, every time! +3 🪙',
-      tieLine: 'Find the starting amount first. Then ask: are we putting together, taking away, sharing, or seeing how many fit?'
+      tieLine: drill.key === 'ratio' ? 'Say what is compared, in the order asked. Then ask: how many batches (÷), how many in all (+), or how much for more batches (×)?'
+        : 'Find the starting amount first. Then ask: are we putting together, taking away, sharing, or seeing how many fit?'
     };
     }
   }
@@ -2800,7 +2802,22 @@ function decimalShiftRows(key, n){
 function storyRows(kind, n){
   const rows = [];
   const add = (label, right, wrongs, tip, also) => { const opts = shuffle([right, ...wrongs]); rows.push({label, options:opts, answer:String(opts.indexOf(right)), tip, also}); };
-  const makers = kind === 'addSub' ? [
+  const ratio = [
+    () => { const [a, b] = coprimePair(5, 5, 2), k = rand(2, 6), [x, y] = pick([['cups of flour', 'eggs'], ['lemons', 'cups of sugar'], ['scoops of cocoa', 'cups of milk']]);
+      add(`A recipe uses ${a} ${x} for every ${b} ${y}. Today we used ${a * k} ${x}. How many batches is that?`, `${a * k} ÷ ${a}`, [`${a * k} − ${a}`, `${a * k} × ${a}`], 'Batches are how many groups of the recipe fit. Divide, don\'t subtract.'); },
+    () => { const [a, b] = coprimePair(5, 5, 2), k = rand(2, 5), [x, y] = pick([['lemons', 'cups of sugar'], ['red beads', 'blue beads'], ['cats', 'dogs']]);
+      add(`There are ${a} ${x} for every ${b} ${y}. We make ${k} batches. How many ${y}?`, `${b} × ${k}`, [`${b} + ${k}`, `${a} × ${k}`], `Each batch has ${b} ${y}. ${k} batches means ${k} groups of ${b}.`); },
+    () => { const [a, b] = coprimePair(5, 5, 2), [x, y] = pick([['muffins', 'cookies'], ['apples', 'pears'], ['pups', 'kittens']]);
+      add(`A platter has ${x} and ${y} in a ${a} to ${b} ratio. How many parts make the whole platter?`, `${a} + ${b}`, [`${a} × ${b}`, `${b}`], 'Part + part = whole.'); },
+    () => { const [a, b] = coprimePair(6, 6, 2), [x, y] = pick([['eggs', 'cups of flour'], ['red tiles', 'white tiles'], ['boys', 'girls']]);
+      add(`A mix has ${a} ${x} and ${b} ${y}. What is the ratio of ${y} to ${x}?`, `${b} : ${a}`, [`${a} : ${b}`], 'Write the numbers in the order the question asks for them.'); },
+    () => { const [a, b] = coprimePair(6, 6, 2), [x, y] = pick([['cats', 'dogs'], ['red marbles', 'green marbles'], ['cupcakes', 'cookies']]);
+      add(`We have ${a} ${x} and ${b} ${y}. What is the ratio of ${x} to all of them?`, `${a} : ${a + b}`, [`${a} : ${b}`], `"All of them" is the whole: ${a} + ${b}.`); },
+    () => { const [big, small, f] = pick([['feet', 'inches', 12], ['yards', 'feet', 3], ['hours', 'minutes', 60], ['meters', 'centimeters', 100]]), n = rand(2, 9);
+      if (Math.random() < 0.5) add(`Change ${n} ${big} into ${small}. There are ${f} ${small} in one of the ${big}.`, `${n} × ${f}`, [`${n} ÷ ${f}`], 'Smaller units means more of them. Multiply.');
+      else add(`Change ${n * f} ${small} into ${big}. There are ${f} ${small} in one of the ${big}.`, `${n * f} ÷ ${f}`, [`${n * f} × ${f}`], 'Bigger units means fewer of them. Divide.'); }
+  ];
+  const makers = kind === 'ratio' ? ratio : kind === 'addSub' ? [
     () => { const a = randDec(2, 15, 2), b = randDec(1, 9, 2); add(`Ana has $${a}. She earns $${b} more. How much does she have now?`, `${a} + ${b}`, [`${a} − ${b}`], 'Earning more puts money together.'); },
     () => { const b = randDec(1, 4, 1), a = randDec(5, 12, 2); add(`A ribbon is ${a} m long. We cut off ${b} m. How much is left?`, `${a} − ${b}`, [`${a} + ${b}`, `${b} − ${a}`], 'Cutting off takes away. Start with the whole ribbon.'); },
     () => { const a = randDec(1, 6, 3), b = randDec(1, 6, 1); add(`One bag of flour weighs ${a} kg and another weighs ${b} kg. How much do they weigh together?`, `${a} + ${b}`, [`${a} − ${b}`], '"Together" means add.'); },

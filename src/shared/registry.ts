@@ -54,7 +54,7 @@ export const DRILLS: Record<string, DrillType> = {
   reciprocal:   { name: 'Reciprocals',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 3 }, teacherLabel: () => 'Flipping fractions',     kidTitle: () => "Let's flip some fractions!" },
   simplify:     { name: 'Simplifying',  unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 2 }, teacherLabel: k => `Simplifying by ${k}`,     kidTitle: k => `Let's simplify by ${k}!` },
   lineUp:       { name: 'Lining up decimals', unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 1 }, teacherLabel: k => `Lining up decimals (${k})`, kidTitle: () => "Let's line up the decimals!" },
-  story:        { name: 'Word problems to math', unit: 'bakery', teacherLabel: k => k === 'divide' ? 'Word problems: dividing fractions' : 'Word problems: adding and subtracting', kidTitle: () => "Let's turn stories into math!" },
+  story:        { name: 'Word problems to math', unit: 'all',    teacherLabel: k => k === 'divide' ? 'Word problems: dividing fractions' : k === 'ratio' ? 'Word problems: ratios' : 'Word problems: adding and subtracting', kidTitle: () => "Let's turn stories into math!" },
   mixed:        { name: 'Mixed numbers', unit: 'bakery', sprintUnlock: { unit: 'bakery', station: 2 }, teacherLabel: k => `Mixed numbers (over ${k})`, kidTitle: () => "Let's find the wholes!" }
 };
 /** "times:7" → "7s times table" */
