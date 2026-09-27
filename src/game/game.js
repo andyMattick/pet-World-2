@@ -549,7 +549,7 @@ function decSteps(a, b, op, lvl, withEstimate){
   const ka = DEC.k(a), kb = DEC.k(b), exact = op === '+' ? ka + kb : ka - kb;
   const wrongRA = rightAlignK(a, b, op);
   const wrongCol = op === '+' ? noCarryK(ka, kb) : smallerFromLargerK(ka, kb);
-  const place = deepestPlace(a, b), drill = {type:'placeValue', key:place};
+  const place = deepestPlace(a, b), drill = {type:'placeValue', key:place}, lineUp = {type:'lineUp', key:place};
   const steps = [];
   if (withEstimate && lvl >= 2) steps.push({name:'Estimate', type:'concept', kind:'choice',
     prompt:'About how much will the answer be? Round each number to the nearest whole number first.',
@@ -561,7 +561,8 @@ function decSteps(a, b, op, lvl, withEstimate){
       {html:columnHTML(a, b, op, false), text:'right edges lined up', ok:false, mis:'rightAlign'}]),
     hint:() => 'The decimal points must make one straight column.'});
   steps.push({name:op === '+' ? 'Add' : 'Subtract', type:'compute', kind:'num', prompt:`${a} ${op === '+' ? '+' : '−'} ${b} = ?`,
-    answer:DEC.fmt(exact), eq:DEC.eq(exact), drill,
+    answer:DEC.fmt(exact), eq:DEC.eq(exact), drill:lineUp, slowOK:true,           // slow is fine here: they may work it on paper
+    work:columnHTML(a, b, op, true),
     mis:v => { if (typeof v !== 'number') return null; const k = Math.round(v * 1000);
       if (k === wrongRA && wrongRA !== exact) return 'rightAlign';
       if (k === wrongCol && wrongCol !== exact) return op === '+' ? 'noRegroup' : 'smallerFromLarger';
@@ -618,18 +619,31 @@ const SCALE_GEN = {
     return {title:money ? 'The Register' : 'Ribbon Table', ctx:`${a} ${op === '+' ? '+' : '−'} ${b} (${money ? 'money' : 'meters'})`, bubble,
       helper:'Decide what the story is asking, then line up the decimal points.',
       visual:`<div style="text-align:center; font-size:1.5rem">${money ? '💵' : '🎀'}</div>`,
-      steps:[{name:'Pick the operation', type:'concept', kind:'choice', prompt:'Do we add or subtract?', options:opts,
+      steps:[{name:'Pick the operation', type:'concept', kind:'choice', prompt:'Do we add or subtract?', options:opts, drill:{type:'story', key:'addSub'},
         hint:() => op === '+' ? 'The story puts two amounts together.' : 'The story takes an amount away, or finds what is left.'},
         ...decSteps(a, b, op, Math.max(1, lvl - 1), false).steps]};
   }
 };
 /* rows for the place-value drill (DRILL_IMPL.placeValue); key is 'ones', 'tenths', 'hundredths' or 'thousandths' */
 function placeValueRows(key){
-  const idx = Math.max(0, PLACE_NAMES.indexOf(key));
+  const first = Math.max(1, PLACE_NAMES.indexOf(key)), order = [first, ...shuffle([1, 2, 3].filter(i => i !== first))];
   const rows = [];
   for (let i = 0; i < 6; i++){
-    const f = `${rand(0, 9)}${rand(0, 9)}${rand(1, 9)}`, n = `${rand(10, 99)}.${f}`;
-    rows.push({label:`In ${n}, the ${PLACE_NAMES[idx]} digit is`, answer:idx === 0 ? n[1] : f[idx - 1]});
+    const idx = order[i % 3];
+    let f; do { f = `${rand(0, 9)}${rand(0, 9)}${rand(1, 9)}`; } while (new Set(f).size < 3);   // three different digits, so each place has its own answer
+    const n = `${rand(10, 99)}.${f}`;
+    rows.push({label:`In ${n}, the ${PLACE_NAMES[idx]} digit is`, answer:f[idx - 1], place:PLACE_NAMES[idx]});
+  }
+  return rows;
+}
+/* rows for the lining-up drill: how many places both numbers need, then fill in the zeros */
+function lineUpRows(key, pairs){
+  const P = Math.max(1, PLACE_NAMES.indexOf(key)), rows = [];
+  for (let i = 0; i < pairs; i++){
+    const long = randDec(1, 30, P), shortP = rand(0, P - 1), short = randDec(1, 30, shortP);
+    const padded = shortP ? short + '0'.repeat(P - shortP) : `${short}.${'0'.repeat(P)}`;
+    rows.push({label:`Line up ${short} and ${long}. How many decimal places should both have?`, answer:String(P)});
+    rows.push({label:`Fill in the zeros: ${short} →`, answer:padded});
   }
   return rows;
 }
@@ -1032,12 +1046,12 @@ function cupsHTML(n, a, b, e){
 }
 function fracIdeaSteps(sharing, eqs){
   return [
-    {name:'What are we doing?', type:'concept', kind:'choice', prompt:'Are we sharing into equal groups, or finding how many fit?',
+    {name:'What are we doing?', type:'concept', kind:'choice', prompt:'Are we sharing into equal groups, or finding how many fit?', drill:{type:'story', key:'divide'},
       options:shuffle([
         {html:'Sharing it equally', text:'sharing', ok:sharing, mis:sharing ? null : 'reversedDivision'},
         {html:'Finding how many fit', text:'how many fit', ok:!sharing, mis:sharing ? 'reversedDivision' : null}]),
       hint:() => sharing ? 'Friends are splitting one amount. That is sharing.' : 'We keep taking out one serving at a time. How many servings fit?'},
-    {name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?',
+    {name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?', drill:{type:'story', key:'divide'},
       options:shuffle(eqs.map(([t, ok, mis]) => ({html:t, text:t, ok, mis}))),
       hint:() => 'Start with the amount you have, then divide by the size of each share or serving.'}
   ];
@@ -1192,11 +1206,11 @@ const BOXES_GEN = {
     const [a, b, c, d] = fracDivNumbers(lvl), P = a * d, Q = b * c, S = boxesStory(a, b, c, d), eq = `${a}/${b} ÷ ${c}/${d}`;
     const storyFirst = Math.random() < 0.5;
     const pickStep = storyFirst
-      ? {name:'Match the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?',
+      ? {name:'Match the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?', drill:{type:'story', key:'divide'},
           options:shuffle([{html:eq, text:eq, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
                            {html:`${a}/${b} × ${c}/${d}`, text:`${a}/${b} × ${c}/${d}`, ok:false, mis:'divAsMult'}]),
           hint:() => 'Start with the amount you have. Divide by the size of one box.'}
-      : {name:'Match the story', type:'concept', kind:'choice', prompt:`Which story matches ${eq}?`,
+      : {name:'Match the story', type:'concept', kind:'choice', prompt:`Which story matches ${eq}?`, drill:{type:'story', key:'divide'},
           options:shuffle([{html:S.how, text:'how many boxes fit', ok:true, mis:null}, {html:S.rev, text:'the numbers swapped', ok:false, mis:'reversedDivision'},
                            {html:S.of, text:'a fraction of an amount', ok:false, mis:'divAsMult'}]),
           hint:() => `${eq} asks: how many ${c}/${d}s fit in ${a}/${b}?`};
@@ -1214,7 +1228,7 @@ const BOXES_GEN = {
       ? `${a}/${b} ${unit} of ${what} fills ${c}/${d} of a big tin. How many ${unit}s fill the whole tin?`
       : `We have ${a}/${b} ${unit} of ${what}. Each bag holds ${c}/${d} ${unit}. How many bags can we fill?${P % Q ? ' (Part of a bag counts too.)' : ''}`;
     const eq = `${a}/${b} ÷ ${c}/${d}`;
-    const steps = [{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?',
+    const steps = [{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the order?', drill:{type:'story', key:'divide'},
         options:shuffle([{html:eq, text:eq, ok:true, mis:null}, {html:`${c}/${d} ÷ ${a}/${b}`, text:`${c}/${d} ÷ ${a}/${b}`, ok:false, mis:'reversedDivision'},
                          {html:`${a}/${b} × ${c}/${d}`, text:`${a}/${b} × ${c}/${d}`, ok:false, mis:'divAsMult'}]),
         hint:() => perWhole ? `${a}/${b} is only ${c}/${d} of the tin. Divide by ${c}/${d} to find the whole.` : 'Start with how much we have. Divide by the size of one bag.'},
@@ -1758,7 +1772,7 @@ function activateStep(i){
   $('#checkBtn').hidden = st.kind === 'choice';
   if (st.kind === 'num') {
     const html = numInput('cur', st.prompt);
-    if (st.slot) { const sl = slotEl(st.slot); sl.classList.add('active'); sl.innerHTML = html; } else box.innerHTML = html;
+    if (st.slot) { const sl = slotEl(st.slot); sl.classList.add('active'); sl.innerHTML = html; } else box.innerHTML = (st.work ? `<div class="step-work">${st.work}</div>` : '') + html;
     const inp = $('#cur'); wireNum(inp, checkCurrent); setTimeout(() => inp.focus(), 40);
   } else if (st.kind === 'ratio') {
     box.innerHTML = `<span class="rlbl">${st.labels[0]}</span>${numInput('curA','first number')}<span class="colon">:</span>${numInput('curB','second number')}<span class="rlbl">${st.labels[1]}</span>`;
@@ -1922,7 +1936,7 @@ function submit(v){
   }
   if ((!ok || slow) && st.type !== 'setup') {
     if (first) order.missed.push(`${SKILLS[order.p.skill].name}: ${st.name.toLowerCase()}`);
-    if ((!ok ? first : true)) queueDrill(st, ok ? 'slow' : 'miss');
+    if ((!ok ? first : !st.slowOK)) queueDrill(st, ok ? 'slow' : 'miss');
   }
   if (ok) stepRight(st, v); else stepWrong(st, v, misId);
   save();
@@ -2090,7 +2104,7 @@ const DRILL_IMPL = {
   placeValue:{
     sprintItem(key){
       const row = placeValueRows(key)[0], n = row.label.match(/In ([\d.]+),/)[1];
-      return {prompt:`Which digit is in the ${key} place of ${n}?`, answer:row.answer, drillId:`placeValue:${key}`};
+      return {prompt:`Which digit is in the ${row.place} place of ${n}?`, answer:row.answer, drillId:`placeValue:${row.place}`};
     },
     build(drill, {short = false} = {}){
     const key = drill.key, idx = Math.max(0, PLACE_NAMES.indexOf(key));
@@ -2102,11 +2116,11 @@ const DRILL_IMPL = {
       rows: placeValueRows(key).slice(0, short ? 3 : 6),
       targetIndex: 0,
       hint(rowIndex, wrongs){
-        const answer = this.rows[rowIndex].answer;
-        return wrongs >= 2 ? `It's ${answer}. Type ${answer}.` : 'Count places after the decimal point: tenths, hundredths, thousandths.';
+        const r = this.rows[rowIndex];
+        return wrongs >= 2 ? `It's ${r.answer}. Type ${r.answer}.` : `Count places after the decimal point: tenths (1st), hundredths (2nd), thousandths (3rd). This one wants the ${r.place}.`;
       },
       finishLine: 'Nice! Decimal places line up by their names.',
-      tieLine: `The ${key} place is ${idx} after the decimal point.`
+      tieLine: `The ${key} place is ${idx} after the decimal point. Tenths, hundredths, thousandths: 1st, 2nd, 3rd.`
     };
     }
   },
@@ -2187,8 +2201,67 @@ const DRILL_IMPL = {
       tieLine: 'Flip means swap the top and bottom. 3/5 flipped is 5/3.'
     };
     }
+  },
+  lineUp:{
+    sprintItem(key){
+      const row = lineUpRows(key === 'default' ? pick(['tenths', 'hundredths', 'thousandths']) : key, 1)[0];
+      return {prompt:row.label.replace(' How many decimal places should both have?', ': how many decimal places?'), answer:row.answer, drillId:`lineUp:${key === 'default' ? 'hundredths' : key}`};
+    },
+    build(drill, {short = false} = {}){
+    const key = PLACE_NAMES.includes(drill.key) && drill.key !== 'ones' ? drill.key : 'hundredths';
+    return {
+      title: DRILLS[drill.type].kidTitle(key),
+      why: drill.reason === 'slow' ? "Let's make lining up quick, so the adding is easy." : 'Lining up comes first. Let\'s practice it!',
+      rows: lineUpRows(key, short ? 2 : 3), targetIndex: 0,
+      hint(rowIndex, wrongs){
+        const r = this.rows[rowIndex];
+        if (wrongs >= 2) return `It's ${r.answer}. Type ${r.answer}.`;
+        return rowIndex % 2 === 0 ? 'Count the digits after each decimal point. Both numbers need the bigger count.' : 'Add zeros at the end until it has as many decimal places as the other number. A whole number gets a point first.';
+      },
+      finishLine: 'Lined up! +3 🪙',
+      tieLine: 'Give both numbers the same number of decimal places, and the points line up by themselves.'
+    };
+    }
+  },
+  story:{
+    build(drill, {short = false} = {}){
+    const rows = storyRows(drill.key === 'divide' ? 'divide' : 'addSub', short ? 3 : 4);
+    return {
+      title: DRILLS[drill.type].kidTitle(drill.key),
+      why: drill.reason === 'slow' ? "Let's get quicker at turning stories into math." : 'Every word problem starts by turning the story into math. Let\'s practice just that part!',
+      rows, targetIndex: 0,
+      hint(rowIndex, wrongs){
+        const r = this.rows[rowIndex];
+        return wrongs >= 2 ? `It's ${r.options[+r.answer]}.` : r.tip;
+      },
+      finishLine: 'Story to math, every time! +3 🪙',
+      tieLine: 'Find the starting amount first. Then ask: are we putting together, taking away, sharing, or seeing how many fit?'
+    };
+    }
   }
 };
+/* short stories for the story drill; each row: {label, options, answer (index), tip} */
+function storyRows(kind, n){
+  const rows = [];
+  const add = (label, right, wrongs, tip) => { const opts = shuffle([right, ...wrongs]); rows.push({label, options:opts, answer:String(opts.indexOf(right)), tip}); };
+  const makers = kind === 'addSub' ? [
+    () => { const a = randDec(2, 15, 2), b = randDec(1, 9, 2); add(`Ana has $${a}. She earns $${b} more. How much does she have now?`, `${a} + ${b}`, [`${a} − ${b}`], 'Earning more puts money together.'); },
+    () => { const b = randDec(1, 4, 1), a = randDec(5, 12, 2); add(`A ribbon is ${a} m long. We cut off ${b} m. How much is left?`, `${a} − ${b}`, [`${a} + ${b}`, `${b} − ${a}`], 'Cutting off takes away. Start with the whole ribbon.'); },
+    () => { const a = randDec(1, 6, 3), b = randDec(1, 6, 1); add(`One bag of flour weighs ${a} kg and another weighs ${b} kg. How much do they weigh together?`, `${a} + ${b}`, [`${a} − ${b}`], '"Together" means add.'); },
+    () => { const b = randDec(1, 9, 2), a = [10, 20][rand(0, 1)] + '.00'; add(`The treats cost $${b}. You pay with $${a}. How much change do you get?`, `${a} − ${b}`, [`${a} + ${b}`, `${b} − ${a}`], 'Change is what is left of the money you paid.'); },
+    () => { const a = randDec(3, 9, 1), b = randDec(1, 2, 2); add(`A jug holds ${a} L of lemonade. We pour out ${b} L. How much is still in the jug?`, `${a} − ${b}`, [`${a} + ${b}`], 'Pouring out takes away.'); },
+    () => { const a = randDec(1, 5, 1), b = randDec(1, 5, 2); add(`Sam walks ${a} km to the park and then ${b} km to the bakery. How far does he walk?`, `${a} + ${b}`, [`${a} − ${b}`], 'Two trips put together make the whole walk.'); }
+  ] : [
+    () => { const [a, b] = properFrac(2, 6), d = b * rand(2, 3); add(`We have ${a}/${b} pound of fudge. Each box holds 1/${d} pound. How many boxes can we fill?`, `${a}/${b} ÷ 1/${d}`, [`1/${d} ÷ ${a}/${b}`, `${a}/${b} × 1/${d}`], 'How many boxes fit: start with the fudge, divide by one box.'); },
+    () => { const [a, b] = properFrac(2, 6), k = rand(2, 5); add(`${a}/${b} of a pan of brownies is shared equally by ${k} friends. How much of the pan does each friend get?`, `${a}/${b} ÷ ${k}`, [`${k} ÷ ${a}/${b}`, `${a}/${b} × ${k}`], 'Sharing splits the amount you have into equal parts.'); },
+    () => { const [a, b] = properFrac(2, 5), N = rand(2, 6); add(`We have ${N} cups of batter. Each muffin uses ${a}/${b} cup. How many muffins can we make?`, `${N} ÷ ${a}/${b}`, [`${a}/${b} ÷ ${N}`, `${N} × ${a}/${b}`], 'How many muffins fit: start with the batter, divide by one muffin.'); },
+    () => { const [a, b] = properFrac(2, 6), [c, d] = properFrac(2, 5); add(`What is ${c}/${d} of ${a}/${b} pound of nuts?`, `${c}/${d} × ${a}/${b}`, [`${a}/${b} ÷ ${c}/${d}`], '"Of" a known amount means multiply. Nothing is being shared or fitted.'); },
+    () => { const [a, b] = properFrac(2, 6); let c, d; do { [c, d] = properFrac(2, 5); } while (c * b === a * d); add(`${a}/${b} pound of berries fills ${c}/${d} of a tin. How many pounds fill the whole tin?`, `${a}/${b} ÷ ${c}/${d}`, [`${c}/${d} ÷ ${a}/${b}`, `${a}/${b} × ${c}/${d}`], 'A part of the tin is known. Divide by that part to find one whole tin.'); }
+  ];
+  const order = shuffle(makers.map((m, i) => i));
+  for (let i = 0; i < n; i++) makers[order[i % makers.length]]();
+  return rows;
+}
 function openPractice(drill, onClose){
   const impl = DRILL_IMPL[drill.type]; if (!impl) return;
   const model = impl.build(drill, {short:!!drill.short});
@@ -2199,7 +2272,7 @@ function openPractice(drill, onClose){
   $('#prTitle').textContent = model.title;
   $('#prWhy').textContent = model.why;
   $('#prDone').hidden = true; $('#prHint').textContent = '';
-  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
+  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}${row.options || row.label.length > 34 ? ' story' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
   const id = drill.type + ':' + drill.key, log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
   log[drill.reason] = (log[drill.reason] || 0) + 1; save();
   Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null,
@@ -2210,27 +2283,39 @@ function openPractice(drill, onClose){
 function ladderStep(){
   const row = pr.model.rows[pr.i], rowEl = $('#lr'+pr.i);
   $$('.lrow.now').forEach(r => r.classList.remove('now')); rowEl.classList.add('now');
+  if (row.options) {                                   // a choice row: tap the right one
+    $('#la'+pr.i).innerHTML = row.options.map((o, k) => `<button class="btn small lopt" type="button" data-k="${k}">${esc(o)}</button>`).join('');
+    $$('#la' + pr.i + ' .lopt').forEach(b => b.addEventListener('click', () => {
+      if (+b.dataset.k === +row.answer) ladderRight(row.options[+row.answer]);
+      else { pr.wrongs++; sfx('bad'); b.disabled = true; $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs); }
+    }));
+    const first = $('#la' + pr.i + ' .lopt'); if (first) first.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
+    return;
+  }
   $('#la'+pr.i).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="${esc(row.label)}"><button class="btn small" id="prCheck" type="button">Check</button>`;
   const inp = $('#lin');
   const allowText = /[./-]/.test(row.answer);
   inp.addEventListener('input', () => { inp.value = inp.value.replace(allowText ? /[^\d./-]/g : /\D/g,''); inp.classList.remove('wrong'); });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ladderCheck(); } });
   $('#prCheck').addEventListener('click', ladderCheck);
-  const pad = numberPad(inp, ladderCheck);
+  const pad = numberPad(inp, ladderCheck, {decimal:/\./.test(row.answer)});
+  if (/\./.test(row.answer)) inp.classList.add('wide');
   if (pad) $('#prCheck').insertAdjacentElement('afterend', pad);
   inp.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
 }
 function ladderCheck(){
   const inp = $('#lin'); if (!inp || !inp.value) return;
   const row = pr.model.rows[pr.i], answer = String(row.answer).trim();
-  if (inp.value.trim() === answer) {
-    $('#la'+pr.i).textContent = answer; $('#lr'+pr.i).classList.remove('now'); $('#lr'+pr.i).classList.add('done');
-    $('#prHint').textContent = ''; pr.wrongs = 0; sfx(pr.i === pr.model.targetIndex ? 'good' : 'tick');
-    if (pr.i + 1 < pr.model.rows.length) { pr.i++; ladderStep(); } else ladderDone();
-  } else {
+  if (inp.value.trim() === answer) ladderRight(answer);
+  else {
     pr.wrongs++; sfx('bad'); inp.classList.remove('wrong'); void inp.offsetWidth; inp.classList.add('wrong'); inp.select();
     $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs);
   }
+}
+function ladderRight(text){
+  $('#la'+pr.i).textContent = text; $('#lr'+pr.i).classList.remove('now'); $('#lr'+pr.i).classList.add('done');
+  $('#prHint').textContent = ''; pr.wrongs = 0; sfx(pr.i === pr.model.targetIndex ? 'good' : 'tick');
+  if (pr.i + 1 < pr.model.rows.length) { pr.i++; ladderStep(); } else ladderDone();
 }
 function ladderDone(){
   S.coins += 3; save(); updateHeader();
@@ -2274,6 +2359,7 @@ $('#spStart').addEventListener('click', () => {
 });
 function sprintDrillTypes(){
   return Object.keys(DRILL_IMPL).filter(type => {
+    if (!DRILL_IMPL[type].sprintItem) return false;       // choice-only pop-ups (stories) stay out of the sprint
     const d = DRILLS[type], unlock = !d.sprintUnlock || (S[d.sprintUnlock.unit]?.st?.[d.sprintUnlock.station] || 0) > 0;
     return unlock && drillTypeOn(drillSettings(), type);
   });
