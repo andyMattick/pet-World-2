@@ -16,7 +16,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
 
 | Neighborhood | Follows | Status |
 |---|---|---|
-| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅ | building |
+| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅, Pizza Parlor (stations 1 to 3) | building |
 | 5th grade | Khan 5th grade | later |
 | **6th grade** | Khan 6th grade: Café ✅, Bakery ✅, Market, Clock Tower, Ice Rink, Potion Lab, Pet Houses, Pet Show | building |
 | 7th grade | Khan 7th grade (needed for next school year) | next year |
