@@ -9,7 +9,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
 - **One save** per student: one coin purse, one Sticker Book, one Fact Sprint record.
 - **Each neighborhood** has its own shops, stations, quizzes, unit tests, and reward sets (pets and decorations), like the Café and Bakery today.
 - **Students can walk between neighborhoods** any time, to review an earlier grade or peek ahead.
-- **Home grade:** the teacher (class) or grown-up (family) sets each student's home neighborhood. The town opens there, and the dashboard shows it first. Local mode asks once, when the town is named.
+- **Home grade:** the class sets its students' home neighborhood (at home, the grown-up's class does). The town opens there, and the dashboard shows it first. Local mode asks once, when the town is named.
 - **Nothing is lost when a grade is added.** Progress is saved by skill id and shop id, and every skill id is unique across the whole game.
 
 ## Neighborhoods, in order
@@ -34,7 +34,7 @@ The order of Geometry and Algebra 2 can follow the school's sequence. Neighborho
 - **Registry:** `NEIGHBORHOODS = { g4: {name:'4th grade', shops:[…]}, g6: {name:'6th grade', shops:['cafe','bakery', …]}, … }`. `BUILDINGS`, `SHOPS`, unit tests, and reward sets are grouped by neighborhood. Every skill and shop id stays unique.
 - **Save:** add `S.home` (default `'g6'`, so every existing save keeps working unchanged). Progress keeps living under shop and skill ids, so adding neighborhoods changes nothing that's already saved.
 - **Town screen:** a neighborhood switcher at the top (home first). "Opens after the unit test of the shop before" works *within* a neighborhood. The first shop of every neighborhood is open.
-- **Classes and families:** `classes.game_settings.home` sets a class's home grade. In a family, the grown-up sets it per kid (stored with the student's settings). No new tables. The family-account sign-up is in `GRADE4.md`.
+- **Classes:** `classes.game_settings.home` sets a class's home grade. At-home students join a class the grown-up makes (no family accounts). No new tables.
 - **Teacher dashboard:** tabs grouped by neighborhood, home first.
 - **Grade trophy:** passing every unit test in a neighborhood gives a trophy for the Sticker Book.
 - **Verify:** checks that `g6` still lists the Café and Bakery and that `S.home` defaults to `'g6'`.

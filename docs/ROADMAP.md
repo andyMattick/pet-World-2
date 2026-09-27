@@ -45,13 +45,13 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 | # | Work | Plan | Depends on | Size |
 |---|---|---|---|---|
-| 3 | **4th grade neighborhood** (follows the Sadlier workbook, with Khan links, same class features, and family accounts for home) | `GRADE4.md` (draft plan) | Neighborhoods | large |
+| 3 | **4th grade neighborhood** (follows the Sadlier workbook, with Khan links, same class features; at home, a grown-up makes a class and the kids use its class code) | `GRADE4.md` (draft plan) | Neighborhoods | large |
 | 4 | **7th grade neighborhood** (for next school year) | to be written | Neighborhoods | large |
 | 5 | **Big reviews** (fluency practice like times tables): addition and subtraction facts for younger kids, order of operations, integer rules, and more, each added with the neighborhood that needs it | `NEIGHBORHOODS.md` (list) | as listed | small each |
 
 Draft plans have the skills, steps, mix-ups, drills, and build steps. Before each one is built, its generator code gets written and stress-tested and pasted into the plan, like `BAKERY-1-SCALE.md`.
 
-**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a family account; read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
+**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a class code (no family accounts); read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
 
 ### Checklist
 
@@ -59,10 +59,10 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 1b. Bakery station 3, Boxing Treats, with the reciprocal drill
 - [x] 1c. Bakery station 4, The Register, with the long-division layout
 - [x] 1d. Bakery station 5, Bulk Orders, and the Bakery Unit Test
-- [x] 2a. 4th grade: owner decisions (shop names, family accounts, read-aloud off), except checking lesson titles against the workbook
+- [x] 2a. 4th grade: owner decisions (shop names, class codes at home, read-aloud off), except checking lesson titles against the workbook
 - [x] 1e. Word-problem practice for the Café (ratio stories)
 - [x] 2. Neighborhoods in the engine: home grade, switcher, grade trophy (`NEIGHBORHOODS-0-ENGINE.md`). Dashboard tabs by neighborhood come with the first 4th grade shop
-- [ ] 3a. 4th grade: family accounts
+- [x] 3a. 4th grade at home: no family accounts; a grown-up makes a class and sets its Home grade
 - [ ] 3b. 4th grade: one shop at a time, Lemonade Stand first
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 

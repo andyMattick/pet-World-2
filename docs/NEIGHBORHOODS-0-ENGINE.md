@@ -20,7 +20,7 @@ The engine lets the town hold more than one grade. Nothing changes on screen unt
 
 ## Still to do, with the 4th grade build
 
-- Families: the grown-up sets each kid's home grade (stored with the student's settings), in `GRADE4.md`'s family accounts step.
+- At home: no family accounts. A grown-up makes a class and sets its Home grade (`GRADE4.md`).
 - Teacher dashboard: shop tabs grouped by neighborhood, home first, once a 4th grade shop has skills.
 - A built 4th grade shop needs a `SHOPS` entry, stations, rewards, and `open:true` on its `BUILDINGS` entry. Setting `open:true` is what makes the switcher appear.
 

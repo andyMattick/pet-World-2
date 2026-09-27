@@ -4,7 +4,7 @@
 
 ## Goal
 
-A 4th grade version of Pet Town, first for a student at home (in a family account, below), with the same class features (class code and PIN, teacher dashboard, quizzes, practice time, music). It follows the **Sadlier *Progress Mathematics* Grade 4** workbook in chapter order, with a Khan Academy 4th grade practice link for every skill.
+A 4th grade version of Pet Town, first for a student at home (joining with a class code, below), with the same class features (class code and PIN, teacher dashboard, quizzes, practice time, music). It follows the **Sadlier *Progress Mathematics* Grade 4** workbook in chapter order, with a Khan Academy 4th grade practice link for every skill.
 
 It uses the **same game engine** as the 6th grade town: shops, stations, step-by-step orders, mix-ups, drills, quizzes, and rewards. Only the content is new.
 
@@ -12,21 +12,20 @@ It uses the **same game engine** as the 6th grade town: shops, stations, step-by
 
 1. **Workbook: not confirmed yet.** This plan uses Sadlier *Progress Mathematics* Grade 4 (36 lessons in 5 units, below). The owner checks the lesson titles against the workbook later. The Lemonade Stand (lessons 1 to 5) is built first and doesn't depend on the uncertain lessons.
 2. **Shop names:** the names below are final.
-3. **Home, with class features:** the at-home student gets the class features (saves, dashboard, quizzes) through a **family account** (see below).
+3. **Home, with class features:** the at-home student gets the class features (saves, dashboard, quizzes) by joining a class the grown-up makes (see below).
 4. **Read-aloud:** off by default. Students turn it on themselves.
 5. **Order:** the Bakery (stations 2 to 5) is finished first, then the neighborhood engine (`NEIGHBORHOODS.md`), then 4th grade starting with the Lemonade Stand.
 6. **4th grade is a neighborhood** in the same town, not a separate town (`NEIGHBORHOODS.md`). A student can move between 4th and 6th grade and keeps all progress.
 
-## Family accounts (part of step G4-0)
+## At home: a class code, no family accounts (owner decision)
 
-Lets a student play at home without a teacher's class:
+There are **no family accounts**. An at-home student uses a **class code**, exactly like a school class:
 
-- A grown-up signs up in the teacher app with email, the same as a teacher, and picks **Family** instead of **Class**. It asks for the grade (4th or 6th).
-- That makes a private family code. The kids join with the family code, their name, and a PIN, exactly like a class, so saves, quizzes, practice time, and the dashboard all work unchanged.
-- The grown-up sees the same dashboard, with family wording ("Your kids" instead of "Class").
+- The grown-up signs up in the teacher app with email, the same as a teacher, and makes a class (for example "Abi at home").
+- The kids join with that class code, their name, and a PIN, so saves, quizzes, practice time, and the dashboard all work unchanged.
+- The class's **Home grade** (class settings) sets where the town opens. A family with a 4th grader and a 6th grader makes two classes, one per grade. Students can still walk to the other neighborhood any time.
 - A grown-up sets it up, not the child, which keeps it right for kids under 13.
-- Database: a `kind` of `'class'` or `'family'` (`'class'` by default) can live in `classes.game_settings`, so no new table is needed. If a new column turns out to be cleaner, it goes in a **new** migration file.
-- A family can have both a 4th grader and a 6th grader, so the course is chosen **per student** in a family (in a class it's per class).
+- No new tables, columns, or sign-up screens.
 
 ## Sadlier units → shops
 
@@ -95,14 +94,14 @@ Khan practice links: each skill's exercise URL goes in the registry when its sta
 
 ## Engine changes (step G4-0)
 
-**Replaced by `NEIGHBORHOODS.md`:** 4th grade is a neighborhood in the same town, with a home grade per student instead of one course per town. The notes below are kept for the family-account details; read "course" as "home grade".
+**Replaced by `NEIGHBORHOODS.md`:** 4th grade is a neighborhood in the same town, with a home grade per student instead of one course per town. In the notes below, read "course" as "home grade".
 
 Original notes:
 
 - **Courses in the registry:** `COURSES = { g6: { name: '6th grade', shops: ['cafe', 'bakery', …] }, g4: { name: '4th grade', shops: ['lemonade', 'toys', …] } }`. `BUILDINGS`, `SHOPS`, and rewards are grouped by course.
 - **Which course a town follows:**
   - Class: `classes.game_settings.course` (`'g6'` by default), set by the teacher when creating the class. This needs no database change, because `game_settings` is already there.
-  - Family: set per student when the grown-up adds a kid (stored with the student's settings).
+  - At home: the grown-up's class sets it, like any class.
   - Local mode: the grown-ups pick 4th or 6th grade when naming the town.
   - Saved as `S.course`. Old saves are `'g6'`.
 - **The town screen, Sticker Book, unit tests, and shop-opening rule** read the course's shops instead of all shops. "Opens after the unit test of the shop before" uses the course's order.
@@ -125,7 +124,7 @@ Each is built inside the station plan that first needs it, the same way the Bake
 
 | Plan | What |
 |---|---|
-| `NEIGHBORHOODS-0-ENGINE.md` | Neighborhoods in the engine (see `NEIGHBORHOODS.md`), then family accounts |
+| `NEIGHBORHOODS-0-ENGINE.md` | Neighborhoods in the engine (see `NEIGHBORHOODS.md`). Built |
 | `GRADE4-1-LEMONADE.md` | Lemonade Stand, 4 stations, and its reward set |
 | `GRADE4-2-TOYS.md` | Toy Shop, 4 stations |
 | `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations (after the Bakery's fraction answers exist) |
