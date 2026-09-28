@@ -40,6 +40,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] 6th grade Clock Tower (all 3 stations): exponents, powers of fractions and decimals, order of operations with a step-by-step engine, comparing powers (`CLOCK.md`)
 - [x] Dashboard shop tabs grouped by grade, opening on the class's home grade; class settings grouped by grade
 - [x] Pet Shop & Sticker Book grouped by grade: a grade switch on top, and it opens on the grade the student is standing in
+- [x] 6th grade Ice Rink (all 4 stations): negative numbers, number lines, opposites, comparing and ordering, absolute value, and negative answers with a ± button (`RINK.md`)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -56,7 +57,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 | # | Work | Khan unit | Main topics | Plan | Size |
 |---|---|---|---|---|---|
-| 1 | ⛸️ **Ice Rink** | 5: Negative numbers | Integers on a number line, opposites, comparing and ordering, absolute value, negatives in context | to be written | medium |
+| 1 | ⛸️ ~~Ice Rink~~ ✅ | 5: Negative numbers | Built | `RINK.md` | done |
 | 2 | 🧪 **Potion Lab** | 6 and 7: Variables and expressions, equations and inequalities | Parts of expressions, evaluating, writing expressions, GCF and LCM, the distributive property, equivalent expressions, one-step equations, inequalities, dependent and independent variables | to be written | large |
 | 3 | 🏡 **Pet Houses** | 8 to 10: Plane figures, the coordinate plane, 3D figures | Area of parallelograms, triangles, and composite shapes; points and polygons in all four quadrants; nets, surface area, volume with fractional edges | to be written | large |
 | 4 | 🏆 **Pet Show** | 11: Data and statistics | Statistical questions, dot plots and histograms, mean and median, range, IQR, MAD, box plots | to be written | medium |
@@ -90,8 +91,8 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3i. 6th grade: the Market Stall (`MARKET.md`)
 - [x] 3j. 6th grade: the Clock Tower (`CLOCK.md`)
 - [x] 3l. Dashboard shop tabs and class settings grouped by grade
-- [ ] 3k. 6th grade: the Ice Rink (negative numbers)  ← next
-- [ ] 3m. 6th grade: the Potion Lab (expressions, equations, inequalities)
+- [x] 3k. 6th grade: the Ice Rink (`RINK.md`)
+- [ ] 3m. 6th grade: the Potion Lab (expressions, equations, inequalities)  ← next
 - [ ] 3n. 6th grade: Pet Houses (area, coordinate plane, 3D figures)
 - [ ] 3o. 6th grade: the Pet Show (data and statistics)
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
