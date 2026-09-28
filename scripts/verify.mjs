@@ -120,6 +120,9 @@ need('src/game/game.js', 'const HOUSES_GEN', 'the Pet Houses area and coordinate
 need('src/game/game.js', 'const HOUSES2_GEN', 'the Pet Houses volume and surface area generators');
 need('src/game/game.js', 'Object.assign(GEN, HOUSES2_GEN)', 'the Pet Houses generators merged into GEN');
 need('src/shared/registry.ts', 'export const HOUSES_STATIONS', 'the Pet Houses stations');
+need('src/game/game.js', 'const SHOW_GEN', 'the Pet Show generators');
+need('src/game/game.js', 'Object.assign(GEN, SHOW_GEN)', 'the Pet Show generators merged into GEN');
+need('src/shared/registry.ts', 'export const SHOW_STATIONS', 'the Pet Show stations');
 need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
 need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
 need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');

@@ -571,3 +571,11 @@ table.xy-table th{font-size:.95rem}
 .plane-pic .grid-name{fill:var(--butter); font-size:14px; font-weight:700}
 .plane-pic .nl-dot{fill:var(--berry); stroke:currentColor; stroke-width:1.5}
 .plane-pic .plane-poly{fill:var(--butter); fill-opacity:.35; stroke:var(--butter); stroke-width:2}
+/* dot plots, histograms, and box plots (Pet Show) */
+.stat-pic{display:block; max-width:100%; height:auto; margin:0 auto}
+.stat-pic .dp-dot{fill:var(--butter); stroke:currentColor; stroke-width:1}
+.stat-pic .hist-bar{fill:var(--butter); stroke:currentColor; stroke-width:1.5}
+.stat-pic .grid-line{stroke:currentColor; stroke-width:.6; opacity:.3}
+.stat-pic .box-rect{fill:var(--butter); fill-opacity:.85; stroke:currentColor; stroke-width:2}
+.stat-pic .box-med{stroke:var(--berry); stroke-width:4}
+.opt svg.stat-pic{max-width:100%; height:auto}
