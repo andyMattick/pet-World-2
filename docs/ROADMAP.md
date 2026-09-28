@@ -38,6 +38,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Garden Center stations 1 and 2: converting units, area and perimeter (`GRADE4-4-GARDEN.md`)
 - [x] 6th grade Market Stall (all 4 stations): unit rates, comparing deals, percents, percents as decimals and fractions, and percent problems with double number lines (`MARKET.md`)
 - [x] 6th grade Clock Tower (all 3 stations): exponents, powers of fractions and decimals, order of operations with a step-by-step engine, comparing powers (`CLOCK.md`)
+- [x] Dashboard shop tabs grouped by grade, opening on the class's home grade; class settings grouped by grade
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -58,7 +59,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 Draft plans have the skills, steps, mix-ups, drills, and build steps. Before each one is built, its generator code gets written and stress-tested and pasted into the plan, like `BAKERY-1-SCALE.md`.
 
-**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a class code (no family accounts); read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
+**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a class code (no family accounts); read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them). 4th grade is paused for now (owner decision); 6th grade comes first.
 
 ### Checklist
 
