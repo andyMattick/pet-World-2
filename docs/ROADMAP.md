@@ -39,6 +39,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] 6th grade Market Stall (all 4 stations): unit rates, comparing deals, percents, percents as decimals and fractions, and percent problems with double number lines (`MARKET.md`)
 - [x] 6th grade Clock Tower (all 3 stations): exponents, powers of fractions and decimals, order of operations with a step-by-step engine, comparing powers (`CLOCK.md`)
 - [x] Dashboard shop tabs grouped by grade, opening on the class's home grade; class settings grouped by grade
+- [x] Pet Shop & Sticker Book grouped by grade: a grade switch on top, and it opens on the grade the student is standing in
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation

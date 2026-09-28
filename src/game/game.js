@@ -3390,7 +3390,7 @@ function show(id){
   updateHeader();
   if (id === 'home') renderHome();
   if (id === 'cafe') renderShopFloor(currentShop);
-  if (id === 'book') renderBook(bookUnit);
+  if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); renderBook(b && b.hood === currentHood() ? bookUnit : buildingsIn(currentHood())[0].id); }   // opens on the grade you're standing in
   window.scrollTo(0,0);
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
@@ -4853,18 +4853,20 @@ function renderBook(unit){
     const set = rewards.filter(reward => reward.kind === kind), count = set.filter(owns).length, complete = count === set.length;
     return `<section class="book-row${complete ? ' complete' : ''}"><div class="book-row-head"><h3>${label}</h3><span>${count} of ${set.length}</span>${complete ? '<strong class="book-complete">✓ Complete!</strong>' : ''}</div><div class="book-grid">${set.map(box).join('')}</div></section>`;
   };
-  const bookHoods = new Set(builtHoods().map(n => n.id));
-  const tabs = BUILDINGS.filter(b => bookHoods.has(b.hood)).map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
+  /* one grade at a time: a grade switch on top (once two grades are built), then that grade's shops */
+  const grades = builtHoods().length > 1 ? `<div class="book-grades" role="tablist" aria-label="Grade">${builtHoods().map(n => `<button type="button" class="book-grade${n.id === building.hood ? ' active' : ''}" role="tab" aria-selected="${n.id === building.hood}" data-book-hood="${n.id}">${n.emoji} ${esc(n.name)}</button>`).join('')}</div>` : '';
+  const tabs = BUILDINGS.filter(b => b.hood === building.hood).map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
   const pageComplete = rewards.length && rewards.every(owns);
   const masterStamp = pageComplete || unitTestPassed(building.id);
   const pageClass = `${!unitOpen(building.id) ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
   const trophies = NEIGHBORHOODS.filter(n => S.completedSets.includes(`hood:${n.id}`)).map(n => `<span class="book-trophy">🏆 ${esc(n.name)}</span>`).join('');
-  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div>${trophies ? `<div class="book-trophies">${trophies}</div>` : ''}<div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!unitOpen(building.id) ? `<div class="book-soon-banner">${esc(unitLockedText(building))}</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
+  $('#bookWrap').innerHTML = `<div class="backrow"><h2>📒 Sticker Book</h2><button class="btn small" data-go="home">Back to town</button></div>${trophies ? `<div class="book-trophies">${trophies}</div>` : ''}${grades}<div class="book-tabs">${tabs}</div><div class="book-page${pageClass}">${!unitOpen(building.id) ? `<div class="book-soon-banner">${esc(unitLockedText(building))}</div>` : ''}<div class="book-page-head"><span class="book-building">${building.emoji}</span><div><h2>${esc(building.name)}</h2><p>${owned} of ${rewards.length} stickers</p></div>${masterStamp ? `<div class="book-stamp">${esc(building.name)}<br>Master</div>` : ''}</div>${row('pet','Pets')}${row('decor','Decorations')}<p class="book-hint" id="bookHint" aria-live="polite"></p></div>`;
   const seen = rewards.filter(reward => owns(reward) && !S.seenCollection.includes(reward.id)).map(reward => reward.id);
   if (seen.length) { S.seenCollection.push(...seen); save(); }
 }
 $('#bookWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.bookHood) { renderBook(buildingsIn(b.dataset.bookHood)[0].id); return; }
   if (b.dataset.bookUnit) { renderBook(b.dataset.bookUnit); return; }
   if (b.dataset.bookBuy) { buyReward(b.dataset.bookBuy); updateHeader(); renderBook(bookUnit); return; }
   if (b.dataset.bookHelper) {

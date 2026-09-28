@@ -51,3 +51,7 @@ Commit after each step. Before each commit, run `npm run verify`, `npm run typec
 5. Set bonuses still pay once. Reloading doesn't pay them again.
 6. The celebration's **Go to the shop** opens the right page.
 7. Old saves load with every owned item filled in.
+
+## Grades
+
+Once two grades are built, the book shows one grade at a time: a 4th grade / 6th grade switch on top, then that grade's shop tabs. It opens on the grade the student is standing in (the neighborhood on screen in town).
