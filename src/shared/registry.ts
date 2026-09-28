@@ -57,6 +57,19 @@ export const SKILLS: Record<string, Skill> = {
   orderOps: { name: 'Order of operations', short: 'Order of operations with exponents', st: 2, shop: 'clock', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:cc-6th-exponents-and-order-of-operations/x0267d782:more-on-order-of-operations/e/order_of_operations_2' },
   orderFracExp: { name: 'Order of operations with fractions and exponents', short: 'Fractions and exponents', st: 3, shop: 'clock', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:cc-6th-exponents-and-order-of-operations/x0267d782:more-on-order-of-operations/e/evaluating-numerical-expressions-with-exponents' },
   compareExp: { name: 'Comparing exponent expressions', short: 'Comparing powers', st: 3, shop: 'clock', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:cc-6th-exponents-and-order-of-operations/x0267d782:more-on-order-of-operations/v/comparing-exponent-expressions' },
+  // 6th grade, Ice Rink (Khan unit 5)
+  negIntro: { name: 'Interpreting negative numbers', short: 'What negatives mean', st: 1, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-neg-num-intro/e/negative_number_word_problems' },
+  negLine: { name: 'Negative numbers on the number line', short: 'Negatives on a number line', st: 1, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-neg-num-intro/e/number_line_2' },
+  opposites: { name: 'Number opposites', short: 'Opposites', st: 1, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/negative-symbol-as-opposite/e/number-opposites' },
+  negDecLine: { name: 'Negative decimals on the number line', short: 'Negative decimals', st: 2, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-neg-dec-frac-number-line/e/decimals_on_the_number_line_3' },
+  negFracLine: { name: 'Negative fractions on the number line', short: 'Negative fractions', st: 2, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-neg-dec-frac-number-line/e/fractions_on_the_number_line_3' },
+  cmpLine: { name: 'Compare rational numbers using a number line', short: 'Compare on a number line', st: 3, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-comparing-negative-numbers/e/understanding-inequalities-and-the-number-line' },
+  cmpRational: { name: 'Compare rational numbers', short: 'Compare rational numbers', st: 3, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-comparing-negative-numbers/e/ordering-rational-numbers' },
+  orderNeg: { name: 'Ordering negative numbers', short: 'Order rational numbers', st: 3, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/x0267d782:ordering-rational-numbers/v/ordering-negative-numbers' },
+  numIneq: { name: 'Writing numerical inequalities', short: 'Writing inequalities', st: 3, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-comparing-negative-numbers/e/writing-numerical-inequalities' },
+  absVal: { name: 'Finding absolute values', short: 'Absolute value', st: 4, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/cc-6th-absolute-value/e/absolute_value' },
+  cmpAbs: { name: 'Compare and order absolute values', short: 'Compare absolute values', st: 4, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/x0267d782:cc-6th-comparing-absolute-values/e/comparing_absolute_values' },
+  absWord: { name: 'Interpreting absolute value', short: 'Absolute value in words', st: 4, shop: 'rink', url: 'https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic/x0267d782:cc-6th-comparing-absolute-values/e/absolute-value-word-problems' },
   // 4th grade, Lemonade Stand (Sadlier lessons 1 to 5)
   cmpMult: { name: 'Compare with multiplication', short: 'Compare with ×', st: 1, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-multiplication-and-division-2/imp-comparing-with-multiplication/e/comparing-with-multiplication' },
   cmpWord: { name: 'Compare with multiplication word problems', short: 'Comparing word problems', st: 1, shop: 'lemonade', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-multiplication-and-division-2/imp-comparing-with-multiplication/e/multiplicative-comparison-word-problems' },
@@ -326,11 +339,18 @@ export const CLOCK_STATIONS: Station[] = [
   { id: 2, name: 'Gears',      emoji: '⚙️', kid: 'Order of operations', skills: ['orderNoExp', 'orderOps'] },
   { id: 3, name: 'Clock Face', emoji: '🕰️', kid: 'Fractions, exponents, and comparing powers', skills: ['orderFracExp', 'compareExp'] }
 ];
+export const RINK_STATIONS: Station[] = [
+  { id: 1, name: 'Thermometer', emoji: '🌡️', kid: 'What negative numbers mean', skills: ['negIntro', 'negLine', 'opposites'] },
+  { id: 2, name: 'Rink Lines',  emoji: '📏', kid: 'Negative decimals and fractions', skills: ['negDecLine', 'negFracLine'] },
+  { id: 3, name: 'Race Board',  emoji: '🏁', kid: 'Comparing and ordering', skills: ['cmpLine', 'cmpRational', 'orderNeg', 'numIneq'] },
+  { id: 4, name: 'Ice Depth',   emoji: '🧊', kid: 'Absolute value', skills: ['absVal', 'cmpAbs', 'absWord'] }
+];
 export const SHOPS: Record<string, Shop> = {
   cafe:   { id: 'cafe',   name: 'Pet Café', emoji: '☕', unitLabel: 'Khan Academy 6th grade, Unit 1: Ratios', stations: STATIONS },
   bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS },
   market: { id: 'market', name: 'Market Stall', emoji: '🍎', unitLabel: 'Khan Academy 6th grade, Unit 3: Rates and percentages', stations: MARKET_STATIONS },
   clock:  { id: 'clock',  name: 'Clock Tower', emoji: '🕰️', unitLabel: 'Khan Academy 6th grade, Unit 4: Exponents and order of operations', stations: CLOCK_STATIONS },
+  rink:   { id: 'rink',   name: 'Ice Rink', emoji: '⛸️', unitLabel: 'Khan Academy 6th grade, Unit 5: Negative numbers', stations: RINK_STATIONS },
   lemonade: { id: 'lemonade', name: 'Lemonade Stand', emoji: '🍋', unitLabel: 'Sadlier Grade 4, lessons 1 to 5, with Khan Academy 4th grade practice', stations: LEMON_STATIONS },
   toys: { id: 'toys', name: 'Toy Shop', emoji: '🧸', unitLabel: 'Sadlier Grade 4, lessons 6 to 13, with Khan Academy 4th grade practice', stations: TOY_STATIONS },
   pizza: { id: 'pizza', name: 'Pizza Parlor', emoji: '🍕', unitLabel: 'Sadlier Grade 4, lessons 14 to 25, with Khan Academy 4th grade practice', stations: PIZZA_STATIONS },
@@ -360,7 +380,7 @@ export const UNIT_SKILLS: Record<string, string[]> = {
   bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'],
   lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'],
   toys: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms', 'roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti', 'mult1by10s', 'areaMult1', 'distMult', 'estProducts', 'multRegroup', 'areaMult2', 'partialProd2', 'mult2digit', 'estDiv', 'interpRem', 'divRem', 'divPV', 'areaDiv', 'estQuot', 'divBy2345', 'divBy6789'],
-  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord', 'multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord', 'eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'], garden: ['convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'moneyWord', 'metricWord', 'customaryWord', 'apSituation', 'rectMeasure', 'apMissing', 'apWord'], market: ['unitRate', 'rateProblems', 'compareRates', 'introPercent', 'pctModel', 'pctConvert', 'benchmarkPct', 'pctEquivalent', 'pctVisual', 'findingPct', 'pctWord'], clock: ['expMeaning', 'powWhole', 'powFrac', 'orderNoExp', 'orderOps', 'orderFracExp', 'compareExp'], rink: [], potion: [], houses: [], show: []
+  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord', 'multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord', 'eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'], garden: ['convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'moneyWord', 'metricWord', 'customaryWord', 'apSituation', 'rectMeasure', 'apMissing', 'apWord'], market: ['unitRate', 'rateProblems', 'compareRates', 'introPercent', 'pctModel', 'pctConvert', 'benchmarkPct', 'pctEquivalent', 'pctVisual', 'findingPct', 'pctWord'], clock: ['expMeaning', 'powWhole', 'powFrac', 'orderNoExp', 'orderOps', 'orderFracExp', 'compareExp'], rink: ['negIntro', 'negLine', 'opposites', 'negDecLine', 'negFracLine', 'cmpLine', 'cmpRational', 'orderNeg', 'numIneq', 'absVal', 'cmpAbs', 'absWord'], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -435,7 +455,7 @@ export const BUILDINGS: Building[] = [
   {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers', hood:'g6', open:true},
   {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages', hood:'g6', open:true},
   {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations', hood:'g6', open:true},
-  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers', hood:'g6'},
+  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers', hood:'g6', open:true},
   {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations', hood:'g6'},
   {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures', hood:'g6'},
   {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6'},
@@ -559,7 +579,11 @@ export const MIS: Record<string, Misconception> = {
   expOnlyTop:        { name: 'Raises only the numerator to the power', kid: 'The whole fraction is multiplied: top times top AND bottom times bottom.', tip: 'Write (2/3)² as 2/3 × 2/3 before multiplying.', skills: ['powFrac'] },
   leftToRight:       { name: 'Works left to right, ignoring the order of operations', kid: 'Multiply and divide before you add and subtract.', tip: 'Underline the × and ÷ first, and circle grouping symbols. Only same-level operations go left to right.', skills: ['orderNoExp', 'orderOps', 'orderFracExp'] },
   ignoresParens:     { name: 'Ignores parentheses or brackets', kid: 'Do what is inside the parentheses first.', tip: 'Box each set of parentheses and work the innermost one first.', skills: ['orderNoExp', 'orderOps', 'orderFracExp'] },
-  expLast:           { name: 'Does another operation before the exponent', kid: 'Exponents come right after grouping symbols.', tip: 'Rewrite each power as its value before doing anything else outside parentheses.', skills: ['orderOps', 'orderFracExp'] }
+  expLast:           { name: 'Does another operation before the exponent', kid: 'Exponents come right after grouping symbols.', tip: 'Rewrite each power as its value before doing anything else outside parentheses.', skills: ['orderOps', 'orderFracExp'] },
+  signWrong:         { name: 'Uses the wrong sign', kid: 'Below, owing, losing, down, and left of 0 are negative.', tip: 'Ask "which direction from 0?" before writing the number. Opposite situations get opposite signs.', skills: ['negIntro', 'negLine', 'opposites', 'negDecLine', 'negFracLine'] },
+  negCompare:        { name: 'Thinks a negative with bigger digits is bigger', kid: 'For negatives, the one closer to 0 is greater: −2 > −8.', tip: 'Use a thermometer or number line: farther right (warmer) is greater. −8° is colder than −2°.', skills: ['cmpLine', 'cmpRational', 'orderNeg', 'numIneq'] },
+  absNegative:       { name: 'Gives a negative absolute value', kid: 'Absolute value is a distance, so it is never negative.', tip: 'Read |−6| as "the distance from −6 to 0." A minus sign outside the bars (−|6|) is the only way to get a negative.', skills: ['absVal', 'cmpAbs', 'absWord'] },
+  absIgnored:        { name: 'Compares the numbers instead of their absolute values', kid: 'Find each distance from 0 first, then compare.', tip: 'Have students rewrite each absolute value as a plain number before comparing or ordering. A debt of more than $20 is a balance less than −$20.', skills: ['absVal', 'cmpAbs', 'absWord'] }
 };
 
 /** Mastery rule shared by game and dashboard: 4+ tries and 75% of the last 8 perfect. */

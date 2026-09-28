@@ -543,3 +543,7 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 /* order of operations: the expression with the part being worked on highlighted (Clock Tower) */
 .oo-expr{text-align:center; font-size:1.4rem; margin:4px 0 8px}
 .oo-expr mark{background:var(--butter); color:#3a2a1a; border-radius:6px; padding:0 4px}
+/* negative numbers (Ice Rink): number line arrows and point names, and the ± button beside an answer box */
+.num-line .nl-arrow{fill:currentColor}
+.num-line .nl-name{font-weight:700; font-size:13px}
+.btn.neg-btn{margin-left:8px; min-width:48px; min-height:44px; font-size:1.5rem; font-weight:800; vertical-align:middle}
