@@ -72,7 +72,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 3d. 4th grade: Toy Shop stations 3 and 4 (multiplying and dividing, with area models), and the factor-pair and rounding sprint skills
 - [x] 3e. 4th grade: Pizza Parlor stations 1 to 3 (`GRADE4-3-PIZZA.md`)
 - [x] 3f. 4th grade: Pizza Parlor stations 4 and 5 (`GRADE4-3-PIZZA.md`)
-- [ ] 3g. 4th grade: Garden Center, then Art Studio
+- [x] 3g. 4th grade: Garden Center stations 1 and 2, converting units and area and perimeter (`GRADE4-4-GARDEN.md`)
+- [ ] 3h. 4th grade: Garden Center stations 3 (line plots) and 4 (angles), then the Art Studio
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run

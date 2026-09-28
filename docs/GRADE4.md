@@ -115,7 +115,7 @@ Original notes:
 |---|---|
 | Toy Shop | Place-value blocks and tables, area models for multiplication and division |
 | Pizza Parlor | Fraction bars and number lines (reusing the Bakery's fraction answers) |
-| Garden Center | Line plots, a protractor picture for angles |
+| Garden Center | Rectangles with a unit grid (`rectSVG`); to come: line plots, a protractor picture for angles |
 | Art Studio | Tap-to-choose points, lines, and shapes; symmetry lines |
 
 Each is built inside the station plan that first needs it, the same way the Bakery builds fraction answers in station 2.
@@ -128,7 +128,7 @@ Each is built inside the station plan that first needs it, the same way the Bake
 | `GRADE4-1-LEMONADE.md` | Lemonade Stand, 4 stations, and its reward set. Built |
 | `GRADE4-2-TOYS.md` | Toy Shop, 4 stations. Built |
 | `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations. Built |
-| `GRADE4-4-GARDEN.md` | Garden Center, 4 stations |
+| `GRADE4-4-GARDEN.md` | Garden Center, 4 stations. Stations 1 and 2 built |
 | `GRADE4-5-ART.md` | Art Studio, 3 stations |
 
 Like the Bakery, every station's generator code is written and stress-tested before it reaches the coder.
