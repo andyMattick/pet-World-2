@@ -524,3 +524,5 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .num-line .nl-text{fill:currentColor; font-size:14px; text-anchor:middle}
 .num-line .nl-small{font-size:11px}
 .num-line .nl-dot{fill:var(--berry); stroke:currentColor; stroke-width:1.5}
+.num-line .nl-jump{fill:none; stroke:var(--berry); stroke-width:2}
+.hundred-grid .fb-on, .hundred-grid .fb-off{stroke-width:1}

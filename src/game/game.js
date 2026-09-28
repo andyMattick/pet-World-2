@@ -2467,6 +2467,135 @@ function mixedProblem(lvl, regroup){
 }
 Object.assign(GEN, PIZZA_GEN);
 
+/* ===== 4th grade, Pizza Parlor stations 4 and 5 (Sadlier lessons 21 to 25): multiplying fractions by whole numbers, tenths and hundredths ===== */
+/* a 10 × 10 grid with the first n squares shaded (hundredths) */
+function hundredGridSVG(n){
+  let g = '';
+  for (let i = 0; i < 100; i++){ const r = Math.floor(i / 10), c = i % 10; g += `<rect x="${1 + c * 16}" y="${1 + r * 16}" width="16" height="16" class="${i < n ? 'fb-on' : 'fb-off'}"/>`; }
+  return `<svg class="frac-bar hundred-grid" viewBox="0 0 162 162" width="162" role="img" aria-label="${n} of 100 squares shaded">${g}</svg>`;
+}
+/* k jumps of a/b on a number line from 0 (whole numbers labeled) */
+function jumpsLineSVG(a, b, k){
+  const top = Math.max(1, Math.ceil(k * a / b)), w = 300, L = 14, R = w - 14, step = (R - L) / (top * b), y = 44;
+  let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
+  for (let i = 0; i <= top * b; i++){ const x = L + i * step, whole = i % b === 0; g += `<line x1="${x}" y1="${y - (whole ? 10 : 6)}" x2="${x}" y2="${y + (whole ? 10 : 6)}" class="nl-line"/>`; if (whole) g += `<text x="${x}" y="${y + 26}" class="nl-text">${i / b}</text>`; }
+  for (let j = 0; j < k; j++){ const x1 = L + j * a * step, x2 = L + (j + 1) * a * step; g += `<path d="M${x1} ${y - 4} Q${(x1 + x2) / 2} ${y - 34} ${x2} ${y - 4}" class="nl-jump"/>`; }
+  return `<svg class="num-line" viewBox="0 0 ${w} 76" width="${w}" role="img" aria-label="${k} jumps of ${a}/${b}">${g}</svg>`;
+}
+const hund = v => Math.round(v * 100);                                    // hundredths as a whole number, exactly
+const decStr = h => XD.fmt(h, 2).replace(/^(\d+)$/, '$1');                 // 45 → "0.45", 50 → "0.5"
+const decEq = h => v => typeof v === 'number' && isFinite(v) && Math.abs(v * 100 - h) < 1e-6;
+const DEC_WORDS = h => { const t = Math.floor(h / 10) % 10, o = h % 10, w = Math.floor(h / 100);
+  const part = o === 0 ? `${ONES_W[t]} tenth${t === 1 ? '' : 's'}` : `${words3(h % 100)} hundredth${h % 100 === 1 ? '' : 's'}`;
+  return (w ? `${words3(w)} and ` : '') + part; };
+const PIZZA2_GEN = {
+  multFracModel(lvl){
+    const b = pick([3, 4, 5, 6, 8]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 3 ? 6 : 4), p = k * a;
+    return {title:'Party Orders', ctx:`${k} × ${a}/${b} model`, bubble:`Each party plate gets ${a}/${b} of a pizza. There are ${k} plates. How much pizza is that?`, helper:`${k} groups of ${a}/${b}: count all the shaded ${FRAC.part(b, true)}.`,
+      visual:`<div class="frac-pics">${Array.from({length:k}, () => fracBarSVG(a, b, {w:160})).join('')}</div>`,
+      steps:[{name:'Count the pieces', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a},
+          mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `${k} groups of ${a} ${FRAC.part(b, a > 1)} is ${k} × ${a} ${FRAC.part(b, true)}.`},
+        ...(p > b ? [fracStep('As a mixed number', `${p}/${b} = ?`, p, b, {mixedOnly:true, mis:v => FRAC.ok(v) && FRAC.same(v, p, b) && v[1] >= v[2] ? 'notMixed' : null})] : [])]};
+  },
+  multFracLine(lvl){
+    const b = pick([2, 3, 4, 5, 6]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), p = k * a;
+    return {title:'Party Orders', ctx:`${k} × ${a}/${b} jumps`, bubble:`A frog jumps ${a}/${b} of a meter, ${k} times. Where does it land?`, helper:'Count the jumps: each one is the same size.',
+      visual:jumpsLineSVG(a, b, k),
+      steps:[{name:'Where it lands', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `Each jump is ${a} small step${a > 1 ? 's' : ''}. ${k} jumps.`}]};
+  },
+  multUnitFrac(lvl){
+    const b = pick([2, 3, 4, 5, 6, 8, 10, 12]), k = rand(2, lvl === 1 ? b - 1 : 12);
+    if (lvl >= 2 && Math.random() < 0.5) return {title:'Party Orders', ctx:`${k}/${b} as unit fractions`, bubble:`Write ${k}/${b} as a whole number times a unit fraction.`, helper:`${k}/${b} is ${k} copies of 1/${b}.`,
+      visual:`<div class="frac-pics">${fracBarSVG(k, b, {w:200})}</div>`,
+      steps:[{name:'How many unit fractions', type:'concept', kind:'num', prompt:`${k}/${b} = ? × 1/${b}`, answer:k, eq:v => v === k, mis:v => v !== k && v === b ? 'multBoth' : null}]};
+    return {title:'Party Orders', ctx:`${k} × 1/${b}`, bubble:`Multiply: ${k} × 1/${b}`, helper:'A whole number times a unit fraction: the whole number goes on top.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × 1/${b}</div>`,
+      steps:[fracStep('Multiply', `${k} × 1/${b} = ?`, k, b, {mis:v => fracMis(v, k, b, [['multBoth', k, k * b]]), hint:() => `${k} copies of 1/${b} is ${k}/${b}.`})]};
+  },
+  multFracWhole(lvl){
+    const b = pick([3, 4, 5, 6, 8, 10]), a = rand(2, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
+    return {title:'Party Orders', ctx:`${k} × ${a}/${b}`, bubble:`Multiply: ${k} × ${a}/${b}`, helper:'Multiply the whole number by the numerator. The denominator stays the same.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${a}/${b}</div>`,
+      steps:[{name:'Count unit fractions', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ? × 1/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null},
+        fracStep('Multiply', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]]), hint:() => `${k} × ${a} = ${p}, so it's ${p}/${b}.${p > b ? ' That\'s more than 1: you can write it as a mixed number.' : ''}`})]};
+  },
+  multMixedWhole(lvl){
+    const b = pick([2, 3, 4, 5, 6, 8]), w = rand(1, lvl === 1 ? 2 : 4), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), top = w * b + a, P = k * top;
+    return {title:'Party Orders', ctx:`${k} × ${w} ${a}/${b}`, bubble:`Each pizza box needs ${w} ${a}/${b} feet of ribbon. How much ribbon for ${k} boxes?`, helper:'Turn the mixed number into a fraction, then multiply.',
+      visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${w} ${a}/${b}</div>`,
+      steps:[{name:'Improper fraction', type:'compute', kind:'num', prompt:`${w} ${a}/${b} = ?/${b}`, answer:top, eq:v => v === top, mis:v => v !== top && (v === w + a || v === w * a + b) ? 'improperWrong' : null},
+        fracStep('Multiply', `${k} × ${top}/${b} = ?`, P, b, {mis:v => { const id = fracMis(v, P, b, [['multBoth', P, k * b], ['wholeOnly', k * w * b + a, b]]); return id; }, hint:() => `${k} × ${top} = ${P}, so ${P}/${b}.`})],
+      answerSteps:[1]};
+  },
+  multFracWord(lvl){
+    const [e, n] = pick(PIZZA_KIDS), b = pick([2, 3, 4, 8]), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
+    const [thing, unit] = pick([['pizza', 'cup of cheese'], ['cake', 'cup of sugar'], ['batch of dough', 'cup of flour'], ['lap', 'mile']]);
+    const story = unit === 'mile' ? `${n} runs ${a}/${b} of a mile each lap and runs ${k} laps. How far does ${n} run?` : `Each ${thing} needs ${a}/${b} ${unit}. ${n} makes ${k}. How much ${unit.replace(/^cup of /, '')} is that, in cups?`;
+    const opts = choiceOf({text:`${k} × ${a}/${b}`}, [{text:`${k} + ${a}/${b}`, mis:'wrongOperation'}, {text:`${a}/${b} ÷ ${k}`, mis:'wrongOperation'}]);
+    return {title:'Party Orders', ctx:`${k} × ${a}/${b} story`, bubble:story, helper:'Equal groups of a fraction: multiply.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${k} × ${a}/${b}</div>`,
+      steps:[{name:'Pick the math', type:'concept', kind:'choice', prompt:'Which one matches the story?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => `${k} equal groups of ${a}/${b}.`},
+        fracStep('Solve', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]])})]};
+  },
+  eqFrac10(lvl){
+    const t = rand(1, 9), toHund = lvl === 1 || Math.random() < 0.5;
+    return {title:'Pizza Money', ctx:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, bubble:toHund ? `Write ${t}/10 in hundredths.` : `Write ${t * 10}/100 in tenths.`, helper:'1 tenth is the same as 10 hundredths.',
+      visual:`<div class="frac-pics">${hundredGridSVG(t * 10)}</div>`,
+      steps:[{name:toHund ? 'Tenths to hundredths' : 'Hundredths to tenths', type:'concept', kind:'num', prompt:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, answer:toHund ? t * 10 : t, eq:v => v === (toHund ? t * 10 : t),
+        mis:v => v !== (toHund ? t * 10 : t) && v === (toHund ? t : t * 10) ? 'tenthsHundredths' : null, hint:() => toHund ? `Each tenth is 10 hundredths. ${t} × 10 = ?` : `Every 10 hundredths make 1 tenth.`}]};
+  },
+  addFrac10(lvl){
+    const t = rand(1, 9), h = rand(1, lvl === 1 ? 9 : 99), sum = t * 10 + h;
+    if (h % 10 === 0 || sum > (lvl === 3 ? 199 : 100)) return PIZZA2_GEN.addFrac10(lvl);
+    return {title:'Pizza Money', ctx:`${t}/10 + ${h}/100`, bubble:`Add: ${t}/10 + ${h}/100`, helper:'Change the tenths to hundredths first, then add.', visual:`<div style="text-align:center; font-size:1.8rem">${t}/10 + ${h}/100</div>`,
+      steps:[{name:'Tenths to hundredths', type:'concept', kind:'num', prompt:`${t}/10 = ?/100`, answer:t * 10, eq:v => v === t * 10, mis:v => v !== t * 10 && v === t ? 'tenthsHundredths' : null},
+        {name:'Add', type:'compute', kind:'num', prompt:`${t * 10}/100 + ${h}/100 = ?/100`, answer:sum, eq:v => v === sum, mis:v => v !== sum && v === t + h ? 'tenthsHundredths' : null, hint:() => `${t * 10} + ${h} = ?`}]};
+  },
+  decShown(lvl){
+    const grid = Math.random() < 0.5, h = grid ? rand(1, 99) : rand(1, 9) * 10,   // number lines show tenths; the grid shows hundredths
+ whole = lvl === 3 && !grid ? rand(1, 3) : 0, H = whole * 100 + h;
+    const visual = grid ? `<div class="frac-pics">${hundredGridSVG(h)}</div>` : numberLineSVG(h % 10 === 0 ? 10 : 100, (h % 10 === 0 ? h / 10 : h) + (whole ? whole * (h % 10 === 0 ? 10 : 100) : 0), {top:whole + 1, w:300});
+    return {title:'Pizza Money', ctx:`${grid ? 'grid' : 'line'} ${decStr(H)}`, bubble:grid ? 'What decimal does the shaded part of the grid show?' : 'What decimal is at the dot?', helper:grid ? 'The whole grid is 1. Each small square is one hundredth.' : 'Count the small steps between the whole numbers.',
+      visual, steps:[{name:'As a decimal', type:'concept', kind:'num', prompt:'Write it as a decimal.', answer:decStr(H), eq:decEq(H), decimal:true,
+        mis:v => { if (decEq(H)(v)) return null; if (h % 10 && decEq(whole * 100 + h * 10)(v)) return 'tenthsHundredths'; if (h % 10 === 0 && decEq(whole * 100 + h / 10)(v)) return 'tenthsHundredths'; return null; },
+        hint:() => grid ? `${h} of 100 squares: ${h}/100.` : `Each small step is ${h % 10 === 0 ? 'one tenth' : 'one hundredth'}.`}]};
+  },
+  decWords(lvl){
+    const h = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 20) : 0, H = w * 100 + h, words = DEC_WORDS(H), d = decStr(H);
+    const wrongH = h % 10 === 0 ? w * 100 + h / 10 : (h < 10 ? w * 100 + h * 10 : w * 100 + (h % 10) * 10 + Math.floor(h / 10));
+    const toWords = Math.random() < 0.5;
+    if (toWords) return {title:'Pizza Money', ctx:`${d} in words`, bubble:`How do you say ${d} in words?`, helper:'Read the number after the point, then say the last place: tenths or hundredths.', visual:`<div style="text-align:center; font-size:2rem">${d}</div>`,
+      steps:[{name:'Decimal to words', type:'concept', kind:'choice', prompt:`Which words say ${d}?`, options:choiceOf({text:words}, [{text:DEC_WORDS(wrongH), mis:'tenthsHundredths'}, {text:words.includes('tenth') ? words.replace('tenth', 'hundredth') : words.replace('hundredth', 'tenth'), mis:'tenthsHundredths'}]), hint:() => `${d.split('.')[1].length === 1 ? 'One digit after the point: tenths.' : 'Two digits after the point: hundredths.'}`}]};
+    return {title:'Pizza Money', ctx:`"${words}"`, bubble:`Write "${words}" as a decimal.`, helper:'Tenths use one place after the point, hundredths use two.', visual:`<div style="text-align:center; font-size:1.4rem">${words}</div>`,
+      steps:[{name:'Words to decimal', type:'concept', kind:'num', prompt:`Write "${words}" as a decimal.`, answer:d, eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && decEq(wrongH)(v) ? 'tenthsHundredths' : null, hint:() => h < 10 ? 'Seven hundredths is 0.07: a zero holds the tenths place.' : 'Write the digits after the point.'}]};
+  },
+  decLine(lvl){
+    if (lvl === 1) { const t = rand(1, 9); return {title:'Pizza Money', ctx:`line 0.${t}`, bubble:'The dot shows how full the pitcher is. What decimal is it at?', helper:'The line from 0 to 1 is split into 10 tenths.', visual:numberLineSVG(10, t),
+      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(t * 10), eq:decEq(t * 10), decimal:true, mis:v => !decEq(t * 10)(v) && decEq(t)(v) ? 'tenthsHundredths' : null}]}; }
+    const t = rand(0, 9), o = rand(1, 9), H = t * 10 + o;
+    const L = 14, R = 286, step = (R - L) / 10, y = 30; let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
+    for (let i = 0; i <= 10; i++){ const x = L + i * step; g += `<line x1="${x}" y1="${y - (i % 10 === 0 ? 10 : 6)}" x2="${x}" y2="${y + (i % 10 === 0 ? 10 : 6)}" class="nl-line"/>`; if (i === 0 || i === 10) g += `<text x="${x}" y="${y + 26}" class="nl-text">${decStr(t * 10 + i)}</text>`; }
+    g += `<circle cx="${L + o * step}" cy="${y}" r="7" class="nl-dot"/>`;
+    return {title:'Pizza Money', ctx:`line ${decStr(H)}`, bubble:`The line is zoomed in between ${decStr(t * 10)} and ${decStr(t * 10 + 10)}. What decimal is at the dot?`, helper:'Between two tenths there are 10 hundredths.',
+      visual:`<svg class="num-line" viewBox="0 0 300 62" width="300" role="img" aria-label="number line from ${decStr(t * 10)} to ${decStr(t * 10 + 10)}">${g}</svg>`,
+      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(H), eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && (decEq(t * 10 + o * 10)(v) || decEq(o)(v)) ? 'tenthsHundredths' : null, hint:() => `Each small step is 0.01. Start at ${decStr(t * 10)} and count ${o}.`}]};
+  },
+  decToFrac(lvl){
+    const tenth = lvl === 1 || Math.random() < 0.3, h = tenth ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 9) : 0, d = decStr(w * 100 + h), den = tenth ? 10 : 100, num = tenth ? h / 10 : h;
+    return {title:'Pizza Money', ctx:`${d} as a fraction`, bubble:`The pizza box weighs ${d} kilograms. Write ${d} as a fraction.`, helper:'One place after the point is tenths. Two places is hundredths.',
+      visual:`<div style="text-align:center; font-size:2rem">${d}</div>`,
+      steps:[{name:'Decimal to fraction', type:'concept', kind:'num', prompt:w ? `${d} = ${w} ?/${den}` : `${d} = ?/${den}`, answer:num, eq:v => v === num, mis:v => v !== num && (v === num * 10 || v * 10 === num) ? 'tenthsHundredths' : null,
+        hint:() => `Read ${d} as "${DEC_WORDS(w * 100 + h)}".`}]};
+  },
+  cmpDec(lvl){
+    let a, b;
+    do { a = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99); b = rand(1, 99); if (lvl >= 2 && Math.random() < 0.6) { a = rand(1, 9) * 10; b = a - rand(1, 9); if (Math.random() < 0.5) [a, b] = [b, a]; } } while (a === b || b <= 0);
+    const right = a > b ? '>' : '<', sa = decStr(a), sb = decStr(b);
+    const longer = sa.length > sb.length ? '>' : sa.length < sb.length ? '<' : null;       // "more digits is bigger": 0.45 > 0.5
+    const opts = choiceOf({text:right}, ['>', '<', '='].map(t => ({text:t, mis:longer && t === longer ? 'longerIsBigger' : 'compareDecimals'}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
+    return {title:'Pizza Money', ctx:`${sa} ? ${sb}`, bubble:`Which costs more: $${sa} or $${sb}?`, helper:'Line up the points. Compare tenths first, then hundredths.', visual:'',
+      steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${sa} ◯ ${sb}`, options:opts, hint:() => `Write both with two places: ${decStr(a).padEnd(4, '0')} and ${decStr(b).padEnd(4, '0')}.`}]};
+  }
+};
+Object.assign(GEN, PIZZA2_GEN);
+
 /* ----- The Register layouts: multiplication rows (kind 'mulrow') and the long-division bus stop (kind 'ldiv') ----- */
 /* digit cells for a number as written (2.45): the point rides on the digit before it, so the digits stay in whole-number columns */
 function writtenCells(str){ const out = []; for (const ch of String(str)) { if (ch === '.') out[out.length - 1].pt = true; else out.push({c:ch}); } return out; }
