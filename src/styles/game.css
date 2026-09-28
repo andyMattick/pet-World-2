@@ -532,3 +532,8 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .rect-pic .rect-grid{stroke:rgba(60,40,20,.45); stroke-width:1}
 .rect-pic .rect-edge{fill:none; stroke:currentColor; stroke-width:2.5}
 .rect-pic .rect-lbl{fill:currentColor; font-size:14px; text-anchor:middle}
+/* double number lines that fit a phone without scrolling (Market Stall) */
+.dnl-fit{padding:0 14px 0 4px}
+.dnl-fit .dnl{min-width:0}
+.dnl-fit .dnl-lbls{font-size:1.3rem}
+.dnl-fit .dnl-tick .v{font-size:1.05rem}

@@ -2828,6 +2828,213 @@ const GARDEN_AP = {
 const GARDEN_GEN = {convMass:convertGen('mass'), convVolume:convertGen('volume'), convLength:convertGen('length'), convTime:convertGen('time'), ...GARDEN_WORD, ...GARDEN_AP};
 Object.assign(GEN, GARDEN_GEN);
 
+/* ===== 6th grade, Market Stall (Khan unit 3): rates and percentages ===== */
+const PRODUCE = [['🍎', 'apples', 'pound'], ['🍐', 'pears', 'pound'], ['🥕', 'carrots', 'bunch'], ['🍓', 'strawberries', 'basket'], ['🥔', 'potatoes', 'pound'], ['🍅', 'tomatoes', 'pound'], ['🌽', 'corn', 'ear'], ['🥬', 'lettuce', 'head']];
+const BY_EACH = [['🍋', 'lemons'], ['🥝', 'kiwis'], ['🍑', 'peaches'], ['🥑', 'avocados'], ['🍊', 'oranges']];
+const cash = c => c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`;      // cents → "$3" or "$2.50"
+const dollars = c => XD.fmt(c, 2);                                                     // cents → "2.5" (typed answer)
+const plural = (n, w) => n === 1 ? w : w === 'bunch' ? 'bunches' : w + 's';
+/* a typed money answer in dollars, exact to the cent */
+const moneyStep = (name, prompt, cents, extra = {}) => ({name, type:'compute', kind:'num', prompt, answer:dollars(cents), eq:XD.eq(cents, 2), decimal:true, ...extra,
+  ...(extra.mis ? {mis:v => XD.eq(cents, 2)(v) ? null : extra.mis(v)} : {})});
+/* a times-table fact for the practice log, only when both numbers are whole and in the table */
+const fx = (x, y, div = false) => Number.isInteger(x) && Number.isInteger(y) && x >= 1 && y >= 1 && x <= 12 && y <= 12 ? {x, y, div} : undefined;
+/* the double number line, shrunk to fit a phone (no sideways scrolling) */
+const dnlFit = (...a) => `<div class="dnl-fit">${dnlHTML(...a)}</div>`;
+const near = (v, x) => typeof v === 'number' && Math.abs(v - x) < 0.005;
+const MARKET_GEN = {
+  /* ----- station 1: Price Tags (rates) ----- */
+  unitRate(lvl){
+    const [e, what, unit] = pick(PRODUCE);
+    if (lvl < 3) {
+      const n = rand(2, 9), per = lvl === 1 ? rand(2, 12) * 100 : rand(3, 19) * 25, total = n * per;
+      return {title:'Price Tags', ctx:`${cash(total)} for ${n} ${unit}`, bubble:`${n} ${plural(n, unit)} of ${what} cost ${cash(total)}. What is the price for 1 ${unit}?`,
+        helper:'A unit rate is the amount for 1. Divide the total by how many.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${n} ${plural(n, unit)} = ${cash(total)}</div>`,
+        steps:[moneyStep('Unit price', `${cash(total)} ÷ ${n} = ?`, per, {fact:lvl === 1 && per <= 1200 ? fx(n, per / 100, true) : undefined, slowOK:lvl > 1,
+          mis:v => near(v, n / (total / 100)) ? 'rateUpsideDown' : near(v, total / 100 * n) ? 'wrongOperation' : null, hint:() => `Split ${cash(total)} into ${n} equal parts.`})]};
+    }
+    const [e2, what2] = pick(BY_EACH), r = pick([2, 4, 5, 10]), k = rand(2, 9), items = r * k, each = 100 / r;   // r items per dollar, so each costs 100/r cents
+    return {title:'Price Tags', ctx:`${items} ${what2} for $${k}`, bubble:`${items} ${what2} cost $${k}. How many ${what2} do you get for $1? What is the price of 1?`,
+      helper:'There are two unit rates: items per dollar and dollars per item.', visual:`<div style="text-align:center; font-size:1.6rem">${e2} ${items} for $${k}</div>`,
+      steps:[numStep(`${what2} per dollar`, 'compute', `${items} ÷ ${k} = ?`, r, {fact:fx(k, r, true), mis:v => near(v, k / items) ? 'rateUpsideDown' : null, hint:() => `Share the ${items} ${what2} among the $${k}.`}),
+        moneyStep('Price of 1', `$${k} ÷ ${items} = ?`, each, {mis:v => near(v, r) || near(v, items / k) ? 'rateUpsideDown' : null, hint:() => `$1 buys ${r}, so each one is $1 ÷ ${r}.`})],
+      answerSteps:[1]};
+  },
+  rateProblems(lvl){
+    const [e, what, unit] = pick(PRODUCE), n = rand(2, 6), per = lvl === 1 ? rand(2, 9) * 100 : rand(6, 45) * 10, total = n * per;
+    if (lvl < 3) {
+      let m; do { m = rand(2, 12); } while (m === n);
+      return {title:'Price Tags', ctx:`${cash(total)} / ${n}, ${m}`, bubble:`${n} ${plural(n, unit)} of ${what} cost ${cash(total)}. How much do ${m} ${plural(m, unit)} cost?`,
+        helper:'Find the price for 1 first, then multiply.', visual:dnlFit(`${e} ${unit}s`, '$', [{t:0, b:0}, {t:1, b:'?'}, {t:n, b:cash(total)}, {t:m, b:'?'}].sort((a, b) => a.t - b.t)),
+        steps:[moneyStep('Price for 1', `${cash(total)} ÷ ${n} = ?`, per, {fact:lvl === 1 ? fx(n, per / 100, true) : undefined, mis:v => near(v, n / (total / 100)) ? 'rateUpsideDown' : null}),
+          moneyStep(`Price for ${m}`, `${cash(per)} × ${m} = ?`, per * m, {fact:lvl === 1 ? fx(per / 100, m) : undefined, mis:v => near(v, total * m / 100) ? 'rateSkipUnit' : near(v, total / 100 + m) ? 'wrongOperation' : null,
+            hint:() => `Each ${unit} is ${cash(per)}. ${m} of them is ${cash(per)} × ${m}.`})], answerSteps:[1]};
+    }
+    const m = rand(2, 12), budget = per * m;
+    if (m === n) return MARKET_GEN.rateProblems(lvl);
+    return {title:'Price Tags', ctx:`${cash(total)} / ${n}, budget ${cash(budget)}`, bubble:`${n} ${plural(n, unit)} of ${what} cost ${cash(total)}. How many ${plural(2, unit)} can you buy with ${cash(budget)}?`,
+      helper:'Find the price for 1, then see how many of those fit in your money.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${n} for ${cash(total)} · 👛 ${cash(budget)}</div>`,
+      steps:[moneyStep('Price for 1', `${cash(total)} ÷ ${n} = ?`, per, {mis:v => near(v, n / (total / 100)) ? 'rateUpsideDown' : null}),
+        numStep(`How many ${unit}s`, 'compute', `${cash(budget)} ÷ ${cash(per)} = ?`, m, {slowOK:true, mis:v => near(v, budget * per / 10000) ? 'rateUpsideDown' : null, hint:() => `How many ${cash(per)}s are in ${cash(budget)}?`})],
+      answerSteps:[1]};
+  },
+  compareRates(lvl){
+    if (lvl === 3 && Math.random() < 0.5) {
+      const names = shuffle(LEMON_KIDS).slice(0, 2), s = [rand(3, 8), 0]; do { s[1] = rand(3, 8); } while (s[1] === s[0]);
+      let t = [rand(2, 9), rand(2, 9)]; if (s[0] * t[0] === s[1] * t[1]) t[1]++;
+      if ((s[0] * t[0] > s[1] * t[1]) === (s[0] > s[1])) t = [t[1], t[0]];                       // the faster runner goes the shorter distance: a trap for comparing totals
+      const d = [s[0] * t[0], s[1] * t[1]], fast = s[0] > s[1] ? 0 : 1, far = d[0] > d[1] ? 0 : 1;
+      const opts = [0, 1].map(i => ({html:`${names[i][0]} ${names[i][1]}`, text:names[i][1], ok:i === fast, mis:i === fast ? null : i === far ? 'compareTotals' : null}));
+      return {title:'Price Tags', ctx:`${d[0]}/${t[0]} vs ${d[1]}/${t[1]}`, bubble:`${names[0][1]} ran ${d[0]} meters in ${t[0]} seconds. ${names[1][1]} ran ${d[1]} meters in ${t[1]} seconds. Who is faster?`,
+        helper:'Compare meters per second, not the total meters.', visual:`<div style="text-align:center; font-size:1.4rem">🏃 ${d[0]} m in ${t[0]} s · ${d[1]} m in ${t[1]} s</div>`,
+        steps:[numStep(`${names[0][1]}'s speed`, 'compute', `${d[0]} ÷ ${t[0]} = ? meters per second`, s[0], {fact:fx(t[0], s[0], true), mis:v => near(v, t[0] / d[0]) ? 'rateUpsideDown' : null}),
+          numStep(`${names[1][1]}'s speed`, 'compute', `${d[1]} ÷ ${t[1]} = ? meters per second`, s[1], {fact:fx(t[1], s[1], true), mis:v => near(v, t[1] / d[1]) ? 'rateUpsideDown' : null}),
+          {name:'Who is faster?', type:'concept', kind:'choice', prompt:'Who is faster?', options:shuffle(opts), hint:() => 'More meters each second is faster.'}], answerSteps:[2]};
+    }
+    const [e, what, unit] = pick(PRODUCE), step = lvl === 1 ? 100 : lvl === 2 ? 25 : 5;
+    const u = [rand(Math.ceil(100 / step), 600 / step) * step, 0]; do { u[1] = rand(Math.ceil(100 / step), 600 / step) * step; } while (u[1] === u[0] || Math.abs(u[1] - u[0]) > 300);
+    let n = [rand(2, 8), rand(2, 8)]; if (n[0] === n[1]) n[1] = n[0] + 1;
+    const cheap = u[0] < u[1] ? 0 : 1; if ((n[0] * u[0] < n[1] * u[1]) === (cheap === 0) && Math.random() < 0.7) n = [n[1], n[0]];   // usually the better buy costs more in total
+    const tot = [n[0] * u[0], n[1] * u[1]], lowTotal = tot[0] < tot[1] ? 0 : tot[1] < tot[0] ? 1 : -1;
+    const opts = ['A', 'B'].map((s, i) => ({html:`Stall ${s}`, text:`Stall ${s}`, ok:i === cheap, mis:i === cheap ? null : i === lowTotal ? 'compareTotals' : null}));
+    return {title:'Price Tags', ctx:`${tot[0]}/${n[0]} vs ${tot[1]}/${n[1]}`, bubble:`Stall A sells ${n[0]} ${plural(n[0], unit)} of ${what} for ${cash(tot[0])}. Stall B sells ${n[1]} ${plural(n[1], unit)} for ${cash(tot[1])}. Which is the better buy?`,
+      helper:'Find the price for 1 at each stall. The lower unit price is the better buy.', visual:`<div style="text-align:center; font-size:1.4rem">${e} A: ${n[0]} for ${cash(tot[0])} · B: ${n[1]} for ${cash(tot[1])}</div>`,
+      steps:[moneyStep('Stall A, price for 1', `${cash(tot[0])} ÷ ${n[0]} = ?`, u[0], {mis:v => near(v, n[0] * 100 / tot[0]) ? 'rateUpsideDown' : null}),
+        moneyStep('Stall B, price for 1', `${cash(tot[1])} ÷ ${n[1]} = ?`, u[1], {mis:v => near(v, n[1] * 100 / tot[1]) ? 'rateUpsideDown' : null}),
+        {name:'Better buy', type:'concept', kind:'choice', prompt:'Which is the better buy?', options:opts, hint:() => `Compare ${cash(u[0])} and ${cash(u[1])} for 1 ${unit}.`}], answerSteps:[2]};
+  },
+
+  /* ----- station 2: Percent Signs (what a percent is) ----- */
+  introPercent(lvl){
+    const n = rand(3, 97), [e, what] = pick(BY_EACH);
+    if (lvl === 1) return {title:'Percent Signs', ctx:`${n} of 100 shaded`, bubble:'What percent of the grid is shaded?', helper:'Percent means "out of 100". Each small square is 1%.',
+      visual:`<div class="frac-pics">${hundredGridSVG(n)}</div>`,
+      steps:[numStep('Percent shaded', 'concept', `${n} out of 100 = ?%`, n, {mis:v => v === 100 - n ? 'percentComplement' : null, hint:() => 'Count the shaded squares. Full rows are 10 each.'})]};
+    if (lvl === 2) return {title:'Percent Signs', ctx:`${n} of 100, not shaded`, bubble:`Of 100 ${what} in the crate, ${n} are ripe. What percent are ripe? What percent are not ripe?`, helper:'The whole crate is 100%.',
+      visual:`<div class="frac-pics">${hundredGridSVG(n)}</div>`,
+      steps:[numStep('Percent ripe', 'concept', `${n} out of 100 = ?%`, n, {mis:v => v === 100 - n ? 'percentComplement' : null}),
+        numStep('Percent not ripe', 'compute', `100% − ${n}% = ?%`, 100 - n, {mis:v => v === n ? 'percentComplement' : null, hint:() => 'The whole is 100%. Take away the ripe part.'})], answerSteps:[1]};
+    const d = pick([10, 20, 25, 50]), k = rand(1, d - 1), p = k * 100 / d;
+    return {title:'Percent Signs', ctx:`${k} of ${d}`, bubble:`${k} of the ${d} ${what} on the table are on sale. What percent is that?`, helper:'Make it "out of 100": multiply the top and bottom by the same number.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${e} ${k} out of ${d}</div>`,
+      steps:[numStep('Out of 100', 'compute', `${k}/${d} = ?/100`, p, {fact:k <= 12 && d >= 10 ? fx(k, 100 / d) : undefined, mis:v => v === k ? 'percentNot100' : v === Number(`${k}${d}`) ? 'fractionDigitsPercent' : null, hint:() => `${d} × ${100 / d} = 100, so multiply ${k} by ${100 / d} too.`}),
+        numStep('Percent', 'concept', `${k} out of ${d} = ?%`, p, {mis:v => v === k ? 'percentNot100' : null, skipIf:() => false})], answerSteps:[1]};
+  },
+  pctModel(lvl){
+    const d = pick(lvl === 2 ? [20, 25] : [2, 4, 5, 10]), k = lvl === 3 ? d + rand(1, d - 1) : rand(1, d - 1), each = 100 / d, p = k * each;
+    return {title:'Percent Signs', ctx:`${k}/${d} bar`, bubble:lvl === 3 ? 'Each bar is one whole. What percent is shaded?' : 'The bar is one whole. What percent is shaded?',
+      helper:'The whole bar is 100%. Find the percent for one part first.', visual:`<div class="frac-pics">${fracBarSVG(k, d, {w:240})}</div>`,
+      steps:[numStep('One part', 'concept', `100% ÷ ${d} = ?%`, each, {fact:d <= 12 && each <= 12 ? fx(d, each, true) : undefined, mis:v => v === d ? 'percentNot100' : null, hint:() => `${d} equal parts share 100%.`}),
+        numStep('Shaded', 'compute', `${k} × ${each}% = ?%`, p, {mis:v => v === k ? 'percentNot100' : v === Number(`${k}${d}`) ? 'fractionDigitsPercent' : lvl === 3 && v === p - 100 ? 'percentComplement' : null, hint:() => `${k} parts, ${each}% each.`})],
+      answerSteps:[1]};
+  },
+
+  /* ----- station 3: Sale Signs (percents, decimals, and fractions) ----- */
+  pctConvert(lvl){
+    const kind = lvl === 1 ? pick(['toDec', 'toPct']) : lvl === 2 ? pick(['pctFrac', 'fracPct']) : pick(['big', 'toDec', 'pctFrac']);
+    if (kind === 'toDec' || kind === 'toPct') {
+      const p = lvl === 1 ? rand(1, 99) : rand(101, 350), dec = XD.fmt(p, 2);
+      if (kind === 'toDec') return {title:'Sale Signs', ctx:`${p}% → decimal`, bubble:`The sign says ${p}%. Write it as a decimal.`, helper:'Percent means out of 100: move the point 2 places left.',
+        visual:`<div style="text-align:center; font-size:1.8rem">🪧 ${p}%</div>`,
+        steps:[{name:'As a decimal', type:'concept', kind:'num', prompt:`${p}% = ?`, answer:dec, eq:XD.eq(p, 2), decimal:true, drill:{type:'decimalShift', key:'100'},
+          mis:v => XD.eq(p, 2)(v) ? null : near(v, p / 10) || near(v, p / 1000) || near(v, p) ? 'percentShift' : null, hint:() => `${p}% is ${p} hundredths.`}]};
+      return {title:'Sale Signs', ctx:`${dec} → percent`, bubble:`Write ${dec} as a percent.`, helper:'Multiply by 100: move the point 2 places right.', visual:`<div style="text-align:center; font-size:1.8rem">🪧 ${dec}</div>`,
+        steps:[numStep('As a percent', 'concept', `${dec} = ?%`, p, {drill:{type:'decimalShift', key:'100'}, mis:v => near(v, p / 10) || near(v, p / 100) || near(v, p * 10) ? 'percentShift' : null, hint:() => `${dec} is ${p} hundredths.`})]};
+    }
+    if (kind === 'pctFrac' || kind === 'big') {
+      let p; do { p = kind === 'big' ? rand(21, 70) * 5 : rand(1, 19) * 5; } while (p % 100 === 0);
+      const steps = [numStep('Out of 100', 'concept', `${p}% = ?/100`, p, {mis:v => near(v, p / 100) ? 'percentShift' : null, hint:() => 'Percent means out of 100.'}), fracSimplestStep(p, 100)];
+      if (kind === 'big') steps.unshift({name:'As a decimal', type:'concept', kind:'num', prompt:`${p}% = ?`, answer:XD.fmt(p, 2), eq:XD.eq(p, 2), decimal:true, mis:v => XD.eq(p, 2)(v) ? null : near(v, p / 10) || near(v, p / 1000) ? 'percentShift' : null});
+      return {title:'Sale Signs', ctx:`${p}% → fraction`, bubble:kind === 'big' ? `Sales are up ${p}% of last week's. Write ${p}% as a decimal and as a fraction in simplest form.` : `The sign says ${p}% off. Write ${p}% as a fraction in simplest form.`,
+        helper:'Write it over 100, then simplify.', visual:`<div style="text-align:center; font-size:1.8rem">🪧 ${p}%</div>`, steps, answerSteps:[steps.length - 1]};
+    }
+    const b = pick([2, 4, 5, 10, 20, 25, 50]), a = rand(1, b - 1), p = a * 100 / b;
+    if (gcd(a, b) !== 1) return MARKET_GEN.pctConvert(lvl);
+    return {title:'Sale Signs', ctx:`${a}/${b} → percent`, bubble:`${a}/${b} of the melons are sold. What percent is that?`, helper:'Make the bottom 100, then the top is the percent.',
+      visual:`<div style="text-align:center; font-size:1.8rem">🍈 ${a}/${b}</div>`,
+      steps:[numStep('Out of 100', 'compute', `${a}/${b} = ?/100`, p, {mis:v => v === a ? 'percentNot100' : v === Number(`${a}${b}`) ? 'fractionDigitsPercent' : null, hint:() => `${b} × ${100 / b} = 100.`}),
+        numStep('Percent', 'concept', `${a}/${b} = ?%`, p, {mis:v => v === a ? 'percentNot100' : null})], answerSteps:[1]};
+  },
+  benchmarkPct(lvl){
+    const B = lvl === 1 ? pick([[50, 2], [10, 10], [100, 1]]) : pick([[25, 4], [20, 5], [1, 100], [5, 20]]);
+    if (lvl < 3) {
+      const [P, div] = B, part = rand(2, lvl === 1 ? 30 : 25), N = part * div;
+      return {title:'Sale Signs', ctx:`${P}% of ${N}`, bubble:`What is ${P}% of ${N}?`, helper:P === 100 ? '100% is the whole thing.' : `${P}% is 1/${div} of the whole.`,
+        visual:`<div style="text-align:center; font-size:1.8rem">🧺 ${P}% of ${N}</div>`,
+        steps:[numStep(`${P}%`, 'compute', `${P}% of ${N} = ?`, part, {fact:div <= 12 && part <= 12 ? fx(div, part, true) : undefined, mis:v => v === N * P || near(v, N / P) && P !== div ? 'percentAsNumber' : v === N - part ? 'percentComplement' : null,
+          hint:() => P === 100 ? 'All of it.' : `Split ${N} into ${div} equal parts.`})]};
+    }
+    const [base, div, times, P] = pick([[10, 10, 3, 30], [10, 10, 7, 70], [25, 4, 3, 75], [20, 5, 3, 60], [10, 10, 4, 40], [5, 20, 3, 15], [20, 5, 4, 80]]), unit = rand(2, 15), N = unit * div;
+    return {title:'Sale Signs', ctx:`${P}% of ${N}`, bubble:`What is ${P}% of ${N}? Use ${base}% to help.`, helper:`${P}% is ${times} groups of ${base}%.`, visual:`<div style="text-align:center; font-size:1.8rem">🧺 ${P}% of ${N}</div>`,
+      steps:[numStep(`${base}%`, 'compute', `${base}% of ${N} = ?`, unit, {fact:div <= 12 && unit <= 12 ? fx(div, unit, true) : undefined, mis:v => near(v, N / base) && base !== div ? 'percentAsNumber' : null}),
+        numStep(`${P}%`, 'compute', `${times} × ${unit} = ?`, unit * times, {fact:unit <= 12 ? fx(times, unit) : undefined, mis:v => v === N - unit * times ? 'percentComplement' : null})], answerSteps:[1]};
+  },
+  pctEquivalent(lvl){
+    const P = lvl === 1 ? rand(1, 9) * 10 : rand(1, 19) * 5, u = P % 10 === 0 ? 10 : 20, N = rand(2, lvl === 1 ? 9 : 12) * u, part = P * N / 100;
+    const [fn, fd] = FRAC.red(P, 100), dec = XD.fmt(P, 2);
+    const right = pick([`${dec} × ${N}`, `${fn}/${fd} × ${N}`, `${N} ÷ 100 × ${P}`]);
+    const wrongs = shuffle([{text:`${P} × ${N}`, mis:'percentAsNumber', val:P * N}, {text:`${N} ÷ ${P}`, mis:'percentAsNumber', val:N / P}, {text:`${XD.fmt(P, 3)} × ${N}`, mis:'percentShift', val:P * N / 1000}, {text:`${XD.fmt(P, 1)} × ${N}`, mis:'percentShift', val:P * N / 10}])
+      .filter(w => Math.abs(w.val - part) > 1e-9).slice(0, 3);   // 10% of 80 is also 80 ÷ 10, so that one can't be a wrong answer
+    const steps = [{name:'Same as', type:'concept', kind:'choice', prompt:`Which is the same as ${P}% of ${N}?`, options:choiceOf({text:right}, wrongs), hint:() => `${P}% = ${dec} = ${fn}/${fd}.`}];
+    if (lvl >= 2) steps.push(numStep('Find it', 'compute', `${P}% of ${N} = ?`, part, {mis:v => v === P * N ? 'percentAsNumber' : v === N - part ? 'percentComplement' : null, hint:() => `${N} ÷ 100 × ${P}, or 10% is ${N / 10}.`}));
+    return {title:'Sale Signs', ctx:`${P}% of ${N}: ${right}`, bubble:`A sign says ${P}% of the ${N} baskets are sold. Which math finds how many baskets are sold?${lvl >= 2 ? ' Then find it.' : ''}`,
+      helper:'A percent can be written as a decimal or a fraction.', visual:`<div style="text-align:center; font-size:1.8rem">🧺 ${P}% of ${N}</div>`, steps, ...(lvl >= 2 ? {answerSteps:[1]} : {})};
+  },
+
+  /* ----- station 4: Discount Bin (percent problems) ----- */
+  pctVisual(lvl){
+    const seg = pick([4, 5]), stepP = 100 / seg, u = rand(2, 12) * (lvl === 3 ? 1 : 1), W = u * seg, j = rand(lvl === 3 ? 1 : 2, seg - 1), [e, what] = pick(BY_EACH);
+    const ticks = Array.from({length:seg + 1}, (_, i) => ({t:`${i * stepP}%`, b:''}));
+    if (lvl === 1) {
+      ticks[0].b = 0; ticks[seg].b = W; ticks[j].b = '?';
+      return {title:'Discount Bin', ctx:`${j * stepP}% of ${W}`, bubble:`The bin holds ${W} ${what}. What is ${j * stepP}% of ${W}?`, helper:`Split the whole into ${seg} equal jumps of ${stepP}%.`, visual:dnlFit('%', `${e}`, ticks, false),
+        steps:[numStep(`One jump (${stepP}%)`, 'compute', `${W} ÷ ${seg} = ?`, u, {fact:fx(seg, u, true)}), numStep(`${j * stepP}%`, 'compute', `${j} × ${u} = ?`, j * u, {fact:fx(j, u), mis:v => v === W - j * u ? 'percentComplement' : null})], answerSteps:[1]};
+    }
+    if (lvl === 2) {
+      ticks[0].b = 0; ticks[j].b = j * u; ticks[seg].b = '?';
+      return {title:'Discount Bin', ctx:`${j * u} is ${j * stepP}%`, bubble:`${j * u} ${what} are ${j * stepP}% of the bin. How many ${what} fill the whole bin?`, helper:`Find one jump of ${stepP}% first.`, visual:dnlFit('%', `${e}`, ticks, false),
+        steps:[numStep(`One jump (${stepP}%)`, 'compute', `${j * u} ÷ ${j} = ?`, u, {fact:fx(j, u, true)}), numStep('100%', 'compute', `${seg} × ${u} = ?`, W, {fact:fx(seg, u), mis:v => v === j * u * j * stepP / 100 ? 'partWholeSwap' : null})], answerSteps:[1]};
+    }
+    ticks.forEach((t, i) => { t.b = i === 0 ? 0 : i === seg ? W : i === j ? j * u : ''; t.t = i === j ? '?' : t.t; });
+    return {title:'Discount Bin', ctx:`${j * u} of ${W}`, bubble:`${j * u} of the ${W} ${what} are on sale. What percent are on sale?`, helper:'How many equal jumps from 0 to the dot? Each jump is the same percent.', visual:dnlFit('%', `${e}`, ticks, false),
+      steps:[numStep('One jump', 'concept', `100% ÷ ${seg} = ?%`, stepP, {}), numStep('Percent', 'compute', `${j} × ${stepP}% = ?%`, j * stepP, {mis:v => v === j * u ? 'percentNot100' : v === 100 - j * stepP ? 'percentComplement' : null})], answerSteps:[1]};
+  },
+  findingPct(lvl){
+    if (lvl === 1) {
+      const P = rand(1, 9) * 10, W = rand(2, 30) * 10, ten = W / 10, part = ten * P / 10;
+      return {title:'Discount Bin', ctx:`${P}% of ${W}`, bubble:`What is ${P}% of ${W}?`, helper:'Find 10% first, then build up.', visual:`<div style="text-align:center; font-size:1.8rem">${P}% of ${W}</div>`,
+        steps:[numStep('10%', 'compute', `10% of ${W} = ?`, ten, {mis:v => v === W * 10 ? 'percentShift' : null}), numStep(`${P}%`, 'compute', `${P / 10} × ${ten} = ?`, part, {fact:ten <= 12 ? fx(P / 10, ten) : undefined, mis:v => v === P * W ? 'percentAsNumber' : v === W - part ? 'percentComplement' : null})], answerSteps:[1]};
+    }
+    if (lvl === 2) {
+      const W = pick([20, 25, 50, 200, 300, 400, 500]), A = W < 100 ? rand(1, W - 1) : rand(1, W / 10 - 1) * 10, P = A * 100 / W;
+      if (!Number.isInteger(P)) return MARKET_GEN.findingPct(lvl);
+      return {title:'Discount Bin', ctx:`${A} of ${W} = ?%`, bubble:`${A} is what percent of ${W}?`, helper:'Write it as a fraction, then make the bottom 100.', visual:`<div style="text-align:center; font-size:1.8rem">${A} out of ${W}</div>`,
+        steps:[numStep('Out of 100', 'compute', `${A}/${W} = ?/100`, P, {mis:v => v === A ? 'percentNot100' : near(v, W * 100 / A) ? 'partWholeSwap' : null, hint:() => W < 100 ? `${W} × ${100 / W} = 100.` : `${W} ÷ ${W / 100} = 100.`})]};
+    }
+    const [u, k] = pick([[10, rand(2, 9)], [5, rand(2, 9)], [20, rand(2, 4)], [25, rand(2, 3)]]), P = u * k, one = rand(2, 15), A = one * k, W = one * 100 / u;
+    return {title:'Discount Bin', ctx:`${A} is ${P}% of ?`, bubble:`${A} is ${P}% of what number?`, helper:`${P}% is ${k} groups of ${u}%. Find ${u}%, then 100%.`, visual:`<div style="text-align:center; font-size:1.8rem">${A} = ${P}% of ?</div>`,
+      steps:[numStep(`${u}%`, 'compute', `${A} ÷ ${k} = ?`, one, {fact:fx(k, one, true)}), numStep('100%', 'compute', `${one} × ${100 / u} = ?`, W, {fact:one <= 12 ? fx(one, 100 / u) : undefined, mis:v => near(v, A * P / 100) ? 'partWholeSwap' : v === A * P ? 'percentAsNumber' : null})],
+      answerSteps:[1]};
+  },
+  pctWord(lvl){
+    const [e, n] = pick(LEMON_KIDS), [pe, what] = pick(BY_EACH), kind = lvl === 1 ? 'part' : lvl === 2 ? pick(['part', 'pct']) : pick(['part', 'pct', 'whole', 'whole']);
+    const P = pick([10, 20, 25, 30, 40, 50, 60, 75, 80]), W = rand(2, 12) * (P % 25 === 0 ? 4 : 10), A = P * W / 100;
+    const T = {
+      part:{story:pick([`${n}'s stall had ${W} ${what}. ${n} sold ${P}% of them. How many ${what} did ${n} sell?`, `A $${W} basket is ${P}% off. How many dollars do you save?`]), eqn:`${P}% of ${W} = ?`, ans:A},
+      pct: {story:`${n} picked ${W} ${what}, and ${A} of them were too small to sell. What percent were too small?`, eqn:`?% of ${W} = ${A}`, ans:P},
+      whole:{story:`${n} sold ${A} ${what} on Saturday. That was ${P}% of all the ${what} ${n} brought. How many ${what} did ${n} bring?`, eqn:`${P}% of ? = ${A}`, ans:W}
+    }[kind];
+    const all = [`${P}% of ${W} = ?`, `?% of ${W} = ${A}`, `${P}% of ? = ${A}`, `${P}% of ${A} = ?`];
+    const shown = kind === 'part' ? [all[0], all[3], `?% of ${W} = ${P}`] : kind === 'pct' ? [all[1], `${A}% of ${W} = ?`, all[3]] : [all[2], `${P}% of ${A} = ?`, `?% of ${A} = ${P}`];
+    const opts = choiceOf({text:T.eqn}, [...new Set(shown.slice(1))].map(t => ({text:t, mis:'partWholeSwap'})));
+    const steps = [{name:'Pick the math', type:'concept', kind:'choice', prompt:'Which one matches the story?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => 'What do you know: the part, the percent, or the whole? What is missing?'},
+      numStep('Solve', 'compute', T.eqn, T.ans, {slowOK:true, mis:v => kind === 'whole' && near(v, A * P / 100) ? 'partWholeSwap' : kind === 'part' && v === W - A ? 'percentComplement' : kind === 'pct' && v === A ? 'percentNot100' : null,
+        hint:() => kind === 'part' ? `10% of ${W} is ${W / 10}.` : kind === 'pct' ? `${A} out of ${W} = ?/100.` : `${A} is ${P}%. Find 1 part, then 100%.`})];
+    return {title:'Discount Bin', ctx:`${kind}: ${T.eqn}`, bubble:T.story, helper:'Part = percent × whole. Decide which one is missing.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${pe}</div>`, steps, answerSteps:[1]};
+  }
+};
+Object.assign(GEN, MARKET_GEN);
+
 /* ----- The Register layouts: multiplication rows (kind 'mulrow') and the long-division bus stop (kind 'ldiv') ----- */
 /* digit cells for a number as written (2.45): the point rides on the digit before it, so the digits stay in whole-number columns */
 function writtenCells(str){ const out = []; for (const ch of String(str)) { if (ch === '.') out[out.length - 1].pt = true; else out.push({c:ch}); } return out; }
