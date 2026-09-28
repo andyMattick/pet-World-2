@@ -547,3 +547,14 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .num-line .nl-arrow{fill:currentColor}
 .num-line .nl-name{font-weight:700; font-size:13px}
 .btn.neg-btn{margin-left:8px; min-width:48px; min-height:44px; font-size:1.5rem; font-weight:800; vertical-align:middle}
+/* equations and inequalities (Potion Lab): the balance, inequality graphs (also as answer choices), and x–y tables */
+.balance{display:flex; align-items:flex-end; justify-content:center; gap:10px; font-size:1.6rem; margin:4px 0}
+.balance .pan-l, .balance .pan-r{border-bottom:4px solid var(--chalk); padding:0 10px 2px; min-width:3em; text-align:center}
+.balance .beam{font-size:2rem}
+.num-line .nl-ray{stroke:var(--berry); stroke-width:5}
+.num-line .nl-ray-head{fill:var(--berry)}
+.num-line .nl-open{fill:var(--board, #2e4a3f); stroke:var(--berry); stroke-width:3}
+.opt svg.ineq{display:block; max-width:100%; height:auto}
+table.xy-table{margin:6px auto; border-collapse:collapse; font-size:1.2rem}
+table.xy-table th, table.xy-table td{border:2px solid var(--chalk); padding:4px 10px; text-align:center}
+table.xy-table th{font-size:.95rem}

@@ -3657,6 +3657,137 @@ const POTION_GEN = {
 const factorsOf = n => [...Array(n).keys()].map(i => i + 1).filter(d => n % d === 0);
 Object.assign(GEN, POTION_GEN);
 
+/* ===== 6th grade, Potion Lab part 2 (Khan unit 7): equations and inequalities ===== */
+const balanceHTML = (left, right) => `<div class="balance"><span class="pan-l">${esc(left)}</span><span class="beam">⚖️</span><span class="pan-r">${esc(right)}</span></div>`;
+/* an inequality on a number line: circle at c (filled for ≤ ≥, open for < >) and a ray in its direction */
+function ineqSVG(op, c, {lo = c - 5, hi = c + 5, w = 280} = {}){
+  const L = 16, R = w - 16, y = 26, step = (R - L) / (hi - lo), X = t => L + (t - lo) * step, right = op === '>' || op === '≥', closed = op === '≥' || op === '≤';
+  let g = `<line x1="${L - 8}" y1="${y}" x2="${R + 8}" y2="${y}" class="nl-line"/>`;
+  for (let t = lo; t <= hi; t++) { g += `<line x1="${X(t)}" y1="${y - 6}" x2="${X(t)}" y2="${y + 6}" class="nl-line"/>`; if ((t - lo) % 2 === 0 || t === c) g += `<text x="${X(t)}" y="${y + 22}" class="nl-text nl-small">${sgn(t)}</text>`; }
+  g += `<line x1="${X(c)}" y1="${y}" x2="${right ? R + 6 : L - 6}" y2="${y}" class="nl-ray"/><path d="${right ? `M${R + 10} ${y} l-10 -7 v14 z` : `M${L - 10} ${y} l10 -7 v14 z`}" class="nl-ray-head"/>`;
+  g += `<circle cx="${X(c)}" cy="${y}" r="7" class="${closed ? 'nl-dot' : 'nl-open'}"/>`;
+  return `<svg class="num-line ineq" viewBox="0 0 ${w} 56" width="${w}" role="img" aria-label="x ${op} ${c}">${g}</svg>`;
+}
+const INEQ_FLIP = {'>':'<', '<':'>', '≥':'≤', '≤':'≥'}, INEQ_OPEN = {'>':'≥', '≥':'>', '<':'≤', '≤':'<'};
+const ineqTrue = (x, op, c) => op === '>' ? x > c : op === '<' ? x < c : op === '≥' ? x >= c : x <= c;
+/* one-step equation shapes: [text, solve, inverse words, the answer you get by doing the wrong thing] */
+const EQ_FORMS = {
+  add: (a, x) => [`x + ${a} = ${x + a}`, `Subtract ${a} from both sides`, `Add ${a} to both sides`, x + 2 * a],
+  addL: (a, x) => [`${a} + x = ${x + a}`, `Subtract ${a} from both sides`, `Add ${a} to both sides`, x + 2 * a],
+  sub: (a, x) => [`x ${MINUS} ${a} = ${x - a}`, `Add ${a} to both sides`, `Subtract ${a} from both sides`, x - 2 * a],
+  mul: (a, x) => [`${a}x = ${a * x}`, `Divide both sides by ${a}`, `Multiply both sides by ${a}`, a * a * x],
+  div: (a, x) => [`x ÷ ${a} = ${x / a}`, `Multiply both sides by ${a}`, `Divide both sides by ${a}`, x / (a * a)]
+};
+const POTION2_GEN = {
+  /* ----- station 5: Balance Scale (one-step equations) ----- */
+  testSol(lvl){
+    const a = rand(2, 9), b = rand(1, 15), x = rand(1, 10), kind = pick(lvl === 1 ? ['add', 'mul'] : ['lin', 'lin', 'mul', 'sub']);
+    const [text, f] = kind === 'add' ? [`x + ${b} = ${x + b}`, v => v + b] : kind === 'mul' ? [`${a}x = ${a * x}`, v => a * v] : kind === 'sub' ? [`${a}x ${MINUS} ${b} = ${a * x - b}`, v => a * v - b] : [`${a}x + ${b} = ${a * x + b}`, v => a * v + b];
+    if (kind === 'sub' && a * x - b < 0) return POTION2_GEN.testSol(lvl);
+    const target = Number(text.split(' = ')[1]);
+    if (lvl === 1) {
+      const tryV = Math.random() < 0.5 ? x : x + pick([-1, 1, 2]) || x + 1, out = f(tryV), yes = out === target;
+      const lhs = text.split(' = ')[0].replace(/(\d+)x/, `$1(${tryV})`).replace(/^x/, String(tryV));
+      return {title:'Balance Scale', ctx:`${text}, x = ${tryV}`, bubble:`Is x = ${tryV} a solution of ${text}?`, helper:'Put the number in for x. If both sides are equal, it is a solution.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+        steps:[numStep('Put it in', 'compute', `${lhs} = ?`, out, {hint:() => `Replace x with ${tryV}.`}),
+          {name:'Solution?', type:'concept', kind:'choice', prompt:`Is x = ${tryV} a solution?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes'}]), hint:() => `Does ${out} equal ${target}?`}], answerSteps:[1]};
+    }
+    const cands = shuffle([...new Set([x, x + 1, x - 1, x + 2, target, Math.max(0, x - 2)])].filter(v => v >= 0 && (v === x || f(v) !== target))).slice(0, 3);
+    if (!cands.includes(x)) cands[0] = x;
+    const opts = shuffle(cands).map(v => ({html:`x = ${v}`, text:`x = ${v}`, ok:v === x, mis:v === target && v !== x ? 'solutionIsTotal' : null}));
+    return {title:'Balance Scale', ctx:`${text}: which x`, bubble:`Which value of x makes ${text} true?`, helper:'Try each value in the equation.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+      steps:[{name:'Which value', type:'concept', kind:'choice', prompt:`Which one is a solution of ${text}?`, options:opts, hint:() => `Put each value in for x and check if the left side is ${target}.`}]};
+  },
+  oneStepAdd(lvl){
+    if (lvl === 3) {
+      const a = rand(11, 99) / 10, x = rand(11, 99) / 10, sub = Math.random() < 0.5, A = sgnD(a), rhs = sub ? x - a : x + a;
+      if (rhs <= 0) return POTION2_GEN.oneStepAdd(lvl);
+      const text = sub ? `x ${MINUS} ${A} = ${sgnD(rhs)}` : `x + ${A} = ${sgnD(rhs)}`, xi = Math.round(x * 10);
+      return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:'Do the opposite operation to both sides.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:sub ? `Add ${A}` : `Subtract ${A}`}, [{text:sub ? `Subtract ${A}` : `Add ${A}`, mis:'inverseWrong'}]), hint:() => sub ? `x had ${A} taken away. Add it back.` : `${A} was added to x. Take it away.`},
+          {name:'Solve', type:'compute', kind:'num', prompt:`x = ${sgnD(rhs)} ${sub ? '+' : MINUS} ${A} = ?`, answer:sgnD(x), eq:XD.eq(xi, 1), decimal:true, mis:v => XD.eq(xi, 1)(v) ? null : Math.abs(v - (sub ? rhs - a : rhs + a)) < 1e-9 ? 'inverseWrong' : null}], answerSteps:[1]};
+    }
+    const form = pick(['add', 'addL', 'sub']), a = rand(2, lvl === 1 ? 15 : 60), x = rand(lvl === 1 ? 1 : 10, lvl === 1 ? 20 : 90);
+    if (form === 'sub' && x - a < 0) return POTION2_GEN.oneStepAdd(lvl);
+    const [text, right, wrong, wrongX] = EQ_FORMS[form](a, x), rhs = text.split(' = ')[1];
+    return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:'Keep the scale balanced: whatever you do to one side, do to the other.', visual:balanceHTML(text.split(' = ')[0], rhs),
+      steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:right}, [{text:wrong, mis:'inverseWrong'}]), hint:() => form === 'sub' ? `x had ${a} taken away. Add it back.` : `${a} was added to x. Take it away.`},
+        numStep('Solve', 'compute', `x = ${rhs} ${form === 'sub' ? '+' : MINUS} ${a} = ?`, x, {mis:v => v === wrongX ? 'inverseWrong' : null})], answerSteps:[1]};
+  },
+  oneStepMult(lvl){
+    if (lvl === 3 && Math.random() < 0.6) {
+      const [p, q] = pick([[1, 2], [2, 3], [3, 4], [1, 3], [3, 5], [2, 5]]), k = rand(2, 9), x = q * k, rhs = p * k;
+      const text = `(${p}/${q})x = ${rhs}`;
+      return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:`Undo multiplying by ${p}/${q}: divide by ${p}/${q}, which is the same as multiplying by ${q}/${p}.`, visual:balanceHTML(`${p}/${q} × x`, String(rhs)),
+        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:`Multiply by ${q}/${p}`}, [{text:`Multiply by ${p}/${q}`, mis:'inverseWrong'}, {text:`Subtract ${p}/${q}`, mis:'inverseWrong'}]), drill:{type:'reciprocal', key:'flip'}, hint:() => `${q}/${p} is the reciprocal of ${p}/${q}.`},
+          numStep('Solve', 'compute', `x = ${rhs} × ${q}/${p} = ?`, x, {mis:v => Math.abs(v - rhs * p / q) < 1e-9 ? 'inverseWrong' : null, hint:() => `${rhs} ÷ ${p} × ${q}.`})], answerSteps:[1]};
+    }
+    const form = pick(['mul', 'mul', 'div']), a = rand(2, lvl === 1 ? 9 : 12), x = form === 'div' ? a * rand(1, lvl === 1 ? 9 : 12) : rand(1, lvl === 1 ? 10 : 25);
+    const [text, right, wrong, wrongX] = EQ_FORMS[form](a, x), rhs = text.split(' = ')[1];
+    return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:form === 'mul' ? `${a}x means ${a} times x. Divide both sides by ${a}.` : `x was divided by ${a}. Multiply both sides by ${a}.`, visual:balanceHTML(text.split(' = ')[0], rhs),
+      steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:right}, [{text:wrong, mis:'inverseWrong'}, {text:form === 'mul' ? `Subtract ${a} from both sides` : `Add ${a} to both sides`, mis:'inverseWrong'}]), hint:() => 'Do the opposite operation.'},
+        numStep('Solve', 'compute', `x = ${rhs} ${form === 'mul' ? '÷' : '×'} ${a} = ?`, x, {fact:form === 'mul' ? fx(a, x, true) : fx(a, x / a), mis:v => v === wrongX ? 'inverseWrong' : form === 'mul' && v === Number(rhs) - a ? 'inverseWrong' : null})], answerSteps:[1]};
+  },
+  eqModel(lvl){
+    const [e, n] = pick(LEMON_KIDS), g = pick(POTION_WORDS), a = rand(2, 9), x = rand(2, 12);
+    const T = pick([
+      [`${n} had some ${g[1]}. ${n} made ${a + 3} more and now has ${x + a + 3}. How many did ${n} have at first?`, `x + ${a + 3} = ${x + a + 3}`, [`x ${MINUS} ${a + 3} = ${x + a + 3}`, `${a + 3}x = ${x + a + 3}`], x],
+      [`Each crate holds ${a} bottles. ${n} filled some crates with ${a * x} bottles. How many crates?`, `${a}x = ${a * x}`, [`x + ${a} = ${a * x}`, `x ÷ ${a} = ${a * x}`], x],
+      [`${n} gave away ${a} ${g[1]} and has ${x} left. How many did ${n} start with?`, `x ${MINUS} ${a} = ${x}`, [`x + ${a} = ${x}`, `${a}x = ${x}`], x + a],
+      [`${n} shared some ${g[1]} equally into ${a} bags. Each bag got ${x}. How many were there?`, `x ÷ ${a} = ${x}`, [`${a}x = ${x}`, `x ${MINUS} ${a} = ${x}`], a * x]]);
+    const [story, right, wrongs, ans] = T;
+    return {title:'Balance Scale', ctx:right, bubble:story, helper:'Let x be the unknown amount. What happened to it?', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]} x = ?</div>`,
+      steps:[{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?', options:choiceOf({text:right}, wrongs.map(w => ({text:w, mis:'wrongOperation'}))), drill:{type:'story', key:'addSub'}, hint:() => 'Start with x and do what the story does to it.'},
+        numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true, mis:v => v !== ans && (v === Number(right.split(' = ')[1]) - a || v === Number(right.split(' = ')[1]) + a) && lvl > 0 ? 'inverseWrong' : null})], answerSteps:[1]};
+  },
+
+  /* ----- station 6: Potion Limits (inequalities, dependent and independent variables) ----- */
+  testIneq(lvl){
+    const op = pick(lvl === 1 ? ['>', '<'] : ['>', '<', '≥', '≤']), c = lvl === 3 ? rand(-6, 6) : rand(2, 15), side = op === '>' || op === '≥' ? 1 : -1, strict = op === '>' || op === '<';
+    const visual = `<div style="text-align:center; font-size:2rem">🚦 x ${op} ${sgn(c)}</div>`, helper = strict ? 'Without the line under the sign, the number itself does not count.' : 'The line under the sign means the number itself counts too.';
+    if (Math.random() < 0.5) {                                             // is this one value a solution?
+      const v = c + pick([-3, -1, 0, 0, 1, 3]), yes = ineqTrue(v, op, c);
+      return {title:'Potion Limits', ctx:`x ${op} ${sgn(c)}, x = ${sgn(v)}`, bubble:`Is x = ${sgn(v)} a solution of x ${op} ${sgn(c)}?`, helper, visual,
+        steps:[{name:'True?', type:'concept', kind:'choice', prompt:`Is ${sgn(v)} ${op} ${sgn(c)} true?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes', mis:v === c ? 'boundaryWrong' : null}]),
+          hint:() => `Where is ${sgn(v)} compared with ${sgn(c)} on a number line?`}]};
+    }
+    const right = !strict && Math.random() < 0.4 ? c : c + side * rand(1, 3);
+    const wrongs = [{v:c - side * rand(1, 3), mis:'ineqDirection'}, strict ? {v:c, mis:'boundaryWrong'} : {v:c - side * rand(4, 5), mis:'ineqDirection'}];
+    const opts = choiceOf({text:`x = ${sgn(right)}`}, wrongs.map(w => ({text:`x = ${sgn(w.v)}`, mis:w.mis})));
+    return {title:'Potion Limits', ctx:`x ${op} ${sgn(c)}: pick`, bubble:`The potion works when x ${op} ${sgn(c)}. Which value makes it true?`, helper, visual,
+      steps:[{name:'Which value', type:'concept', kind:'choice', prompt:`Which makes x ${op} ${sgn(c)} true?`, options:opts, hint:() => `Is it ${side > 0 ? 'more' : 'less'} than ${sgn(c)}${strict ? '' : ', or equal'}?`}]};
+  },
+  plotIneq(lvl){
+    const op = pick(['>', '<', '≥', '≤']), c = lvl === 1 ? rand(1, 8) : rand(-6, 6);
+    const words = {'>':'more than', '<':'less than', '≥':'at least', '≤':'at most'}[op];
+    const ask = lvl === 3 ? `The potion must be kept at ${words} ${sgn(c)} degrees. Which graph shows the temperatures that work?` : `Which graph shows x ${op} ${sgn(c)}?`;
+    const opts = shuffle([[op, null], [INEQ_FLIP[op], 'ineqDirection'], [INEQ_OPEN[op], 'circleWrong']]).map(([o, mis]) => ({html:ineqSVG(o, c), text:`x ${o} ${sgn(c)}`, ok:o === op, mis}));
+    return {title:'Potion Limits', ctx:`graph x ${op} ${sgn(c)}`, bubble:ask, helper:'Open circle: the number is not included (< or >). Filled circle: it is included (≤ or ≥). The arrow points to the numbers that work.',
+      visual:`<div style="text-align:center; font-size:2rem">🚦 ${lvl === 3 ? words + ' ' + sgn(c) : `x ${op} ${sgn(c)}`}</div>`,
+      steps:[{name:'Pick the graph', type:'concept', kind:'choice', prompt:lvl === 3 ? `Which graph shows "${words} ${sgn(c)}"?` : `Which graph shows x ${op} ${sgn(c)}?`, options:opts,
+        hint:() => `${op === '>' || op === '≥' ? 'Greater: the arrow points right.' : 'Less: the arrow points left.'} ${op.includes('≥') || op.includes('≤') ? 'The circle is filled.' : 'The circle is open.'}`}]};
+  },
+  depIndep(lvl){
+    const [e, n] = pick(LEMON_KIDS), k = rand(2, 9), b = rand(2, 12);
+    const S = pick([
+      {story:`${n} earns $${k} for every potion sold.`, ind:'the number of potions sold', dep:'the money earned', f:x => k * x, rule:`y = ${k}x`, wrongRule:[`y = x + ${k}`, `x = ${k}y`], xs:'potions', ys:'dollars'},
+      {story:`A cauldron heats up ${k} degrees every minute, starting at ${b} degrees.`, ind:'the minutes', dep:'the temperature', f:x => k * x + b, rule:`y = ${k}x + ${b}`, wrongRule:[`y = ${b}x + ${k}`, `y = ${k + b}x`], xs:'minutes', ys:'degrees'},
+      {story:`Each bag holds ${k} crystals.`, ind:'the number of bags', dep:'the number of crystals', f:x => k * x, rule:`y = ${k}x`, wrongRule:[`y = x + ${k}`, `y = x ÷ ${k}`], xs:'bags', ys:'crystals'},
+      {story:`${n} is ${b} years older than a little cousin.`, ind:"the cousin's age", dep:`${n}'s age`, f:x => x + b, rule:`y = x + ${b}`, wrongRule:[`y = ${b}x`, `x = y + ${b}`], xs:'cousin', ys:n}]);
+    if (lvl === 1) return {title:'Potion Limits', ctx:`${S.story} dep?`, bubble:`${S.story} Which is the dependent variable?`, helper:'The dependent variable depends on the other one. It is what you find out.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${e} 🧪</div>`,
+      steps:[{name:'Dependent', type:'concept', kind:'choice', prompt:'Which one depends on the other?', options:choiceOf({text:S.dep}, [{text:S.ind, mis:'depIndepSwap'}]), hint:() => `Does ${S.dep} change because of ${S.ind}, or the other way around?`}]};
+    const xs = [1, 2, 3, 4, 5].map(i => i + (lvl === 3 ? rand(0, 1) * 0 : 0)), miss = rand(2, 4);
+    const table = `<table class="xy-table"><tr><th>${esc(S.xs)} (x)</th>${xs.map(x => `<td>${x}</td>`).join('')}</tr><tr><th>${esc(S.ys)} (y)</th>${xs.map((x, i) => `<td>${lvl === 2 && i === miss ? '?' : S.f(x)}</td>`).join('')}</tr></table>`;
+    if (lvl === 2) return {title:'Potion Limits', ctx:`${S.rule} table`, bubble:`${S.story} Fill in the missing number in the table.`, helper:'Find the pattern from x to y, then use it.', visual:table,
+      steps:[numStep('Missing y', 'compute', `When x = ${xs[miss]}, y = ?`, S.f(xs[miss]), {mis:v => v === S.f(xs[miss - 1]) + 1 ? 'patternWrongRule' : null, hint:() => `When x = 1, y = ${S.f(1)}. When x = 2, y = ${S.f(2)}.`})]};
+    return {title:'Potion Limits', ctx:`${S.rule} rule`, bubble:`${S.story} Which equation matches the table?`, helper:'Check the rule with every column of the table.', visual:table,
+      steps:[{name:'Independent', type:'concept', kind:'choice', prompt:'Which is the independent variable (x)?', options:choiceOf({text:S.ind}, [{text:S.dep, mis:'depIndepSwap'}]), hint:() => 'The independent variable is the one you choose or that changes on its own.'},
+        {name:'The rule', type:'concept', kind:'choice', prompt:'Which equation matches?', options:choiceOf({text:S.rule}, S.wrongRule.map(t => ({text:t, mis:t.startsWith('x') ? 'depIndepSwap' : 'patternWrongRule'}))), hint:() => `Try x = 1: y should be ${S.f(1)}. Try x = 2: y should be ${S.f(2)}.`}], answerSteps:[1]};
+  }
+};
+Object.assign(GEN, POTION2_GEN);
+
 /* ----- The Register layouts: multiplication rows (kind 'mulrow') and the long-division bus stop (kind 'ldiv') ----- */
 /* digit cells for a number as written (2.45): the point rides on the digit before it, so the digits stay in whole-number columns */
 function writtenCells(str){ const out = []; for (const ch of String(str)) { if (ch === '.') out[out.length - 1].pt = true; else out.push({c:ch}); } return out; }

@@ -113,6 +113,9 @@ need('src/shared/registry.ts', 'export const RINK_STATIONS', 'the Ice Rink stati
 need('src/game/game.js', 'const POTION_GEN', 'the Potion Lab generators');
 need('src/game/game.js', 'Object.assign(GEN, POTION_GEN)', 'the Potion Lab generators merged into GEN');
 need('src/shared/registry.ts', 'export const POTION_STATIONS', 'the Potion Lab stations');
+need('src/game/game.js', 'const POTION2_GEN', 'the Potion Lab equations and inequalities generators');
+need('src/game/game.js', 'Object.assign(GEN, POTION2_GEN)', 'the Potion Lab part 2 generators merged into GEN');
+need('src/game/game.js', 'function ineqSVG(', 'the inequality graph');
 need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
 need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
 need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');
