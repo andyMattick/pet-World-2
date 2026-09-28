@@ -34,7 +34,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] 4th grade opens: the 🍋 Lemonade Stand, 4 stations and 15 skills (`GRADE4-1-LEMONADE.md`). The town now shows the grade switcher
 - [x] Toy Shop stations 1 and 2: place value (blocks and tables), writing and comparing numbers, rounding, adding and subtracting (`GRADE4-2-TOYS.md`)
 - [x] Toy Shop stations 3 and 4: multiplying and dividing with area models, partial products, and long division by 1-digit numbers, plus factor-pair and rounding sprint skills (`GRADE4-2-TOYS.md`)
-- [x] Pizza Parlor stations 1 to 3: equivalent fractions, comparing, adding and subtracting fractions and mixed numbers, with fraction bars and number lines (`GRADE4-3-PIZZA.md`)
+- [x] Pizza Parlor (all 5 stations): equivalent fractions, comparing, adding and subtracting fractions and mixed numbers, multiplying fractions by whole numbers, tenths, hundredths, and decimals, with fraction bars, number lines, and hundred grids (`GRADE4-3-PIZZA.md`)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -71,7 +71,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 3c. 4th grade: the Toy Shop, stations 1 and 2 (`GRADE4-2-TOYS.md`)
 - [x] 3d. 4th grade: Toy Shop stations 3 and 4 (multiplying and dividing, with area models), and the factor-pair and rounding sprint skills
 - [x] 3e. 4th grade: Pizza Parlor stations 1 to 3 (`GRADE4-3-PIZZA.md`)
-- [ ] 3f. 4th grade: Pizza Parlor stations 4 and 5, then the Garden Center and Art Studio
+- [x] 3f. 4th grade: Pizza Parlor stations 4 and 5 (`GRADE4-3-PIZZA.md`)
+- [ ] 3g. 4th grade: Garden Center, then Art Studio
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run
