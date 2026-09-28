@@ -537,3 +537,6 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .dnl-fit .dnl{min-width:0}
 .dnl-fit .dnl-lbls{font-size:1.3rem}
 .dnl-fit .dnl-tick .v{font-size:1.05rem}
+/* order of operations: the expression with the part being worked on highlighted (Clock Tower) */
+.oo-expr{text-align:center; font-size:1.4rem; margin:4px 0 8px}
+.oo-expr mark{background:var(--butter); color:#3a2a1a; border-radius:6px; padding:0 4px}

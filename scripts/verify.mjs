@@ -102,6 +102,10 @@ need('src/shared/registry.ts', 'export const GARDEN_STATIONS', 'the Garden Cente
 need('src/game/game.js', 'const MARKET_GEN', 'the Market Stall generators');
 need('src/game/game.js', 'Object.assign(GEN, MARKET_GEN)', 'the Market Stall generators merged into GEN');
 need('src/shared/registry.ts', 'export const MARKET_STATIONS', 'the Market Stall stations');
+need('src/game/game.js', 'const CLOCK_GEN', 'the Clock Tower generators');
+need('src/game/game.js', 'Object.assign(GEN, CLOCK_GEN)', 'the Clock Tower generators merged into GEN');
+need('src/game/game.js', 'function ooEval(', 'the order of operations engine');
+need('src/shared/registry.ts', 'export const CLOCK_STATIONS', 'the Clock Tower stations');
 need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
 need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
 need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');
