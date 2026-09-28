@@ -44,6 +44,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] 6th grade Potion Lab stations 1 to 4 (unit 6): parts of expressions, evaluating, writing expressions, GCF and LCM, the distributive property, equivalent expressions (`POTION.md`)
 - [x] 6th grade Potion Lab stations 5 and 6 (unit 7): one-step equations with a balance, inequalities with graphs, dependent and independent variables. The Potion Lab is complete (`POTION.md`)
 - [x] 6th grade Pet Houses (all 6 stations): area of triangles, parallelograms, and composite shapes; the coordinate plane; volume with fractions; nets and surface area (`HOUSES.md`)
+- [x] 6th grade Pet Show (all 5 stations): statistical questions, dot plots, histograms, mean, median, IQR, MAD, box plots, shape of data (`SHOW.md`). **6th grade is complete: 8 shops, Khan units 1 to 11**
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -56,7 +57,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 ## Next up
 
-**6th grade comes first; 4th grade is paused** (owner decision). Each shop follows Khan's 6th grade course, in order. Plan files are written as each shop is built.
+**6th grade is complete** (all 8 shops). 4th grade is paused (owner decision) until the owner restarts it. Each shop follows Khan's 6th grade course, in order. Plan files are written as each shop is built.
 
 | # | Work | Khan unit | Main topics | Plan | Size |
 |---|---|---|---|---|---|
@@ -98,7 +99,8 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3m. 6th grade: Potion Lab stations 1 to 4, unit 6 (`POTION.md`)
 - [x] 3m2. 6th grade: Potion Lab stations 5 and 6, unit 7 (`POTION.md`)
 - [x] 3n. 6th grade: Pet Houses (`HOUSES.md`)
-- [ ] 3o. 6th grade: the Pet Show (data and statistics)  ← next
+- [x] 3o. 6th grade: the Pet Show (`SHOW.md`). 6th grade complete
+- [ ] 3p. Next: owner's choice: restart 4th grade (Garden Center stations 3 and 4, Art Studio), plan 7th grade, or fluency reviews
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run
