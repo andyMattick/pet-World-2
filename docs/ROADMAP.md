@@ -41,6 +41,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Dashboard shop tabs grouped by grade, opening on the class's home grade; class settings grouped by grade
 - [x] Pet Shop & Sticker Book grouped by grade: a grade switch on top, and it opens on the grade the student is standing in
 - [x] 6th grade Ice Rink (all 4 stations): negative numbers, number lines, opposites, comparing and ordering, absolute value, and negative answers with a ± button (`RINK.md`)
+- [x] 6th grade Potion Lab stations 1 to 4 (unit 6): parts of expressions, evaluating, writing expressions, GCF and LCM, the distributive property, equivalent expressions (`POTION.md`)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -92,7 +93,8 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3j. 6th grade: the Clock Tower (`CLOCK.md`)
 - [x] 3l. Dashboard shop tabs and class settings grouped by grade
 - [x] 3k. 6th grade: the Ice Rink (`RINK.md`)
-- [ ] 3m. 6th grade: the Potion Lab (expressions, equations, inequalities)  ← next
+- [x] 3m. 6th grade: Potion Lab stations 1 to 4, unit 6 (`POTION.md`)
+- [ ] 3m2. 6th grade: Potion Lab stations 5 and 6, unit 7 (equations and inequalities)  ← next
 - [ ] 3n. 6th grade: Pet Houses (area, coordinate plane, 3D figures)
 - [ ] 3o. 6th grade: the Pet Show (data and statistics)
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
