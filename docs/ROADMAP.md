@@ -37,6 +37,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Pizza Parlor (all 5 stations): equivalent fractions, comparing, adding and subtracting fractions and mixed numbers, multiplying fractions by whole numbers, tenths, hundredths, and decimals, with fraction bars, number lines, and hundred grids (`GRADE4-3-PIZZA.md`)
 - [x] Garden Center stations 1 and 2: converting units, area and perimeter (`GRADE4-4-GARDEN.md`)
 - [x] 6th grade Market Stall (all 4 stations): unit rates, comparing deals, percents, percents as decimals and fractions, and percent problems with double number lines (`MARKET.md`)
+- [x] 6th grade Clock Tower (all 3 stations): exponents, powers of fractions and decimals, order of operations with a step-by-step engine, comparing powers (`CLOCK.md`)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -77,7 +78,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
 - [x] 3g. 4th grade: Garden Center stations 1 and 2, converting units and area and perimeter (`GRADE4-4-GARDEN.md`)
 - [ ] 3h. 4th grade: Garden Center stations 3 (line plots) and 4 (angles), then the Art Studio
 - [x] 3i. 6th grade: the Market Stall (`MARKET.md`)
-- [ ] 3j. 6th grade: the Clock Tower (exponents and order of operations)
+- [x] 3j. 6th grade: the Clock Tower (`CLOCK.md`)
+- [ ] 3k. 6th grade: the Ice Rink (negative numbers)
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run
