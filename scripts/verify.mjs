@@ -116,6 +116,10 @@ need('src/shared/registry.ts', 'export const POTION_STATIONS', 'the Potion Lab s
 need('src/game/game.js', 'const POTION2_GEN', 'the Potion Lab equations and inequalities generators');
 need('src/game/game.js', 'Object.assign(GEN, POTION2_GEN)', 'the Potion Lab part 2 generators merged into GEN');
 need('src/game/game.js', 'function ineqSVG(', 'the inequality graph');
+need('src/game/game.js', 'const HOUSES_GEN', 'the Pet Houses area and coordinate plane generators');
+need('src/game/game.js', 'const HOUSES2_GEN', 'the Pet Houses volume and surface area generators');
+need('src/game/game.js', 'Object.assign(GEN, HOUSES2_GEN)', 'the Pet Houses generators merged into GEN');
+need('src/shared/registry.ts', 'export const HOUSES_STATIONS', 'the Pet Houses stations');
 need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
 need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
 need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');

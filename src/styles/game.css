@@ -558,3 +558,16 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 table.xy-table{margin:6px auto; border-collapse:collapse; font-size:1.2rem}
 table.xy-table th, table.xy-table td{border:2px solid var(--chalk); padding:4px 10px; text-align:center}
 table.xy-table th{font-size:.95rem}
+/* shapes, the coordinate plane, boxes and nets (Pet Houses) */
+.shape-pic, .plane-pic{display:block; max-width:100%; height:auto; margin:0 auto}
+.shape-pic .shape-fill{fill:var(--butter); stroke:currentColor; stroke-width:2}
+.shape-pic .shape-2{fill:#FFE9A8} .shape-pic .shape-3{fill:#F2D27A}
+.shape-pic .net-face{fill:#FFE9A8}
+.shape-pic .shape-dash{stroke:var(--berry); stroke-width:2; stroke-dasharray:5 4}
+.shape-pic .shape-lbl{fill:currentColor; font-size:15px; font-weight:700}
+.plane-pic .grid-line{stroke:currentColor; stroke-width:.6; opacity:.3}
+.plane-pic .axis-line{stroke:currentColor; stroke-width:2}
+.plane-pic .grid-num{fill:currentColor; font-size:10px; text-anchor:middle}
+.plane-pic .grid-name{fill:var(--butter); font-size:14px; font-weight:700}
+.plane-pic .nl-dot{fill:var(--berry); stroke:currentColor; stroke-width:1.5}
+.plane-pic .plane-poly{fill:var(--butter); fill-opacity:.35; stroke:var(--butter); stroke-width:2}
