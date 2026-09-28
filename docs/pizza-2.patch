@@ -1,0 +1,562 @@
+From ab243f5903d3df9aa4bcdceea1fb8a1a0237752f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 27 Sep 2026 20:15:27 -0400
+Subject: [PATCH 1/2] 4th grade: Pizza Parlor stations 4 and 5
+
+Party Orders (multiplying fractions by whole numbers: models, number line
+jumps, unit fractions, fraction x whole, mixed number x whole, word
+problems) and Pizza Money (tenths and hundredths, adding tenths and
+hundredths, decimals on hundred grids and number lines, decimals in
+words, decimals to fractions, comparing decimals). New mix-ups: multBoth,
+wholeOnly, tenthsHundredths, longerIsBigger, compareDecimals.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014wQFE2KZBjkYxaH2m8t9SR
+---
+ scripts/verify.mjs     |   3 +
+ src/game/game.js       | 129 +++++++++++++++++++++++++++++++++++++++++
+ src/shared/registry.ts |  36 +++++++++---
+ src/styles/game.css    |   2 +
+ 4 files changed, 161 insertions(+), 9 deletions(-)
+
+diff --git a/scripts/verify.mjs b/scripts/verify.mjs
+index 64db678..93ff51a 100644
+--- a/scripts/verify.mjs
++++ b/scripts/verify.mjs
+@@ -92,6 +92,9 @@ need('src/game/game.js', '  factors:{', 'the factor-pair practice pop-up');
+ need('src/game/game.js', '  rounding:{', 'the rounding practice pop-up');
+ need('src/game/game.js', 'const PIZZA_GEN', 'the Pizza Parlor generators');
+ need('src/game/game.js', 'Object.assign(GEN, PIZZA_GEN)', 'the Pizza Parlor generators merged into GEN');
++need('src/game/game.js', 'const PIZZA2_GEN', 'the Pizza Parlor stations 4 and 5 generators');
++need('src/game/game.js', 'Object.assign(GEN, PIZZA2_GEN)', 'the Pizza Parlor stations 4 and 5 generators merged into GEN');
++need('src/game/game.js', 'function hundredGridSVG', 'the hundred grid picture');
+ need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
+ need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
+ need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');
+diff --git a/src/game/game.js b/src/game/game.js
+index 681cad9..315b321 100644
+--- a/src/game/game.js
++++ b/src/game/game.js
+@@ -2467,6 +2467,135 @@ function mixedProblem(lvl, regroup){
+ }
+ Object.assign(GEN, PIZZA_GEN);
+ 
++/* ===== 4th grade, Pizza Parlor stations 4 and 5 (Sadlier lessons 21 to 25): multiplying fractions by whole numbers, tenths and hundredths ===== */
++/* a 10 × 10 grid with the first n squares shaded (hundredths) */
++function hundredGridSVG(n){
++  let g = '';
++  for (let i = 0; i < 100; i++){ const r = Math.floor(i / 10), c = i % 10; g += `<rect x="${1 + c * 16}" y="${1 + r * 16}" width="16" height="16" class="${i < n ? 'fb-on' : 'fb-off'}"/>`; }
++  return `<svg class="frac-bar hundred-grid" viewBox="0 0 162 162" width="162" role="img" aria-label="${n} of 100 squares shaded">${g}</svg>`;
++}
++/* k jumps of a/b on a number line from 0 (whole numbers labeled) */
++function jumpsLineSVG(a, b, k){
++  const top = Math.max(1, Math.ceil(k * a / b)), w = 300, L = 14, R = w - 14, step = (R - L) / (top * b), y = 44;
++  let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
++  for (let i = 0; i <= top * b; i++){ const x = L + i * step, whole = i % b === 0; g += `<line x1="${x}" y1="${y - (whole ? 10 : 6)}" x2="${x}" y2="${y + (whole ? 10 : 6)}" class="nl-line"/>`; if (whole) g += `<text x="${x}" y="${y + 26}" class="nl-text">${i / b}</text>`; }
++  for (let j = 0; j < k; j++){ const x1 = L + j * a * step, x2 = L + (j + 1) * a * step; g += `<path d="M${x1} ${y - 4} Q${(x1 + x2) / 2} ${y - 34} ${x2} ${y - 4}" class="nl-jump"/>`; }
++  return `<svg class="num-line" viewBox="0 0 ${w} 76" width="${w}" role="img" aria-label="${k} jumps of ${a}/${b}">${g}</svg>`;
++}
++const hund = v => Math.round(v * 100);                                    // hundredths as a whole number, exactly
++const decStr = h => XD.fmt(h, 2).replace(/^(\d+)$/, '$1');                 // 45 → "0.45", 50 → "0.5"
++const decEq = h => v => typeof v === 'number' && isFinite(v) && Math.abs(v * 100 - h) < 1e-6;
++const DEC_WORDS = h => { const t = Math.floor(h / 10) % 10, o = h % 10, w = Math.floor(h / 100);
++  const part = o === 0 ? `${ONES_W[t]} tenth${t === 1 ? '' : 's'}` : `${words3(h % 100)} hundredth${h % 100 === 1 ? '' : 's'}`;
++  return (w ? `${words3(w)} and ` : '') + part; };
++const PIZZA2_GEN = {
++  multFracModel(lvl){
++    const b = pick([3, 4, 5, 6, 8]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 3 ? 6 : 4), p = k * a;
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b} model`, bubble:`Each party plate gets ${a}/${b} of a pizza. There are ${k} plates. How much pizza is that?`, helper:`${k} groups of ${a}/${b}: count all the shaded ${FRAC.part(b, true)}.`,
++      visual:`<div class="frac-pics">${Array.from({length:k}, () => fracBarSVG(a, b, {w:160})).join('')}</div>`,
++      steps:[{name:'Count the pieces', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a},
++          mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `${k} groups of ${a} ${FRAC.part(b, a > 1)} is ${k} × ${a} ${FRAC.part(b, true)}.`},
++        ...(p > b ? [fracStep('As a mixed number', `${p}/${b} = ?`, p, b, {mixedOnly:true, mis:v => FRAC.ok(v) && FRAC.same(v, p, b) && v[1] >= v[2] ? 'notMixed' : null})] : [])]};
++  },
++  multFracLine(lvl){
++    const b = pick([2, 3, 4, 5, 6]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), p = k * a;
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b} jumps`, bubble:`A frog jumps ${a}/${b} of a meter, ${k} times. Where does it land?`, helper:'Count the jumps: each one is the same size.',
++      visual:jumpsLineSVG(a, b, k),
++      steps:[{name:'Where it lands', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `Each jump is ${a} small step${a > 1 ? 's' : ''}. ${k} jumps.`}]};
++  },
++  multUnitFrac(lvl){
++    const b = pick([2, 3, 4, 5, 6, 8, 10, 12]), k = rand(2, lvl === 1 ? b - 1 : 12);
++    if (lvl >= 2 && Math.random() < 0.5) return {title:'Party Orders', ctx:`${k}/${b} as unit fractions`, bubble:`Write ${k}/${b} as a whole number times a unit fraction.`, helper:`${k}/${b} is ${k} copies of 1/${b}.`,
++      visual:`<div class="frac-pics">${fracBarSVG(k, b, {w:200})}</div>`,
++      steps:[{name:'How many unit fractions', type:'concept', kind:'num', prompt:`${k}/${b} = ? × 1/${b}`, answer:k, eq:v => v === k, mis:v => v !== k && v === b ? 'multBoth' : null}]};
++    return {title:'Party Orders', ctx:`${k} × 1/${b}`, bubble:`Multiply: ${k} × 1/${b}`, helper:'A whole number times a unit fraction: the whole number goes on top.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × 1/${b}</div>`,
++      steps:[fracStep('Multiply', `${k} × 1/${b} = ?`, k, b, {mis:v => fracMis(v, k, b, [['multBoth', k, k * b]]), hint:() => `${k} copies of 1/${b} is ${k}/${b}.`})]};
++  },
++  multFracWhole(lvl){
++    const b = pick([3, 4, 5, 6, 8, 10]), a = rand(2, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b}`, bubble:`Multiply: ${k} × ${a}/${b}`, helper:'Multiply the whole number by the numerator. The denominator stays the same.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${a}/${b}</div>`,
++      steps:[{name:'Count unit fractions', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ? × 1/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null},
++        fracStep('Multiply', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]]), hint:() => `${k} × ${a} = ${p}, so it's ${p}/${b}.${p > b ? ' That\'s more than 1: you can write it as a mixed number.' : ''}`})]};
++  },
++  multMixedWhole(lvl){
++    const b = pick([2, 3, 4, 5, 6, 8]), w = rand(1, lvl === 1 ? 2 : 4), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), top = w * b + a, P = k * top;
++    return {title:'Party Orders', ctx:`${k} × ${w} ${a}/${b}`, bubble:`Each pizza box needs ${w} ${a}/${b} feet of ribbon. How much ribbon for ${k} boxes?`, helper:'Turn the mixed number into a fraction, then multiply.',
++      visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${w} ${a}/${b}</div>`,
++      steps:[{name:'Improper fraction', type:'compute', kind:'num', prompt:`${w} ${a}/${b} = ?/${b}`, answer:top, eq:v => v === top, mis:v => v !== top && (v === w + a || v === w * a + b) ? 'improperWrong' : null},
++        fracStep('Multiply', `${k} × ${top}/${b} = ?`, P, b, {mis:v => { const id = fracMis(v, P, b, [['multBoth', P, k * b], ['wholeOnly', k * w * b + a, b]]); return id; }, hint:() => `${k} × ${top} = ${P}, so ${P}/${b}.`})],
++      answerSteps:[1]};
++  },
++  multFracWord(lvl){
++    const [e, n] = pick(PIZZA_KIDS), b = pick([2, 3, 4, 8]), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
++    const [thing, unit] = pick([['pizza', 'cup of cheese'], ['cake', 'cup of sugar'], ['batch of dough', 'cup of flour'], ['lap', 'mile']]);
++    const story = unit === 'mile' ? `${n} runs ${a}/${b} of a mile each lap and runs ${k} laps. How far does ${n} run?` : `Each ${thing} needs ${a}/${b} ${unit}. ${n} makes ${k}. How much ${unit.replace(/^cup of /, '')} is that, in cups?`;
++    const opts = choiceOf({text:`${k} × ${a}/${b}`}, [{text:`${k} + ${a}/${b}`, mis:'wrongOperation'}, {text:`${a}/${b} ÷ ${k}`, mis:'wrongOperation'}]);
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b} story`, bubble:story, helper:'Equal groups of a fraction: multiply.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${k} × ${a}/${b}</div>`,
++      steps:[{name:'Pick the math', type:'concept', kind:'choice', prompt:'Which one matches the story?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => `${k} equal groups of ${a}/${b}.`},
++        fracStep('Solve', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]])})]};
++  },
++  eqFrac10(lvl){
++    const t = rand(1, 9), toHund = lvl === 1 || Math.random() < 0.5;
++    return {title:'Pizza Money', ctx:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, bubble:toHund ? `Write ${t}/10 in hundredths.` : `Write ${t * 10}/100 in tenths.`, helper:'1 tenth is the same as 10 hundredths.',
++      visual:`<div class="frac-pics">${hundredGridSVG(t * 10)}</div>`,
++      steps:[{name:toHund ? 'Tenths to hundredths' : 'Hundredths to tenths', type:'concept', kind:'num', prompt:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, answer:toHund ? t * 10 : t, eq:v => v === (toHund ? t * 10 : t),
++        mis:v => v !== (toHund ? t * 10 : t) && v === (toHund ? t : t * 10) ? 'tenthsHundredths' : null, hint:() => toHund ? `Each tenth is 10 hundredths. ${t} × 10 = ?` : `Every 10 hundredths make 1 tenth.`}]};
++  },
++  addFrac10(lvl){
++    const t = rand(1, 9), h = rand(1, lvl === 1 ? 9 : 99), sum = t * 10 + h;
++    if (h % 10 === 0 || sum > (lvl === 3 ? 199 : 100)) return PIZZA2_GEN.addFrac10(lvl);
++    return {title:'Pizza Money', ctx:`${t}/10 + ${h}/100`, bubble:`Add: ${t}/10 + ${h}/100`, helper:'Change the tenths to hundredths first, then add.', visual:`<div style="text-align:center; font-size:1.8rem">${t}/10 + ${h}/100</div>`,
++      steps:[{name:'Tenths to hundredths', type:'concept', kind:'num', prompt:`${t}/10 = ?/100`, answer:t * 10, eq:v => v === t * 10, mis:v => v !== t * 10 && v === t ? 'tenthsHundredths' : null},
++        {name:'Add', type:'compute', kind:'num', prompt:`${t * 10}/100 + ${h}/100 = ?/100`, answer:sum, eq:v => v === sum, mis:v => v !== sum && v === t + h ? 'tenthsHundredths' : null, hint:() => `${t * 10} + ${h} = ?`}]};
++  },
++  decShown(lvl){
++    const grid = Math.random() < 0.5, h = grid ? rand(1, 99) : rand(1, 9) * 10,   // number lines show tenths; the grid shows hundredths
++ whole = lvl === 3 && !grid ? rand(1, 3) : 0, H = whole * 100 + h;
++    const visual = grid ? `<div class="frac-pics">${hundredGridSVG(h)}</div>` : numberLineSVG(h % 10 === 0 ? 10 : 100, (h % 10 === 0 ? h / 10 : h) + (whole ? whole * (h % 10 === 0 ? 10 : 100) : 0), {top:whole + 1, w:300});
++    return {title:'Pizza Money', ctx:`${grid ? 'grid' : 'line'} ${decStr(H)}`, bubble:grid ? 'What decimal does the shaded part of the grid show?' : 'What decimal is at the dot?', helper:grid ? 'The whole grid is 1. Each small square is one hundredth.' : 'Count the small steps between the whole numbers.',
++      visual, steps:[{name:'As a decimal', type:'concept', kind:'num', prompt:'Write it as a decimal.', answer:decStr(H), eq:decEq(H), decimal:true,
++        mis:v => { if (decEq(H)(v)) return null; if (h % 10 && decEq(whole * 100 + h * 10)(v)) return 'tenthsHundredths'; if (h % 10 === 0 && decEq(whole * 100 + h / 10)(v)) return 'tenthsHundredths'; return null; },
++        hint:() => grid ? `${h} of 100 squares: ${h}/100.` : `Each small step is ${h % 10 === 0 ? 'one tenth' : 'one hundredth'}.`}]};
++  },
++  decWords(lvl){
++    const h = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 20) : 0, H = w * 100 + h, words = DEC_WORDS(H), d = decStr(H);
++    const wrongH = h % 10 === 0 ? w * 100 + h / 10 : (h < 10 ? w * 100 + h * 10 : w * 100 + (h % 10) * 10 + Math.floor(h / 10));
++    const toWords = Math.random() < 0.5;
++    if (toWords) return {title:'Pizza Money', ctx:`${d} in words`, bubble:`How do you say ${d} in words?`, helper:'Read the number after the point, then say the last place: tenths or hundredths.', visual:`<div style="text-align:center; font-size:2rem">${d}</div>`,
++      steps:[{name:'Decimal to words', type:'concept', kind:'choice', prompt:`Which words say ${d}?`, options:choiceOf({text:words}, [{text:DEC_WORDS(wrongH), mis:'tenthsHundredths'}, {text:words.includes('tenth') ? words.replace('tenth', 'hundredth') : words.replace('hundredth', 'tenth'), mis:'tenthsHundredths'}]), hint:() => `${d.split('.')[1].length === 1 ? 'One digit after the point: tenths.' : 'Two digits after the point: hundredths.'}`}]};
++    return {title:'Pizza Money', ctx:`"${words}"`, bubble:`Write "${words}" as a decimal.`, helper:'Tenths use one place after the point, hundredths use two.', visual:`<div style="text-align:center; font-size:1.4rem">${words}</div>`,
++      steps:[{name:'Words to decimal', type:'concept', kind:'num', prompt:`Write "${words}" as a decimal.`, answer:d, eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && decEq(wrongH)(v) ? 'tenthsHundredths' : null, hint:() => h < 10 ? 'Seven hundredths is 0.07: a zero holds the tenths place.' : 'Write the digits after the point.'}]};
++  },
++  decLine(lvl){
++    if (lvl === 1) { const t = rand(1, 9); return {title:'Pizza Money', ctx:`line 0.${t}`, bubble:'The dot shows how full the pitcher is. What decimal is it at?', helper:'The line from 0 to 1 is split into 10 tenths.', visual:numberLineSVG(10, t),
++      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(t * 10), eq:decEq(t * 10), decimal:true, mis:v => !decEq(t * 10)(v) && decEq(t)(v) ? 'tenthsHundredths' : null}]}; }
++    const t = rand(0, 9), o = rand(1, 9), H = t * 10 + o;
++    const L = 14, R = 286, step = (R - L) / 10, y = 30; let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
++    for (let i = 0; i <= 10; i++){ const x = L + i * step; g += `<line x1="${x}" y1="${y - (i % 10 === 0 ? 10 : 6)}" x2="${x}" y2="${y + (i % 10 === 0 ? 10 : 6)}" class="nl-line"/>`; if (i === 0 || i === 10) g += `<text x="${x}" y="${y + 26}" class="nl-text">${decStr(t * 10 + i)}</text>`; }
++    g += `<circle cx="${L + o * step}" cy="${y}" r="7" class="nl-dot"/>`;
++    return {title:'Pizza Money', ctx:`line ${decStr(H)}`, bubble:`The line is zoomed in between ${decStr(t * 10)} and ${decStr(t * 10 + 10)}. What decimal is at the dot?`, helper:'Between two tenths there are 10 hundredths.',
++      visual:`<svg class="num-line" viewBox="0 0 300 62" width="300" role="img" aria-label="number line from ${decStr(t * 10)} to ${decStr(t * 10 + 10)}">${g}</svg>`,
++      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(H), eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && (decEq(t * 10 + o * 10)(v) || decEq(o)(v)) ? 'tenthsHundredths' : null, hint:() => `Each small step is 0.01. Start at ${decStr(t * 10)} and count ${o}.`}]};
++  },
++  decToFrac(lvl){
++    const tenth = lvl === 1 || Math.random() < 0.3, h = tenth ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 9) : 0, d = decStr(w * 100 + h), den = tenth ? 10 : 100, num = tenth ? h / 10 : h;
++    return {title:'Pizza Money', ctx:`${d} as a fraction`, bubble:`The pizza box weighs ${d} kilograms. Write ${d} as a fraction.`, helper:'One place after the point is tenths. Two places is hundredths.',
++      visual:`<div style="text-align:center; font-size:2rem">${d}</div>`,
++      steps:[{name:'Decimal to fraction', type:'concept', kind:'num', prompt:w ? `${d} = ${w} ?/${den}` : `${d} = ?/${den}`, answer:num, eq:v => v === num, mis:v => v !== num && (v === num * 10 || v * 10 === num) ? 'tenthsHundredths' : null,
++        hint:() => `Read ${d} as "${DEC_WORDS(w * 100 + h)}".`}]};
++  },
++  cmpDec(lvl){
++    let a, b;
++    do { a = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99); b = rand(1, 99); if (lvl >= 2 && Math.random() < 0.6) { a = rand(1, 9) * 10; b = a - rand(1, 9); if (Math.random() < 0.5) [a, b] = [b, a]; } } while (a === b || b <= 0);
++    const right = a > b ? '>' : '<', sa = decStr(a), sb = decStr(b);
++    const longer = sa.length > sb.length ? '>' : sa.length < sb.length ? '<' : null;       // "more digits is bigger": 0.45 > 0.5
++    const opts = choiceOf({text:right}, ['>', '<', '='].map(t => ({text:t, mis:longer && t === longer ? 'longerIsBigger' : 'compareDecimals'}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
++    return {title:'Pizza Money', ctx:`${sa} ? ${sb}`, bubble:`Which costs more: $${sa} or $${sb}?`, helper:'Line up the points. Compare tenths first, then hundredths.', visual:'',
++      steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${sa} ◯ ${sb}`, options:opts, hint:() => `Write both with two places: ${decStr(a).padEnd(4, '0')} and ${decStr(b).padEnd(4, '0')}.`}]};
++  }
++};
++Object.assign(GEN, PIZZA2_GEN);
++
+ /* ----- The Register layouts: multiplication rows (kind 'mulrow') and the long-division bus stop (kind 'ldiv') ----- */
+ /* digit cells for a number as written (2.45): the point rides on the digit before it, so the digits stay in whole-number columns */
+ function writtenCells(str){ const out = []; for (const ch of String(str)) { if (ch === '.') out[out.length - 1].pt = true; else out.push({c:ch}); } return out; }
+diff --git a/src/shared/registry.ts b/src/shared/registry.ts
+index eab0157..832bc99 100644
+--- a/src/shared/registry.ts
++++ b/src/shared/registry.ts
+@@ -105,7 +105,20 @@ export const SKILLS: Record<string, Skill> = {
+   mixedImproper: { name: 'Write mixed numbers and improper fractions', short: 'Mixed and improper', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-mixed-numbers/e/converting_mixed_numbers_and_improper_fractions' },
+   mixedAS: { name: 'Add and subtract mixed numbers (no regrouping)', short: 'Mixed numbers', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-mixed-numbers/e/adding_subtracting_mixed_numbers_0.5' },
+   mixedASregroup: { name: 'Add and subtract mixed numbers (with regrouping)', short: 'Mixed numbers (regrouping)', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-adding-and-subtracting-mixed-numbers/e/adding-and-subtracting-mixed-numbers-with-like-denominators-2' },
+-  mixedWord: { name: 'Add and subtract mixed numbers word problems', short: 'Mixed number word problems', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/adding-and-subtracting-mixed-numbers-word-problems/e/add-and-subtract-mixed-numbers-word-problems--like-denominators-' }
++  mixedWord: { name: 'Add and subtract mixed numbers word problems', short: 'Mixed number word problems', st: 3, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/adding-and-subtracting-mixed-numbers-word-problems/e/add-and-subtract-mixed-numbers-word-problems--like-denominators-' },
++  multFracModel: { name: 'Multiply fractions and whole numbers with models', short: 'Fraction × whole (pictures)', st: 4, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/4th-multiply-fractions/imp-multiplying-unit-fractions-and-whole-numbers/e/multiplying-fractions-and-whole-numbers-intuition' },
++  multFracLine: { name: 'Multiply fractions and whole numbers on the number line', short: 'Fraction × whole (number line)', st: 4, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/4th-multiply-fractions/imp-multiplying-unit-fractions-and-whole-numbers/e/multiply-fractions-and-whole-numbers-on-the-number-line' },
++  multUnitFrac: { name: 'Multiply unit fractions and whole numbers', short: 'Unit fraction × whole', st: 4, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/4th-multiply-fractions/multiplying-whole-numbers-and-fractions/e/multiplying-unit-fractions-and-whole-numbers' },
++  multFracWhole: { name: 'Multiply fractions and whole numbers', short: 'Fraction × whole', st: 4, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/4th-multiply-fractions/multiplying-whole-numbers-and-fractions/e/multiplying_fractions_by_integers' },
++  multMixedWhole: { name: 'Multiply mixed numbers and whole numbers', short: 'Mixed number × whole', st: 4, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/4th-multiply-fractions/imp-multiplying-whole-numbers-and-fractions/e/multiply-mixed-numbers-and-whole-numbers' },
++  multFracWord: { name: 'Multiply fractions and whole numbers word problems', short: 'Fraction × whole word problems', st: 4, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/4th-multiply-fractions/imp-multiplying-whole-numbers-and-fractions-word-problems/e/multiplying-fractions-and-whole-numbers-word-problems' },
++  eqFrac10: { name: 'Equivalent fractions with denominators of 10 and 100', short: 'Tenths and hundredths', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-fractions-with-denominators-of-10-and-100/e/equivalent-fractions-with-denominators-of-10-and-100' },
++  addFrac10: { name: 'Add fractions with denominators of 10 and 100', short: 'Add tenths and hundredths', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-fractions-2/imp-fractions-with-denominators-of-10-and-100/e/adding_fractions_0.5' },
++  decShown: { name: 'Write decimals and fractions shown on grids and number lines', short: 'Decimals in pictures', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-decimals-vs-fractions/e/write-decimals-and-fractions-shown-on-number-lines' },
++  decWords: { name: 'Decimals in words', short: 'Decimals in words', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-intro-to-decimals/e/decimals-in-words' },
++  decLine: { name: 'Decimals on the number line', short: 'Decimals on a number line', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-decimals-on-the-number-line/e/decimals-on-the-number-line--hundredths-0-1' },
++  decToFrac: { name: 'Write decimals as fractions', short: 'Decimals to fractions', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-converting-decimals-to-fractions/e/converting_decimals_to_fractions_1' },
++  cmpDec: { name: 'Compare decimals', short: 'Compare decimals', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-comparing-decimals/e/comparing_decimals_1' }
+ };
+ export const SKILL_ORDER = Object.keys(SKILLS);
+ 
+@@ -252,8 +265,8 @@ export const PIZZA_STATIONS: Station[] = [
+   { id: 1, name: 'Slices',           emoji: '🍕', kid: 'Equivalent fractions', skills: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen'] },
+   { id: 2, name: 'Which Is Bigger?', emoji: '⚖️', kid: 'Comparing fractions', skills: ['cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord'] },
+   { id: 3, name: 'Toppings',         emoji: '🧀', kid: 'Adding and subtracting fractions and mixed numbers', skills: ['decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord'] },
+-  { id: 4, name: 'Party Orders',     emoji: '🎉', kid: 'Multiplying fractions by whole numbers', skills: [] },
+-  { id: 5, name: 'Pizza Money',      emoji: '💵', kid: 'Tenths, hundredths, and decimals', skills: [] }
++  { id: 4, name: 'Party Orders',     emoji: '🎉', kid: 'Multiplying fractions by whole numbers', skills: ['multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord'] },
++  { id: 5, name: 'Pizza Money',      emoji: '💵', kid: 'Tenths, hundredths, and decimals', skills: ['eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'] }
+ ];
+ export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
+ export const BAKERY_STATIONS: Station[] = [
+@@ -294,7 +307,7 @@ export const UNIT_SKILLS: Record<string, string[]> = {
+   bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'],
+   lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'],
+   toys: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms', 'roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti', 'mult1by10s', 'areaMult1', 'distMult', 'estProducts', 'multRegroup', 'areaMult2', 'partialProd2', 'mult2digit', 'estDiv', 'interpRem', 'divRem', 'divPV', 'areaDiv', 'estQuot', 'divBy2345', 'divBy6789'],
+-  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
++  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord', 'multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord', 'eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+ };
+ 
+ const cafeRewards: Reward[] = [
+@@ -408,12 +421,12 @@ export const MIS: Record<string, Misconception> = {
+   noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec', 'addMulti'] },
+   smallerFromLarger: { name: 'Subtracts the smaller digit from the larger in each column', kid: 'When the top digit is smaller, regroup from the next place.', tip: 'Fill empty places with zeros first (5.2 becomes 5.20), then regroup. Check by adding the answer back.', skills: ['subDec', 'subMulti', 'mixedASregroup'] },
+   estimateOff:       { name: 'Estimate is off by a factor of 10', kid: 'Round each number to the nearest whole number first.', tip: 'Practice rounding decimals to whole numbers before adding. The estimate should be close to the real answer.', skills: ['addDec', 'subDec', 'mulDec'] },
+-  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord', 'cmpWord', 'mdWord', 'fracWordAS', 'mixedWord'] },
++  wrongOperation:    { name: 'Picks the wrong operation in a word problem', kid: 'Is the story putting amounts together or finding what is left?', tip: 'Have students act out or draw the story before choosing an operation. Change and "how much is left" mean subtract.', skills: ['decWord', 'cmpWord', 'mdWord', 'fracWordAS', 'mixedWord', 'multFracWord'] },
+   divAsMult:         { name: 'Multiplies instead of dividing', kid: 'Sharing makes each part smaller, and fitting small servings in makes more of them. Check which way it should go.', tip: 'Before computing, ask "will the answer be more or less than we started with?"', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
+   denomOnly:         { name: 'Multiplies by the denominator and forgets the numerator', kid: 'Each serving is more than one piece. How many pieces does one serving use?', tip: 'Count the pieces on the tape diagram, then group them by the size of one serving.', skills: ['wholeDivFrac'] },
+   numerOnly:         { name: 'Divides by the numerator and ignores the denominator', kid: 'The serving is not whole cups. It is a fraction of a cup.', tip: 'Compare the size of one serving to 1 whole cup first.', skills: ['wholeDivFrac'] },
+   reversedDivision:  { name: 'Divides the other way round', kid: 'Which amount is being split up? Start with that one.', tip: 'Say the story aloud ("how many 2/3-cups fit in 4 cups?") and write the starting amount first.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracInterp', 'fracWord'] },
+-  notMixed:          { name: 'Leaves an improper fraction instead of a mixed number', kid: 'The top is bigger than the bottom. How many wholes are in it?', tip: 'Divide the top by the bottom: the quotient is the whole number and the remainder goes on top.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord'] },
++  notMixed:          { name: 'Leaves an improper fraction instead of a mixed number', kid: 'The top is bigger than the bottom. How many wholes are in it?', tip: 'Divide the top by the bottom: the quotient is the whole number and the remainder goes on top.', skills: ['fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord', 'multFracModel', 'multFracWhole', 'multMixedWhole', 'multFracWord'] },
+   flipWrong:         { name: 'Flips the first fraction instead of the divisor', kid: 'Keep the first fraction. Flip the one you divide by.', tip: 'Say "keep, change, flip" while pointing at each part.', skills: ['fracDiv', 'mixedDiv', 'fracWord'] },
+   noFlip:            { name: 'Multiplies straight across without flipping', kid: 'Dividing means multiply by the flip of the second fraction.', tip: 'Check with a picture: how many 3/4s fit in 2/3? Fewer than 1, so the answer must be less than 1.', skills: ['fracDiv', 'mixedDiv', 'fracWord'] },
+   pointLikeAdding:   { name: 'Keeps one decimal point, like adding', kid: 'When multiplying, count all the decimal places.', tip: 'Estimate first: 2 × 1 is about 2, so 32 can\'t be right.', skills: ['mulDecPlace', 'mulDec'] },
+@@ -453,7 +466,7 @@ export const MIS: Record<string, Misconception> = {
+   noCarryMult:       { name: 'Forgets to carry when multiplying', kid: 'Write the ones digit and carry the tens to the next place.', tip: 'Write each carry above the next column and add it after multiplying that column.', skills: ['multRegroup'] },
+   partialMissing:    { name: 'Leaves out some of the partial products', kid: 'Every part times every part: 2-digit × 2-digit makes four parts.', tip: 'Use the area model: four boxes, four products, then add them all.', skills: ['areaMult2', 'partialProd2'] },
+   compatibleNumber:  { name: 'Picks a number that is hard to divide', kid: 'Pick a close number that the divisor goes into evenly, using a times table fact.', tip: 'List multiples of the divisor times 10 or 100 and pick the one nearest the dividend.', skills: ['estDiv', 'estQuot'] },
+-  additiveEquiv:     { name: 'Adds the same number to the top and bottom', kid: 'Multiply (or divide) the top and bottom by the same number. Adding changes the size.', tip: 'Show 1/2 and 2/3 (added 1 to both) with fraction bars: they are not equal.', skills: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen'] },
++  additiveEquiv:     { name: 'Adds the same number to the top and bottom', kid: 'Multiply (or divide) the top and bottom by the same number. Adding changes the size.', tip: 'Show 1/2 and 2/3 (added 1 to both) with fraction bars: they are not equal.', skills: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'multFracModel', 'multFracLine', 'multFracWhole'] },
+   onlyOneScaled:     { name: 'Changes only the top or only the bottom', kid: 'Whatever you do to the bottom, do to the top.', tip: 'Cut every slice into the same number of pieces: both counts change.', skills: ['eqFrac'] },
+   wholesMatter:      { name: 'Forgets that fractions depend on the whole', kid: 'Half of a big pizza is more than half of a small pizza.', tip: 'Compare 1/2 of two different-size paper strips.', skills: ['diffWholes'] },
+   benchmarkWrong:    { name: 'Places a fraction on the wrong side of 1/2', kid: 'Half of the bottom number is the middle. Is the top more or less than that?', tip: 'For x/y, compare x with y ÷ 2.', skills: ['cmpBench'] },
+@@ -461,9 +474,14 @@ export const MIS: Record<string, Misconception> = {
+   compareFractions:  { name: 'Compares fractions incorrectly', kid: 'Give both the same denominator, then compare the tops.', tip: 'Rewrite both fractions with a common denominator before comparing.', skills: ['cmpVisual', 'cmpBench', 'cmpFrac'] },
+   decomposeSum:      { name: 'Breaks a fraction into parts that don\'t add up', kid: 'The numerators of the parts must add up to the whole numerator.', tip: 'Shade the parts on one fraction bar in two colors.', skills: ['decompVisual', 'decomp'] },
+   addDenominators:   { name: 'Adds the denominators too', kid: 'The slices stay the same size. Add only the tops.', tip: '1/4 + 1/4 is two fourths, not 2/8: show it with fraction bars.', skills: ['addLike', 'fracWordAS'] },
+-  improperWrong:     { name: 'Converts a mixed number wrong', kid: 'Wholes × denominator, then add the numerator.', tip: 'Draw each whole as a full bar of pieces and count all the pieces.', skills: ['mixedImproper'] },
++  improperWrong:     { name: 'Converts a mixed number wrong', kid: 'Wholes × denominator, then add the numerator.', tip: 'Draw each whole as a full bar of pieces and count all the pieces.', skills: ['mixedImproper', 'multMixedWhole'] },
+   regroupTen:        { name: 'Regroups a whole as 10 instead of the denominator', kid: 'One whole is d/d, not 10.', tip: 'A whole pizza cut in 8 is 8/8. Borrow 8/8, not 10.', skills: ['mixedASregroup'] },
+-  mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] }
++  mixedAsParts:      { name: 'Splits a mixed number into parts', kid: 'Turn the mixed number into one fraction first.', tip: 'Rewrite mixed numbers as improper fractions before anything else. 2 1/2 = 5/2.', skills: ['mixedDiv'] },
++  multBoth:          { name: 'Multiplies the denominator by the whole number too', kid: 'Only the number of pieces changes. The size of each piece (the bottom) stays the same.', tip: 'Show 3 × 1/4 as three quarter pieces put together: 3/4, not 3/12. Repeated addition makes it clear the denominator stays.', skills: ['multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord'] },
++  wholeOnly:         { name: 'Multiplies only the whole number part of a mixed number', kid: 'Multiply the fraction part too, or change it to an improper fraction first.', tip: 'Write 3 × 2 1/2 as 3 × 2 plus 3 × 1/2 with an area model, or convert to 5/2 before multiplying.', skills: ['multMixedWhole'] },
++  tenthsHundredths:  { name: 'Mixes up tenths and hundredths', kid: 'One tenth is ten hundredths. Check which place each digit is in.', tip: 'Shade 0.3 and 0.03 on hundred grids side by side. Name the place out loud: 3 tenths vs 3 hundredths.', skills: ['eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac'] },
++  longerIsBigger:    { name: 'Thinks a decimal with more digits is bigger', kid: 'More digits does not mean bigger. Compare tenths first.', tip: 'Add a zero so both have hundredths (0.5 = 0.50), then compare 50 hundredths with 45 hundredths.', skills: ['cmpDec'] },
++  compareDecimals:   { name: 'Compares decimals incorrectly', kid: 'Line up the decimal points and compare from the left.', tip: 'Line up the decimal points, fill empty places with zeros, and compare place by place starting with the ones.', skills: ['cmpDec'] }
+ };
+ 
+ /** Mastery rule shared by game and dashboard: 4+ tries and 75% of the last 8 perfect. */
+diff --git a/src/styles/game.css b/src/styles/game.css
+index 444c0ed..1d93192 100644
+--- a/src/styles/game.css
++++ b/src/styles/game.css
+@@ -524,3 +524,5 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
+ .num-line .nl-text{fill:currentColor; font-size:14px; text-anchor:middle}
+ .num-line .nl-small{font-size:11px}
+ .num-line .nl-dot{fill:var(--berry); stroke:currentColor; stroke-width:1.5}
++.num-line .nl-jump{fill:none; stroke:var(--berry); stroke-width:2}
++.hundred-grid .fb-on, .hundred-grid .fb-off{stroke-width:1}
+-- 
+2.43.0
+
+
+From 834e4a220b567cee9d888636094d547cebec4f99 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 27 Sep 2026 20:15:27 -0400
+Subject: [PATCH 2/2] Docs: Pizza Parlor built (all 5 stations)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014wQFE2KZBjkYxaH2m8t9SR
+---
+ .github/copilot-instructions.md |   2 +-
+ AGENTS.md                       |   2 +-
+ CLAUDE.md                       |   2 +-
+ docs/GRADE4-3-PIZZA.md          | 144 ++++++++++++++++++++++++++++++--
+ docs/GRADE4.md                  |   2 +-
+ docs/NEIGHBORHOODS.md           |   2 +-
+ docs/ROADMAP.md                 |   5 +-
+ 7 files changed, 147 insertions(+), 12 deletions(-)
+
+diff --git a/.github/copilot-instructions.md b/.github/copilot-instructions.md
+index 160fb08..cab50d3 100644
+--- a/.github/copilot-instructions.md
++++ b/.github/copilot-instructions.md
+@@ -32,7 +32,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
+ 
+ | File | What must stay |
+ |---|---|
+-| `src/game/game.js` | About 1,850 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`, plus the Bakery Scale generators `addDec, subDec, decWord` (`SCALE_GEN`), the Sharing Pans generators `fracDivWhole, wholeDivFrac` (`PANS_GEN`), the Boxing Treats generators `fracDiv, mixedDiv, fracInterp, fracWord` (`BOXES_GEN`), the Register generators `mulDecPlace, mulDec, div2, divMulti` (`REGISTER_GEN`, with the `XD` exact decimal helpers), the Bulk Orders generators `divToDec, divDec2, divDec3` (`BULK_GEN`, with `longDivisionDec`), and the 4th grade Lemonade Stand generators `cmpMult, cmpWord, mdWord, estWord, eqWord, multiStep, factorPairs, identFactors, relateFM, identMultiples, primeId, compositeId, primeComp, numPatterns, shapePatterns` (`LEMON_GEN`), and the Toy Shop generators `pvBlocks, pvTable, digitValue, largestSmallest, expandedForm, writtenForm, differentForms, regroup, mult10, div10, compareNums, compareForms, roundNum, roundPlaces, roundWord, addMulti, subMulti` (`TOYS_GEN`) and `mult1by10s, areaMult1, distMult, estProducts, multRegroup, areaMult2, partialProd2, mult2digit, estDiv, interpRem, divRem, divPV, areaDiv, estQuot, divBy2345, divBy6789` (`TOYS2_GEN`, with the `areaHTML` area model), and the Pizza Parlor generators `eqFracModel, eqFracLine, eqFrac, diffWholes, commonDen, cmpVisual, cmpBench, cmpFrac, cmpFracWord, decompVisual, decomp, addLike, subLike, fracWordAS, mixedImproper, mixedAS, mixedASregroup, mixedWord` (`PIZZA_GEN`, with `fracBarSVG` and `numberLineSVG`), all merged into `GEN`, with the `FRAC` exact fraction helpers, the `frac` answer boxes, the `digits` answer boxes under lined-up decimals (`digitBoxesHTML`), the Register layouts (`mulRowsHTML` for multiplication rows, `ldivHTML` for the long-division bus stop, and the `qr` quotient and remainder boxes), `nextStepIndex` (skips a step that is already done), and the `placeValue`, `lineUp`, `story`, `simplify`, `mixed`, `reciprocal`, `decimalShift`, `factors`, and `rounding` practice pop-ups in `DRILL_IMPL` (pop-ups practice the earliest part of a problem: see `docs/DRILLS.md`). Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `tableDown`, `simplestStep`, `simplestChoice`, `renderShopFloor`, `shopProgress`, `renderHall`, `renderParent`; `shift.shop`, Fact Sprint, and drill mixing stay intact. Music: `TRACKS` (4 tracks), `Music.setTrack` / `setVolume`, the music menu (`openMusicMenu`), and `musicAllowed()` for the teacher's Allow music switch. |
++| `src/game/game.js` | About 1,850 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`, plus the Bakery Scale generators `addDec, subDec, decWord` (`SCALE_GEN`), the Sharing Pans generators `fracDivWhole, wholeDivFrac` (`PANS_GEN`), the Boxing Treats generators `fracDiv, mixedDiv, fracInterp, fracWord` (`BOXES_GEN`), the Register generators `mulDecPlace, mulDec, div2, divMulti` (`REGISTER_GEN`, with the `XD` exact decimal helpers), the Bulk Orders generators `divToDec, divDec2, divDec3` (`BULK_GEN`, with `longDivisionDec`), and the 4th grade Lemonade Stand generators `cmpMult, cmpWord, mdWord, estWord, eqWord, multiStep, factorPairs, identFactors, relateFM, identMultiples, primeId, compositeId, primeComp, numPatterns, shapePatterns` (`LEMON_GEN`), and the Toy Shop generators `pvBlocks, pvTable, digitValue, largestSmallest, expandedForm, writtenForm, differentForms, regroup, mult10, div10, compareNums, compareForms, roundNum, roundPlaces, roundWord, addMulti, subMulti` (`TOYS_GEN`) and `mult1by10s, areaMult1, distMult, estProducts, multRegroup, areaMult2, partialProd2, mult2digit, estDiv, interpRem, divRem, divPV, areaDiv, estQuot, divBy2345, divBy6789` (`TOYS2_GEN`, with the `areaHTML` area model), and the Pizza Parlor generators `eqFracModel, eqFracLine, eqFrac, diffWholes, commonDen, cmpVisual, cmpBench, cmpFrac, cmpFracWord, decompVisual, decomp, addLike, subLike, fracWordAS, mixedImproper, mixedAS, mixedASregroup, mixedWord` (`PIZZA_GEN` and `PIZZA2_GEN`, with `fracBarSVG`, `numberLineSVG`, `jumpsLineSVG`, and `hundredGridSVG`), all merged into `GEN`, with the `FRAC` exact fraction helpers, the `frac` answer boxes, the `digits` answer boxes under lined-up decimals (`digitBoxesHTML`), the Register layouts (`mulRowsHTML` for multiplication rows, `ldivHTML` for the long-division bus stop, and the `qr` quotient and remainder boxes), `nextStepIndex` (skips a step that is already done), and the `placeValue`, `lineUp`, `story`, `simplify`, `mixed`, `reciprocal`, `decimalShift`, `factors`, and `rounding` practice pop-ups in `DRILL_IMPL` (pop-ups practice the earliest part of a problem: see `docs/DRILLS.md`). Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `tableDown`, `simplestStep`, `simplestChoice`, `renderShopFloor`, `shopProgress`, `renderHall`, `renderParent`; `shift.shop`, Fact Sprint, and drill mixing stay intact. Music: `TRACKS` (4 tracks), `Music.setTrack` / `setVolume`, the music menu (`openMusicMenu`), and `musicAllowed()` for the teacher's Allow music switch. |
+ | `src/shared/registry.ts` | Exports `NEIGHBORHOODS`, `DEFAULT_HOME` (`'g6'`), `BUILDINGS` (each with a `hood`), `buildingsIn`, `prevBuilding`, `nextBuilding`, `builtHoods`, `validHood`, `SKILLS`, `LEMON_STATIONS`, `TOY_STATIONS`, `PIZZA_STATIONS`, `SKILL_ORDER`, `STATIONS`, `BAKERY_STATIONS`, `SHOPS`, `shopOfSkill`, `QUIZ_DEFAULTS`, `QuizSettings`, `quizSettings`, `UNLOCK_AT`, `MIS`, `notSimplest`, `statusFromRecent`, `DRILLS`, `drillLabel`, `DrillSettings`, `DEFAULT_DRILL_SETTINGS`, `mergeDrillSettings`, `drillTypeOn`. Skills `addDec`, `subDec`, `decWord`, `fracDivWhole`, `wholeDivFrac`, `fracDiv`, `mixedDiv`, `fracInterp`, `fracWord`, `mulDecPlace`, `mulDec`, `div2`, `divMulti`, `divToDec`, `divDec2`, `divDec3` and mix-ups `rightAlign`, `noRegroup`, `smallerFromLarger`, `estimateOff`, `wrongOperation`, `divAsMult`, `denomOnly`, `numerOnly`, `reversedDivision`, `notMixed`, `flipWrong`, `noFlip`, `mixedAsParts`, `pointLikeAdding`, `placesMiscount`, `partialShift`, `quotientTooSmall`, `quotientTooBig`, `missingZero`, `remainderNotDecimal`, `shiftOneOnly`, `pointMisplaced` stay intact. |
+ | `src/lib/supabase.ts` | Exports `backendConfigured` and `makeClient`. |
+ | `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`, `refreshSettings`, `startSession`, `endSession`, plus `ActivityTracker` and `deviceType` (practice time); student settings fields stay live and separate from saved state. |
+diff --git a/AGENTS.md b/AGENTS.md
+index 160fb08..cab50d3 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -32,7 +32,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
+ 
+ | File | What must stay |
+ |---|---|
+-| `src/game/game.js` | About 1,850 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`, plus the Bakery Scale generators `addDec, subDec, decWord` (`SCALE_GEN`), the Sharing Pans generators `fracDivWhole, wholeDivFrac` (`PANS_GEN`), the Boxing Treats generators `fracDiv, mixedDiv, fracInterp, fracWord` (`BOXES_GEN`), the Register generators `mulDecPlace, mulDec, div2, divMulti` (`REGISTER_GEN`, with the `XD` exact decimal helpers), the Bulk Orders generators `divToDec, divDec2, divDec3` (`BULK_GEN`, with `longDivisionDec`), and the 4th grade Lemonade Stand generators `cmpMult, cmpWord, mdWord, estWord, eqWord, multiStep, factorPairs, identFactors, relateFM, identMultiples, primeId, compositeId, primeComp, numPatterns, shapePatterns` (`LEMON_GEN`), and the Toy Shop generators `pvBlocks, pvTable, digitValue, largestSmallest, expandedForm, writtenForm, differentForms, regroup, mult10, div10, compareNums, compareForms, roundNum, roundPlaces, roundWord, addMulti, subMulti` (`TOYS_GEN`) and `mult1by10s, areaMult1, distMult, estProducts, multRegroup, areaMult2, partialProd2, mult2digit, estDiv, interpRem, divRem, divPV, areaDiv, estQuot, divBy2345, divBy6789` (`TOYS2_GEN`, with the `areaHTML` area model), and the Pizza Parlor generators `eqFracModel, eqFracLine, eqFrac, diffWholes, commonDen, cmpVisual, cmpBench, cmpFrac, cmpFracWord, decompVisual, decomp, addLike, subLike, fracWordAS, mixedImproper, mixedAS, mixedASregroup, mixedWord` (`PIZZA_GEN`, with `fracBarSVG` and `numberLineSVG`), all merged into `GEN`, with the `FRAC` exact fraction helpers, the `frac` answer boxes, the `digits` answer boxes under lined-up decimals (`digitBoxesHTML`), the Register layouts (`mulRowsHTML` for multiplication rows, `ldivHTML` for the long-division bus stop, and the `qr` quotient and remainder boxes), `nextStepIndex` (skips a step that is already done), and the `placeValue`, `lineUp`, `story`, `simplify`, `mixed`, `reciprocal`, `decimalShift`, `factors`, and `rounding` practice pop-ups in `DRILL_IMPL` (pop-ups practice the earliest part of a problem: see `docs/DRILLS.md`). Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `tableDown`, `simplestStep`, `simplestChoice`, `renderShopFloor`, `shopProgress`, `renderHall`, `renderParent`; `shift.shop`, Fact Sprint, and drill mixing stay intact. Music: `TRACKS` (4 tracks), `Music.setTrack` / `setVolume`, the music menu (`openMusicMenu`), and `musicAllowed()` for the teacher's Allow music switch. |
++| `src/game/game.js` | About 1,850 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`, plus the Bakery Scale generators `addDec, subDec, decWord` (`SCALE_GEN`), the Sharing Pans generators `fracDivWhole, wholeDivFrac` (`PANS_GEN`), the Boxing Treats generators `fracDiv, mixedDiv, fracInterp, fracWord` (`BOXES_GEN`), the Register generators `mulDecPlace, mulDec, div2, divMulti` (`REGISTER_GEN`, with the `XD` exact decimal helpers), the Bulk Orders generators `divToDec, divDec2, divDec3` (`BULK_GEN`, with `longDivisionDec`), and the 4th grade Lemonade Stand generators `cmpMult, cmpWord, mdWord, estWord, eqWord, multiStep, factorPairs, identFactors, relateFM, identMultiples, primeId, compositeId, primeComp, numPatterns, shapePatterns` (`LEMON_GEN`), and the Toy Shop generators `pvBlocks, pvTable, digitValue, largestSmallest, expandedForm, writtenForm, differentForms, regroup, mult10, div10, compareNums, compareForms, roundNum, roundPlaces, roundWord, addMulti, subMulti` (`TOYS_GEN`) and `mult1by10s, areaMult1, distMult, estProducts, multRegroup, areaMult2, partialProd2, mult2digit, estDiv, interpRem, divRem, divPV, areaDiv, estQuot, divBy2345, divBy6789` (`TOYS2_GEN`, with the `areaHTML` area model), and the Pizza Parlor generators `eqFracModel, eqFracLine, eqFrac, diffWholes, commonDen, cmpVisual, cmpBench, cmpFrac, cmpFracWord, decompVisual, decomp, addLike, subLike, fracWordAS, mixedImproper, mixedAS, mixedASregroup, mixedWord` (`PIZZA_GEN` and `PIZZA2_GEN`, with `fracBarSVG`, `numberLineSVG`, `jumpsLineSVG`, and `hundredGridSVG`), all merged into `GEN`, with the `FRAC` exact fraction helpers, the `frac` answer boxes, the `digits` answer boxes under lined-up decimals (`digitBoxesHTML`), the Register layouts (`mulRowsHTML` for multiplication rows, `ldivHTML` for the long-division bus stop, and the `qr` quotient and remainder boxes), `nextStepIndex` (skips a step that is already done), and the `placeValue`, `lineUp`, `story`, `simplify`, `mixed`, `reciprocal`, `decimalShift`, `factors`, and `rounding` practice pop-ups in `DRILL_IMPL` (pop-ups practice the earliest part of a problem: see `docs/DRILLS.md`). Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `tableDown`, `simplestStep`, `simplestChoice`, `renderShopFloor`, `shopProgress`, `renderHall`, `renderParent`; `shift.shop`, Fact Sprint, and drill mixing stay intact. Music: `TRACKS` (4 tracks), `Music.setTrack` / `setVolume`, the music menu (`openMusicMenu`), and `musicAllowed()` for the teacher's Allow music switch. |
+ | `src/shared/registry.ts` | Exports `NEIGHBORHOODS`, `DEFAULT_HOME` (`'g6'`), `BUILDINGS` (each with a `hood`), `buildingsIn`, `prevBuilding`, `nextBuilding`, `builtHoods`, `validHood`, `SKILLS`, `LEMON_STATIONS`, `TOY_STATIONS`, `PIZZA_STATIONS`, `SKILL_ORDER`, `STATIONS`, `BAKERY_STATIONS`, `SHOPS`, `shopOfSkill`, `QUIZ_DEFAULTS`, `QuizSettings`, `quizSettings`, `UNLOCK_AT`, `MIS`, `notSimplest`, `statusFromRecent`, `DRILLS`, `drillLabel`, `DrillSettings`, `DEFAULT_DRILL_SETTINGS`, `mergeDrillSettings`, `drillTypeOn`. Skills `addDec`, `subDec`, `decWord`, `fracDivWhole`, `wholeDivFrac`, `fracDiv`, `mixedDiv`, `fracInterp`, `fracWord`, `mulDecPlace`, `mulDec`, `div2`, `divMulti`, `divToDec`, `divDec2`, `divDec3` and mix-ups `rightAlign`, `noRegroup`, `smallerFromLarger`, `estimateOff`, `wrongOperation`, `divAsMult`, `denomOnly`, `numerOnly`, `reversedDivision`, `notMixed`, `flipWrong`, `noFlip`, `mixedAsParts`, `pointLikeAdding`, `placesMiscount`, `partialShift`, `quotientTooSmall`, `quotientTooBig`, `missingZero`, `remainderNotDecimal`, `shiftOneOnly`, `pointMisplaced` stay intact. |
+ | `src/lib/supabase.ts` | Exports `backendConfigured` and `makeClient`. |
+ | `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`, `refreshSettings`, `startSession`, `endSession`, plus `ActivityTracker` and `deviceType` (practice time); student settings fields stay live and separate from saved state. |
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 160fb08..cab50d3 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -32,7 +32,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
+ 
+ | File | What must stay |
+ |---|---|
+-| `src/game/game.js` | About 1,850 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`, plus the Bakery Scale generators `addDec, subDec, decWord` (`SCALE_GEN`), the Sharing Pans generators `fracDivWhole, wholeDivFrac` (`PANS_GEN`), the Boxing Treats generators `fracDiv, mixedDiv, fracInterp, fracWord` (`BOXES_GEN`), the Register generators `mulDecPlace, mulDec, div2, divMulti` (`REGISTER_GEN`, with the `XD` exact decimal helpers), the Bulk Orders generators `divToDec, divDec2, divDec3` (`BULK_GEN`, with `longDivisionDec`), and the 4th grade Lemonade Stand generators `cmpMult, cmpWord, mdWord, estWord, eqWord, multiStep, factorPairs, identFactors, relateFM, identMultiples, primeId, compositeId, primeComp, numPatterns, shapePatterns` (`LEMON_GEN`), and the Toy Shop generators `pvBlocks, pvTable, digitValue, largestSmallest, expandedForm, writtenForm, differentForms, regroup, mult10, div10, compareNums, compareForms, roundNum, roundPlaces, roundWord, addMulti, subMulti` (`TOYS_GEN`) and `mult1by10s, areaMult1, distMult, estProducts, multRegroup, areaMult2, partialProd2, mult2digit, estDiv, interpRem, divRem, divPV, areaDiv, estQuot, divBy2345, divBy6789` (`TOYS2_GEN`, with the `areaHTML` area model), and the Pizza Parlor generators `eqFracModel, eqFracLine, eqFrac, diffWholes, commonDen, cmpVisual, cmpBench, cmpFrac, cmpFracWord, decompVisual, decomp, addLike, subLike, fracWordAS, mixedImproper, mixedAS, mixedASregroup, mixedWord` (`PIZZA_GEN`, with `fracBarSVG` and `numberLineSVG`), all merged into `GEN`, with the `FRAC` exact fraction helpers, the `frac` answer boxes, the `digits` answer boxes under lined-up decimals (`digitBoxesHTML`), the Register layouts (`mulRowsHTML` for multiplication rows, `ldivHTML` for the long-division bus stop, and the `qr` quotient and remainder boxes), `nextStepIndex` (skips a step that is already done), and the `placeValue`, `lineUp`, `story`, `simplify`, `mixed`, `reciprocal`, `decimalShift`, `factors`, and `rounding` practice pop-ups in `DRILL_IMPL` (pop-ups practice the earliest part of a problem: see `docs/DRILLS.md`). Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `tableDown`, `simplestStep`, `simplestChoice`, `renderShopFloor`, `shopProgress`, `renderHall`, `renderParent`; `shift.shop`, Fact Sprint, and drill mixing stay intact. Music: `TRACKS` (4 tracks), `Music.setTrack` / `setVolume`, the music menu (`openMusicMenu`), and `musicAllowed()` for the teacher's Allow music switch. |
++| `src/game/game.js` | About 1,850 lines. The `GEN` object with 14 generators: `basic, tape, groups, dnlCreate, dnl, dnlTable, table, equiv, word, realworld, understand, coord, units, ppw`, plus the Bakery Scale generators `addDec, subDec, decWord` (`SCALE_GEN`), the Sharing Pans generators `fracDivWhole, wholeDivFrac` (`PANS_GEN`), the Boxing Treats generators `fracDiv, mixedDiv, fracInterp, fracWord` (`BOXES_GEN`), the Register generators `mulDecPlace, mulDec, div2, divMulti` (`REGISTER_GEN`, with the `XD` exact decimal helpers), the Bulk Orders generators `divToDec, divDec2, divDec3` (`BULK_GEN`, with `longDivisionDec`), and the 4th grade Lemonade Stand generators `cmpMult, cmpWord, mdWord, estWord, eqWord, multiStep, factorPairs, identFactors, relateFM, identMultiples, primeId, compositeId, primeComp, numPatterns, shapePatterns` (`LEMON_GEN`), and the Toy Shop generators `pvBlocks, pvTable, digitValue, largestSmallest, expandedForm, writtenForm, differentForms, regroup, mult10, div10, compareNums, compareForms, roundNum, roundPlaces, roundWord, addMulti, subMulti` (`TOYS_GEN`) and `mult1by10s, areaMult1, distMult, estProducts, multRegroup, areaMult2, partialProd2, mult2digit, estDiv, interpRem, divRem, divPV, areaDiv, estQuot, divBy2345, divBy6789` (`TOYS2_GEN`, with the `areaHTML` area model), and the Pizza Parlor generators `eqFracModel, eqFracLine, eqFrac, diffWholes, commonDen, cmpVisual, cmpBench, cmpFrac, cmpFracWord, decompVisual, decomp, addLike, subLike, fracWordAS, mixedImproper, mixedAS, mixedASregroup, mixedWord` (`PIZZA_GEN` and `PIZZA2_GEN`, with `fracBarSVG`, `numberLineSVG`, `jumpsLineSVG`, and `hundredGridSVG`), all merged into `GEN`, with the `FRAC` exact fraction helpers, the `frac` answer boxes, the `digits` answer boxes under lined-up decimals (`digitBoxesHTML`), the Register layouts (`mulRowsHTML` for multiplication rows, `ldivHTML` for the long-division bus stop, and the `qr` quotient and remainder boxes), `nextStepIndex` (skips a step that is already done), and the `placeValue`, `lineUp`, `story`, `simplify`, `mixed`, `reciprocal`, `decimalShift`, `factors`, and `rounding` practice pop-ups in `DRILL_IMPL` (pop-ups practice the earliest part of a problem: see `docs/DRILLS.md`). Functions `submit`, `completeOrder`, `openPractice`, `enterAs`, `openJoin`, `buyReward`, `tableDown`, `simplestStep`, `simplestChoice`, `renderShopFloor`, `shopProgress`, `renderHall`, `renderParent`; `shift.shop`, Fact Sprint, and drill mixing stay intact. Music: `TRACKS` (4 tracks), `Music.setTrack` / `setVolume`, the music menu (`openMusicMenu`), and `musicAllowed()` for the teacher's Allow music switch. |
+ | `src/shared/registry.ts` | Exports `NEIGHBORHOODS`, `DEFAULT_HOME` (`'g6'`), `BUILDINGS` (each with a `hood`), `buildingsIn`, `prevBuilding`, `nextBuilding`, `builtHoods`, `validHood`, `SKILLS`, `LEMON_STATIONS`, `TOY_STATIONS`, `PIZZA_STATIONS`, `SKILL_ORDER`, `STATIONS`, `BAKERY_STATIONS`, `SHOPS`, `shopOfSkill`, `QUIZ_DEFAULTS`, `QuizSettings`, `quizSettings`, `UNLOCK_AT`, `MIS`, `notSimplest`, `statusFromRecent`, `DRILLS`, `drillLabel`, `DrillSettings`, `DEFAULT_DRILL_SETTINGS`, `mergeDrillSettings`, `drillTypeOn`. Skills `addDec`, `subDec`, `decWord`, `fracDivWhole`, `wholeDivFrac`, `fracDiv`, `mixedDiv`, `fracInterp`, `fracWord`, `mulDecPlace`, `mulDec`, `div2`, `divMulti`, `divToDec`, `divDec2`, `divDec3` and mix-ups `rightAlign`, `noRegroup`, `smallerFromLarger`, `estimateOff`, `wrongOperation`, `divAsMult`, `denomOnly`, `numerOnly`, `reversedDivision`, `notMixed`, `flipWrong`, `noFlip`, `mixedAsParts`, `pointLikeAdding`, `placesMiscount`, `partialShift`, `quotientTooSmall`, `quotientTooBig`, `missingZero`, `remainderNotDecimal`, `shiftOneOnly`, `pointMisplaced` stay intact. |
+ | `src/lib/supabase.ts` | Exports `backendConfigured` and `makeClient`. |
+ | `src/lib/studentBackend.ts` | Exports `Backend` with `restore`, `roster`, `join`, `signOut`, `saveSoon`, `log`, `flush`, `refreshSettings`, `startSession`, `endSession`, plus `ActivityTracker` and `deviceType` (practice time); student settings fields stay live and separate from saved state. |
+diff --git a/docs/GRADE4-3-PIZZA.md b/docs/GRADE4-3-PIZZA.md
+index d8f88eb..44269d3 100644
+--- a/docs/GRADE4-3-PIZZA.md
++++ b/docs/GRADE4-3-PIZZA.md
+@@ -1,18 +1,18 @@
+ # 4th grade, shop 3: the Pizza Parlor
+ 
+-**Status: stations 1 to 3 built; stations 4 (Party Orders, multiplying fractions by whole numbers) and 5 (Pizza Money, tenths and hundredths) to come.** The generators are `PIZZA_GEN` in `src/game/game.js` (stress-tested: 1,080,000 problems, 20,000 per skill and level; every fraction answer checked with exact arithmetic, every comparison and "which sum / which fraction" choice checked to have exactly one right option, and mixed-number problems checked to regroup exactly when the skill says so). Read `AGENTS.md`, `GRADE4.md`, and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
++**Status: built (all 5 stations).** The generators are `PIZZA_GEN` (stations 1 to 3) and `PIZZA2_GEN` (stations 4 and 5, stress-tested: 780,000 problems, 20,000 per skill and level; every product, equivalent fraction, decimal, word form, and comparison checked with exact arithmetic) in `src/game/game.js` (stress-tested: 1,080,000 problems, 20,000 per skill and level; every fraction answer checked with exact arithmetic, every comparison and "which sum / which fraction" choice checked to have exactly one right option, and mixed-number problems checked to regroup exactly when the skill says so). Read `AGENTS.md`, `GRADE4.md`, and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
+ 
+ The Pizza Parlor opens after the Toy Shop Unit Test (or with the teacher's "Open the Pizza Parlor for everyone").
+ 
+-## Stations and skills (Sadlier lessons 14 to 20 so far, Khan's order)
++## Stations and skills (Sadlier lessons 14 to 25, Khan's order)
+ 
+ | # | Station | Skills (ids) |
+ |---|---|---|
+ | 1 | 🍕 Slices | Equivalent fractions (fraction models) (`eqFracModel`), Equivalent fractions (number lines) (`eqFracLine`), Equivalent fractions (`eqFrac`), Fractions of different wholes (`diffWholes`), Common denominators (`commonDen`) |
+ | 2 | ⚖️ Which Is Bigger? | Visually compare fractions (`cmpVisual`), Compare fractions using benchmarks (`cmpBench`), Compare fractions with different numerators and denominators (`cmpFrac`), Compare fractions word problems (`cmpFracWord`) |
+ | 3 | 🧀 Toppings | Decompose fractions visually (`decompVisual`), Decompose fractions (`decomp`), Add and subtract fractions with common denominators (`addLike`, `subLike`), word problems (`fracWordAS`), Write mixed numbers and improper fractions (`mixedImproper`), Add and subtract mixed numbers without and with regrouping (`mixedAS`, `mixedASregroup`), mixed number word problems (`mixedWord`) |
+-| 4 | 🎉 Party Orders | Lessons 21 to 23 (to be written) |
+-| 5 | 💵 Pizza Money | Lessons 24 and 25 (to be written) |
++| 4 | 🎉 Party Orders | Multiply fractions and whole numbers with models (`multFracModel`), on the number line (`multFracLine`), unit fractions (`multUnitFrac`), fractions × whole numbers (`multFracWhole`), mixed numbers × whole numbers (`multMixedWhole`), word problems (`multFracWord`) |
++| 5 | 💵 Pizza Money | Tenths and hundredths (`eqFrac10`), add tenths and hundredths (`addFrac10`), decimals on grids and number lines (`decShown`), decimals in words (`decWords`), decimals on a zoomed-in number line (`decLine`), decimals to fractions (`decToFrac`), compare decimals (`cmpDec`) |
+ 
+ ## What students get
+ 
+@@ -20,11 +20,13 @@ The Pizza Parlor opens after the Toy Shop Unit Test (or with the teacher's "Open
+ - **Fraction answers** use the Bakery's fraction boxes. 4th grade doesn't require simplest form, so any equal fraction is accepted, except that mixed-number answers must have a fraction part less than 1.
+ - **Equivalent fractions:** from pictures, number lines, and missing numbers; level 3 picks the equal fraction from real mistakes (adding the same number to top and bottom, scaling only one). Common denominators find the smallest shared denominator, then rewrite both.
+ - **Comparing:** pictures, benchmarks (each fraction against 1/2, then compare), common denominators, and word problems. Wrong answers that follow "bigger denominator is bigger" are named.
++- **Multiplying by a whole number (station 4):** groups of fraction bars, jumps on a number line (`jumpsLineSVG`), writing a fraction as a whole number × a unit fraction, then fraction × whole and mixed number × whole (change to an improper fraction first; quizzes ask only the final answer). Word problems pick the equation first.
++- **Decimals (station 5):** a 10 × 10 hundred grid (`hundredGridSVG`) for hundredths, number lines for tenths, a zoomed-in line between two tenths, decimals in words (both ways), decimals to fractions, and comparing money amounts.
+ - **Adding and subtracting:** decomposing (which sum, missing part, wholes into fractions), like denominators (sums over 1 on level 2+), word problems (pick + or − first), mixed ↔ improper, and mixed numbers with and without regrouping (borrowing a whole as d/d).
+ 
+ ## Mix-ups
+ 
+-New: `additiveEquiv`, `onlyOneScaled`, `wholesMatter`, `benchmarkWrong`, `biggerDenBigger`, `compareFractions`, `decomposeSum`, `addDenominators`, `improperWrong`, `regroupTen`. Reused: `notMixed`, `wrongOperation`, `smallerFromLarger`. The equivalent-fraction steps open the Bakery's simplify pop-up; the word problems open the word-problem pop-up.
++New: `additiveEquiv`, `onlyOneScaled`, `wholesMatter`, `benchmarkWrong`, `biggerDenBigger`, `compareFractions`, `decomposeSum`, `addDenominators`, `improperWrong`, `regroupTen`. Reused: `notMixed`, `wrongOperation`, `smallerFromLarger`. Stations 4 and 5 add `multBoth` (multiplies the denominator too), `wholeOnly` (multiplies only the whole part of a mixed number), `tenthsHundredths`, `longerIsBigger` (0.45 > 0.5), and `compareDecimals`. The equivalent-fraction steps open the Bakery's simplify pop-up; the word problems open the word-problem pop-up.
+ 
+ ## Rewards
+ 
+@@ -244,3 +246,135 @@ function mixedProblem(lvl, regroup){
+     helper:'Work with the fractions, then the wholes.', visual:`<div style="text-align:center; font-size:1.8rem">${mixedTxt(w1, n1, d)} ${op} ${mixedTxt(w2, n2, d)}</div>`, steps, answerSteps:[steps.length - 1]};
+ }
+ ```
++
++## Generator code, stations 4 and 5 (stress-tested)
++
++```js
++/* ===== 4th grade, Pizza Parlor stations 4 and 5 (Sadlier lessons 21 to 25): multiplying fractions by whole numbers, tenths and hundredths ===== */
++/* a 10 × 10 grid with the first n squares shaded (hundredths) */
++function hundredGridSVG(n){
++  let g = '';
++  for (let i = 0; i < 100; i++){ const r = Math.floor(i / 10), c = i % 10; g += `<rect x="${1 + c * 16}" y="${1 + r * 16}" width="16" height="16" class="${i < n ? 'fb-on' : 'fb-off'}"/>`; }
++  return `<svg class="frac-bar hundred-grid" viewBox="0 0 162 162" width="162" role="img" aria-label="${n} of 100 squares shaded">${g}</svg>`;
++}
++/* k jumps of a/b on a number line from 0 (whole numbers labeled) */
++function jumpsLineSVG(a, b, k){
++  const top = Math.max(1, Math.ceil(k * a / b)), w = 300, L = 14, R = w - 14, step = (R - L) / (top * b), y = 44;
++  let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
++  for (let i = 0; i <= top * b; i++){ const x = L + i * step, whole = i % b === 0; g += `<line x1="${x}" y1="${y - (whole ? 10 : 6)}" x2="${x}" y2="${y + (whole ? 10 : 6)}" class="nl-line"/>`; if (whole) g += `<text x="${x}" y="${y + 26}" class="nl-text">${i / b}</text>`; }
++  for (let j = 0; j < k; j++){ const x1 = L + j * a * step, x2 = L + (j + 1) * a * step; g += `<path d="M${x1} ${y - 4} Q${(x1 + x2) / 2} ${y - 34} ${x2} ${y - 4}" class="nl-jump"/>`; }
++  return `<svg class="num-line" viewBox="0 0 ${w} 76" width="${w}" role="img" aria-label="${k} jumps of ${a}/${b}">${g}</svg>`;
++}
++const hund = v => Math.round(v * 100);                                    // hundredths as a whole number, exactly
++const decStr = h => XD.fmt(h, 2).replace(/^(\d+)$/, '$1');                 // 45 → "0.45", 50 → "0.5"
++const decEq = h => v => typeof v === 'number' && isFinite(v) && Math.abs(v * 100 - h) < 1e-6;
++const DEC_WORDS = h => { const t = Math.floor(h / 10) % 10, o = h % 10, w = Math.floor(h / 100);
++  const part = o === 0 ? `${ONES_W[t]} tenth${t === 1 ? '' : 's'}` : `${words3(h % 100)} hundredth${h % 100 === 1 ? '' : 's'}`;
++  return (w ? `${words3(w)} and ` : '') + part; };
++const PIZZA2_GEN = {
++  multFracModel(lvl){
++    const b = pick([3, 4, 5, 6, 8]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 3 ? 6 : 4), p = k * a;
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b} model`, bubble:`Each party plate gets ${a}/${b} of a pizza. There are ${k} plates. How much pizza is that?`, helper:`${k} groups of ${a}/${b}: count all the shaded ${FRAC.part(b, true)}.`,
++      visual:`<div class="frac-pics">${Array.from({length:k}, () => fracBarSVG(a, b, {w:160})).join('')}</div>`,
++      steps:[{name:'Count the pieces', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a},
++          mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `${k} groups of ${a} ${FRAC.part(b, a > 1)} is ${k} × ${a} ${FRAC.part(b, true)}.`},
++        ...(p > b ? [fracStep('As a mixed number', `${p}/${b} = ?`, p, b, {mixedOnly:true, mis:v => FRAC.ok(v) && FRAC.same(v, p, b) && v[1] >= v[2] ? 'notMixed' : null})] : [])]};
++  },
++  multFracLine(lvl){
++    const b = pick([2, 3, 4, 5, 6]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), p = k * a;
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b} jumps`, bubble:`A frog jumps ${a}/${b} of a meter, ${k} times. Where does it land?`, helper:'Count the jumps: each one is the same size.',
++      visual:jumpsLineSVG(a, b, k),
++      steps:[{name:'Where it lands', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `Each jump is ${a} small step${a > 1 ? 's' : ''}. ${k} jumps.`}]};
++  },
++  multUnitFrac(lvl){
++    const b = pick([2, 3, 4, 5, 6, 8, 10, 12]), k = rand(2, lvl === 1 ? b - 1 : 12);
++    if (lvl >= 2 && Math.random() < 0.5) return {title:'Party Orders', ctx:`${k}/${b} as unit fractions`, bubble:`Write ${k}/${b} as a whole number times a unit fraction.`, helper:`${k}/${b} is ${k} copies of 1/${b}.`,
++      visual:`<div class="frac-pics">${fracBarSVG(k, b, {w:200})}</div>`,
++      steps:[{name:'How many unit fractions', type:'concept', kind:'num', prompt:`${k}/${b} = ? × 1/${b}`, answer:k, eq:v => v === k, mis:v => v !== k && v === b ? 'multBoth' : null}]};
++    return {title:'Party Orders', ctx:`${k} × 1/${b}`, bubble:`Multiply: ${k} × 1/${b}`, helper:'A whole number times a unit fraction: the whole number goes on top.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × 1/${b}</div>`,
++      steps:[fracStep('Multiply', `${k} × 1/${b} = ?`, k, b, {mis:v => fracMis(v, k, b, [['multBoth', k, k * b]]), hint:() => `${k} copies of 1/${b} is ${k}/${b}.`})]};
++  },
++  multFracWhole(lvl){
++    const b = pick([3, 4, 5, 6, 8, 10]), a = rand(2, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b}`, bubble:`Multiply: ${k} × ${a}/${b}`, helper:'Multiply the whole number by the numerator. The denominator stays the same.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${a}/${b}</div>`,
++      steps:[{name:'Count unit fractions', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ? × 1/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null},
++        fracStep('Multiply', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]]), hint:() => `${k} × ${a} = ${p}, so it's ${p}/${b}.${p > b ? ' That\'s more than 1: you can write it as a mixed number.' : ''}`})]};
++  },
++  multMixedWhole(lvl){
++    const b = pick([2, 3, 4, 5, 6, 8]), w = rand(1, lvl === 1 ? 2 : 4), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), top = w * b + a, P = k * top;
++    return {title:'Party Orders', ctx:`${k} × ${w} ${a}/${b}`, bubble:`Each pizza box needs ${w} ${a}/${b} feet of ribbon. How much ribbon for ${k} boxes?`, helper:'Turn the mixed number into a fraction, then multiply.',
++      visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${w} ${a}/${b}</div>`,
++      steps:[{name:'Improper fraction', type:'compute', kind:'num', prompt:`${w} ${a}/${b} = ?/${b}`, answer:top, eq:v => v === top, mis:v => v !== top && (v === w + a || v === w * a + b) ? 'improperWrong' : null},
++        fracStep('Multiply', `${k} × ${top}/${b} = ?`, P, b, {mis:v => { const id = fracMis(v, P, b, [['multBoth', P, k * b], ['wholeOnly', k * w * b + a, b]]); return id; }, hint:() => `${k} × ${top} = ${P}, so ${P}/${b}.`})],
++      answerSteps:[1]};
++  },
++  multFracWord(lvl){
++    const [e, n] = pick(PIZZA_KIDS), b = pick([2, 3, 4, 8]), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
++    const [thing, unit] = pick([['pizza', 'cup of cheese'], ['cake', 'cup of sugar'], ['batch of dough', 'cup of flour'], ['lap', 'mile']]);
++    const story = unit === 'mile' ? `${n} runs ${a}/${b} of a mile each lap and runs ${k} laps. How far does ${n} run?` : `Each ${thing} needs ${a}/${b} ${unit}. ${n} makes ${k}. How much ${unit.replace(/^cup of /, '')} is that, in cups?`;
++    const opts = choiceOf({text:`${k} × ${a}/${b}`}, [{text:`${k} + ${a}/${b}`, mis:'wrongOperation'}, {text:`${a}/${b} ÷ ${k}`, mis:'wrongOperation'}]);
++    return {title:'Party Orders', ctx:`${k} × ${a}/${b} story`, bubble:story, helper:'Equal groups of a fraction: multiply.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${k} × ${a}/${b}</div>`,
++      steps:[{name:'Pick the math', type:'concept', kind:'choice', prompt:'Which one matches the story?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => `${k} equal groups of ${a}/${b}.`},
++        fracStep('Solve', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]])})]};
++  },
++  eqFrac10(lvl){
++    const t = rand(1, 9), toHund = lvl === 1 || Math.random() < 0.5;
++    return {title:'Pizza Money', ctx:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, bubble:toHund ? `Write ${t}/10 in hundredths.` : `Write ${t * 10}/100 in tenths.`, helper:'1 tenth is the same as 10 hundredths.',
++      visual:`<div class="frac-pics">${hundredGridSVG(t * 10)}</div>`,
++      steps:[{name:toHund ? 'Tenths to hundredths' : 'Hundredths to tenths', type:'concept', kind:'num', prompt:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, answer:toHund ? t * 10 : t, eq:v => v === (toHund ? t * 10 : t),
++        mis:v => v !== (toHund ? t * 10 : t) && v === (toHund ? t : t * 10) ? 'tenthsHundredths' : null, hint:() => toHund ? `Each tenth is 10 hundredths. ${t} × 10 = ?` : `Every 10 hundredths make 1 tenth.`}]};
++  },
++  addFrac10(lvl){
++    const t = rand(1, 9), h = rand(1, lvl === 1 ? 9 : 99), sum = t * 10 + h;
++    if (h % 10 === 0 || sum > (lvl === 3 ? 199 : 100)) return PIZZA2_GEN.addFrac10(lvl);
++    return {title:'Pizza Money', ctx:`${t}/10 + ${h}/100`, bubble:`Add: ${t}/10 + ${h}/100`, helper:'Change the tenths to hundredths first, then add.', visual:`<div style="text-align:center; font-size:1.8rem">${t}/10 + ${h}/100</div>`,
++      steps:[{name:'Tenths to hundredths', type:'concept', kind:'num', prompt:`${t}/10 = ?/100`, answer:t * 10, eq:v => v === t * 10, mis:v => v !== t * 10 && v === t ? 'tenthsHundredths' : null},
++        {name:'Add', type:'compute', kind:'num', prompt:`${t * 10}/100 + ${h}/100 = ?/100`, answer:sum, eq:v => v === sum, mis:v => v !== sum && v === t + h ? 'tenthsHundredths' : null, hint:() => `${t * 10} + ${h} = ?`}]};
++  },
++  decShown(lvl){
++    const grid = Math.random() < 0.5, h = grid ? rand(1, 99) : rand(1, 9) * 10,   // number lines show tenths; the grid shows hundredths
++ whole = lvl === 3 && !grid ? rand(1, 3) : 0, H = whole * 100 + h;
++    const visual = grid ? `<div class="frac-pics">${hundredGridSVG(h)}</div>` : numberLineSVG(h % 10 === 0 ? 10 : 100, (h % 10 === 0 ? h / 10 : h) + (whole ? whole * (h % 10 === 0 ? 10 : 100) : 0), {top:whole + 1, w:300});
++    return {title:'Pizza Money', ctx:`${grid ? 'grid' : 'line'} ${decStr(H)}`, bubble:grid ? 'What decimal does the shaded part of the grid show?' : 'What decimal is at the dot?', helper:grid ? 'The whole grid is 1. Each small square is one hundredth.' : 'Count the small steps between the whole numbers.',
++      visual, steps:[{name:'As a decimal', type:'concept', kind:'num', prompt:'Write it as a decimal.', answer:decStr(H), eq:decEq(H), decimal:true,
++        mis:v => { if (decEq(H)(v)) return null; if (h % 10 && decEq(whole * 100 + h * 10)(v)) return 'tenthsHundredths'; if (h % 10 === 0 && decEq(whole * 100 + h / 10)(v)) return 'tenthsHundredths'; return null; },
++        hint:() => grid ? `${h} of 100 squares: ${h}/100.` : `Each small step is ${h % 10 === 0 ? 'one tenth' : 'one hundredth'}.`}]};
++  },
++  decWords(lvl){
++    const h = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 20) : 0, H = w * 100 + h, words = DEC_WORDS(H), d = decStr(H);
++    const wrongH = h % 10 === 0 ? w * 100 + h / 10 : (h < 10 ? w * 100 + h * 10 : w * 100 + (h % 10) * 10 + Math.floor(h / 10));
++    const toWords = Math.random() < 0.5;
++    if (toWords) return {title:'Pizza Money', ctx:`${d} in words`, bubble:`How do you say ${d} in words?`, helper:'Read the number after the point, then say the last place: tenths or hundredths.', visual:`<div style="text-align:center; font-size:2rem">${d}</div>`,
++      steps:[{name:'Decimal to words', type:'concept', kind:'choice', prompt:`Which words say ${d}?`, options:choiceOf({text:words}, [{text:DEC_WORDS(wrongH), mis:'tenthsHundredths'}, {text:words.includes('tenth') ? words.replace('tenth', 'hundredth') : words.replace('hundredth', 'tenth'), mis:'tenthsHundredths'}]), hint:() => `${d.split('.')[1].length === 1 ? 'One digit after the point: tenths.' : 'Two digits after the point: hundredths.'}`}]};
++    return {title:'Pizza Money', ctx:`"${words}"`, bubble:`Write "${words}" as a decimal.`, helper:'Tenths use one place after the point, hundredths use two.', visual:`<div style="text-align:center; font-size:1.4rem">${words}</div>`,
++      steps:[{name:'Words to decimal', type:'concept', kind:'num', prompt:`Write "${words}" as a decimal.`, answer:d, eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && decEq(wrongH)(v) ? 'tenthsHundredths' : null, hint:() => h < 10 ? 'Seven hundredths is 0.07: a zero holds the tenths place.' : 'Write the digits after the point.'}]};
++  },
++  decLine(lvl){
++    if (lvl === 1) { const t = rand(1, 9); return {title:'Pizza Money', ctx:`line 0.${t}`, bubble:'The dot shows how full the pitcher is. What decimal is it at?', helper:'The line from 0 to 1 is split into 10 tenths.', visual:numberLineSVG(10, t),
++      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(t * 10), eq:decEq(t * 10), decimal:true, mis:v => !decEq(t * 10)(v) && decEq(t)(v) ? 'tenthsHundredths' : null}]}; }
++    const t = rand(0, 9), o = rand(1, 9), H = t * 10 + o;
++    const L = 14, R = 286, step = (R - L) / 10, y = 30; let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
++    for (let i = 0; i <= 10; i++){ const x = L + i * step; g += `<line x1="${x}" y1="${y - (i % 10 === 0 ? 10 : 6)}" x2="${x}" y2="${y + (i % 10 === 0 ? 10 : 6)}" class="nl-line"/>`; if (i === 0 || i === 10) g += `<text x="${x}" y="${y + 26}" class="nl-text">${decStr(t * 10 + i)}</text>`; }
++    g += `<circle cx="${L + o * step}" cy="${y}" r="7" class="nl-dot"/>`;
++    return {title:'Pizza Money', ctx:`line ${decStr(H)}`, bubble:`The line is zoomed in between ${decStr(t * 10)} and ${decStr(t * 10 + 10)}. What decimal is at the dot?`, helper:'Between two tenths there are 10 hundredths.',
++      visual:`<svg class="num-line" viewBox="0 0 300 62" width="300" role="img" aria-label="number line from ${decStr(t * 10)} to ${decStr(t * 10 + 10)}">${g}</svg>`,
++      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(H), eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && (decEq(t * 10 + o * 10)(v) || decEq(o)(v)) ? 'tenthsHundredths' : null, hint:() => `Each small step is 0.01. Start at ${decStr(t * 10)} and count ${o}.`}]};
++  },
++  decToFrac(lvl){
++    const tenth = lvl === 1 || Math.random() < 0.3, h = tenth ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 9) : 0, d = decStr(w * 100 + h), den = tenth ? 10 : 100, num = tenth ? h / 10 : h;
++    return {title:'Pizza Money', ctx:`${d} as a fraction`, bubble:`The pizza box weighs ${d} kilograms. Write ${d} as a fraction.`, helper:'One place after the point is tenths. Two places is hundredths.',
++      visual:`<div style="text-align:center; font-size:2rem">${d}</div>`,
++      steps:[{name:'Decimal to fraction', type:'concept', kind:'num', prompt:w ? `${d} = ${w} ?/${den}` : `${d} = ?/${den}`, answer:num, eq:v => v === num, mis:v => v !== num && (v === num * 10 || v * 10 === num) ? 'tenthsHundredths' : null,
++        hint:() => `Read ${d} as "${DEC_WORDS(w * 100 + h)}".`}]};
++  },
++  cmpDec(lvl){
++    let a, b;
++    do { a = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99); b = rand(1, 99); if (lvl >= 2 && Math.random() < 0.6) { a = rand(1, 9) * 10; b = a - rand(1, 9); if (Math.random() < 0.5) [a, b] = [b, a]; } } while (a === b || b <= 0);
++    const right = a > b ? '>' : '<', sa = decStr(a), sb = decStr(b);
++    const longer = sa.length > sb.length ? '>' : sa.length < sb.length ? '<' : null;       // "more digits is bigger": 0.45 > 0.5
++    const opts = choiceOf({text:right}, ['>', '<', '='].map(t => ({text:t, mis:longer && t === longer ? 'longerIsBigger' : 'compareDecimals'}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
++    return {title:'Pizza Money', ctx:`${sa} ? ${sb}`, bubble:`Which costs more: $${sa} or $${sb}?`, helper:'Line up the points. Compare tenths first, then hundredths.', visual:'',
++      steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${sa} ◯ ${sb}`, options:opts, hint:() => `Write both with two places: ${decStr(a).padEnd(4, '0')} and ${decStr(b).padEnd(4, '0')}.`}]};
++  }
++};
++```
+diff --git a/docs/GRADE4.md b/docs/GRADE4.md
+index fe27016..ee6d322 100644
+--- a/docs/GRADE4.md
++++ b/docs/GRADE4.md
+@@ -127,7 +127,7 @@ Each is built inside the station plan that first needs it, the same way the Bake
+ | `NEIGHBORHOODS-0-ENGINE.md` | Neighborhoods in the engine (see `NEIGHBORHOODS.md`). Built |
+ | `GRADE4-1-LEMONADE.md` | Lemonade Stand, 4 stations, and its reward set. Built |
+ | `GRADE4-2-TOYS.md` | Toy Shop, 4 stations. Built |
+-| `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations. Stations 1 to 3 built |
++| `GRADE4-3-PIZZA.md` | Pizza Parlor, 5 stations. Built |
+ | `GRADE4-4-GARDEN.md` | Garden Center, 4 stations |
+ | `GRADE4-5-ART.md` | Art Studio, 3 stations |
+ 
+diff --git a/docs/NEIGHBORHOODS.md b/docs/NEIGHBORHOODS.md
+index 90cf453..aeed01e 100644
+--- a/docs/NEIGHBORHOODS.md
++++ b/docs/NEIGHBORHOODS.md
+@@ -16,7 +16,7 @@ Pet Town is **one town per student**, with **one neighborhood per grade or cours
+ 
+ | Neighborhood | Follows | Status |
+ |---|---|---|
+-| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅, Pizza Parlor (stations 1 to 3) | building |
++| 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅, Pizza Parlor ✅ | building |
+ | 5th grade | Khan 5th grade | later |
+ | **6th grade** | Khan 6th grade: Café ✅, Bakery ✅, Market, Clock Tower, Ice Rink, Potion Lab, Pet Houses, Pet Show | building |
+ | 7th grade | Khan 7th grade (needed for next school year) | next year |
+diff --git a/docs/ROADMAP.md b/docs/ROADMAP.md
+index f0fa88e..a12f9ae 100644
+--- a/docs/ROADMAP.md
++++ b/docs/ROADMAP.md
+@@ -34,7 +34,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
+ - [x] 4th grade opens: the 🍋 Lemonade Stand, 4 stations and 15 skills (`GRADE4-1-LEMONADE.md`). The town now shows the grade switcher
+ - [x] Toy Shop stations 1 and 2: place value (blocks and tables), writing and comparing numbers, rounding, adding and subtracting (`GRADE4-2-TOYS.md`)
+ - [x] Toy Shop stations 3 and 4: multiplying and dividing with area models, partial products, and long division by 1-digit numbers, plus factor-pair and rounding sprint skills (`GRADE4-2-TOYS.md`)
+-- [x] Pizza Parlor stations 1 to 3: equivalent fractions, comparing, adding and subtracting fractions and mixed numbers, with fraction bars and number lines (`GRADE4-3-PIZZA.md`)
++- [x] Pizza Parlor (all 5 stations): equivalent fractions, comparing, adding and subtracting fractions and mixed numbers, multiplying fractions by whole numbers, tenths, hundredths, and decimals, with fraction bars, number lines, and hundred grids (`GRADE4-3-PIZZA.md`)
+ - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
+ - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
+ - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
+@@ -71,7 +71,8 @@ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before eac
+ - [x] 3c. 4th grade: the Toy Shop, stations 1 and 2 (`GRADE4-2-TOYS.md`)
+ - [x] 3d. 4th grade: Toy Shop stations 3 and 4 (multiplying and dividing, with area models), and the factor-pair and rounding sprint skills
+ - [x] 3e. 4th grade: Pizza Parlor stations 1 to 3 (`GRADE4-3-PIZZA.md`)
+-- [ ] 3f. 4th grade: Pizza Parlor stations 4 and 5, then the Garden Center and Art Studio
++- [x] 3f. 4th grade: Pizza Parlor stations 4 and 5 (`GRADE4-3-PIZZA.md`)
++- [ ] 3g. 4th grade: Garden Center, then Art Studio
+ - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
+ 
+ ## Database files, in the order they were run
+-- 
+2.43.0
+

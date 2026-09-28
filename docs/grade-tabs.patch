@@ -1,0 +1,166 @@
+From 0dc23f004b8f383ed110bd7e301846c428fe5306 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 27 Sep 2026 21:32:30 -0400
+Subject: [PATCH 1/2] Dashboard: shops grouped by grade
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The skill grid's shop tabs are now in one row per grade (4th, then 6th),
+and the dashboard opens on the first shop of the class's home grade
+(the Lemonade Stand for a 4th grade class, the Café for 6th). Class
+settings group each grade's "Unlock through" pickers and "Open for
+everyone" switches under a grade heading.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014wQFE2KZBjkYxaH2m8t9SR
+---
+ src/styles/teacher.css |  6 ++++++
+ src/teacher/main.ts    | 10 +++++-----
+ src/teacher/report.ts  | 17 ++++++++++++-----
+ 3 files changed, 23 insertions(+), 10 deletions(-)
+
+diff --git a/src/styles/teacher.css b/src/styles/teacher.css
+index 5137cd0..144594b 100644
+--- a/src/styles/teacher.css
++++ b/src/styles/teacher.css
+@@ -116,3 +116,9 @@ tr.stale td, td.stale{background:rgba(255,157,178,.22)}
+ .pt-day{flex:1; display:flex; align-items:flex-end; height:100%}
+ .pt-day.week-start{border-left:1px dashed var(--line); padding-left:2px}
+ .pt-bar{display:block; width:100%; min-height:2px; background:var(--mint); border-radius:3px 3px 0 0}
++/* shops grouped by grade: dashboard skill-grid tabs and class settings */
++.shop-tabs{display:flex; flex-direction:column; gap:6px; margin-bottom:10px}
++.shop-grade{align-items:center; flex-wrap:wrap; gap:6px; margin-top:0}
++.grade-lbl{font-weight:700; min-width:7.5em}
++.grade-set{border-top:1px solid rgba(0,0,0,.1); margin-top:12px; padding-top:8px}
++.grade-set h3{margin:0 0 4px; font-size:1rem}
+diff --git a/src/teacher/main.ts b/src/teacher/main.ts
+index 9000b79..bbb6c6d 100644
+--- a/src/teacher/main.ts
++++ b/src/teacher/main.ts
+@@ -2,7 +2,7 @@
+ import type { RealtimeChannel } from '@supabase/supabase-js';
+ import { makeClient } from '../lib/supabase';
+ import { BUILDINGS, SHOPS, DRILLS, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
+-import { renderClassReport, esc, type StudentReport } from './report';
++import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
+ 
+ interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; created_at: string }
+ interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
+@@ -93,6 +93,7 @@ async function renderDashboard() {
+   if (current?.id !== cls.id || tab !== 'dashboard') return;
+   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
+   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
++  setReportClass(cls.id, cls.game_settings?.home);
+   renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
+   startLive(cls.id);
+ }
+@@ -231,12 +232,11 @@ function renderSettings() {
+       <p class="muted">Signing in on a new computer brings their town with them.</p><div class="row"><button class="btn small" id="copyJoin" data-label="Copy join instructions">Copy join instructions</button></div><textarea id="joinFallback" class="copy-fallback" hidden readonly aria-label="Join instructions to copy"></textarea></div>
+     <div class="card"><h2>Class settings</h2>
+       <label for="cName">Class name</label><input type="text" id="cName" maxlength="60" value="${esc(cls.name)}">
+-      <label for="cStation">Unlock the café through</label>
+-      <select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>
+-      ${Object.values(SHOPS).filter(shop => shop.id !== 'cafe' && BUILDINGS.some(b => b.id === shop.id && b.open)).map(shop => { const m = (cls.game_settings?.minStations as Record<string, number> | undefined)?.[shop.id] || 1; return `<label for="minSt-${shop.id}">Unlock the ${esc(shop.name)} through</label><select id="minSt-${shop.id}" data-min-station="${shop.id}">${shop.stations.filter(st => st.skills.length).map(st => `<option value="${st.id}" ${st.id === m ? 'selected' : ''}>Station ${st.id}: ${esc(st.name)}</option>`).join('')}</select>`; }).join('')}
++      ${builtHoods().map(n => { const inHood = BUILDINGS.filter(b => b.hood === n.id && b.open); return `<div class="grade-set"><h3>${n.emoji} ${esc(n.name)}</h3>${inHood.map(b => b.id === 'cafe'
++        ? `<label for="cStation">Unlock the café through</label><select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>`
++        : SHOPS[b.id] ? (shop => { const m = (cls.game_settings?.minStations as Record<string, number> | undefined)?.[shop.id] || 1; return `<label for="minSt-${shop.id}">Unlock the ${esc(shop.name)} through</label><select id="minSt-${shop.id}" data-min-station="${shop.id}">${shop.stations.filter(st => st.skills.length).map(st => `<option value="${st.id}" ${st.id === m ? 'selected' : ''}>Station ${st.id}: ${esc(st.name)}</option>`).join('')}</select>`; })(SHOPS[b.id]) : '').join('')}${inHood.filter(b => prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}</div>`; }).join('')}
+       <p class="muted">Later stations still open on their own: after 6 orders at the one before, or after its quiz when quizzes open stations. Skipped stations are open right away. The unit test still needs every station quiz passed, or excused on a student's page.</p>
+       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
+-      ${BUILDINGS.filter(b => b.open && prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}
+       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
+       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
+       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>
+diff --git a/src/teacher/report.ts b/src/teacher/report.ts
+index 8798f05..06ab298 100644
+--- a/src/teacher/report.ts
++++ b/src/teacher/report.ts
+@@ -1,5 +1,5 @@
+ /* Renders the class dashboard from the per-student reports that class_report() returns. */
+-import { SKILLS, SKILL_ORDER as ORDER, SHOPS, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
++import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
+ 
+ type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
+ interface AssessmentHistory { shop: string; station: number | null; kind: 'quiz' | 'test'; score: number; total: number; passed: boolean; missed: string[]; t: number }
+@@ -24,7 +24,14 @@ interface PracticeSummary { last: number | null; today: number; week: number; da
+ 
+ const $ = (s: string) => document.querySelector(s) as HTMLElement;
+ export const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
+-let reportShop = 'cafe';
++let reportShop: string | null = null;   // null: the first shop of the class's home grade
++let reportHome = DEFAULT_HOME, reportClass = '';
++/* the dashboard opens on the class's home grade; picking another class starts over there */
++export function setReportClass(classId: string, home: unknown) {
++  if (classId !== reportClass) { reportClass = classId; reportShop = null; }
++  reportHome = validHood(home) ? home : DEFAULT_HOME;
++}
++const shopsIn = (hood: string) => Object.values(SHOPS).filter(s => BUILDINGS.some(b => b.id === s.id && b.hood === hood));
+ 
+ function sStats(r: StudentReport) {
+   const cc = r.cc || [0, 0, 0, 0];
+@@ -69,7 +76,7 @@ function assessmentCell(r: StudentReport, shop: string, station: number | null,
+ 
+ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent, onSaveQuizOverride?: SaveQuizOverride) {
+   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
+-  const shop = SHOPS[reportShop] || SHOPS.cafe;
++  const shop = (reportShop && SHOPS[reportShop]) || shopsIn(reportHome)[0] || SHOPS.cafe;
+   const shopStations = shop.stations.map(st => ({
+     station: st,
+     skills: ORDER.filter(k => shopOfSkill(k) === shop.id && SKILLS[k].st === st.id)
+@@ -122,7 +129,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
+   const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
+   h += `<div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
+ 
+-  h += `<div class="card"><h2>Skill grid</h2><div class="row noprint" role="tablist" aria-label="Shop">${Object.values(SHOPS).map(s => `<button class="btn small${s.id === shop.id ? ' mint' : ''}" type="button" role="tab" aria-selected="${s.id === shop.id}" data-report-shop="${s.id}">${s.emoji} ${s.id === 'cafe' ? 'Café' : esc(s.name)}</button>`).join('')}</div>`;
++  h += `<div class="card"><h2>Skill grid</h2><div class="noprint shop-tabs" role="tablist" aria-label="Shop">${builtHoods().filter(n => shopsIn(n.id).length).map(n => `<div class="row shop-grade"><span class="grade-lbl">${n.emoji} ${esc(n.name)}</span>${shopsIn(n.id).map(s => `<button class="btn small${s.id === shop.id ? ' mint' : ''}" type="button" role="tab" aria-selected="${s.id === shop.id}" data-report-shop="${s.id}">${s.emoji} ${s.id === 'cafe' ? 'Café' : esc(s.name)}</button>`).join('')}</div>`).join('')}</div>`;
+   if (!shopSkills.length) h += `<p class="muted">No ${esc(shop.name)} skills are built yet.</p>`;
+   if (shopStations.length) {
+     h += `<div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
+@@ -161,7 +168,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
+     ${tf.length ? '<table class="steptable"><tr><th>Fact</th><th>Misses or slow</th><th>Students</th></tr>' + tf.map(([k, v]) => { const [x, y] = k.split('x').map(Number); return `<tr><td>${x} × ${y} = ${x * y}</td><td>${v.miss}</td><td>${[...v.who].map(esc).join(', ')}</td></tr>`; }).join('') + '</table>' : '<p class="muted">No times-table trouble yet.</p>'}</div></div>`;
+   el.innerHTML = h;
+   el.querySelectorAll<HTMLButtonElement>('[data-report-shop]').forEach(b => b.addEventListener('click', () => {
+-    reportShop = b.dataset.reportShop || 'cafe';
++    reportShop = b.dataset.reportShop || null;
+     renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
+   }));
+   el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride)));
+-- 
+2.43.0
+
+
+From c01096742f9c69e5d50831d5783ad8f4561ab129 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 27 Sep 2026 21:32:30 -0400
+Subject: [PATCH 2/2] Docs: dashboard grouped by grade; 4th grade paused
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014wQFE2KZBjkYxaH2m8t9SR
+---
+ docs/ROADMAP.md | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/docs/ROADMAP.md b/docs/ROADMAP.md
+index f57f3d9..98a40db 100644
+--- a/docs/ROADMAP.md
++++ b/docs/ROADMAP.md
+@@ -38,6 +38,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
+ - [x] Garden Center stations 1 and 2: converting units, area and perimeter (`GRADE4-4-GARDEN.md`)
+ - [x] 6th grade Market Stall (all 4 stations): unit rates, comparing deals, percents, percents as decimals and fractions, and percent problems with double number lines (`MARKET.md`)
+ - [x] 6th grade Clock Tower (all 3 stations): exponents, powers of fractions and decimals, order of operations with a step-by-step engine, comparing powers (`CLOCK.md`)
++- [x] Dashboard shop tabs grouped by grade, opening on the class's home grade; class settings grouped by grade
+ - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
+ - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
+ - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
+@@ -58,7 +59,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
+ 
+ Draft plans have the skills, steps, mix-ups, drills, and build steps. Before each one is built, its generator code gets written and stress-tested and pasted into the plan, like `BAKERY-1-SCALE.md`.
+ 
+-**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a class code (no family accounts); read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them).
++**Owner decisions made:** the Bakery came first (done); mixed numbers are required in simplest form; 4th grade shop names are final; at-home students use a class code (no family accounts); read-aloud starts off. **Still open:** check the 4th grade lesson titles against the workbook (the Lemonade Stand doesn't depend on them). 4th grade is paused for now (owner decision); 6th grade comes first.
+ 
+ ### Checklist
+ 
+-- 
+2.43.0
+
