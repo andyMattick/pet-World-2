@@ -526,3 +526,9 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .num-line .nl-dot{fill:var(--berry); stroke:currentColor; stroke-width:1.5}
 .num-line .nl-jump{fill:none; stroke:var(--berry); stroke-width:2}
 .hundred-grid .fb-on, .hundred-grid .fb-off{stroke-width:1}
+/* rectangles (Garden Center) */
+.rect-pic{max-width:100%; height:auto; display:block; margin:0 auto}
+.rect-pic .rect-fill{fill:var(--butter)}
+.rect-pic .rect-grid{stroke:rgba(60,40,20,.45); stroke-width:1}
+.rect-pic .rect-edge{fill:none; stroke:currentColor; stroke-width:2.5}
+.rect-pic .rect-lbl{fill:currentColor; font-size:14px; text-anchor:middle}

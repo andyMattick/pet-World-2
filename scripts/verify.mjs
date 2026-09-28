@@ -95,6 +95,10 @@ need('src/game/game.js', 'Object.assign(GEN, PIZZA_GEN)', 'the Pizza Parlor gene
 need('src/game/game.js', 'const PIZZA2_GEN', 'the Pizza Parlor stations 4 and 5 generators');
 need('src/game/game.js', 'Object.assign(GEN, PIZZA2_GEN)', 'the Pizza Parlor stations 4 and 5 generators merged into GEN');
 need('src/game/game.js', 'function hundredGridSVG', 'the hundred grid picture');
+need('src/game/game.js', 'const GARDEN_GEN', 'the Garden Center generators');
+need('src/game/game.js', 'Object.assign(GEN, GARDEN_GEN)', 'the Garden Center generators merged into GEN');
+need('src/game/game.js', 'function rectSVG(', 'the rectangle picture');
+need('src/shared/registry.ts', 'export const GARDEN_STATIONS', 'the Garden Center stations');
 need('src/game/game.js', 'function fracBarSVG(', 'the fraction bar picture');
 need('src/game/game.js', 'function numberLineSVG(', 'the number line picture');
 need('src/shared/registry.ts', 'export const PIZZA_STATIONS', 'the Pizza Parlor stations');
@@ -123,7 +127,7 @@ need('src/shared/registry.ts', 'export const shopOfSkill', 'the skill-to-shop lo
 const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
-if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 10)) problems.push('src/shared/registry.ts should define REWARDS.length === 116');
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 11)) problems.push('src/shared/registry.ts should define REWARDS.length === 126');
 if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);

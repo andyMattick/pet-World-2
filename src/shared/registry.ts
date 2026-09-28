@@ -118,7 +118,20 @@ export const SKILLS: Record<string, Skill> = {
   decWords: { name: 'Decimals in words', short: 'Decimals in words', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-intro-to-decimals/e/decimals-in-words' },
   decLine: { name: 'Decimals on the number line', short: 'Decimals on a number line', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-decimals-on-the-number-line/e/decimals-on-the-number-line--hundredths-0-1' },
   decToFrac: { name: 'Write decimals as fractions', short: 'Decimals to fractions', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-converting-decimals-to-fractions/e/converting_decimals_to_fractions_1' },
-  cmpDec: { name: 'Compare decimals', short: 'Compare decimals', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-comparing-decimals/e/comparing_decimals_1' }
+  cmpDec: { name: 'Compare decimals', short: 'Compare decimals', st: 5, shop: 'pizza', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-decimals/imp-comparing-decimals/e/comparing_decimals_1' },
+  // 4th grade, Garden Center (Sadlier lessons 26 to 33)
+  convMass: { name: 'Convert to smaller units (g and kg, oz and lb)', short: 'Mass units', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-converting-units-of-mass/e/converting-larger-units-to-smaller-units--grams-and-kilograms-' },
+  convVolume: { name: 'Convert to smaller units (mL and L, c, pt, qt, and gal)', short: 'Volume units', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-converting-units-of-volume/e/converting-larger-units-to-smaller-units--cups--pints--quarts--and-gallons-' },
+  convLength: { name: 'Convert to smaller units (mm, cm, m, km, in, ft, yd, and mi)', short: 'Length units', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-converting-units-of-length/e/converting-larger-units-to-smaller-units--inches--feet--yards--and-miles-' },
+  convTime: { name: 'Convert to smaller units (sec, min, and hr)', short: 'Time units', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-converting-units-of-time/e/measurement-units' },
+  timeWord: { name: 'Time conversion word problems', short: 'Time word problems', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-converting-units-of-time/e/measuring-time-word-problems' },
+  moneyWord: { name: 'Convert money word problems', short: 'Money word problems', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-money-word-problems/e/measuring-and-converting-money-word-problems' },
+  metricWord: { name: 'Metric conversions word problems', short: 'Metric word problems', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-conversion-word-problems/e/metric-conversions-word-problems' },
+  customaryWord: { name: 'US customary conversion word problems', short: 'Customary word problems', st: 1, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/imp-measurement-and-data-2/imp-conversion-word-problems/e/us-customary-conversion-word-problems' },
+  apSituation: { name: 'Area and perimeter situations', short: 'Area or perimeter?', st: 2, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/area-perimeter/imp-area-and-perimeter/e/area-and-perimeter-scenarios' },
+  rectMeasure: { name: 'Represent rectangle measurements', short: 'Area and perimeter', st: 2, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/area-perimeter/imp-area-and-perimeter/e/area_of_squares_and_rectangles' },
+  apMissing: { name: 'Find a missing side from the area or perimeter', short: 'Missing side', st: 2, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/area-perimeter/imp-area-and-perimeter/v/width-from-perimeter' },
+  apWord: { name: 'Area & perimeter of rectangles word problems', short: 'Area and perimeter word problems', st: 2, shop: 'garden', url: 'https://www.khanacademy.org/math/cc-fourth-grade-math/area-perimeter/imp-area-and-perimeter/e/area-and-perimeter-of-rectangles-word-problems' }
 };
 export const SKILL_ORDER = Object.keys(SKILLS);
 
@@ -268,6 +281,12 @@ export const PIZZA_STATIONS: Station[] = [
   { id: 4, name: 'Party Orders',     emoji: '🎉', kid: 'Multiplying fractions by whole numbers', skills: ['multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord'] },
   { id: 5, name: 'Pizza Money',      emoji: '💵', kid: 'Tenths, hundredths, and decimals', skills: ['eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'] }
 ];
+export const GARDEN_STATIONS: Station[] = [
+  { id: 1, name: 'Measuring Cups',   emoji: '🥄', kid: 'Converting units', skills: ['convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'moneyWord', 'metricWord', 'customaryWord'] },
+  { id: 2, name: 'Garden Beds',      emoji: '🟫', kid: 'Area and perimeter', skills: ['apSituation', 'rectMeasure', 'apMissing', 'apWord'] },
+  { id: 3, name: 'Seed Survey',      emoji: '📊', kid: 'Line plots', skills: [] },
+  { id: 4, name: 'Sprinkler Angles', emoji: '📐', kid: 'Measuring angles', skills: [] }
+];
 export interface Shop { id: string; name: string; emoji: string; unitLabel: string; stations: Station[] }
 export const BAKERY_STATIONS: Station[] = [
   { id: 1, name: 'The Scale',     emoji: '⚖️', kid: 'Add and subtract decimals', skills: ['addDec', 'subDec', 'decWord'] },
@@ -281,7 +300,8 @@ export const SHOPS: Record<string, Shop> = {
   bakery: { id: 'bakery', name: 'Bakery',   emoji: '🥐', unitLabel: 'Khan Academy 6th grade, Unit 2: Arithmetic with rational numbers', stations: BAKERY_STATIONS },
   lemonade: { id: 'lemonade', name: 'Lemonade Stand', emoji: '🍋', unitLabel: 'Sadlier Grade 4, lessons 1 to 5, with Khan Academy 4th grade practice', stations: LEMON_STATIONS },
   toys: { id: 'toys', name: 'Toy Shop', emoji: '🧸', unitLabel: 'Sadlier Grade 4, lessons 6 to 13, with Khan Academy 4th grade practice', stations: TOY_STATIONS },
-  pizza: { id: 'pizza', name: 'Pizza Parlor', emoji: '🍕', unitLabel: 'Sadlier Grade 4, lessons 14 to 25, with Khan Academy 4th grade practice', stations: PIZZA_STATIONS }
+  pizza: { id: 'pizza', name: 'Pizza Parlor', emoji: '🍕', unitLabel: 'Sadlier Grade 4, lessons 14 to 25, with Khan Academy 4th grade practice', stations: PIZZA_STATIONS },
+  garden: { id: 'garden', name: 'Garden Center', emoji: '🌱', unitLabel: 'Sadlier Grade 4, lessons 26 to 33, with Khan Academy 4th grade practice', stations: GARDEN_STATIONS }
 };
 export const shopOfSkill = (id: string) => SKILLS[id]?.shop || 'cafe';
 export const UNLOCK_AT = 6;
@@ -307,7 +327,7 @@ export const UNIT_SKILLS: Record<string, string[]> = {
   bakery: ['addDec', 'subDec', 'decWord', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord', 'mulDecPlace', 'mulDec', 'div2', 'divMulti', 'divToDec', 'divDec2', 'divDec3'],
   lemonade: ['cmpMult', 'cmpWord', 'mdWord', 'estWord', 'eqWord', 'multiStep', 'factorPairs', 'identFactors', 'relateFM', 'identMultiples', 'primeId', 'compositeId', 'primeComp', 'numPatterns', 'shapePatterns'],
   toys: ['pvBlocks', 'pvTable', 'digitValue', 'largestSmallest', 'expandedForm', 'writtenForm', 'differentForms', 'regroup', 'mult10', 'div10', 'compareNums', 'compareForms', 'roundNum', 'roundPlaces', 'roundWord', 'addMulti', 'subMulti', 'mult1by10s', 'areaMult1', 'distMult', 'estProducts', 'multRegroup', 'areaMult2', 'partialProd2', 'mult2digit', 'estDiv', 'interpRem', 'divRem', 'divPV', 'areaDiv', 'estQuot', 'divBy2345', 'divBy6789'],
-  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord', 'multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord', 'eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
+  pizza: ['eqFracModel', 'eqFracLine', 'eqFrac', 'diffWholes', 'commonDen', 'cmpVisual', 'cmpBench', 'cmpFrac', 'cmpFracWord', 'decompVisual', 'decomp', 'addLike', 'subLike', 'fracWordAS', 'mixedImproper', 'mixedAS', 'mixedASregroup', 'mixedWord', 'multFracModel', 'multFracLine', 'multUnitFrac', 'multFracWhole', 'multMixedWhole', 'multFracWord', 'eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac', 'cmpDec'], garden: ['convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'moneyWord', 'metricWord', 'customaryWord', 'apSituation', 'rectMeasure', 'apMissing', 'apWord'], market: [], clock: [], rink: [], potion: [], houses: [], show: []
 };
 
 const cafeRewards: Reward[] = [
@@ -339,6 +359,8 @@ const UNIT_SETS: [string, [string,string][], [string,string][]][] = [
            [['🪀','Yo-yo rack'],['🧩','Puzzle wall'],['🚂','Toy train'],['🎠','Carousel'],['🎁','Golden gift box']]],
   ['pizza', [['🐭','Mozzarella the mouse'],['🐈‍⬛','Pepper the cat'],['🦔','Crust the hedgehog'],['🦝','Basil the raccoon'],['🐲','Oregano the dragon']],
             [['🧀','Cheese wheel'],['🍅','Tomato basket'],['🫓','Dough board'],['🔥','Pizza oven'],['🏆','Golden pizza peel']]],
+  ['garden', [['🐇','Clover the bunny'],['🦗','Chirp the cricket'],['🐛','Wiggles the caterpillar'],['🦫','Bramble the beaver'],['🕊️','Blossom the dove']],
+            [['🌵','Cactus pot'],['🥕','Carrot patch'],['🌹','Rose bush'],['⛲','Garden fountain'],['🏆','Golden watering can']]],
   ['market', [['🐐','Gus the goat'],['🦜','Kiwi the parrot'],['🐢','Slowpoke the turtle'],['🦙','Lulu the llama'],['🐓','Rocco the rooster']],
              [['🍉','Melon stand'],['🌽','Corn crate'],['🧺','Picnic basket'],['🏷️','Price tags'],['⚖️','Golden scale']]],
   ['clock',  [['🦉','Hoot the owl'],['🦇','Midnight the bat'],['🐿️','Acorn the chipmunk'],['🦅','Soar the eagle'],['🐉','Ember the dragon']],
@@ -387,7 +409,7 @@ export const BUILDINGS: Building[] = [
   {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4', open:true},
   {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4', open:true},
   {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4', open:true},
-  {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4'},
+  {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4', open:true},
   {id:'art',      emoji:'🎨', name:'Art Studio',     unit:'Geometry', hood:'g4'}
 ];
 export const buildingsIn = (hood: string) => BUILDINGS.filter(b => b.hood === hood);
@@ -415,7 +437,7 @@ export const MIS: Record<string, Misconception> = {
   oneSideOnly:      { name: 'Thinks changing one amount keeps the ratio', kid: 'If only one amount changes, the taste changes.', tip: 'Use a mix (lemonade, paint) and change only one ingredient.', skills: ['understand'] },
   notSimplest: { name: 'Stops before simplest form', kid: 'Can you divide both numbers again?', tip: 'Ask: is there any number besides 1 that divides both? Divide by the biggest one (the GCF), or keep dividing until nothing does.', skills: ['basic', 'equiv', 'table', 'fracDivWhole', 'wholeDivFrac', 'fracDiv', 'mixedDiv', 'fracInterp', 'fracWord'] },
   coordSwap:        { name: 'Swaps x and y on the coordinate plane', kid: 'Go across first (x), then up (y).', tip: 'Say "across, then up" and check the axis labels before plotting.', skills: ['coord'] },
-  unitsDirection:   { name: 'Multiplies when they should divide (or the reverse) converting units', kid: 'Should the number get bigger or smaller?', tip: 'Going to a smaller unit means more of them, so multiply.', skills: ['units'] },
+  unitsDirection:   { name: 'Multiplies when they should divide (or the reverse) converting units', kid: 'Should the number get bigger or smaller?', tip: 'Going to a smaller unit means more of them, so multiply.', skills: ['units', 'convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'moneyWord', 'metricWord', 'customaryWord'] },
   factSlip:         { name: 'Times-table slip (off by one group)', kid: 'So close! Check that times fact.', tip: 'The method is right. Drill the specific facts (see the times-table section).', skills: [] },
   rightAlign:        { name: 'Lines up right edges instead of decimal points', kid: 'Line up the decimal points, not the last digits.', tip: 'Have students write the numbers on grid paper with the decimal points in one column, and fill empty places with zeros.', skills: ['addDec', 'subDec'] },
   noRegroup:         { name: 'Forgets to carry when adding decimals', kid: 'When a column makes 10 or more, carry the 1.', tip: 'Add one column at a time from the right and say the carry out loud. Place-value disks help.', skills: ['addDec', 'addMulti'] },
@@ -461,7 +483,7 @@ export const MIS: Record<string, Misconception> = {
   shiftWrong:        { name: 'Moves the digits the wrong number of places', kid: 'Times 10 adds one 0. Divided by 10 takes one 0 away.', tip: 'Use a place-value chart and slide the digits one place.', skills: ['mult10', 'div10', 'mult1by10s', 'estProducts', 'areaMult2', 'partialProd2', 'divPV', 'areaDiv', 'estDiv', 'estQuot'] },
   moreDigitsBigger:  { name: 'Compares by the first digit when the numbers have different lengths', kid: 'Count the digits first. More digits means a bigger number.', tip: 'Line both numbers up on a place-value chart before comparing.', skills: ['compareNums'] },
   compareDigits:     { name: 'Compares the wrong places', kid: 'Start at the left and find the first place where the digits are different.', tip: 'Line the numbers up by place and compare one column at a time from the left.', skills: ['compareNums', 'compareForms'] },
-  addFactors:        { name: 'Adds the factors instead of multiplying', kid: 'The area is length times width, not length plus width.', tip: 'Count the squares in a small rectangle to see why it multiplies.', skills: ['areaMult1'] },
+  addFactors:        { name: 'Adds the factors instead of multiplying', kid: 'The area is length times width, not length plus width.', tip: 'Count the squares in a small rectangle to see why it multiplies.', skills: ['areaMult1', 'apSituation', 'rectMeasure', 'apWord', 'apMissing'] },
   distributeWrong:   { name: 'Multiplies only part of the number', kid: 'Every part of the big number gets multiplied.', tip: 'Draw an area model with one box for each place, and multiply every box.', skills: ['distMult'] },
   noCarryMult:       { name: 'Forgets to carry when multiplying', kid: 'Write the ones digit and carry the tens to the next place.', tip: 'Write each carry above the next column and add it after multiplying that column.', skills: ['multRegroup'] },
   partialMissing:    { name: 'Leaves out some of the partial products', kid: 'Every part times every part: 2-digit × 2-digit makes four parts.', tip: 'Use the area model: four boxes, four products, then add them all.', skills: ['areaMult2', 'partialProd2'] },
@@ -481,7 +503,13 @@ export const MIS: Record<string, Misconception> = {
   wholeOnly:         { name: 'Multiplies only the whole number part of a mixed number', kid: 'Multiply the fraction part too, or change it to an improper fraction first.', tip: 'Write 3 × 2 1/2 as 3 × 2 plus 3 × 1/2 with an area model, or convert to 5/2 before multiplying.', skills: ['multMixedWhole'] },
   tenthsHundredths:  { name: 'Mixes up tenths and hundredths', kid: 'One tenth is ten hundredths. Check which place each digit is in.', tip: 'Shade 0.3 and 0.03 on hundred grids side by side. Name the place out loud: 3 tenths vs 3 hundredths.', skills: ['eqFrac10', 'addFrac10', 'decShown', 'decWords', 'decLine', 'decToFrac'] },
   longerIsBigger:    { name: 'Thinks a decimal with more digits is bigger', kid: 'More digits does not mean bigger. Compare tenths first.', tip: 'Add a zero so both have hundredths (0.5 = 0.50), then compare 50 hundredths with 45 hundredths.', skills: ['cmpDec'] },
-  compareDecimals:   { name: 'Compares decimals incorrectly', kid: 'Line up the decimal points and compare from the left.', tip: 'Line up the decimal points, fill empty places with zeros, and compare place by place starting with the ones.', skills: ['cmpDec'] }
+  compareDecimals:   { name: 'Compares decimals incorrectly', kid: 'Line up the decimal points and compare from the left.', tip: 'Line up the decimal points, fill empty places with zeros, and compare place by place starting with the ones.', skills: ['cmpDec'] },
+  wrongFactor:       { name: 'Uses the wrong number of small units in one big unit', kid: 'Check the fact: how many small units make 1 big unit?', tip: 'Keep a conversion chart handy (1 kg = 1,000 g, 1 lb = 16 oz, 1 ft = 12 in, 1 gal = 4 qt, 1 hr = 60 min) and have students say the fact before multiplying.', skills: ['convMass', 'convVolume', 'convLength', 'convTime', 'moneyWord', 'metricWord', 'customaryWord'] },
+  joinedUnits:       { name: 'Writes mixed units side by side instead of converting', kid: '2 feet 5 inches is not 25 inches. Change the feet to inches first.', tip: 'Show 1 hr 20 min on a clock: it is 80 minutes, not 120. Convert the big unit, then add the small unit.', skills: ['convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'customaryWord'] },
+  forgotSmallPart:   { name: 'Forgets to add the small units after converting', kid: 'You changed the big units. Now add the small units that were already there.', tip: 'Underline both parts of a mixed measurement (3 lb 4 oz) and check off each part as it is used.', skills: ['convMass', 'convVolume', 'convLength', 'convTime', 'timeWord', 'moneyWord', 'metricWord'] },
+  rawCompare:        { name: 'Compares the numbers without changing to the same unit', kid: 'Change both to the same unit first. 2 pounds is more than 30 ounces.', tip: 'Ask "same unit?" before every comparison; convert the bigger unit to the smaller one.', skills: ['convMass', 'convVolume', 'convLength', 'convTime'] },
+  areaPerimeterSwap: { name: 'Mixes up area and perimeter', kid: 'Area covers the inside (multiply). Perimeter goes around the edge (add the sides).', tip: 'Shade the inside of a rectangle for area and trace the outline for perimeter. Fences and borders go around; soil, grass, and tiles cover.', skills: ['apSituation', 'rectMeasure', 'apMissing', 'apWord'] },
+  halfPerimeter:     { name: 'Adds only two sides for the perimeter', kid: 'A rectangle has four sides: two lengths and two widths.', tip: 'Label all four sides before adding, or use 2 × (length + width).', skills: ['apSituation', 'rectMeasure', 'apMissing', 'apWord'] }
 };
 
 /** Mastery rule shared by game and dashboard: 4+ tries and 75% of the last 8 perfect. */
