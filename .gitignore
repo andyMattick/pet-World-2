@@ -3,3 +3,5 @@ dist
 .env
 .env.local
 .DS_Store
+# patch files uploaded to apply changes (git am); never commit them
+*.patch
