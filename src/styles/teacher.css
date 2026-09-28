@@ -116,3 +116,9 @@ tr.stale td, td.stale{background:rgba(255,157,178,.22)}
 .pt-day{flex:1; display:flex; align-items:flex-end; height:100%}
 .pt-day.week-start{border-left:1px dashed var(--line); padding-left:2px}
 .pt-bar{display:block; width:100%; min-height:2px; background:var(--mint); border-radius:3px 3px 0 0}
+/* shops grouped by grade: dashboard skill-grid tabs and class settings */
+.shop-tabs{display:flex; flex-direction:column; gap:6px; margin-bottom:10px}
+.shop-grade{align-items:center; flex-wrap:wrap; gap:6px; margin-top:0}
+.grade-lbl{font-weight:700; min-width:7.5em}
+.grade-set{border-top:1px solid rgba(0,0,0,.1); margin-top:12px; padding-top:8px}
+.grade-set h3{margin:0 0 4px; font-size:1rem}

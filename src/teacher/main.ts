@@ -2,7 +2,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
 import { BUILDINGS, SHOPS, DRILLS, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
-import { renderClassReport, esc, type StudentReport } from './report';
+import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
@@ -93,6 +93,7 @@ async function renderDashboard() {
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
+  setReportClass(cls.id, cls.game_settings?.home);
   renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
   startLive(cls.id);
 }
@@ -231,12 +232,11 @@ function renderSettings() {
       <p class="muted">Signing in on a new computer brings their town with them.</p><div class="row"><button class="btn small" id="copyJoin" data-label="Copy join instructions">Copy join instructions</button></div><textarea id="joinFallback" class="copy-fallback" hidden readonly aria-label="Join instructions to copy"></textarea></div>
     <div class="card"><h2>Class settings</h2>
       <label for="cName">Class name</label><input type="text" id="cName" maxlength="60" value="${esc(cls.name)}">
-      <label for="cStation">Unlock the café through</label>
-      <select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>
-      ${Object.values(SHOPS).filter(shop => shop.id !== 'cafe' && BUILDINGS.some(b => b.id === shop.id && b.open)).map(shop => { const m = (cls.game_settings?.minStations as Record<string, number> | undefined)?.[shop.id] || 1; return `<label for="minSt-${shop.id}">Unlock the ${esc(shop.name)} through</label><select id="minSt-${shop.id}" data-min-station="${shop.id}">${shop.stations.filter(st => st.skills.length).map(st => `<option value="${st.id}" ${st.id === m ? 'selected' : ''}>Station ${st.id}: ${esc(st.name)}</option>`).join('')}</select>`; }).join('')}
+      ${builtHoods().map(n => { const inHood = BUILDINGS.filter(b => b.hood === n.id && b.open); return `<div class="grade-set"><h3>${n.emoji} ${esc(n.name)}</h3>${inHood.map(b => b.id === 'cafe'
+        ? `<label for="cStation">Unlock the café through</label><select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>`
+        : SHOPS[b.id] ? (shop => { const m = (cls.game_settings?.minStations as Record<string, number> | undefined)?.[shop.id] || 1; return `<label for="minSt-${shop.id}">Unlock the ${esc(shop.name)} through</label><select id="minSt-${shop.id}" data-min-station="${shop.id}">${shop.stations.filter(st => st.skills.length).map(st => `<option value="${st.id}" ${st.id === m ? 'selected' : ''}>Station ${st.id}: ${esc(st.name)}</option>`).join('')}</select>`; })(SHOPS[b.id]) : '').join('')}${inHood.filter(b => prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}</div>`; }).join('')}
       <p class="muted">Later stations still open on their own: after 6 orders at the one before, or after its quiz when quizzes open stations. Skipped stations are open right away. The unit test still needs every station quiz passed, or excused on a student's page.</p>
       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
-      ${BUILDINGS.filter(b => b.open && prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>

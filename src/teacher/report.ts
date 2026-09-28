@@ -1,5 +1,5 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
-import { SKILLS, SKILL_ORDER as ORDER, SHOPS, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
+import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
 interface AssessmentHistory { shop: string; station: number | null; kind: 'quiz' | 'test'; score: number; total: number; passed: boolean; missed: string[]; t: number }
@@ -24,7 +24,14 @@ interface PracticeSummary { last: number | null; today: number; week: number; da
 
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
 export const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
-let reportShop = 'cafe';
+let reportShop: string | null = null;   // null: the first shop of the class's home grade
+let reportHome = DEFAULT_HOME, reportClass = '';
+/* the dashboard opens on the class's home grade; picking another class starts over there */
+export function setReportClass(classId: string, home: unknown) {
+  if (classId !== reportClass) { reportClass = classId; reportShop = null; }
+  reportHome = validHood(home) ? home : DEFAULT_HOME;
+}
+const shopsIn = (hood: string) => Object.values(SHOPS).filter(s => BUILDINGS.some(b => b.id === s.id && b.hood === hood));
 
 function sStats(r: StudentReport) {
   const cc = r.cc || [0, 0, 0, 0];
@@ -69,7 +76,7 @@ function assessmentCell(r: StudentReport, shop: string, station: number | null, 
 
 export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent, onSaveQuizOverride?: SaveQuizOverride) {
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
-  const shop = SHOPS[reportShop] || SHOPS.cafe;
+  const shop = (reportShop && SHOPS[reportShop]) || shopsIn(reportHome)[0] || SHOPS.cafe;
   const shopStations = shop.stations.map(st => ({
     station: st,
     skills: ORDER.filter(k => shopOfSkill(k) === shop.id && SKILLS[k].st === st.id)
@@ -122,7 +129,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
   h += `<div class="card"><h2>Pop-ups that aren't helping</h2>${notHelping.length ? '<table class="steptable"><tr><th>Student</th><th>Drill</th><th>Pop-ups</th><th>Misses after</th></tr>' + notHelping.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(drillLabel(x.id))}</td><td>${x.v.popups || 0}</td><td>${x.v.missesAfter || 0}</td></tr>`).join('') + '</table>' : '<p class="muted">No drills need reteaching right now.</p>'}</div>`;
 
-  h += `<div class="card"><h2>Skill grid</h2><div class="row noprint" role="tablist" aria-label="Shop">${Object.values(SHOPS).map(s => `<button class="btn small${s.id === shop.id ? ' mint' : ''}" type="button" role="tab" aria-selected="${s.id === shop.id}" data-report-shop="${s.id}">${s.emoji} ${s.id === 'cafe' ? 'Café' : esc(s.name)}</button>`).join('')}</div>`;
+  h += `<div class="card"><h2>Skill grid</h2><div class="noprint shop-tabs" role="tablist" aria-label="Shop">${builtHoods().filter(n => shopsIn(n.id).length).map(n => `<div class="row shop-grade"><span class="grade-lbl">${n.emoji} ${esc(n.name)}</span>${shopsIn(n.id).map(s => `<button class="btn small${s.id === shop.id ? ' mint' : ''}" type="button" role="tab" aria-selected="${s.id === shop.id}" data-report-shop="${s.id}">${s.emoji} ${s.id === 'cafe' ? 'Café' : esc(s.name)}</button>`).join('')}</div>`).join('')}</div>`;
   if (!shopSkills.length) h += `<p class="muted">No ${esc(shop.name)} skills are built yet.</p>`;
   if (shopStations.length) {
     h += `<div class="tablewrap"><table class="cls"><thead><tr><th></th>`;
@@ -161,7 +168,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     ${tf.length ? '<table class="steptable"><tr><th>Fact</th><th>Misses or slow</th><th>Students</th></tr>' + tf.map(([k, v]) => { const [x, y] = k.split('x').map(Number); return `<tr><td>${x} × ${y} = ${x * y}</td><td>${v.miss}</td><td>${[...v.who].map(esc).join(', ')}</td></tr>`; }).join('') + '</table>' : '<p class="muted">No times-table trouble yet.</p>'}</div></div>`;
   el.innerHTML = h;
   el.querySelectorAll<HTMLButtonElement>('[data-report-shop]').forEach(b => b.addEventListener('click', () => {
-    reportShop = b.dataset.reportShop || 'cafe';
+    reportShop = b.dataset.reportShop || null;
     renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
   }));
   el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride)));
