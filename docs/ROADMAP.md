@@ -43,6 +43,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] 6th grade Ice Rink (all 4 stations): negative numbers, number lines, opposites, comparing and ordering, absolute value, and negative answers with a ± button (`RINK.md`)
 - [x] 6th grade Potion Lab stations 1 to 4 (unit 6): parts of expressions, evaluating, writing expressions, GCF and LCM, the distributive property, equivalent expressions (`POTION.md`)
 - [x] 6th grade Potion Lab stations 5 and 6 (unit 7): one-step equations with a balance, inequalities with graphs, dependent and independent variables. The Potion Lab is complete (`POTION.md`)
+- [x] 6th grade Pet Houses (all 6 stations): area of triangles, parallelograms, and composite shapes; the coordinate plane; volume with fractions; nets and surface area (`HOUSES.md`)
 - [x] Answer boxes under lined-up decimals: one box per column, filled right to left, with optional carry/borrow boxes on every level; a wrong answer names the column to check
 - [x] Keyboard works everywhere (the number pad no longer locks typing, including the PIN), and number keys 1 to 9 pick choices
 - [x] Whole and part wording in Sharing Pans and the word-problem pop-up, and "same as ×" notes after the right division equation
@@ -96,8 +97,8 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3k. 6th grade: the Ice Rink (`RINK.md`)
 - [x] 3m. 6th grade: Potion Lab stations 1 to 4, unit 6 (`POTION.md`)
 - [x] 3m2. 6th grade: Potion Lab stations 5 and 6, unit 7 (`POTION.md`)
-- [ ] 3n. 6th grade: Pet Houses (area, coordinate plane, 3D figures)  ← next
-- [ ] 3o. 6th grade: the Pet Show (data and statistics)
+- [x] 3n. 6th grade: Pet Houses (`HOUSES.md`)
+- [ ] 3o. 6th grade: the Pet Show (data and statistics)  ← next
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run
