@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -38,6 +38,7 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
+  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:''},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
@@ -82,6 +83,11 @@ function normalize(raw){
   s.displayed = Array.from({length:8}, (_,i) => s.decor.includes(s.displayed[i]) ? s.displayed[i] : null);
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
+  s.mathMinutes = s.mathMinutes && typeof s.mathMinutes === 'object' ? s.mathMinutes : {};
+  s.arcade = Object.assign({tickets:0, playedSeconds:0, day:''}, s.arcade || {});
+  s.arcade.tickets = Math.max(0, Math.floor(+s.arcade.tickets || 0));
+  s.arcade.playedSeconds = Math.max(0, Math.floor(+s.arcade.playedSeconds || 0));
+  s.arcade.day = typeof s.arcade.day === 'string' ? s.arcade.day : '';
   return s;
 }
 function loadState(key){
@@ -4342,7 +4348,7 @@ $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
 let currentShop = 'cafe';
-const SCREENS = ['loading','join','name','home','cafe','shift','sprint','book','summary','shop','hall','parent'];
+const SCREENS = ['loading','join','name','home','cafe','shift','sprint','book','summary','shop','hall','parent','arcade'];
 function show(id){
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
   Music.setTempo(id === 'sprint' ? SPRINT_RATE : 1);
@@ -4350,6 +4356,7 @@ function show(id){
   if (id === 'home') renderHome();
   if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); renderBook(b && b.hood === currentHood() ? bookUnit : buildingsIn(currentHood())[0].id); }   // opens on the grade you're standing in
+  if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
@@ -4367,6 +4374,59 @@ function updateHeader(){
 }
 let toastTimer;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
+const arcadeEntryCost = 10;
+const arcadeDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+function arcadeToday(){
+  const day = arcadeDateKey();
+  if (S.arcade.day !== day) { S.arcade.day = day; S.arcade.playedSeconds = 0; }
+  return day;
+}
+function arcadeMathMinutes(){ return Math.floor(Number(S.mathMinutes[arcadeToday()] || 0)); }
+function arcadeRemainingSeconds(){ return Math.max(0, arcadeMathMinutes() * 60 - S.arcade.playedSeconds); }
+function arcadeModuleMessage(event){
+  const frame = $('#arcadeFrame');
+  if (!frame || event.source !== frame.contentWindow || !event.data || event.data.type !== 'arcade:finished') return;
+  const tickets = Math.max(0, Math.min(25, Math.floor(Number(event.data.tickets) || 0)));
+  if (!tickets) return;
+  S.arcade.tickets += tickets; save(); renderArcade(); toast(`You earned ${tickets} arcade ticket${tickets === 1 ? '' : 's'}!`);
+}
+window.addEventListener('message', arcadeModuleMessage);
+function arcadeCard(game, daily){
+  const remaining = arcadeRemainingSeconds(), playable = remaining > 0 && S.coins >= arcadeEntryCost;
+  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? `Play for 🪙 ${arcadeEntryCost}` : remaining ? `Need ${arcadeEntryCost} 🪙` : 'Do math to unlock play'}</button></article>`;
+}
+function renderArcade(){
+  const daily = arcadeGameOfTheDay(new Date(), ARCADE_GAMES);
+  const minutes = arcadeMathMinutes(), remaining = arcadeRemainingSeconds();
+  $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="arcade-summary"><div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div><div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div></div>
+    <p class="muted">Each entry costs 🪙 ${arcadeEntryCost}. Games can award arcade tickets, which are separate from Pet Town coins.</p>
+    <div class="arcade-grid">${ARCADE_GAMES.filter(game => game.available).map(game => arcadeCard(game, daily?.id === game.id)).join('')}</div>
+    <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
+}
+function startArcadeGame(id){
+  const game = ARCADE_GAMES.find(item => item.id === id), remaining = arcadeRemainingSeconds();
+  if (!game || !game.available || remaining <= 0 || S.coins < arcadeEntryCost) return;
+  S.coins -= arcadeEntryCost; save(); updateHeader();
+  const play = $('#arcadePlayWrap');
+  play.hidden = false;
+  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${Math.ceil(remaining / 60)} min left</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}" loading="eager"></iframe>`;
+  $('#arcadeClose').addEventListener('click', () => { play.hidden = true; play.innerHTML = ''; renderArcade(); });
+  const started = performance.now();
+  const timer = setInterval(() => {
+    const used = Math.floor((performance.now() - started) / 1000);
+    S.arcade.playedSeconds = Math.min(arcadeMathMinutes() * 60, S.arcade.playedSeconds + Math.max(0, used - (timer.last || 0)));
+    timer.last = used; save();
+    const left = arcadeRemainingSeconds();
+    const clock = $('#arcadeClock'); if (clock) clock.textContent = `${Math.ceil(left / 60)} min left`;
+    if (!left) { clearInterval(timer); toast('Today\'s arcade time is used up.'); }
+  }, 1000);
+  $('#arcadeClose').addEventListener('click', () => clearInterval(timer), {once:true});
+}
+$('#arcadeWrap').addEventListener('click', event => {
+  const button = event.target.closest('[data-arcade-start]');
+  if (button) startArcadeGame(button.dataset.arcadeStart);
+});
 function coinBurst(el, n){
   if (reduceMotion() || !el) return;
   const r = el.getBoundingClientRect();
@@ -4597,6 +4657,7 @@ function renderHome(){
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
+  h += `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${S.arcade.tickets} arcade tickets</span></button>`;
   $('#town').innerHTML = h;
 }
 let pickerMode = '', pickerSlot = -1;
@@ -4636,6 +4697,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
+  else if (id === 'arcade') show('arcade');
 });
 
 /* ---------- shop stations ---------- */
@@ -5173,6 +5235,8 @@ function completeOrder(){
   progress.st[shift.station] = (progress.st[shift.station]||0) + 1;
   const secs = order.start === null ? 0 : (performance.now() - order.start) / 1000;
   S.timeMs += Math.min(secs, 300) * 1000;
+  const mathDay = arcadeDateKey();
+  S.mathMinutes[mathDay] = (S.mathMinutes[mathDay] || 0) + Math.min(secs, 300) / 60;
   let tip = 4 + p.steps.length*2 + Math.max(0, Math.round(6 * (1 - secs/order.limit)));
   if (perfect) { S.streak++; tip += Math.min(5, S.streak); S.perfect++; shift.perfect++; }
   else tip = Math.max(3, tip - order.tries - order.hints);

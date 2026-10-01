@@ -114,6 +114,20 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .tile .soon{background:var(--butter); color:#4A2E2A; font-weight:800; font-size:.8rem; border-radius:8px; padding:1px 8px}
 .tile.service{--roof:var(--mint)}
 
+/* arcade */
+.arcade-summary{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:12px 0 16px}
+.arcade-summary>div{background:var(--surface); border:3px solid var(--edge); border-radius:14px; padding:10px; text-align:center}
+.arcade-summary b,.arcade-summary span{display:block}.arcade-summary b{font-size:1.35rem}.arcade-summary span{font-size:.8rem;color:var(--ink-soft)}
+.arcade-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px}
+.arcade-card{background:var(--surface); border:3px solid var(--edge); border-radius:18px; padding:16px; box-shadow:0 4px 0 var(--edge)}
+.arcade-card.arcade-daily{border-color:var(--berry); box-shadow:0 4px 0 var(--berry-deep)}
+.arcade-card-top{display:flex; align-items:center; justify-content:space-between; gap:8px}.arcade-emoji{font-size:2.8rem; line-height:1}
+.arcade-badge{background:var(--butter); border:2px solid var(--edge); border-radius:999px; padding:2px 8px; font-size:.75rem; font-weight:800; white-space:nowrap}
+.arcade-card h3{margin:10px 0 4px}.arcade-card p{min-height:3.2em; margin:0 0 14px; color:var(--ink-soft); font-size:.92rem}
+.arcade-play{margin-top:18px; background:var(--board); border:3px solid var(--edge); border-radius:18px; padding:10px; color:var(--chalk)}
+.arcade-play-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px}.arcade-play iframe{display:block; width:100%; height:min(72vh,720px); border:0; border-radius:10px; background:#101820}
+@media (max-width:600px){.arcade-summary{grid-template-columns:1fr}.arcade-play iframe{height:70vh}}
+
 /* café stations */
 .stations{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px}
 .station{background:var(--surface); border:3px solid var(--edge); border-radius:20px; padding:16px; display:flex; flex-direction:column; gap:8px}

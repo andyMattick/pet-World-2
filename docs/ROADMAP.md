@@ -135,3 +135,44 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 ## After that
 
 - [ ] Selling: TPT listing or a teacher sign-up page
+
+
+1. Things to do with the pets and decorations they own
+🏠 My Pet Room. Kids drag their decorations anywhere in a room: rug, fountain, trophy shelf, pizza oven. Their pets wander around, nap on the rug and splash in the fountain. Tapping a pet makes it do a trick or show a little speech bubble ("I love this cactus!"). More stickers means a busier, livelier room.
+🎩 Dress-up. Cheap accessories like hats, bows, sunglasses and a cape to put on the helper pet. The pet wears them while "helping" at the shops.
+🏡 House tours. A class gallery where kids visit each other's rooms and leave a ❤️ or a stamp like "cute fountain!" Stamps are picked from a set list, with no typing, so nothing needs moderating. Being seen is a strong reason to keep decorating.
+2. The Arcade: non-math games that cost coins
+
+Coins stay the reward for math. The arcade is only a place to spend them. Each play costs a few coins, and a daily limit (set by the teacher) keeps it a treat rather than a replacement for math.
+
+🐾 Pet Dash: the helper pet runs and hops over cones.
+🧠 Sticker Match: a memory game using the stickers the kid owns.
+🎯 Treat Toss: flick treats into the pet's bowl.
+🏁 Pet Race: tap fast to race a class leaderboard.
+
+Scores earn trophies, not coins, so the arcade can never replace doing math as a way to earn.
+
+3. Reasons to come back tomorrow
+✈️ Pet Trips. Send a pet on a trip, like the beach or the mountains. It comes back after a real day with a postcard for a travel scrapbook. The postcards are fixed, not a random prize draw.
+🌱 Greenhouse. Buy seeds and plants grow over several days. Each finished order waters them. A fully grown plant becomes a decoration.
+🎉 Class Party Jar. Everyone can drop coins in a shared jar. When it's full, the whole class unlocks something, like confetti in the town or a party hat for every pet. You could pair it with a real classroom reward.
+A few guardrails I'd build in
+No random paid prizes, so nothing like loot boxes for kids.
+Math is the only way to earn coins.
+Short play sessions.
+Teacher switches for the arcade, its daily limit and the class gallery.
+Everything stays out of the way during quizzes.
+
+I'd start with My Pet Room, since it makes every sticker they've already bought matter right away, then add the Arcade with Pet Dash and Sticker Match. Which of these should I build first?
+
+i like my pet room / dress up;
+
+i like my pet room / dress up;
+
+i like the arcade games;
+
+i like my pet room / dress up;
+
+i like the arcade games;
+
+i like the pet trips and greenhouses

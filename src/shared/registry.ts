@@ -295,6 +295,27 @@ export function mergeDrillSettings(...layers: (Partial<DrillSettings> | null | u
 /** A drill type is on unless explicitly set to false. */
 export const drillTypeOn = (s: DrillSettings, type: string) => s.enabled && s.types[type] !== false;
 
+export interface ArcadeGame {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  src: string;
+  available: boolean;
+}
+
+export const ARCADE_GAMES: ArcadeGame[] = [
+  { id: 'corsairs-cove', name: "Corsair's Cove", emoji: '🏴‍☠️', description: 'Solve math to refill your ammo and sail on.', src: '/arcade/corsairs-cove/', available: true },
+  { id: 'whack-a-mole', name: 'Whack-a-Mole Stats Lab', emoji: '🔨', description: 'Play a quick round and explore your score statistics.', src: '/arcade/whack-a-mole/', available: true }
+];
+
+export function arcadeGameOfTheDay(date = new Date(), games: ArcadeGame[] = ARCADE_GAMES): ArcadeGame | null {
+  const available = games.filter(game => game.available);
+  if (!available.length) return null;
+  const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+  return available[((day % available.length) + available.length) % available.length];
+}
+
 export interface QuizSettings {
   passPct: number;
   quizPerSkill: number;
