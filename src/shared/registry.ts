@@ -323,7 +323,7 @@ export function arcadeSettings(raw: Partial<ArcadeSettings> | null | undefined):
   const games = Object.fromEntries(ARCADE_GAMES.map(game => [game.id, raw?.games?.[game.id] !== false]));
   return {
     enabled: raw?.enabled === true,
-    freePlay: raw?.freePlay !== false,
+    freePlay: raw?.freePlay === true,
     games,
     corsairPointsPerTicket: Math.round(clampNum(raw?.corsairPointsPerTicket, 1000, 100000, 10000)),
     whackTicketsPerRound: Math.round(clampNum(raw?.whackTicketsPerRound, 0, 5, 1)),

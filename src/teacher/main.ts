@@ -253,10 +253,10 @@ function renderSettings() {
       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
       <h3>Arcade</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade games for this class</label>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: no 100-coin admission and no Arcade tickets</label>
-      <p class="muted" style="margin-top:0">Students still need math practice to unlock Arcade minutes. Free Play disables Pet Town coin admission and ticket prizes.</p>
-      <h4>Available games</h4>${ARCADE_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-arcade-game="${game.id}" ${arcade.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)}</label>`).join('')}
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade for paid-entry mode</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: banked math time only, no admission or tickets</label>
+      <p class="muted" style="margin-top:0">Free Play opens every available game and requires only math time banked today. Arcade and game switches apply to paid-entry mode.</p>
+      <h4>Available games (paid-entry mode)</h4>${ARCADE_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-arcade-game="${game.id}" ${arcade.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)}</label>`).join('')}
       <h4>Ticket rewards (paid-entry mode)</h4>
       <label for="arcadeCorsairRate">Corsair's Cove points per ticket</label><input type="number" id="arcadeCorsairRate" min="1000" max="100000" step="1000" value="${arcade.corsairPointsPerTicket}">
       <label for="arcadeWhackTickets">Tickets per completed Whack-a-Mole round</label><input type="number" id="arcadeWhackTickets" min="0" max="5" step="1" value="${arcade.whackTicketsPerRound}">

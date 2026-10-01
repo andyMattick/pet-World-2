@@ -4412,12 +4412,13 @@ let activeArcadeRun = null, arcadeTimer = null;
 const arcadePolicy = () => Backend.me ? arcadeSettings(Backend.me.game_settings?.arcade) : arcadeSettings({enabled:true, freePlay:true});
 const arcadeGamesForClass = () => {
   const policy = arcadePolicy();
-  return ARCADE_GAMES.filter(game => game.available && policy.games[game.id]);
+  return ARCADE_GAMES.filter(game => game.available && (policy.freePlay || policy.games[game.id]));
 };
 const arcadeTicketPrizesEnabled = () => { const policy = arcadePolicy(); return policy.enabled && !policy.freePlay; };
 async function openArcade(){
   if (Backend.me) await Backend.refreshSettings();
-  if (!arcadePolicy().enabled) { toast('Your teacher has not opened the Arcade.'); return; }
+  const policy = arcadePolicy();
+  if (!policy.freePlay && !policy.enabled) { toast('Your teacher has not opened the Arcade.'); return; }
   show('arcade');
 }
 const arcadeDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -4470,9 +4471,10 @@ function arcadeModuleMessage(event){
 }
 window.addEventListener('message', arcadeModuleMessage);
 function arcadeCard(game, daily, policy){
-  const remaining = arcadeRemainingSeconds(), admitted = policy.freePlay || arcadeAdmitted(), playable = remaining > 0 && (admitted || S.coins >= arcadeEntryCost);
+  const remaining = arcadeRemainingSeconds(), admitted = policy.freePlay || arcadeAdmitted();
+  const playable = remaining > 0 && (policy.freePlay || admitted || S.coins >= arcadeEntryCost);
   const action = policy.freePlay ? 'Play free' : admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
-  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : 'Do math to unlock play'}</button></article>`;
+  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : 'No arcade time left today'}</button></article>`;
 }
 function renderArcade(){
   const policy = arcadePolicy(), games = arcadeGamesForClass(), daily = arcadeGameOfTheDay(new Date(), games);
@@ -4490,7 +4492,7 @@ function renderArcade(){
 }
 function startArcadeGame(id){
   const policy = arcadePolicy(), game = arcadeGamesForClass().find(item => item.id === id), remaining = arcadeRemainingSeconds();
-  if (!policy.enabled || !game || remaining <= 0 || (!policy.freePlay && !arcadeAdmitted() && S.coins < arcadeEntryCost)) return;
+  if (!game || remaining <= 0 || (!policy.freePlay && (!policy.enabled || !policy.games[id] || !arcadeAdmitted() && S.coins < arcadeEntryCost))) return;
   if (!policy.freePlay && !arcadeAdmitted()) { S.coins -= arcadeEntryCost; S.arcade.admittedDay = arcadeToday(); save(); updateHeader(); }
   if (arcadeTimer) clearInterval(arcadeTimer);
   const runId = `${S.sid}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
@@ -4906,7 +4908,7 @@ function renderHome(){
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
   const arcade = arcadePolicy();
-  h += arcade.enabled
+  h += arcade.enabled || arcade.freePlay
     ? `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcade.freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`
     : `<button class="tile service locked" data-open="arcade" aria-disabled="true"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">Closed by your teacher</span><span class="soon">🔒</span></button>`;
   $('#town').innerHTML = h;

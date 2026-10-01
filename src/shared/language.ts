@@ -77,6 +77,7 @@ const extendedTranslations: Record<string, string> = {
   'math time unlocked today': 'minutos de práctica de hoy', 'arcade time left': 'tiempo de juego restante', 'no coins or rewards': 'sin monedas ni premios',
   'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.': 'El modo de juego gratis está activado: no se usan monedas ni se ganan boletos. La práctica de matemáticas desbloquea tiempo de juego.',
   'Today\'s arcade time is used up.': 'Ya se usó todo el tiempo de juego de hoy.', 'Leave game': 'Salir del juego', 'min left': 'min restantes',
+  'No arcade time left today': 'No queda tiempo de juego hoy',
   'Choose a pet': 'Elige una mascota', 'Empty display slot': 'Espacio de exhibición vacío', 'Earn more in the café!': '¡Gana más en la cafetería!',
   'Add a decoration': 'Añadir una decoración', 'My helper': 'Mi ayudante', 'orders served': 'pedidos atendidos',
   'Sprint Track': 'Carrera relámpago', '60-second times tables': 'Tablas de multiplicar en 60 segundos', 'tips powered up ×': 'propinas potenciadas ×',

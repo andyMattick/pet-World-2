@@ -8,6 +8,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
 - [x] Unit 1: Pet Café, 4 stations and 14 Khan skills, with step-level diagnostics and mix-up detection
 - [x] Times-table practice pop-ups, Fact Sprint, music, backups
+- [x] Times-table drill pop-ups practice facts out of order and read each problem and answer aloud before advancing
 - [x] Supabase backend: class codes, PINs, saves, live teacher dashboard
 - [x] Deployed on Vercel (every push to `main` deploys automatically)
 - [x] Rewards: unlock rules, celebration, shop by unit, collections (`REWARDS.md`, `TASK-rewards.md`)
@@ -118,11 +119,13 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 ## Notes from reviews
 
 - Quizzes appear only after **every skill in a station is mastered**. With "Passing a station quiz opens the next station" on (the default), the next station opens only after that quiz is passed. Stations that were open before the quiz update stay open.
+- Skill mastery is a rolling recent-results rule: at least 4 problems attempted and at least 75% perfect across the most recent 8. Older results roll out as new problems are completed.
 - During quizzes, right and wrong answers both show a neutral "Answer saved". ✓/✗ appears only on the summary.
 - Quiz and test problems are **not** logged to `problems`, so the teacher's skill grid stays practice-only. Quiz results live in `assessments`.
 - Quiz settings rules live in one place (`registry.ts`) and are shared by the game and the teacher app.
 - The Scale's line-up step only appears when the two numbers have different decimal places; otherwise both choices look the same.
 - Each new shop opens for a student only after she passes the Unit Test of the shop before it (a teacher can excuse the test, or open the shop for the whole class in Settings). Local mode's "Unlock every station and shop" opens everything.
+- When Free Play is explicitly selected, it ignores the Arcade master/game switches and coin admission; students can launch any available game while today's banked math time remains. Paid-entry mode retains the Arcade and per-game switches, daily admission, and ticket rules. Neither mode has a once-a-day launch limit.
 
 ## Before other teachers or classes use it
 
@@ -144,6 +147,7 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 - [ ] **My Pet Room:** MVP in progress (`PET-ROOM.md`). Students can place owned decorations, drag or keyboard-nudge them, and tap their larger helper for a reaction. Existing display-case stickers seed the first room; room decorations are image-only with accessible labels. Arcade-ticket furniture is cataloged but held until ticket awards are secure.
 - [ ] **Dress-up:** MVP in progress (`PET-ROOM.md`). Wearables have separate saved ownership/equipment and movable saved positions, coin purchases, a math-streak reward, and Arcade-ticket exclusives held until ticket awards are secured.
 - [ ] **Arcade:** in progress. Teacher class settings can enable the Arcade and individual games, select Free Play (no admission or ticket rewards) or paid mode, and configure Corsair tickets per 10,000 points, Whack tickets per completed round, a Game-of-the-Day bonus, and a daily cap. Paid mode charges 100 coins once daily and allows one arcade minute per completed practice order. The host validates same-origin iframe/run IDs, deduplicates round reports, calculates ticket awards, and limits them to the class cap; server-side anti-tamper validation and browser review remain. Corsair's Cove has grid-path chasing, faster guard pursuit, and corrected tunnel navigation; Whack-a-Mole counts dazed-mole clicks as misses, blocks duplicate hits, and caps freeze bonuses at 30 seconds per round.
+- [ ] **English/Spanish localization:** Global language toggles are in the student and teacher headers. The student choice is saved with student progress; the teacher choice is saved in that browser. Shared interface strings and selected generated prompts are translated, but full reviewed Spanish coverage remains for generated problems, teacher reports/settings, and both embedded Arcade games. Untranslated strings currently remain in English.
 - [ ] **House tours:** not built.
 - [ ] **Pet Trips, Greenhouse, and Class Party Jar:** not built.
 
