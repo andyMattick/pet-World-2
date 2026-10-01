@@ -100,7 +100,7 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3m2. 6th grade: Potion Lab stations 5 and 6, unit 7 (`POTION.md`)
 - [x] 3n. 6th grade: Pet Houses (`HOUSES.md`)
 - [x] 3o. 6th grade: the Pet Show (`SHOW.md`). 6th grade complete
-- [ ] 3p. Next: owner's choice: restart 4th grade (Garden Center stations 3 and 4, Art Studio), plan 7th grade, or fluency reviews
+- [ ] 3p. Next: finish the My Pet Room and Dress-up MVP (`PET-ROOM.md`), then complete Arcade prize handling and browser review before scheduling more post-6th-grade work
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
 ## Database files, in the order they were run

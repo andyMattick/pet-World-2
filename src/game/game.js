@@ -39,7 +39,7 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]},
-  facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
+  facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
@@ -65,6 +65,7 @@ function normalize(raw){
     s.drillLog = {};
     Object.entries(s.practiceLog).forEach(([key, value]) => { s.drillLog['times:' + key] = value; });
   }
+  s.practiceLanguage = s.practiceLanguage === 'es' ? 'es' : 'en';
   s.pace = Object.assign({idea:[], arith:[], sprint:[]}, s.pace || {});
   ['idea','arith','sprint'].forEach(k => { s.pace[k] = Array.isArray(s.pace[k]) ? s.pace[k].slice(-20) : []; });
   if (!Array.isArray(s.owned) || !s.owned.length) s.owned = ['cat'];
@@ -4897,7 +4898,10 @@ function renderHome(){
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
-  if (arcadePolicy().enabled) h += `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcadePolicy().freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`;
+  const arcade = arcadePolicy();
+  h += arcade.enabled
+    ? `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcade.freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`
+    : `<button class="tile service locked" data-open="arcade" aria-disabled="true"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">Closed by your teacher</span><span class="soon">🔒</span></button>`;
   $('#town').innerHTML = h;
 }
 let pickerMode = '', pickerSlot = -1;
@@ -5539,19 +5543,53 @@ const DRILL_IMPL = {
     const table = +drill.key, top = Math.max(10, drill.other);
     const start = short ? Math.min(Math.max(1, drill.other - 2), top - 4) : 1;
     const count = short ? 5 : top;
+    const rows = shuffle(Array.from({length:count}, (_,i) => {
+      const k = start + i;
+      return {label:`${table} × ${k} =`, answer:String(table*k), multiplier:k};
+    }));
     return {
       title: DRILLS[drill.type].kidTitle(drill.key),
-      why: drill.reason === 'miss' ? `That one was ${drill.text}. Counting up by ${table}s makes it easier.`
-        : drill.reason === 'slow' ? `You got ${drill.text}, but it took a while. Let's make the ${table}s faster!`
+      why: drill.reason === 'miss' ? `That one was ${drill.text}. Let's practice the ${table}s facts.`
+        : drill.reason === 'slow' ? `You got ${drill.text}, but it took a while. Let's build quick recall of the ${table}s facts!`
         : `The ${table}s were tricky in that sprint. Let's practice them!`,
-      rows: Array.from({length:count}, (_,i) => { const k = start + i; return {label:`${table} × ${k} =`, answer:String(table*k)}; }),
-      targetIndex: drill.other - start,
+      rows,
+      targetIndex: rows.findIndex(row => row.multiplier === drill.other),
       hint(rowIndex, wrongs){
         const answer = this.rows[rowIndex].answer;
-        return wrongs >= 2 ? `It's ${answer}. Type ${answer}.` : rowIndex === 0 ? 'Anything times 1 stays the same.' : `Add ${table} to ${table*rowIndex}.`;
+        return wrongs >= 2 ? `It's ${answer}. Type ${answer}.` : `Try to recall ${table} times ${this.rows[rowIndex].multiplier}.`;
       },
-      finishLine: `You counted all the way to ${table} × ${top}! +3 🪙`,
-      tieLine: drill.div ? `${table*drill.other} ÷ ${table} = ${drill.other}, because ${table} × ${drill.other} = ${table*drill.other}.` : `${table} × ${drill.other} = ${table*drill.other}. Now you know it!`
+      finishLine: `You practiced all the way to ${table} × ${top}! +3 🪙`,
+      tieLine: drill.div ? `${table*drill.other} ÷ ${table} = ${drill.other}, because ${table} × ${drill.other} = ${table*drill.other}.` : `${table} × ${drill.other} = ${table*drill.other}. Now you know it!`,
+      copy(language){
+        const spanish = language === 'es';
+        const title = spanish ? `¡Practiquemos la tabla del ${table}!` : DRILLS[drill.type].kidTitle(drill.key);
+        const why = spanish
+          ? drill.reason === 'miss' ? `La respuesta era ${drill.text}. ¡Practiquemos la tabla del ${table}!`
+            : drill.reason === 'slow' ? `Acertaste: ${drill.text}, pero tardaste un poco. ¡Practiquemos para recordar rápido la tabla del ${table}!`
+            : `La tabla del ${table} fue difícil en la carrera. ¡Vamos a practicar!`
+          : drill.reason === 'miss' ? `That one was ${drill.text}. Let's practice the ${table}s facts.`
+            : drill.reason === 'slow' ? `You got ${drill.text}, but it took a while. Let's build quick recall of the ${table}s facts!`
+            : `The ${table}s were tricky in that sprint. Let's practice them!`;
+        return {
+          title, why,
+          rowLabels: rows.map(row => spanish ? `¿Cuánto es ${table} × ${row.multiplier}?` : row.label),
+          rowAriaLabels: rows.map(row => spanish ? `¿Cuánto es ${table} por ${row.multiplier}?` : row.label),
+          hint(rowIndex, wrongs){
+            const answer = rows[rowIndex].answer, multiplier = rows[rowIndex].multiplier;
+            return wrongs >= 2
+              ? spanish ? `Es ${answer}. Escribe ${answer}.` : `It's ${answer}. Type ${answer}.`
+              : spanish ? `Intenta recordar cuánto es ${table} por ${multiplier}.` : `Try to recall ${table} times ${multiplier}.`;
+          },
+          finishLine: spanish ? `¡Practicaste hasta ${table} × ${top}! +3 🪙` : `You practiced all the way to ${table} × ${top}! +3 🪙`,
+          tieLine: spanish
+            ? drill.div ? `${table*drill.other} dividido entre ${table} es ${drill.other}, porque ${table} por ${drill.other} es ${table*drill.other}.` : `${table} por ${drill.other} es ${table*drill.other}. ¡Ya te la sabes!`
+            : drill.div ? `${table*drill.other} ÷ ${table} = ${drill.other}, because ${table} × ${drill.other} = ${table*drill.other}.` : `${table} × ${drill.other} = ${table*drill.other}. Now you know it!`,
+          checkLabel: spanish ? 'Comprobar' : 'Check',
+          closeLabel: paused => spanish ? paused ? 'Volver al pedido' : 'Seguir' : paused ? 'Back to the order' : 'Keep going',
+          spokenPrompt(rowIndex){ const row = rows[rowIndex]; return spanish ? `¿Cuánto es ${table} por ${row.multiplier}?` : `What is ${table} times ${row.multiplier}?`; },
+          spokenAnswer(rowIndex){ const row = rows[rowIndex]; return spanish ? `${table} por ${row.multiplier} es igual a ${table*row.multiplier}.` : `${table} times ${row.multiplier} equals ${table*row.multiplier}.`; }
+        };
+      }
     };
     }
   },
@@ -5808,14 +5846,70 @@ function openPractice(drill, onClose){
   $('#prPet').textContent = petEmoji();
   $('#prTitle').textContent = model.title;
   $('#prWhy').textContent = model.why;
+  $('#practiceLanguage').hidden = drill.type !== 'times';
   $('#prDone').hidden = true; $('#prHint').textContent = '';
-  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}${row.options || row.label.length > 34 || model.rows.some(r => r.options) ? ' story' : ''}" id="lr${i}"><span>${row.label}</span><span class="ans" id="la${i}"></span></div>`).join('');
+  $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}${row.options || row.label.length > 34 || model.rows.some(r => r.options) ? ' story' : ''}" id="lr${i}"><span data-row-label>${esc(row.label)}</span><span class="ans" id="la${i}"></span></div>`).join('');
   const id = drill.type + ':' + drill.key, log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
   log[drill.reason] = (log[drill.reason] || 0) + 1; save();
   Backend.log('practice_popups', {times_table:drill.type === 'times' ? Number(drill.key) : null,
     drill_type:drill.type, drill_key:String(drill.key), reason:drill.reason});
   $('main').inert = true; $('#practice').hidden = false;
+  renderPracticeLanguage();
   ladderStep();
+}
+function practiceCopy(){ return pr?.drill.type === 'times' ? pr.model.copy(S.practiceLanguage) : null; }
+function renderPracticeLanguage(){
+  if (!pr || pr.drill.type !== 'times') return;
+  const copy = practiceCopy(), spanish = S.practiceLanguage === 'es';
+  $('#prTitle').textContent = copy.title; $('#prWhy').textContent = copy.why;
+  $('#practiceEnglish').setAttribute('aria-pressed', String(!spanish));
+  $('#practiceSpanish').setAttribute('aria-pressed', String(spanish));
+  pr.model.rows.forEach((row, i) => {
+    const rowEl = $('#lr' + i);
+    rowEl.querySelector('[data-row-label]').textContent = copy.rowLabels[i];
+    rowEl.classList.toggle('story', spanish);
+  });
+  const input = $('#lin'); if (input) input.setAttribute('aria-label', copy.rowAriaLabels[pr.i]);
+  const check = $('#prCheck'); if (check) check.textContent = copy.checkLabel;
+  if (pr.wrongs) $('#prHint').textContent = copy.hint(pr.i, pr.wrongs);
+  if (pr.completed) {
+    $('#prFinishLine').textContent = copy.finishLine;
+    $('#prTieLine').textContent = copy.tieLine;
+    $('#prClose').textContent = copy.closeLabel(!!pr.pausedOrder);
+  }
+}
+function setPracticeLanguage(language){
+  if (!pr || pr.drill.type !== 'times' || !['en','es'].includes(language)) return;
+  const phase = pr.speaking ? pr.speechPhase : '';
+  pr.speechToken = (pr.speechToken || 0) + 1;
+  if (phase && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  pr.speaking = false; pr.speechPhase = '';
+  S.practiceLanguage = language; save(); renderPracticeLanguage();
+  if (phase) speakTimesFact(phase);
+}
+function speakPractice(text, onEnd, language = 'en'){
+  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') { onEnd(); return; }
+  const utterance = new SpeechSynthesisUtterance(text);
+  const locale = language === 'es' ? 'es-MX' : 'en-US';
+  utterance.lang = locale; utterance.rate = .9;
+  const prefix = language === 'es' ? 'es' : 'en', voices = speechSynthesis.getVoices();
+  utterance.voice = voices.find(voice => voice.lang.toLowerCase() === locale.toLowerCase()) || voices.find(voice => voice.lang.toLowerCase().startsWith(prefix)) || null;
+  let finished = false;
+  const finish = () => { if (finished) return; finished = true; onEnd(); };
+  utterance.onend = finish; utterance.onerror = finish;
+  speechSynthesis.cancel(); speechSynthesis.speak(utterance);
+}
+function speakTimesFact(phase){
+  if (!pr || pr.drill.type !== 'times') return;
+  const current = pr, language = S.practiceLanguage, copy = practiceCopy();
+  const token = current.speechToken = (current.speechToken || 0) + 1;
+  current.speaking = true; current.speechPhase = phase;
+  speakPractice(phase === 'answer' ? copy.spokenAnswer(current.i) : copy.spokenPrompt(current.i), () => {
+    if (pr !== current || current.speechToken !== token) return;
+    current.speaking = false; current.speechPhase = '';
+    if (phase === 'answer') advancePracticeRow();
+    else $('#lin')?.focus();
+  }, language);
 }
 function ladderStep(){
   const row = pr.model.rows[pr.i], rowEl = $('#lr'+pr.i);
@@ -5829,7 +5923,8 @@ function ladderStep(){
     const first = $('#la' + pr.i + ' .lopt'); if (first) first.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
     return;
   }
-  $('#la'+pr.i).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="${esc(row.label)}"><button class="btn small" id="prCheck" type="button">Check</button>`;
+  const copy = practiceCopy();
+  $('#la'+pr.i).innerHTML = `<input id="lin" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="${esc(copy ? copy.rowAriaLabels[pr.i] : row.label)}"><button class="btn small" id="prCheck" type="button">${copy ? esc(copy.checkLabel) : 'Check'}</button>`;
   const inp = $('#lin');
   const allowText = /[./-]/.test(row.answer);
   inp.addEventListener('input', () => { inp.value = inp.value.replace(allowText ? /[^\d./-]/g : /\D/g,''); inp.classList.remove('wrong'); });
@@ -5839,14 +5934,17 @@ function ladderStep(){
   if (/\./.test(row.answer)) inp.classList.add('wide');
   if (pad) $('#prCheck').insertAdjacentElement('afterend', pad);
   inp.focus(); if (rowEl.scrollIntoView) rowEl.scrollIntoView({block:'nearest'});
+  if (pr.drill.type === 'times') speakTimesFact('prompt');
 }
 function ladderCheck(){
+  if (pr.speaking) return;
   const inp = $('#lin'); if (!inp || !inp.value) return;
   const row = pr.model.rows[pr.i], answer = String(row.answer).trim();
   if (inp.value.trim() === answer) ladderRight(answer);
   else {
     pr.wrongs++; sfx('bad'); inp.classList.remove('wrong'); void inp.offsetWidth; inp.classList.add('wrong'); inp.select();
-    $('#prHint').textContent = pr.model.hint(pr.i, pr.wrongs);
+    const copy = practiceCopy();
+    $('#prHint').textContent = copy ? copy.hint(pr.i, pr.wrongs) : pr.model.hint(pr.i, pr.wrongs);
   }
 }
 /* number keys 1 to 9 pick a choice, in orders and in practice pop-ups */
@@ -5860,16 +5958,24 @@ document.addEventListener('keydown', e => {
 function ladderRight(text){
   $('#la'+pr.i).textContent = text; $('#lr'+pr.i).classList.remove('now'); $('#lr'+pr.i).classList.add('done');
   $('#prHint').textContent = ''; pr.wrongs = 0; sfx(pr.i === pr.model.targetIndex ? 'good' : 'tick');
+  if (pr.drill.type === 'times') speakTimesFact('answer');
+  else advancePracticeRow();
+}
+function advancePracticeRow(){
+  if (!pr) return;
   if (pr.i + 1 < pr.model.rows.length) { pr.i++; ladderStep(); } else ladderDone();
 }
 function ladderDone(){
   S.coins += 3; save(); updateHeader();
-  $('#prDone').innerHTML = `<p>${pr.model.finishLine}</p><p class="big">${pr.model.tieLine}</p><button class="btn berry" id="prClose">${pr.pausedOrder ? 'Back to the order' : 'Keep going'}</button>`;
+  pr.completed = true;
+  const copy = practiceCopy();
+  $('#prDone').innerHTML = `<p id="prFinishLine">${esc(copy ? copy.finishLine : pr.model.finishLine)}</p><p class="big" id="prTieLine">${esc(copy ? copy.tieLine : pr.model.tieLine)}</p><button class="btn berry" id="prClose">${esc(copy ? copy.closeLabel(!!pr.pausedOrder) : pr.pausedOrder ? 'Back to the order' : 'Keep going')}</button>`;
   $('#prDone').hidden = false; sfx('coin');
   $('#prClose').addEventListener('click', closePractice); $('#prClose').focus();
 }
 function closePractice(){
   const cur = pr; pr = null;
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
   $('#practice').hidden = true; $('main').inert = false;
   if (cur.pausedOrder && cur.pausedOrder === order && !order.done) {
     order.start += performance.now() - cur.opened;
@@ -5879,6 +5985,10 @@ function closePractice(){
   if (cur.onClose) cur.onClose();
   setTimeout(showNextUnlock, 0);
 }
+$('#practiceLanguage').addEventListener('click', event => {
+  const button = event.target.closest('[data-practice-language]');
+  if (button) setPracticeLanguage(button.dataset.practiceLanguage);
+});
 
 /* ---------- fact sprint ---------- */
 let sp = null, spTimer = null;

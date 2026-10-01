@@ -12,20 +12,19 @@ Today, a missed or slow step with a times-table fact opens a practice ladder for
 
 ### What stays exactly the same
 
-**The times-table ladder must look and behave exactly as it does now.** That means:
+**The times-table ladder keeps the same facts and target highlighting, but practices recall rather than counting up.** That means:
 
-- Rows `t × 1` through `t × max(10, other)`, answered one at a time.
+- Rows `t × 1` through `t × max(10, other)`, in shuffled order and answered one at a time.
 - The row for the missed fact has a dashed outline.
-- **Hints:**
-  - On the first row, a wrong answer shows "Anything times 1 stays the same."
-  - On any later row, it shows "Add t to (previous product)."
-  - After 2 wrong tries on the same row, it shows "It's X. Type X."
+- Read each fact aloud before the student answers, then read the complete equation and answer before moving to the next row. If browser speech is unavailable, continue without audio.
+- An English / Español toggle translates the times-table pop-up text and speech; equations stay in math notation. The choice is saved per student. Other drill types remain in English.
+- **Hints:** a first wrong answer prompts the student to recall the fact; after 2 wrong tries on the same row, it shows "It's X. Type X."
 - **Title:** "Let's practice the 7s!"
 - **Why line**, depending on what triggered it:
   - after a miss: "That one was … Counting up by 7s makes it easier."
   - after a slow answer: "You got …, but it took a while. Let's make the 7s faster!"
   - after the sprint: "The 7s were tricky in that sprint. Let's practice them!"
-- **Finish:** "You counted all the way to 7 × 10! +3 🪙", then the tie-back line, then the button.
+- **Finish:** "You practiced all the way to 7 × 10! +3 🪙", then the tie-back line, then the button.
 - **Triggers:** a missed step, a slow step (15 seconds for idea steps, 10 for arithmetic), or the end of a sprint.
 - **At most once per shift** for each drill.
 - **The patience bar pauses** while the pop-up is open and resumes after.

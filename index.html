@@ -110,6 +110,10 @@
 <div id="practice" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="prTitle">
   <div class="modal-card">
     <div class="pr-head"><span class="pr-pet" id="prPet">🐱</span><div><h2 id="prTitle">Let's practice!</h2><p id="prWhy"></p></div></div>
+    <div class="practice-language" id="practiceLanguage" role="group" aria-label="Language / Idioma" hidden>
+      <button class="btn small" id="practiceEnglish" type="button" data-practice-language="en" aria-pressed="true">English</button>
+      <button class="btn small" id="practiceSpanish" type="button" data-practice-language="es" aria-pressed="false">Español</button>
+    </div>
     <div class="ladder" id="ladder"></div>
     <p class="pr-hint" id="prHint" aria-live="polite"></p>
     <div class="pr-done" id="prDone" hidden></div>
