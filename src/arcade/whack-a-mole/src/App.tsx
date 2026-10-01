@@ -610,8 +610,6 @@ export default function App() {
     const targetHole = holes.find((h) => h.id === holeId);
     if (!targetHole) return;
 
-    if (targetHole.state.startsWith('cooling_down') || targetHole.state.startsWith('whacked')) return;
-
     const isMoleTarget = ['mole_up', 'golden_up', 'speedy_up', 'frozen_up'].includes(targetHole.state);
     if (isMoleTarget) {
       const moleHitKey = `${holeId}:${targetHole.appearedAt}`;

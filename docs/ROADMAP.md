@@ -143,11 +143,11 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 
 - [ ] **My Pet Room:** MVP in progress (`PET-ROOM.md`). Students can place owned decorations, drag or keyboard-nudge them, and tap their helper for a reaction. Existing display-case stickers seed the first room. More room interactions remain.
 - [ ] **Dress-up:** MVP in progress (`PET-ROOM.md`). Wearables have separate saved ownership/equipment, coin purchases, a math-streak reward, and Arcade-ticket exclusives held until ticket awards are secured.
-- [ ] **Arcade:** in progress. The host has a separate game catalog, a 100-coin daily admission, one arcade minute per completed practice order, separate arcade tickets, and a Game of the Day rotation. Corsair's Cove has grid-path chasing, faster guard pursuit, and corrected tunnel navigation; Whack-a-Mole ignores dazed-mole clicks, blocks duplicate hits, and caps freeze bonuses at 30 seconds per round. Ticket prizes, secure round-result handling, browser review, and teacher controls remain.
+- [ ] **Arcade:** in progress. The host has a separate game catalog, a 100-coin daily admission, one arcade minute per completed practice order, separate arcade tickets, and a Game of the Day rotation. Corsair's Cove has grid-path chasing, faster guard pursuit, and corrected tunnel navigation; Whack-a-Mole counts dazed-mole clicks as misses, blocks duplicate hits, and caps freeze bonuses at 30 seconds per round. Ticket prizes, secure round-result handling, browser review, and teacher controls remain.
 - [ ] **House tours:** not built.
 - [ ] **Pet Trips, Greenhouse, and Class Party Jar:** not built.
 
-The owner's preferred order remains **My Pet Room and Dress-up first**, then the Arcade. The room and wardrobe MVP are underway; Arcade development is also in progress following the later decision to bring in the two game prototypes. The catalog stays open to future games such as computer-vs-human Bingo, Sticker Memory, a Hangman-style game, and another Corsair-style game.
+The owner's preferred order remains **My Pet Room and Dress-up first**, then the Arcade. The room and wardrobe MVP are underway; Arcade development is also in progress following the later decision to bring in the two game prototypes. The catalog and Game of the Day rotation should stay open to additional games.
 
 1. Things to do with the pets and decorations they own
 🏠 My Pet Room. Kids drag their decorations anywhere in a room: rug, fountain, trophy shelf, pizza oven. Their pets wander around, nap on the rug and splash in the fountain. Tapping a pet makes it do a trick or show a little speech bubble ("I love this cactus!"). More stickers means a busier, livelier room.
@@ -159,7 +159,18 @@ Pet Town coins stay the reward for math. Arcade admission costs 100 coins once p
 
 🏴‍☠️ Corsair's Cove: a maze chase where math refills the ship's ammo.
 🔨 Whack-a-Mole Stats Lab: a timed round with score statistics.
-🧠 Future ideas: computer-vs-human Bingo, Sticker Memory using owned stickers, a Hangman-style game, and more original arcade games.
+
+**Future arcade ideas (not yet scheduled):**
+- 🧠 Sticker Memory: a memory-matching game using stickers the student owns.
+- 🎲 Computer-vs-human Bingo.
+- 🔤 Hangman-style word game.
+- 🐾 Pet Dash: the helper pet runs and hops over cones.
+- 🎯 Treat Toss: flick treats into the pet's bowl.
+- 🏁 Pet Race: a quick-tap race.
+- 🧭 Minefield Run: guide a character across a map; solve math to clear mines or use movement tools.
+- 🪽 Flappy Answer: guide a character through the opening labeled with the answer to a displayed problem.
+- 🕵️ Squad Sneak: guide a stick-figure squad past patrols; solve math to open routes or use gadgets.
+- ⚓ Another original maze-chase game in the Corsair's Cove spirit.
 
 Games can award arcade tickets or trophies, never Pet Town coins, so arcade play cannot replace math as a way to earn coins or play time.
 

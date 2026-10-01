@@ -6,7 +6,7 @@ Give owned decorations a place to live and let students personalize their helper
 
 ## Feature decisions
 
-- Add a Pet Room town tile. Students can move owned decorations around a room with pointer/touch dragging. Clamp placements to the room bounds and support keyboard nudging for the selected item.
+- Add a Pet Room town tile. Show decoration images without visible item-name labels. Students can move owned decorations around a room with pointer/touch dragging. Clamp placements to the room bounds and support keyboard nudging for the selected item; preserve accessible labels for assistive technology.
 - Show the selected helper pet in the room. Tapping it triggers a small trick or speech bubble. Wandering can be a light ambient animation, not saved simulation state.
 - Preserve the Sticker Book display case. Add separate saved room placements so old `displayed` values and existing saves remain compatible. If a student has no room layout yet, seed it from their currently displayed decorations.
 - Keep wearables in an accessory catalog separate from pets and decorations. Save owned accessory IDs and the active accessory in the student's existing state object.

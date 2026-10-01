@@ -4693,16 +4693,16 @@ function renderPetRoom(){
   const helper = petReward(), placed = new Set(S.room.placements.map(item => item.id));
   const positions = S.room.placements.map(place => {
     const reward = REWARDS.find(item => item.id === place.id);
-    return reward ? `<button type="button" class="room-decor-item" data-room-decor="${reward.id}" style="left:${place.x}%;top:${place.y}%" aria-label="Move ${esc(reward.name)}; use arrow keys to nudge"><span class="room-decor-emoji">${reward.emoji}</span><span class="room-decor-name">${esc(reward.name)}</span></button>` : '';
+    return reward ? `<button type="button" class="room-decor-item" data-room-decor="${reward.id}" style="left:${place.x}%;top:${place.y}%" aria-label="Move ${esc(reward.name)}; use arrow keys to nudge"><span class="room-decor-emoji" aria-hidden="true">${reward.emoji}</span></button>` : '';
   }).join('');
   const inventory = S.decor.filter(id => !placed.has(id)).map(id => {
     const reward = REWARDS.find(item => item.id === id);
-    return reward ? `<button type="button" data-room-add="${id}" aria-label="Place ${esc(reward.name)}"><span>${reward.emoji}</span><small>Place ${esc(reward.name)}</small></button>` : '';
+    return reward ? `<button type="button" data-room-add="${id}" aria-label="Place ${esc(reward.name)}" title="Place ${esc(reward.name)}"><span class="room-inventory-emoji" aria-hidden="true">${reward.emoji}</span></button>` : '';
   }).join('');
   const wear = slot => { const item = ACCESSORIES.find(accessory => accessory.id === S.wearing[slot]); return item ? `<span class="room-wear room-wear-${slot}" aria-hidden="true">${item.emoji}</span>` : ''; };
   $('#roomWrap').innerHTML = `<div class="backrow"><h2>🏠 My Pet Room</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="room-layout"><div><div id="roomScene" class="room-scene" aria-label="Your room. Drag decorations or focus one and use the arrow keys to move it."><div id="roomBubble" class="room-bubble" role="status">${esc(petName())}: My room!</div><div class="room-rug" aria-hidden="true"></div>
-      <button type="button" class="room-pet" data-room-pet aria-label="Tap your helper pet"><span class="room-pet-emoji">${wear('hat')}${wear('eyes')}${helper.emoji}${wear('neck')}</span><span class="room-decor-name">${esc(petName())}</span></button>${positions}</div>
+      <button type="button" class="room-pet" data-room-pet aria-label="Tap ${esc(petName())}, your helper pet"><span class="room-pet-emoji">${wear('hat')}${wear('eyes')}${helper.emoji}${wear('neck')}</span></button>${positions}</div>
       <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div></div></div>
       <aside class="room-side"><section class="room-panel"><h3>Dress-up</h3><div class="wardrobe-grid">${ACCESSORIES.map(roomAccessoryCard).join('')}</div><p class="wardrobe-note">Coin items can be bought here. Practice rewards are earned by math. Arcade-ticket items unlock with the secure Arcade prize shop.</p></section></aside></div>`;
 }
