@@ -12,9 +12,12 @@ body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--body); 
 [hidden]{display:none !important}
 :focus-visible{outline:3px solid var(--berry); outline-offset:2px}
 a{color:var(--berry-deep)}
-header.top{background:var(--berry); color:#fff; padding:16px 22px}
+header.top{background:var(--berry); color:#fff; padding:16px 22px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap}
 header.top h1{margin:0; font-family:var(--head); font-size:1.6rem}
 header.top p{margin:2px 0 0; opacity:.9}
+.language-toggle{display:flex; gap:2px; padding:3px; border:2px solid rgba(255,255,255,.7); border-radius:10px; background:rgba(255,255,255,.12)}
+.language-toggle button{border:0; border-radius:6px; padding:5px 8px; background:transparent; color:#fff; font:inherit; font-size:.82rem; font-weight:700; cursor:pointer}
+.language-toggle button[aria-pressed="true"]{background:#fff; color:var(--berry)}
 main{max-width:1280px; margin:0 auto; padding:18px}
 h2{font-family:var(--head); font-size:1.25rem; margin:0 0 10px}
 .grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; margin-bottom:16px}

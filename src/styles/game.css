@@ -41,6 +41,9 @@ a{color:var(--berry-deep)}
 .chips{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
 .chip{background:var(--surface); border:3px solid var(--edge); border-radius:999px; padding:3px 12px; font-weight:700; white-space:nowrap}
 .chip.power{background:var(--butter); color:#4A2E2A}
+.language-toggle{display:flex; gap:2px; padding:3px; border:2px solid var(--edge); border-radius:10px; background:var(--surface)}
+.language-toggle button{border:0; border-radius:6px; padding:5px 8px; background:transparent; color:var(--ink); font:inherit; font-size:.82rem; font-weight:700; cursor:pointer}
+.language-toggle button[aria-pressed="true"]{background:var(--butter); box-shadow:inset 0 0 0 1px var(--berry)}
 .iconbtn{background:var(--surface); border:3px solid var(--edge); border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:1.1rem; color:var(--ink)}
 .iconbtn.off{opacity:.45; text-decoration:line-through}
 main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
@@ -447,8 +450,6 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .pr-pet{font-size:3.4rem; line-height:1}
 .pr-head h2{margin:0; font-size:1.7rem; color:var(--berry-deep)}
 .pr-head p{margin:4px 0 0}
-.practice-language{display:flex; justify-content:flex-end; gap:4px; margin-top:10px}
-.practice-language .btn[aria-pressed="true"]{background:var(--butter); color:var(--ink); box-shadow:inset 0 0 0 1px var(--berry)}
 .ladder{display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; margin-top:14px}
 @media (max-width:480px){.ladder{grid-template-columns:1fr}}
 .lrow{display:flex; align-items:center; gap:8px; font-size:1.35rem; font-weight:700; padding:4px 10px; border-radius:12px; color:var(--ink-soft)}

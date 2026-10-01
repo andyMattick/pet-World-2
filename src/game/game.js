@@ -3,6 +3,7 @@
    - local: no backend configured, the town saves in the browser (the single-file build) */
 import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
+import { installLanguage, translateText } from '../shared/language';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -129,6 +130,11 @@ function loadState(key){
   return fresh();
 }
 let S = fresh();
+const refreshLanguage = installLanguage(document.body, () => S.practiceLanguage);
+function syncLanguageControls(){
+  refreshLanguage();
+  document.querySelectorAll('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === S.practiceLanguage)));
+}
 function save(){ S.savedAt = Date.now(); try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){} if (Backend.me) Backend.saveSoon(S); }
 
 /* ---------- facts (times tables) ---------- */
@@ -4659,6 +4665,7 @@ function b64u(bytes){ let s = ''; for (let i=0;i<bytes.length;i++) s += String.f
 /* replace the whole town with another save (from the account or a backup code) */
 function adopt(state, fromBackup){
   S = normalize(state);
+  syncLanguageControls();
   save();
   if (!$('#scr-shift').hidden) return;
   if (!S.name) (Backend.me ? show('join') : openName());
@@ -5004,7 +5011,8 @@ let shift = null, order = null;
 let patienceTimer = null;
 function resetTown(resetAt){
   const me = Backend.me;
-  S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, resetSeen:resetAt});
+  S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, practiceLanguage:S.practiceLanguage, resetSeen:resetAt});
+  syncLanguageControls();
 }
 async function startShift(shop, station, reviewKey = null){
   const config = SHOPS[shop] || SHOPS.cafe;
@@ -5081,7 +5089,13 @@ function stopOrderSpeech(){
 function readOrder(){
   if (!order || typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return;
   if (order.speaking) { stopOrderSpeech(); return; }
-  const currentOrder = order, utterance = new SpeechSynthesisUtterance(currentOrder.p.bubble);
+  const currentOrder = order, originalText = currentOrder.p.bubble;
+  const translatedText = S.practiceLanguage === 'es' ? translateText(originalText) : originalText;
+  const spanish = translatedText !== originalText, utterance = new SpeechSynthesisUtterance(translatedText);
+  const language = spanish ? 'es-MX' : 'en-US', prefix = spanish ? 'es' : 'en';
+  utterance.lang = language;
+  utterance.voice = speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase() === language.toLowerCase())
+    || speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith(prefix)) || null;
   utterance.rate = .95; currentOrder.speaking = true;
   utterance.onend = () => { if (order === currentOrder) currentOrder.speaking = false; };
   utterance.onerror = utterance.onend;
@@ -5089,12 +5103,13 @@ function readOrder(){
 }
 function ticketHTML(text){
   const bold = s => s.replace(/(&#?[a-z0-9]+;)|(\d+(?:\.\d+)?)/gi, (m, ent, num) => ent ? ent : `<b>${num}</b>`);
-  const safe = esc(text);
+  const source = S.practiceLanguage === 'es' ? translateText(text) : text;
+  const safe = esc(source);
   const parts = (safe.match(/(?:[^.!?]|[.!?](?=\S))+[.!?]*/g) || [safe]).map(s => s.trim()).filter(Boolean);   // a point inside a number (2.4) is not the end of a sentence
   let qi = -1; parts.forEach((s, i) => { if (s.endsWith('?')) qi = i; });
   const story = parts.filter((_, i) => i !== qi).join(' ');
   return (story ? `<div class="ticket-story">${bold(story)}</div>` : '') +
-    (qi >= 0 ? `<div class="ticket-find">❓ Find: ${bold(parts[qi])}</div>` : '');
+    (qi >= 0 ? `<div class="ticket-find">❓ ${S.practiceLanguage === 'es' ? 'Encuentra:' : 'Find:'} ${bold(parts[qi])}</div>` : '');
 }
 function nextCustomer(){
   if (shift.mode === 'practice' && shift.reviewKey && reviewComplete(shift.reviewKey)) { endShift(); return; }
@@ -5846,7 +5861,6 @@ function openPractice(drill, onClose){
   $('#prPet').textContent = petEmoji();
   $('#prTitle').textContent = model.title;
   $('#prWhy').textContent = model.why;
-  $('#practiceLanguage').hidden = drill.type !== 'times';
   $('#prDone').hidden = true; $('#prHint').textContent = '';
   $('#ladder').innerHTML = model.rows.map((row, i) => `<div class="lrow${i === model.targetIndex ? ' target' : ''}${row.options || row.label.length > 34 || model.rows.some(r => r.options) ? ' story' : ''}" id="lr${i}"><span data-row-label>${esc(row.label)}</span><span class="ans" id="la${i}"></span></div>`).join('');
   const id = drill.type + ':' + drill.key, log = S.drillLog[id] = S.drillLog[id] || {miss:0, slow:0, sprint:0};
@@ -5862,8 +5876,6 @@ function renderPracticeLanguage(){
   if (!pr || pr.drill.type !== 'times') return;
   const copy = practiceCopy(), spanish = S.practiceLanguage === 'es';
   $('#prTitle').textContent = copy.title; $('#prWhy').textContent = copy.why;
-  $('#practiceEnglish').setAttribute('aria-pressed', String(!spanish));
-  $('#practiceSpanish').setAttribute('aria-pressed', String(spanish));
   pr.model.rows.forEach((row, i) => {
     const rowEl = $('#lr' + i);
     rowEl.querySelector('[data-row-label]').textContent = copy.rowLabels[i];
@@ -5879,12 +5891,14 @@ function renderPracticeLanguage(){
   }
 }
 function setPracticeLanguage(language){
-  if (!pr || pr.drill.type !== 'times' || !['en','es'].includes(language)) return;
-  const phase = pr.speaking ? pr.speechPhase : '';
-  pr.speechToken = (pr.speechToken || 0) + 1;
+  if (!['en','es'].includes(language)) return;
+  const timesDrill = pr?.drill.type === 'times';
+  const phase = timesDrill && pr.speaking ? pr.speechPhase : '';
+  if (timesDrill) pr.speechToken = (pr.speechToken || 0) + 1;
   if (phase && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
-  pr.speaking = false; pr.speechPhase = '';
-  S.practiceLanguage = language; save(); renderPracticeLanguage();
+  if (timesDrill) { pr.speaking = false; pr.speechPhase = ''; }
+  S.practiceLanguage = language; save(); syncLanguageControls();
+  if (timesDrill) renderPracticeLanguage();
   if (phase) speakTimesFact(phase);
 }
 function speakPractice(text, onEnd, language = 'en'){
@@ -5985,9 +5999,9 @@ function closePractice(){
   if (cur.onClose) cur.onClose();
   setTimeout(showNextUnlock, 0);
 }
-$('#practiceLanguage').addEventListener('click', event => {
-  const button = event.target.closest('[data-practice-language]');
-  if (button) setPracticeLanguage(button.dataset.practiceLanguage);
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-language]');
+  if (button && ['en','es'].includes(button.dataset.language)) setPracticeLanguage(button.dataset.language);
 });
 
 /* ---------- fact sprint ---------- */
@@ -6280,7 +6294,7 @@ function renderHall(){
       <div style="margin-top:8px"><button class="btn small" id="restoreBtn">Restore my town</button></div>
     </div>
     <div class="panel"><h3>For grown-ups</h3><p>See which skills are strong, which step gets stuck, and which times tables need work.</p><button class="btn small" id="toParent">Open the progress report</button></div>`;
-  if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); openJoin(); });
+  if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); syncLanguageControls(); openJoin(); });
   if ($('#rename')) $('#rename').addEventListener('click', openName);
   $('#makeBackup').addEventListener('click', async () => { const code = await backupCode(); $('#backupWrap').hidden = false; $('#backupBox').value = code; $('#backupBox').select(); });
   $$('#hallWrap [data-copy]').forEach(b => b.addEventListener('click', async () => {
@@ -6398,7 +6412,7 @@ function renderParent(){
   let armed = false, armT;
   $('#resetBtn').addEventListener('click', e => {
     if (!armed) { armed = true; e.target.textContent = 'Click again to erase everything'; armT = setTimeout(() => { armed = false; e.target.textContent = 'Reset all progress'; }, 4000); return; }
-    clearTimeout(armT); const keep = {muted:S.muted, music:S.music, musicTrack:S.musicTrack, musicVolume:S.musicVolume, minStation:S.minStation, name:Backend.me ? S.name : ''};
+    clearTimeout(armT); const keep = {muted:S.muted, music:S.music, musicTrack:S.musicTrack, musicVolume:S.musicVolume, practiceLanguage:S.practiceLanguage, minStation:S.minStation, name:Backend.me ? S.name : ''};
     S = Object.assign(fresh(), keep); save(); toast('Progress reset'); if (Backend.me) show('home'); else openName();
   });
 }
@@ -6485,6 +6499,7 @@ function enterAs(me){
     S = (remote && (remote.savedAt || 0) > (local.savedAt || 0)) ? normalize(remote) : local;
     S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
   }
+  syncLanguageControls();
   drillSettings();
   checkUnlocks({announce:false});
   save(); show('home');
@@ -6494,7 +6509,7 @@ function enterAs(me){
 
 /* ---------- boot ---------- */
 (async function boot(){
-  if (!Backend.enabled) { S = loadState(LOCAL_KEY); drillSettings(); checkUnlocks({announce:false}); save(); startTownTracker(); if (!S.name) openName(); else show('home'); return; }
+  if (!Backend.enabled) { S = loadState(LOCAL_KEY); syncLanguageControls(); drillSettings(); checkUnlocks({announce:false}); save(); startTownTracker(); if (!S.name) openName(); else show('home'); return; }
   show('loading');
   let me = null;
   try { me = await Backend.restore(); } catch(e){}

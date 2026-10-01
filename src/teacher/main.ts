@@ -1,6 +1,7 @@
 /* Teacher app: sign in, manage classes and rosters, print PIN cards, live class dashboard. */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
+import { installLanguage, type Language } from '../shared/language';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 
@@ -11,6 +12,18 @@ interface NewPin { name: string; pin: string }
 const sb = makeClient('pt-teacher');
 const app = document.getElementById('app') as HTMLElement;
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
+let teacherLanguage: Language = 'en';
+try { teacherLanguage = localStorage.getItem('pettown:teacher-language') === 'es' ? 'es' : 'en'; } catch {}
+const refreshLanguage = installLanguage(document.body, () => teacherLanguage);
+document.querySelectorAll<HTMLButtonElement>('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === teacherLanguage)));
+document.addEventListener('click', event => {
+  const button = (event.target as Element).closest<HTMLButtonElement>('[data-language]');
+  if (!button || !['en','es'].includes(button.dataset.language || '')) return;
+  teacherLanguage = button.dataset.language as Language;
+  try { localStorage.setItem('pettown:teacher-language', teacherLanguage); } catch {}
+  refreshLanguage();
+  document.querySelectorAll<HTMLButtonElement>('[data-language]').forEach(control => control.setAttribute('aria-pressed', String(control.dataset.language === teacherLanguage)));
+});
 
 let classes: ClassRow[] = [];
 let current: ClassRow | null = null;
