@@ -141,9 +141,9 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 
 ### Current status
 
-- [ ] **My Pet Room:** MVP in progress (`PET-ROOM.md`). Students can place owned decorations, drag or keyboard-nudge them, and tap their helper for a reaction. Existing display-case stickers seed the first room. More room interactions remain.
-- [ ] **Dress-up:** MVP in progress (`PET-ROOM.md`). Wearables have separate saved ownership/equipment, coin purchases, a math-streak reward, and Arcade-ticket exclusives held until ticket awards are secured.
-- [ ] **Arcade:** in progress. The host has a separate game catalog, a 100-coin daily admission, one arcade minute per completed practice order, separate arcade tickets, and a Game of the Day rotation. Corsair's Cove has grid-path chasing, faster guard pursuit, and corrected tunnel navigation; Whack-a-Mole counts dazed-mole clicks as misses, blocks duplicate hits, and caps freeze bonuses at 30 seconds per round. Ticket prizes, secure round-result handling, browser review, and teacher controls remain.
+- [ ] **My Pet Room:** MVP in progress (`PET-ROOM.md`). Students can place owned decorations, drag or keyboard-nudge them, and tap their larger helper for a reaction. Existing display-case stickers seed the first room; room decorations are image-only with accessible labels. Arcade-ticket furniture is cataloged but held until ticket awards are secure.
+- [ ] **Dress-up:** MVP in progress (`PET-ROOM.md`). Wearables have separate saved ownership/equipment and movable saved positions, coin purchases, a math-streak reward, and Arcade-ticket exclusives held until ticket awards are secured.
+- [ ] **Arcade:** in progress. Teacher class settings can enable the Arcade and individual games, select Free Play (no admission or ticket rewards) or paid mode, and configure Corsair tickets per 10,000 points, Whack tickets per completed round, a Game-of-the-Day bonus, and a daily cap. Paid mode charges 100 coins once daily and allows one arcade minute per completed practice order. The host validates same-origin iframe/run IDs, deduplicates round reports, calculates ticket awards, and limits them to the class cap; server-side anti-tamper validation and browser review remain. Corsair's Cove has grid-path chasing, faster guard pursuit, and corrected tunnel navigation; Whack-a-Mole counts dazed-mole clicks as misses, blocks duplicate hits, and caps freeze bonuses at 30 seconds per round.
 - [ ] **House tours:** not built.
 - [ ] **Pet Trips, Greenhouse, and Class Party Jar:** not built.
 
@@ -164,9 +164,9 @@ Pet Town coins stay the reward for math. Arcade admission costs 100 coins once p
 - 🧠 Sticker Memory: a memory-matching game using stickers the student owns.
 - 🎲 Computer-vs-human Bingo.
 - 🔤 Hangman-style word game.
-- 🐾 Pet Dash: the helper pet runs and hops over cones.
-- 🎯 Treat Toss: flick treats into the pet's bowl.
-- 🏁 Pet Race: a quick-tap race.
+- 🐾 Pet Dash: the helper pet runs and hops over cones (like geometry dash)
+- 🎯 Treat Toss: flick treats into the pet's bowl (like angry birds)
+- 🏁 Pet Race: a quick-tap race (like subway surfer)
 - 🧭 Minefield Run: guide a character across a map; solve math to clear mines or use movement tools.
 - 🪽 Flappy Answer: guide a character through the opening labeled with the answer to a displayed problem.
 - 🕵️ Squad Sneak: guide a stick-figure squad past patrols; solve math to open routes or use gadgets.

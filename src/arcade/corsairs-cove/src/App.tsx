@@ -19,6 +19,7 @@ import { GameState, PirateCharacter, Direction, MathConfig } from './types';
 import { Gamepad2, ShieldAlert, Sparkles, Wind, Bomb, Flame, Info, GraduationCap, Award, Crown, X, Maximize, Minimize, Wrench } from 'lucide-react';
 
 export default function App() {
+  const arcadeRunId = new URLSearchParams(window.location.search).get('arcadeRun');
   const engineRef = useRef<GameEngine | null>(null);
   if (!engineRef.current) {
     engineRef.current = new GameEngine();
@@ -33,6 +34,7 @@ export default function App() {
   const [isIncentivesOpen, setIsIncentivesOpen] = useState(false);
   const [showVirtualControls, setShowVirtualControls] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const reportedArcadeRounds = useRef<Set<string>>(new Set());
 
   const handleToggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -46,7 +48,12 @@ export default function App() {
 
   const handleStateChange = useCallback((newState: GameState) => {
     setGameState(newState);
-  }, []);
+    if (!arcadeRunId || window.parent === window || newState.status !== 'GAME_OVER') return;
+    const roundId = `${newState.levelStartTime}:${newState.level}:${newState.score}`;
+    if (reportedArcadeRounds.current.has(roundId)) return;
+    reportedArcadeRounds.current.add(roundId);
+    window.parent.postMessage({type:'arcade:round-complete', gameId:'corsairs-cove', runId:arcadeRunId, roundId, score:newState.score}, window.location.origin);
+  }, [arcadeRunId]);
 
   const handleToggleSound = () => {
     engine.toggleSound();

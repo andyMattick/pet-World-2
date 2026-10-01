@@ -139,17 +139,23 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .room-decor-item:hover,.room-decor-item:focus-visible,.room-decor-item.dragging{background:rgba(255,255,255,.72)}
 .room-decor-item:active{cursor:grabbing}.room-decor-item.dragging{z-index:5; border-color:var(--berry); box-shadow:0 4px 10px rgba(0,0,0,.2)}
 .room-decor-emoji{font-size:3.2rem; line-height:1.1; filter:drop-shadow(0 2px 1px rgba(0,0,0,.2))}
-.room-pet{z-index:3; left:55%; top:60%; width:82px; min-height:88px; border-color:var(--berry); cursor:pointer; animation:roomPetWander 5s ease-in-out infinite}
-.room-pet-emoji{position:relative; font-size:3.5rem; line-height:1}.room-wear{position:absolute; z-index:1; font-size:1.1rem}.room-wear-hat{top:-8px; left:30px}.room-wear-eyes{top:20px; left:15px}.room-wear-neck{bottom:0; right:5px}
+.room-pet{z-index:3; left:55%; top:60%; width:154px; min-height:178px; border-color:transparent; background:transparent; cursor:pointer; animation:roomPetWander 5s ease-in-out infinite}
+.room-pet-art{position:relative; display:block; width:148px; height:170px}
+.room-pet-emoji{position:absolute; left:50%; top:53%; transform:translate(-50%,-50%); font-size:6rem; line-height:1}
+.room-wear{position:absolute; z-index:4; display:grid; place-items:center; width:44px; height:44px; padding:0; border:2px solid transparent; border-radius:50%; transform:translate(-50%,-50%); font-size:2rem; cursor:grab; touch-action:none; user-select:none}
+.room-wear:hover,.room-wear:focus-visible,.room-wear.dragging{border-color:var(--berry); background:rgba(255,255,255,.88); box-shadow:0 3px 8px rgba(0,0,0,.18)}
+.room-wear:active{cursor:grabbing}
 @keyframes roomPetWander{0%,100%{margin-left:-8px}50%{margin-left:8px}}
 .room-side{display:flex; flex-direction:column; gap:14px}.room-panel{padding:12px; border:3px solid var(--edge); border-radius:12px; background:var(--surface)}
 .room-panel h3{margin:0 0 8px; font-size:1.12rem}.room-inventory,.wardrobe-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:7px}
 .room-inventory button,.wardrobe-item{min-width:0; min-height:74px; padding:5px; border:2px solid var(--edge); border-radius:9px; background:var(--surface); color:var(--ink); text-align:center}
 .room-inventory button{cursor:pointer}.room-inventory button span,.wardrobe-item .accessory-emoji{display:block; font-size:1.7rem; line-height:1.1}.room-inventory button .room-inventory-emoji{font-size:2.4rem}
+.room-subhead{margin:12px 0 6px; font-size:.9rem}.room-placed-list{display:flex; flex-wrap:wrap; gap:6px}.room-placed-item{position:relative; display:grid; place-items:center; width:48px; height:48px; border:1px solid var(--edge); border-radius:8px; background:var(--surface)}
+.room-placed-item .room-inventory-emoji{font-size:1.8rem}.room-remove{position:absolute; top:-7px; right:-7px; display:grid; place-items:center; width:24px; height:24px; padding:0; border:2px solid var(--edge); border-radius:50%; background:var(--surface); color:var(--ink); font-size:1rem; font-weight:800; line-height:1; cursor:pointer}
 .wardrobe-item{display:flex; flex-direction:column; align-items:center; gap:3px}.wardrobe-item small{font-size:.68rem; line-height:1.1}.wardrobe-item .btn{margin-top:auto}
 .wardrobe-item.locked{opacity:.75}.wardrobe-note{margin:8px 0 0; color:var(--ink-soft); font-size:.78rem}
 @media (max-width:760px){.room-layout{grid-template-columns:minmax(0,1fr)}.room-scene{min-height:380px}.room-side{display:grid; grid-template-columns:1fr}.room-bubble{max-width:52%; font-size:.85rem}}
-@media (max-width:420px){.room-scene{min-height:340px}.room-decor-item{width:54px; min-height:54px}.room-rug{width:48%; left:26%}}
+@media (max-width:420px){.room-scene{min-height:340px}.room-decor-item{width:54px; min-height:54px}.room-pet{width:128px;min-height:152px}.room-pet-art{width:124px;height:146px}.room-pet-emoji{font-size:5.2rem}.room-wear{width:38px;height:38px;font-size:1.8rem}.room-rug{width:48%; left:26%}}
 
 /* café stations */
 .stations{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px}

@@ -309,6 +309,29 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'whack-a-mole', name: 'Whack-a-Mole Stats Lab', emoji: '🔨', description: 'Play a quick round and explore your score statistics.', src: '/arcade/whack-a-mole/', available: true }
 ];
 
+export interface ArcadeSettings {
+  enabled: boolean;
+  freePlay: boolean;
+  games: Record<string, boolean>;
+  corsairPointsPerTicket: number;
+  whackTicketsPerRound: number;
+  maxTicketsPerDay: number;
+  gameOfDayBonusTickets: number;
+}
+
+export function arcadeSettings(raw: Partial<ArcadeSettings> | null | undefined): ArcadeSettings {
+  const games = Object.fromEntries(ARCADE_GAMES.map(game => [game.id, raw?.games?.[game.id] !== false]));
+  return {
+    enabled: raw?.enabled === true,
+    freePlay: raw?.freePlay !== false,
+    games,
+    corsairPointsPerTicket: Math.round(clampNum(raw?.corsairPointsPerTicket, 1000, 100000, 10000)),
+    whackTicketsPerRound: Math.round(clampNum(raw?.whackTicketsPerRound, 0, 5, 1)),
+    maxTicketsPerDay: Math.round(clampNum(raw?.maxTicketsPerDay, 0, 100, 10)),
+    gameOfDayBonusTickets: Math.round(clampNum(raw?.gameOfDayBonusTickets, 0, 5, 1))
+  };
+}
+
 export function arcadeGameOfTheDay(date = new Date(), games: ArcadeGame[] = ARCADE_GAMES): ArcadeGame | null {
   const available = games.filter(game => game.available);
   if (!available.length) return null;
@@ -331,6 +354,14 @@ export const ACCESSORIES: Accessory[] = [
   { id:'lucky-star', slot:'neck', emoji:'🌟', name:'Lucky star', source:'practice', price:0, streakRequired:5 },
   { id:'captain-hat', slot:'hat', emoji:'🏴‍☠️', name:'Captain hat', source:'arcade', price:20 },
   { id:'pixel-shades', slot:'eyes', emoji:'🕶️', name:'Pixel shades', source:'arcade', price:30 }
+];
+
+export interface ArcadeRoomFurniture { id: string; emoji: string; name: string; ticketPrice: number }
+export const ARCADE_ROOM_FURNITURE: ArcadeRoomFurniture[] = [
+  { id:'arcade-pixel-rug', emoji:'🟪', name:'Pixel rug', ticketPrice:15 },
+  { id:'arcade-fountain', emoji:'⛲', name:'Coin fountain', ticketPrice:25 },
+  { id:'arcade-pizza-oven', emoji:'🍕', name:'Pixel pizza oven', ticketPrice:35 },
+  { id:'arcade-trophy-shelf', emoji:'🏆', name:'Trophy shelf', ticketPrice:40 }
 ];
 
 export interface QuizSettings {

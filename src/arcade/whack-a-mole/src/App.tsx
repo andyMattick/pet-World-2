@@ -454,6 +454,10 @@ export default function App() {
     setSelectedScoreForChart(score);
     setSelectedRoundLabel(`Round #${newRecord.roundNumber}`);
     setShowSummaryModal(true);
+    const arcadeRunId = new URLSearchParams(window.location.search).get('arcadeRun');
+    if (arcadeRunId && window.parent !== window) {
+      window.parent.postMessage({type:'arcade:round-complete', gameId:'whack-a-mole', runId:arcadeRunId, roundId:uniqueId, score}, window.location.origin);
+    }
 
     if (prevMean !== null) {
       const sign = meanDelta >= 0 ? `+${meanDelta}` : `${meanDelta}`;

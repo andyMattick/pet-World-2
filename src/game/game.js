@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, ACCESSORIES } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -38,10 +38,10 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:'', admittedDay:''},
+  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
-  cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[]}, accessoriesOwned:['starter-clip'], wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
+  cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
 /* fill in any fields an older save is missing */
@@ -81,14 +81,19 @@ function normalize(raw){
   s.resetSeen = typeof s.resetSeen === 'string' ? s.resetSeen : null;
   if (!Array.isArray(raw?.displayed)) s.displayed = s.decor.slice(0,8);
   s.displayed = Array.from({length:8}, (_,i) => s.decor.includes(s.displayed[i]) ? s.displayed[i] : null);
-  s.room = Object.assign({initialized:false,placements:[]}, s.room || {});
+  s.room = Object.assign({initialized:false,placements:[],items:[]}, s.room || {});
   s.room.initialized = !!s.room.initialized;
+  s.room.items = Array.isArray(s.room.items) ? [...new Set(s.room.items.filter(id => ARCADE_ROOM_FURNITURE.some(item => item.id === id)))] : [];
   const roomIds = new Set();
   s.room.placements = (Array.isArray(s.room.placements) ? s.room.placements : []).filter(item => {
-    if (!item || typeof item.id !== 'string' || !s.decor.includes(item.id) || roomIds.has(item.id) || !Number.isFinite(+item.x) || !Number.isFinite(+item.y)) return false;
+    const ownedRoomItem = item && (s.decor.includes(item.id) || s.room.items.includes(item.id));
+    if (!item || typeof item.id !== 'string' || !ownedRoomItem || roomIds.has(item.id) || !Number.isFinite(+item.x) || !Number.isFinite(+item.y)) return false;
     roomIds.add(item.id); return true;
   }).map(item => ({id:item.id, x:Math.max(4, Math.min(96, +item.x)), y:Math.max(8, Math.min(88, +item.y))}));
   s.accessoriesOwned = Array.isArray(s.accessoriesOwned) ? [...new Set(s.accessoriesOwned.filter(id => ACCESSORIES.some(item => item.id === id)))] : [];
+  s.accessoryPositions = Object.fromEntries(Object.entries(s.accessoryPositions && typeof s.accessoryPositions === 'object' ? s.accessoryPositions : {})
+    .filter(([id, point]) => s.accessoriesOwned.includes(id) && point && Number.isFinite(+point.x) && Number.isFinite(+point.y))
+    .map(([id, point]) => [id, {x:Math.max(5, Math.min(95, +point.x)), y:Math.max(5, Math.min(95, +point.y))}]));
   s.wearing = Object.assign({hat:null,eyes:null,neck:null}, s.wearing || {});
   ['hat','eyes','neck'].forEach(slot => {
     const accessory = ACCESSORIES.find(item => item.id === s.wearing[slot]);
@@ -98,11 +103,14 @@ function normalize(raw){
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   s.mathMinutes = s.mathMinutes && typeof s.mathMinutes === 'object' ? s.mathMinutes : {};
-  s.arcade = Object.assign({tickets:0, playedSeconds:0, day:'', admittedDay:''}, s.arcade || {});
+  s.arcade = Object.assign({tickets:0, playedSeconds:0, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]}, s.arcade || {});
   s.arcade.tickets = Math.max(0, Math.floor(+s.arcade.tickets || 0));
   s.arcade.playedSeconds = Math.max(0, Math.floor(+s.arcade.playedSeconds || 0));
   s.arcade.day = typeof s.arcade.day === 'string' ? s.arcade.day : '';
   s.arcade.admittedDay = typeof s.arcade.admittedDay === 'string' ? s.arcade.admittedDay : '';
+  s.arcade.ticketDay = typeof s.arcade.ticketDay === 'string' ? s.arcade.ticketDay : '';
+  s.arcade.ticketsEarnedToday = Math.max(0, Math.floor(+s.arcade.ticketsEarnedToday || 0));
+  s.arcade.completedRounds = Array.isArray(s.arcade.completedRounds) ? [...new Set(s.arcade.completedRounds.filter(id => typeof id === 'string'))].slice(-200) : [];
   return s;
 }
 function loadState(key){
@@ -4365,6 +4373,8 @@ let bookUnit = 'cafe';
 let currentShop = 'cafe';
 const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','summary','shop','hall','parent','arcade'];
 function show(id){
+  if (id !== 'room' && roomDrag) finishRoomDrag();
+  if (id === 'arcade' && !arcadePolicy().enabled) { toast('Your teacher has not opened the Arcade.'); id = 'home'; }
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
   Music.setTempo(id === 'sprint' ? SPRINT_RATE : 1);
   updateHeader();
@@ -4375,7 +4385,7 @@ function show(id){
   if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
 }
-document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) show(b.dataset.go); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) { if (b.dataset.go === 'arcade') void openArcade(); else show(b.dataset.go); } });
 function updateHeader(){
   $('#townTitle').textContent = townName(); document.title = townName();
   $('#coinCount').textContent = S.coins;
@@ -4391,59 +4401,112 @@ function updateHeader(){
 let toastTimer;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
 const arcadeEntryCost = 100;
+let activeArcadeRun = null, arcadeTimer = null;
+const arcadePolicy = () => Backend.me ? arcadeSettings(Backend.me.game_settings?.arcade) : arcadeSettings({enabled:true, freePlay:true});
+const arcadeGamesForClass = () => {
+  const policy = arcadePolicy();
+  return ARCADE_GAMES.filter(game => game.available && policy.games[game.id]);
+};
+const arcadeTicketPrizesEnabled = () => { const policy = arcadePolicy(); return policy.enabled && !policy.freePlay; };
+async function openArcade(){
+  if (Backend.me) await Backend.refreshSettings();
+  if (!arcadePolicy().enabled) { toast('Your teacher has not opened the Arcade.'); return; }
+  show('arcade');
+}
 const arcadeDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 function arcadeToday(){
   const day = arcadeDateKey();
   if (S.arcade.day !== day) { S.arcade.day = day; S.arcade.playedSeconds = 0; S.arcade.admittedDay = ''; }
+  if (S.arcade.ticketDay !== day) { S.arcade.ticketDay = day; S.arcade.ticketsEarnedToday = 0; }
   return day;
 }
 function arcadeMathMinutes(){ return Math.floor(Number(S.mathMinutes[arcadeToday()] || 0)); }
 function arcadeRemainingSeconds(){ return Math.max(0, arcadeMathMinutes() * 60 - S.arcade.playedSeconds); }
 function arcadeAdmitted(){ return S.arcade.admittedDay === arcadeToday(); }
+function arcadeFurnitureCard(item){
+  const policy = arcadePolicy(), owned = S.room.items.includes(item.id), prizesEnabled = arcadeTicketPrizesEnabled(), canBuy = prizesEnabled && !owned && S.arcade.tickets >= item.ticketPrice;
+  const action = owned ? '<span class="tag">Owned</span>' : prizesEnabled
+    ? `<button class="btn small butter" data-arcade-furniture="${item.id}" ${canBuy ? '' : 'disabled'}>${canBuy ? `Buy · 🎟️ ${item.ticketPrice}` : `Need 🎟️ ${item.ticketPrice}`}</button>`
+    : `<span class="tag">${policy.freePlay ? 'Disabled in Free Play' : 'Prize shop coming soon'}</span>`;
+  return `<div class="wardrobe-item${owned ? '' : ' locked'}"><span class="accessory-emoji">${item.emoji}</span><strong>${esc(item.name)}</strong><small>Pet Room furniture</small>${action}</div>`;
+}
+function buyArcadeFurniture(id){
+  if (!arcadeTicketPrizesEnabled()) return;
+  const item = ARCADE_ROOM_FURNITURE.find(furniture => furniture.id === id);
+  if (!item || S.room.items.includes(id) || S.arcade.tickets < item.ticketPrice) return;
+  S.arcade.tickets -= item.ticketPrice; S.room.items.push(id); save(); renderArcade(); toast(`${item.name} added to your Pet Room!`);
+}
 function arcadeModuleMessage(event){
   const frame = $('#arcadeFrame');
-  if (!frame || event.source !== frame.contentWindow || !event.data || event.data.type !== 'arcade:finished') return;
-  const tickets = Math.max(0, Math.min(25, Math.floor(Number(event.data.tickets) || 0)));
-  if (!tickets) return;
-  S.arcade.tickets += tickets; save(); renderArcade(); toast(`You earned ${tickets} arcade ticket${tickets === 1 ? '' : 's'}!`);
+  const run = activeArcadeRun, data = event.data, policy = arcadePolicy();
+  if (!frame || !run || event.origin !== location.origin || event.source !== frame.contentWindow || !data || data.type !== 'arcade:round-complete') return;
+  if (run.freePlay || policy.freePlay || !policy.enabled || !policy.games[run.gameId] || data.runId !== run.id || data.gameId !== run.gameId) return;
+  const roundId = typeof data.roundId === 'string' ? data.roundId.slice(0,80) : '';
+  const score = Math.floor(Number(data.score));
+  if (!roundId || !Number.isFinite(score) || score < 0) return;
+  const roundKey = `${run.id}:${roundId}`;
+  if (run.completed.has(roundKey) || S.arcade.completedRounds.includes(roundKey)) return;
+  run.completed.add(roundKey); S.arcade.completedRounds.push(roundKey); S.arcade.completedRounds = S.arcade.completedRounds.slice(-200);
+  let earned = 0;
+  if (run.gameId === 'corsairs-cove') {
+    const oldMilestones = Math.floor(run.highestScore / policy.corsairPointsPerTicket);
+    run.highestScore = Math.max(run.highestScore, score);
+    earned = Math.floor(run.highestScore / policy.corsairPointsPerTicket) - oldMilestones;
+  } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
+  if (run.gameOfDay) earned += policy.gameOfDayBonusTickets;
+  const cap = Math.max(0, policy.maxTicketsPerDay - S.arcade.ticketsEarnedToday);
+  const tickets = Math.min(cap, earned);
+  if (tickets > 0) {
+    S.arcade.tickets += tickets; S.arcade.ticketsEarnedToday += tickets;
+    save(); renderArcade(); toast(`You earned ${tickets} arcade ticket${tickets === 1 ? '' : 's'}!`);
+  } else save();
 }
 window.addEventListener('message', arcadeModuleMessage);
-function arcadeCard(game, daily){
-  const remaining = arcadeRemainingSeconds(), admitted = arcadeAdmitted(), playable = remaining > 0 && (admitted || S.coins >= arcadeEntryCost);
-  const action = admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
+function arcadeCard(game, daily, policy){
+  const remaining = arcadeRemainingSeconds(), admitted = policy.freePlay || arcadeAdmitted(), playable = remaining > 0 && (admitted || S.coins >= arcadeEntryCost);
+  const action = policy.freePlay ? 'Play free' : admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
   return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : 'Do math to unlock play'}</button></article>`;
 }
 function renderArcade(){
-  const daily = arcadeGameOfTheDay(new Date(), ARCADE_GAMES);
+  const policy = arcadePolicy(), games = arcadeGamesForClass(), daily = arcadeGameOfTheDay(new Date(), games);
   const minutes = arcadeMathMinutes(), remaining = arcadeRemainingSeconds();
+  const arcadeStats = policy.freePlay
+    ? `<div><b>Free Play</b><span>no coins or rewards</span></div>`
+    : `<div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div>`;
+  const prizeShop = policy.freePlay ? '' : `<section class="arcade-prizes"><div class="backrow"><h3>Furniture stickers for My Pet Room</h3><span>🎟️ ${S.arcade.tickets}</span></div><div class="wardrobe-grid">${ARCADE_ROOM_FURNITURE.map(arcadeFurnitureCard).join('')}</div><p class="wardrobe-note">Earn tickets in Arcade games. Ticket purchases use Arcade tickets only.</p></section>`;
   $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2><button class="btn small" data-go="home">Back to town</button></div>
-    <div class="arcade-summary"><div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div><div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div></div>
-    <p class="muted">Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your math-earned time remains. Games can award arcade tickets, which are separate from Pet Town coins.</p>
-    <div class="arcade-grid">${ARCADE_GAMES.filter(game => game.available).map(game => arcadeCard(game, daily?.id === game.id)).join('')}</div>
+    <div class="arcade-summary"><div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div>${arcadeStats}</div>
+    <p class="muted">${policy.freePlay ? 'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your math-earned time remains. Ticket prizes are separate from Pet Town coins.`}</p>
+    <div class="arcade-grid">${games.map(game => arcadeCard(game, daily?.id === game.id, policy)).join('') || '<p class="muted">Your teacher has not enabled any Arcade games.</p>'}</div>
+    ${prizeShop}
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
 }
 function startArcadeGame(id){
-  const game = ARCADE_GAMES.find(item => item.id === id), remaining = arcadeRemainingSeconds();
-  if (!game || !game.available || remaining <= 0 || (!arcadeAdmitted() && S.coins < arcadeEntryCost)) return;
-  if (!arcadeAdmitted()) { S.coins -= arcadeEntryCost; S.arcade.admittedDay = arcadeToday(); save(); updateHeader(); }
+  const policy = arcadePolicy(), game = arcadeGamesForClass().find(item => item.id === id), remaining = arcadeRemainingSeconds();
+  if (!policy.enabled || !game || remaining <= 0 || (!policy.freePlay && !arcadeAdmitted() && S.coins < arcadeEntryCost)) return;
+  if (!policy.freePlay && !arcadeAdmitted()) { S.coins -= arcadeEntryCost; S.arcade.admittedDay = arcadeToday(); save(); updateHeader(); }
+  if (arcadeTimer) clearInterval(arcadeTimer);
+  const runId = `${S.sid}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+  activeArcadeRun = {id:runId, gameId:game.id, freePlay:policy.freePlay, gameOfDay:arcadeGameOfTheDay(new Date(), arcadeGamesForClass())?.id === game.id, highestScore:0, completed:new Set()};
   const play = $('#arcadePlayWrap');
   play.hidden = false;
-  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${Math.ceil(remaining / 60)} min left</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}" loading="eager"></iframe>`;
-  $('#arcadeClose').addEventListener('click', () => { play.hidden = true; play.innerHTML = ''; renderArcade(); });
+  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${Math.ceil(remaining / 60)} min left</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}&arcadeRun=${encodeURIComponent(runId)}" loading="eager"></iframe>`;
+  $('#arcadeClose').addEventListener('click', () => { if (arcadeTimer) clearInterval(arcadeTimer); activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); });
   const started = performance.now();
-  const timer = setInterval(() => {
+  arcadeTimer = setInterval(() => {
     const used = Math.floor((performance.now() - started) / 1000);
-    S.arcade.playedSeconds = Math.min(arcadeMathMinutes() * 60, S.arcade.playedSeconds + Math.max(0, used - (timer.last || 0)));
-    timer.last = used; save();
+    S.arcade.playedSeconds = Math.min(arcadeMathMinutes() * 60, S.arcade.playedSeconds + Math.max(0, used - (arcadeTimer.last || 0)));
+    arcadeTimer.last = used; save();
     const left = arcadeRemainingSeconds();
     const clock = $('#arcadeClock'); if (clock) clock.textContent = `${Math.ceil(left / 60)} min left`;
-    if (!left) { clearInterval(timer); toast('Today\'s arcade time is used up.'); }
+    if (!left) { clearInterval(arcadeTimer); arcadeTimer = null; activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); toast('Today\'s arcade time is used up.'); }
   }, 1000);
-  $('#arcadeClose').addEventListener('click', () => clearInterval(timer), {once:true});
 }
 $('#arcadeWrap').addEventListener('click', event => {
   const button = event.target.closest('[data-arcade-start]');
   if (button) startArcadeGame(button.dataset.arcadeStart);
+  const furniture = event.target.closest('[data-arcade-furniture]');
+  if (furniture) buyArcadeFurniture(furniture.dataset.arcadeFurniture);
 });
 function coinBurst(el, n){
   if (reduceMotion() || !el) return;
@@ -4654,6 +4717,12 @@ function hoodTrophies(){ return NEIGHBORHOODS.filter(n => { const list = buildin
 function roomPoint(index){
   return {x:12 + (index % 4) * 24, y:54 + Math.floor(index / 4) * 24};
 }
+const ROOM_PET_ART = {cat:'🐈', bunny:'🐇', penguin:'🐧', chick:'🐥', dog:'🐕', goat:'🐐', turtle:'🐢', llama:'🦙', rooster:'🐓', bat:'🦇', squirrel:'🐿️', eagle:'🦅', dragon:'🐉', deer:'🦌', wolf:'🐺', whale:'🐋', shark:'🦈', swan:'🦢', frog:'🐸', snake:'🐍', lizard:'🦎', octopus:'🐙', butterfly:'🦋', snail:'🐌', ladybug:'🐞', bee:'🐝', badger:'🦡', peacock:'🦚', poodle:'🐩', giraffe:'🦒', zebra:'🦓', lion:'🦁'};
+function roomPetArt(){ return ROOM_PET_ART[S.pet] || petEmoji(); }
+function accessoryPoint(item){
+  return S.accessoryPositions[item.id] || (item.slot === 'hat' ? {x:50,y:10} : item.slot === 'eyes' ? {x:50,y:42} : {x:50,y:82});
+}
+function roomItem(id){ return REWARDS.find(item => item.id === id) || ARCADE_ROOM_FURNITURE.find(item => item.id === id) || null; }
 function ensureRoom(){
   if (S.room.initialized) return;
   S.room.placements = S.displayed.filter(id => id && S.decor.includes(id)).map((id, i) => ({id, ...roomPoint(i)}));
@@ -4673,7 +4742,11 @@ function roomAccessoryCard(item){
 function roomWear(id){
   const item = ACCESSORIES.find(accessory => accessory.id === id);
   if (!item || !S.accessoriesOwned.includes(id)) return;
-  S.wearing[item.slot] = S.wearing[item.slot] === id ? null : id;
+  if (S.wearing[item.slot] === id) S.wearing[item.slot] = null;
+  else {
+    S.wearing[item.slot] = id;
+    if (!S.accessoryPositions[id]) S.accessoryPositions[id] = accessoryPoint(item);
+  }
   save(); renderPetRoom(); sfx('good');
 }
 function roomObtainAccessory(id){
@@ -4690,62 +4763,107 @@ function roomObtainAccessory(id){
 }
 function renderPetRoom(){
   ensureRoom();
-  const helper = petReward(), placed = new Set(S.room.placements.map(item => item.id));
+  const placed = new Set(S.room.placements.map(item => item.id));
   const positions = S.room.placements.map(place => {
-    const reward = REWARDS.find(item => item.id === place.id);
+    const reward = roomItem(place.id);
     return reward ? `<button type="button" class="room-decor-item" data-room-decor="${reward.id}" style="left:${place.x}%;top:${place.y}%" aria-label="Move ${esc(reward.name)}; use arrow keys to nudge"><span class="room-decor-emoji" aria-hidden="true">${reward.emoji}</span></button>` : '';
   }).join('');
-  const inventory = S.decor.filter(id => !placed.has(id)).map(id => {
-    const reward = REWARDS.find(item => item.id === id);
+  const inventory = [...S.decor, ...S.room.items].filter(id => !placed.has(id)).map(id => {
+    const reward = roomItem(id);
     return reward ? `<button type="button" data-room-add="${id}" aria-label="Place ${esc(reward.name)}" title="Place ${esc(reward.name)}"><span class="room-inventory-emoji" aria-hidden="true">${reward.emoji}</span></button>` : '';
   }).join('');
-  const wear = slot => { const item = ACCESSORIES.find(accessory => accessory.id === S.wearing[slot]); return item ? `<span class="room-wear room-wear-${slot}" aria-hidden="true">${item.emoji}</span>` : ''; };
+  const roomInventory = S.room.placements.map(place => {
+    const reward = roomItem(place.id);
+    return reward ? `<div class="room-placed-item"><span class="room-inventory-emoji" aria-hidden="true">${reward.emoji}</span><button type="button" class="room-remove" data-room-remove="${reward.id}" aria-label="Take ${esc(reward.name)} out of the room" title="Take out of room">×</button></div>` : '';
+  }).join('');
+  const wear = slot => {
+    const item = ACCESSORIES.find(accessory => accessory.id === S.wearing[slot]); if (!item) return '';
+    const point = accessoryPoint(item);
+    return `<span class="room-wear" data-room-accessory="${item.id}" role="button" tabindex="0" style="left:${point.x}%;top:${point.y}%" aria-label="Move ${esc(item.name)}; arrow keys to nudge, Enter to remove"><span aria-hidden="true">${item.emoji}</span></span>`;
+  };
   $('#roomWrap').innerHTML = `<div class="backrow"><h2>🏠 My Pet Room</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="room-layout"><div><div id="roomScene" class="room-scene" aria-label="Your room. Drag decorations or focus one and use the arrow keys to move it."><div id="roomBubble" class="room-bubble" role="status">${esc(petName())}: My room!</div><div class="room-rug" aria-hidden="true"></div>
-      <button type="button" class="room-pet" data-room-pet aria-label="Tap ${esc(petName())}, your helper pet"><span class="room-pet-emoji">${wear('hat')}${wear('eyes')}${helper.emoji}${wear('neck')}</span></button>${positions}</div>
-      <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div></div></div>
+      <div class="room-pet" data-room-pet role="button" tabindex="0" aria-label="Tap ${esc(petName())}, your helper pet"><span id="roomPetArt" class="room-pet-art"><span class="room-pet-emoji" aria-hidden="true">${roomPetArt()}</span>${wear('hat')}${wear('eyes')}${wear('neck')}</span></div>${positions}</div>
+      <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div><h4 class="room-subhead">In the room</h4><div class="room-placed-list">${roomInventory || '<span class="muted">No stickers placed yet.</span>'}</div></div></div>
       <aside class="room-side"><section class="room-panel"><h3>Dress-up</h3><div class="wardrobe-grid">${ACCESSORIES.map(roomAccessoryCard).join('')}</div><p class="wardrobe-note">Coin items can be bought here. Practice rewards are earned by math. Arcade-ticket items unlock with the secure Arcade prize shop.</p></section></aside></div>`;
 }
 let roomDrag = null;
 $('#roomWrap').addEventListener('pointerdown', event => {
+  const accessory = event.target.closest('[data-room-accessory]'), petArt = $('#roomPetArt');
+  if (accessory && petArt && event.button === 0) {
+    event.preventDefault(); event.stopPropagation();
+    roomDrag = {kind:'accessory', id:accessory.dataset.roomAccessory, pointerId:event.pointerId, rect:petArt.getBoundingClientRect()};
+    accessory.classList.add('dragging'); accessory.setPointerCapture(event.pointerId); return;
+  }
   const item = event.target.closest('[data-room-decor]'), scene = $('#roomScene');
   if (!item || !scene || event.button !== 0) return;
   event.preventDefault();
-  roomDrag = {id:item.dataset.roomDecor, pointerId:event.pointerId, rect:scene.getBoundingClientRect()};
+  roomDrag = {kind:'decor', id:item.dataset.roomDecor, pointerId:event.pointerId, rect:scene.getBoundingClientRect()};
   item.classList.add('dragging'); item.setPointerCapture(event.pointerId);
 });
 $('#roomWrap').addEventListener('pointermove', event => {
   if (!roomDrag || roomDrag.pointerId !== event.pointerId) return;
-  const x = Math.max(4, Math.min(96, 100 * (event.clientX - roomDrag.rect.left) / roomDrag.rect.width));
-  const y = Math.max(8, Math.min(88, 100 * (event.clientY - roomDrag.rect.top) / roomDrag.rect.height));
-  const item = [...$('#roomScene').querySelectorAll('[data-room-decor]')].find(button => button.dataset.roomDecor === roomDrag.id);
+  const min = roomDrag.kind === 'accessory' ? 5 : 4, max = roomDrag.kind === 'accessory' ? 95 : 96;
+  const x = Math.max(min, Math.min(max, 100 * (event.clientX - roomDrag.rect.left) / roomDrag.rect.width));
+  const y = Math.max(min, Math.min(roomDrag.kind === 'accessory' ? 95 : 88, 100 * (event.clientY - roomDrag.rect.top) / roomDrag.rect.height));
+  roomDrag.x = x; roomDrag.y = y;
+  const selector = roomDrag.kind === 'accessory' ? '[data-room-accessory]' : '[data-room-decor]';
+  const root = roomDrag.kind === 'accessory' ? $('#roomPetArt') : $('#roomScene');
+  const item = [...(root?.querySelectorAll(selector) || [])].find(button => button.dataset.roomAccessory === roomDrag.id || button.dataset.roomDecor === roomDrag.id);
   if (item) { item.style.left = `${x}%`; item.style.top = `${y}%`; roomDrag.x = x; roomDrag.y = y; }
 });
 function finishRoomDrag(event){
-  if (!roomDrag || (event && roomDrag.pointerId !== event.pointerId)) return;
-  const item = S.room.placements.find(place => place.id === roomDrag.id);
-  const button = [...$('#roomScene').querySelectorAll('[data-room-decor]')].find(node => node.dataset.roomDecor === roomDrag.id);
-  if (item && Number.isFinite(roomDrag.x) && Number.isFinite(roomDrag.y)) { item.x = roomDrag.x; item.y = roomDrag.y; save(); }
-  button?.classList.remove('dragging'); roomDrag = null;
+  if (!roomDrag || (event?.pointerId != null && roomDrag.pointerId !== event.pointerId)) return;
+  if (Number.isFinite(roomDrag.x) && Number.isFinite(roomDrag.y)) {
+    if (roomDrag.kind === 'accessory') S.accessoryPositions[roomDrag.id] = {x:roomDrag.x, y:roomDrag.y};
+    else {
+      const item = S.room.placements.find(place => place.id === roomDrag.id);
+      if (item) { item.x = roomDrag.x; item.y = roomDrag.y; }
+    }
+    save();
+  }
+  const root = roomDrag.kind === 'accessory' ? $('#roomPetArt') : $('#roomScene');
+  const selector = roomDrag.kind === 'accessory' ? '[data-room-accessory]' : '[data-room-decor]';
+  [...(root?.querySelectorAll(selector) || [])].find(node => node.dataset.roomAccessory === roomDrag.id || node.dataset.roomDecor === roomDrag.id)?.classList.remove('dragging');
+  roomDrag = null;
 }
 $('#roomWrap').addEventListener('pointerup', finishRoomDrag);
 $('#roomWrap').addEventListener('pointercancel', finishRoomDrag);
+window.addEventListener('pagehide', () => finishRoomDrag());
 $('#roomWrap').addEventListener('keydown', event => {
-  const button = event.target.closest('[data-room-decor]');
+  const pet = event.target.closest('[data-room-pet]');
+  if (pet && !event.target.closest('[data-room-accessory]') && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault(); $('#roomBubble').textContent = pick([`${petName()}: I love my room!`, `${petName()}: Look what I can do!`, `${petName()}: This is my favorite place!`]); sfx('good'); return;
+  }
+  const wearable = event.target.closest('[data-room-accessory]');
+  if (wearable && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); roomWear(wearable.dataset.roomAccessory); return; }
+  const button = event.target.closest('[data-room-decor],[data-room-accessory]');
   const delta = {ArrowLeft:[-3,0],ArrowRight:[3,0],ArrowUp:[0,-3],ArrowDown:[0,3]}[event.key];
   if (!button || !delta) return;
   event.preventDefault();
-  const item = S.room.placements.find(place => place.id === button.dataset.roomDecor);
-  if (!item) return;
-  item.x = Math.max(4, Math.min(96, item.x + delta[0])); item.y = Math.max(8, Math.min(88, item.y + delta[1]));
-  save(); renderPetRoom(); $('#roomScene [data-room-decor="' + button.dataset.roomDecor + '"]')?.focus();
+  if (button.dataset.roomAccessory) {
+    const accessory = ACCESSORIES.find(item => item.id === button.dataset.roomAccessory); if (!accessory) return;
+    const point = accessoryPoint(accessory);
+    S.accessoryPositions[button.dataset.roomAccessory] = {x:Math.max(5, Math.min(95, point.x + delta[0])), y:Math.max(5, Math.min(95, point.y + delta[1]))};
+  } else {
+    const item = S.room.placements.find(place => place.id === button.dataset.roomDecor); if (!item) return;
+    item.x = Math.max(4, Math.min(96, item.x + delta[0])); item.y = Math.max(8, Math.min(88, item.y + delta[1]));
+  }
+  const id = button.dataset.roomAccessory || button.dataset.roomDecor;
+  save(); renderPetRoom(); [...$('#roomScene').querySelectorAll('[data-room-decor],[data-room-accessory]')].find(node => node.dataset.roomAccessory === id || node.dataset.roomDecor === id)?.focus();
 });
 $('#roomWrap').addEventListener('click', event => {
+  if (event.target.closest('[data-room-accessory]')) return;
+  const pet = event.target.closest('[data-room-pet]');
+  if (pet) { $('#roomBubble').textContent = pick([`${petName()}: I love my room!`, `${petName()}: Look what I can do!`, `${petName()}: This is my favorite place!`]); sfx('good'); return; }
   const button = event.target.closest('button'); if (!button) return;
-  if (button.dataset.roomPet !== undefined) { $('#roomBubble').textContent = pick([`${petName()}: I love my room!`, `${petName()}: Look what I can do!`, `${petName()}: This is my favorite place!`]); sfx('good'); return; }
+  if (button.dataset.roomRemove) {
+    S.room.placements = S.room.placements.filter(place => place.id !== button.dataset.roomRemove);
+    save(); renderPetRoom(); sfx('tick'); return;
+  }
   if (button.dataset.roomAdd) {
     const id = button.dataset.roomAdd;
-    if (!S.decor.includes(id) || S.room.placements.some(item => item.id === id)) return;
+    if (!(S.decor.includes(id) || S.room.items.includes(id)) || S.room.placements.some(item => item.id === id)) return;
     const point = roomPoint(S.room.placements.length); S.room.placements.push({id, ...point}); save(); renderPetRoom(); return;
   }
   if (button.dataset.roomBuy) { roomObtainAccessory(button.dataset.roomBuy); return; }
@@ -4779,7 +4897,7 @@ function renderHome(){
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
-  h += `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${S.arcade.tickets} arcade tickets</span></button>`;
+  if (arcadePolicy().enabled) h += `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcadePolicy().freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`;
   $('#town').innerHTML = h;
 }
 let pickerMode = '', pickerSlot = -1;
@@ -4820,7 +4938,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
-  else if (id === 'arcade') show('arcade');
+  else if (id === 'arcade') void openArcade();
 });
 
 /* ---------- shop stations ---------- */

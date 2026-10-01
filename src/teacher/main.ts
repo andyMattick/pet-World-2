@@ -1,7 +1,7 @@
 /* Teacher app: sign in, manage classes and rosters, print PIN cards, live class dashboard. */
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
-import { BUILDINGS, SHOPS, DRILLS, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type DrillSettings, type QuizSettings } from '../shared/registry';
+import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; created_at: string }
@@ -222,6 +222,7 @@ function renderSettings() {
   const pane = $('#pane'), cls = current!;
   const settings = mergeDrillSettings(cls.drill_settings);
   const quizzes = quizSettings(cls.quiz_settings || QUIZ_DEFAULTS);
+  const arcade = arcadeSettings(cls.game_settings?.arcade as Partial<ArcadeSettings> | undefined);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="two">
@@ -238,6 +239,17 @@ function renderSettings() {
       <p class="muted">Later stations still open on their own: after 6 orders at the one before, or after its quiz when quizzes open stations. Skipped stations are open right away. The unit test still needs every station quiz passed, or excused on a student's page.</p>
       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
+      <h3>Arcade</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade games for this class</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: no 100-coin admission and no Arcade tickets</label>
+      <p class="muted" style="margin-top:0">Students still need math practice to unlock Arcade minutes. Free Play disables Pet Town coin admission and ticket prizes.</p>
+      <h4>Available games</h4>${ARCADE_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-arcade-game="${game.id}" ${arcade.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)}</label>`).join('')}
+      <h4>Ticket rewards (paid-entry mode)</h4>
+      <label for="arcadeCorsairRate">Corsair's Cove points per ticket</label><input type="number" id="arcadeCorsairRate" min="1000" max="100000" step="1000" value="${arcade.corsairPointsPerTicket}">
+      <label for="arcadeWhackTickets">Tickets per completed Whack-a-Mole round</label><input type="number" id="arcadeWhackTickets" min="0" max="5" step="1" value="${arcade.whackTicketsPerRound}">
+      <label for="arcadeTicketCap">Maximum Arcade tickets per student each day</label><input type="number" id="arcadeTicketCap" min="0" max="100" step="1" value="${arcade.maxTicketsPerDay}">
+      <label for="arcadeGameOfDayBonus">Bonus tickets for completing the Game of the Day</label><input type="number" id="arcadeGameOfDayBonus" min="0" max="5" step="1" value="${arcade.gameOfDayBonusTickets}">
+      <p class="muted" style="margin-top:0">The bonus is deterministic, counts toward the daily ticket cap, and is disabled in Free Play.</p>
       <div class="row"><button class="btn primary" id="saveCls">Save</button><span class="status" id="setMsg"></span></div>
       <h2 style="margin-top:20px">Delete class</h2><p class="muted" style="margin-top:0">Removes the roster and all progress for this class.</p>
       <button class="btn small" id="delCls">Delete this class</button></div>
@@ -276,10 +288,21 @@ function renderSettings() {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
     const openUnits = [...pane.querySelectorAll<HTMLInputElement>('[data-open-unit]')].filter(input => input.checked).map(input => input.dataset.openUnit!);
     const allowMusic = ($('#allowMusic') as HTMLInputElement).checked;
+    const arcadeGames: Record<string, boolean> = {};
+    pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { arcadeGames[input.dataset.arcadeGame!] = input.checked; });
+    const arcadeSettingsForClass = arcadeSettings({
+      enabled: ($('#arcadeEnabled') as HTMLInputElement).checked,
+      freePlay: ($('#arcadeFreePlay') as HTMLInputElement).checked,
+      games: arcadeGames,
+      corsairPointsPerTicket: +($('#arcadeCorsairRate') as HTMLInputElement).value,
+      whackTicketsPerRound: +($('#arcadeWhackTickets') as HTMLInputElement).value,
+      maxTicketsPerDay: +($('#arcadeTicketCap') as HTMLInputElement).value,
+      gameOfDayBonusTickets: +($('#arcadeGameOfDayBonus') as HTMLInputElement).value
+    });
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, minStations, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, minStations, arcade: arcadeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
