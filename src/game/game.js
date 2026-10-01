@@ -39,7 +39,7 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]},
+  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
@@ -105,7 +105,9 @@ function normalize(raw){
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   s.mathMinutes = s.mathMinutes && typeof s.mathMinutes === 'object' ? s.mathMinutes : {};
-  s.arcade = Object.assign({tickets:0, playedSeconds:0, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]}, s.arcade || {});
+  s.arcade = Object.assign({tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]}, s.arcade || {});
+  if (raw?.arcade?.timerVersion !== 3) s.arcade.playedSeconds = 0;
+  s.arcade.timerVersion = 3;
   s.arcade.tickets = Math.max(0, Math.floor(+s.arcade.tickets || 0));
   s.arcade.playedSeconds = Math.max(0, Math.floor(+s.arcade.playedSeconds || 0));
   s.arcade.day = typeof s.arcade.day === 'string' ? s.arcade.day : '';
@@ -4429,7 +4431,10 @@ function arcadeToday(){
   return day;
 }
 function arcadeMathMinutes(){ return Math.floor(Number(S.mathMinutes[arcadeToday()] || 0)); }
-function arcadeRemainingSeconds(){ return Math.max(0, arcadeMathMinutes() * 60 - S.arcade.playedSeconds); }
+function arcadeRemainingSeconds(){
+  if (S.arcade.timerVersion !== 3) { S.arcade.playedSeconds = 0; S.arcade.timerVersion = 3; save(); }
+  return Math.max(0, arcadeMathMinutes() * 60 - S.arcade.playedSeconds);
+}
 function arcadeAdmitted(){ return S.arcade.admittedDay === arcadeToday(); }
 function arcadeFurnitureCard(item){
   const policy = arcadePolicy(), owned = S.room.items.includes(item.id), prizesEnabled = arcadeTicketPrizesEnabled(), canBuy = prizesEnabled && !owned && S.arcade.tickets >= item.ticketPrice;
@@ -4502,10 +4507,13 @@ function startArcadeGame(id){
   play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${Math.ceil(remaining / 60)} min left</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}&arcadeRun=${encodeURIComponent(runId)}" loading="eager"></iframe>`;
   $('#arcadeClose').addEventListener('click', () => { if (arcadeTimer) clearInterval(arcadeTimer); activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); });
   const started = performance.now();
+  let elapsedPreviously = 0;
   arcadeTimer = setInterval(() => {
     const used = Math.floor((performance.now() - started) / 1000);
-    S.arcade.playedSeconds = Math.min(arcadeMathMinutes() * 60, S.arcade.playedSeconds + Math.max(0, used - (arcadeTimer.last || 0)));
-    arcadeTimer.last = used; save();
+    const elapsed = Math.max(0, used - elapsedPreviously);
+    elapsedPreviously = used;
+    S.arcade.playedSeconds = Math.min(arcadeMathMinutes() * 60, S.arcade.playedSeconds + elapsed);
+    save();
     const left = arcadeRemainingSeconds();
     const clock = $('#arcadeClock'); if (clock) clock.textContent = `${Math.ceil(left / 60)} min left`;
     if (!left) { clearInterval(arcadeTimer); arcadeTimer = null; activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); toast('Today\'s arcade time is used up.'); }
