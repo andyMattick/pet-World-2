@@ -137,6 +137,18 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 - [ ] Selling: TPT listing or a teacher sign-up page
 
 
+## Post-6th-grade feature roadmap
+
+### Current status
+
+- [ ] **My Pet Room:** not built. The town has a Sticker Book, display case, owned decorations, and helper-pet selection, but there is not yet a free-placement room, wandering pets, pet interactions, or room-specific decoration behavior.
+- [ ] **Dress-up:** not built. There are no wearable hats, bows, sunglasses, capes, or saved accessory choices yet.
+- [ ] **Arcade:** in progress. The host has a separate arcade catalog, paid entry, math-earned daily play time, separate arcade tickets, a Game of the Day rotation, and staged Corsair's Cove and Whack-a-Mole builds. Ticket prizes, secure round-result handling, browser review, and teacher controls remain.
+- [ ] **House tours:** not built.
+- [ ] **Pet Trips, Greenhouse, and Class Party Jar:** not built.
+
+The intended order remains **My Pet Room and Dress-up first**, then the Arcade. The Arcade catalog is deliberately open to future games such as computer-vs-human Bingo, Sticker Memory, a Hangman-style game, and another Corsair-style game.
+
 1. Things to do with the pets and decorations they own
 🏠 My Pet Room. Kids drag their decorations anywhere in a room: rug, fountain, trophy shelf, pizza oven. Their pets wander around, nap on the rug and splash in the fountain. Tapping a pet makes it do a trick or show a little speech bubble ("I love this cactus!"). More stickers means a busier, livelier room.
 🎩 Dress-up. Cheap accessories like hats, bows, sunglasses and a cape to put on the helper pet. The pet wears them while "helping" at the shops.
