@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, ACCESSORIES } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -38,10 +38,10 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:''},
+  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, day:'', admittedDay:''},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
-  cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
+  cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[]}, accessoriesOwned:['starter-clip'], wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
 /* fill in any fields an older save is missing */
@@ -81,13 +81,28 @@ function normalize(raw){
   s.resetSeen = typeof s.resetSeen === 'string' ? s.resetSeen : null;
   if (!Array.isArray(raw?.displayed)) s.displayed = s.decor.slice(0,8);
   s.displayed = Array.from({length:8}, (_,i) => s.decor.includes(s.displayed[i]) ? s.displayed[i] : null);
+  s.room = Object.assign({initialized:false,placements:[]}, s.room || {});
+  s.room.initialized = !!s.room.initialized;
+  const roomIds = new Set();
+  s.room.placements = (Array.isArray(s.room.placements) ? s.room.placements : []).filter(item => {
+    if (!item || typeof item.id !== 'string' || !s.decor.includes(item.id) || roomIds.has(item.id) || !Number.isFinite(+item.x) || !Number.isFinite(+item.y)) return false;
+    roomIds.add(item.id); return true;
+  }).map(item => ({id:item.id, x:Math.max(4, Math.min(96, +item.x)), y:Math.max(8, Math.min(88, +item.y))}));
+  s.accessoriesOwned = Array.isArray(s.accessoriesOwned) ? [...new Set(s.accessoriesOwned.filter(id => ACCESSORIES.some(item => item.id === id)))] : [];
+  s.wearing = Object.assign({hat:null,eyes:null,neck:null}, s.wearing || {});
+  ['hat','eyes','neck'].forEach(slot => {
+    const accessory = ACCESSORIES.find(item => item.id === s.wearing[slot]);
+    if (accessory && (accessory.slot !== slot || !s.accessoriesOwned.includes(accessory.id))) s.wearing[slot] = null;
+    else if (!accessory) s.wearing[slot] = null;
+  });
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   s.mathMinutes = s.mathMinutes && typeof s.mathMinutes === 'object' ? s.mathMinutes : {};
-  s.arcade = Object.assign({tickets:0, playedSeconds:0, day:''}, s.arcade || {});
+  s.arcade = Object.assign({tickets:0, playedSeconds:0, day:'', admittedDay:''}, s.arcade || {});
   s.arcade.tickets = Math.max(0, Math.floor(+s.arcade.tickets || 0));
   s.arcade.playedSeconds = Math.max(0, Math.floor(+s.arcade.playedSeconds || 0));
   s.arcade.day = typeof s.arcade.day === 'string' ? s.arcade.day : '';
+  s.arcade.admittedDay = typeof s.arcade.admittedDay === 'string' ? s.arcade.admittedDay : '';
   return s;
 }
 function loadState(key){
@@ -4348,12 +4363,13 @@ $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
 let currentShop = 'cafe';
-const SCREENS = ['loading','join','name','home','cafe','shift','sprint','book','summary','shop','hall','parent','arcade'];
+const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','summary','shop','hall','parent','arcade'];
 function show(id){
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
   Music.setTempo(id === 'sprint' ? SPRINT_RATE : 1);
   updateHeader();
   if (id === 'home') renderHome();
+  if (id === 'room') renderPetRoom();
   if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); renderBook(b && b.hood === currentHood() ? bookUnit : buildingsIn(currentHood())[0].id); }   // opens on the grade you're standing in
   if (id === 'arcade') renderArcade();
@@ -4374,15 +4390,16 @@ function updateHeader(){
 }
 let toastTimer;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
-const arcadeEntryCost = 10;
+const arcadeEntryCost = 100;
 const arcadeDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 function arcadeToday(){
   const day = arcadeDateKey();
-  if (S.arcade.day !== day) { S.arcade.day = day; S.arcade.playedSeconds = 0; }
+  if (S.arcade.day !== day) { S.arcade.day = day; S.arcade.playedSeconds = 0; S.arcade.admittedDay = ''; }
   return day;
 }
 function arcadeMathMinutes(){ return Math.floor(Number(S.mathMinutes[arcadeToday()] || 0)); }
 function arcadeRemainingSeconds(){ return Math.max(0, arcadeMathMinutes() * 60 - S.arcade.playedSeconds); }
+function arcadeAdmitted(){ return S.arcade.admittedDay === arcadeToday(); }
 function arcadeModuleMessage(event){
   const frame = $('#arcadeFrame');
   if (!frame || event.source !== frame.contentWindow || !event.data || event.data.type !== 'arcade:finished') return;
@@ -4392,22 +4409,23 @@ function arcadeModuleMessage(event){
 }
 window.addEventListener('message', arcadeModuleMessage);
 function arcadeCard(game, daily){
-  const remaining = arcadeRemainingSeconds(), playable = remaining > 0 && S.coins >= arcadeEntryCost;
-  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? `Play for 🪙 ${arcadeEntryCost}` : remaining ? `Need ${arcadeEntryCost} 🪙` : 'Do math to unlock play'}</button></article>`;
+  const remaining = arcadeRemainingSeconds(), admitted = arcadeAdmitted(), playable = remaining > 0 && (admitted || S.coins >= arcadeEntryCost);
+  const action = admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
+  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : 'Do math to unlock play'}</button></article>`;
 }
 function renderArcade(){
   const daily = arcadeGameOfTheDay(new Date(), ARCADE_GAMES);
   const minutes = arcadeMathMinutes(), remaining = arcadeRemainingSeconds();
   $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="arcade-summary"><div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div><div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div></div>
-    <p class="muted">Each entry costs 🪙 ${arcadeEntryCost}. Games can award arcade tickets, which are separate from Pet Town coins.</p>
+    <p class="muted">Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your math-earned time remains. Games can award arcade tickets, which are separate from Pet Town coins.</p>
     <div class="arcade-grid">${ARCADE_GAMES.filter(game => game.available).map(game => arcadeCard(game, daily?.id === game.id)).join('')}</div>
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
 }
 function startArcadeGame(id){
   const game = ARCADE_GAMES.find(item => item.id === id), remaining = arcadeRemainingSeconds();
-  if (!game || !game.available || remaining <= 0 || S.coins < arcadeEntryCost) return;
-  S.coins -= arcadeEntryCost; save(); updateHeader();
+  if (!game || !game.available || remaining <= 0 || (!arcadeAdmitted() && S.coins < arcadeEntryCost)) return;
+  if (!arcadeAdmitted()) { S.coins -= arcadeEntryCost; S.arcade.admittedDay = arcadeToday(); save(); updateHeader(); }
   const play = $('#arcadePlayWrap');
   play.hidden = false;
   play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${Math.ceil(remaining / 60)} min left</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}" loading="eager"></iframe>`;
@@ -4632,6 +4650,109 @@ function hoodSwitchHTML(){
 /* a grade trophy for the Sticker Book once every unit test in a neighborhood is passed */
 function hoodTrophies(){ return NEIGHBORHOODS.filter(n => { const list = buildingsIn(n.id); return list.length && list.every(b => b.open && unitTestPassed(b.id)); }); }
 
+/* ---------- Pet Room and Dress-up ---------- */
+function roomPoint(index){
+  return {x:12 + (index % 4) * 24, y:54 + Math.floor(index / 4) * 24};
+}
+function ensureRoom(){
+  if (S.room.initialized) return;
+  S.room.placements = S.displayed.filter(id => id && S.decor.includes(id)).map((id, i) => ({id, ...roomPoint(i)}));
+  S.room.initialized = true; save();
+}
+function roomAccessoryCard(item){
+  const owned = S.accessoriesOwned.includes(item.id), worn = S.wearing[item.slot] === item.id;
+  let action = '';
+  if (owned) action = `<button class="btn small ${worn ? '' : 'mint'}" data-room-wear="${item.id}">${worn ? 'Remove' : 'Wear'}</button>`;
+  else if (item.source === 'coins') action = `<button class="btn small butter" data-room-buy="${item.id}" ${S.coins < item.price ? 'disabled' : ''}>🪙 ${item.price}</button>`;
+  else if (item.source === 'practice') action = S.bestStreak >= (item.streakRequired || Infinity)
+    ? `<button class="btn small mint" data-room-claim="${item.id}">Claim</button>`
+    : `<small>Earn with ${item.streakRequired} perfect orders in a row</small>`;
+  else action = `<small>🎟️ ${item.price}<br>Arcade prizes coming soon</small>`;
+  return `<div class="wardrobe-item${item.source === 'arcade' ? ' locked' : ''}"><span class="accessory-emoji">${item.emoji}</span><strong>${esc(item.name)}</strong><small>${esc(item.slot)}</small>${action}</div>`;
+}
+function roomWear(id){
+  const item = ACCESSORIES.find(accessory => accessory.id === id);
+  if (!item || !S.accessoriesOwned.includes(id)) return;
+  S.wearing[item.slot] = S.wearing[item.slot] === id ? null : id;
+  save(); renderPetRoom(); sfx('good');
+}
+function roomObtainAccessory(id){
+  const item = ACCESSORIES.find(accessory => accessory.id === id);
+  if (!item || S.accessoriesOwned.includes(id)) return;
+  if (item.source === 'coins') {
+    if (S.coins < item.price) return;
+    S.coins -= item.price;
+  } else if (item.source === 'practice') {
+    if (S.bestStreak < (item.streakRequired || Infinity)) return;
+  } else return;
+  S.accessoriesOwned.push(id); save(); updateHeader(); renderPetRoom(); sfx('coin');
+  toast(item.source === 'practice' ? `${item.name} earned!` : `${item.name} added to Dress-up!`);
+}
+function renderPetRoom(){
+  ensureRoom();
+  const helper = petReward(), placed = new Set(S.room.placements.map(item => item.id));
+  const positions = S.room.placements.map(place => {
+    const reward = REWARDS.find(item => item.id === place.id);
+    return reward ? `<button type="button" class="room-decor-item" data-room-decor="${reward.id}" style="left:${place.x}%;top:${place.y}%" aria-label="Move ${esc(reward.name)}; use arrow keys to nudge"><span class="room-decor-emoji">${reward.emoji}</span><span class="room-decor-name">${esc(reward.name)}</span></button>` : '';
+  }).join('');
+  const inventory = S.decor.filter(id => !placed.has(id)).map(id => {
+    const reward = REWARDS.find(item => item.id === id);
+    return reward ? `<button type="button" data-room-add="${id}" aria-label="Place ${esc(reward.name)}"><span>${reward.emoji}</span><small>Place ${esc(reward.name)}</small></button>` : '';
+  }).join('');
+  const wear = slot => { const item = ACCESSORIES.find(accessory => accessory.id === S.wearing[slot]); return item ? `<span class="room-wear room-wear-${slot}" aria-hidden="true">${item.emoji}</span>` : ''; };
+  $('#roomWrap').innerHTML = `<div class="backrow"><h2>🏠 My Pet Room</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="room-layout"><div><div id="roomScene" class="room-scene" aria-label="Your room. Drag decorations or focus one and use the arrow keys to move it."><div id="roomBubble" class="room-bubble" role="status">${esc(petName())}: My room!</div><div class="room-rug" aria-hidden="true"></div>
+      <button type="button" class="room-pet" data-room-pet aria-label="Tap your helper pet"><span class="room-pet-emoji">${wear('hat')}${wear('eyes')}${helper.emoji}${wear('neck')}</span><span class="room-decor-name">${esc(petName())}</span></button>${positions}</div>
+      <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div></div></div>
+      <aside class="room-side"><section class="room-panel"><h3>Dress-up</h3><div class="wardrobe-grid">${ACCESSORIES.map(roomAccessoryCard).join('')}</div><p class="wardrobe-note">Coin items can be bought here. Practice rewards are earned by math. Arcade-ticket items unlock with the secure Arcade prize shop.</p></section></aside></div>`;
+}
+let roomDrag = null;
+$('#roomWrap').addEventListener('pointerdown', event => {
+  const item = event.target.closest('[data-room-decor]'), scene = $('#roomScene');
+  if (!item || !scene || event.button !== 0) return;
+  event.preventDefault();
+  roomDrag = {id:item.dataset.roomDecor, pointerId:event.pointerId, rect:scene.getBoundingClientRect()};
+  item.classList.add('dragging'); item.setPointerCapture(event.pointerId);
+});
+$('#roomWrap').addEventListener('pointermove', event => {
+  if (!roomDrag || roomDrag.pointerId !== event.pointerId) return;
+  const x = Math.max(4, Math.min(96, 100 * (event.clientX - roomDrag.rect.left) / roomDrag.rect.width));
+  const y = Math.max(8, Math.min(88, 100 * (event.clientY - roomDrag.rect.top) / roomDrag.rect.height));
+  const item = [...$('#roomScene').querySelectorAll('[data-room-decor]')].find(button => button.dataset.roomDecor === roomDrag.id);
+  if (item) { item.style.left = `${x}%`; item.style.top = `${y}%`; roomDrag.x = x; roomDrag.y = y; }
+});
+function finishRoomDrag(event){
+  if (!roomDrag || (event && roomDrag.pointerId !== event.pointerId)) return;
+  const item = S.room.placements.find(place => place.id === roomDrag.id);
+  const button = [...$('#roomScene').querySelectorAll('[data-room-decor]')].find(node => node.dataset.roomDecor === roomDrag.id);
+  if (item && Number.isFinite(roomDrag.x) && Number.isFinite(roomDrag.y)) { item.x = roomDrag.x; item.y = roomDrag.y; save(); }
+  button?.classList.remove('dragging'); roomDrag = null;
+}
+$('#roomWrap').addEventListener('pointerup', finishRoomDrag);
+$('#roomWrap').addEventListener('pointercancel', finishRoomDrag);
+$('#roomWrap').addEventListener('keydown', event => {
+  const button = event.target.closest('[data-room-decor]');
+  const delta = {ArrowLeft:[-3,0],ArrowRight:[3,0],ArrowUp:[0,-3],ArrowDown:[0,3]}[event.key];
+  if (!button || !delta) return;
+  event.preventDefault();
+  const item = S.room.placements.find(place => place.id === button.dataset.roomDecor);
+  if (!item) return;
+  item.x = Math.max(4, Math.min(96, item.x + delta[0])); item.y = Math.max(8, Math.min(88, item.y + delta[1]));
+  save(); renderPetRoom(); $('#roomScene [data-room-decor="' + button.dataset.roomDecor + '"]')?.focus();
+});
+$('#roomWrap').addEventListener('click', event => {
+  const button = event.target.closest('button'); if (!button) return;
+  if (button.dataset.roomPet !== undefined) { $('#roomBubble').textContent = pick([`${petName()}: I love my room!`, `${petName()}: Look what I can do!`, `${petName()}: This is my favorite place!`]); sfx('good'); return; }
+  if (button.dataset.roomAdd) {
+    const id = button.dataset.roomAdd;
+    if (!S.decor.includes(id) || S.room.placements.some(item => item.id === id)) return;
+    const point = roomPoint(S.room.placements.length); S.room.placements.push({id, ...point}); save(); renderPetRoom(); return;
+  }
+  if (button.dataset.roomBuy) { roomObtainAccessory(button.dataset.roomBuy); return; }
+  if (button.dataset.roomClaim) { roomObtainAccessory(button.dataset.roomClaim); return; }
+  if (button.dataset.roomWear) roomWear(button.dataset.roomWear);
+});
+
 /* ---------- town ---------- */
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -4654,6 +4775,7 @@ function renderHome(){
       : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
   });
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
+  h += `<button class="tile service" data-open="room"><span class="te">🏠</span><span class="tn">My Pet Room</span><span class="tu">${S.room.initialized ? S.room.placements.length : S.displayed.filter(Boolean).length} decorations · Dress-up</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
@@ -4694,6 +4816,7 @@ $('#town').addEventListener('click', e => {
     show('cafe');
   }
   else if (id === 'sprint') openSprint();
+  else if (id === 'room') show('room');
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
@@ -5236,7 +5359,7 @@ function completeOrder(){
   const secs = order.start === null ? 0 : (performance.now() - order.start) / 1000;
   S.timeMs += Math.min(secs, 300) * 1000;
   const mathDay = arcadeDateKey();
-  S.mathMinutes[mathDay] = (S.mathMinutes[mathDay] || 0) + Math.min(secs, 300) / 60;
+  S.mathMinutes[mathDay] = (S.mathMinutes[mathDay] || 0) + 1;
   let tip = 4 + p.steps.length*2 + Math.max(0, Math.round(6 * (1 - secs/order.limit)));
   if (perfect) { S.streak++; tip += Math.min(5, S.streak); S.perfect++; shift.perfect++; }
   else tip = Math.max(3, tip - order.tries - order.hints);

@@ -141,28 +141,27 @@ All seven are run in Supabase. Never edit one of these files. Any change goes in
 
 ### Current status
 
-- [ ] **My Pet Room:** not built. The town has a Sticker Book, display case, owned decorations, and helper-pet selection, but there is not yet a free-placement room, wandering pets, pet interactions, or room-specific decoration behavior.
-- [ ] **Dress-up:** not built. There are no wearable hats, bows, sunglasses, capes, or saved accessory choices yet.
-- [ ] **Arcade:** in progress. The host has a separate arcade catalog, paid entry, math-earned daily play time, separate arcade tickets, a Game of the Day rotation, and staged Corsair's Cove and Whack-a-Mole builds. Ticket prizes, secure round-result handling, browser review, and teacher controls remain.
+- [ ] **My Pet Room:** MVP in progress (`PET-ROOM.md`). Students can place owned decorations, drag or keyboard-nudge them, and tap their helper for a reaction. Existing display-case stickers seed the first room. More room interactions remain.
+- [ ] **Dress-up:** MVP in progress (`PET-ROOM.md`). Wearables have separate saved ownership/equipment, coin purchases, a math-streak reward, and Arcade-ticket exclusives held until ticket awards are secured.
+- [ ] **Arcade:** in progress. The host has a separate game catalog, a 100-coin daily admission, one arcade minute per completed practice order, separate arcade tickets, and a Game of the Day rotation. Corsair's Cove has grid-path chasing, faster guard pursuit, and corrected tunnel navigation; Whack-a-Mole ignores dazed-mole clicks, blocks duplicate hits, and caps freeze bonuses at 30 seconds per round. Ticket prizes, secure round-result handling, browser review, and teacher controls remain.
 - [ ] **House tours:** not built.
 - [ ] **Pet Trips, Greenhouse, and Class Party Jar:** not built.
 
-The intended order remains **My Pet Room and Dress-up first**, then the Arcade. The Arcade catalog is deliberately open to future games such as computer-vs-human Bingo, Sticker Memory, a Hangman-style game, and another Corsair-style game.
+The owner's preferred order remains **My Pet Room and Dress-up first**, then the Arcade. The room and wardrobe MVP are underway; Arcade development is also in progress following the later decision to bring in the two game prototypes. The catalog stays open to future games such as computer-vs-human Bingo, Sticker Memory, a Hangman-style game, and another Corsair-style game.
 
 1. Things to do with the pets and decorations they own
 🏠 My Pet Room. Kids drag their decorations anywhere in a room: rug, fountain, trophy shelf, pizza oven. Their pets wander around, nap on the rug and splash in the fountain. Tapping a pet makes it do a trick or show a little speech bubble ("I love this cactus!"). More stickers means a busier, livelier room.
 🎩 Dress-up. Cheap accessories like hats, bows, sunglasses and a cape to put on the helper pet. The pet wears them while "helping" at the shops.
 🏡 House tours. A class gallery where kids visit each other's rooms and leave a ❤️ or a stamp like "cute fountain!" Stamps are picked from a set list, with no typing, so nothing needs moderating. Being seen is a strong reason to keep decorating.
-2. The Arcade: non-math games that cost coins
+2. The Arcade: games that spend coins and award arcade-only prizes
 
-Coins stay the reward for math. The arcade is only a place to spend them. Each play costs a few coins, and a daily limit (set by the teacher) keeps it a treat rather than a replacement for math.
+Pet Town coins stay the reward for math. Arcade admission costs 100 coins once per day; after admission, the student can play for one minute per completed math practice order that day. No additional coins are charged between games. Arcade tickets are a separate currency for arcade-only prizes and never convert to Pet Town coins.
 
-🐾 Pet Dash: the helper pet runs and hops over cones.
-🧠 Sticker Match: a memory game using the stickers the kid owns.
-🎯 Treat Toss: flick treats into the pet's bowl.
-🏁 Pet Race: tap fast to race a class leaderboard.
+🏴‍☠️ Corsair's Cove: a maze chase where math refills the ship's ammo.
+🔨 Whack-a-Mole Stats Lab: a timed round with score statistics.
+🧠 Future ideas: computer-vs-human Bingo, Sticker Memory using owned stickers, a Hangman-style game, and more original arcade games.
 
-Scores earn trophies, not coins, so the arcade can never replace doing math as a way to earn.
+Games can award arcade tickets or trophies, never Pet Town coins, so arcade play cannot replace math as a way to earn coins or play time.
 
 3. Reasons to come back tomorrow
 ✈️ Pet Trips. Send a pet on a trip, like the beach or the mountains. It comes back after a real day with a postcard for a travel scrapbook. The postcards are fixed, not a random prize draw.
@@ -170,21 +169,9 @@ Scores earn trophies, not coins, so the arcade can never replace doing math as a
 🎉 Class Party Jar. Everyone can drop coins in a shared jar. When it's full, the whole class unlocks something, like confetti in the town or a party hat for every pet. You could pair it with a real classroom reward.
 A few guardrails I'd build in
 No random paid prizes, so nothing like loot boxes for kids.
-Math is the only way to earn coins.
-Short play sessions.
-Teacher switches for the arcade, its daily limit and the class gallery.
+Math practice is the only way to earn Pet Town coins and unlock arcade minutes.
+Arcade tickets cannot pay admission or be converted to Pet Town coins.
+Short play sessions, with teacher controls for the arcade and its daily limit.
 Everything stays out of the way during quizzes.
 
-I'd start with My Pet Room, since it makes every sticker they've already bought matter right away, then add the Arcade with Pet Dash and Sticker Match. Which of these should I build first?
-
-i like my pet room / dress up;
-
-i like my pet room / dress up;
-
-i like the arcade games;
-
-i like my pet room / dress up;
-
-i like the arcade games;
-
-i like the pet trips and greenhouses
+**Owner decision:** My Pet Room and Dress-up are the preferred next major features. Arcade work is already in progress to integrate the two imported game prototypes; finish its prize shop, secure round-result handling, teacher controls, and browser review before calling it done.

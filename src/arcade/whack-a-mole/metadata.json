@@ -1,0 +1,6 @@
+{
+  "name": "Whack-a-Mole Stats Lab",
+  "description": "Fast-paced 30-second Whack-a-Mole game with real-time statistics calculating mean, percentile rank, and z-score on an interactive normal distribution curve.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

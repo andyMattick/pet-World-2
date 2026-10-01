@@ -1,0 +1,6 @@
+{
+  "name": "Corsair's Cove: Pirates vs Redcoats",
+  "description": "An educational arcade maze chase game where pirates solve customizable math ciphers (addition, subtraction, multiplication, division, PEMDAS) across difficulty levels 1-10 with hints, scratchpad, and end-of-game report cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

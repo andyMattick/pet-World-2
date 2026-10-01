@@ -128,6 +128,27 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .arcade-play-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px}.arcade-play iframe{display:block; width:100%; height:min(72vh,720px); border:0; border-radius:10px; background:#101820}
 @media (max-width:600px){.arcade-summary{grid-template-columns:1fr}.arcade-play iframe{height:70vh}}
 
+/* Pet Room and Dress-up */
+.room-layout{display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start}
+.room-scene{position:relative; min-height:430px; overflow:hidden; border:4px solid var(--edge); border-radius:16px; background:linear-gradient(to bottom,var(--room-wall,#f4d3d6) 0 58%,var(--room-floor,#bd8058) 58% 100%); touch-action:pan-y}
+.room-scene::before{content:""; position:absolute; left:8%; top:8%; width:23%; height:25%; border:7px solid #86553d; border-radius:5px; background:linear-gradient(90deg,transparent 47%,#86553d 48% 52%,transparent 53%),linear-gradient(transparent 47%,#86553d 48% 52%,transparent 53%),#c9edf3; box-shadow:0 4px 0 rgba(0,0,0,.14)}
+.room-rug{position:absolute; left:32%; top:63%; width:38%; height:24%; border:4px solid #9d435b; border-radius:50%; background:#df8794; box-shadow:inset 0 0 0 6px rgba(255,255,255,.18)}
+.room-bubble{position:absolute; z-index:4; top:8px; right:8px; max-width:min(56%,280px); padding:6px 10px; border:2px solid var(--edge); border-radius:12px; background:var(--surface); font-weight:700; box-shadow:0 2px 0 rgba(0,0,0,.12)}
+.room-decor-item,.room-pet{position:absolute; z-index:2; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; width:76px; min-height:70px; padding:4px; border:2px solid transparent; border-radius:12px; background:rgba(255,255,255,.88); color:#3b2724; cursor:grab; touch-action:none; user-select:none}
+.room-decor-item:active{cursor:grabbing}.room-decor-item.dragging{z-index:5; border-color:var(--berry); box-shadow:0 4px 10px rgba(0,0,0,.2)}
+.room-decor-emoji{font-size:2rem; line-height:1.1}.room-decor-name{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.62rem; font-weight:700}
+.room-pet{z-index:3; left:55%; top:60%; width:82px; min-height:88px; border-color:var(--berry); cursor:pointer; animation:roomPetWander 5s ease-in-out infinite}
+.room-pet-emoji{position:relative; font-size:3.5rem; line-height:1}.room-wear{position:absolute; z-index:1; font-size:1.1rem}.room-wear-hat{top:-8px; left:30px}.room-wear-eyes{top:20px; left:15px}.room-wear-neck{bottom:0; right:5px}
+@keyframes roomPetWander{0%,100%{margin-left:-8px}50%{margin-left:8px}}
+.room-side{display:flex; flex-direction:column; gap:14px}.room-panel{padding:12px; border:3px solid var(--edge); border-radius:12px; background:var(--surface)}
+.room-panel h3{margin:0 0 8px; font-size:1.12rem}.room-inventory,.wardrobe-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:7px}
+.room-inventory button,.wardrobe-item{min-width:0; min-height:74px; padding:5px; border:2px solid var(--edge); border-radius:9px; background:var(--surface); color:var(--ink); text-align:center}
+.room-inventory button{cursor:pointer}.room-inventory button span,.wardrobe-item .accessory-emoji{display:block; font-size:1.7rem; line-height:1.1}
+.wardrobe-item{display:flex; flex-direction:column; align-items:center; gap:3px}.wardrobe-item small{font-size:.68rem; line-height:1.1}.wardrobe-item .btn{margin-top:auto}
+.wardrobe-item.locked{opacity:.75}.wardrobe-note{margin:8px 0 0; color:var(--ink-soft); font-size:.78rem}
+@media (max-width:760px){.room-layout{grid-template-columns:minmax(0,1fr)}.room-scene{min-height:380px}.room-side{display:grid; grid-template-columns:1fr}.room-bubble{max-width:52%; font-size:.85rem}}
+@media (max-width:420px){.room-scene{min-height:340px}.room-decor-item{width:62px; min-height:60px}.room-decor-name{font-size:.55rem}.room-rug{width:48%; left:26%}}
+
 /* café stations */
 .stations{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px}
 .station{background:var(--surface); border:3px solid var(--edge); border-radius:20px; padding:16px; display:flex; flex-direction:column; gap:8px}

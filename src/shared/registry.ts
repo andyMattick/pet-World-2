@@ -316,6 +316,23 @@ export function arcadeGameOfTheDay(date = new Date(), games: ArcadeGame[] = ARCA
   return available[((day % available.length) + available.length) % available.length];
 }
 
+export type AccessorySlot = 'hat' | 'eyes' | 'neck';
+export type AccessorySource = 'start' | 'coins' | 'practice' | 'arcade';
+export interface Accessory {
+  id: string; slot: AccessorySlot; emoji: string; name: string;
+  source: AccessorySource; price: number; streakRequired?: number;
+}
+
+export const ACCESSORIES: Accessory[] = [
+  { id:'starter-clip', slot:'hat', emoji:'🌼', name:'Daisy clip', source:'start', price:0 },
+  { id:'knit-cap', slot:'hat', emoji:'🧢', name:'Knit cap', source:'coins', price:60 },
+  { id:'blue-bow', slot:'hat', emoji:'🎀', name:'Blue bow', source:'coins', price:45 },
+  { id:'sunny-glasses', slot:'eyes', emoji:'😎', name:'Sunny glasses', source:'coins', price:90 },
+  { id:'lucky-star', slot:'neck', emoji:'🌟', name:'Lucky star', source:'practice', price:0, streakRequired:5 },
+  { id:'captain-hat', slot:'hat', emoji:'🏴‍☠️', name:'Captain hat', source:'arcade', price:20 },
+  { id:'pixel-shades', slot:'eyes', emoji:'🕶️', name:'Pixel shades', source:'arcade', price:30 }
+];
+
 export interface QuizSettings {
   passPct: number;
   quizPerSkill: number;
