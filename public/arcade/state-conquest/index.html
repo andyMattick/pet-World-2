@@ -101,10 +101,11 @@ const rw=m=>m=="type"?4:m-2;
 let G;
 function msg(t){G.log.unshift(t);G.log=G.log.slice(0,7)}
 function miss(n){G.miss[n]=(G.miss[n]||0)+1}
-function ask(q,ans,pool,cb,skip){
+function ask(q,ans,pool,cb,skip,coinReward=false){
  const m=$("md");m.style.display="flex";G.busy=true;
  const fin=(ok,mode)=>{m.style.display="none";G.busy=false;cb(ok,mode)};
- m.innerHTML=`<div class="mc"><b>${q}</b><p><input id="ai" autocomplete="off" placeholder="Type your answer"><button id="ab">Go (${rw("type")} 🪖)</button></p><div>Or choose:</div><div>${[5,4,3].map(n=>`<button class="g" data-n="${n}">${n} options (${rw(n)} 🪖)</button>`).join("")}</div>${skip?'<button class="r" id="sk">Skip</button>':""}</div>`;
+ const reward=n=>n==="type"?5:n===5?4:n===4?3:2,points=n=>coinReward?reward(n):rw(n),unit=coinReward?"🪙":"🪖";
+ m.innerHTML=`<div class="mc"><b>${q}</b><p><input id="ai" autocomplete="off" placeholder="Type your answer"><button id="ab">Go (${points("type")} ${unit})</button></p><div>Or choose:</div><div>${[5,4,3].map(n=>`<button class="g" data-n="${n}">${n} options (${points(n)} ${unit})</button>`).join("")}</div>${skip?'<button class="r" id="sk">Skip</button>':""}</div>`;
  const inp=$("ai");setTimeout(()=>inp.focus(),50);
  const go=()=>{if(inp.value.trim())fin(norm(inp.value)==norm(ans),"type")};
  $("ab").onclick=go;inp.onkeydown=e=>{if(e.key=="Enter")go()};
@@ -115,33 +116,43 @@ function ask(q,ans,pool,cb,skip){
   m.querySelectorAll(".opt").forEach(bt=>bt.onclick=()=>fin(bt.textContent==ans,n))});
 }
 function init(){
- G={ph:"reinf",turn:1,slots:0,gold:0,named:new Set(),sel:null,rep:[],bonusU:new Set(),bonusT:false,log:["Welcome! Blue is you. ★ marks each capital, colored by who holds it."],miss:{},busy:false,names:false,over:null};
- shuf(keys).forEach((k,i)=>{const o=i<17?1:i<34?2:0;T[k].o=o;T[k].co=o;T[k].t=o?3:2});startTurn();
+ G={ph:"reinf",turn:1,slots:0,gold:0,named:new Set(),sel:null,rep:[],bonusU:new Set(),protectedCaps:new Set(),capitalAttempts:{},capitalQueue:[],recaptureUsed:false,pendingRecapture:false,recaptureTarget:null,recaptureResumePhase:null,bonusT:false,log:["Welcome! You control 20 states, the computer controls 20, and 10 rebel states start with 3 troops each."],miss:{},busy:false,names:false,over:null};
+ shuf(keys).forEach((k,i)=>{const o=i<20?1:i<40?2:0;T[k].o=o;T[k].co=o;T[k].t=3});startTurn();
 }
 function startTurn(){
- G.named=new Set();G.sel=null;G.ph="reinf";G.bonusT=false;
- const mine=keys.filter(k=>T[k].o==1),caps=keys.filter(k=>T[k].co==1);
+ G.named=new Set();G.sel=null;G.ph="reinf";G.bonusT=false;G.recaptureUsed=false;
+ const mine=keys.filter(k=>T[k].o==1);
  G.slots=2+Math.floor(mine.length/5);
- if(G.turn>1){
-  const inc=Math.floor(caps.length/4);if(inc){G.gold+=inc;msg(`🪙 +${inc} from the ${caps.length} capitals you hold.`)}
-  const ai=shuf(keys.filter(k=>T[k].o==2))[0];
-  if(ai){const q=T[ai];q.co=0;q.t-=3;if(q.t<=0){q.o=0;q.t=2;msg(`🟩 Rebels took ${q.n} from the computer!`)}else msg(`🟩 Rebels hit the computer in ${q.n}.`)}
- }
- const n=caps.length;G.R=G.turn>1?shuf(caps).slice(0,Math.min(n,1+(n>=10)+(n>=20)+(n>=30))):[];
- rebels();
+ render();
+ if(G.capitalQueue.length)offerRecapture(()=>render(),"reinf");
 }
-function rebels(){
- if(!G.R||!G.R.length||G.over){G.sel=null;render();return}
- const k=G.R[0],q=T[k];
- if(q.co!=1){G.R.shift();rebels();return}
- G.sel=k;render();
- ask(`🔥 Rebels are storming the capital of ${q.n}! Name the capital to stop them!`,q.c,CAPS,ok=>{
-  G.R.shift();
-  if(ok)msg(`🛡️ You stopped the rebels in ${q.n}.`);
-  else{miss(q.n+" (capital: "+q.c+")");q.co=0;
-   if(q.o==1){q.t-=3;if(q.t<=0){q.o=0;q.t=2;msg(`💥 Rebels took over ${q.n}! (capital: ${q.c})`)}else msg(`💥 Rebels seized ${q.c} and hit ${q.n}: -3 troops.`)}
-   else msg(`💥 Rebels seized the capital ${q.c}.`)}
-  check();rebels()});
+function offerRecapture(next,phase,target){
+ if(G.recaptureUsed||G.busy){next();return}
+ const k=target||G.capitalQueue.find(id=>T[id]?.o==1&&T[id].co==0&&!G.protectedCaps.has(id));
+ if(!k){G.capitalQueue=G.capitalQueue.filter(id=>T[id]?.o==1&&T[id].co==0&&!G.protectedCaps.has(id));next();return}
+ G.recaptureUsed=true;G.pendingRecapture=true;G.recaptureTarget=k;G.recaptureResumePhase=phase;G.ph="recapture";render();
+ const previousAttempts=G.capitalAttempts[k]||0,currentReward=mode=>Math.max(0,(mode==="type"?5:mode===5?4:mode===4?3:2)-previousAttempts);
+ ask(`🔥 Rebels hold ${T[k].n}'s capital. Name it to reclaim the capital! First-try rewards: 5 for typing, 4 with 5 choices, 3 with 4 choices, 2 with 3 choices. This attempt: up to ${currentReward("type")} coins.`,T[k].c,CAPS,(ok,mode)=>{
+  G.pendingRecapture=false;G.ph=phase;
+  const attempts=G.capitalAttempts[k]||0;G.capitalAttempts[k]=attempts+1;
+  if(ok){
+   T[k].co=1;G.protectedCaps.add(k);G.capitalQueue=G.capitalQueue.filter(id=>id!==k);
+   const base=mode==="type"?5:mode===5?4:mode===4?3:2,reward=Math.max(0,base-attempts);G.gold+=reward;
+   msg(`🛡️ You reclaimed ${T[k].c}! Its capital is protected from rebels. +${reward} 🪙`);
+  }else{miss(T[k].n+" (capital: "+T[k].c+")");msg(`❌ ${T[k].c} remains under rebel control. Try again next round for fewer coins.`)}
+  G.recaptureTarget=null;render();next();
+ },false,true);
+}
+function rebels(afterComputer){
+ G.ph="rebels";
+ const rebelStates=keys.filter(k=>T[k].o==0);
+ rebelStates.forEach(k=>T[k].t++);
+ const raids=keys.filter(k=>T[k].o==1&&T[k].co==1&&!G.protectedCaps.has(k)&&[...T[k].adj].filter(x=>T[x].o==0).reduce((sum,x)=>sum+T[x].t,0)>T[k].t);
+ raids.forEach(k=>{T[k].co=0;if(!G.capitalQueue.includes(k))G.capitalQueue.push(k);msg(`🔥 Rebels overran the capital of ${T[k].n}; the state remains yours.`)});
+ if(!rebelStates.length)msg("The rebels have no states left to reinforce.");
+ if(!raids.length)msg("🛡️ No unprotected capitals were overrun this round.");
+ render();
+ if(G.capitalQueue.length&&!G.recaptureUsed)offerRecapture(afterComputer,"computer");else afterComputer();
 }
 function check(){
  const p=keys.filter(k=>T[k].o==1).length;
@@ -181,6 +192,7 @@ function fight(a,d){
 function addRep(t,rd){G.rep.unshift({t,rd});G.rep=G.rep.slice(0,4)}
 function seize(){
  if(G.busy||G.over||!G.sel)return;const q=T[G.sel];if(q.o!=1||q.co==1)return;
+ if(q.co==0){if(!G.capitalQueue.includes(q.k))G.capitalQueue.push(q.k);const phase=G.ph;offerRecapture(()=>render(),phase,q.k);return}
  ask(`🏛️ Name the capital of ${q.n} to seize it!`,q.c,CAPS,ok=>{
   if(ok){q.co=1;msg(`🏛️ You seized ${q.c}!`)}else{q.t=Math.max(1,q.t-1);miss(q.n+" (capital: "+q.c+")");msg(`❌ The capital is ${q.c}. -1 troop.`)}render()});
 }
@@ -201,15 +213,23 @@ function buy(){
 }
 function endTurn(){
  if(G.busy||G.over)return;
+ G.sel=null;rebels(computerTurn);
+}
+function computerTurn(){
  G.ph="ai";const mine=()=>keys.filter(k=>T[k].o==2);
- let r=3+Math.floor(mine().length/2);
- while(r-->0&&mine().length){const bd=mine().filter(k=>[...T[k].adj].some(x=>T[x].o!=2));const l=bd.length?bd:mine();T[l[rnd(l.length)]].t++}
- let won=0;
- for(let i=0;i<40&&won<8;i++){
-  const c=[];mine().forEach(k=>{if(T[k].t>=3)T[k].adj.forEach(x=>{if(T[x].o!=2&&T[k].t>T[x].t+1)c.push([k,x])})});
-  if(!c.length)break;
-  const pc=c.filter(z=>T[z[1]].o==1),ch=pc.length&&Math.random()<.7?pc:c,[k,x]=ch[rnd(ch.length)];
-  const[w,la,ld,rd]=fight(T[k],T[x]);if(T[x].o==1)addRep(`🟥 Computer attacks ${T[x].n} from ${T[k].n}`+(w?" — captured!":" — you held!"),rd);if(w){if(T[x].o==1)msg(`🟥 The computer captured ${T[x].n}!`);T[x].o=2;T[x].co=2;won++}
+ let reinforcements=Math.floor(mine().length/3)*3;
+ while(reinforcements-->0&&mine().length)T[mine()[rnd(mine().length)]].t++;
+ msg(`🟥 Computer reinforced with ${Math.floor(keys.filter(k=>T[k].o==2).length/3)*3} troops.`);
+ let attacks=0;
+ while(attacks<50){
+  const candidates=[];
+  mine().forEach(k=>{if(T[k].t>=3)T[k].adj.forEach(x=>{if(T[x].o!=2&&T[k].t>T[x].t+1)candidates.push([k,x])})});
+  if(!candidates.length)break;
+  const humanTargets=candidates.filter(([,target])=>T[target].o==1),choices=humanTargets.length?humanTargets:candidates,[from,target]=choices[rnd(choices.length)];
+  const[w,la,ld,rd]=fight(T[from],T[target]);
+  if(T[target].o==1)addRep(`🟥 Computer attacks ${T[target].n} from ${T[from].n}`+(w?" — captured!":" — you held!"),rd);
+  if(w){if(T[target].o==1)msg(`🟥 The computer captured ${T[target].n}!`);T[target].o=2;T[target].co=2}
+  attacks++;
  }
  msg(`🟥 The computer's turn is over.`);
  check();
@@ -230,10 +250,12 @@ function render(){
  if(G.over){
   const m=Object.entries(G.miss).sort((x,y)=>y[1]-x[1]).slice(0,10);
   h=`<h3>${G.over=="win"?"🏆 You conquered all 50 states!":"💀 You lost your last state."}</h3><b>📊 Your weak spots:</b><br>${m.length?m.map(x=>`${x[0]} ×${x[1]}`).join("<br>"):"None, perfect!"}<br><button class="g" onclick="init()">Play again</button>`;
+ }else if(G.ph=="recapture"){
+  h=`<b>🏛️ Reclaim a capital</b><br>Name the rebel-held capital to restore control. You may attempt one recapture per round.`;
  }else if(G.ph=="reinf"){
   h=`<b>1️⃣ Reinforce</b> (${G.slots} slot${G.slots==1?"":"s"} left)<br>Tap one of your blue states and name it, or type any state you own:<br><input id="fi" placeholder="Type a state you own" onkeydown="if(event.key=='Enter')free()"><button onclick="free()">Go (4 🪖)</button><br><button onclick="buy()">🪖 Buy 2 troops (3 🪙)</button><button class="g" onclick="G.ph='attack';G.sel=null;render()">To battle ➜</button>`;
  }else{
-  h=`<b>2️⃣ Attack</b><br>Tap your state (2+ troops), then a neighboring red or gray state, and name it to invade. You earn 🪙 each turn from capitals you hold (★). 🏛️ Conquest capital bonus: ${G.bonusT?"used this turn":"available"}.<br>${G.sel&&T[G.sel].o==1&&T[G.sel].co!=1?`<button class="g" onclick="seize()">🏛️ Seize ${T[G.sel].n}'s capital</button>`:""}<button class="r" onclick="endTurn()">End turn ➜</button>`;
+  h=`<b>2️⃣ Attack</b><br>Tap your state (2+ troops), then a neighboring red or gray state, and name it to invade. You earn 🪙 each turn from capitals you hold (★). 🏛️ Conquest capital bonus: ${G.bonusT?"used this turn":"available"}.<br>${G.sel&&T[G.sel].o==1&&T[G.sel].co!=1&&!(T[G.sel].co==0&&G.recaptureUsed)?`<button class="g" onclick="seize()">🏛️ ${T[G.sel].co==0?"Reclaim":"Seize"} ${T[G.sel].n}'s capital</button>`:""}<button class="r" onclick="endTurn()">End turn ➜</button>`;
  }
  h+=`<br><button onclick="G.names=!G.names;render()" style="background:#777">👁 Show names: ${G.names?"on":"off"}</button><br><button onclick="save();msg('💾 Saved. The game also saves automatically.');render()">💾 Save</button><button onclick="exportSave()">📋 Export</button><button onclick="importSave()">📥 Import</button><button class="r" onclick="newGame()">🔄 New game</button>`;
  $("ctl").innerHTML=h;
@@ -244,16 +266,21 @@ function render(){
 }
 $("map").onclick=e=>{const g=e.target.closest("[data-s]");if(g)pick(g.dataset.s)};
 const KEY="stateConquestSave1";
-function snap(){const g={...G,named:[...G.named],bonusU:[...G.bonusU]};delete g.busy;return JSON.stringify({v:1,g,t:Object.fromEntries(keys.map(k=>[k,[T[k].o,T[k].co,T[k].t]]))})}
+function snap(){const g={...G,named:[...G.named],bonusU:[...G.bonusU],protectedCaps:[...G.protectedCaps]};delete g.busy;return JSON.stringify({v:1,g,t:Object.fromEntries(keys.map(k=>[k,[T[k].o,T[k].co,T[k].t]]))})}
 function restore(j){const d=JSON.parse(j);if(d.v!=1||!d.g||!d.t)throw 0;keys.forEach(k=>{if(!d.t[k])throw 0});
- G={...d.g,named:new Set(d.g.named),bonusU:new Set(d.g.bonusU),busy:false};keys.forEach(k=>{const a=d.t[k];T[k].o=a[0];T[k].co=a[1];T[k].t=a[2]})}
+ G={...d.g,named:new Set(d.g.named||[]),bonusU:new Set(d.g.bonusU||[]),protectedCaps:new Set(d.g.protectedCaps||[]),capitalAttempts:d.g.capitalAttempts||{},capitalQueue:Array.isArray(d.g.capitalQueue)?d.g.capitalQueue:[],recaptureUsed:!!d.g.recaptureUsed,pendingRecapture:!!d.g.pendingRecapture,recaptureTarget:d.g.recaptureTarget||null,recaptureResumePhase:d.g.recaptureResumePhase||null,busy:false};if(G.ph==="ai")G.ph="computer";keys.forEach(k=>{const a=d.t[k];T[k].o=a[0];T[k].co=a[1];T[k].t=a[2]})}
 const embedded=window.parent!==window, arcadeRun=new URLSearchParams(location.search).get('arcadeRun');
 function save(){const state=snap();if(embedded&&arcadeRun){window.parent.postMessage({type:"arcade:state-save",gameId:"state-conquest",runId:arcadeRun,state},location.origin);return}try{localStorage.setItem(KEY,state)}catch(e){}}
 function clearSaved(){if(embedded&&arcadeRun){window.parent.postMessage({type:"arcade:state-clear",gameId:"state-conquest",runId:arcadeRun},location.origin);return}try{localStorage.removeItem(KEY)}catch(e){}}
 function loadSaved(){if(embedded)return null;try{return localStorage.getItem(KEY)}catch(e){return null}}
 function dlg(h){const m=$("md");m.style.display="flex";m.innerHTML=`<div class="mc">${h}</div>`}
 function closeDlg(){$("md").style.display="none"}
-function resume(){render();if(G.R&&G.R.length)rebels()}
+function resume(){
+ render();
+ if(G.pendingRecapture&&G.recaptureTarget){const phase=G.recaptureResumePhase||"reinf",target=G.recaptureTarget;G.pendingRecapture=false;G.recaptureUsed=false;offerRecapture(()=>phase==="computer"?computerTurn():render(),phase,target)}
+ else if(G.ph==="computer")computerTurn();
+ else if(G.ph==="rebels")rebels(computerTurn);
+}
 function exportSave(){const c=btoa(unescape(encodeURIComponent(snap())));dlg(`<b>📋 Your save code</b><p>Copy it and keep it somewhere safe. You can paste it with Import, even on another device.</p><textarea id="ec" rows="5" style="width:100%" readonly>${c}</textarea><p><button onclick="$('ec').select()">Select all</button><button onclick="closeDlg()">Close</button></p>`)}
 function importSave(){dlg(`<b>📥 Paste your save code</b><p><textarea id="ic" rows="5" style="width:100%"></textarea></p><button class="g" onclick="doImport()">Load</button><button onclick="closeDlg()">Cancel</button>`)}
 function doImport(){try{restore(decodeURIComponent(escape(atob($("ic").value.trim()))));save();closeDlg();resume()}catch(e){$("ic").value="";$("ic").placeholder="That code didn't work."}}

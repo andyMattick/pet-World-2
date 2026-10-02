@@ -447,6 +447,12 @@ h3{margin:22px 0 10px; font-size:1.3rem}
 .ela-parent-row{display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; padding:7px 0; border-top:1px solid var(--edge)}
 .ela-parent-row>span{color:var(--ink-soft)}
 .ela-review-flag{flex-basis:100%; color:#8a4b00}
+.reading-report{padding:10px 0; border-top:1px solid var(--edge)}
+.reading-report h4{margin:0 0 8px}
+.reading-report-chapter{padding:10px 12px; margin:8px 0; border:1px solid var(--edge); border-radius:8px}
+.reading-report-chapter dl{display:grid; grid-template-columns:minmax(135px,.35fr) minmax(0,1fr); gap:5px 12px; margin:8px 0 0}
+.reading-report-chapter dt{font-weight:700}
+.reading-report-chapter dd{margin:0; overflow-wrap:anywhere}
 .ela-passed{display:block; color:var(--mint-ink); font-weight:800}
 .ela-context{margin-bottom:12px}
 .ela-question{max-width:700px; margin:24px auto; padding:18px 0}
@@ -459,7 +465,7 @@ h3{margin:22px 0 10px; font-size:1.3rem}
 .ela-option.incorrect{background:var(--bad); color:#4A2E2A}
 .ela-feedback{min-height:28px; margin:12px 0; font-weight:700}
 .ela-result{text-align:center; background:var(--surface); border:3px solid var(--edge); border-radius:12px; padding:20px}
-@media(max-width:760px){.ela-layout{grid-template-columns:1fr}.ela-workspace{grid-template-columns:1fr}.ela-chapters{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:6px}.ela-chapters-head,.ela-add-chapter{grid-column:1/-1}.ela-prompts{grid-template-columns:1fr}.ela-exercise,.ela-assessment,.ela-final-assessment{align-items:flex-start}.ela-exercise .btn,.ela-assessment .btn,.ela-final-assessment .btn{flex-shrink:0}}
+@media(max-width:760px){.ela-layout{grid-template-columns:1fr}.ela-workspace{grid-template-columns:1fr}.ela-chapters{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:6px}.ela-chapters-head,.ela-add-chapter{grid-column:1/-1}.ela-prompts{grid-template-columns:1fr}.ela-exercise,.ela-assessment,.ela-final-assessment{align-items:flex-start}.ela-exercise .btn,.ela-assessment .btn,.ela-final-assessment .btn{flex-shrink:0}.reading-report-chapter dl{grid-template-columns:1fr; gap:2px}.reading-report-chapter dd{margin-bottom:6px}}
 .two{display:grid; grid-template-columns:1fr 1fr; gap:16px}
 @media (max-width:820px){.two{grid-template-columns:1fr}}
 .stats{display:grid; grid-template-columns:1fr 1fr; gap:10px}

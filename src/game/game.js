@@ -60,8 +60,10 @@ function normalize(raw){
     chapters:Array.isArray(book.chapters) ? book.chapters.slice(0,200).filter(chapter => chapter && typeof chapter.id === 'string').map(chapter => ({
       id:chapter.id, label:typeof chapter.label === 'string' ? chapter.label.slice(0,100) : '',
       characters:typeof chapter.characters === 'string' ? chapter.characters.slice(0,600) : '',
+      notableAction:typeof chapter.notableAction === 'string' ? chapter.notableAction.slice(0,600) : '',
       conflict:typeof chapter.conflict === 'string' ? chapter.conflict.slice(0,600) : '',
       interaction:typeof chapter.interaction === 'string' ? chapter.interaction.slice(0,600) : '',
+      joy:typeof chapter.joy === 'string' ? chapter.joy.slice(0,600) : '',
       setting:typeof chapter.setting === 'string' ? chapter.setting.slice(0,600) : '',
       themes:typeof chapter.themes === 'string' ? chapter.themes.slice(0,600) : '',
       detail:typeof chapter.detail === 'string' ? chapter.detail.slice(0,600) : '',
@@ -220,6 +222,10 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 function unitTestPassed(unit){
+  if (unit === 'elaNouns' || unit === 'elaVerbs') {
+    const key = unit === 'elaNouns' ? 'final-test' : 'verbs:final-test';
+    return !!S.elaProgress?.[key]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
+  }
   const key = `${unit}:test`;
   return !!S.quizzes[key]?.passed || Backend.me?.quiz_overrides?.[key] === 'excused';
 }
@@ -4538,11 +4544,11 @@ function renderArcade(){
     : `<div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div>`;
   const timeStats = gamesOnlyMode
     ? `<div><b>Unlimited</b><span>no math-time limit</span></div><div><b>No rewards</b><span>games only</span></div>`
-    : `<div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div>`;
+    : `<div><b>${minutes} min</b><span>practice time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div>`;
   const prizeShop = policy.freePlay ? '' : `<section class="arcade-prizes"><div class="backrow"><h3>Furniture stickers for My Pet Room</h3><span>🎟️ ${S.arcade.tickets}</span></div><div class="wardrobe-grid">${ARCADE_ROOM_FURNITURE.map(arcadeFurnitureCard).join('')}</div><p class="wardrobe-note">Earn tickets in Arcade games. Ticket purchases use Arcade tickets only.</p></section>`;
   $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2>${gamesOnlyMode ? '<button class="btn small" data-games-only-exit>Exit games</button>' : '<button class="btn small" data-go="home">Back to town</button>'}</div>
     <div class="arcade-summary">${timeStats}${arcadeStats}</div>
-    <p class="muted">${gamesOnlyMode ? 'Games-only session: no math timer, Pet Town coins, Arcade tickets, or prize shop.' : policy.freePlay ? 'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your math-earned time remains. Ticket prizes are separate from Pet Town coins.`}</p>
+    <p class="muted">${gamesOnlyMode ? 'Games-only session: no practice timer, Pet Town coins, Arcade tickets, or prize shop.' : policy.freePlay ? 'Free Play is on: no Pet Town coins or Arcade tickets. Learning practice unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your practice time remains. Ticket prizes are separate from Pet Town coins.`}</p>
     <div class="arcade-grid">${games.map(game => arcadeCard(game, daily?.id === game.id, policy)).join('') || '<p class="muted">Your teacher has not enabled any Arcade games.</p>'}</div>
     ${prizeShop}
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
@@ -5037,7 +5043,7 @@ $('#town').addEventListener('click', e => {
   }
   else if (id === 'sprint') openSprint();
   else if (id === 'room') show('room');
-  else if (id === 'elaNouns') show('library');
+  else if (id === 'elaNouns' || id === 'elaVerbs') { show('library'); renderEnglishUnit(id === 'elaVerbs' ? 'verbs' : 'nouns'); }
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
@@ -5062,6 +5068,117 @@ const ENGLISH_GROUPS = [
   {id:'irregularBase', name:'Irregular plural nouns: base plurals and irregular endings', learn:'Explore plurals that change their spelling, add unusual endings, or stay the same.', skills:['fToVes','enPlurals','basePlurals']},
   {id:'irregularForeign', name:'Irregular plural nouns: mutant and foreign plurals', learn:'Practice internal vowel changes, borrowed plurals, and mixed review.', skills:['mutantPlurals','foreignPlurals','pluralReview']}
 ];
+const ENGLISH_UNIT2 = [
+  {id:'verbIdentify',name:'Identifying verbs',lesson:'Verbs show actions or states of being.'},
+  {id:'verbAgreement',name:'Introduction to verb agreement',lesson:'A verb agrees with its subject in number: singular subjects use singular verbs, and plural subjects use plural verbs.'},
+  {id:'verbTense',name:'Introduction to verb tense',lesson:'Verb tense locates an action in the present, past, or future.'},
+  {id:'actionLinkHelping',name:'Action, linking, and helping verbs',lesson:'Action verbs show what a subject does; linking verbs connect a subject to a description; helping verbs work with a main verb.'},
+  {id:'irregularVerbs',name:'Irregular verbs',lesson:'Irregular verbs form their past tense in ways that do not follow the usual -ed pattern.'},
+  {id:'simpleAspect',name:'Simple verb aspect',lesson:'Simple aspect presents an action as a fact, habit, or completed event.'},
+  {id:'progressiveAspect',name:'Progressive verb aspect',lesson:'Progressive aspect uses a form of be plus an -ing verb to show an ongoing action.'},
+  {id:'perfectAspect',name:'Perfect verb aspect',lesson:'Perfect aspect uses have plus a past participle to connect an action to another time.'},
+  {id:'perfectProgressive',name:'Perfect progressive verb aspect',lesson:'Perfect progressive uses have, been, and an -ing verb to show an ongoing action over time.'},
+  {id:'tenseAspectTime',name:'Managing time with tense and aspect',lesson:'Choose tense and aspect to show when an action happens and how it relates to another event.'},
+  {id:'modalVerbs',name:'Modal verbs',lesson:'Modal verbs such as can, might, and must express ability, possibility, or necessity.'}
+];
+const ENGLISH_GROUPS2 = [
+  {id:'foundation',quizName:'Quiz 1',name:'Introduction to verbs, tense, linking and helping verbs',learn:'Identify verbs, match verbs to their subjects, and recognize tense and verb types.',skills:['verbIdentify','verbAgreement','verbTense','actionLinkHelping']},
+  {id:'irregular',quizName:'Irregular verbs Quiz',name:'Irregular verbs',learn:'Practice past-tense verbs that do not use the regular -ed ending.',skills:['irregularVerbs']},
+  {id:'aspect',quizName:'Verb aspect Quiz',name:'Verb aspect: simple, progressive, and perfect',learn:'Compare simple, progressive, and perfect forms.',skills:['simpleAspect','progressiveAspect','perfectAspect']},
+  {id:'aspectModal',quizName:'Aspect and modal verbs Quiz',name:'Verb aspect and modal verbs',learn:'Use perfect progressive aspect to manage time and choose modal verbs for meaning.',skills:['perfectProgressive','tenseAspectTime','modalVerbs']}
+];
+const VERB_QUESTIONS = {
+  verbIdentify:(c) => [
+    {prompt:`For a sentence about ${c.name} in ${c.place}, which word is a verb?`,options:[c.name,'explores','quietly','near'],answer:1},
+    {prompt:`Your chapter notes mention “${c.action}.” Which word below is an action verb?`,options:['curious','discovers','beside','gentle'],answer:1},
+    {prompt:`Which word is the verb in “${c.name} feels joy after the conflict”?`,options:[c.name,'feels','joy','conflict'],answer:1},
+    {prompt:`Which word tells what the character does in “${c.name} searches near ${c.place}”?`,options:['near','searches',c.name,c.place],answer:1}
+  ],
+  verbAgreement:(c) => [
+    {prompt:`The main character ___ near ${c.place}.`,options:['walk','walks','walking','have walked'],answer:1},
+    {prompt:`The characters ___ together when ${c.conflict} begins.`,options:['plans','plan','planning','was plan'],answer:1},
+    {prompt:`A character and a friend ___ the clue.`,options:['finds','find','finding','has find'],answer:1},
+    {prompt:`The joy in the chapter ___ the character hopeful.`,options:['make','makes','making','were make'],answer:1}
+  ],
+  verbTense:(c) => [
+    {prompt:`A summary describes a finished event: “${c.name} ___ the clue.”`,options:['finds','found','will find','is finding'],answer:1},
+    {prompt:`The chapter is happening now: “${c.name} ___ near ${c.place}.”`,options:['walked','walks','will walked','has walks'],answer:1},
+    {prompt:`The character plans for tomorrow: “${c.name} ___ the note.”`,options:['reads yesterday','read now','will read','has read yesterday'],answer:2},
+    {prompt:`Which sentence is in the past tense?`,options:[`${c.name} notices the clue.`,`${c.name} noticed the clue.`,`${c.name} will notice the clue.`,`${c.name} is noticing the clue.`],answer:1}
+  ],
+  actionLinkHelping:(c) => [
+    {prompt:`In “${c.name} searches near ${c.place},” which word is the action verb?`,options:[c.name,'searches','near',c.place],answer:1},
+    {prompt:`In “${c.name} feels hopeful,” which verb links the character to a description?`,options:[c.name,'feels','hopeful','the'],answer:1},
+    {prompt:`In “${c.name} has found a clue,” which word helps the main verb?`,options:[c.name,'has','found','clue'],answer:1},
+    {prompt:`Which sentence uses a linking verb?`,options:[`${c.name} runs toward ${c.place}.`,`${c.name} seems joyful.`,`${c.name} has found a clue.`,`${c.name} will search.`],answer:1}
+  ],
+  irregularVerbs:(c) => [
+    {prompt:`Yesterday, ${c.name} ___ a clue.`,options:['finded','found','finds','finding'],answer:1},
+    {prompt:`In the past, the characters ___ the map.`,options:['saw','seed','seeing','sees'],answer:0},
+    {prompt:`Choose the correct past tense: “The character ___ a letter.”`,options:['writed','wrote','written yesterday','writes yesterday'],answer:1},
+    {prompt:`After ${c.conflict}, ${c.name} ___ the book home.`,options:['taked','took','taking','takes yesterday'],answer:1}
+  ],
+  simpleAspect:(c) => [
+    {prompt:`Which sentence uses simple present aspect?`,options:[`${c.name} is reading near ${c.place}.`,`${c.name} reads near ${c.place}.`,`${c.name} has read near ${c.place}.`,`${c.name} will be reading near ${c.place}.`],answer:1},
+    {prompt:`A completed chapter event is summarized in simple past:`,options:[`${c.name} was finding a clue.`,`${c.name} found a clue.`,`${c.name} has found a clue.`,`${c.name} will find a clue.`],answer:1},
+    {prompt:`Which verb phrase shows a regular habit?`,options:[`${c.name} searched once.`,`${c.name} searches each morning.`,`${c.name} has been searching.`,`${c.name} will search later.`],answer:1},
+    {prompt:`Choose the simple future form.`,options:[`${c.name} finds the path.`,`${c.name} found the path.`,`${c.name} will find the path.`,`${c.name} has found the path.`],answer:2}
+  ],
+  progressiveAspect:(c) => [
+    {prompt:`The action is happening right now: “${c.name} ___ near ${c.place}.”`,options:['searches','is searching','has searched','will search'],answer:1},
+    {prompt:`Which phrase uses progressive aspect?`,options:['noticed the clue','has noticed the clue','was noticing the clue','will notice the clue'],answer:2},
+    {prompt:`The characters are in the middle of discussing ${c.conflict}.`,options:['discuss','discussed','are discussing','have discussed'],answer:2},
+    {prompt:`Choose the present progressive form.`,options:['they explore','they explored','they are exploring','they have explored'],answer:2}
+  ],
+  perfectAspect:(c) => [
+    {prompt:`Which sentence uses present perfect aspect?`,options:[`${c.name} finds a clue.`,`${c.name} found a clue.`,`${c.name} has found a clue.`,`${c.name} is finding a clue.`],answer:2},
+    {prompt:`The character finished searching before another event.`,options:['has been searching','had searched','is searching','will search'],answer:1},
+    {prompt:`Choose the phrase with have + past participle.`,options:['is reading','read yesterday','has read','will read'],answer:2},
+    {prompt:`Which sentence connects a past action to now?`,options:[`${c.name} searched yesterday.`,`${c.name} is searching now.`,`${c.name} has searched the room.`,`${c.name} will search later.`],answer:2}
+  ],
+  perfectProgressive:(c) => [
+    {prompt:`${c.name} began searching earlier and is still searching:`,options:['has searched','has been searching','is searched','will search'],answer:1},
+    {prompt:`Which phrase uses have + been + an -ing verb?`,options:['had found','has been looking','is looking','will have looked'],answer:1},
+    {prompt:`The characters started discussing ${c.conflict} an hour ago and continue now.`,options:['discussed','have been discussing','will discuss','are discussed'],answer:1},
+    {prompt:`Choose the past perfect progressive form.`,options:['had been waiting','has waited','was waiting','will have waited'],answer:0}
+  ],
+  tenseAspectTime:(c) => [
+    {prompt:`The character began reading before the conflict started and continued until then.`,options:['reads','is reading','had been reading','will read'],answer:2},
+    {prompt:`Which sentence clearly shows an action that will be ongoing at a future time?`,options:[`${c.name} will be reading at noon.`,`${c.name} read at noon.`,`${c.name} has read at noon.`,`${c.name} reads yesterday.`],answer:0},
+    {prompt:`The notes describe an action completed before another past event.`,options:['has found','had found','is finding','will find'],answer:1},
+    {prompt:`Which time word best fits “${c.name} ___ the clue already”?`,options:['tomorrow','yesterday before','has found','next week'],answer:2}
+  ],
+  modalVerbs:(c) => [
+    {prompt:`Which modal shows ability? “${c.name} ___ solve the puzzle.”`,options:['can','was','has','does'],answer:0},
+    {prompt:`Which modal shows possibility? “The clue ___ be near ${c.place}.”`,options:['might','did','has','is'],answer:0},
+    {prompt:`Which modal shows a strong requirement?`,options:['could','might','must','would'],answer:2},
+    {prompt:`Choose a modal that politely asks permission.`,options:['May I read the note?','I read the note.','I have read the note.','I am reading the note.'],answer:0}
+  ]
+};
+const englishCourse = course => course === 'verbs'
+  ? {id:'verbs',building:'elaVerbs',title:'English Unit 2: Verbs',skills:ENGLISH_UNIT2,groups:ENGLISH_GROUPS2,finalKey:'verbs:final-test',finalPass:9}
+  : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
+function englishProgressReportHTML(){
+  return ['nouns','verbs'].map(courseId => {
+    const course = englishCourse(courseId), skills = course.skills.map(skill => {
+      const record = englishRecord(skill.id), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
+      const summary = accuracy === null ? record.tries ? `No answer history yet · best ${record.best}/${record.questionCount || 4}` : 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`;
+      return `<div class="ela-parent-row"><strong>${esc(skill.name)}</strong><span>${summary}</span>${record.answered >= 4 && accuracy < 70 ? '<b class="ela-review-flag">Review suggested</b>' : ''}</div>`;
+    }).join('');
+    const assessments = [...course.groups.map(group => ({name:group.quizName || `${group.name} quiz`,key:englishQuizKey(group.id,courseId),total:4})),{name:`${course.title} Test`,key:course.finalKey,total:course.skills.length}].map(item => {
+      const record = englishRecord(item.key);
+      return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || item.total} · ${record.tries} tries` : 'Not started'}</span></div>`;
+    }).join('');
+    return `<section class="panel"><h3>${esc(course.title)}</h3><p class="muted">Per-skill accuracy and assessment progress. Review is suggested after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${skills}</div><h4>Quizzes and test</h4><div class="ela-parent-grid">${assessments}</div></section>`;
+  }).join('');
+}
+function readingLedgerHTML(){
+  const books = S.readingBooks.map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
+    const notes = [['Main characters',chapter.characters],['Notable character action',chapter.notableAction],['Character interactions',chapter.interaction],['Conflict',chapter.conflict],['Joy or success',chapter.joy],['Environment and setting',chapter.setting],['Theme or big idea',chapter.themes],['Standout detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
+    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes added yet.</p>'}</div>`;
+  }).join('') : '<p class="muted">No chapters added yet.</p>'}</section>`).join('');
+  return `<section class="panel"><h3>Reading Log</h3><p class="muted">Student-entered book-report notes, chapter by chapter. The game does not verify book interpretations.</p>${books || '<p class="muted">No books added yet.</p>'}</section>`;
+}
 const PLURAL_QUESTIONS = {
   identifyNouns:[
     (name,place,theme) => ({prompt:`In the chapter, ${name} explores ${place}. Which word is a noun?`,options:[name,'explores','carefully','through'],answer:0}),
@@ -5124,7 +5241,7 @@ const PLURAL_QUESTIONS = {
     {prompt:'Choose the plural of sheep.',options:['sheeps','sheep','sheepes','sheepies'],answer:1}
   ]
 };
-let englishRun = null, deletingBookId = null;
+let englishRun = null, deletingBookId = null, activeEnglishCourse = 'nouns';
 const readingText = (chapter,key,fallback) => (chapter?.[key] || '').split(/[\n,;]/).map(value => value.trim()).filter(Boolean)[0] || fallback;
 function selectedReading(){
   const selection = S.readingSelection;
@@ -5133,9 +5250,15 @@ function selectedReading(){
   return book && chapter ? {book,chapter} : null;
 }
 function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S.readingSelection?.bookId) || null; }
-function englishQuestions(skillId){
+function englishQuestions(skillId, courseId='nouns'){
   const reading = selectedReading();
   const {book,chapter} = reading || {book:{title:'your book'},chapter:{}};
+  const context = {
+    name:readingText(chapter,'characters','Mira'),place:readingText(chapter,'setting','the old library'),
+    theme:readingText(chapter,'themes','friendship'),action:readingText(chapter,'notableAction','searches for a clue'),
+    conflict:readingText(chapter,'conflict','a difficult problem'),joy:readingText(chapter,'joy','a joyful discovery')
+  };
+  if (courseId === 'verbs') return (VERB_QUESTIONS[skillId] || []).map(makeQuestion => ({...makeQuestion(context),skillId}));
   if (!reading) {
     const general = {
       identifyNouns:[
@@ -5159,7 +5282,7 @@ function englishQuestions(skillId){
     };
     if (general[skillId]) return general[skillId].map(question => ({...question, skillId}));
   }
-  const name = readingText(chapter,'characters','Mira'), place = readingText(chapter,'setting','the old library'), theme = readingText(chapter,'themes','friendship');
+  const {name,place,theme} = context;
   const prompts = PLURAL_QUESTIONS[skillId] || [];
   return prompts.map(item => typeof item === 'function' ? item(name,place,theme) : item).map(question => ({...question, skillId}));
 }
@@ -5169,12 +5292,14 @@ function renderEnglishLibrary(){
   const chapterList = activeBook ? activeBook.chapters.map(chapter => `<button type="button" class="ela-chapter${active?.chapter.id === chapter.id ? ' active' : ''}" data-ela-chapter="${esc(chapter.id)}">${esc(chapter.label || 'Untitled chapter')}</button>`).join('') : '';
   const chapter = active?.chapter;
   const fields = [
-    ['characters','Who are the main characters?'],['conflict','What problem or conflict is happening?'],['interaction','What important interaction happened?'],
-    ['setting','Where and when does this chapter take place?'],['themes','What theme or big idea do you notice?'],['detail','What detail from the chapter supports your thinking?'],['vocabulary','What new or interesting words did you notice?']
+    ['characters','Who are the main characters in this chapter?'],['notableAction','What is one notable thing a character did?'],['interaction','How did the characters interact?'],
+    ['conflict','What conflict or problem appeared or changed?'],['joy','What brought a character joy, hope, or a sense of success?'],
+    ['setting','What is the environment, and how does it affect events?'],['themes','What theme or big idea is developing?'],
+    ['detail','What detail or moment stands out as evidence?'],['vocabulary','What new or interesting words did you notice?']
   ];
   const editor = active ? `<div class="ela-editor"><div class="ela-reading-context"><strong>${esc(active.book.title)}</strong><span>${esc(chapter.label)}</span></div>
     <form id="elaChapterForm"><div class="ela-prompts">${fields.map(([key,label]) => `<label>${label}<textarea name="${key}" maxlength="600" rows="2">${esc(chapter[key] || '')}</textarea></label>`).join('')}</div><button class="btn berry" type="submit">Save chapter notes</button></form>
-    <div class="ela-start"><p>Your notes can give practice a reading context. The game does not check whether notes match the book.</p><button class="btn mint" type="button" data-ela-unit>Open English Unit 1: Nouns</button></div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book and chapter to save notes, or practice English without choosing a book.</p><button class="btn mint" type="button" data-ela-unit>Practice English Unit 1: Nouns</button></div>`;
+    <div class="ela-start"><p>Your notes can give practice a reading context. The game does not check whether notes match the book.</p><button class="btn mint" type="button" data-ela-unit data-ela-course="nouns">Open English Unit 1: Nouns</button>${unitOpen('elaVerbs') ? '<button class="btn mint" type="button" data-ela-unit data-ela-course="verbs">Open English Unit 2: Verbs</button>' : ''}</div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book and chapter to save notes, or practice English without choosing a book.</p><button class="btn mint" type="button" data-ela-unit data-ela-course="nouns">Practice English Unit 1: Nouns</button>${unitOpen('elaVerbs') ? '<button class="btn mint" type="button" data-ela-unit data-ela-course="verbs">Practice English Unit 2: Verbs</button>' : ''}</div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 Story Corner Library</h2><button class="btn small" data-go="home">Back to town</button></div>
     <p class="muted">Build your own book report one chapter at a time. Save your notes and return to them whenever you read more. Notes are not checked for accuracy; a parent can review them with you.</p>
     <div class="ela-layout"><aside class="ela-shelf"><h3>My books</h3>${bookList || '<p class="muted">No books added yet.</p>'}<form id="elaBookForm" class="ela-add-book"><label>Book title<input name="title" maxlength="120" required></label><label>Author <span class="muted">(optional)</span><input name="author" maxlength="120"></label><button class="btn" type="submit">Add a book</button></form></aside>
@@ -5189,7 +5314,7 @@ $('#libraryWrap').addEventListener('submit', event => {
   }
   if (form.id === 'elaAddChapter') {
     const book = selectedReadingBook(), label = String(new FormData(form).get('label') || '').trim(); if (!book || !label) return;
-    const chapter = {id:'chapter-' + Math.random().toString(36).slice(2,10),label,characters:'',conflict:'',interaction:'',setting:'',themes:'',detail:'',vocabulary:''};
+    const chapter = {id:'chapter-' + Math.random().toString(36).slice(2,10),label,characters:'',notableAction:'',conflict:'',interaction:'',joy:'',setting:'',themes:'',detail:'',vocabulary:''};
     book.chapters.push(chapter); S.readingSelection = {bookId:book.id,chapterId:chapter.id}; save(); renderEnglishLibrary(); $('#elaChapterForm textarea')?.focus(); return;
   }
   if (form.id === 'elaChapterForm') {
@@ -5216,67 +5341,67 @@ $('#libraryWrap').addEventListener('click', event => {
     const active = selectedReading(); if (!active) return;
     S.readingSelection = {bookId:active.book.id,chapterId:button.dataset.elaChapter}; save(); renderEnglishLibrary(); return;
   }
-  if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(); return; }
+  if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(button.dataset.elaCourse || 'nouns'); return; }
 });
 function englishRecord(key){
   const record = S.elaProgress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = id => `quiz:${id}`;
-function englishAssessmentQuestions(skillIds, count){
-  const pools = skillIds.map(skillId => shuffle(englishQuestions(skillId)));
+const englishQuizKey = (id, courseId='nouns') => courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
+function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
+  const pools = skillIds.map(skillId => shuffle(englishQuestions(skillId, courseId)));
   const questions = [];
   while (questions.length < count && pools.some(pool => pool.length)) {
     pools.forEach(pool => { if (pool.length && questions.length < count) questions.push(pool.pop()); });
   }
   return shuffle(questions);
 }
-function renderEnglishUnit(){
-  const active = selectedReading();
-  const groups = ENGLISH_GROUPS.map((group, groupIndex) => {
-    const blockUnlocked = groupIndex === 0 || !!englishRecord(englishQuizKey(ENGLISH_GROUPS[groupIndex-1].id)).passed;
+function renderEnglishUnit(courseId=activeEnglishCourse){
+  const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
+  const groups = course.groups.map((group, groupIndex) => {
+    const blockUnlocked = groupIndex === 0 || !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id)).passed;
     const exercises = group.skills.map((skillId, skillIndex) => {
-      const skill = ENGLISH_UNIT1.find(item => item.id === skillId), record = englishRecord(skillId);
+      const skill = course.skills.find(item => item.id === skillId), record = englishRecord(skillId);
       const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1]).passed);
       const accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
       const status = record.passed ? `✓ Level up · Best ${record.best}/4 · ${record.tries} tries`
         : record.tries ? `Best ${record.best}/4 · ${record.tries} tries · Get 3 of 4 to level up`
           : 'Not started · Get 3 of 4 to level up';
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
-      return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p><span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
+      return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p><span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
-    const key = englishQuizKey(group.id), quiz = englishRecord(key);
+    const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key);
     const canQuiz = blockUnlocked && group.skills.every(skillId => !!englishRecord(skillId).passed);
     const quizStatus = quiz.passed ? `Passed · best ${quiz.best}/4 · ${quiz.tries} tries`
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div><div class="ela-exercise-list">${exercises}</div><div class="ela-assessment"><div><strong>${esc(group.name)} Quiz</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div></section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div><div class="ela-exercise-list">${exercises}</div><div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div></section>`;
   }).join('');
-  const finalKey = 'final-test', finalRecord = englishRecord(finalKey), finalReady = ENGLISH_GROUPS.every(group => !!englishRecord(englishQuizKey(group.id)).passed);
-  const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/10 · ${finalRecord.tries} tries`
-    : finalRecord.tries ? `Best ${finalRecord.best}/10 · ${finalRecord.tries} tries · Get 8 of 10 to pass`
-      : finalReady ? 'Ready · Get 8 of 10 to pass' : 'Pass all four block quizzes to unlock';
+  const finalKey = course.finalKey, finalRecord = englishRecord(finalKey), finalReady = course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id)).passed);
+  const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${course.skills.length} · ${finalRecord.tries} tries`
+    : finalRecord.tries ? `Best ${finalRecord.best}/${course.skills.length} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${course.skills.length} to pass`
+      : finalReady ? `Ready · Get ${course.finalPass} of ${course.skills.length} to pass` : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 English Unit 1: Nouns</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>Unit 1 Test</h3><p class="muted">Cumulative · 10 questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${course.skills.length} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>`;
 }
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
   const question = run.questions[run.index];
   const active = selectedReading(), context = active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit>Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
 }
-function startEnglishPractice(skillId){
-  const questions = englishQuestions(skillId), skill = ENGLISH_UNIT1.find(item => item.id === skillId);
+function startEnglishPractice(skillId,courseId=activeEnglishCourse){
+  const course = englishCourse(courseId), questions = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
   if (!skill || questions.length !== 4) return;
-  englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,questions,index:0,score:0,passMark:3,answered:false,outcomes:[]}; renderEnglishQuestion();
+  activeEnglishCourse=course.id;englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[]}; renderEnglishQuestion();
 }
-function startEnglishAssessment(groupId){
-  const final = groupId === 'final', group = ENGLISH_GROUPS.find(item => item.id === groupId);
-  if (final ? !ENGLISH_GROUPS.every(item => englishRecord(englishQuizKey(item.id)).passed) : !group || !group.skills.every(skillId => englishRecord(skillId).passed)) return;
+function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
+  const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
+  if (final ? !course.groups.every(item => englishRecord(englishQuizKey(item.id,course.id)).passed) : !group || !group.skills.every(skillId => englishRecord(skillId).passed)) return;
   const questions = final
-    ? ENGLISH_UNIT1.map(skill => shuffle(englishQuestions(skill.id))[0])
-    : englishAssessmentQuestions(group.skills, 4);
-  englishRun = {title:final ? 'Unit 1 Test' : `${group.name} Quiz`,progressKey:final ? 'final-test' : englishQuizKey(group.id),retryType:final ? 'final' : 'quiz',retryId:groupId,questions,index:0,score:0,passMark:final ? 8 : 3,answered:false,outcomes:[],assessment:true};
+    ? course.skills.map(skill => shuffle(englishQuestions(skill.id,course.id))[0])
+    : englishAssessmentQuestions(group.skills, 4,course.id);
+  activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true};
   renderEnglishQuestion();
 }
 function finishEnglishRun(){
@@ -5293,19 +5418,24 @@ function finishEnglishRun(){
       recentAnswers:[...(record.recentAnswers || []),correct ? 1 : 0].slice(-12)
     };
   });
+  const arcadeMinutesEarned = Math.floor(run.questions.length / 4);
+  if (arcadeMinutesEarned) {
+    const day = arcadeDateKey();
+    S.mathMinutes[day] = (S.mathMinutes[day] || 0) + arcadeMinutesEarned;
+  }
   save(); englishRun = null;
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
-  const retry = run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}">Practice again</button>`
-    : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}">Retake quiz</button>`
-      : '<button class="btn berry" type="button" data-ela-final>Retake test</button>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit>Back to Unit 1</button></div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${S.elaProgress[run.progressKey].best} of ${run.questions.length} · Attempts: ${S.elaProgress[run.progressKey].tries}</p>${retry}</div>`;
+  const retry = run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
+    : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}" data-ela-course="${run.courseId}">Retake quiz</button>`
+      : `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">Retake test</button>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button></div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${S.elaProgress[run.progressKey].best} of ${run.questions.length} · Attempts: ${S.elaProgress[run.progressKey].tries}</p>${retry}</div>`;
 }
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
   if (button.hasAttribute('data-ela-library')) { renderEnglishLibrary(); return; }
-  if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice); return; }
-  if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz); return; }
-  if (button.hasAttribute('data-ela-final')) { startEnglishAssessment('final'); return; }
+  if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice,button.dataset.elaCourse || activeEnglishCourse); return; }
+  if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
+  if (button.hasAttribute('data-ela-final')) { startEnglishAssessment('final',button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
@@ -6660,6 +6790,7 @@ function renderHall(){
       <textarea class="code" id="restoreBox" style="min-height:70px" aria-label="Paste a backup code" placeholder="PTSZ.…"></textarea>
       <div style="margin-top:8px"><button class="btn small" id="restoreBtn">Restore my town</button></div>
     </div>
+    ${englishProgressReportHTML()}${readingLedgerHTML()}
     <div class="panel"><h3>For grown-ups</h3><p>See which skills are strong, which step gets stuck, and which times tables need work.</p><button class="btn small" id="toParent">Open the progress report</button></div>`;
   if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); syncLanguageControls(); openJoin(); });
   if ($('#rename')) $('#rename').addEventListener('click', openName);
@@ -6745,26 +6876,13 @@ function renderParent(){
     return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
   }).join('');
   const legendary = REWARDS.filter(r => r.legendary && owns(r));
-  const englishSkillReport = ENGLISH_UNIT1.map(skill => {
-    const record = englishRecord(skill.id), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
-    return `<div class="ela-parent-row"><strong>${esc(skill.name)}</strong><span>${accuracy === null ? 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`}</span>${record.answered >= 4 && accuracy < 70 ? '<b class="ela-review-flag">Review suggested</b>' : ''}</div>`;
-  }).join('');
-  const englishAssessmentReport = [...ENGLISH_GROUPS.map(group => ({name:`${group.name} quiz`,key:englishQuizKey(group.id),needed:3})),{name:'Unit 1 Test',key:'final-test',needed:8}].map(item => {
-    const record = englishRecord(item.key);
-    return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || (item.key === 'final-test' ? 10 : 4)} · ${record.tries} tries` : 'Not started'}</span></div>`;
-  }).join('');
-  const readingReports = S.readingBooks.map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
-    const notes = [['Main characters',chapter.characters],['Conflict',chapter.conflict],['Important interaction',chapter.interaction],['Setting',chapter.setting],['Theme or big idea',chapter.themes],['Supporting detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
-    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes added yet.</p>'}</div>`;
-  }).join('') : '<p class="muted">No chapters added yet.</p>'}</section>`).join('');
   $('#parentWrap').innerHTML = `<div class="backrow"><h2>Progress report: ${esc(S.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="panel"><h3>Ideas or arithmetic?</h3><div class="stats">
       <div class="stat"><b>${cP === null ? '–' : cP + '%'}</b>idea steps right on the first try (${cc} of ${ca})</div>
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
-    <div class="panel"><h3>English Unit 1: Nouns</h3><p class="muted">Per-skill accuracy and assessment progress. “Review suggested” appears after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${englishSkillReport}</div><h4>Quizzes and test</h4><div class="ela-parent-grid">${englishAssessmentReport}</div></div>
-    <div class="panel"><h3>Reading Log</h3><p class="muted">These are student-entered notes, not checked by the game. Review them together against the book.</p>${readingReports || '<p class="muted">No books added yet.</p>'}</div>
+    ${englishProgressReportHTML()}${readingLedgerHTML()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>

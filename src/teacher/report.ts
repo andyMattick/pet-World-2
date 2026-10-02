@@ -17,6 +17,8 @@ export interface StudentReport {
   p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: DrillHistory; ds?: Partial<DrillSettings> | null; dl?: DrillHistory; sp: number;
   qz?: AssessmentHistory[]; qx?: Record<string, string> | null;
   ss?: PracticeSummary;
+  readingBooks?: { title: string; author?: string; chapters: { label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string }[] }[];
+  elaProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
 }
 /* practice time from class_report(): minutes today and in the last 7 days, daily minutes for 4 weeks,
    and the 10 most recent sessions as [start ms, last seen ms, active seconds, device] */
@@ -89,12 +91,15 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   list.forEach(r => { const c = r.cc || [0, 0, 0, 0]; ci += c[0]; cc += c[1]; ca += c[2]; cac += c[3]; });
   const ip = ci ? Math.round(100 * cc / ci) : null, ap = ca ? Math.round(100 * cac / ca) : null;
   const activeNow = list.filter(r => r.t && Date.now() - r.t < 10 * 60000).length;
+  const readingStudents = list.filter(r => r.readingBooks?.length).length;
+  const englishStudents = list.filter(r => Object.values(r.elaProgress || {}).some(progress => (progress.answered || 0) > 0 || (progress.tries || 0) > 0)).length;
   let h = `<div class="summary">
     <div class="kpi"><b>${n}</b>students (${played.length} have played)</div>
     <div class="kpi"><b>${activeNow}</b>active in the last 10 minutes</div>
     <div class="kpi"><b>${orders}</b>problems solved</div>
     <div class="kpi"><b>${pctTxt(ip)}</b>idea steps right, first try</div>
-    <div class="kpi"><b>${pctTxt(ap)}</b>arithmetic steps right, first try</div></div>`;
+    <div class="kpi"><b>${pctTxt(ap)}</b>arithmetic steps right, first try</div>
+    <div class="kpi"><b>${readingStudents}</b>students with Reading Logs · ${englishStudents} practiced English</div></div>`;
 
   const groups: Record<string, { r: StudentReport; n: number; ex?: string }[]> = {};
   list.forEach(r => Object.entries(r.m || {}).forEach(([id, v]) => { if (!MIS[id]) return; (groups[id] = groups[id] || []).push({ r, n: v[0], ex: v[1] && v[1][0] }); }));
@@ -187,6 +192,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
+    h += englishReadingHTML(r);
   h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
   ORDER.forEach(k => {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
@@ -298,6 +304,30 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   $('#dClose').focus();
   $('#dClose').addEventListener('click', closeDetail);
   $('#dPrint').addEventListener('click', () => window.print());
+}
+function englishReadingHTML(r: StudentReport) {
+  const courses = [
+    {title:'English Unit 1: Nouns',skills:{identifyNouns:'Identifying nouns',singularPlural:'Singular and plural nouns',commonProper:'Common and proper nouns',concreteAbstract:'Concrete and abstract nouns',fToVes:'f to -ves plurals',enPlurals:'-en plurals',basePlurals:'Base plurals',mutantPlurals:'Mutant plurals',foreignPlurals:'Foreign plurals',pluralReview:'Irregular plural review'},quizzes:[['quiz:intro','Introduction to nouns Quiz'],['quiz:types','Types of nouns Quiz'],['quiz:irregularBase','Irregular plurals I Quiz'],['quiz:irregularForeign','Irregular plurals II Quiz']],finalKey:'final-test',finalCount:10},
+    {title:'English Unit 2: Verbs',skills:{verbIdentify:'Identifying verbs',verbAgreement:'Introduction to verb agreement',verbTense:'Introduction to verb tense',actionLinkHelping:'Action, linking, and helping verbs',irregularVerbs:'Irregular verbs',simpleAspect:'Simple verb aspect',progressiveAspect:'Progressive verb aspect',perfectAspect:'Perfect verb aspect',perfectProgressive:'Perfect progressive verb aspect',tenseAspectTime:'Managing time with tense and aspect',modalVerbs:'Modal verbs'},quizzes:[['verbs:quiz:foundation','Quiz 1 · Verbs foundations'],['verbs:quiz:irregular','Irregular verbs Quiz'],['verbs:quiz:aspect','Verb aspect Quiz'],['verbs:quiz:aspectModal','Aspect and modal verbs Quiz']],finalKey:'verbs:final-test',finalCount:11}
+  ];
+  const coursePanels = courses.map(course => {
+    const skills = Object.entries(course.skills).map(([id, name]) => {
+      const progress = r.elaProgress?.[id], answered = progress?.answered || 0, misses = progress?.misses || 0;
+      const result = answered ? `${Math.round((answered - misses) * 100 / answered)}% · ${answered - misses}/${answered} correct`
+        : progress?.tries ? `No answer history · best ${progress.best ?? 0}/${progress.questionCount || 4}` : 'Not practiced';
+      return `<tr><td>${esc(name)}</td><td>${result}</td><td>${answered >= 4 && (answered - misses) / answered < .7 ? 'Review suggested' : ''}</td></tr>`;
+    }).join('');
+    const assessments = [...course.quizzes.map(([key, name]) => ({key,name,total:4})),{key:course.finalKey,name:'Unit test',total:course.finalCount}].map(item => {
+      const progress = r.elaProgress?.[item.key];
+      return `<tr><td>${esc(item.name)}</td><td>${progress?.tries ? `${progress.passed ? 'Passed' : 'Not passed'} · best ${progress.best ?? 0}/${progress.questionCount || item.total}` : 'Not started'}</td><td>${progress?.tries || 0}</td></tr>`;
+    }).join('');
+    return `<div class="card"><h2>${esc(course.title)}</h2><h3>Practice by skill</h3><table class="steptable"><tr><th>Skill</th><th>Accuracy</th><th>Focus</th></tr>${skills}</table><h3>Quizzes and test</h3><table class="steptable"><tr><th>Assessment</th><th>Status</th><th>Attempts</th></tr>${assessments}</table></div>`;
+  }).join('');
+  const books = (r.readingBooks || []).map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
+    const notes = [['Main characters',chapter.characters],['Notable character action',chapter.notableAction],['Character interactions',chapter.interaction],['Conflict',chapter.conflict],['Joy or success',chapter.joy],['Environment and setting',chapter.setting],['Theme or big idea',chapter.themes],['Standout detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
+    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes yet.</p>'}</div>`;
+  }).join('') : '<p class="muted">No chapters yet.</p>'}</section>`).join('');
+  return `${coursePanels}<div class="card"><h2>Reading Log</h2><p class="muted">Student-entered chapter book reports; the game does not verify interpretations.</p>${books || '<p class="muted">No books added yet.</p>'}</div>`;
 }
 export function closeDetail() { $('#detail').hidden = true; }
 $('#detail').addEventListener('click', e => { if ((e.target as HTMLElement).id === 'detail') closeDetail(); });

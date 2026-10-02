@@ -105,9 +105,20 @@ async function renderDashboard() {
   const { data, error } = await sb!.rpc('class_report', { p_class: cls.id, p_tz: Intl.DateTimeFormat().resolvedOptions().timeZone });
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
-  pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p><div id="report"></div>`;
+  const reports = (data || []) as StudentReport[];
+  const ids = reports.map(student => student.id);
+  const {data:saves, error:saveError} = ids.length ? await sb!.from('saves').select('student_id,state').in('student_id', ids) : {data:[], error:null};
+  if (current?.id !== cls.id || tab !== 'dashboard') return;
+  const savedByStudent = new Map<string, Record<string, unknown>>();
+  (saves || []).forEach(row => { if (row.state && typeof row.state === 'object') savedByStudent.set(row.student_id, row.state as Record<string, unknown>); });
+  reports.forEach(student => {
+    const state = savedByStudent.get(student.id);
+    student.readingBooks = Array.isArray(state?.readingBooks) ? state.readingBooks as NonNullable<StudentReport['readingBooks']> : [];
+    student.elaProgress = state?.elaProgress && typeof state.elaProgress === 'object' ? state.elaProgress as NonNullable<StudentReport['elaProgress']> : {};
+  });
+  pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
   setReportClass(cls.id, cls.game_settings?.home);
-  renderClassReport($('#report'), (data || []) as StudentReport[], saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = ((data || []) as StudentReport[]).find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
+  renderClassReport($('#report'), reports, saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = reports.find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
   startLive(cls.id);
 }
 async function saveStudentDrills(id: string, settings: Partial<DrillSettings> | null) {
@@ -255,7 +266,7 @@ function renderSettings() {
       <h3>Arcade</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade for paid-entry mode</label>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: banked math time only, no admission or tickets</label>
-      <p class="muted" style="margin-top:0">Free Play opens every available game and requires only math time banked today. Arcade and game switches apply to paid-entry mode.</p>
+      <p class="muted" style="margin-top:0">Free Play opens every available game and requires only practice time banked today. Arcade and game switches apply to paid-entry mode.</p>
       <h4>Available games (paid-entry mode)</h4>${ARCADE_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-arcade-game="${game.id}" ${arcade.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)}</label>`).join('')}
       <h4>Ticket rewards (paid-entry mode)</h4>
       <label for="arcadeCorsairRate">Corsair's Cove points per ticket</label><input type="number" id="arcadeCorsairRate" min="1000" max="100000" step="1000" value="${arcade.corsairPointsPerTicket}">
