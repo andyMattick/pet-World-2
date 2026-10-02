@@ -583,6 +583,10 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .hood-tab{font:inherit; font-weight:700; min-height:44px; padding:8px 16px; border-radius:999px; border:3px solid var(--edge); background:var(--surface); color:inherit; cursor:pointer}
 .hood-tab.active{background:var(--butter); color:#4A2E2A}
 .hood-tab small{font-weight:600; opacity:.75; margin-left:4px}
+.class-heading{grid-column:1/-1; display:flex; align-items:center; gap:12px; min-width:0}
+.class-heading h2{margin:0; font-size:1.2rem}
+.class-grid{grid-column:1/-1; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px}
+.class-tile{width:100%; min-width:0}
 .world-map{grid-column:1/-1; position:relative; aspect-ratio:16/10; background:#CFE8F5; border:3px solid var(--edge); border-radius:18px; overflow:hidden}
 .world-map svg{position:absolute; inset:0; width:100%; height:100%}
 .world-map polygon{fill:#E8DDB5; stroke:#B9A878; stroke-width:.4; stroke-linejoin:round}

@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, townHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, SUBJECTS, DEFAULT_HOME, buildingsIn, buildingsInClass, subjectsIn, prevBuilding, nextBuilding, builtHoods, townHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 
@@ -217,7 +217,7 @@ function unitOpen(unit){
 /* what a locked building says: built ones name the unit test that opens them */
 function unitLockedText(building){
   const prev = prevBuilding(building.id);
-  return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`;
+    return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 function unitTestPassed(unit){
   const key = `${unit}:test`;
@@ -4407,7 +4407,7 @@ function show(id){
   if (id === 'home') renderHome();
   if (id === 'room') renderPetRoom();
   if (id === 'cafe') renderShopFloor(currentShop);
-  if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); const hood = builtHoods().some(n => n.id === currentHood()) ? currentHood() : homeHood(); renderBook(b && b.hood === hood ? bookUnit : buildingsIn(hood)[0].id); }   // opens on the grade you're standing in
+  if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
   if (id === 'library') renderEnglishLibrary();
   if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
@@ -4755,6 +4755,7 @@ const backupCode = () => packCode('PTS', JSON.stringify(S));
 
 /* ---------- name ---------- */
 function openName(){
+  viewHood = null; viewSubject = null;
   $('#nameInput').value = S.name; updatePreview();
   const hoods = builtHoods(), wrap = $('#homeWrap');                // local mode asks for the grade once there are two to pick from
   wrap.hidden = hoods.length < 2 || !!Backend.me;
@@ -4776,15 +4777,16 @@ $('#nameSave').addEventListener('click', () => {
 function homeHood(){ const cls = Backend.me?.game_settings?.home; return validHood(cls) ? cls : S.home; }
 let viewHood = null;                                         // the neighborhood on screen; starts at home each visit
 const currentHood = () => viewHood && townHoods().some(n => n.id === viewHood) ? viewHood : homeHood();
+let viewSubject = null;
 function hoodSwitchHTML(){
   const hoods = townHoods(); if (hoods.length < 2) return '';
   const home = homeHood(), sorted = hoods;                        // grade order (4th, then 6th), with the home grade marked
-  return `<div class="hood-switch" role="tablist" aria-label="Neighborhood">${sorted.map(n => `<button type="button" role="tab" class="hood-tab${n.id === currentHood() ? ' active' : ''}" aria-selected="${n.id === currentHood()}" data-hood="${n.id}">${n.emoji} ${esc(n.name)}${n.id === home ? ' <small>home</small>' : ''}</button>`).join('')}</div>`;
+  return `<div class="hood-switch" role="tablist" aria-label="Grade">${sorted.map(n => `<button type="button" role="tab" class="hood-tab${n.id === currentHood() ? ' active' : ''}" aria-selected="${n.id === currentHood()}" data-hood="${n.id}">${n.emoji} ${esc(n.name)}${n.id === home ? ' <small>home</small>' : ''}</button>`).join('')}</div>`;
 }
 /* neighborhoods whose buildings have a pin (History) get a world map; each pin opens its museum like the tile below it */
 const MAP_LAND = ['8,14 20,10 30,14 33,24 28,34 24,44 20,40 14,30 9,24', '34,6 42,6 40,14 35,12', '24,48 32,50 34,62 29,80 26,70 23,56', '44,18 52,14 58,16 60,24 54,32 47,30 43,25', '46,36 56,34 62,42 62,56 57,72 52,66 49,52 44,42', '60,14 75,12 90,16 92,28 86,40 80,48 74,38 66,40 62,32 58,22', '80,62 90,60 92,70 84,74 79,69'];
-function worldMapHTML(hood){
-  const pinned = buildingsIn(hood).filter(b => b.pin); if (!pinned.length) return '';
+function worldMapHTML(hood, subject){
+  const pinned = buildingsInClass(hood, subject).filter(b => b.pin); if (!pinned.length) return '';
   const pins = pinned.map((b, i) => {
     const open = unitOpen(b.id), style = `left:${b.pin.x}%;top:${b.pin.y}%`, label = `${i + 1}. ${esc(b.name)}: ${esc(b.unit)}${open ? '' : ', opening soon'}`;
     return open ? `<button type="button" class="map-pin" style="${style}" data-open="${b.id}" aria-label="${label}" title="${label}">${b.emoji}<small>${i + 1}</small></button>`
@@ -4964,16 +4966,29 @@ function renderHome(){
   $('#displayCaseWrap').innerHTML = `<div class="display-case"><button type="button" class="helper-box" data-case-pet aria-label="Choose helper pet"><span class="helper-box-emoji">${helper.emoji}</span><strong>My helper</strong><small>${esc(helper.name)}</small></button><div class="case-main"><div class="display-shelves">${slots}</div></div></div><button type="button" class="display-progress" data-open="book">📒 Sticker Book: ${stickerCount} of ${REWARDS.length} stickers</button>`;
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
-  let h = hoodSwitchHTML() + worldMapHTML(currentHood());
-  buildingsIn(currentHood()).forEach(b => {
-    const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
-    const open = unitOpen(b.id);
-    const stickers = open && rewards.length ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
-    const progress = open && rewards.length ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
-    h += open
-      ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}</button>`
-      : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
-  });
+  const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
+  let h = hoodSwitchHTML();
+  if (!selectedSubject) {
+    h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
+    subjectsIn(hood).forEach(subject => {
+      const units = buildingsInClass(hood, subject.id), open = units.filter(unit => unitOpen(unit.id)).length;
+      h += `<button type="button" class="tile class-tile" data-class="${subject.id}"><span class="te">${subject.emoji}</span><span class="tn">${esc(subject.name)}</span><span class="tu">${units.length} units · ${open} open</span></button>`;
+    });
+    h += '</div>';
+  } else {
+    const subject = SUBJECTS.find(item => item.id === selectedSubject);
+    h += `<div class="class-heading"><button type="button" class="btn small" data-class-back>All classes</button><h2>${subject?.emoji || ''} ${esc(subject?.name || selectedSubject)}</h2></div>`;
+    h += worldMapHTML(hood, selectedSubject);
+    buildingsInClass(hood, selectedSubject).forEach(b => {
+      const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
+      const open = unitOpen(b.id);
+      const stickers = open && rewards.length ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
+      const progress = open && rewards.length ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
+      h += open
+        ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}</button>`
+        : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
+    });
+  }
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   h += `<button class="tile service" data-open="room"><span class="te">🏠</span><span class="tn">My Pet Room</span><span class="tu">${S.room.initialized ? S.room.placements.length : S.displayed.filter(Boolean).length} decorations · Dress-up</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
@@ -5010,7 +5025,9 @@ $('#displayPickerOptions').addEventListener('click', e => {
 });
 $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
 $('#town').addEventListener('click', e => {
-  const hood = e.target.closest('[data-hood]'); if (hood) { viewHood = hood.dataset.hood; sfx('tick'); renderHome(); const t = $(`#town [data-hood="${viewHood}"]`); if (t) t.focus(); return; }
+  const classBack = e.target.closest('[data-class-back]'); if (classBack) { viewSubject = null; renderHome(); return; }
+  const classTile = e.target.closest('[data-class]'); if (classTile) { viewSubject = classTile.dataset.class; sfx('tick'); renderHome(); return; }
+  const hood = e.target.closest('[data-hood]'); if (hood) { viewHood = hood.dataset.hood; viewSubject = null; sfx('tick'); renderHome(); const t = $(`#town [data-hood="${viewHood}"]`); if (t) t.focus(); return; }
   const b = e.target.closest('[data-open]'); if (!b) return;
   const id = b.dataset.open;
   if (SHOPS[id] && unitOpen(id)) {
@@ -6531,7 +6548,7 @@ function renderBook(unit){
   };
   /* one grade at a time: a grade switch on top (once two grades are built), then that grade's shops */
   const grades = builtHoods().length > 1 ? `<div class="book-grades" role="tablist" aria-label="Grade">${builtHoods().map(n => `<button type="button" class="book-grade${n.id === building.hood ? ' active' : ''}" role="tab" aria-selected="${n.id === building.hood}" data-book-hood="${n.id}">${n.emoji} ${esc(n.name)}</button>`).join('')}</div>` : '';
-  const tabs = BUILDINGS.filter(b => b.hood === building.hood).map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
+  const tabs = buildingsInClass(building.hood, building.subject).map(b => `<button type="button" class="book-tab${b.id === building.id ? ' active' : ''}" data-book-unit="${b.id}">${b.emoji}<span>${esc(b.name)}</span></button>`).join('');
   const pageComplete = rewards.length && rewards.every(owns);
   const masterStamp = pageComplete || unitTestPassed(building.id);
   const pageClass = `${!unitOpen(building.id) ? ' book-page-soon' : ''}${pageComplete ? ' book-page-complete' : ''}`;
@@ -6711,6 +6728,7 @@ function renderParent(){
 /* ---------- joining a class (hosted mode) ---------- */
 const join = {code:'', roster:[], pick:null};
 function openJoin(){
+  viewHood = null; viewSubject = null;
   join.code = ''; join.roster = []; join.pick = null;
   let last = ''; try { last = localStorage.getItem('pettown:lastCode') || ''; } catch(e){}
   $('#joinWrap').innerHTML = `<div class="card"><div class="big-emoji">🐾</div><h2>Welcome to Pet Town!</h2>
@@ -6784,6 +6802,7 @@ const townTracker = new ActivityTracker(seconds => {
 });
 function startTownTracker(){ localSession = null; townTracker.start(); }
 function enterAs(me){
+  viewHood = null; viewSubject = null;
   storeKey = 'pettown:v1:' + me.student_id;
   const local = loadState(storeKey);
   const remote = me.state && typeof me.state === 'object' ? me.state : null;

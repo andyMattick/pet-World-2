@@ -595,63 +595,66 @@ export const REWARDS: Reward[] = [
 export interface Neighborhood { id: string; name: string; emoji: string }
 export const NEIGHBORHOODS: Neighborhood[] = [
   { id: 'g4', name: '4th grade', emoji: '🍋' },
-  { id: 'g6', name: '6th grade', emoji: '☕' },
-  { id: 'hist', name: 'History', emoji: '🏛️' },
-  { id: 'bio', name: 'Biology', emoji: '🦁' },
-  { id: 'ela', name: 'English', emoji: '📚' }
+  { id: 'g6', name: '6th grade', emoji: '☕' }
 ];
 export const DEFAULT_HOME = 'g6';
-export interface Building { id: string; emoji: string; name: string; unit: string; hood: string; open?: boolean; pin?: { x: number; y: number } }
+export interface Subject { id: string; name: string; emoji: string }
+export const SUBJECTS: Subject[] = [
+  {id:'math', name:'Math', emoji:'➗'},
+  {id:'history', name:'History', emoji:'🏛️'},
+  {id:'biology', name:'Biology', emoji:'🦁'},
+  {id:'english', name:'English', emoji:'📚'}
+];
+export interface Building { id: string; emoji: string; name: string; unit: string; hood: string; subject: string; open?: boolean; pin?: { x: number; y: number } }
 export const BUILDINGS: Building[] = [
-  {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', hood:'g6', open:true},
-  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers', hood:'g6', open:true},
-  {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages', hood:'g6', open:true},
-  {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations', hood:'g6', open:true},
-  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers', hood:'g6', open:true},
-  {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations', hood:'g6', open:true},
-  {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures', hood:'g6', open:true},
-  {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6', open:true},
-  {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4', open:true},
-  {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4', open:true},
-  {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4', open:true},
-  {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4', open:true},
-  {id:'art',      emoji:'🎨', name:'Art Studio',     unit:'Geometry', hood:'g4'},
-  /* History: world-history units, one museum per place on the world map (pin = % of map width and height). Planned. */
-  {id:'histOrigins',  emoji:'🏺', name:'Mesopotamia Museum',     unit:'Unit 1: Origins of History', hood:'hist', pin:{x:65,y:31}},
-  {id:'histEarly',    emoji:'🦴', name:'Rift Valley Museum',     unit:'Unit 2: Early Humans (250,000 BP to 3000 BCE)', hood:'hist', pin:{x:59,y:56}},
-  {id:'histAgrarian', emoji:'🌾', name:'Nile Valley Museum',     unit:'Unit 3: Early Agrarian Societies (6000 BCE to 100 CE)', hood:'hist', pin:{x:57,y:41}},
-  {id:'histEmpires',  emoji:'🏛️', name:'Rome Museum',            unit:'Unit 4: Empires and Belief Systems (600 BCE to 700 CE)', hood:'hist', pin:{x:51,y:29}},
-  {id:'histWebs',     emoji:'🐫', name:'Silk Road Museum',       unit:'Unit 5: Regional Webs (200 to 1500 CE)', hood:'hist', pin:{x:80,y:33}},
-  {id:'histGlobal1',  emoji:'⛵', name:'Tenochtitlan Museum',    unit:'Unit 6: The First Global Age (1200 to 1750 CE)', hood:'hist', pin:{x:22,y:42}},
-  {id:'histLong19',   emoji:'🏭', name:'London Museum',          unit:'Unit 7: The Long Nineteenth Century (1750 to 1914 CE)', hood:'hist', pin:{x:45,y:17}},
-  {id:'histConflict', emoji:'🕊️', name:'War and Peace Museum',   unit:'Unit 8: Global Conflict (1914 to 1991 CE)', hood:'hist', pin:{x:60,y:16}},
-  {id:'histGlobal2',  emoji:'🌐', name:'Singapore Museum',       unit:'Unit 9: Globalization (1900 CE to the Present)', hood:'hist', pin:{x:79,y:55}},
-  /* Biology: zoos, aquariums, and gardens, Khan Biology order. Planned. */
-  {id:'bioChem',    emoji:'🌿', name:'Nature Center',  unit:'Chemistry of life', hood:'bio'},
-  {id:'bioCells',   emoji:'🐑', name:'Petting Zoo',    unit:'Cell structure and function', hood:'bio'},
-  {id:'bioEnergy',  emoji:'🌺', name:'Greenhouse',     unit:'Photosynthesis and cellular respiration', hood:'bio'},
-  {id:'bioDivide',  emoji:'🦋', name:'Butterfly House', unit:'Cell division and life cycles', hood:'bio'},
-  {id:'bioGenes',   emoji:'🐄', name:'Farm Barn',      unit:'Heredity and genes', hood:'bio'},
-  {id:'bioEvolve',  emoji:'🦜', name:'Aviary',         unit:'Evolution and natural selection', hood:'bio'},
-  {id:'bioEco',     emoji:'🐠', name:'Aquarium',       unit:'Ecosystems and energy flow', hood:'bio'},
-  {id:'bioPlanet',  emoji:'🦁', name:'Zoo',            unit:'Biodiversity and human impact', hood:'bio'},
-  /* English: libraries, Khan grammar and reading order. Planned. */
-  {id:'elaNouns',  emoji:'📖', name:'Story Corner Library', unit:'Unit 1: Nouns', hood:'ela', open:true},
-  {id:'elaVerbs',  emoji:'🏃', name:'Action Library',       unit:'Verbs and verb tenses', hood:'ela'},
-  {id:'elaDescr',  emoji:'🎨', name:'Poetry Library',       unit:'Adjectives and adverbs', hood:'ela'},
-  {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Prepositions, conjunctions, and sentence structure', hood:'ela'},
-  {id:'elaPunct',  emoji:'✏️', name:'Punctuation Library',  unit:'Punctuation and capitalization', hood:'ela'},
-  {id:'elaVocab',  emoji:'🔤', name:'Word Library',         unit:'Vocabulary, word roots, and context clues', hood:'ela'},
-  {id:'elaRead',   emoji:'🔍', name:'Reading Library',      unit:'Main idea, details, and inference', hood:'ela'},
-  {id:'elaLit',    emoji:'🎭', name:'Storybook Library',    unit:'Literature: characters, plot, and theme', hood:'ela'},
-  {id:'elaInfo',   emoji:'📰', name:'Reference Library',    unit:'Informational text and argument', hood:'ela'},
-  {id:'elaWrite',  emoji:'📝', name:'Writing Library',      unit:'Writing: paragraphs, essays, and revising', hood:'ela'}
+  {id:'cafe',   emoji:'☕', name:'Pet Café',     unit:'Unit 1: Ratios', hood:'g6', subject:'math', open:true},
+  {id:'bakery', emoji:'🥐', name:'Bakery',       unit:'Unit 2: Arithmetic with rational numbers', hood:'g6', subject:'math', open:true},
+  {id:'market', emoji:'🍎', name:'Market Stall', unit:'Unit 3: Rates and percentages', hood:'g6', subject:'math', open:true},
+  {id:'clock',  emoji:'🕰️', name:'Clock Tower',  unit:'Unit 4: Exponents and order of operations', hood:'g6', subject:'math', open:true},
+  {id:'rink',   emoji:'⛸️', name:'Ice Rink',     unit:'Unit 5: Negative numbers', hood:'g6', subject:'math', open:true},
+  {id:'potion', emoji:'🧪', name:'Potion Lab',   unit:'Units 6 and 7: Expressions and equations', hood:'g6', subject:'math', open:true},
+  {id:'houses', emoji:'🏡', name:'Pet Houses',   unit:'Units 8 to 10: Area, coordinate plane, 3D figures', hood:'g6', subject:'math', open:true},
+  {id:'show',   emoji:'🏆', name:'Pet Show',     unit:'Unit 11: Data and statistics', hood:'g6', subject:'math', open:true},
+  {id:'lemonade', emoji:'🍋', name:'Lemonade Stand', unit:'Operations and algebraic thinking', hood:'g4', subject:'math', open:true},
+  {id:'toys',     emoji:'🧸', name:'Toy Shop',       unit:'Number and operations in base ten', hood:'g4', subject:'math', open:true},
+  {id:'pizza',    emoji:'🍕', name:'Pizza Parlor',   unit:'Number and operations: fractions', hood:'g4', subject:'math', open:true},
+  {id:'garden',   emoji:'🌱', name:'Garden Center',  unit:'Measurement and data', hood:'g4', subject:'math', open:true},
+  {id:'art',      emoji:'🎨', name:'Art Studio',     unit:'Geometry', hood:'g4', subject:'math'},
+  {id:'histOrigins',  emoji:'🏺', name:'Mesopotamia Museum',     unit:'Unit 1: Origins of History', hood:'g6', subject:'history', pin:{x:65,y:31}},
+  {id:'histEarly',    emoji:'🦴', name:'Rift Valley Museum',     unit:'Unit 2: Early Humans (250,000 BP to 3000 BCE)', hood:'g6', subject:'history', pin:{x:59,y:56}},
+  {id:'histAgrarian', emoji:'🌾', name:'Nile Valley Museum',     unit:'Unit 3: Early Agrarian Societies (6000 BCE to 100 CE)', hood:'g6', subject:'history', pin:{x:57,y:41}},
+  {id:'histEmpires',  emoji:'🏛️', name:'Rome Museum',            unit:'Unit 4: Empires and Belief Systems (600 BCE to 700 CE)', hood:'g6', subject:'history', pin:{x:51,y:29}},
+  {id:'histWebs',     emoji:'🐫', name:'Silk Road Museum',       unit:'Unit 5: Regional Webs (200 to 1500 CE)', hood:'g6', subject:'history', pin:{x:80,y:33}},
+  {id:'histGlobal1',  emoji:'⛵', name:'Tenochtitlan Museum',    unit:'Unit 6: The First Global Age (1200 to 1750 CE)', hood:'g6', subject:'history', pin:{x:22,y:42}},
+  {id:'histLong19',   emoji:'🏭', name:'London Museum',          unit:'Unit 7: The Long Nineteenth Century (1750 to 1914 CE)', hood:'g6', subject:'history', pin:{x:45,y:17}},
+  {id:'histConflict', emoji:'🕊️', name:'War and Peace Museum',   unit:'Unit 8: Global Conflict (1914 to 1991 CE)', hood:'g6', subject:'history', pin:{x:60,y:16}},
+  {id:'histGlobal2',  emoji:'🌐', name:'Singapore Museum',       unit:'Unit 9: Globalization (1900 CE to the Present)', hood:'g6', subject:'history', pin:{x:79,y:55}},
+  {id:'bioChem',    emoji:'🌿', name:'Nature Center',   unit:'Chemistry of life', hood:'g6', subject:'biology'},
+  {id:'bioCells',   emoji:'🐑', name:'Petting Zoo',     unit:'Cell structure and function', hood:'g6', subject:'biology'},
+  {id:'bioEnergy',  emoji:'🌺', name:'Greenhouse',      unit:'Photosynthesis and cellular respiration', hood:'g6', subject:'biology'},
+  {id:'bioDivide',  emoji:'🦋', name:'Butterfly House', unit:'Cell division and life cycles', hood:'g6', subject:'biology'},
+  {id:'bioGenes',   emoji:'🐄', name:'Farm Barn',       unit:'Heredity and genes', hood:'g6', subject:'biology'},
+  {id:'bioEvolve',  emoji:'🦜', name:'Aviary',          unit:'Evolution and natural selection', hood:'g6', subject:'biology'},
+  {id:'bioEco',     emoji:'🐠', name:'Aquarium',        unit:'Ecosystems and energy flow', hood:'g6', subject:'biology'},
+  {id:'bioPlanet',  emoji:'🦁', name:'Zoo',             unit:'Biodiversity and human impact', hood:'g6', subject:'biology'},
+  {id:'elaNouns',  emoji:'📖', name:'Story Corner Library', unit:'Unit 1: Nouns', hood:'g6', subject:'english', open:true},
+  {id:'elaVerbs',  emoji:'🏃', name:'Action Library',       unit:'Verbs and verb tenses', hood:'g6', subject:'english'},
+  {id:'elaDescr',  emoji:'🎨', name:'Poetry Library',       unit:'Adjectives and adverbs', hood:'g6', subject:'english'},
+  {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Prepositions, conjunctions, and sentence structure', hood:'g6', subject:'english'},
+  {id:'elaPunct',  emoji:'✏️', name:'Punctuation Library',  unit:'Punctuation and capitalization', hood:'g6', subject:'english'},
+  {id:'elaVocab',  emoji:'🔤', name:'Word Library',         unit:'Vocabulary, word roots, and context clues', hood:'g6', subject:'english'},
+  {id:'elaRead',   emoji:'🔍', name:'Reading Library',      unit:'Main idea, details, and inference', hood:'g6', subject:'english'},
+  {id:'elaLit',    emoji:'🎭', name:'Storybook Library',    unit:'Literature: characters, plot, and theme', hood:'g6', subject:'english'},
+  {id:'elaInfo',   emoji:'📰', name:'Reference Library',    unit:'Informational text and argument', hood:'g6', subject:'english'},
+  {id:'elaWrite',  emoji:'📝', name:'Writing Library',      unit:'Writing: paragraphs, essays, and revising', hood:'g6', subject:'english'}
 ];
 export const buildingsIn = (hood: string) => BUILDINGS.filter(b => b.hood === hood);
+export const subjectsIn = (hood: string) => SUBJECTS.filter(subject => BUILDINGS.some(b => b.hood === hood && b.subject === subject.id));
+export const buildingsInClass = (hood: string, subject: string) => BUILDINGS.filter(b => b.hood === hood && b.subject === subject);
 export const hoodOf = (id: string) => BUILDINGS.find(b => b.id === id)?.hood || DEFAULT_HOME;
-/* the building before this one in its own neighborhood (null for the first, which is always open) */
-export function prevBuilding(id: string): Building | null { const b = BUILDINGS.find(x => x.id === id); if (!b) return null; const list = buildingsIn(b.hood), i = list.indexOf(b); return i > 0 ? list[i - 1] : null; }
-export function nextBuilding(id: string): Building | null { const b = BUILDINGS.find(x => x.id === id); if (!b) return null; const list = buildingsIn(b.hood), i = list.indexOf(b); return list[i + 1] || null; }
+/* the building before this one in its grade and subject (null for the first in the class) */
+export function prevBuilding(id: string): Building | null { const b = BUILDINGS.find(x => x.id === id); if (!b) return null; const list = buildingsInClass(b.hood, b.subject), i = list.indexOf(b); return i > 0 ? list[i - 1] : null; }
+export function nextBuilding(id: string): Building | null { const b = BUILDINGS.find(x => x.id === id); if (!b) return null; const list = buildingsInClass(b.hood, b.subject), i = list.indexOf(b); return list[i + 1] || null; }
 /* neighborhoods with at least one built shop; the switcher and grade pickers appear once there are two */
 export const builtHoods = () => NEIGHBORHOODS.filter(n => BUILDINGS.some(b => b.hood === n.id && b.open));
 /* neighborhoods the town switcher shows: built ones plus planned ones whose shops say "Opening soon" */
