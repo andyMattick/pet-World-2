@@ -307,7 +307,8 @@ export interface ArcadeGame {
 export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'corsairs-cove', name: "Corsair's Cove", emoji: '🏴‍☠️', description: 'Solve math to refill your ammo and sail on.', src: '/arcade/corsairs-cove/', available: true },
   { id: 'whack-a-mole', name: 'Whack-a-Mole Stats Lab', emoji: '🔨', description: 'Play a quick round and explore your score statistics.', src: '/arcade/whack-a-mole/', available: true },
-  { id: 'state-conquest', name: 'State Conquest', emoji: '🗺️', description: 'Learn all 50 states, capitals, and neighboring geography in a saveable strategy campaign.', src: '/arcade/state-conquest/', available: true }
+  { id: 'state-conquest', name: 'State Conquest', emoji: '🗺️', description: 'Learn all 50 states, capitals, and neighboring geography in a saveable strategy campaign.', src: '/arcade/state-conquest/', available: true },
+  { id: 'fly-fly-butterfly', name: 'Fly, Fly Butterfly', emoji: '🦋', description: 'Learn butterfly life stages and ecology in a strategic card game with a persistent campaign.', src: '/arcade/fly-fly-butterfly/', available: true }
 ];
 
 export interface ArcadeSettings {
