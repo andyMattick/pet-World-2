@@ -544,6 +544,12 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
 .hood-tab{font:inherit; font-weight:700; min-height:44px; padding:8px 16px; border-radius:999px; border:3px solid var(--edge); background:var(--surface); color:inherit; cursor:pointer}
 .hood-tab.active{background:var(--butter); color:#4A2E2A}
 .hood-tab small{font-weight:600; opacity:.75; margin-left:4px}
+.world-map{grid-column:1/-1; position:relative; aspect-ratio:16/10; background:#CFE8F5; border:3px solid var(--edge); border-radius:18px; overflow:hidden}
+.world-map svg{position:absolute; inset:0; width:100%; height:100%}
+.world-map polygon{fill:#E8DDB5; stroke:#B9A878; stroke-width:.4; stroke-linejoin:round}
+.map-pin{position:absolute; transform:translate(-50%,-50%); width:34px; height:34px; display:flex; align-items:center; justify-content:center; font:inherit; font-size:1.2rem; line-height:1; padding:0; border-radius:50%; border:3px solid var(--edge); background:var(--surface); color:inherit; cursor:pointer}
+.map-pin small{position:absolute; right:-6px; bottom:-6px; min-width:16px; border-radius:8px; background:var(--butter); color:#4A2E2A; font-size:.7rem; font-weight:800; line-height:16px}
+.map-pin.locked{cursor:default; opacity:.7}
 #homeWrap{display:block; margin-top:10px}
 #homeWrap select{margin-top:4px}
 .book-trophies{display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 10px}

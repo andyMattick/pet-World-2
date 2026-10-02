@@ -1,7 +1,7 @@
 /* Pet Town game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
-import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
+import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, DEFAULT_HOME, buildingsIn, prevBuilding, nextBuilding, builtHoods, townHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 
@@ -4390,7 +4390,7 @@ function show(id){
   if (id === 'home') renderHome();
   if (id === 'room') renderPetRoom();
   if (id === 'cafe') renderShopFloor(currentShop);
-  if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); renderBook(b && b.hood === currentHood() ? bookUnit : buildingsIn(currentHood())[0].id); }   // opens on the grade you're standing in
+  if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); const hood = builtHoods().some(n => n.id === currentHood()) ? currentHood() : homeHood(); renderBook(b && b.hood === hood ? bookUnit : buildingsIn(hood)[0].id); }   // opens on the grade you're standing in
   if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
 }
@@ -4722,11 +4722,22 @@ $('#nameSave').addEventListener('click', () => {
 /* the class (or grown-up) sets the home grade; local mode uses the one picked when the town was named */
 function homeHood(){ const cls = Backend.me?.game_settings?.home; return validHood(cls) ? cls : S.home; }
 let viewHood = null;                                         // the neighborhood on screen; starts at home each visit
-const currentHood = () => viewHood && builtHoods().some(n => n.id === viewHood) ? viewHood : homeHood();
+const currentHood = () => viewHood && townHoods().some(n => n.id === viewHood) ? viewHood : homeHood();
 function hoodSwitchHTML(){
-  const hoods = builtHoods(); if (hoods.length < 2) return '';
+  const hoods = townHoods(); if (hoods.length < 2) return '';
   const home = homeHood(), sorted = hoods;                        // grade order (4th, then 6th), with the home grade marked
   return `<div class="hood-switch" role="tablist" aria-label="Neighborhood">${sorted.map(n => `<button type="button" role="tab" class="hood-tab${n.id === currentHood() ? ' active' : ''}" aria-selected="${n.id === currentHood()}" data-hood="${n.id}">${n.emoji} ${esc(n.name)}${n.id === home ? ' <small>home</small>' : ''}</button>`).join('')}</div>`;
+}
+/* neighborhoods whose buildings have a pin (History) get a world map; each pin opens its museum like the tile below it */
+const MAP_LAND = ['8,14 20,10 30,14 33,24 28,34 24,44 20,40 14,30 9,24', '34,6 42,6 40,14 35,12', '24,48 32,50 34,62 29,80 26,70 23,56', '44,18 52,14 58,16 60,24 54,32 47,30 43,25', '46,36 56,34 62,42 62,56 57,72 52,66 49,52 44,42', '60,14 75,12 90,16 92,28 86,40 80,48 74,38 66,40 62,32 58,22', '80,62 90,60 92,70 84,74 79,69'];
+function worldMapHTML(hood){
+  const pinned = buildingsIn(hood).filter(b => b.pin); if (!pinned.length) return '';
+  const pins = pinned.map((b, i) => {
+    const open = unitOpen(b.id), style = `left:${b.pin.x}%;top:${b.pin.y}%`, label = `${i + 1}. ${esc(b.name)}: ${esc(b.unit)}${open ? '' : ', opening soon'}`;
+    return open ? `<button type="button" class="map-pin" style="${style}" data-open="${b.id}" aria-label="${label}" title="${label}">${b.emoji}<small>${i + 1}</small></button>`
+      : `<span class="map-pin locked" style="${style}" role="img" aria-label="${label}" title="${label}">${b.emoji}<small>${i + 1}</small></span>`;
+  }).join('');
+  return `<div class="world-map"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${MAP_LAND.map(p => `<polygon points="${p}"/>`).join('')}</svg>${pins}</div>`;
 }
 /* a grade trophy for the Sticker Book once every unit test in a neighborhood is passed */
 function hoodTrophies(){ return NEIGHBORHOODS.filter(n => { const list = buildingsIn(n.id); return list.length && list.every(b => b.open && unitTestPassed(b.id)); }); }
@@ -4900,7 +4911,7 @@ function renderHome(){
   $('#displayCaseWrap').innerHTML = `<div class="display-case"><button type="button" class="helper-box" data-case-pet aria-label="Choose helper pet"><span class="helper-box-emoji">${helper.emoji}</span><strong>My helper</strong><small>${esc(helper.name)}</small></button><div class="case-main"><div class="display-shelves">${slots}</div></div></div><button type="button" class="display-progress" data-open="book">📒 Sticker Book: ${stickerCount} of ${REWARDS.length} stickers</button>`;
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
-  let h = hoodSwitchHTML();
+  let h = hoodSwitchHTML() + worldMapHTML(currentHood());
   buildingsIn(currentHood()).forEach(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
     const open = unitOpen(b.id);
