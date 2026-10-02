@@ -41,7 +41,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -71,6 +71,11 @@ function normalize(raw){
     })) : []
   })) : [];
   s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
+  s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
+  s.historyProjects = Object.fromEntries(['history','history2'].map(id => {
+    const p = s.historyProjects?.[id] || {}, answers = p.answers && typeof p.answers === 'object' ? p.answers : {};
+    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,10)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : ''}];
+  }));
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
@@ -222,6 +227,7 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 function unitTestPassed(unit){
+  if (unit === 'histOrigins' || unit === 'histEarly') return !!S.historyProgress?.[unit === 'histOrigins' ? 'history:final-test' : 'history2:final-test']?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (unit === 'elaNouns' || unit === 'elaVerbs') {
     const key = unit === 'elaNouns' ? 'final-test' : 'verbs:final-test';
     return !!S.elaProgress?.[key]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
@@ -5044,6 +5050,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'sprint') openSprint();
   else if (id === 'room') show('room');
   else if (id === 'elaNouns' || id === 'elaVerbs') { show('library'); renderEnglishUnit(id === 'elaVerbs' ? 'verbs' : 'nouns'); }
+  else if (id === 'histOrigins' || id === 'histEarly') { show('library'); renderEnglishUnit(id === 'histOrigins' ? 'history' : 'history2'); }
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
@@ -5155,21 +5162,117 @@ const VERB_QUESTIONS = {
     {prompt:`Choose a modal that politely asks permission.`,options:['May I read the note?','I read the note.','I have read the note.','I am reading the note.'],answer:0}
   ]
 };
+const HISTORY_UNIT1 = [
+  {id:'historyStories',name:'History Stories',lesson:'Compare the stories people tell about the past. Different starting points and perspectives shape what a history includes.'},
+  {id:'historyScale',name:'History of Many Shapes and Sizes',lesson:'Switch scale to study local details or wider patterns, and test claims against evidence.'},
+  {id:'historyFrames',name:'History Frames',lesson:'Use frames such as communities, networks, and production and distribution to focus a historical question.'},
+  {id:'historyMemory',name:'History and Memory',lesson:'Assess historical narratives by examining evidence, memory, and multiple accounts.'}
+];
+const HISTORY_GROUPS = [
+  {id:'stories',name:'History Stories | 1.1',quizName:'History Stories Quiz',learn:'Where does history begin? Compare starting points and perspectives; distinguish a historical story from the evidence used to support it.',skills:['historyStories'],quizSkills:['historyStories','historyScale'],extraLessons:[HISTORY_UNIT1[1]]},
+  {id:'frames',name:'History Frames | 1.3',quizName:'History Frames Quiz',learn:'Explore communities, expanding and contracting networks, and how production and distribution shape societies.',skills:['historyFrames']},
+  {id:'memory',name:'History and Memory | 1.4',quizName:'History and Memory Quiz',learn:'Assess narratives by comparing evidence, collective memory, and whose accounts are preserved.',skills:['historyMemory']}
+];
+const HISTORY_QUESTIONS = {
+  historyStories:[
+    {prompt:'Two communities tell different stories about the same event. What is a useful first step?',options:['Choose the older story automatically.','Compare each account’s perspective and supporting evidence.','Assume both accounts describe every detail.','Ignore the community that left fewer written records.'],answer:1},
+    {prompt:'A historian finds a letter written by someone who witnessed an event. What can the letter show?',options:['One person’s perspective and some evidence about the event.','Every person’s experience of the event.','That the writer’s memory is perfectly accurate.','That no other sources are needed.'],answer:0},
+    {prompt:'Why can histories of the same place begin at different points?',options:['A different starting point can highlight different people, changes, or questions.','Only one starting point is allowed in history.','The earliest date is always the most important.','Starting points change what actually happened.'],answer:0},
+    {prompt:'Which statement is the best-supported historical claim?',options:['Everyone remembers the event the same way.','This source proves every detail about the past.','Several sources describe the change, though they emphasize different experiences.','One account is true because it is the longest.'],answer:2}
+  ],
+  historyScale:[
+    {prompt:'A historian studies one family’s experience of migration. Which scale is this?',options:['A close, local scale.','A global scale only.','A century-wide scale only.','A comparison with no people.'],answer:0},
+    {prompt:'What can “zooming out” help a historian notice?',options:['Patterns connecting many places or communities.','The exact thoughts of one person.','Details that no source records.','That local experiences do not matter.'],answer:0},
+    {prompt:'A claim says a trade route changed many communities. What is a strong way to test it?',options:['Look for evidence from multiple connected places.','Use one object and assume it explains everything.','Ignore evidence that does not fit.','Ask only whether the route was long.'],answer:0},
+    {prompt:'Why might a historian switch between close-up and wide views?',options:['Different scales reveal different details and patterns.','One scale makes all evidence unnecessary.','Wide views always prove local causes.','Close views cannot include evidence.'],answer:0}
+  ],
+  historyFrames:[
+    {prompt:'A historian asks how families and villages formed shared practices. Which frame fits best?',options:['Communities.','Networks.','Production and distribution.','Weather only.'],answer:0},
+    {prompt:'A historian traces how ideas and goods moved between places. Which frame fits best?',options:['Communities.','Networks.','One person’s daily routine only.','A list of rulers only.'],answer:1},
+    {prompt:'A historian studies who made goods and how they reached other people. Which frame fits best?',options:['Production and distribution.','Collective memory only.','A single battle only.','A family tree only.'],answer:0},
+    {prompt:'How can a frame help when studying a complex event?',options:['It focuses attention on one useful set of details and questions.','It guarantees one complete explanation.','It removes the need to compare sources.','It makes every other perspective incorrect.'],answer:0}
+  ],
+  historyMemory:[
+    {prompt:'What is collective memory?',options:['Ways a group remembers and tells stories about its past.','A list of dates that never changes.','A source that is always unbiased.','A record written by only one historian.'],answer:0},
+    {prompt:'Why compare a remembered story with other evidence?',options:['To understand what it reveals and where accounts differ or are incomplete.','To prove memories are useless.','To make all accounts identical.','To avoid asking who created a source.'],answer:0},
+    {prompt:'A new artifact disagrees with a familiar account. What should historians do?',options:['Examine the artifact and compare it with other evidence.','Discard it because the old story is familiar.','Change the artifact to fit the account.','Assume disagreement makes all history unknowable.'],answer:0},
+    {prompt:'Which question helps assess a historical narrative?',options:['Who preserved this account, and whose experiences are missing?','Is this the only story I have heard?','Does the narrative avoid all disagreement?','Can I memorize it without checking evidence?'],answer:0}
+  ]
+};
+const isHistoryCourse = id => id === 'history' || id === 'history2';
+const HISTORY_UNIT2 = [
+  {id:'earliestHumans',name:'The Earliest Humans | 2.1',lesson:'For most of human history people foraged. About 12,000 years ago some began farming, starting the Neolithic Revolution.'},
+  {id:'migrationArt',name:'Migration and Art | 2.2',lesson:'Homo sapiens began in Africa and later migrated to other regions, leaving art and other evidence long before writing.'},
+  {id:'foragingSocieties',name:'Foraging Societies | 2.3',lesson:'Foraging required deep knowledge and skill, supported by communities and networks.'},
+  {id:'agriculturalRevolution',name:'The Agricultural Revolution | 2.4',lesson:'The move from foraging to agriculture laid the foundation for the first agricultural societies, with advantages and disadvantages.'},
+  {id:'biggestMistake',name:'The Biggest Mistake Humans Ever Made? | 2.5',lesson:'Farming changed diets, communities, lifestyles, networks, and production and distribution, with lasting consequences.'}
+];
+const HISTORY_GROUPS2 = HISTORY_UNIT2.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id]}));
+const HISTORY2_QUESTIONS = {
+  earliestHumans:[
+    {prompt:'For most of the 250,000 years of our species’ history, how did people mainly live?',options:['As foragers','As city dwellers','As factory workers','As farmers'],answer:0},
+    {prompt:'About how long ago did some people begin experimenting with farming?',options:['About 12,000 years ago','About 250 years ago','About 2,000 years ago','About 250,000 years ago'],answer:0},
+    {prompt:'What is the Neolithic Revolution?',options:['The shift toward farming and settled life','The invention of the printing press','A war between empires','The first use of writing'],answer:0},
+    {prompt:'Why compare life “then” and “now” when studying early humans?',options:['It reveals changes and continuities in how people live','It proves the past was identical to today','It removes the need for evidence','It shows foragers had no knowledge'],answer:0}
+  ],
+  migrationArt:[
+    {prompt:'Where did Homo sapiens first develop?',options:['Africa','Antarctica','Australia only','North America'],answer:0},
+    {prompt:'What can early human art tell historians?',options:['Clues about beliefs, skills, and communities, though not everything','The exact thoughts of every person','That writing already existed everywhere','Nothing, because art is not evidence'],answer:0},
+    {prompt:'Early humans created art before writing existed. What does that show?',options:['People communicated and expressed ideas in ways other than writing','Only written sources are reliable','Early humans could not think symbolically','Art always shows daily meals'],answer:0},
+    {prompt:'A historian finds paintings in a cave. What is the best next step?',options:['Compare them with other evidence about the people and place','Assume the paintings explain all of their culture','Ignore them because they have no words','Decide the artist’s exact name'],answer:0}
+  ],
+  foragingSocieties:[
+    {prompt:'Foraging is also called:',options:['Hunting and gathering','Mining and trading','Planting and harvesting','Building and printing'],answer:0},
+    {prompt:'Why did foraging require great knowledge?',options:['People needed to know plants, animals, seasons, and places','Food always stayed in one spot','Tools were never used','Communities never shared information'],answer:0},
+    {prompt:'How did communities help foragers thrive?',options:['By sharing skills, knowledge, and support','By avoiding all cooperation','By storing food in factories','By depending on one person only'],answer:0},
+    {prompt:'How could networks help foraging communities?',options:['They could exchange information, goods, and help','They prevented all movement','They made tools unnecessary','They ended communication'],answer:0}
+  ],
+  agriculturalRevolution:[
+    {prompt:'What is agriculture?',options:['Growing crops and raising animals for food','Collecting wild food only','Traveling without settling','Trading written records'],answer:0},
+    {prompt:'Which is an advantage of farming?',options:['It can produce more food in one place','It guarantees perfect health','It removes the risk of drought','It ends all conflict'],answer:0},
+    {prompt:'Which is a possible disadvantage of early farming?',options:['Crops could fail and diets could become less varied','Nobody needed to plan ahead','Communities always became smaller','Tools disappeared'],answer:0},
+    {prompt:'Why did farming lay a foundation for early agricultural societies?',options:['Reliable food supported settled communities','It made people stop using resources','It prevented trade','It required no cooperation'],answer:0}
+  ],
+  biggestMistake:[
+    {prompt:'Which kinds of change did agriculture influence?',options:['Diet, communities, lifestyles, networks, and production','Only the weather','Only the length of days','Nothing beyond food'],answer:0},
+    {prompt:'A claim says farming was “the biggest mistake.” What is the best way to test it?',options:['Compare evidence about benefits and costs for different people','Accept it because it sounds dramatic','Ignore all disadvantages','Use only one object as proof'],answer:0},
+    {prompt:'Which statement shows the question has more than one side?',options:['Farming created new possibilities and new problems','Farming had no effects','Foraging never required skill','Everyone experienced agriculture the same way'],answer:0},
+    {prompt:'Which frame is most useful for studying how food was made and shared?',options:['Production and distribution','Weather only','A single ruler','A battle map'],answer:0}
+  ]
+};
+const HISTORY_PROJECTS = {
+  history:{title:'Source Investigator Project',summary:'Investigate one source and explain what it can and cannot tell a historian.',steps:[
+    {key:'source',label:'1. Choose and describe a source (an object, photo, document, story, or place). Who made it, when, and why?'},
+    {key:'perspective',label:'2. Whose perspective does it show? Whose voices are missing?'},
+    {key:'claim',label:'3. Make one claim about the past from this source and give two pieces of evidence.'},
+    {key:'frame',label:'4. Choose a frame (communities, networks, or production and distribution) or a different scale. How does it change the story?'}]},
+  history2:{title:'Forager or Farmer? Evidence Case',summary:'Research one foraging society or early farming community and answer: was agriculture a mistake?',steps:[
+    {key:'subject',label:'1. Choose a foraging society or early farming community to research. Describe where and when it existed.'},
+    {key:'evidence',label:'2. List at least three pieces of evidence (artifacts, art, remains, or reliable sources) and what each shows.'},
+    {key:'tradeoffs',label:'3. Explain advantages and disadvantages of this way of life for different people.'},
+    {key:'claim',label:'4. Answer “Was agriculture a mistake?” with a claim, supporting evidence, and a counterargument.'},
+    {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]}
+};
 const englishCourse = course => course === 'verbs'
   ? {id:'verbs',building:'elaVerbs',title:'English Unit 2: Verbs',skills:ENGLISH_UNIT2,groups:ENGLISH_GROUPS2,finalKey:'verbs:final-test',finalPass:9}
+  : course === 'history'
+    ? {id:'history',building:'histOrigins',title:'History Unit 1: Origins of History',skills:HISTORY_UNIT1,groups:HISTORY_GROUPS,finalKey:'history:final-test',testPer:2,finalPass:6,noQuizzes:true}
+  : course === 'history2'
+    ? {id:'history2',building:'histEarly',title:'History Unit 2: Early Humans',skills:HISTORY_UNIT2,groups:HISTORY_GROUPS2,finalKey:'history2:final-test',testPer:2,finalPass:8,noQuizzes:true}
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
-function englishProgressReportHTML(){
-  return ['nouns','verbs'].map(courseId => {
+const testSize = course => course.skills.length * (course.testPer || 1);
+function englishProgressReportHTML(canReview = false){
+  return ['nouns','verbs','history','history2'].map(courseId => {
     const course = englishCourse(courseId), skills = course.skills.map(skill => {
-      const record = englishRecord(skill.id), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
+      const record = englishRecord(skill.id,courseId), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
       const summary = accuracy === null ? record.tries ? `No answer history yet · best ${record.best}/${record.questionCount || 4}` : 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`;
       return `<div class="ela-parent-row"><strong>${esc(skill.name)}</strong><span>${summary}</span>${record.answered >= 4 && accuracy < 70 ? '<b class="ela-review-flag">Review suggested</b>' : ''}</div>`;
     }).join('');
-    const assessments = [...course.groups.map(group => ({name:group.quizName || `${group.name} quiz`,key:englishQuizKey(group.id,courseId),total:4})),{name:`${course.title} Test`,key:course.finalKey,total:course.skills.length}].map(item => {
-      const record = englishRecord(item.key);
+    const assessments = [...(course.noQuizzes ? [] : course.groups.map(group => ({name:group.quizName || `${group.name} quiz`,key:englishQuizKey(group.id,courseId),total:4}))),{name:`${course.title} Test`,key:course.finalKey,total:testSize(course)}].map(item => {
+      const record = englishRecord(item.key,courseId);
       return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || item.total} · ${record.tries} tries` : 'Not started'}</span></div>`;
     }).join('');
-    return `<section class="panel"><h3>${esc(course.title)}</h3><p class="muted">Per-skill accuracy and assessment progress. Review is suggested after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${skills}</div><h4>Quizzes and test</h4><div class="ela-parent-grid">${assessments}</div></section>`;
+    return `<section class="panel"><h3>${esc(course.title)}</h3><p class="muted">Per-skill accuracy and assessment progress. Review is suggested after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${skills}</div><h4>${course.noQuizzes ? 'Test' : 'Quizzes and test'}</h4><div class="ela-parent-grid">${assessments}</div>${isHistoryCourse(courseId) ? `<h4>Project</h4><div class="ela-parent-grid">${historyProjectReportHTML(courseId, canReview)}</div>` : ''}</section>`;
   }).join('');
 }
 function readingLedgerHTML(){
@@ -5258,6 +5361,7 @@ function englishQuestions(skillId, courseId='nouns'){
     theme:readingText(chapter,'themes','friendship'),action:readingText(chapter,'notableAction','searches for a clue'),
     conflict:readingText(chapter,'conflict','a difficult problem'),joy:readingText(chapter,'joy','a joyful discovery')
   };
+  if (isHistoryCourse(courseId)) return ((courseId === 'history2' ? HISTORY2_QUESTIONS : HISTORY_QUESTIONS)[skillId] || []).map(question => ({...question,skillId}));
   if (courseId === 'verbs') return (VERB_QUESTIONS[skillId] || []).map(makeQuestion => ({...makeQuestion(context),skillId}));
   if (!reading) {
     const general = {
@@ -5343,11 +5447,11 @@ $('#libraryWrap').addEventListener('click', event => {
   }
   if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(button.dataset.elaCourse || 'nouns'); return; }
 });
-function englishRecord(key){
-  const record = S.elaProgress?.[key];
+function englishRecord(key,courseId='nouns'){
+  const progress = isHistoryCourse(courseId) ? S.historyProgress : S.elaProgress, record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isHistoryCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => shuffle(englishQuestions(skillId, courseId)));
   const questions = [];
@@ -5356,13 +5460,59 @@ function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   }
   return shuffle(questions);
 }
+const englishFinalReady = course => course.noQuizzes
+  ? course.skills.every(skill => !!englishRecord(skill.id,course.id).passed)
+  : course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id),course.id).passed);
+/* hosted: the teacher's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"; local: a grown-up sets it */
+function historyProjectState(courseId){
+  const p = S.historyProjects[courseId] || {answers:{},status:'draft',submittedAt:0,localReview:''};
+  if (p.status !== 'submitted') return {...p, state:'draft'};
+  const raw = Backend.me ? Backend.me.quiz_overrides?.[`project:${courseId}`] : '', [verdict, at] = String(raw || '').split(':');
+  const review = Backend.me ? (+at === p.submittedAt && (verdict === 'verified' || verdict === 'revise') ? verdict : '') : p.localReview;
+  return {...p, state:review || 'submitted'};
+}
+const PROJECT_STATE_TEXT = {draft:'Draft', submitted:'Submitted \u00b7 waiting for review', verified:'\u2705 Verified by your teacher', revise:'\ud83d\udd01 Revision requested'};
+function historyProjectCardHTML(courseId){
+  const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
+  return `<section class="ela-final-assessment"><div><h3>${esc(project.title)}</h3><p class="muted">${esc(project.summary)} \u00b7 ${PROJECT_STATE_TEXT[info.state]}</p></div><button type="button" class="btn small berry" data-history-project="${courseId}">${info.state === 'draft' ? 'Open project' : 'View project'}</button></section>`;
+}
+function historyProjectReportHTML(courseId, canReview){
+  const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
+  const answers = project.steps.filter(step => info.answers[step.key]).map(step => `<dt>${esc(step.label)}</dt><dd>${esc(info.answers[step.key])}</dd>`).join('');
+  const buttons = canReview && info.state !== 'draft' ? `<div class="row"><button class="btn small" data-project-local-review="verified" data-project-course="${courseId}">Mark verified</button><button class="btn small" data-project-local-review="revise" data-project-course="${courseId}">Request revision</button></div>` : '';
+  return `<div class="ela-parent-row"><strong>${esc(project.title)}</strong><span>${PROJECT_STATE_TEXT[info.state]}</span></div>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl>${buttons}</div>` : ''}`;
+}
+function renderHistoryProject(courseId){
+  void Backend.refreshSettings();
+  const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId), locked = info.state === 'submitted' || info.state === 'verified';
+  const fields = project.steps.map(step => `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');
+  const actions = locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
+    : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
+}
+$('#libraryWrap').addEventListener('submit', event => {
+  const form = event.target.closest('#historyProjectForm'); if (!form) return;
+  event.stopImmediatePropagation(); event.preventDefault();
+  const courseId = form.dataset.course, p = S.historyProjects[courseId], data = new FormData(form);
+  HISTORY_PROJECTS[courseId].steps.forEach(step => { p.answers[step.key] = String(data.get(step.key) || '').trim().slice(0,1500); });
+  if (event.submitter?.dataset.saveMode === 'submit') {
+    if (!HISTORY_PROJECTS[courseId].steps.every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
+    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; toast('Project submitted for review.');
+  } else toast('Draft saved.');
+  save(); renderHistoryProject(courseId);
+}, true);
+$('#libraryWrap').addEventListener('click', event => {
+  const open = event.target.closest('[data-history-project]'); if (open) { renderHistoryProject(open.dataset.historyProject); return; }
+  const edit = event.target.closest('[data-history-project-edit]');
+  if (edit) { const p = S.historyProjects[edit.dataset.historyProjectEdit]; p.status = 'draft'; p.localReview = ''; save(); renderHistoryProject(edit.dataset.historyProjectEdit); }
+});
 function renderEnglishUnit(courseId=activeEnglishCourse){
   const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
   const groups = course.groups.map((group, groupIndex) => {
-    const blockUnlocked = groupIndex === 0 || !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id)).passed;
+    const blockUnlocked = groupIndex === 0 || (course.noQuizzes ? course.groups[groupIndex-1].skills.every(skillId => !!englishRecord(skillId,course.id).passed) : !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id),course.id).passed);
     const exercises = group.skills.map((skillId, skillIndex) => {
-      const skill = course.skills.find(item => item.id === skillId), record = englishRecord(skillId);
-      const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1]).passed);
+      const skill = course.skills.find(item => item.id === skillId), record = englishRecord(skillId,course.id);
+      const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1],course.id).passed);
       const accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
       const status = record.passed ? `✓ Level up · Best ${record.best}/4 · ${record.tries} tries`
         : record.tries ? `Best ${record.best}/4 · ${record.tries} tries · Get 3 of 4 to level up`
@@ -5370,19 +5520,20 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
       return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p><span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
-    const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key);
-    const canQuiz = blockUnlocked && group.skills.every(skillId => !!englishRecord(skillId).passed);
+    const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key,course.id);
+    const canQuiz = blockUnlocked && group.skills.every(skillId => !!englishRecord(skillId,course.id).passed);
     const quizStatus = quiz.passed ? `Passed · best ${quiz.best}/4 · ${quiz.tries} tries`
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div><div class="ela-exercise-list">${exercises}</div><div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div></section>`;
+    const extraLessons = (group.extraLessons || []).map(lesson => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p><span>Learn · no separate practice set listed</span></article>`).join('');
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
-  const finalKey = course.finalKey, finalRecord = englishRecord(finalKey), finalReady = course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id)).passed);
-  const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${course.skills.length} · ${finalRecord.tries} tries`
-    : finalRecord.tries ? `Best ${finalRecord.best}/${course.skills.length} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${course.skills.length} to pass`
-      : finalReady ? `Ready · Get ${course.finalPass} of ${course.skills.length} to pass` : 'Pass all block quizzes to unlock';
+  const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
+  const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
+    : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
+      : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${course.skills.length} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isHistoryCourse(course.id) ? historyProjectCardHTML(course.id) : ''}`;
 }
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
@@ -5397,23 +5548,24 @@ function startEnglishPractice(skillId,courseId=activeEnglishCourse){
 }
 function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
-  if (final ? !course.groups.every(item => englishRecord(englishQuizKey(item.id,course.id)).passed) : !group || !group.skills.every(skillId => englishRecord(skillId).passed)) return;
+  if (final ? !englishFinalReady(course) : !group || !group.skills.every(skillId => englishRecord(skillId,course.id).passed)) return;
   const questions = final
-    ? course.skills.map(skill => shuffle(englishQuestions(skill.id,course.id))[0])
-    : englishAssessmentQuestions(group.skills, 4,course.id);
+    ? shuffle(course.skills.flatMap(skill => shuffle(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
+    : englishAssessmentQuestions(group.quizSkills || group.skills, 4,course.id);
   activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true};
   renderEnglishQuestion();
 }
 function finishEnglishRun(){
-  const run = englishRun, previous = englishRecord(run.progressKey), passed = run.score >= run.passMark;
-  S.elaProgress[run.progressKey] = {
+  const run = englishRun, store = isHistoryCourse(run.courseId) ? S.historyProgress : S.elaProgress;
+  const previous = englishRecord(run.progressKey,run.courseId), passed = run.score >= run.passMark;
+  store[run.progressKey] = {
     ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
     passed:!!previous.passed || passed, recentScores:[...(previous.recentScores || []),run.score].slice(-10),
     lastScore:run.score, questionCount:run.questions.length
   };
   run.questions.forEach((question,index) => {
-    const skillId = question.skillId, record = englishRecord(skillId), correct = !!run.outcomes[index];
-    S.elaProgress[skillId] = {
+    const skillId = question.skillId, record = englishRecord(skillId,run.courseId), correct = !!run.outcomes[index];
+    store[skillId] = {
       ...record, answered:(record.answered || 0) + 1, misses:(record.misses || 0) + (correct ? 0 : 1),
       recentAnswers:[...(record.recentAnswers || []),correct ? 1 : 0].slice(-12)
     };
@@ -5428,7 +5580,7 @@ function finishEnglishRun(){
   const retry = run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
     : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}" data-ela-course="${run.courseId}">Retake quiz</button>`
       : `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">Retake test</button>`;
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button></div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${S.elaProgress[run.progressKey].best} of ${run.questions.length} · Attempts: ${S.elaProgress[run.progressKey].tries}</p>${retry}</div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button></div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${store[run.progressKey].best} of ${run.questions.length} · Attempts: ${store[run.progressKey].tries}</p>${retry}</div>`;
 }
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
@@ -6882,7 +7034,7 @@ function renderParent(){
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
-    ${englishProgressReportHTML()}${readingLedgerHTML()}
+    ${englishProgressReportHTML(!Backend.me)}${readingLedgerHTML()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>
@@ -6895,6 +7047,10 @@ function renderParent(){
       ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station and shop</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
+  $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {
+    const p = S.historyProjects[b.dataset.projectCourse]; if (!p || p.status !== 'submitted') return;
+    p.localReview = b.dataset.projectLocalReview; save(); renderParent();
+  }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
   if ($('#saveParentDrills')) $('#saveParentDrills').addEventListener('click', () => {
     const types = {}; $$('[data-parent-drill-type]').forEach(input => { types[input.dataset.parentDrillType] = input.checked; });

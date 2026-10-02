@@ -19,6 +19,8 @@ export interface StudentReport {
   ss?: PracticeSummary;
   readingBooks?: { title: string; author?: string; chapters: { label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string }[] }[];
   elaProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
+  historyProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
+  historyProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
 }
 /* practice time from class_report(): minutes today and in the last 7 days, daily minutes for 4 weeks,
    and the 10 most recent sessions as [start ms, last seen ms, active seconds, device] */
@@ -193,6 +195,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
     h += englishReadingHTML(r);
+  h += '<div id="projectCard"></div>';
   h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
   ORDER.forEach(k => {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
@@ -264,6 +267,15 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-excuse]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizExcuse!, 'excused'); }));
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-clear]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizClear!, `cleared:${Date.now()}`); }));
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-undo]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizUndo!, null); }));
+    renderProjectCard();
+  }
+  function renderProjectCard() {
+    const card = $('#projectCard');
+    if (!card) return;
+    card.innerHTML = historyProjectsHTML(r, overrides);
+    card.querySelectorAll<HTMLButtonElement>('[data-project-verdict]').forEach(b => b.addEventListener('click', () => {
+      void saveOverride(`project:${b.dataset.projectCourse}`, `${b.dataset.projectVerdict}:${b.dataset.projectAt}`);
+    }));
   }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
   renderQuizCard();
@@ -305,20 +317,34 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   $('#dClose').addEventListener('click', closeDetail);
   $('#dPrint').addEventListener('click', () => window.print());
 }
+function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {
+  const projects: Record<string, string> = { history: 'History Unit 1: Source Investigator Project', history2: 'History Unit 2: Forager or Farmer? Evidence Case' };
+  const labels: Record<string, string> = { source: 'Source', perspective: 'Perspective', claim: 'Claim and evidence', frame: 'Frame or scale', subject: 'Subject', evidence: 'Evidence', tradeoffs: 'Advantages and disadvantages', sources: 'Sources used' };
+  const rows = Object.entries(projects).map(([id, title]) => {
+    const p = r.historyProjects?.[id], at = p?.submittedAt || 0, submitted = p?.status === 'submitted' && at > 0;
+    const [verdict, stamp] = String(overrides[`project:${id}`] || '').split(':'), current = +stamp === at && (verdict === 'verified' || verdict === 'revise') ? verdict : '';
+    const status = !submitted ? 'Not submitted' : current === 'verified' ? 'Verified' : current === 'revise' ? 'Revision requested' : 'Waiting for review';
+    const answers = Object.entries(p?.answers || {}).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(labels[k] || k)}</dt><dd>${esc(v)}</dd>`).join('');
+    return `<h3>${esc(title)} · ${status}</h3>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl></div>` : '<p class="muted">No work yet.</p>'}${submitted ? `<div class="row"><button class="btn small primary" data-project-verdict="verified" data-project-course="${id}" data-project-at="${at}">Verify</button> <button class="btn small" data-project-verdict="revise" data-project-course="${id}" data-project-at="${at}">Request revision</button></div>` : ''}`;
+  }).join('');
+  return `<div class="card"><h2>History projects</h2><p class="muted">Student-built research projects. Verify when the work meets your standard, or request a revision.</p>${rows}<p class="status" id="studentQuizMsg2"></p></div>`;
+}
 function englishReadingHTML(r: StudentReport) {
   const courses = [
     {title:'English Unit 1: Nouns',skills:{identifyNouns:'Identifying nouns',singularPlural:'Singular and plural nouns',commonProper:'Common and proper nouns',concreteAbstract:'Concrete and abstract nouns',fToVes:'f to -ves plurals',enPlurals:'-en plurals',basePlurals:'Base plurals',mutantPlurals:'Mutant plurals',foreignPlurals:'Foreign plurals',pluralReview:'Irregular plural review'},quizzes:[['quiz:intro','Introduction to nouns Quiz'],['quiz:types','Types of nouns Quiz'],['quiz:irregularBase','Irregular plurals I Quiz'],['quiz:irregularForeign','Irregular plurals II Quiz']],finalKey:'final-test',finalCount:10},
-    {title:'English Unit 2: Verbs',skills:{verbIdentify:'Identifying verbs',verbAgreement:'Introduction to verb agreement',verbTense:'Introduction to verb tense',actionLinkHelping:'Action, linking, and helping verbs',irregularVerbs:'Irregular verbs',simpleAspect:'Simple verb aspect',progressiveAspect:'Progressive verb aspect',perfectAspect:'Perfect verb aspect',perfectProgressive:'Perfect progressive verb aspect',tenseAspectTime:'Managing time with tense and aspect',modalVerbs:'Modal verbs'},quizzes:[['verbs:quiz:foundation','Quiz 1 · Verbs foundations'],['verbs:quiz:irregular','Irregular verbs Quiz'],['verbs:quiz:aspect','Verb aspect Quiz'],['verbs:quiz:aspectModal','Aspect and modal verbs Quiz']],finalKey:'verbs:final-test',finalCount:11}
+    {title:'English Unit 2: Verbs',skills:{verbIdentify:'Identifying verbs',verbAgreement:'Introduction to verb agreement',verbTense:'Introduction to verb tense',actionLinkHelping:'Action, linking, and helping verbs',irregularVerbs:'Irregular verbs',simpleAspect:'Simple verb aspect',progressiveAspect:'Progressive verb aspect',perfectAspect:'Perfect verb aspect',perfectProgressive:'Perfect progressive verb aspect',tenseAspectTime:'Managing time with tense and aspect',modalVerbs:'Modal verbs'},quizzes:[['verbs:quiz:foundation','Quiz 1 · Verbs foundations'],['verbs:quiz:irregular','Irregular verbs Quiz'],['verbs:quiz:aspect','Verb aspect Quiz'],['verbs:quiz:aspectModal','Aspect and modal verbs Quiz']],finalKey:'verbs:final-test',finalCount:11},
+    {title:'History Unit 1: Origins of History',history:true,skills:{historyStories:'History Stories',historyScale:'History of Many Shapes and Sizes',historyFrames:'History Frames',historyMemory:'History and Memory'},quizzes:[] as string[][],finalKey:'history:final-test',finalCount:8},
+    {title:'History Unit 2: Early Humans',history:true,skills:{earliestHumans:'The Earliest Humans',migrationArt:'Migration and Art',foragingSocieties:'Foraging Societies',agriculturalRevolution:'The Agricultural Revolution',biggestMistake:'The Biggest Mistake Humans Ever Made?'},quizzes:[] as string[][],finalKey:'history2:final-test',finalCount:10}
   ];
   const coursePanels = courses.map(course => {
     const skills = Object.entries(course.skills).map(([id, name]) => {
-      const progress = r.elaProgress?.[id], answered = progress?.answered || 0, misses = progress?.misses || 0;
+      const progress = ((course as { history?: boolean }).history ? r.historyProgress : r.elaProgress)?.[id], answered = progress?.answered || 0, misses = progress?.misses || 0;
       const result = answered ? `${Math.round((answered - misses) * 100 / answered)}% · ${answered - misses}/${answered} correct`
         : progress?.tries ? `No answer history · best ${progress.best ?? 0}/${progress.questionCount || 4}` : 'Not practiced';
       return `<tr><td>${esc(name)}</td><td>${result}</td><td>${answered >= 4 && (answered - misses) / answered < .7 ? 'Review suggested' : ''}</td></tr>`;
     }).join('');
     const assessments = [...course.quizzes.map(([key, name]) => ({key,name,total:4})),{key:course.finalKey,name:'Unit test',total:course.finalCount}].map(item => {
-      const progress = r.elaProgress?.[item.key];
+      const progress = ((course as { history?: boolean }).history ? r.historyProgress : r.elaProgress)?.[item.key];
       return `<tr><td>${esc(item.name)}</td><td>${progress?.tries ? `${progress.passed ? 'Passed' : 'Not passed'} · best ${progress.best ?? 0}/${progress.questionCount || item.total}` : 'Not started'}</td><td>${progress?.tries || 0}</td></tr>`;
     }).join('');
     return `<div class="card"><h2>${esc(course.title)}</h2><h3>Practice by skill</h3><table class="steptable"><tr><th>Skill</th><th>Accuracy</th><th>Focus</th></tr>${skills}</table><h3>Quizzes and test</h3><table class="steptable"><tr><th>Assessment</th><th>Status</th><th>Attempts</th></tr>${assessments}</table></div>`;
