@@ -1,0 +1,2610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Fly, Fly Butterfly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#1B2136;
+    --bg-deep-2:#151a2b;
+    --bg-panel:#262c4a;
+    --bg-panel-2:#2f3660;
+    --bg-panel-3:#39406e;
+    --line:rgba(255,255,255,.10);
+    --line-strong:rgba(255,255,255,.22);
+    --cream:#F3EEDD;
+    --cream-dim:rgba(243,238,221,.62);
+    --ink:#171a2c;
+
+    --c-larva:#7FBF8E;
+    --c-feed:#B7C25A;
+    --c-pupa:#C79A56;
+    --c-chrysalis:#9C8FE0;
+    --c-baby:#E7B740;
+    --c-hibernation:#6FA8C9;
+    --c-adult:#F0806B;
+    --c-egg:#9aa3c9;
+    --c-garden:#6FB9A0;
+    --c-fly:#F2A65A;
+    --c-wild:#E86AA6;
+    --c-event:#8B7FD1;
+
+    --gold:#E7B740;
+    --coral:#F0806B;
+    --teal:#6FB9A0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(139,127,224,.20), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(240,128,107,.14), transparent 55%),
+      linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-deep-2) 100%);
+    color:var(--cream);
+    font-family:'Nunito Sans', system-ui, sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:900px;margin:0 auto;padding:14px 14px 40px;min-height:100vh;}
+  h1,h2,h3{font-family:'Fraunces', serif; margin:0; letter-spacing:.2px;}
+  .eyebrow{font-family:'Space Mono', monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--cream-dim);}
+  button{font-family:inherit; cursor:pointer;}
+  .btn{
+    appearance:none; border:1px solid var(--line-strong); background:var(--bg-panel-2); color:var(--cream);
+    padding:10px 16px; border-radius:10px; font-weight:700; font-size:14px; transition:.15s;
+  }
+  .btn:hover:not(:disabled){background:var(--bg-panel-3); transform:translateY(-1px);}
+  .btn:disabled{opacity:.35; cursor:not-allowed;}
+  .btn-primary{background:linear-gradient(135deg,var(--gold),#d99a3a); color:var(--ink); border:none;}
+  .btn-primary:hover:not(:disabled){filter:brightness(1.08); background:linear-gradient(135deg,var(--gold),#d99a3a);}
+  .btn-ghost{background:transparent;}
+  .btn-coral{background:linear-gradient(135deg,var(--coral),#d95f4c); color:var(--ink); border:none;}
+  .btn-sm{padding:6px 10px; font-size:12px; border-radius:8px;}
+
+  /* ---------- Hero / Setup ---------- */
+  .hero{text-align:center; padding:28px 6px 8px;}
+  .hero .wing{font-size:44px; display:inline-block; animation:flutter 3.2s ease-in-out infinite;}
+  @keyframes flutter{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(6deg) translateY(-6px);}}
+  .hero h1{font-size:clamp(30px,7vw,46px); font-weight:700; background:linear-gradient(135deg,var(--gold),var(--coral) 60%,var(--c-chrysalis)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .hero p{color:var(--cream-dim); margin-top:6px; font-size:14px;}
+
+  .panel{background:var(--bg-panel); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:14px;}
+  .panel h2{font-size:19px; margin-bottom:10px;}
+  .row{display:flex; gap:8px; flex-wrap:wrap;}
+  .choice-group{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 16px;}
+  .choice{border:1.5px solid var(--line-strong); background:var(--bg-panel-2); color:var(--cream); border-radius:10px; padding:10px 14px; font-weight:700; font-size:14px;}
+  .choice.active{border-color:var(--gold); background:rgba(231,183,64,.18); box-shadow:0 0 0 1px var(--gold) inset;}
+  .name-inputs{display:grid; gap:10px; margin:6px 0 16px;}
+  .player-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .player-row input{flex:1 1 140px; min-width:0;}
+  .type-toggle{display:flex; gap:6px; flex:0 0 auto;}
+  .choice-sm{padding:7px 10px; font-size:12px; border-radius:8px;}
+  .name-inputs input{
+    background:var(--bg-panel-2); border:1.5px solid var(--line-strong); border-radius:10px; padding:10px 12px;
+    color:var(--cream); font-family:inherit; font-size:14px; font-weight:600;
+  }
+  .name-inputs input:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  .mode-desc{font-size:12.5px; color:var(--cream-dim); margin-top:-6px; margin-bottom:14px; line-height:1.5;}
+  .check-row{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--cream-dim); margin-bottom:16px;}
+
+  /* ---------- Scoreboard ---------- */
+  .scoreboard{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin-bottom:14px;}
+  .score-card{background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; position:relative; overflow:hidden;}
+  .score-card.turn{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset, 0 0 18px rgba(231,183,64,.18);}
+  .score-card .pname{font-weight:800; font-size:13.5px; display:flex; align-items:center; gap:6px;}
+  .score-card .turn-dot{width:7px;height:7px;border-radius:50%; background:var(--gold); box-shadow:0 0 8px var(--gold);}
+  .score-card .tokens{display:flex; gap:8px; margin-top:6px; font-family:'Space Mono',monospace; font-size:11.5px; color:var(--cream-dim); flex-wrap:wrap;}
+  .score-card .tokens b{color:var(--cream); font-weight:700;}
+  .score-card .total{position:absolute; top:8px; right:10px; font-family:'Space Mono',monospace; font-size:17px; font-weight:700; color:var(--gold);}
+
+  /* ---------- Tracks ---------- */
+  .lifecycle-strip{background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px;}
+  .lc-scroller{display:flex; align-items:flex-start; gap:6px; overflow-x:auto; padding-bottom:2px;}
+  .lc-stage{flex:0 0 auto; width:92px; text-align:center;}
+  .lc-dot{width:26px; height:26px; border-radius:50%; background:var(--stage-color); margin:0 auto 5px; box-shadow:0 0 6px var(--stage-color); display:flex; align-items:center; justify-content:center; color:#fff;}
+  .lc-dot svg{width:16px; height:16px;}
+  .lc-name{font-family:'Fraunces',serif; font-weight:600; font-size:11px; margin-bottom:2px;}
+  .lc-fact{font-size:9px; color:var(--cream-dim); line-height:1.35;}
+  .lc-arrow{flex:0 0 auto; color:var(--cream-dim); font-size:12px; padding-top:5px;}
+  .tracks{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;}
+  @media (max-width:560px){.tracks{grid-template-columns:1fr;}}
+  .track{background:var(--bg-panel); border:1.5px solid var(--line); border-radius:14px; padding:12px 12px 16px; position:relative; transition:.15s;}
+  .track.eligible{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset, 0 0 20px rgba(231,183,64,.16); cursor:pointer;}
+  .track.eligible:hover{background:var(--bg-panel-2);}
+  .track.selectable{cursor:pointer;}
+  .track.selectable:hover{background:var(--bg-panel-2);}
+  .track.track-selected{border-color:var(--c-chrysalis); box-shadow:0 0 0 1px var(--c-chrysalis) inset, 0 0 20px rgba(156,143,224,.22);}
+  .track.locked{opacity:.55;}
+  .track .t-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;}
+  .track .t-label{font-family:'Fraunces',serif; font-weight:600; font-size:15px;}
+  .track .t-sub{font-family:'Space Mono',monospace; font-size:10.5px; color:var(--cream-dim);}
+  .track .lock-badge{font-size:10px; font-family:'Space Mono',monospace; background:rgba(255,255,255,.08); padding:2px 6px; border-radius:6px; color:var(--cream-dim);}
+  .track .t-meta{display:flex; gap:6px; align-items:center; margin-top:6px; flex-wrap:wrap;}
+  .t-credit{font-size:9px; font-family:'Space Mono',monospace; background:rgba(255,255,255,.06); border:1px solid var(--line-strong); color:var(--cream-dim); padding:2px 6px; border-radius:6px;}
+  .t-credit.mine{background:rgba(111,185,160,.16); border-color:var(--teal); color:var(--teal); font-weight:700;}
+  .t-touched{font-size:9px; font-family:'Space Mono',monospace; background:rgba(231,183,64,.16); border:1px solid var(--gold); color:var(--gold); padding:2px 6px; border-radius:6px;}
+  .nodewrap{position:relative; padding:0 2px; margin-bottom:4px;}
+  .line-bg{position:absolute; left:15px; right:15px; top:15px; height:3px; background:rgba(255,255,255,.10); border-radius:2px;}
+  .line-fill{position:absolute; left:15px; top:15px; height:3px; background:linear-gradient(90deg,var(--teal),var(--gold)); border-radius:2px; transition:width .5s ease;}
+  .nodes{position:relative; display:flex; justify-content:space-between; z-index:1;}
+  .node{
+    width:26px; height:26px; border-radius:50%; flex-shrink:0; transition:.2s;
+    border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05);
+    display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.28);
+  }
+  .node svg{width:15px; height:15px; transition:.2s;}
+  .node.done{
+    border-color:var(--stage-color); color:var(--stage-color);
+    background:rgba(255,255,255,.08);
+    background:color-mix(in srgb, var(--stage-color) 20%, transparent);
+  }
+  .node.current{
+    transform:scale(1.6); border-color:#fff; background:var(--stage-color); color:#fff;
+    box-shadow:0 0 0 4px rgba(255,255,255,.14), 0 0 14px var(--stage-color); animation:pulse 1.7s infinite;
+  }
+  .node.current svg{width:17px; height:17px;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(255,255,255,.14),0 0 8px var(--stage-color);}50%{box-shadow:0 0 0 7px rgba(255,255,255,.06),0 0 20px var(--stage-color);}}
+  .tier-track-row{display:flex; margin-top:3px;}
+  .tier-seg{font-family:'Space Mono',monospace; font-size:8px; letter-spacing:.04em; color:var(--cream-dim); text-align:center; border-top:2px solid; padding-top:3px; overflow:hidden; white-space:nowrap;}
+  .tier-seg-1{border-top-color:rgba(111,185,160,.55);}
+  .tier-seg-2{border-top-color:rgba(240,128,107,.55);}
+  .track.hover-target{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset, 0 0 16px rgba(231,183,64,.2);}
+  .card.hover-target{border-color:var(--gold); box-shadow:0 0 12px rgba(231,183,64,.45);}
+  .actionrow{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
+  .adults-tracker{background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:14px;}
+  .adults-tracker .at-label{font-size:12px; color:var(--cream-dim); white-space:nowrap; display:block; margin-bottom:8px;}
+  .bfly-pips{display:flex; flex-wrap:wrap; align-items:flex-end; gap:4px 5px;}
+  .bfly-pip{transition:.3s; line-height:1;}
+  .bfly-pip.unearned{font-size:13px; opacity:.16; filter:grayscale(1);}
+  .bfly-pip.earned{opacity:1; filter:none;}
+  .bfly-pip.bfly-small{font-size:13px; color:var(--teal); text-shadow:0 0 5px rgba(111,185,160,.6);}
+  .bfly-pip.bfly-medium{font-size:18px; color:var(--gold); text-shadow:0 0 6px rgba(231,183,64,.6);}
+  .bfly-pip.bfly-large{font-size:23px; color:var(--coral); text-shadow:0 0 8px rgba(240,128,107,.65);}
+
+  /* ---------- Cards ---------- */
+  .hand-wrap{margin-top:6px;}
+  .hand-scroller{display:flex; gap:9px; overflow-x:auto; padding:8px 2px 12px;}
+  .card{
+    flex:0 0 auto; width:120px; height:168px; border-radius:12px; background:var(--cream);
+    border:2px solid rgba(0,0,0,.12); overflow:hidden;
+    transition:.15s; position:relative; box-shadow:0 2px 6px rgba(0,0,0,.35);
+  }
+  .card:hover{transform:translateY(-3px);}
+  .card.selected{box-shadow:0 8px 22px rgba(231,183,64,.4); transform:translateY(-8px);}
+  .card.selected .card-frame{border-color:var(--gold); box-shadow:0 0 0 2px var(--gold) inset;}
+  .card.eligible .card-frame{border-color:var(--c-chrysalis); box-shadow:0 0 0 2px var(--c-chrysalis) inset, 0 0 12px rgba(156,143,224,.5);}
+  .card.event{border-style:dashed;}
+  .card-frame{
+    position:absolute; inset:5px; border-radius:8px; border:1.5px solid var(--card-color);
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:4px 5px 6px; color:var(--ink);
+  }
+  .idx{position:absolute; font-family:'Space Mono',monospace; font-weight:700; font-size:8px; letter-spacing:.02em; color:var(--card-color); line-height:1;}
+  .idx-tl{top:3px; left:4px;}
+  .tier-badge{position:absolute; top:2px; right:3px; font-family:'Space Mono',monospace; font-size:7px; font-weight:700; letter-spacing:.03em; color:#fff; background:var(--card-color); padding:1.5px 4px; border-radius:4px; z-index:2; pointer-events:none;}
+  .playable-dot{position:absolute; bottom:2px; left:4px; width:7px; height:7px; border-radius:50%; background:transparent; z-index:2;}
+  .card.playable-now .playable-dot{background:var(--teal); box-shadow:0 0 5px var(--teal);}
+  .keep-badge{position:absolute; bottom:1px; right:3px; font-size:9px; z-index:2; opacity:.85;}
+  .card-art{
+    width:76px; height:76px; margin:10px auto 3px; border-radius:50%;
+    background:rgba(255,255,255,.25);
+    background:color-mix(in srgb, var(--card-color) 16%, transparent);
+    display:flex; align-items:center; justify-content:center; color:var(--card-color);
+  }
+  .card-art svg{width:54px; height:54px;}
+  .card-title{font-family:'Fraunces',serif; font-weight:600; font-size:11px; line-height:1.2; color:var(--ink); margin-top:2px;}
+  .card .cdesc{font-size:7.5px; color:#6b6455; line-height:1.25; margin-top:auto; padding-top:3px;}
+  .stage-flow{display:flex; align-items:center; justify-content:center; gap:2px; margin-top:auto; padding-top:5px;}
+  .flow-group{display:flex; gap:1px;}
+  .flow-icon{width:14px; height:14px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; opacity:.8;}
+  .flow-icon svg{width:12px; height:12px;}
+  .flow-arrow{font-size:8px; color:#a89f8a; flex-shrink:0;}
+  .flow-end{font-size:11px; color:var(--gold); flex-shrink:0;}
+  .flow-branch{display:flex; align-items:center; gap:2px;}
+  .flow-pts{font-family:'Space Mono',monospace; font-weight:700; font-size:11px; flex-shrink:0;}
+  .flow-pts-any{font-size:8px; color:#8a8267; font-weight:600;}
+  .flow-sep{font-size:9px; color:#c2b99e; margin:0 1px; flex-shrink:0;}
+  .flow-this{
+    width:19px; height:19px; border-radius:50%; opacity:1;
+    background:rgba(255,255,255,.55); border:1.5px solid var(--card-color);
+    box-shadow:0 0 0 2px rgba(255,255,255,.35);
+  }
+  .flow-this svg{width:14px; height:14px;}
+  .card-pick{width:96px; height:132px;}
+  .card-pick .card-art{width:52px; height:52px; margin:9px auto 2px;}
+  .card-pick .card-art svg{width:36px; height:36px;}
+  .card-pick .card-title{font-size:9.5px;}
+  .card-pick .cdesc{display:none;}
+
+  /* ---------- Gate / overlays ---------- */
+  .gate{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:18px; padding:40px 20px; text-align:center; margin-top:30px;
+  }
+  .gate .wing{font-size:52px; animation:flutter 3.2s ease-in-out infinite; display:block; margin-bottom:10px;}
+  .gate h2{font-size:22px; margin-bottom:6px;}
+  .gate p{color:var(--cream-dim); font-size:13.5px; margin-bottom:20px;}
+
+  .photo-box{background:var(--bg-panel); border:1.5px solid var(--gold); border-radius:16px; padding:18px; margin-bottom:14px;}
+  .photo-box h2{font-size:18px; margin-bottom:4px;}
+  .photo-box .meta{font-size:13px; color:var(--cream-dim); margin-bottom:12px;}
+  .photo-box .cost-badge{display:inline-block; font-family:'Space Mono',monospace; font-size:11px; background:rgba(231,183,64,.16); border:1px solid var(--gold); color:var(--gold); padding:3px 8px; border-radius:8px; margin-top:4px;}
+
+  .log{font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim); background:var(--bg-panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-top:6px; max-height:80px; overflow-y:auto;}
+  .log div{padding:1px 0;}
+
+  .footer-bar{display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px; flex-wrap:wrap;}
+  .pile-info{font-family:'Space Mono',monospace; font-size:11px; color:var(--cream-dim);}
+
+  .endscreen{text-align:center; padding:20px 6px;}
+  .podium{display:flex; flex-direction:column; gap:10px; margin:20px 0;}
+  .prow{background:var(--bg-panel); border:1.5px solid var(--line); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center;}
+  .prow.win{border-color:var(--gold); box-shadow:0 0 24px rgba(231,183,64,.25);}
+  .prow .pn{font-weight:800; font-size:15px; display:flex; align-items:center; gap:8px;}
+  .prow .pts{font-family:'Space Mono',monospace; font-weight:700; color:var(--gold); font-size:18px;}
+  .crown{font-size:18px;}
+
+  .choicelist{display:flex; flex-direction:column; gap:8px; margin:14px 0;}
+  .choicerow{display:flex; justify-content:space-between; align-items:center; background:var(--bg-panel-2); border:1px solid var(--line-strong); border-radius:10px; padding:10px 12px;}
+
+  .toast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--bg-panel-3); border:1px solid var(--gold); color:var(--cream); padding:9px 16px; border-radius:10px; font-size:13px; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,.4); animation:toastin .25s ease;}
+
+  .celebration{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:55;
+    display:flex; flex-direction:column; gap:6px; max-width:min(92vw,380px);
+    pointer-events:none;
+  }
+  .celeb-row{
+    display:flex; align-items:center; gap:10px;
+    background:linear-gradient(135deg, rgba(46,51,88,.97), rgba(57,64,110,.97));
+    border:1.5px solid var(--gold); border-radius:14px; padding:10px 16px;
+    box-shadow:0 10px 32px rgba(0,0,0,.5), 0 0 24px rgba(231,183,64,.25);
+    animation:celebpop .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .celeb-icon{font-size:26px; flex-shrink:0; filter:drop-shadow(0 0 6px rgba(231,183,64,.6));}
+  .celeb-text{display:flex; flex-direction:column; min-width:0;}
+  .celeb-title{font-family:'Fraunces',serif; font-weight:700; font-size:14px; color:var(--cream);}
+  .celeb-sub{font-family:'Space Mono',monospace; font-size:12px; color:var(--gold); font-weight:700;}
+  @keyframes celebpop{0%{opacity:0; transform:scale(.7) translateY(-14px);} 60%{opacity:1; transform:scale(1.04) translateY(0);} 100%{opacity:1; transform:scale(1) translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .celeb-row{animation:none;} }
+  @keyframes toastin{from{opacity:0; transform:translate(-50%,8px);} to{opacity:1; transform:translate(-50%,0);}}
+
+  .rules-toggle{position:fixed; top:12px; right:12px; z-index:40; display:flex; gap:6px;}
+  .rules-modal{position:fixed; inset:0; background:rgba(10,12,22,.72); display:flex; align-items:center; justify-content:center; z-index:60; padding:16px;}
+  .rules-modal .inner{background:var(--bg-panel); border:1px solid var(--line-strong); border-radius:16px; max-width:520px; max-height:80vh; overflow-y:auto; padding:22px;}
+  .rules-modal h3{margin-bottom:10px;}
+  .rules-modal p, .rules-modal li{font-size:13px; color:var(--cream-dim); line-height:1.6;}
+  .rules-modal ul{padding-left:18px; margin:6px 0 14px;}
+
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0;}
+  .stat-box{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:10px; text-align:center;}
+  .stat-n{font-family:'Space Mono',monospace; font-size:20px; font-weight:700; color:var(--gold);}
+  .stat-l{font-size:10.5px; color:var(--cream-dim); margin-top:2px;}
+  .history-list{display:flex; flex-direction:column; gap:8px; margin-top:12px; max-height:260px; overflow-y:auto;}
+  .history-row{background:var(--bg-panel-2); border:1px solid var(--line); border-radius:10px; padding:8px 10px;}
+  .history-head{display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:10px; color:var(--cream-dim); margin-bottom:5px;}
+  .history-players{display:flex; flex-wrap:wrap; gap:8px; font-size:12px;}
+  .hp{color:var(--cream-dim);}
+  .hp b{color:var(--cream); font-weight:700;}
+  .hp.win{color:var(--gold);}
+  .hp.win b{color:var(--gold);}
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--bg-panel-3); border-radius:8px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .wing, .node.current, .card{animation:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+"use strict";
+
+/* ============================= DATA ============================= */
+// Unique per-card-type metadata + deck composition counts (used for building the draw pile)
+const STAGE_CARD_INFO = {
+  'Larva':          {abbr:'LAR',  color:'var(--c-larva)',      count:8,  fact:'Hatches from the egg and immediately starts eating.'},
+  'Feed':           {abbr:'FEED', color:'var(--c-feed)',       count:14, fact:'Feeding fuels growth — this happens twice in the cycle.'},
+  'Pupa':           {abbr:'PUPA', color:'var(--c-pupa)',       count:8,  fact:'The caterpillar stops eating and finds a safe spot.'},
+  'Chrysalis':      {abbr:'CHRY', color:'var(--c-chrysalis)',  count:6,  fact:'A hard case forms — the body rebuilds itself inside.'},
+  'Baby Butterfly': {abbr:'BABY', color:'var(--c-baby)',       count:4,  fact:'Emerges with soft, folded wings that need to dry.'},
+  'Hibernation':    {abbr:'HIBE', color:'var(--c-hibernation)',count:4,  fact:'Many butterflies rest through winter before flying far.'},
+  'Adult Butterfly':{abbr:'ADLT', color:'var(--c-adult)',      count:4,  fact:'Fully grown and ready to fly, feed, and reproduce.'}
+};
+// The track sequence — Feed appears twice on purpose: once after Larva, once before Hibernation
+const STAGES = [
+  {key:'Larva',           ...STAGE_CARD_INFO['Larva']},
+  {key:'Feed',            ...STAGE_CARD_INFO['Feed']},
+  {key:'Pupa',            ...STAGE_CARD_INFO['Pupa']},
+  {key:'Chrysalis',       ...STAGE_CARD_INFO['Chrysalis']},
+  {key:'Baby Butterfly',  ...STAGE_CARD_INFO['Baby Butterfly']},
+  {key:'Feed',            ...STAGE_CARD_INFO['Feed']},
+  {key:'Hibernation',     ...STAGE_CARD_INFO['Hibernation']},
+  {key:'Adult Butterfly', ...STAGE_CARD_INFO['Adult Butterfly']}
+];
+const BABY_STAGE_INDEX = STAGES.findIndex(s=>s.key==='Baby Butterfly'); // 4
+const ADULT_STAGE_INDEX = STAGES.length - 1; // 7
+const NODES = [{key:'Egg', abbr:'EGG', color:'var(--c-egg)', fact:'Every track starts here — the very beginning of life.'}].concat(STAGES);
+
+const EVENTS = [
+  {key:'bugbgone', label:'Bug B Gone', desc:'Reset all tracks before Baby (pays out banked Cultivator credit first). +1 Egg per track reset.'},
+  {key:'byebyebirdy', label:'Bye, Bye Birdy', desc:'Reset all tracks at Baby or later (pays out banked Cultivator credit first). +1 Egg per track reset.'},
+  {key:'butterfliesbfree', label:'Butterflies B Free', desc:'Everyone discards their Garden cards.'},
+  {key:'plenty', label:"Butterfly's A Plenty", desc:'Gain 4 Eggs.'},
+  {key:'growthspurt', label:'Growth Spurt', desc:'Gain 1 Egg for each track closest to Egg.'},
+  {key:'fasttrack', label:'Fast Track', desc:'Advance every track one stage (max Adult).'},
+  {key:'lookatitgrow', label:'Look At It Grow', desc:'Jump one track to Baby or to Adult.'},
+  {key:'switcharoo', label:'Switch-A-Roo', desc:'Reverse turn order.'},
+  {key:'peekaboo', label:'Peek-A-Boo', desc:"Peek an opponent's hand, take one card."},
+  {key:'skippydoo', label:'Skippy-Doo', desc:'Next player skips their turn.'},
+  {key:'draw2play2', label:'Draw 2 / Play 2', desc:'Draw 2 cards to your hand.'},
+  {key:'allhandsondeck', label:'All Hands On Deck', desc:'Everyone passes their hand along.'},
+  {key:'doover', label:'Do Over', desc:'Discard your hand, draw 4, take another turn.'},
+  {key:'mixitup', label:'Mix It Up', desc:'Shuffle the discard pile into a new draw pile.'}
+];
+
+const PHOTO_INFO = {
+  babyGarden:{label:'Baby Butterfly', costCards:1, reward:1, tokenLabel:'Small'},
+  adultGarden:{label:'Adult Butterfly', costCards:2, reward:2, tokenLabel:'Medium'},
+  release:{label:'Released Adult', costCards:3, reward:3, tokenLabel:'Large'}
+};
+
+let idCounter = 1;
+function newId(){ return 'c'+(idCounter++); }
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* ============================= STATE ============================= */
+let S = { count:2, names:['',''], types:['human','human'], mode:'kids', longer:false }; // setup buffer
+let G = null; // active game
+let appPhase = 'setup';
+let toastMsg = null, toastTimer = null;
+let celebrationMsg = null, celebrationTimer = null;
+
+/* ============================= ONLINE LOBBY ============================= */
+// A per-tab identity, regenerated fresh each load, but overridden below if
+// this tab previously claimed a seat in a specific lobby (see loadMySeatId),
+// so a page refresh can recover which seat you owned.
+let myClientId = 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+let O = {
+  screen:'choose',      // 'choose' | 'create' | 'join' | 'waiting' | 'playing'
+  code:null,
+  myName:'',
+  joinCodeInput:'',
+  isHost:false,
+  hostClientId:null,
+  count:2,
+  mode:'kids',
+  longer:false,
+  seats:[],
+  seq:0,
+  pollTimer:null,
+  syncing:false,
+  busy:false,
+  error:null
+};
+
+function generateLobbyCode(){
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O/1/I/L — easy to read aloud
+  let s = '';
+  for(let i=0;i<4;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+async function fetchLobby(code){
+  if(!hasStorage()) return null;
+  try{
+    const res = await window.storage.get('lobby:'+code, true);
+    return (res && res.value) ? JSON.parse(res.value) : null;
+  } catch(e){ return null; }
+}
+
+async function saveLobby(code, data){
+  if(!hasStorage()) return false;
+  try{
+    await window.storage.set('lobby:'+code, JSON.stringify(data), true);
+    return true;
+  } catch(e){ return false; }
+}
+
+async function saveMySeatId(code){
+  if(!hasStorage()) return;
+  try{ await window.storage.set('myseat:'+code, myClientId, false); } catch(e){}
+}
+async function loadMySeatId(code){
+  if(!hasStorage()) return null;
+  try{
+    const res = await window.storage.get('myseat:'+code, false);
+    return res ? res.value : null;
+  } catch(e){ return null; }
+}
+
+async function createLobby(){
+  if(!hasStorage()){ O.error = "Online play needs the artifact storage feature, which isn't available here."; render(); return; }
+  if(O.busy) return;
+  O.busy = true; O.error = null; render();
+  const name = (O.myName||'').trim() || 'Host';
+  let code = generateLobbyCode();
+  for(let attempt=0; attempt<5; attempt++){
+    const existing = await fetchLobby(code);
+    if(!existing) break;
+    code = generateLobbyCode();
+  }
+  const seats = [];
+  for(let i=0;i<O.count;i++){
+    seats.push({ index:i, name: i===0?name:'', isAI:false, claimedBy: i===0?myClientId:null });
+  }
+  const lobby = {
+    status:'waiting', hostClientId: myClientId, mode:O.mode, longer:O.longer,
+    seatCount:O.count, seats, seq:1, updatedAt:Date.now()
+  };
+  const ok = await saveLobby(code, lobby);
+  O.busy = false;
+  if(!ok){ O.error = 'Could not create the lobby — try again.'; render(); return; }
+  await saveMySeatId(code);
+  O.code = code; O.isHost = true; O.hostClientId = myClientId;
+  O.seats = seats; O.seq = 1; O.screen = 'waiting'; O.error = null;
+  startOnlinePolling();
+  render();
+}
+
+async function joinLobby(){
+  if(!hasStorage()){ O.error = "Online play needs the artifact storage feature, which isn't available here."; render(); return; }
+  if(O.busy) return;
+  const code = (O.joinCodeInput||'').trim().toUpperCase();
+  const name = (O.myName||'').trim() || 'Player';
+  if(!code){ O.error = 'Enter a lobby code.'; render(); return; }
+  O.busy = true; O.error = null; render();
+
+  let lobby = await fetchLobby(code);
+  if(!lobby){ O.busy=false; O.error = 'No lobby found with that code.'; render(); return; }
+
+  if(lobby.status !== 'waiting'){
+    const mySeat = (lobby.seats||[]).find(s=>s.claimedBy===myClientId);
+    if(mySeat){
+      O.code = code; O.isHost = (lobby.hostClientId===myClientId); O.hostClientId = lobby.hostClientId;
+      adoptLobbyState(lobby); O.screen = 'playing'; appPhase = 'online';
+      startOnlinePolling(); O.busy=false; render(); return;
+    }
+    O.busy=false; O.error = 'That lobby has already started.'; render(); return;
+  }
+
+  for(let attempt=0; attempt<4; attempt++){
+    lobby = await fetchLobby(code);
+    if(!lobby){ O.busy=false; O.error='Lobby disappeared.'; render(); return; }
+    const openSeat = lobby.seats.find(s=> !s.claimedBy && !s.isAI);
+    if(!openSeat){ O.busy=false; O.error='That lobby is full.'; render(); return; }
+    openSeat.claimedBy = myClientId;
+    openSeat.name = name;
+    lobby.seq = (lobby.seq||0)+1;
+    lobby.updatedAt = Date.now();
+    const ok = await saveLobby(code, lobby);
+    if(ok){
+      await saveMySeatId(code);
+      O.code = code; O.isHost = false; O.hostClientId = lobby.hostClientId;
+      O.seats = lobby.seats; O.seq = lobby.seq; O.mode = lobby.mode; O.longer = lobby.longer;
+      O.screen = 'waiting'; O.error = null; O.busy = false;
+      startOnlinePolling(); render(); return;
+    }
+  }
+  O.busy = false; O.error = 'Could not join — try again.'; render();
+}
+
+async function toggleSeatAI(idx){
+  if(!O.isHost || idx===0) return;
+  for(let attempt=0; attempt<4; attempt++){
+    const lobby = await fetchLobby(O.code);
+    if(!lobby || lobby.status!=='waiting') return;
+    const seat = lobby.seats[idx];
+    if(!seat) return;
+    if(seat.claimedBy && seat.claimedBy!==myClientId) return; // someone already joined this seat — don't clobber them
+    seat.isAI = !seat.isAI;
+    if(seat.isAI){ seat.claimedBy = null; seat.name = ''; }
+    lobby.seq = (lobby.seq||0)+1;
+    lobby.updatedAt = Date.now();
+    const ok = await saveLobby(O.code, lobby);
+    if(ok){
+      O.seats = lobby.seats;
+      O.seq = lobby.seq;
+      render();
+      return;
+    }
+  }
+}
+
+async function startOnlineGame(){
+  if(!O.isHost || O.busy) return;
+  O.busy = true; render();
+  const fresh = await fetchLobby(O.code);
+  if(fresh && fresh.status==='waiting'){ O.seats = fresh.seats; O.seq = fresh.seq; }
+  if(O.seats.some(s=> !s.isAI && !s.claimedBy)){ O.busy = false; O.error = 'Every seat needs a player or a Computer before starting.'; render(); return; }
+  const names = O.seats.map(s=> s.isAI ? '' : (s.name||''));
+  const types = O.seats.map(s=> s.isAI ? 'ai' : 'human');
+  initGame(O.count, names, types, O.mode, O.longer, false);
+  G.onlineMode = true;
+  G.onlineCode = O.code;
+  G.seatOwners = O.seats.map(s=> s.isAI ? null : s.claimedBy);
+  G.hostClientId = O.hostClientId;
+  G.seq = 1;
+  appPhase = 'online';
+  O.screen = 'playing';
+  await pushOnlineState();
+  O.busy = false;
+  render();
+}
+
+function myPlayerIndex(){
+  if(!G || !G.seatOwners) return -1;
+  return G.seatOwners.indexOf(myClientId);
+}
+function isMySeat(seatIdx){
+  return !!(G && G.seatOwners && G.seatOwners[seatIdx] === myClientId);
+}
+function amIOnlineHost(){
+  return !!(G && G.hostClientId === myClientId);
+}
+function canActForSeat(seatIdx){
+  if(isMySeat(seatIdx)) return true;
+  return !!(G.players[seatIdx] && G.players[seatIdx].isAI && amIOnlineHost());
+}
+
+async function pushOnlineState(){
+  if(!O.code || !G) return false;
+  G.seq = (G.seq||0)+1;
+  const lobby = { status:'playing', hostClientId:G.hostClientId, seatOwners:G.seatOwners, seq:G.seq, gameState:G, updatedAt:Date.now() };
+  const ok = await saveLobby(O.code, lobby);
+  O.seq = G.seq;
+  return ok;
+}
+
+function adoptLobbyState(lobby){
+  G = lobby.gameState;
+  G.onlineMode = true;
+  G.onlineCode = O.code;
+  O.seq = lobby.seq;
+}
+
+function startOnlinePolling(){
+  if(O.pollTimer) return;
+  O.pollTimer = setInterval(onlinePollTick, 2500);
+  onlinePollTick();
+}
+function stopOnlinePolling(){
+  clearInterval(O.pollTimer);
+  O.pollTimer = null;
+}
+
+async function onlinePollTick(){
+  if(!O.code || O.syncing) return;
+  O.syncing = true;
+  try{
+    const lobby = await fetchLobby(O.code);
+    if(!lobby){ O.syncing=false; return; }
+    if(lobby.status==='waiting'){
+      if(lobby.seq > O.seq){
+        O.seats = lobby.seats; O.seq = lobby.seq; O.hostClientId = lobby.hostClientId;
+        render();
+      }
+    } else if(lobby.status==='playing'){
+      if(!G || lobby.seq > (G.seq||0)){
+        adoptLobbyState(lobby);
+        O.screen = 'playing';
+        appPhase = 'online';
+        render();
+      }
+      await onlineSyncTick();
+    }
+  } finally {
+    O.syncing = false;
+  }
+}
+
+// Auto-advances shared state that doesn't need a human decision — gate
+// confirmations and Computer-player turns — reusing the exact same
+// functions the local pass-and-play game already uses. Only the client that
+// actually owns the relevant seat (or the host, for Computer seats) performs
+// the write, so connected clients never race each other.
+async function onlineSyncTick(){
+  if(!G || !G.onlineMode) return;
+  let acted = false;
+  if(G.phase==='gate-turnstart'){
+    if(isMySeat(G.gateTarget) || (G.players[G.gateTarget] && G.players[G.gateTarget].isAI && amIOnlineHost())){
+      confirmGateTurnstart(); acted = true;
+    }
+  } else if(G.phase==='gate-resume'){
+    if(isMySeat(G.gateTarget) || (G.players[G.gateTarget] && G.players[G.gateTarget].isAI && amIOnlineHost())){
+      confirmGateResume(); acted = true;
+    }
+  } else if(G.phase==='gate-photo'){
+    const entry = G.photoQueue[0];
+    if(entry && isMySeat(entry.playerIndex)){
+      confirmGatePhoto(); acted = true;
+    }
+  } else if(G.phase==='play' && G.players[G.currentPlayerIndex] && G.players[G.currentPlayerIndex].isAI && amIOnlineHost()){
+    aiStep(); acted = true;
+  } else if(G.phase==='event-choice' && G.players[G.currentPlayerIndex] && G.players[G.currentPlayerIndex].isAI && amIOnlineHost()){
+    aiResolveEventChoice(); acted = true;
+  } else if(G.phase==='wild-choice' && G.pendingWildChoice && G.players[G.pendingWildChoice.playerIdx] && G.players[G.pendingWildChoice.playerIdx].isAI && amIOnlineHost()){
+    resolveWildChoice('score'); acted = true;
+  }
+  if(acted){
+    await pushOnlineState();
+    render();
+    setTimeout(onlineSyncTick, 500); // keep chaining quickly through Computer turns instead of waiting for the next poll
+  }
+}
+
+function leaveOnlineGame(){
+  stopOnlinePolling();
+  G = null; O = { screen:'choose', code:null, myName:'', joinCodeInput:'', isHost:false, hostClientId:null, count:2, mode:'kids', longer:false, seats:[], seq:0, pollTimer:null, syncing:false, busy:false, error:null };
+  appPhase = 'setup';
+}
+
+function showCelebration(lines){
+  if(!lines || lines.length===0) return;
+  celebrationMsg = { lines, key: Date.now()+'-'+Math.random() };
+  clearTimeout(celebrationTimer);
+  const duration = Math.min(6500, 2200 + lines.length*900);
+  celebrationTimer = setTimeout(()=>{ celebrationMsg=null; render(); }, duration);
+}
+
+// Accumulates a line onto the celebration for the scoring event currently
+// in progress. This does NOT display anything by itself — the full summary
+// (score, Cultivator's Bonus, every photo taken) is shown together once the
+// whole sequence finishes, via flushPendingCelebration().
+function appendCelebration(line){
+  G.pendingCelebration = G.pendingCelebration || [];
+  G.pendingCelebration.push(line);
+}
+
+function flushPendingCelebration(){
+  if(G.pendingCelebration && G.pendingCelebration.length){
+    showCelebration(G.pendingCelebration);
+  }
+  G.pendingCelebration = [];
+}
+let showRules = false;
+let showResults = false;
+let aiTimerPending = false;
+
+let matchHistory = [];
+let historyLoaded = false;
+let saveChain = Promise.resolve();
+let simSummary = null; // {n, results:[...]} shown right after a batch simulate
+
+function showToast(msg){
+  toastMsg = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ toastMsg=null; render(); }, 2200);
+}
+
+/* ============================= RESULTS STORAGE ============================= */
+function hasStorage(){
+  return (typeof window!=='undefined') && !!window.storage;
+}
+async function loadHistory(){
+  if(!hasStorage()){ historyLoaded = true; return; }
+  try{
+    const res = await window.storage.get('match-history', false);
+    matchHistory = (res && res.value) ? JSON.parse(res.value) : [];
+  } catch(e){
+    matchHistory = [];
+  }
+  historyLoaded = true;
+  render();
+}
+function persistHistory(){
+  if(!hasStorage()) return;
+  const snapshot = JSON.stringify(matchHistory);
+  saveChain = saveChain.then(()=>
+    window.storage.set('match-history', snapshot, false).catch(()=>{})
+  );
+}
+function recordGameResult(){
+  if(!G || G.resultSaved) return;
+  G.resultSaved = true;
+  const record = {
+    id: Date.now()+'-'+Math.floor(Math.random()*10000),
+    timestamp: Date.now(),
+    mode: G.mode,
+    longerGame: G.longerGame,
+    playerCount: G.players.length,
+    butterfliesScored: G.butterfliesScored,
+    players: G.players.map(p=>({
+      name:p.name, isAI:!!p.isAI, egg:p.tokens.egg, small:p.tokens.small,
+      medium:p.tokens.medium, large:p.tokens.large, total: scoreOf(p)
+    })),
+    winnerTotal: G.winners[0].total,
+    winnerNames: G.winners.filter(w=>w.total===G.winners[0].total).map(w=>w.p.name),
+    winnerIsAI: G.winners[0].p.isAI
+  };
+  matchHistory.unshift(record);
+  if(matchHistory.length>300) matchHistory.length = 300;
+  persistHistory();
+}
+async function clearHistory(){
+  matchHistory = [];
+  if(hasStorage()){
+    try{ await window.storage.delete('match-history', false); } catch(e){}
+  }
+  render();
+}
+
+/* ============================= DECK / SETUP ============================= */
+function buildDeck(){
+  let cards = [];
+  Object.keys(STAGE_CARD_INFO).forEach(key=>{
+    const count = STAGE_CARD_INFO[key].count;
+    for(let i=0;i<count;i++) cards.push({id:newId(), type:key, category:'stage'});
+  });
+  for(let i=0;i<4;i++) cards.push({id:newId(), type:'Garden', category:'garden'});
+  for(let i=0;i<4;i++) cards.push({id:newId(), type:'Fly, Fly Butterfly', category:'release'});
+  for(let i=0;i<4;i++) cards.push({id:newId(), type:'Wild', category:'wild'});
+  return shuffle(cards);
+}
+
+function buildEventDeck(){
+  return shuffle(EVENTS.map(ev=>({id:newId(), type:ev.key, category:'event', label:ev.label, desc:ev.desc})));
+}
+
+function reshuffleIfNeeded(){
+  if(G.drawPile.length>0) return;
+  if(G.discardPile.length===0) return;
+  if(G.mode==='kids'){
+    G.drawPile = G.discardPile.slice().reverse();
+  } else {
+    G.drawPile = shuffle(G.discardPile.slice());
+  }
+  G.discardPile = [];
+}
+
+function drawOne(){
+  reshuffleIfNeeded();
+  if(G.drawPile.length===0) return null;
+  return G.drawPile.pop();
+}
+
+function drawEventCard(){
+  if(G.eventDrawPile.length===0){
+    if(G.eventDiscardPile.length===0) return null;
+    G.eventDrawPile = shuffle(G.eventDiscardPile.slice());
+    G.eventDiscardPile = [];
+  }
+  return G.eventDrawPile.pop();
+}
+
+function drawCards(playerIdx, n){
+  const player = G.players[playerIdx];
+  let drawn = 0;
+  for(let i=0;i<n;i++){
+    const c = drawOne();
+    if(!c) break;
+    player.hand.push(c);
+    drawn++;
+  }
+  return drawn;
+}
+
+function drawUpToHandSize(playerIdx, size){
+  const player = G.players[playerIdx];
+  const need = size - player.hand.length;
+  if(need<=0) return 0;
+  return drawCards(playerIdx, need);
+}
+
+function flipInitialTrackStage(){
+  for(let guard=0; guard<200; guard++){
+    const c = drawOne();
+    if(!c) return -1;
+    G.discardPile.push(c);
+    const idx = STAGES.findIndex(s=>s.key===c.type);
+    if(idx>=0) return idx;
+  }
+  return -1;
+}
+
+function initGame(count, rawNames, rawTypes, mode, longer, setAppPhase){
+  const n = count;
+  let aiCounter = 0;
+  const players = [];
+  for(let i=0;i<n;i++){
+    const isAI = (rawTypes[i]==='ai');
+    let nm = (rawNames[i]||'').trim();
+    if(!nm){ aiCounter += isAI?1:0; nm = isAI ? ('Computer '+aiCounter) : ('Player '+(i+1)); }
+    players.push({ id:i, name:nm, isAI, hand:[], tokens:{egg:0, small:0, medium:0, large:0}, scorePoints:0 });
+  }
+  G = {
+    mode,
+    longerGame:longer,
+    butterfliesNeeded: longer ? 8 : 14,
+    players,
+    direction:1,
+    currentPlayerIndex:0,
+    tracks:[0,1,2,3].map(()=>({stageIndex:-1, locked:false, contrib:{}})),
+    drawPile:[],
+    discardPile:[],
+    eventDrawPile:[],
+    eventDiscardPile:[],
+    phase:'gate-turnstart',
+    gateTarget:0,
+    activeViewer:null,
+    selectedCardId:null,
+    selectedTrackIdx:null,
+    cardsPlayedThisTurn:0,
+    butterfliesScored:0,
+    butterflyLog:[],
+    pendingCelebration:[],
+    finalRound:false,
+    photoQueue:[],
+    photoScorerIndex:null,
+    photoSelected:[],
+    skipNext:false,
+    extraTurnFor:null,
+    pendingEvent:null,
+    log:[],
+    winners:null,
+    resultSaved:false
+  };
+  G.drawPile = buildDeck();
+  if(mode==='advanced'){ G.eventDrawPile = buildEventDeck(); }
+  // deal
+  for(let i=0;i<4;i++){ players.forEach(p=> { const c=drawOne(); if(c) p.hand.push(c); }); }
+  // flip 4 track starting stages
+  G.tracks.forEach(t=>{ t.stageIndex = flipInitialTrackStage(); });
+  if(setAppPhase!==false) appPhase = 'game';
+  celebrationMsg = null;
+  clearTimeout(celebrationTimer);
+  logMsg('The garden opens! Cards are dealt and tracks are set.');
+}
+
+function startRealGame(){
+  initGame(S.count, S.names, S.types, S.mode, S.longer, true);
+}
+
+function logMsg(msg){
+  G.log.unshift(msg);
+  if(G.log.length>40) G.log.length=40;
+}
+
+/* ============================= TURN FLOW ============================= */
+function startTurn(playerIdx){
+  G.currentPlayerIndex = playerIdx;
+  G.selectedCardId = null;
+  G.selectedTrackIdx = null;
+  G.cardsPlayedThisTurn = 0;
+  G.turnContrib = {}; // tracks which tracks were played on this turn, for the UI marker
+  G.phase = 'gate-turnstart';
+  G.gateTarget = playerIdx;
+}
+
+function confirmGateTurnstart(){
+  G.activeViewer = G.gateTarget;
+  G.phase = 'play';
+}
+
+function nextTurn(){
+  if(G.extraTurnFor !== null){
+    const p = G.extraTurnFor;
+    G.extraTurnFor = null;
+    startTurn(p);
+    return;
+  }
+  let steps = 1;
+  if(G.skipNext){ steps = 2; G.skipNext = false; }
+  const n = G.players.length;
+  let idx = G.currentPlayerIndex;
+  idx = ((idx + G.direction*steps) % n + n) % n;
+  startTurn(idx);
+}
+
+function hasLegalMove(playerIdx){
+  const player = G.players[playerIdx];
+  return player.hand.some(card=>{
+    if(card.category==='event') return false; // Kids Mode has no events anyway
+    return G.tracks.some(t=> !!actionForCardOnTrack(card, t));
+  });
+}
+
+function endTurn(){
+  if(G.phase !== 'play') return;
+  if(G.onlineMode && !canActForSeat(G.currentPlayerIndex)){ showToast("It's not your turn."); return; }
+  const player = G.players[G.currentPlayerIndex];
+  const playedNothing = (G.cardsPlayedThisTurn === 0);
+  const heldBackAPlay = (G.mode==='kids') && hasLegalMove(G.currentPlayerIndex);
+  if(playedNothing || heldBackAPlay){
+    if(player.hand.length>0){
+      player.hand.forEach(c=> G.discardPile.push(c));
+      if(heldBackAPlay && !playedNothing){
+        logMsg(player.name + " held a playable card — Kids Mode's play-everything rule discards the hand.");
+      } else {
+        logMsg(player.name + ' played nothing and discarded their hand.');
+      }
+      player.hand = [];
+    }
+  }
+
+  if(G.mode==='advanced' && !G.finalRound && G.cardsPlayedThisTurn<=1){
+    const ev = drawEventCard();
+    if(ev){
+      G.eventDiscardPile.push(ev);
+      logMsg(player.name + ' played ' + G.cardsPlayedThisTurn + ' card' + (G.cardsPlayedThisTurn===1?'':'s') + ' this turn — an Event triggers: ' + ev.label + '!');
+      const needsChoice = applyEventEffect(ev, G.currentPlayerIndex, true);
+      if(needsChoice) return; // paused in 'event-choice'; that flow calls finishEndTurn() itself
+    }
+  }
+
+  finishEndTurn();
+}
+
+function finishEndTurn(){
+  const player = G.players[G.currentPlayerIndex];
+  const n = drawUpToHandSize(G.currentPlayerIndex, 4);
+  if(n>0){
+    logMsg(player.name + ' draws back up to a full hand (+' + n + ').');
+  } else {
+    logMsg(player.name + ' ends the turn with a full hand already.');
+  }
+  nextTurn();
+}
+
+/* ============================= HAND HELPERS ============================= */
+function findCardInHand(playerIdx, cardId){
+  return G.players[playerIdx].hand.find(c=>c.id===cardId) || null;
+}
+function removeFromHand(playerIdx, cardId){
+  const p = G.players[playerIdx];
+  const i = p.hand.findIndex(c=>c.id===cardId);
+  if(i>=0) return p.hand.splice(i,1)[0];
+  return null;
+}
+
+/* ============================= LEGALITY ============================= */
+function actionForCardOnTrack(card, track){
+  if(track.locked) return null;
+  if(card.category==='event') return null;
+  if(card.type==='Garden'){
+    if(track.stageIndex===BABY_STAGE_INDEX) return 'garden-baby';
+    if(track.stageIndex===ADULT_STAGE_INDEX) return 'garden-adult';
+    return null;
+  }
+  if(card.type==='Fly, Fly Butterfly'){
+    if(track.stageIndex===BABY_STAGE_INDEX) return 'release-baby';
+    if(track.stageIndex===ADULT_STAGE_INDEX) return 'release';
+    return null;
+  }
+  if(card.type==='Wild'){
+    if(track.stageIndex===BABY_STAGE_INDEX) return 'wild-baby';
+    if(track.stageIndex===ADULT_STAGE_INDEX) return 'wild-garden-adult';
+  }
+  // stage / wild advance
+  const nextIdx = track.stageIndex+1;
+  if(nextIdx>ADULT_STAGE_INDEX) return null;
+  const req = STAGES[nextIdx].key;
+  if(card.type===req || card.type==='Wild') return 'advance';
+  return null;
+}
+
+/* ============================= SCORING ============================= */
+// Pays out banked Cultivator's Bonus credit for a track, then clears it.
+// excludeIdx (if given) is skipped — the scorer doesn't also collect their
+// own contributor payout, since they already got the token. Pass null to
+// pay everyone (used when a track's progress is wiped rather than scored).
+function payCultivatorContributors(track, excludeIdx){
+  const contribs = track.contrib || {};
+  const paid = [];
+  Object.keys(contribs).forEach(key=>{
+    const cpid = parseInt(key,10);
+    if(excludeIdx!==null && excludeIdx!==undefined && cpid===excludeIdx) return;
+    const tier = contribs[key];
+    G.players[cpid].tokens.egg += tier;
+    paid.push(G.players[cpid].name + ' +' + tier);
+  });
+  track.contrib = {};
+  return paid;
+}
+
+function scoreTrack(trackIdx, kind, playerIdx){
+  const track = G.tracks[trackIdx];
+  const player = G.players[playerIdx];
+  let tokenKey, reward, photoType, label, icon;
+  if(kind==='garden-baby'){ tokenKey='small'; reward=5; photoType='babyGarden'; label='Small Butterfly'; icon='&#129419;'; }
+  else if(kind==='wild-baby'){ tokenKey='small'; reward=5; photoType='babyGarden'; label='Small Butterfly'; icon='&#129419;'; }
+  else if(kind==='release-baby'){ tokenKey='small'; reward=5; photoType='babyGarden'; label='Small Butterfly'; icon='&#129419;'; }
+  else if(kind==='garden-adult'){ tokenKey='medium'; reward=7; photoType='adultGarden'; label='Medium Butterfly'; icon='&#129419;'; }
+  else if(kind==='wild-adult'){ tokenKey='medium'; reward=7; photoType='adultGarden'; label='Medium Butterfly'; icon='&#129419;'; }
+  else { tokenKey='large'; reward=10; photoType='release'; label='Large Butterfly'; icon='&#127881;'; }
+  // Fly, Fly Butterfly (Release) lets you keep your own banked Cultivator's
+  // Bonus credit on the track you're releasing, on top of the points —
+  // Garden and Wild never do, regardless of stage.
+  const keepsOwnCultivator = (kind==='release-baby' || kind==='release');
+
+  player.tokens[tokenKey]++;
+  player.scorePoints = (player.scorePoints||0) + reward;
+
+  G.butterflyLog = G.butterflyLog || [];
+  G.butterflyLog.push(tokenKey); // 'small'|'medium'|'large', in the order they were scored
+
+  G.butterfliesScored++;
+  if(!G.finalRound && G.butterfliesScored >= G.butterfliesNeeded){
+    G.finalRound = true;
+    logMsg('The ' + G.butterfliesScored + 'th Butterfly has been scored — Final Round begins!');
+  }
+
+  const celebLines = [{icon:icon, text:player.name+' scored a '+label+'!', sub:'+'+reward+' pts', cls:'bfly-'+tokenKey}];
+
+  const paid = payCultivatorContributors(track, keepsOwnCultivator ? null : playerIdx);
+  if(paid.length){
+    logMsg("Cultivator's Bonus: " + paid.join(', ') + ' Egg.');
+    celebLines.push({icon:'&#127793;', text:"Cultivator's Bonus", sub:paid.join(', ')+' Egg', cls:'cultivator'});
+  }
+
+  if(G.finalRound){
+    track.locked = true;
+  } else {
+    track.stageIndex = -1;
+  }
+
+  logMsg(player.name + ' earned a ' + label + '! (+' + reward + ' pts)');
+  G.pendingCelebration = (G.pendingCelebration || []).concat(celebLines);
+  buildPhotoQueue(playerIdx, photoType);
+}
+
+function buildPhotoQueue(scorerIdx, photoType){
+  if(G.finalRound){
+    G.photoQueue = [];
+    G.photoScorerIndex = scorerIdx;
+    advancePhotoQueue();
+    return;
+  }
+  const n = G.players.length;
+  const info = PHOTO_INFO[photoType];
+  const q = [];
+  for(let i=1;i<n;i++){
+    const idx = (scorerIdx+i)%n;
+    q.push({playerIndex:idx, type:photoType, cost:info.costCards, reward:info.reward});
+  }
+  G.photoQueue = q;
+  G.photoScorerIndex = scorerIdx;
+  advancePhotoQueue();
+}
+
+function advancePhotoQueue(){
+  while(true){
+    if(G.photoQueue.length===0){
+      maybeEndGame();
+      if(G.phase==='end'){
+        flushPendingCelebration();
+        return;
+      }
+      flushPendingCelebration();
+      if(G.activeViewer !== G.currentPlayerIndex){
+        G.phase = 'gate-resume';
+        G.gateTarget = G.currentPlayerIndex;
+      } else {
+        G.phase = 'play';
+      }
+      return;
+    }
+    const entry = G.photoQueue[0];
+    const photographer = G.players[entry.playerIndex];
+    if(photographer.isAI){
+      G.photoQueue.shift();
+      const wild = photographer.hand.find(c=>c.type==='Wild');
+      let pay = false;
+      if(wild){ G.photoSelected = [wild.id]; pay = true; }
+      else if(photographer.hand.length > entry.cost){ G.photoSelected = photographer.hand.slice(0, entry.cost).map(c=>c.id); pay = true; }
+      else { G.photoSelected = []; }
+      if(pay){
+        const cards = G.photoSelected.map(id=> removeFromHand(entry.playerIndex, id)).filter(Boolean);
+        cards.forEach(c=> G.discardPile.push(c));
+        photographer.tokens.egg += entry.reward;
+        logMsg(photographer.name + ' snapped a photo! (+' + entry.reward + ' Egg' + (entry.reward===1?'':'s') + ')');
+        appendCelebration({icon:'&#128248;', text:photographer.name+' took a photo!', sub:'+'+entry.reward+' Egg'+(entry.reward===1?'':'s'), cls:'photo'});
+      } else {
+        logMsg(photographer.name + ' skipped the photo.');
+      }
+      G.photoSelected = [];
+      continue;
+    }
+    G.phase = 'gate-photo';
+    G.gateTarget = entry.playerIndex;
+    G.photoSelected = [];
+    return;
+  }
+}
+
+function confirmGatePhoto(){
+  G.activeViewer = G.gateTarget;
+  G.phase = 'photo-decision';
+  G.photoSelected = [];
+}
+
+function togglePhotoCard(cardId){
+  const i = G.photoSelected.indexOf(cardId);
+  if(i>=0) G.photoSelected.splice(i,1);
+  else G.photoSelected.push(cardId);
+}
+
+function photoSelectionValid(entry, playerHand){
+  const selectedCards = G.photoSelected.map(id=> playerHand.find(c=>c.id===id)).filter(Boolean);
+  if(selectedCards.length===1 && selectedCards[0].type==='Wild') return true;
+  if(selectedCards.length===entry.cost) return true;
+  return false;
+}
+
+function resolvePhoto(pay){
+  if(G.onlineMode && G.photoQueue[0] && !isMySeat(G.photoQueue[0].playerIndex)){ showToast("That's not your photo decision."); return; }
+  const entry = G.photoQueue.shift();
+  const player = G.players[entry.playerIndex];
+  if(pay){
+    const cards = G.photoSelected.map(id=> removeFromHand(entry.playerIndex, id)).filter(Boolean);
+    cards.forEach(c=> G.discardPile.push(c));
+    player.tokens.egg += entry.reward;
+    logMsg(player.name + ' snapped a photo! (+' + entry.reward + ' Egg' + (entry.reward===1?'':'s') + ')');
+    appendCelebration({icon:'&#128248;', text:player.name+' took a photo!', sub:'+'+entry.reward+' Egg'+(entry.reward===1?'':'s'), cls:'photo'});
+  } else {
+    logMsg(player.name + ' skipped the photo.');
+  }
+  G.photoSelected = [];
+  advancePhotoQueue();
+}
+
+function confirmGateResume(){
+  G.activeViewer = G.gateTarget;
+  G.phase = 'play';
+}
+
+function maybeEndGame(){
+  const lockedCount = G.tracks.filter(t=>t.locked).length;
+  if(G.finalRound && lockedCount>=4){
+    G.phase = 'end';
+    computeWinners();
+    recordGameResult();
+  }
+}
+
+function computeWinners(){
+  const scored = G.players.map(p=>({
+    p,
+    total: p.tokens.egg*1 + (p.scorePoints||0)
+  }));
+  scored.sort((a,b)=>{
+    if(b.total!==a.total) return b.total-a.total;
+    if(b.p.tokens.large!==a.p.tokens.large) return b.p.tokens.large-a.p.tokens.large;
+    if(b.p.tokens.medium!==a.p.tokens.medium) return b.p.tokens.medium-a.p.tokens.medium;
+    if(b.p.tokens.small!==a.p.tokens.small) return b.p.tokens.small-a.p.tokens.small;
+    return b.p.tokens.egg-a.p.tokens.egg;
+  });
+  G.winners = scored;
+}
+
+/* ============================= PLAYER ACTIONS ============================= */
+function selectCard(cardId){
+  if(G.selectedTrackIdx!==null && G.selectedTrackIdx!==undefined){
+    const trackIdx = G.selectedTrackIdx;
+    G.selectedCardId = cardId;
+    G.selectedTrackIdx = null;
+    playOnTrack(trackIdx);
+    return;
+  }
+  G.selectedCardId = (G.selectedCardId===cardId) ? null : cardId;
+}
+
+function selectTrack(trackIdx){
+  if(G.selectedCardId) return; // a card is already driving the selection
+  G.selectedTrackIdx = (G.selectedTrackIdx===trackIdx) ? null : trackIdx;
+}
+
+function doAdvanceTrack(trackIdx, pIdx, finalRoundBonusEligible){
+  const track = G.tracks[trackIdx];
+  track.stageIndex += 1;
+  const tier = track.stageIndex<=BABY_STAGE_INDEX ? 1 : 2; // through Baby = 1, Hibernation/Adult = 2
+  const dest = NODES[track.stageIndex+1].key;
+  G.turnContrib = G.turnContrib || {};
+  const alreadyBankedThisTurn = !!G.turnContrib[trackIdx];
+  G.turnContrib[trackIdx] = true; // gates this-turn banking AND drives the "played this turn" UI marker
+  if(finalRoundBonusEligible){
+    G.players[pIdx].tokens.egg += tier;
+    logMsg(G.players[pIdx].name + ' advanced Track ' + (trackIdx+1) + ' to ' + dest + '. (Final Round: +' + tier + ' Egg' + (tier===1?'':'s') + ')');
+    appendCelebration({icon:'&#9889;', text:'Final Round Egg', sub:G.players[pIdx].name+' +'+tier, cls:'finalround'});
+    flushPendingCelebration(); // no photo queue follows a plain advance — show it now
+  } else if(!alreadyBankedThisTurn){
+    track.contrib = track.contrib || {};
+    track.contrib[pIdx] = (track.contrib[pIdx]||0) + tier; // accumulates across turns until the track scores or is wiped
+    logMsg(G.players[pIdx].name + ' advanced Track ' + (trackIdx+1) + ' to ' + dest + ". (Cultivator credit +" + tier + " banked this turn, total " + track.contrib[pIdx] + ")");
+  } else {
+    logMsg(G.players[pIdx].name + ' advanced Track ' + (trackIdx+1) + ' to ' + dest + ' (already banked a Cultivator credit on this track this turn).');
+  }
+}
+
+function playOnTrack(trackIdx){
+  if(!G.selectedCardId) return;
+  const pIdx = G.currentPlayerIndex;
+  if(G.onlineMode && !canActForSeat(pIdx)){ showToast("It's not your turn."); return; }
+  const card = findCardInHand(pIdx, G.selectedCardId);
+  if(!card) { G.selectedCardId=null; return; }
+  const track = G.tracks[trackIdx];
+  const action = actionForCardOnTrack(card, track);
+  if(!action){ showToast("That card can't be played there."); return; }
+
+  const finalRoundBonusEligible = G.finalRound; // true only if Final Round was already active before this play
+  G.pendingCelebration = []; // fresh accumulator for this action's celebration
+
+  removeFromHand(pIdx, card.id);
+  G.discardPile.push(card);
+  G.cardsPlayedThisTurn++;
+  G.selectedCardId = null;
+
+  if(action==='advance'){
+    doAdvanceTrack(trackIdx, pIdx, finalRoundBonusEligible);
+  } else if(action==='garden-baby'){
+    if(finalRoundBonusEligible){ G.players[pIdx].tokens.egg += 1; logMsg('Final Round bonus: +1 Egg for the card played.'); appendCelebration({icon:'&#9889;', text:'Final Round Bonus', sub:'+1 Egg', cls:'finalround'}); }
+    scoreTrack(trackIdx, 'garden-baby', pIdx);
+  } else if(action==='wild-baby'){
+    // Wild at Baby is genuinely ambiguous: score it now, or use the Wild to
+    // advance toward the second Feed instead. Pause here and let the player
+    // (or the AI) choose, rather than deciding for them.
+    G.pendingWildChoice = { trackIdx, playerIdx: pIdx, finalRoundBonusEligible };
+    G.phase = 'wild-choice';
+    logMsg(G.players[pIdx].name + ' is deciding whether to score or advance with a Wild.');
+  } else if(action==='garden-adult'){
+    if(finalRoundBonusEligible){ G.players[pIdx].tokens.egg += 2; logMsg('Final Round bonus: +2 Eggs for the card played.'); appendCelebration({icon:'&#9889;', text:'Final Round Bonus', sub:'+2 Eggs', cls:'finalround'}); }
+    scoreTrack(trackIdx, 'garden-adult', pIdx);
+  } else if(action==='wild-garden-adult'){
+    logMsg(G.players[pIdx].name + ' used a Wild to harvest an Adult Butterfly.');
+    if(finalRoundBonusEligible){ G.players[pIdx].tokens.egg += 2; logMsg('Final Round bonus: +2 Eggs for the card played.'); appendCelebration({icon:'&#9889;', text:'Final Round Bonus', sub:'+2 Eggs', cls:'finalround'}); }
+    scoreTrack(trackIdx, 'wild-adult', pIdx);
+  } else if(action==='release-baby'){
+    logMsg(G.players[pIdx].name + ' released a Baby Butterfly early.');
+    if(finalRoundBonusEligible){ G.players[pIdx].tokens.egg += 1; logMsg('Final Round bonus: +1 Egg for the card played.'); appendCelebration({icon:'&#9889;', text:'Final Round Bonus', sub:'+1 Egg', cls:'finalround'}); }
+    scoreTrack(trackIdx, 'release-baby', pIdx);
+  } else if(action==='release'){
+    if(finalRoundBonusEligible){ G.players[pIdx].tokens.egg += 2; logMsg('Final Round bonus: +2 Eggs for the card played.'); appendCelebration({icon:'&#9889;', text:'Final Round Bonus', sub:'+2 Eggs', cls:'finalround'}); }
+    scoreTrack(trackIdx, 'release', pIdx);
+  }
+}
+
+// Resolves the Wild-at-Baby choice: 'score' scores it now as a Small
+// Butterfly, 'advance' uses the Wild to push the track on to the second Feed
+// instead, banking Cultivator credit as a normal advance would.
+function resolveWildChoice(choice){
+  if(!G.pendingWildChoice) return;
+  const { trackIdx, playerIdx, finalRoundBonusEligible } = G.pendingWildChoice;
+  if(G.onlineMode && !canActForSeat(playerIdx)){ showToast("It's not your turn."); return; }
+  G.pendingWildChoice = null;
+  G.phase = 'play';
+  G.pendingCelebration = [];
+  if(choice==='score'){
+    logMsg(G.players[playerIdx].name + ' used a Wild to harvest a Baby Butterfly.');
+    if(finalRoundBonusEligible){ G.players[playerIdx].tokens.egg += 1; logMsg('Final Round bonus: +1 Egg for the card played.'); appendCelebration({icon:'&#9889;', text:'Final Round Bonus', sub:'+1 Egg', cls:'finalround'}); }
+    scoreTrack(trackIdx, 'wild-baby', playerIdx);
+  } else {
+    logMsg(G.players[playerIdx].name + ' used a Wild to advance instead of scoring.');
+    doAdvanceTrack(trackIdx, playerIdx, finalRoundBonusEligible);
+  }
+}
+
+// Applies a drawn Event card's effect for the given player. The card itself
+// is already removed from the event deck and discarded by the caller.
+// Returns true if this event needs a player choice (paused in 'event-choice'
+// phase — the resolver functions below will call finishEndTurn() when done),
+// or false if it resolved immediately.
+function applyEventEffect(card, pIdx, fromEndTurn){
+  const player = G.players[pIdx];
+
+  switch(card.type){
+    case 'bugbgone': {
+      let gained=0;
+      const celebLines = [];
+      G.tracks.forEach(t=>{
+        if(!t.locked && t.stageIndex>=0 && t.stageIndex<BABY_STAGE_INDEX){
+          const paid = payCultivatorContributors(t, null);
+          if(paid.length){
+            logMsg("Cultivator's Bonus (track wiped): " + paid.join(', ') + ' Egg.');
+            celebLines.push({icon:'&#127793;', text:"Cultivator's Bonus (wiped)", sub:paid.join(', ')+' Egg', cls:'cultivator'});
+          }
+          t.stageIndex=-1;
+          gained++;
+        }
+      });
+      player.tokens.egg += gained;
+      logMsg(player.name + ' triggered Bug B Gone — ' + gained + ' track(s) reset. (+' + gained + ' Egg)');
+      celebLines.unshift({icon:'&#128027;', text:'Bug B Gone!', sub:gained+' track(s) reset, '+player.name+' +'+gained+' Egg', cls:'event'});
+      showCelebration(celebLines);
+      return false;
+    }
+    case 'byebyebirdy': {
+      let gained=0;
+      const celebLines = [];
+      G.tracks.forEach(t=>{
+        if(!t.locked && t.stageIndex>=BABY_STAGE_INDEX){
+          const paid = payCultivatorContributors(t, null);
+          if(paid.length){
+            logMsg("Cultivator's Bonus (track wiped): " + paid.join(', ') + ' Egg.');
+            celebLines.push({icon:'&#127793;', text:"Cultivator's Bonus (wiped)", sub:paid.join(', ')+' Egg', cls:'cultivator'});
+          }
+          t.stageIndex=-1;
+          gained++;
+        }
+      });
+      player.tokens.egg += gained;
+      logMsg(player.name + ' triggered Bye, Bye Birdy — ' + gained + ' track(s) reset. (+' + gained + ' Egg)');
+      celebLines.unshift({icon:'&#129412;', text:'Bye, Bye Birdy!', sub:gained+' track(s) reset, '+player.name+' +'+gained+' Egg', cls:'event'});
+      showCelebration(celebLines);
+      return false;
+    }
+    case 'butterfliesbfree': {
+      G.players.forEach(p=>{
+        const keep=[];
+        p.hand.forEach(c=>{ if(c.type==='Garden') G.discardPile.push(c); else keep.push(c); });
+        p.hand = keep;
+      });
+      logMsg(player.name + ' triggered Butterflies B Free — everyone discards Garden cards.');
+      return false;
+    }
+    case 'plenty': {
+      player.tokens.egg += 4;
+      logMsg(player.name + ' triggered Butterfly\'s A Plenty. (+4 Eggs)');
+      return false;
+    }
+    case 'growthspurt': {
+      const active = G.tracks.filter(t=>!t.locked);
+      let gained=0;
+      if(active.length){
+        const min = Math.min(...active.map(t=>t.stageIndex));
+        gained = active.filter(t=>t.stageIndex===min).length;
+      }
+      player.tokens.egg += gained;
+      logMsg(player.name + ' triggered Growth Spurt. (+' + gained + ' Egg' + (gained===1?'':'s') + ')');
+      return false;
+    }
+    case 'fasttrack': {
+      G.tracks.forEach(t=>{ if(!t.locked && t.stageIndex<ADULT_STAGE_INDEX) t.stageIndex++; });
+      logMsg(player.name + ' triggered Fast Track — every track advances one stage.');
+      return false;
+    }
+    case 'lookatitgrow': {
+      G.pendingEvent = {type:'lookatitgrow', fromEndTurn:!!fromEndTurn};
+      G.phase = 'event-choice';
+      return true;
+    }
+    case 'switcharoo': {
+      G.direction *= -1;
+      logMsg(player.name + ' triggered Switch-A-Roo — turn order reversed!');
+      return false;
+    }
+    case 'peekaboo': {
+      G.pendingEvent = {type:'peekaboo', opponent:null, fromEndTurn:!!fromEndTurn};
+      G.phase = 'event-choice';
+      return true;
+    }
+    case 'skippydoo': {
+      G.skipNext = true;
+      logMsg(player.name + ' triggered Skippy-Doo — the next player will be skipped.');
+      return false;
+    }
+    case 'draw2play2': {
+      const n = drawCards(pIdx, 2);
+      logMsg(player.name + ' triggered Draw 2 / Play 2 — drew ' + n + ' card' + (n===1?'':'s') + '.');
+      return false;
+    }
+    case 'allhandsondeck': {
+      const hands = G.players.map(p=>p.hand);
+      const n = G.players.length;
+      for(let i=0;i<n;i++){ G.players[i].hand = hands[(i+1)%n]; }
+      logMsg(player.name + ' triggered All Hands On Deck — hands pass along!');
+      return false;
+    }
+    case 'doover': {
+      player.hand.forEach(c=> G.discardPile.push(c));
+      player.hand = [];
+      const n = drawCards(pIdx, 4);
+      G.extraTurnFor = pIdx;
+      logMsg(player.name + ' triggered Do Over — new hand of ' + n + ', goes again!');
+      return false;
+    }
+    case 'mixitup': {
+      G.drawPile = shuffle(G.drawPile.concat(G.discardPile));
+      G.discardPile = [];
+      logMsg(player.name + ' triggered Mix It Up — discard pile reshuffled in.');
+      return false;
+    }
+  }
+  return false;
+}
+
+function resolveLookAtItGrow(trackIdx, dest){
+  const track = G.tracks[trackIdx];
+  const fromEndTurn = G.pendingEvent && G.pendingEvent.fromEndTurn;
+  if(!track.locked){
+    track.stageIndex = dest;
+    logMsg(G.players[G.currentPlayerIndex].name + ' triggered Look At It Grow — Track ' + (trackIdx+1) + ' jumps to ' + NODES[dest+1].key + '.');
+  }
+  G.pendingEvent = null;
+  if(fromEndTurn){ finishEndTurn(); } else { G.phase = 'play'; }
+}
+
+function pickPeekOpponent(idx){
+  G.pendingEvent.opponent = idx;
+}
+
+function takePeekedCard(cardId){
+  const opp = G.pendingEvent.opponent;
+  const fromEndTurn = G.pendingEvent && G.pendingEvent.fromEndTurn;
+  const card = removeFromHand(opp, cardId);
+  if(card){
+    G.players[G.currentPlayerIndex].hand.push(card);
+    logMsg(G.players[G.currentPlayerIndex].name + ' triggered Peek-A-Boo and took a card from ' + G.players[opp].name + '.');
+  }
+  G.pendingEvent = null;
+  if(fromEndTurn){ finishEndTurn(); } else { G.phase = 'play'; }
+}
+
+function finishPeek(){
+  const fromEndTurn = G.pendingEvent && G.pendingEvent.fromEndTurn;
+  G.pendingEvent = null;
+  if(fromEndTurn){ finishEndTurn(); } else { G.phase = 'play'; }
+}
+
+/* ============================= COMPUTER PLAYERS ============================= */
+const ACTION_VALUE = {advance:1, 'garden-baby':5, 'wild-baby':5, 'garden-adult':7, 'wild-garden-adult':7, 'release-baby':6, release:11};
+
+// Performs exactly one action for the current AI player, then returns.
+// The outer auto-advance loop calls this repeatedly (one tick per action)
+// so a human watching can follow along, and so any Photo Opportunity
+// triggered mid-turn can pause on a human player if needed.
+function aiStep(){
+  const pIdx = G.currentPlayerIndex;
+  const player = G.players[pIdx];
+
+  let best = null; // {value, cardId, trackIdx}
+  player.hand.forEach(card=>{
+    G.tracks.forEach((t,ti)=>{
+      const act = actionForCardOnTrack(card, t);
+      if(act){
+        const val = ACTION_VALUE[act] || 0;
+        if(!best || val>best.value){ best = {value:val, cardId:card.id, trackIdx:ti}; }
+      }
+    });
+  });
+
+  if(best){
+    G.selectedCardId = best.cardId;
+    playOnTrack(best.trackIdx);
+    return;
+  }
+  endTurn();
+}
+
+function aiResolveEventChoice(){
+  const pe = G.pendingEvent;
+  if(!pe) { G.phase='play'; return; }
+  if(pe.type==='lookatitgrow'){
+    const candidates = G.tracks.map((t,i)=>({t,i})).filter(x=>!x.t.locked);
+    if(candidates.length===0){ G.pendingEvent=null; G.phase='play'; return; }
+    // Prefer jumping the track closest to being ready straight to Adult.
+    candidates.sort((a,b)=> b.t.stageIndex - a.t.stageIndex);
+    resolveLookAtItGrow(candidates[0].i, ADULT_STAGE_INDEX);
+  } else if(pe.type==='peekaboo'){
+    if(pe.opponent===null){
+      let target=null, max=-1;
+      G.players.forEach((p,idx)=>{
+        if(idx===G.currentPlayerIndex) return;
+        if(p.hand.length>max){ max=p.hand.length; target=idx; }
+      });
+      if(target!==null) pickPeekOpponent(target); else finishPeek();
+    } else {
+      const opp = G.players[pe.opponent];
+      if(opp.hand.length===0){ finishPeek(); return; }
+      const pick = opp.hand.find(c=>c.type==='Wild')
+        || opp.hand.find(c=>c.category==='garden' || c.category==='release')
+        || opp.hand[0];
+      takePeekedCard(pick.id);
+    }
+  } else {
+    G.pendingEvent = null;
+    G.phase = 'play';
+  }
+}
+
+// Called after every render(): drives computer-player turns forward on a
+// short timer so the game plays itself without further clicks, while still
+// pausing naturally whenever a human needs to act (a real gate, a photo
+// decision, or their own turn).
+function maybeAutoAdvance(){
+  if(appPhase!=='game' || !G || aiTimerPending) return;
+  let job = null;
+  if(G.phase==='gate-turnstart' && G.players[G.gateTarget] && G.players[G.gateTarget].isAI){
+    job = ()=>{ confirmGateTurnstart(); };
+  } else if(G.phase==='gate-resume' && G.players[G.gateTarget] && G.players[G.gateTarget].isAI){
+    job = ()=>{ confirmGateResume(); };
+  } else if(G.phase==='play' && G.players[G.currentPlayerIndex].isAI){
+    job = ()=>{ aiStep(); };
+  } else if(G.phase==='event-choice' && G.players[G.currentPlayerIndex].isAI){
+    job = ()=>{ aiResolveEventChoice(); };
+  } else if(G.phase==='wild-choice' && G.pendingWildChoice && G.players[G.pendingWildChoice.playerIdx].isAI){
+    job = ()=>{ resolveWildChoice('score'); };
+  }
+  if(!job) return;
+  aiTimerPending = true;
+  setTimeout(()=>{
+    aiTimerPending = false;
+    job();
+    render();
+  }, 550);
+}
+
+// Runs one complete all-AI game synchronously (no timers/rendering) and
+// returns true if it completed. Used by simulateGames() for fast testing.
+function simulateOneGame(count, mode, longer){
+  const names = Array(count).fill('');
+  const types = Array(count).fill('ai');
+  initGame(count, names, types, mode, longer, false);
+  let guard = 0;
+  while(G.phase!=='end' && guard<8000){
+    guard++;
+    if(G.phase==='gate-turnstart') confirmGateTurnstart();
+    else if(G.phase==='gate-resume') confirmGateResume();
+    else if(G.phase==='play') aiStep();
+    else if(G.phase==='event-choice') aiResolveEventChoice();
+    else if(G.phase==='wild-choice') resolveWildChoice('score');
+    else if(G.phase==='gate-photo'){ confirmGatePhoto(); resolvePhoto(false); }
+    else break;
+  }
+  return G.phase==='end';
+}
+
+function simulateGames(n, count, mode, longer){
+  let completed = 0;
+  for(let i=0;i<n;i++){
+    if(simulateOneGame(count, mode, longer)) completed++;
+  }
+  G = null;
+  appPhase = 'setup';
+  simSummary = {n, completed};
+  showResults = true;
+}
+
+/* ============================= RENDER HELPERS ============================= */
+function esc(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function cardColor(card){
+  if(card.category==='stage'){ const s=STAGES.find(x=>x.key===card.type); return s?s.color:'var(--c-egg)'; }
+  if(card.category==='garden') return 'var(--c-garden)';
+  if(card.category==='release') return 'var(--c-fly)';
+  if(card.category==='wild') return 'var(--c-wild)';
+  if(card.category==='event') return 'var(--c-event)';
+  return '#888';
+}
+function cardAbbr(card){
+  if(card.category==='stage'){ const s=STAGES.find(x=>x.key===card.type); return s?s.abbr:'?'; }
+  if(card.category==='garden') return 'GDN';
+  if(card.category==='release') return 'FLY';
+  if(card.category==='wild') return 'WILD';
+  if(card.category==='event') return 'EVT';
+  return '?';
+}
+function cardName(card){
+  if(card.category==='event') return card.label;
+  return card.type;
+}
+
+// Stage cards (like Feed) can appear at more than one point in the life
+// cycle, so this returns every valid prerequisite stage and every tier
+// that card can bank Cultivator credit at.
+function cardStagePositions(card){
+  const positions = [];
+  STAGES.forEach((s,i)=>{ if(s.key===card.type) positions.push(i); });
+  return positions;
+}
+function cardTiers(card){
+  if(card.category==='stage'){
+    const positions = cardStagePositions(card);
+    const tiers = positions.map(i=> i<=BABY_STAGE_INDEX ? 1 : 2);
+    return Array.from(new Set(tiers));
+  }
+  if(card.category==='garden' || card.category==='release') return [1,2];
+  return [];
+}
+function cardTierBadge(card){
+  const tiers = cardTiers(card);
+  if(tiers.length===0) return '';
+  return 'T' + tiers.join('/');
+}
+
+function cardEligibilityCaption(card){
+  if(card.category==='event') return card.desc;
+  if(card.category==='stage'){
+    const positions = cardStagePositions(card);
+    const prereqs = Array.from(new Set(positions.map(i=> i===0 ? 'Egg' : STAGES[i-1].key)));
+    return 'Play after ' + prereqs.join(' or ');
+  }
+  if(card.category==='garden') return 'Play on Baby \u2192 Small, or Adult \u2192 Medium';
+  if(card.category==='release') return 'Play on Baby \u2192 Small, or Adult \u2192 Large';
+  if(card.category==='wild') return 'Play like any stage card, or on Adult \u2192 Medium';
+  return '';
+}
+
+function stageColorFor(key){
+  if(key==='Egg') return 'var(--c-egg)';
+  return (STAGE_CARD_INFO[key] && STAGE_CARD_INFO[key].color) || 'var(--cream-dim)';
+}
+function tokenColorFor(tokenKey){
+  if(tokenKey==='small') return 'var(--teal)';
+  if(tokenKey==='medium') return 'var(--gold)';
+  if(tokenKey==='large') return 'var(--coral)';
+  return 'var(--cream-dim)';
+}
+const BABY_NODE_INDEX = BABY_STAGE_INDEX + 1;   // NODES index for Baby Butterfly
+const ADULT_NODE_INDEX = ADULT_STAGE_INDEX + 1; // NODES index for Adult Butterfly
+
+// For Garden / Fly, Fly Butterfly / Wild — which stage(s) they can score on,
+// and exactly how many points each one is worth right now.
+function cardScoreBranches(card){
+  if(card.category==='garden') return [
+    {nodeIdx:BABY_NODE_INDEX, points:5, tokenKey:'small'},
+    {nodeIdx:ADULT_NODE_INDEX, points:7, tokenKey:'medium'}
+  ];
+  if(card.category==='release') return [
+    {nodeIdx:BABY_NODE_INDEX, points:5, tokenKey:'small'},
+    {nodeIdx:ADULT_NODE_INDEX, points:10, tokenKey:'large'}
+  ];
+  if(card.category==='wild') return [
+    {any:true, points:null, tokenKey:null},
+    {nodeIdx:BABY_NODE_INDEX, points:5, tokenKey:'small'},
+    {nodeIdx:ADULT_NODE_INDEX, points:7, tokenKey:'medium'}
+  ];
+  return null;
+}
+
+// For a stage card, which track node comes immediately before it and
+// immediately after it in the life cycle (as NODES indices, so the two Feed
+// occurrences resolve to their correct distinct positions). Feed appears in
+// two spots, so both pairs are returned, deduped.
+function cardNeighborStages(card){
+  if(card.category!=='stage') return null;
+  const positions = cardStagePositions(card); // indices into STAGES
+  const beforeIdx = [], afterIdx = [];
+  positions.forEach(i=>{
+    const b = i; // NODES[i] is the stage right before STAGES[i] (which sits at NODES[i+1])
+    if(beforeIdx.indexOf(b)===-1) beforeIdx.push(b);
+    if(i < STAGES.length-1){
+      const a = i+2; // NODES index of the stage right after STAGES[i]
+      if(afterIdx.indexOf(a)===-1) afterIdx.push(a);
+    }
+  });
+  return { beforeIdx, afterIdx };
+}
+
+// Simple hand-drawn SVG motifs for each card face, one per life-cycle stage
+// plus the special cards. All use currentColor so a single CSS color
+// variable tints the whole icon to match that card's accent.
+const CARD_ART = {
+  'Egg': '<ellipse cx="32" cy="35" rx="15" ry="19" opacity=".85"/><path d="M22 24 Q28 19 31 25" fill="none" stroke="#fff" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>',
+  'Larva': '<circle cx="14" cy="42" r="8" opacity=".9"/><circle cx="27" cy="38" r="8.5" opacity=".9"/><circle cx="40" cy="35" r="9" opacity=".9"/><circle cx="52" cy="30" r="8" opacity=".9"/><line x1="55" y1="24" x2="58" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="50" y1="23" x2="50" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="49" cy="28" r="1.3" fill="#fff"/>',
+  'Feed': '<path d="M32 8 C50 14 56 32 32 56 C8 32 14 14 32 8 Z" opacity=".85"/><line x1="32" y1="12" x2="32" y2="52" stroke="#fff" stroke-width="1.4" opacity=".55" fill="none"/><line x1="32" y1="24" x2="22" y2="18" stroke="#fff" stroke-width="1" opacity=".45" fill="none"/><line x1="32" y1="34" x2="44" y2="30" stroke="#fff" stroke-width="1" opacity=".45" fill="none"/>',
+  'Pupa': '<line x1="32" y1="6" x2="32" y2="14" stroke="currentColor" stroke-width="2" fill="none"/><ellipse cx="32" cy="38" rx="14" ry="22" opacity=".85"/><line x1="20" y1="30" x2="44" y2="30" stroke="#fff" stroke-width="1" opacity=".35" fill="none"/><line x1="19" y1="42" x2="45" y2="42" stroke="#fff" stroke-width="1" opacity=".35" fill="none"/>',
+  'Chrysalis': '<path d="M32 6 q4 4 2 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M32 14 C46 16 48 34 40 48 C36 56 28 56 24 48 C16 34 18 16 32 14 Z" opacity=".85"/><line x1="22" y1="26" x2="42" y2="26" stroke="#fff" stroke-width="1" opacity=".4" fill="none"/><line x1="21" y1="36" x2="43" y2="36" stroke="#fff" stroke-width="1" opacity=".4" fill="none"/>',
+  'Baby Butterfly': '<line x1="32" y1="16" x2="32" y2="48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M32 20 C18 16 10 26 16 36 C22 44 30 38 32 30 Z" opacity=".85"/><path d="M32 20 C46 16 54 26 48 36 C42 44 34 38 32 30 Z" opacity=".85"/><line x1="30" y1="16" x2="26" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/><line x1="34" y1="16" x2="38" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>',
+  'Hibernation': '<path d="M40 10 C24 10 14 24 14 38 C14 50 24 58 36 58 C26 54 20 44 20 34 C20 22 28 12 40 10 Z" opacity=".85"/><text x="40" y="26" font-size="11" fill="currentColor" opacity=".7" font-family="Georgia,serif">z</text><text x="47" y="18" font-size="8" fill="currentColor" opacity=".55" font-family="Georgia,serif">z</text>',
+  'Adult Butterfly': '<line x1="32" y1="14" x2="32" y2="50" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M32 18 C14 8 4 20 10 32 C14 40 26 38 32 28 Z" opacity=".9"/><path d="M32 18 C50 8 60 20 54 32 C50 40 38 38 32 28 Z" opacity=".9"/><path d="M32 30 C20 30 14 42 20 48 C25 53 30 46 32 38 Z" opacity=".7"/><path d="M32 30 C44 30 50 42 44 48 C39 53 34 46 32 38 Z" opacity=".7"/><path d="M30 14 C26 10 22 6 18 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M34 14 C38 10 42 6 46 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+  'Garden': '<circle cx="32" cy="20" r="9" opacity=".85"/><circle cx="18" cy="30" r="9" opacity=".85"/><circle cx="46" cy="30" r="9" opacity=".85"/><circle cx="24" cy="42" r="9" opacity=".85"/><circle cx="40" cy="42" r="9" opacity=".85"/><circle cx="32" cy="32" r="7" fill="#fff" opacity=".9"/><line x1="32" y1="46" x2="32" y2="58" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>',
+  'release': '<path d="M4 44 C10 40 16 40 22 44" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".5" stroke-linecap="round"/><path d="M2 35 C9 31 16 31 23 35" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35" stroke-linecap="round"/><line x1="38" y1="14" x2="38" y2="46" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" fill="none"/><path d="M38 18 C22 8 12 20 18 30 C22 37 33 35 38 26 Z" opacity=".9"/><path d="M38 18 C54 8 62 20 56 30 C52 37 43 35 38 26 Z" opacity=".9"/><path d="M38 28 C26 28 20 38 26 44 C31 48 35 42 38 36 Z" opacity=".7"/><path d="M38 28 C50 28 56 38 50 44 C45 48 41 42 38 36 Z" opacity=".7"/>',
+  'Wild': '<line x1="32" y1="14" x2="32" y2="50" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M32 18 C14 8 4 20 10 32 C14 40 26 38 32 28 Z" opacity=".9"/><path d="M32 18 C50 8 60 20 54 32 C50 40 38 38 32 28 Z" opacity=".9"/><path d="M32 30 C20 30 14 42 20 48 C25 53 30 46 32 38 Z" opacity=".7"/><path d="M32 30 C44 30 50 42 44 48 C39 53 34 46 32 38 Z" opacity=".7"/><circle cx="8" cy="10" r="1.6" opacity=".8"/><circle cx="56" cy="12" r="1.3" opacity=".7"/><circle cx="54" cy="52" r="1.6" opacity=".8"/>',
+  'event': '<path d="M32 6 L37 26 L57 32 L37 38 L32 58 L27 38 L7 32 L27 26 Z" opacity=".85"/><circle cx="50" cy="14" r="2.2" opacity=".6"/><circle cx="14" cy="50" r="2.2" opacity=".6"/>',
+  'Feed2': '<path d="M22 8 C38 12 44 28 24 48 C6 28 10 14 22 8 Z" opacity=".65"/><path d="M40 20 C52 24 56 36 42 52 C28 40 30 28 40 20 Z" opacity=".9"/><line x1="22" y1="12" x2="22" y2="44" stroke="#fff" stroke-width="1.2" opacity=".45" fill="none"/><line x1="40" y1="24" x2="40" y2="48" stroke="#fff" stroke-width="1.2" opacity=".5" fill="none"/>'
+};
+// The track has two Feed spaces (once after Larva, again after Baby
+// Butterfly). They're the same card, but shown with a distinct icon on the
+// track/strip so it's clear at a glance which feeding a neighboring stage
+// actually connects to — Hibernation only ever follows the second one.
+const SECOND_FEED_NODE_INDEX = (function(){
+  let seen = false;
+  for(let i=0;i<NODES.length;i++){
+    if(NODES[i].key==='Feed'){ if(seen) return i; seen = true; }
+  }
+  return -1;
+})();
+function nodeArt(ni){
+  const nd = NODES[ni];
+  if(nd.key==='Feed' && ni===SECOND_FEED_NODE_INDEX) return CARD_ART['Feed2'];
+  return CARD_ART[nd.key] || '';
+}
+function cardArt(card){
+  if(card.category==='stage') return CARD_ART[card.type] || '';
+  if(card.category==='release') return CARD_ART['release'];
+  if(card.category==='event') return CARD_ART['event'];
+  return CARD_ART[card.type] || CARD_ART[card.category] || '';
+}
+
+function renderCard(card, opts){
+  opts = opts||{};
+  const selected = (opts.act==='togglePhotoCard')
+    ? (G.photoSelected && G.photoSelected.includes(card.id))
+    : (G.selectedCardId===card.id);
+  const eligible = !!opts.eligible;
+  const playableNow = (opts.showPlayable && G.tracks) ? G.tracks.some(t=>!!actionForCardOnTrack(card,t)) : false;
+  const desc = cardEligibilityCaption(card);
+  const tierBadge = cardTierBadge(card);
+  const abbr = cardAbbr(card);
+  const art = cardArt(card);
+
+  let footer;
+  const neighbors = cardNeighborStages(card);
+  if(neighbors){
+    const iconSpan = (ni)=> '<span class="flow-icon" style="color:'+stageColorFor(NODES[ni].key)+'" title="'+esc(NODES[ni].key)+'"><svg viewBox="0 0 64 64" fill="currentColor">'+nodeArt(ni)+'</svg></span>';
+    const beforeHtml = '<span class="flow-group">'+neighbors.beforeIdx.map(iconSpan).join('')+'</span>';
+    const afterHtml = neighbors.afterIdx.length
+      ? '<span class="flow-group">'+neighbors.afterIdx.map(iconSpan).join('')+'</span>'
+      : '<span class="flow-end" title="Final stage — ready to Garden or Release">&#10022;</span>';
+    const thisIconHtml = '<span class="flow-icon flow-this" style="color:'+cardColor(card)+'" title="This card"><svg viewBox="0 0 64 64" fill="currentColor">'+art+'</svg></span>';
+    footer = '<div class="stage-flow">'+beforeHtml+'<span class="flow-arrow">&rarr;</span>'+thisIconHtml+'<span class="flow-arrow">&rarr;</span>'+afterHtml+'</div>';
+  } else {
+    const branches = cardScoreBranches(card);
+    if(branches){
+      const branchHtml = branches.map(b=>{
+        const icon = b.any
+          ? '<span class="flow-end" title="Any stage card">&#10022;</span>'
+          : '<span class="flow-icon" style="color:'+stageColorFor(NODES[b.nodeIdx].key)+'" title="'+esc(NODES[b.nodeIdx].key)+'"><svg viewBox="0 0 64 64" fill="currentColor">'+nodeArt(b.nodeIdx)+'</svg></span>';
+        const pts = b.points!==null
+          ? '<span class="flow-pts" style="color:'+tokenColorFor(b.tokenKey)+'">'+b.points+'</span>'
+          : '<span class="flow-pts flow-pts-any">any</span>';
+        return '<span class="flow-branch">'+icon+'<span class="flow-arrow">&rarr;</span>'+pts+'</span>';
+      }).join('<span class="flow-sep">/</span>');
+      footer = '<div class="stage-flow">'+branchHtml+'</div>';
+    } else {
+      footer = desc ? '<div class="cdesc">'+esc(desc)+'</div>' : '';
+    }
+  }
+
+  return '<div class="card'+(opts.small?' card-pick':'')+(card.category==='event'?' event':'')+(selected?' selected':'')+(eligible?' eligible':'')+(playableNow?' playable-now':'')+'" '+
+    'style="--card-color:'+cardColor(card)+'" title="'+esc(cardName(card)+(desc?' — '+desc:'')+(card.category==='release'?' — keeps your own Cultivator\'s Bonus on the track you release':''))+'" data-act="'+(opts.act||'selectCard')+'" data-id="'+card.id+'" data-p="'+(opts.p!==undefined?opts.p:'')+'">' +
+    '<div class="card-frame">' +
+      '<div class="idx idx-tl">'+esc(abbr)+'</div>' +
+      (tierBadge?'<div class="tier-badge">'+tierBadge+'</div>':'') +
+      '<div class="playable-dot" title="Playable now"></div>' +
+      (card.category==='release'?'<div class="keep-badge" title="Keeps your own Cultivator\'s Bonus on the track you release">&#127793;</div>':'') +
+      '<div class="card-art"><svg viewBox="0 0 64 64" fill="currentColor">'+art+'</svg></div>' +
+      '<div class="card-title">'+esc(cardName(card))+'</div>' +
+      footer +
+    '</div>' +
+  '</div>';
+}
+
+function scoreOf(player){
+  return player.tokens.egg*1 + (player.scorePoints||0);
+}
+
+function renderScoreboard(){
+  let html = '<div class="scoreboard">';
+  G.players.forEach((p,i)=>{
+    const isTurn = (i===G.currentPlayerIndex && (G.phase==='play' || G.phase==='event-choice' || G.phase==='wild-choice'));
+    html += '<div class="score-card'+(isTurn?' turn':'')+'">' +
+      '<div class="total">'+scoreOf(p)+'</div>' +
+      '<div class="pname">'+(isTurn?'<span class="turn-dot"></span>':'')+(p.isAI?'&#129302; ':'')+esc(p.name)+'</div>' +
+      '<div class="tokens">' +
+        '<span title="Eggs">&#129370; <b>'+p.tokens.egg+'</b></span>' +
+        '<span title="Small Butterflies (5pts)">S&#129419; <b>'+p.tokens.small+'</b></span>' +
+        '<span title="Medium Butterflies (7pts)">M&#129419; <b>'+p.tokens.medium+'</b></span>' +
+        '<span title="Large Butterflies (10pts)">L&#129419; <b>'+p.tokens.large+'</b></span>' +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function trackEligibility(track){
+  if(!G.selectedCardId) return false;
+  const card = findCardInHand(G.currentPlayerIndex, G.selectedCardId);
+  if(!card) return false;
+  return !!actionForCardOnTrack(card, track);
+}
+
+function renderButterflyTracker(){
+  const log = G.butterflyLog || [];
+  let pips = '';
+  for(let i=0;i<G.butterfliesNeeded;i++){
+    const size = log[i]; // 'small'|'medium'|'large' if earned, undefined if not yet
+    const cls = size ? ('earned bfly-'+size) : 'unearned';
+    pips += '<span class="bfly-pip '+cls+'" title="'+(size?(size.charAt(0).toUpperCase()+size.slice(1)+' Butterfly'):'Not yet earned')+'">&#129419;</span>';
+  }
+  return '<div class="adults-tracker">' +
+    '<span class="at-label">Butterflies until Final Round</span>' +
+    '<div class="bfly-pips">'+pips+'</div>' +
+  '</div>';
+}
+
+function renderLifeCycleStrip(){
+  let html = '<div class="lifecycle-strip"><div class="lc-scroller">';
+  NODES.forEach((nd,i)=>{
+    const art = nodeArt(i);
+    html += '<div class="lc-stage">' +
+      '<div class="lc-dot" style="--stage-color:'+nd.color+'"><svg viewBox="0 0 64 64" fill="currentColor">'+art+'</svg></div>' +
+      '<div class="lc-name">'+esc(nd.key)+(i===SECOND_FEED_NODE_INDEX?' (2nd)':'')+'</div>' +
+      '<div class="lc-fact">'+esc(nd.fact||'')+'</div>' +
+    '</div>';
+    if(i<NODES.length-1) html += '<div class="lc-arrow">&rarr;</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function renderTracks(indices){
+  indices = indices || [0,1,2,3];
+  let html = '<div class="tracks">';
+  indices.forEach((idx)=>{
+    const t = G.tracks[idx];
+    const eligible = trackEligibility(t);
+    const selectableForReverse = !G.selectedCardId && !t.locked;
+    const trackSelected = (G.selectedTrackIdx===idx);
+    const curDisplayIdx = t.stageIndex+1; // 0..(ADULT_STAGE_INDEX+1) within NODES
+    const fillPct = Math.max(0, t.stageIndex) / ADULT_STAGE_INDEX * 100;
+    let nodesHtml = '';
+    NODES.forEach((nd,ni)=>{
+      let cls='node';
+      if(ni < curDisplayIdx) cls+=' done';
+      if(ni === curDisplayIdx) cls+=' current';
+      const art = nodeArt(ni);
+      const label = nd.key + (ni===SECOND_FEED_NODE_INDEX ? ' (2nd feeding)' : '');
+      nodesHtml += '<div class="'+cls+'" style="--stage-color:'+nd.color+'" title="'+esc(label)+'"><svg viewBox="0 0 64 64" fill="currentColor">'+art+'</svg></div>';
+    });
+    const curLabel = t.stageIndex===-1 ? 'Egg' : STAGES[t.stageIndex].key;
+    const tierSplitPct = (BABY_STAGE_INDEX+1)/(NODES.length-1)*100;
+    const contribList = t.contrib ? Object.keys(t.contrib).map(k=>{
+      const pid = parseInt(k,10);
+      return {name:G.players[pid].name, mine:pid===G.currentPlayerIndex, tier:t.contrib[k]};
+    }) : [];
+    const touchedThisTurn = !G.finalRound && !!(G.turnContrib && G.turnContrib[idx]);
+    const clickAct = eligible ? 'playOnTrack' : (selectableForReverse ? 'selectTrack' : '');
+    html += '<div class="track'+(eligible?' eligible':'')+(selectableForReverse?' selectable':'')+(trackSelected?' track-selected':'')+(t.locked?' locked':'')+'" title="Track '+(idx+1)+': currently at '+esc(curLabel)+(t.locked?' (locked, already scored)':'')+'" data-act="'+clickAct+'" data-track="'+idx+'">' +
+      '<div class="t-head">' +
+        '<div><div class="t-label">Track '+(idx+1)+'</div><div class="t-sub">'+esc(curLabel).toUpperCase()+'</div></div>' +
+        (t.locked?'<div class="lock-badge">&#128274; SCORED</div>':'') +
+      '</div>' +
+      '<div class="nodewrap">' +
+        '<div class="line-bg"></div>' +
+        '<div class="line-fill" style="width:'+fillPct+'%"></div>' +
+        '<div class="nodes">'+nodesHtml+'</div>' +
+      '</div>' +
+      '<div class="tier-track-row">' +
+        '<div class="tier-seg tier-seg-1" style="width:'+tierSplitPct+'%">TIER 1</div>' +
+        '<div class="tier-seg tier-seg-2" style="width:'+(100-tierSplitPct)+'%">TIER 2</div>' +
+      '</div>' +
+      '<div class="t-meta">' +
+        contribList.map(c=>'<span class="t-credit'+(c.mine?' mine':'')+'">'+esc(c.name)+': '+c.tier+'</span>').join('') +
+        (touchedThisTurn ? '<span class="t-touched">Played this turn</span>' : '') +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderHand(playerIdx, opts){
+  opts = opts||{};
+  const player = G.players[playerIdx];
+  if(player.hand.length===0){
+    return '<div class="hand-wrap"><div class="hand-scroller"><span style="font-size:12px;color:var(--cream-dim);padding:10px;">No cards in hand.</span></div></div>';
+  }
+  let html = '<div class="hand-wrap"><div class="hand-scroller">';
+  player.hand.forEach(c=>{
+    let cardOpts = opts;
+    if(opts.highlightForTrack!==undefined && opts.highlightForTrack!==null){
+      const track = G.tracks[opts.highlightForTrack];
+      cardOpts = Object.assign({}, opts, { eligible: !!actionForCardOnTrack(c, track) });
+    }
+    html += renderCard(c, cardOpts);
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function renderLog(){
+  let html = '<div class="log">';
+  G.log.slice(0,8).forEach(m=> html += '<div>&#8250; '+esc(m)+'</div>');
+  html += '</div>';
+  return html;
+}
+
+/* ============================= PHASE RENDERERS ============================= */
+function renderSetup(){
+  let html = '';
+  html += '<div class="hero"><span class="wing">&#129419;</span><h1>Fly, Fly Butterfly</h1><p>Raise butterflies on shared tracks. Garden them or set them free.</p></div>';
+  html += '<div style="text-align:center;margin-bottom:14px;"><button class="btn" data-act="onlineGoChoose">&#127760; Play Online (different devices)</button></div>';
+
+  html += '<div class="panel"><h2>Players</h2><div class="choice-group">';
+  [2,3,4].forEach(n=>{
+    html += '<button class="choice'+(S.count===n?' active':'')+'" data-act="setCount" data-n="'+n+'">'+n+' players</button>';
+  });
+  html += '</div>';
+  html += '<div class="name-inputs">';
+  for(let i=0;i<S.count;i++){
+    const isAI = S.types[i]==='ai';
+    html += '<div class="player-row">' +
+      '<input type="text" maxlength="16" placeholder="'+(isAI?'Computer '+(i+1):'Player '+(i+1))+' name" value="'+esc(S.names[i]||'')+'" data-act="setName" data-i="'+i+'">' +
+      '<span class="type-toggle">' +
+        '<button class="choice choice-sm'+(!isAI?' active':'')+'" data-act="setPlayerType" data-i="'+i+'" data-type="human">&#128100; Human</button>' +
+        '<button class="choice choice-sm'+(isAI?' active':'')+'" data-act="setPlayerType" data-i="'+i+'" data-type="ai">&#129302; Computer</button>' +
+      '</span>' +
+    '</div>';
+  }
+  html += '</div></div>';
+
+  html += '<div class="panel"><h2>Mode</h2><div class="choice-group">';
+  html += '<button class="choice'+(S.mode==='kids'?' active':'')+'" data-act="setMode" data-m="kids">Kids Mode</button>';
+  html += '<button class="choice'+(S.mode==='advanced'?' active':'')+'" data-act="setMode" data-m="advanced">Advanced Mode</button>';
+  html += '</div>';
+  html += '<div class="mode-desc">'+(S.mode==='kids'
+    ? 'Simple and quick — no Event cards. Great for ages 6&ndash;8.'
+    : 'Adds Events that trigger when you play few cards on your turn. Best for ages 8+.')+'</div>';
+  html += '<div class="check-row"><input type="checkbox" id="longerbox" data-act="toggleLonger" '+(S.longer?'checked':'')+'> <label for="longerbox">Shorter game &mdash; end at 8 Butterflies instead of 14</label></div>';
+  html += '</div>';
+
+  html += '<div style="text-align:center;margin-top:8px;"><button class="btn btn-primary" data-act="startGame" style="padding:13px 30px;font-size:15px;">Start Game</button></div>';
+
+  html += '<div class="panel" style="margin-top:22px;">' +
+    '<h2 style="font-size:16px;">&#9889; Instant simulation</h2>' +
+    '<p style="font-size:12.5px;color:var(--cream-dim);margin:4px 0 12px;">Run all-computer games instantly (using the player count and mode above) to build up test data in Results &mdash; no need to watch them play.</p>' +
+    '<div class="choice-group">' +
+    [5,20,50].map(n=>'<button class="btn btn-sm" data-act="simulate" data-n="'+n+'">Simulate '+n+'</button>').join('') +
+    '</div>' +
+  '</div>';
+
+  return html;
+}
+
+function renderGateScreen(){
+  const target = G.players[G.gateTarget];
+  const targetName = target ? target.name : '';
+  const isAI = target && target.isAI;
+
+  if(isAI){
+    let msg = 'Getting ready to play&hellip;';
+    if(G.phase==='gate-resume') msg = 'Continuing its turn&hellip;';
+    return '<div class="gate">' +
+      '<span class="wing">&#129302;</span>' +
+      '<h2>'+esc(targetName)+'</h2>' +
+      '<p>'+msg+'</p>' +
+    '</div>';
+  }
+
+  let msg = 'Get ready for your turn.';
+  let confirmAct = 'confirmGateTurnstart';
+  if(G.phase==='gate-photo'){
+    msg = 'A butterfly was scored! You may get a photo opportunity.';
+    confirmAct = 'confirmGatePhoto';
+  } else if(G.phase==='gate-resume'){
+    msg = "Let's get back to your turn.";
+    confirmAct = 'confirmGateResume';
+  }
+  return '<div class="gate">' +
+    '<span class="wing">&#129419;</span>' +
+    '<h2>Pass the device to<br>'+esc(targetName)+'</h2>' +
+    '<p>'+msg+'</p>' +
+    '<button class="btn btn-primary" data-act="'+confirmAct+'" style="padding:12px 28px;">I\'m Ready</button>' +
+  '</div>';
+}
+
+function renderPlay(){
+  const pIdx = G.currentPlayerIndex;
+  const player = G.players[pIdx];
+
+  let html = '';
+  html += renderScoreboard();
+  html += renderButterflyTracker();
+  html += renderLifeCycleStrip();
+  if(G.finalRound){
+    html += '<div class="panel" style="border-color:var(--coral);padding:10px 16px;"><b style="color:var(--coral);">Final Round!</b> <span style="font-size:13px;color:var(--cream-dim);">Locked tracks can no longer be played. Score the rest to end the game.</span></div>';
+  }
+  html += renderTracks([0,1]);
+
+  if(player.isAI){
+    html += '<div class="panel" style="text-align:center;padding:26px 16px;">' +
+      '<div style="font-size:30px;">&#129302;</div>' +
+      '<div style="font-weight:800;margin-top:6px;">'+esc(player.name)+' is thinking&hellip;</div>' +
+      '<div style="font-size:12px;color:var(--cream-dim);margin-top:4px;">Holding '+player.hand.length+' card'+(player.hand.length===1?'':'s')+'</div>' +
+    '</div>';
+    html += renderTracks([2,3]);
+    html += renderLog();
+    return html;
+  }
+
+  const selectedCard = G.selectedCardId ? findCardInHand(pIdx, G.selectedCardId) : null;
+  const trackSelected = (G.selectedTrackIdx!==null && G.selectedTrackIdx!==undefined) ? G.selectedTrackIdx : null;
+
+  html += '<div class="panel">';
+  html += '<div class="footer-bar"><h2 style="font-size:16px;">'+esc(player.name)+'\'s hand</h2>' +
+    '<span class="pile-info">Draw: '+G.drawPile.length+' &middot; Discard: '+G.discardPile.length+'</span></div>';
+  html += renderHand(pIdx, {act:'selectCard', highlightForTrack: trackSelected, showPlayable:true});
+  html += '<div class="actionrow">';
+  html += '<button class="btn btn-primary" data-act="endTurn" style="margin-left:auto;">End Turn</button>';
+  html += '</div>';
+  if(selectedCard){
+    html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:8px;">Tap a glowing track to play <b>'+esc(cardName(selectedCard))+'</b> there.</div>';
+  }
+  if(!selectedCard && trackSelected!==null){
+    html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:8px;">Glowing cards can be played on Track '+(trackSelected+1)+'. Tap one to play it.</div>';
+  }
+  if(G.mode==='advanced' && !G.finalRound && !selectedCard && trackSelected===null){
+    html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:8px;">Play 0 or 1 cards this turn and an Event triggers automatically when you end your turn.</div>';
+  }
+  html += '</div>';
+
+  html += renderTracks([2,3]);
+  html += renderLog();
+  return html;
+}
+
+function renderPhotoDecision(){
+  const entry = G.photoQueue[0];
+  const player = G.players[entry.playerIndex];
+  const scorer = G.players[G.photoScorerIndex];
+  const info = PHOTO_INFO[entry.type];
+  const valid = photoSelectionValid(entry, player.hand);
+
+  let html = '';
+  html += '<div class="photo-box">' +
+    '<h2>&#128248; Photo Opportunity</h2>' +
+    '<div class="meta">'+esc(scorer.name)+' scored a <b>'+info.label+'</b>. Pay the cost to snap a photo?</div>' +
+    '<div class="cost-badge">Cost: '+entry.cost+' card'+(entry.cost===1?'':'s')+(entry.cost>1?' (or 1 Wild)':'')+' &rarr; +'+entry.reward+' Egg'+(entry.reward===1?'':'s')+'</div>' +
+  '</div>';
+
+  html += '<div class="panel"><h2 style="font-size:15px;">'+esc(player.name)+'\'s hand</h2>';
+  html += renderHand(entry.playerIndex, {act:'togglePhotoCard', showPlayable:true});
+  html += '<div style="font-size:11px;color:var(--cream-dim);margin:-4px 0 8px;">A small teal dot means that card is currently playable on a track &mdash; think twice before giving it up.</div>';
+  html += '<div class="actionrow">';
+  html += '<button class="btn btn-primary" data-act="takePhoto" '+(valid?'':'disabled')+'>Take Photo</button>';
+  html += '<button class="btn btn-ghost" data-act="skipPhoto">Skip</button>';
+  html += '</div></div>';
+  return html;
+}
+
+function renderWildChoice(){
+  const pw = G.pendingWildChoice;
+  if(!pw) return '';
+  const track = G.tracks[pw.trackIdx];
+  const player = G.players[pw.playerIdx];
+
+  if(player.isAI){
+    return '<div class="panel" style="text-align:center;padding:26px 16px;">' +
+      '<div style="font-size:30px;">&#129302;</div>' +
+      '<div style="font-weight:800;margin-top:6px;">'+esc(player.name)+' is deciding&hellip;</div>' +
+    '</div>';
+  }
+
+  const nextStageKey = NODES[track.stageIndex+2].key; // stage the track would advance to
+  let html = '';
+  html += '<div class="photo-box">' +
+    '<h2>&#10024; Wild at Baby Butterfly</h2>' +
+    '<div class="meta">'+esc(player.name)+', Track '+(pw.trackIdx+1)+' is at Baby Butterfly. Score it now, or use the Wild to advance instead?</div>' +
+  '</div>';
+  html += '<div class="panel"><div class="actionrow" style="flex-direction:column; gap:8px; align-items:stretch;">';
+  html += '<button class="btn btn-primary" data-act="wildChoiceScore">Score now &mdash; Small Butterfly (5 pts)</button>';
+  html += '<button class="btn btn-ghost" data-act="wildChoiceAdvance">Advance instead &mdash; push toward '+esc(nextStageKey)+'</button>';
+  html += '</div></div>';
+  return html;
+}
+
+function renderEventChoice(){
+  const pe = G.pendingEvent;
+  const player = G.players[G.currentPlayerIndex];
+
+  if(player.isAI){
+    return '<div class="panel" style="text-align:center;padding:26px 16px;">' +
+      '<div style="font-size:30px;">&#129302;</div>' +
+      '<div style="font-weight:800;margin-top:6px;">'+esc(player.name)+' is deciding&hellip;</div>' +
+    '</div>';
+  }
+
+  let html = '<div class="panel">';
+  if(pe.type==='lookatitgrow'){
+    html += '<h2>Look At It Grow</h2><p style="color:var(--cream-dim);font-size:13px;">Choose a track to jump forward.</p>';
+    html += '<div class="choicelist">';
+    G.tracks.forEach((t,idx)=>{
+      if(t.locked) return;
+      html += '<div class="choicerow"><span>Track '+(idx+1)+' <span style="color:var(--cream-dim);font-size:12px;">(now: '+(t.stageIndex===-1?'Egg':STAGES[t.stageIndex].key)+')</span></span>' +
+        '<span class="row">' +
+        '<button class="btn btn-sm" data-act="lookGrow" data-track="'+idx+'" data-dest="'+BABY_STAGE_INDEX+'">&rarr; Baby</button>' +
+        '<button class="btn btn-sm" data-act="lookGrow" data-track="'+idx+'" data-dest="'+ADULT_STAGE_INDEX+'">&rarr; Adult</button>' +
+        '</span></div>';
+    });
+    html += '</div>';
+  } else if(pe.type==='peekaboo'){
+    if(pe.opponent===null){
+      html += '<h2>Peek-A-Boo</h2><p style="color:var(--cream-dim);font-size:13px;">Choose an opponent to peek at.</p>';
+      html += '<div class="choicelist">';
+      G.players.forEach((p,idx)=>{
+        if(idx===G.currentPlayerIndex) return;
+        html += '<div class="choicerow"><span>'+esc(p.name)+' <span style="color:var(--cream-dim);font-size:12px;">('+p.hand.length+' cards)</span></span>' +
+          '<button class="btn btn-sm" data-act="pickPeekOpponent" data-p="'+idx+'">Peek</button></div>';
+      });
+      html += '</div>';
+    } else {
+      const opp = G.players[pe.opponent];
+      html += '<h2>Peek-A-Boo</h2><p style="color:var(--cream-dim);font-size:13px;">Take one card from '+esc(opp.name)+'\'s hand.</p>';
+      html += renderHand(pe.opponent, {act:'takePeekedCard'});
+      html += '<div class="actionrow"><button class="btn btn-ghost" data-act="finishPeek">Take nothing</button></div>';
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderEnd(){
+  let html = '<div class="endscreen">';
+  html += '<span class="wing" style="font-size:56px;">&#127881;</span>';
+  html += '<h1 style="font-size:30px;">Game Over</h1>';
+  html += '<p style="color:var(--cream-dim);margin-top:6px;">The garden has settled. Final tally:</p>';
+  html += '<div class="podium">';
+  G.winners.forEach((w,i)=>{
+    html += '<div class="prow'+(i===0?' win':'')+'">' +
+      '<div class="pn">'+(i===0?'<span class="crown">&#128081;</span>':'')+esc(w.p.name)+'</div>' +
+      '<div class="row" style="font-family:\'Space Mono\',monospace;font-size:12px;color:var(--cream-dim);gap:10px;">' +
+        '<span>&#129370;'+w.p.tokens.egg+'</span><span>S&#129419;'+w.p.tokens.small+'</span><span>M&#129419;'+w.p.tokens.medium+'</span><span>L&#129419;'+w.p.tokens.large+'</span>' +
+      '</div>' +
+      '<div class="pts">'+w.total+' pts</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  html += '<button class="btn btn-primary" data-act="playAgain" style="padding:12px 26px;">Play Again</button>';
+  html += '</div>';
+  return html;
+}
+
+function renderRulesModal(){
+  if(!showRules) return '';
+  return '<div class="rules-modal" data-act="closeRulesBg">' +
+    '<div class="inner">' +
+      '<h3>Quick Reference</h3>' +
+      '<p><b>On your turn:</b> play any legal cards from your hand, then end your turn — you draw back up to a 4-card hand <i>after</i> you finish playing, not before. If you play nothing, your hand is discarded. In Kids Mode, you must play <i>every</i> legal card you can — holding one back also discards your hand.</p>' +
+      '<p><b>Tracks:</b> Larva &rarr; Feed &rarr; Pupa &rarr; Chrysalis &rarr; Baby &rarr; Hibernation &rarr; Adult. Play the next stage card (or Wild) to advance. No immediate Egg &mdash; instead you bank a Cultivator tier for that track (see below).</p>' +
+      '<p><b>Garden:</b> play on Baby (&rarr; Small, 5pts) or Adult (&rarr; Medium, 7pts). Track resets to Egg.</p>' +
+      '<p><b>Fly, Fly Butterfly:</b> play on Baby (&rarr; Small, 5pts) or Adult (&rarr; Large, 10pts). Unlike Garden or Wild, releasing also lets you keep your own banked Cultivator\'s Bonus credit on that track, on top of the points. Only an Adult release counts toward the Final Round. Track resets to Egg.</p>' +
+      '<p><b>Wild:</b> substitutes for any Stage card to Advance a track. Can also be played directly on a track at Adult Butterfly to harvest a Medium (7pts). At Baby Butterfly specifically, playing a Wild asks you to choose: score it now for a Small (5pts), or use it to advance the track instead. Scoring resets the track to Egg.</p>' +
+      "<p><b>Cultivator's Bonus:</b> advancing a track pays no immediate Egg during the normal game &mdash; instead you bank a credit: 1 (through Baby) or 2 (Hibernation/Adult), once per track <i>per turn</i> (playing several cards on the same track in one turn still only banks once, but touching it again on a later turn banks again, adding up). When the track finally scores <i>or</i> gets wiped by an Event card, every banked contributor cashes in their full accumulated total in Eggs. Normally the scorer doesn't also collect their own credit &mdash; except with Fly, Fly Butterfly, which lets you keep it. This is the only way to earn Eggs from advancing until the Final Round.</p>" +
+      '<p><b>Photo Opportunity:</b> after any score, other players may pay cards to earn Eggs: Baby = 1 card for 1 Egg, Adult Garden = 2 cards (or 1 Wild) for 2 Eggs, Release = 3 cards (or 1 Wild) for 3 Eggs. Since hands refill at the end of a turn, paying for a photo leaves you short-handed on your very next turn.</p>' +
+      '<p><b>Final Round:</b> triggered once 14 (or 8, shorter game) Butterflies of any size have been scored &mdash; Small, Medium, and Large all count. That track locks. Others stay live until scored, then lock too. The Cultivator\'s Bonus and Photo Opportunities both stop, and instead every card you play on a remaining track (Advance, Garden, or Release) immediately earns 1 Egg (through Baby) or 2 Eggs (Hibernation/Adult or later). Once all 4 lock, the game ends.</p>' +
+      '<p><b>Scoring:</b> Egg=1. At Baby, Garden, Wild, and Fly, Fly Butterfly all score a Small (5pts). At Adult, Garden and Wild both score a Medium (7pts), while Fly, Fly Butterfly scores a Large (10pts) &mdash; the only way to get one. Ties break by most Large &rarr; Medium &rarr; Small &rarr; Egg.</p>' +
+      '<button class="btn btn-primary" data-act="closeRules" style="margin-top:8px;">Close</button>' +
+    '</div></div>';
+}
+
+function renderCelebration(){
+  if(!celebrationMsg) return '';
+  const rows = celebrationMsg.lines.map(l=>
+    '<div class="celeb-row">' +
+      '<span class="celeb-icon">'+l.icon+'</span>' +
+      '<span class="celeb-text"><span class="celeb-title">'+esc(l.text)+'</span><span class="celeb-sub">'+esc(l.sub)+'</span></span>' +
+    '</div>'
+  ).join('');
+  return '<div class="celebration" key="'+esc(celebrationMsg.key)+'">'+rows+'</div>';
+}
+
+function renderResultsModal(){
+  if(!showResults) return '';
+  let html = '<div class="rules-modal" data-act="closeResultsBg">' +
+    '<div class="inner">' +
+      '<h3>&#128202; Results</h3>';
+
+  if(!hasStorage()){
+    html += '<p>Results tracking needs the artifact storage feature, which isn\'t available in this preview environment. Everything else still works.</p>';
+  } else if(!historyLoaded){
+    html += '<p>Loading saved results&hellip;</p>';
+  } else {
+    if(simSummary){
+      html += '<p style="color:var(--gold);">Just simulated '+simSummary.completed+' of '+simSummary.n+' requested game'+(simSummary.n===1?'':'s')+'.</p>';
+    }
+    if(matchHistory.length===0){
+      html += '<p>No games recorded yet. Finish a game, or run an instant simulation from the setup screen, to start building test data.</p>';
+    } else {
+      const totalGames = matchHistory.length;
+      const aiWins = matchHistory.filter(r=>r.winnerIsAI).length;
+      const avgTotal = Math.round(matchHistory.reduce((s,r)=>s+r.winnerTotal,0)/totalGames);
+      const avgButterflies = (matchHistory.reduce((s,r)=>s+(r.butterfliesScored||0),0)/totalGames).toFixed(1);
+      const kidsCount = matchHistory.filter(r=>r.mode==='kids').length;
+      const losingTotals = matchHistory.map(r=> r.players && r.players.length ? Math.min(...r.players.map(p=>p.total)) : r.winnerTotal);
+      const avgLosing = Math.round(losingTotals.reduce((s,v)=>s+v,0)/totalGames);
+      const diffs = matchHistory.map((r,i)=> r.winnerTotal - losingTotals[i]);
+      const avgDiff = Math.round(diffs.reduce((s,v)=>s+v,0)/totalGames);
+
+      html += '<div class="stat-grid">' +
+        '<div class="stat-box"><div class="stat-n">'+totalGames+'</div><div class="stat-l">games recorded</div></div>' +
+        '<div class="stat-box"><div class="stat-n">'+avgTotal+'</div><div class="stat-l">avg winning score</div></div>' +
+        '<div class="stat-box"><div class="stat-n">'+avgLosing+'</div><div class="stat-l">avg losing score</div></div>' +
+        '<div class="stat-box"><div class="stat-n">'+avgDiff+'</div><div class="stat-l">avg score differential</div></div>' +
+        '<div class="stat-box"><div class="stat-n">'+avgButterflies+'</div><div class="stat-l">avg Butterflies scored</div></div>' +
+        '<div class="stat-box"><div class="stat-n">'+aiWins+'/'+totalGames+'</div><div class="stat-l">won by a Computer</div></div>' +
+      '</div>';
+      html += '<p style="font-size:11px;color:var(--cream-dim);margin-top:2px;">Kids mode: '+kidsCount+' &middot; Advanced mode: '+(totalGames-kidsCount)+'</p>';
+
+      html += '<div class="history-list">';
+      matchHistory.slice(0,25).forEach(r=>{
+        const d = new Date(r.timestamp);
+        const dateStr = d.toLocaleDateString()+' '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        const rankedPlayers = r.players.slice().sort((a,b)=>b.total-a.total);
+        html += '<div class="history-row">' +
+          '<div class="history-head"><span>'+dateStr+'</span><span>'+(r.mode==='kids'?'Kids':'Advanced'+(r.longerGame?' (long)':''))+' &middot; '+r.playerCount+'p</span></div>' +
+          '<div class="history-players">' + rankedPlayers.map((p,i)=>
+            '<span class="hp'+(i===0?' win':'')+'">'+(p.isAI?'&#129302;':'&#128100;')+' '+esc(p.name)+' <b>'+p.total+'</b></span>'
+          ).join('') + '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+      html += '<button class="btn btn-ghost btn-sm" data-act="clearHistory" style="margin-top:12px;">Clear all results</button>';
+    }
+  }
+
+  html += '<button class="btn btn-primary" data-act="closeResults" style="margin-top:14px;display:block;">Close</button>';
+  html += '</div></div>';
+  return html;
+}
+
+/* ============================= ONLINE RENDERING ============================= */
+function renderOnlineChoose(){
+  let html = '<div class="hero"><span class="wing">&#127760;</span><h1>Play Online</h1><p>Play with friends on their own computers, and fill any empty seats with Computer players.</p></div>';
+  html += '<div class="panel" style="text-align:center;">';
+  html += '<button class="btn btn-primary" data-act="onlineGoCreate" style="padding:13px 30px;font-size:15px;width:100%;margin-bottom:10px;">Create a Lobby</button>';
+  html += '<button class="btn" data-act="onlineGoJoin" style="padding:13px 30px;font-size:15px;width:100%;">Join a Lobby</button>';
+  html += '</div>';
+  html += '<div style="text-align:center;"><button class="btn btn-ghost btn-sm" data-act="onlineBackToSetup">&larr; Back</button></div>';
+  return html;
+}
+
+function renderOnlineCreate(){
+  let html = '<div class="hero"><span class="wing">&#127760;</span><h1>Create a Lobby</h1><p>You\'ll get a short code to share with the others.</p></div>';
+  html += '<div class="panel">';
+  html += '<h2 style="font-size:16px;">Your name</h2>';
+  html += '<div class="name-inputs"><input type="text" maxlength="16" placeholder="Your name" value="'+esc(O.myName||'')+'" data-act="onlineSetName"></div>';
+  html += '<h2 style="font-size:16px;">Players (including you)</h2><div class="choice-group">';
+  [2,3,4].forEach(n=>{ html += '<button class="choice'+(O.count===n?' active':'')+'" data-act="onlineSetCount" data-n="'+n+'">'+n+' players</button>'; });
+  html += '</div>';
+  html += '<h2 style="font-size:16px;">Mode</h2><div class="choice-group">';
+  html += '<button class="choice'+(O.mode==='kids'?' active':'')+'" data-act="onlineSetMode" data-m="kids">Kids Mode</button>';
+  html += '<button class="choice'+(O.mode==='advanced'?' active':'')+'" data-act="onlineSetMode" data-m="advanced">Advanced Mode</button>';
+  html += '</div>';
+  html += '<div class="check-row"><input type="checkbox" id="onlinelongerbox" data-act="onlineToggleLonger" '+(O.longer?'checked':'')+'> <label for="onlinelongerbox">Shorter game &mdash; end at 8 Butterflies instead of 14</label></div>';
+  if(O.error) html += '<div style="color:var(--coral);font-size:13px;margin-bottom:10px;">'+esc(O.error)+'</div>';
+  html += '<button class="btn btn-primary" data-act="onlineCreate" '+(O.busy?'disabled':'')+' style="width:100%;padding:12px;">'+(O.busy?'Creating&hellip;':'Create Lobby')+'</button>';
+  html += '</div>';
+  html += '<div style="text-align:center;"><button class="btn btn-ghost btn-sm" data-act="onlineGoChoose">&larr; Back</button></div>';
+  return html;
+}
+
+function renderOnlineJoin(){
+  let html = '<div class="hero"><span class="wing">&#127760;</span><h1>Join a Lobby</h1><p>Enter the code your host shared with you.</p></div>';
+  html += '<div class="panel">';
+  html += '<h2 style="font-size:16px;">Your name</h2>';
+  html += '<div class="name-inputs"><input type="text" maxlength="16" placeholder="Your name" value="'+esc(O.myName||'')+'" data-act="onlineSetName"></div>';
+  html += '<h2 style="font-size:16px;">Lobby code</h2>';
+  html += '<div class="name-inputs"><input type="text" maxlength="4" placeholder="ABCD" value="'+esc(O.joinCodeInput||'')+'" data-act="onlineSetCode" style="text-transform:uppercase;letter-spacing:.15em;font-size:20px;text-align:center;font-family:\'Space Mono\',monospace;"></div>';
+  if(O.error) html += '<div style="color:var(--coral);font-size:13px;margin-bottom:10px;">'+esc(O.error)+'</div>';
+  html += '<button class="btn btn-primary" data-act="onlineJoin" '+(O.busy?'disabled':'')+' style="width:100%;padding:12px;">'+(O.busy?'Joining&hellip;':'Join Lobby')+'</button>';
+  html += '</div>';
+  html += '<div style="text-align:center;"><button class="btn btn-ghost btn-sm" data-act="onlineGoChoose">&larr; Back</button></div>';
+  return html;
+}
+
+function renderOnlineWaiting(){
+  let html = '<div class="hero" style="padding-top:14px;">';
+  html += '<h1 style="font-size:26px;">Lobby Code</h1>';
+  html += '<div style="font-family:\'Space Mono\',monospace;font-size:44px;font-weight:700;letter-spacing:.2em;color:var(--gold);margin:6px 0;">'+esc(O.code||'')+'</div>';
+  html += '<p>Share this code &mdash; players open this same page and choose "Join a Lobby".</p>';
+  html += '</div>';
+
+  html += '<div class="panel"><h2 style="font-size:16px;">Seats</h2><div class="choicelist">';
+  O.seats.forEach((s,i)=>{
+    const label = s.isAI ? '&#129302; Computer' : (s.claimedBy ? '&#128100; '+esc(s.name||'Player') : 'Empty &mdash; waiting to join&hellip;');
+    html += '<div class="choicerow"><span>Seat '+(i+1)+': '+label+'</span>';
+    if(O.isHost && i!==0 && (s.isAI || !s.claimedBy)){
+      html += '<button class="btn btn-sm" data-act="onlineToggleSeatAI" data-i="'+i+'">'+(s.isAI?'Make Open Seat':'Make Computer')+'</button>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:10px;">Mode: '+(O.mode==='kids'?'Kids':'Advanced')+' &middot; '+(O.longer?'8':'14')+' Butterflies to end</div>';
+  if(O.error) html += '<div style="color:var(--coral);font-size:13px;margin-top:8px;">'+esc(O.error)+'</div>';
+  if(O.isHost){
+    const ready = O.seats.every(s=> s.isAI || s.claimedBy);
+    html += '<button class="btn btn-primary" data-act="onlineStart" '+((ready && !O.busy)?'':'disabled')+' style="width:100%;padding:12px;margin-top:12px;">'+(O.busy?'Starting&hellip;':(ready?'Start Game':'Waiting for all seats to fill&hellip;'))+'</button>';
+  } else {
+    html += '<div style="text-align:center;font-size:13px;color:var(--cream-dim);margin-top:12px;">Waiting for the host to start the game&hellip;</div>';
+  }
+  html += '</div>';
+  html += '<div style="text-align:center;"><button class="btn btn-ghost btn-sm" data-act="onlineLeave">Leave Lobby</button></div>';
+  return html;
+}
+
+function renderOnlineWaitingBanner(text){
+  return '<div class="panel" style="text-align:center;padding:20px 16px;">' +
+    '<div style="font-size:24px;">&#128337;</div>' +
+    '<div style="font-weight:700;margin-top:6px;">'+esc(text)+'</div>' +
+  '</div>';
+}
+
+function renderOnlineHandAndActions(){
+  const pIdx = myPlayerIndex();
+  const player = G.players[pIdx];
+  const selectedCard = G.selectedCardId ? findCardInHand(pIdx, G.selectedCardId) : null;
+  const trackSelected = (G.selectedTrackIdx!==null && G.selectedTrackIdx!==undefined) ? G.selectedTrackIdx : null;
+
+  let html = '<div class="panel">';
+  html += '<div class="footer-bar"><h2 style="font-size:16px;">Your hand</h2>' +
+    '<span class="pile-info">Draw: '+G.drawPile.length+' &middot; Discard: '+G.discardPile.length+'</span></div>';
+  html += renderHand(pIdx, {act:'selectCard', highlightForTrack: trackSelected, showPlayable:true});
+  html += '<div class="actionrow">';
+  html += '<button class="btn btn-primary" data-act="endTurn" style="margin-left:auto;">End Turn</button>';
+  html += '</div>';
+  if(selectedCard){
+    html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:8px;">Tap a glowing track to play <b>'+esc(cardName(selectedCard))+'</b> there.</div>';
+  }
+  if(!selectedCard && trackSelected!==null){
+    html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:8px;">Glowing cards can be played on Track '+(trackSelected+1)+'. Tap one to play it.</div>';
+  }
+  if(G.mode==='advanced' && !G.finalRound && !selectedCard && trackSelected===null){
+    html += '<div style="font-size:12px;color:var(--cream-dim);margin-top:8px;">Play 0 or 1 cards this turn and an Event triggers automatically when you end your turn.</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderOnlineGame(){
+  if(!G) return renderOnlineWaitingBanner('Reconnecting&hellip;');
+  if(G.phase==='end') return renderEnd();
+
+  const myIdx = myPlayerIndex();
+  let html = '';
+  html += '<div class="footer-bar" style="margin-bottom:10px;"><span class="pile-info">Lobby '+esc(O.code||'')+'</span><button class="btn btn-ghost btn-sm" data-act="onlineLeave">Leave Game</button></div>';
+  html += renderScoreboard();
+  html += renderButterflyTracker();
+  html += renderLifeCycleStrip();
+  if(G.finalRound){
+    html += '<div class="panel" style="border-color:var(--coral);padding:10px 16px;"><b style="color:var(--coral);">Final Round!</b> <span style="font-size:13px;color:var(--cream-dim);">Locked tracks can no longer be played. Score the rest to end the game.</span></div>';
+  }
+  html += renderTracks([0,1]);
+
+  if(G.phase==='photo-decision' && G.photoQueue[0]){
+    if(G.photoQueue[0].playerIndex===myIdx){
+      html += renderPhotoDecision();
+    } else {
+      html += renderOnlineWaitingBanner(G.players[G.photoQueue[0].playerIndex].name + ' is deciding on a photo\u2026');
+    }
+  } else if(G.phase==='event-choice'){
+    if(G.currentPlayerIndex===myIdx){
+      html += renderEventChoice();
+    } else {
+      html += renderOnlineWaitingBanner(G.players[G.currentPlayerIndex].name + ' is resolving an Event\u2026');
+    }
+  } else if(G.phase==='wild-choice' && G.pendingWildChoice){
+    if(G.pendingWildChoice.playerIdx===myIdx){
+      html += renderWildChoice();
+    } else {
+      html += renderOnlineWaitingBanner(G.players[G.pendingWildChoice.playerIdx].name + ' is deciding on a Wild\u2026');
+    }
+  } else if(G.phase==='play' && G.currentPlayerIndex===myIdx){
+    html += renderOnlineHandAndActions();
+  } else if(G.phase==='play'){
+    html += renderOnlineWaitingBanner((G.players[G.currentPlayerIndex]?G.players[G.currentPlayerIndex].name:'Someone') + "'s turn\u2026");
+  } else {
+    html += renderOnlineWaitingBanner('Syncing\u2026');
+  }
+
+  html += renderTracks([2,3]);
+  html += renderLog();
+  return html;
+}
+
+/* ============================= MASTER RENDER ============================= */
+function render(){
+  const app = document.getElementById('app');
+  let html = '<div class="rules-toggle">' +
+    '<button class="btn btn-ghost btn-sm" data-act="toggleResults">&#128202; Results</button>' +
+    '<button class="btn btn-ghost btn-sm" data-act="toggleRules">&#128220; Rules</button>' +
+  '</div>';
+
+  if(appPhase==='setup'){
+    html += renderSetup();
+  } else if(appPhase==='online'){
+    if(O.screen==='choose') html += renderOnlineChoose();
+    else if(O.screen==='create') html += renderOnlineCreate();
+    else if(O.screen==='join') html += renderOnlineJoin();
+    else if(O.screen==='waiting') html += renderOnlineWaiting();
+    else if(O.screen==='playing') html += renderOnlineGame();
+    else html += renderOnlineChoose();
+  } else {
+    switch(G.phase){
+      case 'gate-turnstart':
+      case 'gate-photo':
+      case 'gate-resume':
+        html += renderGateScreen();
+        break;
+      case 'play':
+        html += renderPlay();
+        break;
+      case 'photo-decision':
+        html += renderPhotoDecision();
+        break;
+      case 'event-choice':
+        html += renderEventChoice();
+        break;
+      case 'wild-choice':
+        html += renderWildChoice();
+        break;
+      case 'end':
+        html += renderEnd();
+        break;
+      default:
+        html += renderPlay();
+    }
+  }
+
+  html += renderRulesModal();
+  html += renderResultsModal();
+  if(toastMsg) html += '<div class="toast">'+esc(toastMsg)+'</div>';
+  html += renderCelebration();
+
+  app.innerHTML = html;
+  maybeAutoAdvance();
+  attachHoverHighlighting();
+}
+
+// Lets you see where a card can be played (or which cards fit a track) by
+// hovering, without clicking anything. Uses direct DOM listeners rather
+// than the click-driven re-render, so it's cheap and never loses state.
+function attachHoverHighlighting(){
+  if(!G || G.phase!=='play') return;
+  if(appPhase!=='game' && appPhase!=='online') return;
+  const pIdx = appPhase==='online' ? myPlayerIndex() : G.currentPlayerIndex;
+  if(appPhase==='online' && (pIdx<0 || G.currentPlayerIndex!==pIdx)) return; // only hover-highlight on your own turn, online
+  const player = G.players[pIdx];
+  if(!player || player.isAI) return;
+  const handScroller = document.querySelector('.hand-wrap .hand-scroller');
+  if(!handScroller) return;
+  const cardEls = Array.from(handScroller.querySelectorAll('.card[data-id]'));
+  const trackEls = Array.from(document.querySelectorAll('.track[data-track]'));
+  if(cardEls.length===0 || trackEls.length===0) return;
+
+  cardEls.forEach(cardEl=>{
+    const card = findCardInHand(pIdx, cardEl.dataset.id);
+    if(!card) return;
+    cardEl.addEventListener('mouseenter', function(){
+      trackEls.forEach(tEl=>{
+        const ti = parseInt(tEl.dataset.track,10);
+        if(actionForCardOnTrack(card, G.tracks[ti])) tEl.classList.add('hover-target');
+      });
+    });
+    cardEl.addEventListener('mouseleave', function(){
+      trackEls.forEach(tEl=> tEl.classList.remove('hover-target'));
+    });
+  });
+
+  trackEls.forEach(trackEl=>{
+    const ti = parseInt(trackEl.dataset.track,10);
+    trackEl.addEventListener('mouseenter', function(){
+      cardEls.forEach(cEl=>{
+        const card = findCardInHand(pIdx, cEl.dataset.id);
+        if(card && actionForCardOnTrack(card, G.tracks[ti])) cEl.classList.add('hover-target');
+      });
+    });
+    trackEl.addEventListener('mouseleave', function(){
+      cardEls.forEach(cEl=> cEl.classList.remove('hover-target'));
+    });
+  });
+}
+
+/* ============================= EVENT DELEGATION ============================= */
+const ONLINE_SYNC_ACTIONS = new Set(['playOnTrack','endTurn','takePhoto','skipPhoto','lookGrow','pickPeekOpponent','takePeekedCard','finishPeek']);
+
+document.addEventListener('click', function(e){
+  if(e.target.tagName==='INPUT' && e.target.type==='text') return; // let normal text-editing clicks through untouched
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+  const d = el.dataset;
+
+  switch(act){
+    case 'setCount': {
+      const n = parseInt(d.n,10);
+      S.count = n;
+      while(S.names.length<n) S.names.push('');
+      while(S.types.length<n) S.types.push('human');
+      S.names.length = n;
+      S.types.length = n;
+      break;
+    }
+    case 'setPlayerType': {
+      const i = parseInt(d.i,10);
+      S.types[i] = d.type;
+      break;
+    }
+    case 'setMode': S.mode = d.m; break;
+    case 'toggleLonger': S.longer = !S.longer; break;
+    case 'startGame': startRealGame(); break;
+    case 'playAgain': appPhase='setup'; G=null; simSummary=null; break;
+    case 'simulate': {
+      const n = parseInt(d.n,10);
+      simulateGames(n, S.count, S.mode, S.longer);
+      break;
+    }
+
+    case 'confirmGateTurnstart': confirmGateTurnstart(); break;
+    case 'confirmGatePhoto': confirmGatePhoto(); break;
+    case 'confirmGateResume': confirmGateResume(); break;
+
+    case 'selectCard': selectCard(d.id); break;
+    case 'selectTrack': selectTrack(parseInt(d.track,10)); break;
+    case 'playOnTrack': playOnTrack(parseInt(d.track,10)); break;
+    case 'endTurn': endTurn(); break;
+
+    case 'togglePhotoCard': togglePhotoCard(d.id); break;
+    case 'takePhoto': resolvePhoto(true); break;
+    case 'skipPhoto': resolvePhoto(false); break;
+    case 'wildChoiceScore': resolveWildChoice('score'); break;
+    case 'wildChoiceAdvance': resolveWildChoice('advance'); break;
+
+    case 'lookGrow': resolveLookAtItGrow(parseInt(d.track,10), parseInt(d.dest,10)); break;
+    case 'pickPeekOpponent': pickPeekOpponent(parseInt(d.p,10)); break;
+    case 'takePeekedCard': takePeekedCard(d.id); break;
+    case 'finishPeek': finishPeek(); break;
+
+    case 'toggleRules': showRules = !showRules; break;
+    case 'closeRules': showRules = false; break;
+    case 'closeRulesBg': if(e.target===el) showRules=false; break;
+
+    case 'toggleResults': showResults = !showResults; break;
+    case 'closeResults': showResults = false; simSummary=null; break;
+    case 'closeResultsBg': if(e.target===el){ showResults=false; simSummary=null; } break;
+    case 'clearHistory': clearHistory(); break;
+
+    case 'onlineGoChoose': appPhase='online'; O.screen='choose'; O.error=null; break;
+    case 'onlineBackToSetup': appPhase='setup'; break;
+    case 'onlineGoCreate': O.screen='create'; O.error=null; break;
+    case 'onlineGoJoin': O.screen='join'; O.error=null; break;
+    case 'onlineSetCount': O.count = parseInt(d.n,10); break;
+    case 'onlineSetMode': O.mode = d.m; break;
+    case 'onlineToggleLonger': O.longer = !O.longer; break;
+    case 'onlineCreate': createLobby(); break;
+    case 'onlineJoin': joinLobby(); break;
+    case 'onlineToggleSeatAI': toggleSeatAI(parseInt(d.i,10)); break;
+    case 'onlineStart': startOnlineGame(); break;
+    case 'onlineLeave': leaveOnlineGame(); break;
+  }
+
+  if(G && G.onlineMode && ONLINE_SYNC_ACTIONS.has(act)){
+    pushOnlineState();
+  }
+  render();
+});
+
+document.addEventListener('input', function(e){
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  if(el.dataset.act==='setName'){
+    const i = parseInt(el.dataset.i,10);
+    S.names[i] = el.value;
+  } else if(el.dataset.act==='onlineSetName'){
+    O.myName = el.value;
+  } else if(el.dataset.act==='onlineSetCode'){
+    O.joinCodeInput = el.value.toUpperCase();
+  }
+});
+
+/* ============================= INIT ============================= */
+render();
+loadHistory();
+})();
+</script>
+</body>
+</html>

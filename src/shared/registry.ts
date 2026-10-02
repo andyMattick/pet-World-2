@@ -306,7 +306,8 @@ export interface ArcadeGame {
 
 export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'corsairs-cove', name: "Corsair's Cove", emoji: '🏴‍☠️', description: 'Solve math to refill your ammo and sail on.', src: '/arcade/corsairs-cove/', available: true },
-  { id: 'whack-a-mole', name: 'Whack-a-Mole Stats Lab', emoji: '🔨', description: 'Play a quick round and explore your score statistics.', src: '/arcade/whack-a-mole/', available: true }
+  { id: 'whack-a-mole', name: 'Whack-a-Mole Stats Lab', emoji: '🔨', description: 'Play a quick round and explore your score statistics.', src: '/arcade/whack-a-mole/', available: true },
+  { id: 'state-conquest', name: 'State Conquest', emoji: '🗺️', description: 'Learn all 50 states, capitals, and neighboring geography in a saveable strategy campaign.', src: '/arcade/state-conquest/', available: true }
 ];
 
 export interface ArcadeSettings {
@@ -634,7 +635,7 @@ export const BUILDINGS: Building[] = [
   {id:'bioEco',     emoji:'🐠', name:'Aquarium',       unit:'Ecosystems and energy flow', hood:'bio'},
   {id:'bioPlanet',  emoji:'🦁', name:'Zoo',            unit:'Biodiversity and human impact', hood:'bio'},
   /* English: libraries, Khan grammar and reading order. Planned. */
-  {id:'elaNouns',  emoji:'📖', name:'Story Corner Library', unit:'Nouns and pronouns', hood:'ela'},
+  {id:'elaNouns',  emoji:'📖', name:'Story Corner Library', unit:'Unit 1: Nouns', hood:'ela', open:true},
   {id:'elaVerbs',  emoji:'🏃', name:'Action Library',       unit:'Verbs and verb tenses', hood:'ela'},
   {id:'elaDescr',  emoji:'🎨', name:'Poetry Library',       unit:'Adjectives and adverbs', hood:'ela'},
   {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Prepositions, conjunctions, and sentence structure', hood:'ela'},

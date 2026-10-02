@@ -39,9 +39,9 @@ let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared 
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]},
+  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[],
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -55,6 +55,21 @@ function normalize(raw){
     s[shop.id] = Object.assign({st:{}}, s[shop.id] || {}); s[shop.id].st = Object.assign(Object.fromEntries(shop.stations.map(st => [st.id, 0])), s[shop.id].st || {});
   });
   ['review','quizzes'].forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {}; });
+  s.readingBooks = Array.isArray(s.readingBooks) ? s.readingBooks.filter(book => book && typeof book.id === 'string' && typeof book.title === 'string').slice(0,100).map(book => ({
+    id:book.id, title:book.title.slice(0,120), author:typeof book.author === 'string' ? book.author.slice(0,120) : '',
+    chapters:Array.isArray(book.chapters) ? book.chapters.slice(0,200).filter(chapter => chapter && typeof chapter.id === 'string').map(chapter => ({
+      id:chapter.id, label:typeof chapter.label === 'string' ? chapter.label.slice(0,100) : '',
+      characters:typeof chapter.characters === 'string' ? chapter.characters.slice(0,600) : '',
+      conflict:typeof chapter.conflict === 'string' ? chapter.conflict.slice(0,600) : '',
+      interaction:typeof chapter.interaction === 'string' ? chapter.interaction.slice(0,600) : '',
+      setting:typeof chapter.setting === 'string' ? chapter.setting.slice(0,600) : '',
+      themes:typeof chapter.themes === 'string' ? chapter.themes.slice(0,600) : '',
+      detail:typeof chapter.detail === 'string' ? chapter.detail.slice(0,600) : '',
+      vocabulary:typeof chapter.vocabulary === 'string' ? chapter.vocabulary.slice(0,600) : ''
+    })) : []
+  })) : [];
+  s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
+  if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
       shop.stations.filter(st => st.skills.length && (st.id === 1 || (shop.id === 'cafe' && st.id <= s.minStation) || (s[shop.id]?.st?.[st.id-1] || 0) >= UNLOCK_AT)).map(st => st.id)
@@ -105,7 +120,7 @@ function normalize(raw){
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   s.mathMinutes = s.mathMinutes && typeof s.mathMinutes === 'object' ? s.mathMinutes : {};
-  s.arcade = Object.assign({tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[]}, s.arcade || {});
+  s.arcade = Object.assign({tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}}, s.arcade || {});
   if (raw?.arcade?.timerVersion !== 3) s.arcade.playedSeconds = 0;
   s.arcade.timerVersion = 3;
   s.arcade.tickets = Math.max(0, Math.floor(+s.arcade.tickets || 0));
@@ -115,6 +130,8 @@ function normalize(raw){
   s.arcade.ticketDay = typeof s.arcade.ticketDay === 'string' ? s.arcade.ticketDay : '';
   s.arcade.ticketsEarnedToday = Math.max(0, Math.floor(+s.arcade.ticketsEarnedToday || 0));
   s.arcade.completedRounds = Array.isArray(s.arcade.completedRounds) ? [...new Set(s.arcade.completedRounds.filter(id => typeof id === 'string'))].slice(-200) : [];
+  s.arcade.gameSaves = Object.fromEntries(Object.entries(s.arcade.gameSaves && typeof s.arcade.gameSaves === 'object' ? s.arcade.gameSaves : {})
+    .filter(([id, state]) => ARCADE_GAMES.some(game => game.id === id) && typeof state === 'string' && state.length <= 100000));
   return s;
 }
 function loadState(key){
@@ -4380,7 +4397,7 @@ $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
 let currentShop = 'cafe';
-const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','summary','shop','hall','parent','arcade'];
+const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','library','summary','shop','hall','parent','arcade'];
 function show(id){
   if (id !== 'room' && roomDrag) finishRoomDrag();
   if (id === 'arcade' && !arcadePolicy().enabled) { toast('Your teacher has not opened the Arcade.'); id = 'home'; }
@@ -4391,6 +4408,7 @@ function show(id){
   if (id === 'room') renderPetRoom();
   if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit); const hood = builtHoods().some(n => n.id === currentHood()) ? currentHood() : homeHood(); renderBook(b && b.hood === hood ? bookUnit : buildingsIn(hood)[0].id); }   // opens on the grade you're standing in
+  if (id === 'library') renderEnglishLibrary();
   if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
 }
@@ -4452,8 +4470,17 @@ function buyArcadeFurniture(id){
 function arcadeModuleMessage(event){
   const frame = $('#arcadeFrame');
   const run = activeArcadeRun, data = event.data, policy = arcadePolicy();
-  if (!frame || !run || event.origin !== location.origin || event.source !== frame.contentWindow || !data || data.type !== 'arcade:round-complete') return;
-  if (run.freePlay || policy.freePlay || !policy.enabled || !policy.games[run.gameId] || data.runId !== run.id || data.gameId !== run.gameId) return;
+  if (!frame || !run || event.origin !== location.origin || event.source !== frame.contentWindow || !data || data.runId !== run.id || data.gameId !== run.gameId) return;
+  if (data.type === 'arcade:state-load-request') {
+    event.source.postMessage({type:'arcade:state-load', gameId:run.gameId, runId:run.id, state:S.arcade.gameSaves[run.gameId] || null}, event.origin);
+    return;
+  }
+  if (data.type === 'arcade:state-save') {
+    if (typeof data.state !== 'string' || data.state.length > 100000) return;
+    S.arcade.gameSaves[run.gameId] = data.state; save(); return;
+  }
+  if (data.type === 'arcade:state-clear') { delete S.arcade.gameSaves[run.gameId]; save(); return; }
+  if (data.type !== 'arcade:round-complete' || run.freePlay || policy.freePlay || !policy.enabled || !policy.games[run.gameId]) return;
   const roundId = typeof data.roundId === 'string' ? data.roundId.slice(0,80) : '';
   const score = Math.floor(Number(data.score));
   if (!roundId || !Number.isFinite(score) || score < 0) return;
@@ -4915,8 +4942,8 @@ function renderHome(){
   buildingsIn(currentHood()).forEach(b => {
     const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
     const open = unitOpen(b.id);
-    const stickers = open ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
-    const progress = open ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
+    const stickers = open && rewards.length ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
+    const progress = open && rewards.length ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
     h += open
       ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}</button>`
       : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${b.name}</span><span class="tu">${b.unit}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
@@ -4967,10 +4994,222 @@ $('#town').addEventListener('click', e => {
   }
   else if (id === 'sprint') openSprint();
   else if (id === 'room') show('room');
+  else if (id === 'elaNouns') show('library');
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
   else if (id === 'arcade') void openArcade();
+});
+
+const ENGLISH_UNIT1 = [
+  {id:'identifyNouns', group:'Introduction to nouns', lesson:'Nouns name people, places, things, and ideas. A noun can be singular (one) or plural (more than one).', name:'Identifying nouns'},
+  {id:'singularPlural', group:'Introduction to nouns', lesson:'Most nouns form a plural with -s or -es. Some spelling patterns change when a noun becomes plural.', name:'Singular and plural nouns'},
+  {id:'commonProper', group:'Types of nouns', lesson:'Common nouns name general people, places, or things. Proper nouns name a specific one and begin with a capital letter.', name:'Common and proper nouns'},
+  {id:'concreteAbstract', group:'Types of nouns', lesson:'Concrete nouns can be experienced with the senses. Abstract nouns name ideas, feelings, or qualities.', name:'Concrete and abstract nouns'},
+  {id:'fToVes', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'Some nouns ending in f or fe change to -ves in the plural.', name:'Irregular plural nouns: f to -ves plurals'},
+  {id:'enPlurals', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'A few nouns form their plural with -en or another special ending.', name:'Irregular plural nouns: -en plurals'},
+  {id:'basePlurals', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'Some nouns use the same form for one and for more than one.', name:'Irregular plural nouns: the base plural'},
+  {id:'mutantPlurals', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Some plurals change the inside of the word instead of adding an ending.', name:'Irregular plural nouns: mutant plurals'},
+  {id:'foreignPlurals', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Some nouns borrowed from other languages keep a plural form from that language.', name:'Irregular plural nouns: foreign plurals'},
+  {id:'pluralReview', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Review regular and irregular plural patterns, including words that change or stay the same.', name:'Irregular plural nouns review'}
+];
+const ENGLISH_GROUPS = [
+  {name:'Introduction to nouns', learn:'Nouns name people, places, things, and ideas. Practice spotting nouns and choosing singular or plural forms.', skills:['identifyNouns','singularPlural']},
+  {name:'Types of nouns', learn:'Sort nouns by what they name: general or specific, tangible or abstract.', skills:['commonProper','concreteAbstract']},
+  {name:'Irregular plural nouns: base plurals and irregular endings', learn:'Explore plurals that change their spelling, add unusual endings, or stay the same.', skills:['fToVes','enPlurals','basePlurals']},
+  {name:'Irregular plural nouns: mutant and foreign plurals', learn:'Practice internal vowel changes, borrowed plurals, and mixed review.', skills:['mutantPlurals','foreignPlurals','pluralReview']}
+];
+const PLURAL_QUESTIONS = {
+  identifyNouns:[
+    (name,place,theme) => ({prompt:`In the chapter, ${name} explores ${place}. Which word is a noun?`,options:[name,'explores','carefully','through'],answer:0}),
+    (name,place,theme) => ({prompt:`Which word names a place in your reading notes?`,options:['bravely',place,'discovers','although'],answer:1}),
+    (name,place,theme) => ({prompt:`Which choice names an idea from the chapter?`,options:['quickly','beneath','listens',theme],answer:3}),
+    (name,place,theme) => ({prompt:`In "${name} remembers the chapter," which word names a person?`,options:['remembers','chapter',name,'the'],answer:2})
+  ],
+  singularPlural:[
+    {prompt:'Which is the plural of story?',options:['storys','stories','storyes','storie'],answer:1},
+    {prompt:'Which is the plural of box?',options:['boxs','boxies','boxes','box'],answer:2},
+    {prompt:'Which sentence uses a singular noun?',options:['The chapters are exciting.','The library has a map.','The characters explore.','The books are open.'],answer:1},
+    {prompt:'Choose the plural form of "chapter".',options:['chapteres','chapters','chapteries','chapter'],answer:1}
+  ],
+  commonProper:[
+    (name,place) => ({prompt:'Which choice is a proper noun?',options:[name,'chapter','library','story'],answer:0}),
+    (name,place) => ({prompt:'Which choice is a common noun?',options:[name,'author','your school name','a character name'],answer:1}),
+    (name,place) => ({prompt:'Which sentence correctly capitalizes a proper noun?',options:[`We read about ${name} in the book.`,`We read About ${name} in the book.`,`We read about ${name} in The book.`,`we read about ${name} in the book.`],answer:0}),
+    (name,place) => ({prompt:'In your chapter notes, which is the name of a specific place?',options:['a room',place,'the library','a country'],answer:1})
+  ],
+  concreteAbstract:[
+    (name,place,theme) => ({prompt:'Which choice names an abstract idea from the chapter?',options:[name,place,'a doorway',theme],answer:3}),
+    (name,place,theme) => ({prompt:'Which choice names something concrete you could see?',options:['friendship','hope',place,'courage'],answer:2}),
+    (name,place,theme) => ({prompt:'Which is a concrete noun?',options:['kindness','a book','fear','freedom'],answer:1}),
+    (name,place,theme) => ({prompt:'Which is an abstract noun?',options:['a window','a path','a character','bravery'],answer:3})
+  ],
+  fToVes:[
+    {prompt:'Choose the plural of leaf.',options:['leafs','leaves','leavs','leafes'],answer:1},
+    {prompt:'Choose the plural of wolf.',options:['wolfs','wolfes','wolves','wolvs'],answer:2},
+    {prompt:'Choose the plural of knife.',options:['knifes','knives','knivs','knifees'],answer:1},
+    {prompt:'Choose the plural of shelf.',options:['shelfs','shelves','shelvs','shelfes'],answer:1}
+  ],
+  enPlurals:[
+    {prompt:'Choose the plural of child.',options:['childs','childes','children','childrens'],answer:2},
+    {prompt:'Choose the plural of ox.',options:['oxes','oxen','oxs','oxens'],answer:1},
+    {prompt:'Choose the plural of person.',options:['persons','people','peoples','persones'],answer:1},
+    {prompt:'Choose the plural of woman.',options:['womans','womanes','women','womens'],answer:2}
+  ],
+  basePlurals:[
+    {prompt:'What is the plural of sheep?',options:['sheeps','sheep','sheepes','sheepies'],answer:1},
+    {prompt:'What is the plural of deer?',options:['deers','deer','deeres','deeries'],answer:1},
+    {prompt:'Choose the correct sentence.',options:['Two fishs swam by.','Two fish swam by.','Two fishes swam by always.','Two fishies swam by.'],answer:1},
+    {prompt:'Which word has the same singular and plural form?',options:['book','child','species','leaf'],answer:2}
+  ],
+  mutantPlurals:[
+    {prompt:'Choose the plural of mouse.',options:['mouses','mice','mouse','mices'],answer:1},
+    {prompt:'Choose the plural of goose.',options:['gooses','geese','goose','geeses'],answer:1},
+    {prompt:'Choose the plural of tooth.',options:['tooths','teeth','toothes','teeths'],answer:1},
+    {prompt:'Choose the plural of foot.',options:['foots','feet','footses','feets'],answer:1}
+  ],
+  foreignPlurals:[
+    {prompt:'Choose the plural of cactus.',options:['cactuses only','cacti','cactus','cactis'],answer:1},
+    {prompt:'Choose the plural of criterion.',options:['criterions','criteria','criteriones','criterias'],answer:1},
+    {prompt:'Choose the plural of alumnus.',options:['alumnuses','alumni','alumnus','alumnis'],answer:1},
+    {prompt:'Choose the plural of fungus.',options:['funguses only','fungi','fungus','fungis'],answer:1}
+  ],
+  pluralReview:[
+    {prompt:'Choose the plural of knife.',options:['knifes','knives','knife','knivies'],answer:1},
+    {prompt:'Choose the plural of child.',options:['childs','children','childes','child'],answer:1},
+    {prompt:'Choose the plural of mouse.',options:['mouses','mice','mouse','mices'],answer:1},
+    {prompt:'Choose the plural of sheep.',options:['sheeps','sheep','sheepes','sheepies'],answer:1}
+  ]
+};
+let englishRun = null;
+const readingText = (chapter,key,fallback) => (chapter?.[key] || '').split(/[\n,;]/).map(value => value.trim()).filter(Boolean)[0] || fallback;
+function selectedReading(){
+  const selection = S.readingSelection;
+  if (!selection) return null;
+  const book = S.readingBooks.find(item => item.id === selection.bookId), chapter = book?.chapters.find(item => item.id === selection.chapterId);
+  return book && chapter ? {book,chapter} : null;
+}
+function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S.readingSelection?.bookId) || null; }
+function englishQuestions(skillId){
+  const reading = selectedReading();
+  const {book,chapter} = reading || {book:{title:'your book'},chapter:{}};
+  if (!reading) {
+    const general = {
+      identifyNouns:[
+        {prompt:'Which choice is a noun?',options:['quickly','mountain','because','bright'],answer:1},
+        {prompt:'Which word names an idea?',options:['under','kindness','walked','softly'],answer:1},
+        {prompt:'Which word names a person?',options:['teacher','carefully','across','blue'],answer:0},
+        {prompt:'Which word names a place?',options:['nearby','city','sing','gentle'],answer:1}
+      ],
+      commonProper:[
+        {prompt:'Which choice is a proper noun?',options:['river','Monday','book','teacher'],answer:1},
+        {prompt:'Which choice is a common noun?',options:['Maya','Canada','planet','Tuesday'],answer:2},
+        {prompt:'Which sentence correctly capitalizes a proper noun?',options:['We visited Boston in July.','We visited boston in July.','We visited Boston in july.','we visited Boston in July.'],answer:0},
+        {prompt:'Which is the name of a specific place?',options:['a country','the park','Lake Erie','a classroom'],answer:2}
+      ],
+      concreteAbstract:[
+        {prompt:'Which choice names an abstract idea?',options:['a chair','a window','honesty','a pencil'],answer:2},
+        {prompt:'Which choice names something you could see or touch?',options:['hope','courage','a shell','patience'],answer:2},
+        {prompt:'Which is a concrete noun?',options:['kindness','a book','fear','freedom'],answer:1},
+        {prompt:'Which is an abstract noun?',options:['a window','a path','a character','bravery'],answer:3}
+      ]
+    };
+    if (general[skillId]) return general[skillId];
+  }
+  const name = readingText(chapter,'characters','Mira'), place = readingText(chapter,'setting','the old library'), theme = readingText(chapter,'themes','friendship');
+  const prompts = PLURAL_QUESTIONS[skillId] || [];
+  return prompts.map(item => typeof item === 'function' ? item(name,place,theme) : item);
+}
+function renderEnglishLibrary(){
+  const active = selectedReading(), activeBook = selectedReadingBook(), books = S.readingBooks;
+  const bookList = books.map(book => `<button type="button" class="ela-book${activeBook?.id === book.id ? ' active' : ''}" data-ela-book="${esc(book.id)}"><strong>${esc(book.title)}</strong><small>${esc(book.author || 'Author not added')} · ${book.chapters.length} chapter${book.chapters.length === 1 ? '' : 's'}</small></button>`).join('');
+  const chapterList = activeBook ? activeBook.chapters.map(chapter => `<button type="button" class="ela-chapter${active?.chapter.id === chapter.id ? ' active' : ''}" data-ela-chapter="${esc(chapter.id)}">${esc(chapter.label || 'Untitled chapter')}</button>`).join('') : '';
+  const chapter = active?.chapter;
+  const fields = [
+    ['characters','Who are the main characters?'],['conflict','What problem or conflict is happening?'],['interaction','What important interaction happened?'],
+    ['setting','Where and when does this chapter take place?'],['themes','What theme or big idea do you notice?'],['detail','What detail from the chapter supports your thinking?'],['vocabulary','What new or interesting words did you notice?']
+  ];
+  const editor = active ? `<div class="ela-editor"><div class="ela-reading-context"><strong>${esc(active.book.title)}</strong><span>${esc(chapter.label)}</span></div>
+    <form id="elaChapterForm"><div class="ela-prompts">${fields.map(([key,label]) => `<label>${label}<textarea name="${key}" maxlength="600" rows="2">${esc(chapter[key] || '')}</textarea></label>`).join('')}</div><button class="btn berry" type="submit">Save chapter notes</button></form>
+    <div class="ela-start"><p>Your notes can give practice a reading context. The game does not check whether notes match the book.</p><button class="btn mint" type="button" data-ela-unit>Open English Unit 1: Nouns</button></div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book and chapter to save notes, or practice English without choosing a book.</p><button class="btn mint" type="button" data-ela-unit>Practice English Unit 1: Nouns</button></div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 Story Corner Library</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <p class="muted">Build your own book report one chapter at a time. Save your notes and return to them whenever you read more. Notes are not checked for accuracy; a parent can review them with you.</p>
+    <div class="ela-layout"><aside class="ela-shelf"><h3>My books</h3>${bookList || '<p class="muted">No books added yet.</p>'}<form id="elaBookForm" class="ela-add-book"><label>Book title<input name="title" maxlength="120" required></label><label>Author <span class="muted">(optional)</span><input name="author" maxlength="120"></label><button class="btn" type="submit">Add a book</button></form></aside>
+    <div class="ela-workspace">${activeBook ? `<div class="ela-chapters"><h3>Chapters</h3>${chapterList}<form id="elaAddChapter" class="ela-add-chapter"><label>Chapter name or number<input name="label" maxlength="100" required placeholder="Chapter 1"></label><button class="btn small" type="submit">Add chapter</button></form></div>` : ''}${editor}</div></div>`;
+}
+$('#libraryWrap').addEventListener('submit', event => {
+  event.preventDefault(); const form = event.target;
+  if (form.id === 'elaBookForm') {
+    const data = new FormData(form), title = String(data.get('title') || '').trim(); if (!title) return;
+    const book = {id:'book-' + Math.random().toString(36).slice(2,10), title, author:String(data.get('author') || '').trim(), chapters:[]};
+    S.readingBooks.unshift(book); S.readingSelection = {bookId:book.id,chapterId:null}; save(); renderEnglishLibrary(); $('#libraryWrap [name="label"]')?.focus(); return;
+  }
+  if (form.id === 'elaAddChapter') {
+    const book = selectedReadingBook(), label = String(new FormData(form).get('label') || '').trim(); if (!book || !label) return;
+    const chapter = {id:'chapter-' + Math.random().toString(36).slice(2,10),label,characters:'',conflict:'',interaction:'',setting:'',themes:'',detail:'',vocabulary:''};
+    book.chapters.push(chapter); S.readingSelection = {bookId:book.id,chapterId:chapter.id}; save(); renderEnglishLibrary(); $('#elaChapterForm textarea')?.focus(); return;
+  }
+  if (form.id === 'elaChapterForm') {
+    const active = selectedReading(); if (!active) return;
+    for (const field of form.querySelectorAll('textarea[name]')) active.chapter[field.name] = field.value.trim();
+    save(); renderEnglishLibrary(); toast('Chapter notes saved.');
+  }
+});
+$('#libraryWrap').addEventListener('click', event => {
+  const button = event.target.closest('button'); if (!button) return;
+  if (button.dataset.elaBook) {
+    const book = S.readingBooks.find(item => item.id === button.dataset.elaBook); if (!book) return;
+    S.readingSelection = {bookId:book.id,chapterId:book.chapters[book.chapters.length-1]?.id || null}; save(); renderEnglishLibrary(); return;
+  }
+  if (button.dataset.elaChapter) {
+    const active = selectedReading(); if (!active) return;
+    S.readingSelection = {bookId:active.book.id,chapterId:button.dataset.elaChapter}; save(); renderEnglishLibrary(); return;
+  }
+  if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(); return; }
+});
+function renderEnglishUnit(){
+  const active = selectedReading();
+  const progress = S.elaProgress || {};
+  const groups = ENGLISH_GROUPS.map(group => `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div><div class="ela-exercise-list">${group.skills.map(skillId => {
+    const skill = ENGLISH_UNIT1.find(item => item.id === skillId), index = ENGLISH_UNIT1.findIndex(item => item.id === skillId), record = progress[skillId], unlocked = index === 0 || !!progress[ENGLISH_UNIT1[index-1].id]?.passed;
+    return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${record?.passed ? '<span class="ela-passed">✓ Level up</span>' : record?.tries ? `<span class="muted">Best: ${record.best}/4 · Get 3 of 4 to level up</span>` : '<span class="muted">Not started · Get 3 of 4 to level up</span>'}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" ${unlocked ? '' : 'disabled'}>${record?.passed ? 'Practice again' : record?.tries ? 'Try again' : 'Practice'}</button></article>`;
+  }).join('')}</div></section>`).join('');
+  const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 English Unit 1: Nouns</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}`;
+}
+function renderEnglishQuestion(){
+  const run = englishRun; if (!run) return;
+  const question = run.questions[run.index], title = ENGLISH_UNIT1.find(item => item.id === run.skillId).name;
+  const active = selectedReading(), context = active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(title)}</h2><button class="btn small" data-ela-unit>Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of 4 · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+}
+function startEnglishPractice(skillId){
+  const questions = englishQuestions(skillId); if (questions.length !== 4) return;
+  englishRun = {skillId,questions,index:0,score:0,answered:false}; renderEnglishQuestion();
+}
+function finishEnglishPractice(){
+  const run = englishRun, previous = S.elaProgress[run.skillId] || {best:0,tries:0,passed:false};
+  const passed = run.score >= 3;
+  S.elaProgress[run.skillId] = {best:Math.max(previous.best || 0,run.score),tries:(previous.tries || 0) + 1,passed:previous.passed || passed};
+  save(); englishRun = null;
+  const skill = ENGLISH_UNIT1.find(item => item.id === run.skillId);
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Level up!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit>Back to Unit 1</button></div><div class="ela-question ela-result"><p>You got <strong>${run.score} of 4</strong> correct.</p><p>${passed ? 'You got 3 of 4 or better. The next exercise is now open.' : 'Get 3 of 4 correct to level up. Your best score is saved.'}</p><button class="btn berry" type="button" data-ela-practice="${skill.id}">${passed ? 'Practice again' : 'Try again'}</button></div>`;
+}
+$('#libraryWrap').addEventListener('click', event => {
+  const button = event.target.closest('button'); if (!button) return;
+  if (button.hasAttribute('data-ela-library')) { renderEnglishLibrary(); return; }
+  if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice); return; }
+  if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
+    const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
+    englishRun.answered = true; if (correct) englishRun.score++;
+    button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
+    const feedback = $('#libraryWrap .ela-feedback'); feedback.textContent = correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`;
+    button.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>'); return;
+  }
+  if (button.hasAttribute('data-ela-next') && englishRun) {
+    englishRun.index++; englishRun.answered = false;
+    if (englishRun.index === 4) finishEnglishPractice(); else renderEnglishQuestion();
+  }
 });
 
 /* ---------- shop stations ---------- */
@@ -6399,12 +6638,17 @@ function renderParent(){
     return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
   }).join('');
   const legendary = REWARDS.filter(r => r.legendary && owns(r));
+  const readingReports = S.readingBooks.map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
+    const notes = [['Main characters',chapter.characters],['Conflict',chapter.conflict],['Important interaction',chapter.interaction],['Setting',chapter.setting],['Theme or big idea',chapter.themes],['Supporting detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
+    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes added yet.</p>'}</div>`;
+  }).join('') : '<p class="muted">No chapters added yet.</p>'}</section>`).join('');
   $('#parentWrap').innerHTML = `<div class="backrow"><h2>Progress report: ${esc(S.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="panel"><h3>Ideas or arithmetic?</h3><div class="stats">
       <div class="stat"><b>${cP === null ? '–' : cP + '%'}</b>idea steps right on the first try (${cc} of ${ca})</div>
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
+    <div class="panel"><h3>Reading Log</h3><p class="muted">These are student-entered notes, not checked by the game. Review them together against the book.</p>${readingReports || '<p class="muted">No books added yet.</p>'}</div>
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>
