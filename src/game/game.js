@@ -5057,10 +5057,10 @@ const ENGLISH_UNIT1 = [
   {id:'pluralReview', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Review regular and irregular plural patterns, including words that change or stay the same.', name:'Irregular plural nouns review'}
 ];
 const ENGLISH_GROUPS = [
-  {name:'Introduction to nouns', learn:'Nouns name people, places, things, and ideas. Practice spotting nouns and choosing singular or plural forms.', skills:['identifyNouns','singularPlural']},
-  {name:'Types of nouns', learn:'Sort nouns by what they name: general or specific, tangible or abstract.', skills:['commonProper','concreteAbstract']},
-  {name:'Irregular plural nouns: base plurals and irregular endings', learn:'Explore plurals that change their spelling, add unusual endings, or stay the same.', skills:['fToVes','enPlurals','basePlurals']},
-  {name:'Irregular plural nouns: mutant and foreign plurals', learn:'Practice internal vowel changes, borrowed plurals, and mixed review.', skills:['mutantPlurals','foreignPlurals','pluralReview']}
+  {id:'intro', name:'Introduction to nouns', learn:'Nouns name people, places, things, and ideas. Practice spotting nouns and choosing singular or plural forms.', skills:['identifyNouns','singularPlural']},
+  {id:'types', name:'Types of nouns', learn:'Sort nouns by what they name: general or specific, tangible or abstract.', skills:['commonProper','concreteAbstract']},
+  {id:'irregularBase', name:'Irregular plural nouns: base plurals and irregular endings', learn:'Explore plurals that change their spelling, add unusual endings, or stay the same.', skills:['fToVes','enPlurals','basePlurals']},
+  {id:'irregularForeign', name:'Irregular plural nouns: mutant and foreign plurals', learn:'Practice internal vowel changes, borrowed plurals, and mixed review.', skills:['mutantPlurals','foreignPlurals','pluralReview']}
 ];
 const PLURAL_QUESTIONS = {
   identifyNouns:[
@@ -5124,7 +5124,7 @@ const PLURAL_QUESTIONS = {
     {prompt:'Choose the plural of sheep.',options:['sheeps','sheep','sheepes','sheepies'],answer:1}
   ]
 };
-let englishRun = null;
+let englishRun = null, deletingBookId = null;
 const readingText = (chapter,key,fallback) => (chapter?.[key] || '').split(/[\n,;]/).map(value => value.trim()).filter(Boolean)[0] || fallback;
 function selectedReading(){
   const selection = S.readingSelection;
@@ -5157,11 +5157,11 @@ function englishQuestions(skillId){
         {prompt:'Which is an abstract noun?',options:['a window','a path','a character','bravery'],answer:3}
       ]
     };
-    if (general[skillId]) return general[skillId];
+    if (general[skillId]) return general[skillId].map(question => ({...question, skillId}));
   }
   const name = readingText(chapter,'characters','Mira'), place = readingText(chapter,'setting','the old library'), theme = readingText(chapter,'themes','friendship');
   const prompts = PLURAL_QUESTIONS[skillId] || [];
-  return prompts.map(item => typeof item === 'function' ? item(name,place,theme) : item);
+  return prompts.map(item => typeof item === 'function' ? item(name,place,theme) : item).map(question => ({...question, skillId}));
 }
 function renderEnglishLibrary(){
   const active = selectedReading(), activeBook = selectedReadingBook(), books = S.readingBooks;
@@ -5178,7 +5178,7 @@ function renderEnglishLibrary(){
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 Story Corner Library</h2><button class="btn small" data-go="home">Back to town</button></div>
     <p class="muted">Build your own book report one chapter at a time. Save your notes and return to them whenever you read more. Notes are not checked for accuracy; a parent can review them with you.</p>
     <div class="ela-layout"><aside class="ela-shelf"><h3>My books</h3>${bookList || '<p class="muted">No books added yet.</p>'}<form id="elaBookForm" class="ela-add-book"><label>Book title<input name="title" maxlength="120" required></label><label>Author <span class="muted">(optional)</span><input name="author" maxlength="120"></label><button class="btn" type="submit">Add a book</button></form></aside>
-    <div class="ela-workspace">${activeBook ? `<div class="ela-chapters"><h3>Chapters</h3>${chapterList}<form id="elaAddChapter" class="ela-add-chapter"><label>Chapter name or number<input name="label" maxlength="100" required placeholder="Chapter 1"></label><button class="btn small" type="submit">Add chapter</button></form></div>` : ''}${editor}</div></div>`;
+    <div class="ela-workspace">${activeBook ? `<div class="ela-chapters"><div class="ela-chapters-head"><h3>Chapters</h3><button type="button" class="btn small" data-ela-delete="${esc(activeBook.id)}">Delete book</button></div>${deletingBookId === activeBook.id ? `<div class="ela-delete-confirm"><p>Delete this book and all its chapter notes?</p><button type="button" class="btn small" data-ela-delete-confirm="${esc(activeBook.id)}">Delete permanently</button><button type="button" class="btn small" data-ela-delete-cancel>Cancel</button></div>` : ''}${chapterList}<form id="elaAddChapter" class="ela-add-chapter"><label>Chapter name or number<input name="label" maxlength="100" required placeholder="Chapter 1"></label><button class="btn small" type="submit">Add chapter</button></form></div>` : ''}${editor}</div></div>`;
 }
 $('#libraryWrap').addEventListener('submit', event => {
   event.preventDefault(); const form = event.target;
@@ -5200,9 +5200,17 @@ $('#libraryWrap').addEventListener('submit', event => {
 });
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
+  if (button.dataset.elaDelete) { deletingBookId = button.dataset.elaDelete; renderEnglishLibrary(); return; }
+  if (button.hasAttribute('data-ela-delete-cancel')) { deletingBookId = null; renderEnglishLibrary(); return; }
+  if (button.dataset.elaDeleteConfirm) {
+    const id = button.dataset.elaDeleteConfirm;
+    S.readingBooks = S.readingBooks.filter(book => book.id !== id);
+    if (S.readingSelection?.bookId === id) S.readingSelection = null;
+    deletingBookId = null; save(); renderEnglishLibrary(); toast('Book and chapter notes deleted.'); return;
+  }
   if (button.dataset.elaBook) {
     const book = S.readingBooks.find(item => item.id === button.dataset.elaBook); if (!book) return;
-    S.readingSelection = {bookId:book.id,chapterId:book.chapters[book.chapters.length-1]?.id || null}; save(); renderEnglishLibrary(); return;
+    deletingBookId = null; S.readingSelection = {bookId:book.id,chapterId:book.chapters[book.chapters.length-1]?.id || null}; save(); renderEnglishLibrary(); return;
   }
   if (button.dataset.elaChapter) {
     const active = selectedReading(); if (!active) return;
@@ -5210,48 +5218,104 @@ $('#libraryWrap').addEventListener('click', event => {
   }
   if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(); return; }
 });
+function englishRecord(key){
+  const record = S.elaProgress?.[key];
+  return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
+}
+const englishQuizKey = id => `quiz:${id}`;
+function englishAssessmentQuestions(skillIds, count){
+  const pools = skillIds.map(skillId => shuffle(englishQuestions(skillId)));
+  const questions = [];
+  while (questions.length < count && pools.some(pool => pool.length)) {
+    pools.forEach(pool => { if (pool.length && questions.length < count) questions.push(pool.pop()); });
+  }
+  return shuffle(questions);
+}
 function renderEnglishUnit(){
   const active = selectedReading();
-  const progress = S.elaProgress || {};
-  const groups = ENGLISH_GROUPS.map(group => `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div><div class="ela-exercise-list">${group.skills.map(skillId => {
-    const skill = ENGLISH_UNIT1.find(item => item.id === skillId), index = ENGLISH_UNIT1.findIndex(item => item.id === skillId), record = progress[skillId], unlocked = index === 0 || !!progress[ENGLISH_UNIT1[index-1].id]?.passed;
-    return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${record?.passed ? '<span class="ela-passed">✓ Level up</span>' : record?.tries ? `<span class="muted">Best: ${record.best}/4 · Get 3 of 4 to level up</span>` : '<span class="muted">Not started · Get 3 of 4 to level up</span>'}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" ${unlocked ? '' : 'disabled'}>${record?.passed ? 'Practice again' : record?.tries ? 'Try again' : 'Practice'}</button></article>`;
-  }).join('')}</div></section>`).join('');
+  const groups = ENGLISH_GROUPS.map((group, groupIndex) => {
+    const blockUnlocked = groupIndex === 0 || !!englishRecord(englishQuizKey(ENGLISH_GROUPS[groupIndex-1].id)).passed;
+    const exercises = group.skills.map((skillId, skillIndex) => {
+      const skill = ENGLISH_UNIT1.find(item => item.id === skillId), record = englishRecord(skillId);
+      const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1]).passed);
+      const accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
+      const status = record.passed ? `✓ Level up · Best ${record.best}/4 · ${record.tries} tries`
+        : record.tries ? `Best ${record.best}/4 · ${record.tries} tries · Get 3 of 4 to level up`
+          : 'Not started · Get 3 of 4 to level up';
+      const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
+      return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p><span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
+    }).join('');
+    const key = englishQuizKey(group.id), quiz = englishRecord(key);
+    const canQuiz = blockUnlocked && group.skills.every(skillId => !!englishRecord(skillId).passed);
+    const quizStatus = quiz.passed ? `Passed · best ${quiz.best}/4 · ${quiz.tries} tries`
+      : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
+        : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p><span>Learn</span></div><div class="ela-exercise-list">${exercises}</div><div class="ela-assessment"><div><strong>${esc(group.name)} Quiz</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div></section>`;
+  }).join('');
+  const finalKey = 'final-test', finalRecord = englishRecord(finalKey), finalReady = ENGLISH_GROUPS.every(group => !!englishRecord(englishQuizKey(group.id)).passed);
+  const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/10 · ${finalRecord.tries} tries`
+    : finalRecord.tries ? `Best ${finalRecord.best}/10 · ${finalRecord.tries} tries · Get 8 of 10 to pass`
+      : finalReady ? 'Ready · Get 8 of 10 to pass' : 'Pass all four block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 English Unit 1: Nouns</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 English Unit 1: Nouns</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>Unit 1 Test</h3><p class="muted">Cumulative · 10 questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>`;
 }
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
-  const question = run.questions[run.index], title = ENGLISH_UNIT1.find(item => item.id === run.skillId).name;
+  const question = run.questions[run.index];
   const active = selectedReading(), context = active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(title)}</h2><button class="btn small" data-ela-unit>Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of 4 · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit>Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
 }
 function startEnglishPractice(skillId){
-  const questions = englishQuestions(skillId); if (questions.length !== 4) return;
-  englishRun = {skillId,questions,index:0,score:0,answered:false}; renderEnglishQuestion();
+  const questions = englishQuestions(skillId), skill = ENGLISH_UNIT1.find(item => item.id === skillId);
+  if (!skill || questions.length !== 4) return;
+  englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,questions,index:0,score:0,passMark:3,answered:false,outcomes:[]}; renderEnglishQuestion();
 }
-function finishEnglishPractice(){
-  const run = englishRun, previous = S.elaProgress[run.skillId] || {best:0,tries:0,passed:false};
-  const passed = run.score >= 3;
-  S.elaProgress[run.skillId] = {best:Math.max(previous.best || 0,run.score),tries:(previous.tries || 0) + 1,passed:previous.passed || passed};
+function startEnglishAssessment(groupId){
+  const final = groupId === 'final', group = ENGLISH_GROUPS.find(item => item.id === groupId);
+  if (final ? !ENGLISH_GROUPS.every(item => englishRecord(englishQuizKey(item.id)).passed) : !group || !group.skills.every(skillId => englishRecord(skillId).passed)) return;
+  const questions = final
+    ? ENGLISH_UNIT1.map(skill => shuffle(englishQuestions(skill.id))[0])
+    : englishAssessmentQuestions(group.skills, 4);
+  englishRun = {title:final ? 'Unit 1 Test' : `${group.name} Quiz`,progressKey:final ? 'final-test' : englishQuizKey(group.id),retryType:final ? 'final' : 'quiz',retryId:groupId,questions,index:0,score:0,passMark:final ? 8 : 3,answered:false,outcomes:[],assessment:true};
+  renderEnglishQuestion();
+}
+function finishEnglishRun(){
+  const run = englishRun, previous = englishRecord(run.progressKey), passed = run.score >= run.passMark;
+  S.elaProgress[run.progressKey] = {
+    ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
+    passed:!!previous.passed || passed, recentScores:[...(previous.recentScores || []),run.score].slice(-10),
+    lastScore:run.score, questionCount:run.questions.length
+  };
+  run.questions.forEach((question,index) => {
+    const skillId = question.skillId, record = englishRecord(skillId), correct = !!run.outcomes[index];
+    S.elaProgress[skillId] = {
+      ...record, answered:(record.answered || 0) + 1, misses:(record.misses || 0) + (correct ? 0 : 1),
+      recentAnswers:[...(record.recentAnswers || []),correct ? 1 : 0].slice(-12)
+    };
+  });
   save(); englishRun = null;
-  const skill = ENGLISH_UNIT1.find(item => item.id === run.skillId);
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Level up!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit>Back to Unit 1</button></div><div class="ela-question ela-result"><p>You got <strong>${run.score} of 4</strong> correct.</p><p>${passed ? 'You got 3 of 4 or better. The next exercise is now open.' : 'Get 3 of 4 correct to level up. Your best score is saved.'}</p><button class="btn berry" type="button" data-ela-practice="${skill.id}">${passed ? 'Practice again' : 'Try again'}</button></div>`;
+  const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
+  const retry = run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}">Practice again</button>`
+    : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}">Retake quiz</button>`
+      : '<button class="btn berry" type="button" data-ela-final>Retake test</button>';
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit>Back to Unit 1</button></div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${S.elaProgress[run.progressKey].best} of ${run.questions.length} · Attempts: ${S.elaProgress[run.progressKey].tries}</p>${retry}</div>`;
 }
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
   if (button.hasAttribute('data-ela-library')) { renderEnglishLibrary(); return; }
   if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice); return; }
+  if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz); return; }
+  if (button.hasAttribute('data-ela-final')) { startEnglishAssessment('final'); return; }
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
-    englishRun.answered = true; if (correct) englishRun.score++;
+    englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
     button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
     const feedback = $('#libraryWrap .ela-feedback'); feedback.textContent = correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`;
     button.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>'); return;
   }
   if (button.hasAttribute('data-ela-next') && englishRun) {
     englishRun.index++; englishRun.answered = false;
-    if (englishRun.index === 4) finishEnglishPractice(); else renderEnglishQuestion();
+    if (englishRun.index === englishRun.questions.length) finishEnglishRun(); else renderEnglishQuestion();
   }
 });
 
@@ -6681,6 +6745,14 @@ function renderParent(){
     return `<div class="collection-row"><b>${esc(b.name)}</b><span>${owned} of ${rewards.length} items</span></div>`;
   }).join('');
   const legendary = REWARDS.filter(r => r.legendary && owns(r));
+  const englishSkillReport = ENGLISH_UNIT1.map(skill => {
+    const record = englishRecord(skill.id), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
+    return `<div class="ela-parent-row"><strong>${esc(skill.name)}</strong><span>${accuracy === null ? 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`}</span>${record.answered >= 4 && accuracy < 70 ? '<b class="ela-review-flag">Review suggested</b>' : ''}</div>`;
+  }).join('');
+  const englishAssessmentReport = [...ENGLISH_GROUPS.map(group => ({name:`${group.name} quiz`,key:englishQuizKey(group.id),needed:3})),{name:'Unit 1 Test',key:'final-test',needed:8}].map(item => {
+    const record = englishRecord(item.key);
+    return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || (item.key === 'final-test' ? 10 : 4)} · ${record.tries} tries` : 'Not started'}</span></div>`;
+  }).join('');
   const readingReports = S.readingBooks.map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
     const notes = [['Main characters',chapter.characters],['Conflict',chapter.conflict],['Important interaction',chapter.interaction],['Setting',chapter.setting],['Theme or big idea',chapter.themes],['Supporting detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
     return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes added yet.</p>'}</div>`;
@@ -6691,6 +6763,7 @@ function renderParent(){
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
+    <div class="panel"><h3>English Unit 1: Nouns</h3><p class="muted">Per-skill accuracy and assessment progress. “Review suggested” appears after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${englishSkillReport}</div><h4>Quizzes and test</h4><div class="ela-parent-grid">${englishAssessmentReport}</div></div>
     <div class="panel"><h3>Reading Log</h3><p class="muted">These are student-entered notes, not checked by the game. Review them together against the book.</p>${readingReports || '<p class="muted">No books added yet.</p>'}</div>
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
