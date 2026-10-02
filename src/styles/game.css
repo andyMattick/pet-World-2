@@ -692,3 +692,5 @@ table.xy-table th{font-size:.95rem}
 .stat-pic .box-rect{fill:var(--butter); fill-opacity:.85; stroke:currentColor; stroke-width:2}
 .stat-pic .box-med{stroke:var(--berry); stroke-width:4}
 .opt svg.stat-pic{max-width:100%; height:auto}
+.ela-khan-link{display:inline-block; margin:6px 0; font-weight:700}
+.ela-learn-note{margin:8px 0}
