@@ -4412,11 +4412,21 @@ function show(id){
   if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
 }
-document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) { if (b.dataset.go === 'arcade') void openArcade(); else show(b.dataset.go); } });
+document.addEventListener('click', e => {
+  const gamesOnlyButton = e.target.closest('[data-games-only]');
+  if (gamesOnlyButton) { const form = gamesOnlyButton.closest('#scr-join, #scr-name')?.querySelector('[data-games-only-form]'); if (form) { form.hidden = false; form.querySelector('input').focus(); } return; }
+  if (e.target.closest('[data-games-only-exit]')) { exitGamesOnly(); return; }
+  const b = e.target.closest('[data-go]'); if (b) { if (b.dataset.go === 'arcade') void openArcade(); else show(b.dataset.go); }
+});
+document.addEventListener('submit', e => {
+  const form = e.target.closest('[data-games-only-form]');
+  if (form) { e.preventDefault(); enterGamesOnly(form); }
+});
 function updateHeader(){
-  $('#townTitle').textContent = townName(); document.title = townName();
+  $('#townTitle').textContent = gamesOnlyMode ? 'Arcade' : townName(); document.title = gamesOnlyMode ? 'Arcade' : townName();
   $('#coinCount').textContent = S.coins;
-  $('#powerChip').hidden = !(S.power > 1);
+  $('#coinCount').parentElement.hidden = gamesOnlyMode;
+  $('#powerChip').hidden = gamesOnlyMode || !(S.power > 1);
   $('#powerVal').textContent = '×' + fmtPow(S.power);
   $('#muteBtn').textContent = S.muted ? '🔇' : '🔊';
   $('#muteBtn').setAttribute('aria-label', S.muted ? 'Turn sound effects on' : 'Turn sound effects off');
@@ -4428,8 +4438,9 @@ function updateHeader(){
 let toastTimer;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800); }
 const arcadeEntryCost = 100;
+let gamesOnlyMode = false, gamesOnlyReturn = 'join';
 let activeArcadeRun = null, arcadeTimer = null;
-const arcadePolicy = () => Backend.me ? arcadeSettings(Backend.me.game_settings?.arcade) : arcadeSettings({enabled:true, freePlay:true});
+const arcadePolicy = () => gamesOnlyMode ? arcadeSettings({enabled:true, freePlay:true}) : Backend.me ? arcadeSettings(Backend.me.game_settings?.arcade) : arcadeSettings({enabled:true, freePlay:true});
 const arcadeGamesForClass = () => {
   const policy = arcadePolicy();
   return ARCADE_GAMES.filter(game => game.available && (policy.freePlay || policy.games[game.id]));
@@ -4440,6 +4451,17 @@ async function openArcade(){
   const policy = arcadePolicy();
   if (!policy.freePlay && !policy.enabled) { toast('Your teacher has not opened the Arcade.'); return; }
   show('arcade');
+}
+function enterGamesOnly(form){
+  const input = form.querySelector('[name="secretWord"]'), error = form.querySelector('[data-games-only-error]');
+  if (input.value.trim().toUpperCase() !== 'GAMEZ') { error.textContent = 'That secret word did not match.'; input.value = ''; input.focus(); return; }
+  gamesOnlyReturn = form.closest('#scr-join') ? 'join' : 'name';
+  gamesOnlyMode = true;
+  show('arcade');
+}
+function exitGamesOnly(){
+  gamesOnlyMode = false;
+  if (gamesOnlyReturn === 'join') openJoin(); else openName();
 }
 const arcadeDateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 function arcadeToday(){
@@ -4503,36 +4525,40 @@ function arcadeModuleMessage(event){
 }
 window.addEventListener('message', arcadeModuleMessage);
 function arcadeCard(game, daily, policy){
-  const remaining = arcadeRemainingSeconds(), admitted = policy.freePlay || arcadeAdmitted();
-  const playable = remaining > 0 && (policy.freePlay || admitted || S.coins >= arcadeEntryCost);
-  const action = policy.freePlay ? 'Play free' : admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
+  const remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds(), admitted = policy.freePlay || arcadeAdmitted();
+  const playable = gamesOnlyMode || (remaining > 0 && (policy.freePlay || admitted || S.coins >= arcadeEntryCost));
+  const action = gamesOnlyMode ? 'Play' : policy.freePlay ? 'Play free' : admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
   return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : 'No arcade time left today'}</button></article>`;
 }
 function renderArcade(){
   const policy = arcadePolicy(), games = arcadeGamesForClass(), daily = arcadeGameOfTheDay(new Date(), games);
-  const minutes = arcadeMathMinutes(), remaining = arcadeRemainingSeconds();
-  const arcadeStats = policy.freePlay
+  const minutes = gamesOnlyMode ? 0 : arcadeMathMinutes(), remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds();
+  const arcadeStats = gamesOnlyMode ? `<div><b>Games only</b><span>No Pet Town coins or tickets</span></div>` : policy.freePlay
     ? `<div><b>Free Play</b><span>no coins or rewards</span></div>`
     : `<div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div>`;
+  const timeStats = gamesOnlyMode
+    ? `<div><b>Unlimited</b><span>no math-time limit</span></div><div><b>No rewards</b><span>games only</span></div>`
+    : `<div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div>`;
   const prizeShop = policy.freePlay ? '' : `<section class="arcade-prizes"><div class="backrow"><h3>Furniture stickers for My Pet Room</h3><span>🎟️ ${S.arcade.tickets}</span></div><div class="wardrobe-grid">${ARCADE_ROOM_FURNITURE.map(arcadeFurnitureCard).join('')}</div><p class="wardrobe-note">Earn tickets in Arcade games. Ticket purchases use Arcade tickets only.</p></section>`;
-  $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2><button class="btn small" data-go="home">Back to town</button></div>
-    <div class="arcade-summary"><div><b>${minutes} min</b><span>math time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div>${arcadeStats}</div>
-    <p class="muted">${policy.freePlay ? 'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your math-earned time remains. Ticket prizes are separate from Pet Town coins.`}</p>
+  $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2>${gamesOnlyMode ? '<button class="btn small" data-games-only-exit>Exit games</button>' : '<button class="btn small" data-go="home">Back to town</button>'}</div>
+    <div class="arcade-summary">${timeStats}${arcadeStats}</div>
+    <p class="muted">${gamesOnlyMode ? 'Games-only session: no math timer, Pet Town coins, Arcade tickets, or prize shop.' : policy.freePlay ? 'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your math-earned time remains. Ticket prizes are separate from Pet Town coins.`}</p>
     <div class="arcade-grid">${games.map(game => arcadeCard(game, daily?.id === game.id, policy)).join('') || '<p class="muted">Your teacher has not enabled any Arcade games.</p>'}</div>
     ${prizeShop}
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
 }
 function startArcadeGame(id){
-  const policy = arcadePolicy(), game = arcadeGamesForClass().find(item => item.id === id), remaining = arcadeRemainingSeconds();
-  if (!game || remaining <= 0 || (!policy.freePlay && (!policy.enabled || !policy.games[id] || !arcadeAdmitted() && S.coins < arcadeEntryCost))) return;
+  const policy = arcadePolicy(), game = arcadeGamesForClass().find(item => item.id === id), remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds();
+  if (!game || (!gamesOnlyMode && remaining <= 0) || (!gamesOnlyMode && !policy.freePlay && (!policy.enabled || !policy.games[id] || !arcadeAdmitted() && S.coins < arcadeEntryCost))) return;
   if (!policy.freePlay && !arcadeAdmitted()) { S.coins -= arcadeEntryCost; S.arcade.admittedDay = arcadeToday(); save(); updateHeader(); }
   if (arcadeTimer) clearInterval(arcadeTimer);
   const runId = `${S.sid}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
   activeArcadeRun = {id:runId, gameId:game.id, freePlay:policy.freePlay, gameOfDay:arcadeGameOfTheDay(new Date(), arcadeGamesForClass())?.id === game.id, highestScore:0, completed:new Set()};
   const play = $('#arcadePlayWrap');
   play.hidden = false;
-  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${Math.ceil(remaining / 60)} min left</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}&arcadeRun=${encodeURIComponent(runId)}" loading="eager"></iframe>`;
+  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${gamesOnlyMode ? 'Games only' : `${Math.ceil(remaining / 60)} min left`}</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}&arcadeRun=${encodeURIComponent(runId)}" loading="eager"></iframe>`;
   $('#arcadeClose').addEventListener('click', () => { if (arcadeTimer) clearInterval(arcadeTimer); activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); });
+  if (gamesOnlyMode) return;
   const started = performance.now();
   let elapsedPreviously = 0;
   arcadeTimer = setInterval(() => {
@@ -6690,7 +6716,10 @@ function openJoin(){
   $('#joinWrap').innerHTML = `<div class="card"><div class="big-emoji">🐾</div><h2>Welcome to Pet Town!</h2>
     <label for="codeInput">Type your class code</label>
     <input id="codeInput" class="textin" maxlength="8" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase; letter-spacing:.2em" value="${esc(last)}">
-    <div class="row"><button class="btn berry" id="codeGo">Next</button></div><p class="muted" id="joinMsg" aria-live="polite"></p></div>`;
+    <div class="row"><button class="btn berry" id="codeGo">Next</button></div>
+    <div class="row"><button class="btn small" type="button" data-games-only>I'm just here for the games</button></div>
+    <form class="games-only-form" data-games-only-form hidden><label>Secret word<input class="textin" type="password" name="secretWord" autocomplete="off" required></label><div class="row"><button class="btn berry" type="submit">Open games</button></div><p class="muted" data-games-only-error aria-live="polite"></p></form>
+    <p class="muted" id="joinMsg" aria-live="polite"></p></div>`;
   show('join');
   const go = async () => {
     const code = $('#codeInput').value.trim().toUpperCase();
