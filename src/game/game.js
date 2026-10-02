@@ -41,11 +41,17 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
 /* fill in any fields an older save is missing */
+function normalizeProjectStore(raw, ids){
+  return Object.fromEntries(ids.map(id => {
+    const p = raw?.[id] || {}, answers = p.answers && typeof p.answers === 'object' ? p.answers : {};
+    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,12)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : ''}];
+  }));
+}
 function normalize(raw){
   const f = fresh(), s = Object.assign(f, raw || {});
   s.cafe = Object.assign({st:{}}, s.cafe || {}); s.cafe.st = Object.assign({1:0,2:0,3:0,4:0}, s.cafe.st || {});
@@ -72,10 +78,9 @@ function normalize(raw){
   })) : [];
   s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
-  s.historyProjects = Object.fromEntries(['history','history2'].map(id => {
-    const p = s.historyProjects?.[id] || {}, answers = p.answers && typeof p.answers === 'object' ? p.answers : {};
-    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,10)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : ''}];
-  }));
+  s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
+  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','history2','history3','history4']);
+  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
@@ -227,7 +232,7 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 function unitTestPassed(unit){
-  if (unit === 'histOrigins' || unit === 'histEarly') return !!S.historyProgress?.[unit === 'histOrigins' ? 'history:final-test' : 'history2:final-test']?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
+  if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (unit === 'elaNouns' || unit === 'elaVerbs') {
     const key = unit === 'elaNouns' ? 'final-test' : 'verbs:final-test';
     return !!S.elaProgress?.[key]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
@@ -5050,7 +5055,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'sprint') openSprint();
   else if (id === 'room') show('room');
   else if (id === 'elaNouns' || id === 'elaVerbs') { show('library'); renderEnglishUnit(id === 'elaVerbs' ? 'verbs' : 'nouns'); }
-  else if (id === 'histOrigins' || id === 'histEarly') { show('library'); renderEnglishUnit(id === 'histOrigins' ? 'history' : 'history2'); }
+  else if (HISTORY_BUILDING_COURSE[id]) { show('library'); renderEnglishUnit(HISTORY_BUILDING_COURSE[id]); }
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
@@ -5199,7 +5204,83 @@ const HISTORY_QUESTIONS = {
     {prompt:'Which question helps assess a historical narrative?',options:['Who preserved this account, and whose experiences are missing?','Is this the only story I have heard?','Does the narrative avoid all disagreement?','Can I memorize it without checking evidence?'],answer:0}
   ]
 };
-const isHistoryCourse = id => id === 'history' || id === 'history2';
+const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1'};
+const isScienceCourse = id => id === 'bio1';
+const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id);
+const progressStore = id => isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
+const projectStore = key => String(key).startsWith('history') ? S.historyProjects : S.scienceProjects;
+const projectKeys = id => [id, `${id}lab`].filter(key => HISTORY_PROJECTS[key]);
+const mc = (prompt, correct, ...wrong) => ({prompt, options:[correct, ...wrong], answer:0});
+const HISTORY_UNIT3 = [
+  {id:'villageNetworks',name:'Foragers and Village Networks | 3.2',lesson:'Early farming villages were small but connected through networks, and interacted with foragers, herders, and nomads.'},
+  {id:'firstCities',name:'The First Cities, States, and Empires | 3.3',lesson:'As agriculture spread, villages grew into cities that linked into powerful states and complex networks.'},
+  {id:'tradeNetworks',name:'Ancient Trade Networks | 3.4',lesson:'Local networks were more common, but long-distance trade also linked societies across Afro-Eurasia and the Americas.'},
+  {id:'mesopotamia',name:'Ancient Mesopotamia | 3.6',lesson:'Farming, cities, writing, laws, and religion shaped one of the earliest complex societies.'},
+  {id:'shangChina',name:'Shang Dynasty China | 3.7',lesson:'The Shang used farming, bronze technology, writing, ancestor worship, and political power to build an early agrarian society.'},
+  {id:'egyptNubia',name:'Nubia and Ancient Egypt | 3.8',lesson:'The Nile shaped Nubia and ancient Egypt, and the two societies influenced one another.'},
+  {id:'earlyAmericas',name:'Ancient Americas | 3.10',lesson:'Early societies in Mesoamerica, South America, and North America adapted to different environments and built complex communities, such as the Olmec and Chavín de Huantar.'},
+  {id:'ancientIndia',name:'Indus River Valley | 3.11',lesson:'People in the Indus River Valley built organized cities and trade networks; historians rely on archaeological evidence because the society left few readable written records.'},
+  {id:'earlyAgrarian',name:'Early Agrarian Societies in Context | 3.12',lesson:'Compare similarities and differences among early agrarian societies to see how geographic context influenced their development.'}
+];
+const HISTORY3_LEARN_ONLY = {villageNetworks:[{name:'Cities, Societies, and Empires | 3.1',lesson:'Small groups grew into large, complex societies, states, and empires that shaped life inside and beyond them.'}], mesopotamia:[{name:'Early Agrarian Societies | 3.5',lesson:'Complex agricultural societies emerged independently in different regions, each shaped by its geography, climate, and resources.'}], earlyAmericas:[{name:'Aksum and Nok Society | 3.9',lesson:'Aksum and Nok society show the diversity of early African agrarian societies through trade, technology, culture, and regional connections.'}]};
+const HISTORY_GROUPS3 = HISTORY_UNIT3.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id],extraLessons:HISTORY3_LEARN_ONLY[skill.id]}));
+const HISTORY3_QUESTIONS = {
+  villageNetworks:[
+    mc('Early farming villages were small. How were they connected to others?','Through networks of exchange and communication','They were completely isolated','Only through written laws','Only through large empires'),
+    mc('Which groups did farming villages interact with?','Foragers, herders, and nomads','Only other farmers','No outsiders','Only rulers of empires'),
+    mc('Why might a village trade with herders?','They could exchange different goods and resources','Herders never traded','Villages produced nothing','Trade was impossible without writing'),
+    mc('What does a village network help historians see?','That small communities were part of wider connections','That villages never changed','That all people lived the same way','That cities appeared first')
+  ],
+  firstCities:[
+    mc('What happened as agriculture spread and intensified?','Communities grew and some villages became cities','All people returned to foraging','Cities disappeared','Trade stopped'),
+    mc('What is a state?','A political organization that governs a territory and people','A single farming tool','A type of crop','A small family group'),
+    mc('How did linked cities form powerful states?','Through connections such as trade, leadership, and shared institutions','By avoiding all contact','By staying separate villages','By ending farming'),
+    mc('Which change is most connected to growing cities?','More people living together and more complex societies','Smaller and simpler communities','Less need for organization','No new leadership')
+  ],
+  tradeNetworks:[
+    mc('Which kind of trade network was more common in the ancient world?','Local networks','Global airline routes','Only ocean liners','Digital markets'),
+    mc('Long-distance trade linked societies across which regions?','Afro-Eurasia and the Americas','Only one village','Only Antarctica','Only one river valley'),
+    mc('Why might a society want goods from far away?','They might lack certain resources or want valued items','Distant goods were always identical to local ones','Trade prevented all contact','Only rulers could use goods'),
+    mc('What can trade goods found far from their source suggest?','Connections between distant communities','That the goods fell from the sky','That no one traveled','That trade never happened')
+  ],
+  earlyAgrarian:[
+    mc('Why did complex agrarian societies develop in different ways?','Geographic context shaped their resources and choices','All used identical resources','Climate never mattered','They never farmed'),
+    mc('What is a good way to compare Mesopotamia, Egypt, the Indus Valley, and Shang China?','Identify similarities and differences in farming, cities, and trade','Assume they were the same','Compare only their names','Ignore their environments'),
+    mc('Which is a similarity among several early agrarian societies?','Farming supported growing communities','None used farming','All had identical rulers','All were in the same place'),
+    mc('Why is context important when studying a society?','It helps explain why events and choices happened','It makes evidence unnecessary','It proves every society was equal in size','It removes differences between regions')
+  ],
+  mesopotamia:[
+    mc('Mesopotamia developed between which rivers?','The Tigris and Euphrates','The Nile and Congo','The Mississippi and Amazon','The Rhine and Danube'),
+    mc('Which development helped Mesopotamian governments and trade keep records?','Writing','Telephones','Printing presses','Airplanes'),
+    mc('What did early law codes help do in complex societies?','Set rules for behavior and settle disputes','Replace all farming','Prevent writing','End trade'),
+    mc('How did religion shape Mesopotamian cities?','Temples and beliefs were central to community life','Cities had no beliefs','Religion banned cities','Temples were unrelated to leaders')
+  ],
+  shangChina:[
+    mc('Which technology was important to the Shang Dynasty?','Bronze','Steel skyscrapers','Plastic','Electricity'),
+    mc('What did Shang ancestor worship involve?','Honoring ancestors in religious practice','Ignoring family history','Banning ceremonies','Worshiping only machines'),
+    mc('What kind of Shang writing evidence do historians study?','Inscriptions on bones and bronze','Digital files','Printed newspapers','Typewritten letters'),
+    mc('How did political power support Shang society?','Rulers organized people, resources, and religion','Rulers had no role','Everyone governed separately','Farming was unnecessary')
+  ],
+  egyptNubia:[
+    mc('Which river shaped ancient Egypt and Nubia?','The Nile','The Yangtze','The Rhine','The Seine'),
+    mc('Why was the Nile important for farming?','Its flooding and water supported crops','It froze every year','It removed all soil','It had no effect'),
+    mc('How are Nubia and Egypt best described?','Neighboring societies that influenced each other','Societies with no contact','One society that never changed','Societies on different continents with no trade'),
+    mc('Which evidence could show influence between Nubia and Egypt?','Shared artifacts, trade, and political contact','A modern map only','A single unlabeled rock','Nothing could show it')
+  ],
+  earlyAmericas:[
+    mc('Which early society in Mesoamerica is often studied with this unit?','The Olmec','The Shang','The Sumerians','The Hittites'),
+    mc('Chavín de Huantar was located in which region?','The Andes of South America','The Nile Valley','Mesopotamia','The Arctic'),
+    mc('Why did early American societies differ by region?','They adapted to different environments and resources','All regions were identical','They had no farms','Geography did not matter'),
+    mc('How can historians learn about early American societies?','By studying artifacts, buildings, and other evidence','Only from modern novels','Only from one written law','They cannot study them')
+  ],
+  ancientIndia:[
+    mc('Which river valley hosted early cities in South Asia?','The Indus','The Rhine','The Mississippi','The Seine'),
+    mc('What is notable about many Indus Valley cities?','Planned layouts and drainage systems','No streets','No buildings','No trade'),
+    mc('What are Indus seals and traded goods evidence of?','Trade networks and record-keeping practices','Modern computers','Only farming tools','A fully translated law code'),
+    mc('How do historians study a society that left few readable written records?','By analyzing archaeological evidence such as buildings and artifacts','By guessing without evidence','By ignoring the society','By using only modern newspapers')
+  ]
+};
 const HISTORY_UNIT2 = [
   {id:'earliestHumans',name:'The Earliest Humans | 2.1',lesson:'For most of human history people foraged. About 12,000 years ago some began farming, starting the Neolithic Revolution.'},
   {id:'migrationArt',name:'Migration and Art | 2.2',lesson:'Homo sapiens began in Africa and later migrated to other regions, leaving art and other evidence long before writing.'},
@@ -5240,7 +5321,209 @@ const HISTORY2_QUESTIONS = {
     {prompt:'Which frame is most useful for studying how food was made and shared?',options:['Production and distribution','Weather only','A single ruler','A battle map'],answer:0}
   ]
 };
+const HISTORY_UNIT4 = [
+  {id:'portableBelief',name:'Portable Belief Systems | 4.2',lesson:'Portable belief systems travel with people, spreading along networks to new places and connecting diverse communities.'},
+  {id:'hinduBuddhism',name:'Hinduism and Buddhism | 4.4',lesson:'Hinduism and Buddhism developed in South Asia; their ideas about duty, suffering, rebirth, and liberation shaped people\u2019s lives.'},
+  {id:'judaismChristianity',name:'Judaism and Christianity | 4.5',lesson:'Judaism, Christianity, and Zoroastrianism developed in Southwest Asia and shaped later religious traditions and communities.'},
+  {id:'islam',name:'Islam | 4.6',lesson:'Islam began in Arabia; the life of Muhammad and the early Muslim community shaped its core beliefs and spread.'},
+  {id:'comparePortable',name:'Comparing Portable Belief Systems | 4.7',lesson:'Comparing portable belief systems helps explain why traditions spread across regions and connected diverse communities.'},
+  {id:'persia',name:'Ancient Empires: Persians and Greeks | 4.9 \u00b7 Ancient Persia',lesson:'Persian rulers used political power, warfare, culture, and exchange to shape the ancient Mediterranean world.'},
+  {id:'greece',name:'Ancient Empires: Persians and Greeks | 4.9 \u00b7 Classical Greece',lesson:'Greek, Macedonian, and Ptolemaic powers shaped the Mediterranean through politics, warfare, culture, and exchange.'},
+  {id:'imperialChina',name:'Ancient Empires: Zhou and Qin | 4.11',lesson:'The Zhou and Qin dynasties developed new ideas about government, power, and social order that shaped later Chinese empires.'},
+  {id:'compareEmpires',name:'Comparing Ancient Empires | 4.12',lesson:'Comparing empires shows different ways states expanded, governed diverse peoples, and justified their power.'},
+  {id:'rome',name:'Ancient Empires: Rome and Han China | 4.13 \u00b7 Ancient Rome',lesson:'Roman rulers grew and maintained their empire through military power, roads, law, and administration.'},
+  {id:'romeHan',name:'Ancient Empires: Rome and Han China | 4.13 \u00b7 Rome and Han China',lesson:'Comparing how Roman and Han rulers grew and maintained their empires.'},
+  {id:'womenAncient',name:'Women in the Ancient World | 4.15',lesson:'The roles of women differed in ancient Rome and Han China.'}
+];
+const HISTORY4_LEARN_ONLY = {portableBelief:[{name:'Empires and Belief Systems | 4.1',lesson:'The rise of new empires and portable belief systems added complexity to human societies; belief systems and empires often helped each other spread.'}], hinduBuddhism:[{name:'Confucianism, Legalism, and Daoism | 4.3',lesson:'These traditions offered different answers about order, leadership, human nature, and how people should live.'}], comparePortable:[{name:'How Do Religions Grow and Change? | 4.8',lesson:'Belief systems transformed as they spread along networks.'}], imperialChina:[{name:'Ancient Empires: Mauryan and Gupta | 4.10',lesson:'The Mauryan and Gupta Empires built political power, supported religious and cultural change, and shaped life across South Asia.'}], womenAncient:[{name:'The Rise and Fall of Empires | 4.14',lesson:'Comparing the rise and fall of empires shows patterns of continuity and change in power, social organization, and belief systems.'}]};
+const HISTORY_GROUPS4 = HISTORY_UNIT4.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id],extraLessons:HISTORY4_LEARN_ONLY[skill.id]}));
+const HISTORY4_QUESTIONS = {
+  portableBelief:[
+    mc('What makes a belief system \u201cportable\u201d?','It can travel with people to new places','It is tied to one temple only','It forbids travel','It exists only in laws'),
+    mc('How did portable belief systems often spread?','Along trade and travel networks','Only through isolation','Only by farming','By avoiding contact'),
+    mc('Why could portable belief systems connect diverse communities?','Shared beliefs and practices linked people across regions','They erased all differences','They required one language only','They stopped trade'),
+    mc('Which is an example of a portable belief system?','Buddhism','A village boundary stone','A harvest tool','A trade price list')
+  ],
+  hinduBuddhism:[
+    mc('Who founded Buddhism?','Siddhartha Gautama, the Buddha','Muhammad','Confucius','Cyrus'),
+    mc('In Hinduism, what does dharma refer to?','Duty and the right way of living','A kind of trade good','A military rank','A city wall'),
+    mc('What is the cycle of death and rebirth called?','Samsara','Mandate','Satrapy','Census'),
+    mc('Which idea is central to Buddhism?','Ending suffering by following the Eightfold Path','Building roads','Honoring emperors as gods only','Avoiding all teaching')
+  ],
+  judaismChristianity:[
+    mc('Judaism is known for belief in:','One God and a covenant with the Jewish people','Many city gods only','No sacred texts','Rule by emperors only'),
+    mc('Christianity developed from the teachings about:','Jesus of Nazareth','Siddhartha Gautama','Confucius','Alexander'),
+    mc('In which region did Judaism and Christianity develop?','Southwest Asia','Northern Europe','The Americas','Southeast Asia'),
+    mc('What is the central sacred text of Judaism?','The Torah','The Quran','The Analects','The Vedas only')
+  ],
+  islam:[
+    mc('Where did Islam begin?','Arabia','China','Rome','Mesoamerica'),
+    mc('What is the Quran?','The sacred text of Islam','A Roman law code','A Chinese dynasty','A trade route'),
+    mc('Who is regarded by Muslims as the Prophet who received revelations?','Muhammad','Augustus','Darius','Laozi'),
+    mc('What are the Five Pillars of Islam?','Core practices of Muslim life','Five Roman roads','Five Greek cities','Five Chinese dynasties')
+  ],
+  comparePortable:[
+    mc('Why compare portable belief systems?','To see similarities, differences, and why they spread','To prove they are identical','To ignore their histories','To avoid using evidence'),
+    mc('Which is a similarity many portable belief systems share?','Teachings about how people should live and treat others','They all began in one city','They all rejected travel','They all lacked communities'),
+    mc('What helped belief systems spread across regions?','Trade routes, travelers, and sometimes empires','Isolation','Closed borders only','Avoiding networks'),
+    mc('Which claim is best supported by comparing belief systems?','Traditions changed as they spread to new regions','Traditions never changed','Only one tradition spread','Spread had no causes')
+  ],
+  persia:[
+    mc('How did the Persian Empire govern its large territory?','Through provinces called satrapies','Through a single village','Without officials','By avoiding roads'),
+    mc('What was the Royal Road used for?','Communication and travel across the empire','A farming ritual','A battle formation','A religious holiday'),
+    mc('Persian rulers like Cyrus were known for:','Allowing conquered peoples to keep many customs','Banning all travel','Ending trade','Destroying every city'),
+    mc('The Persian Empire founded by Cyrus is called the:','Achaemenid Empire','Han Empire','Gupta Empire','Aksumite Empire')
+  ],
+  greece:[
+    mc('Many Greek communities were organized as:','City-states','One national government','Nomadic bands only','Provinces of Rome'),
+    mc('Athens is known for developing:','An early form of democracy among citizens','A single emperor','Bronze oracle bones','The Mandate of Heaven'),
+    mc('How did Alexander the Great spread Greek culture?','By conquering a large empire','By avoiding other lands','By closing trade','By ending the army'),
+    mc('Sparta was known for:','A military-focused society','Having no army','A mostly written law code','Being part of Han China')
+  ],
+  imperialChina:[
+    mc('What was the Mandate of Heaven?','The idea that rulers govern with approval that can be lost','A Roman road','A trade tax','A type of writing'),
+    mc('How did the Qin unify China?','By standardizing laws, writing, and money','By giving up power','By ending government','By closing all cities'),
+    mc('Which philosophy favored strict laws and punishments?','Legalism','Daoism','Buddhism','Christianity'),
+    mc('Which dynasty came before the Qin and used the Mandate of Heaven?','The Zhou','The Gupta','The Ptolemaic','The Achaemenid')
+  ],
+  compareEmpires:[
+    mc('Why compare ancient empires?','To see how states expanded, governed diverse peoples, and justified power','To prove all were identical','To avoid evidence','To ignore geography'),
+    mc('Which is a way empires justified their power?','Claiming divine approval or successful leadership','Giving up all authority','Avoiding rules','Ignoring subjects'),
+    mc('What helped empires govern diverse peoples?','Roads, officials, laws, and local arrangements','Isolation','No communication','Only farming tools'),
+    mc('Which claim is best supported by comparing empires?','Empires used different methods to expand and govern','All empires acted the same way','Empires never changed','Power had no sources')
+  ],
+  rome:[
+    mc('Who became the first Roman emperor?','Augustus','Cyrus','Qin Shi Huangdi','Asoka'),
+    mc('What was the Pax Romana?','A long period of relative peace and stability','A Chinese philosophy','A trade tax','A religious text'),
+    mc('What helped Rome control its territory?','Roads, legions, and law','Isolation','No army','Only farming'),
+    mc('Rome began as a:','Republic','Dynasty ruled by the Qin','Satrapy','Caliphate')
+  ],
+  romeHan:[
+    mc('Which philosophy did Han rulers promote in government?','Confucianism','Legalism only','Christianity','Zoroastrianism'),
+    mc('What trade network helped connect Rome and Han China indirectly?','The Silk Road','The Royal Road only','The Mississippi','The Amazon'),
+    mc('Which problem did both Rome and Han China face?','Governing large territories and defending borders','No need for rulers','No trade','No farmers'),
+    mc('How did Han rulers staff their government?','With educated officials in a bureaucracy','With no officials','Only with foreign armies','Only with priests')
+  ],
+  womenAncient:[
+    mc('In Han China, Confucian ideas often emphasized women\u2019s roles in:','The family and household hierarchy','Voting in assemblies','Leading all armies','Writing Roman laws'),
+    mc('Elite Roman women could often:','Influence family affairs and manage property, but could not vote','Vote and hold every office','Have no family role','Govern the empire as consuls'),
+    mc('Why compare women\u2019s roles in Rome and Han China?','To see how societies shaped opportunities and limits','To prove roles were identical','To avoid evidence','To ignore social class'),
+    mc('Which statement is best supported?','Women\u2019s experiences differed by society and social class','Every woman had the same experience','Women left no influence','Evidence is unnecessary')
+  ]
+};
+const BIO_UNIT1 = [
+  {id:'cellsOrganisms',name:'Understand: Cells and organisms',lesson:'Cells are the basic unit of life. Cells form tissues, tissues form organs, organs form systems, and systems work together in an organism.'},
+  {id:'cellPartsU',name:'Understand: Cell parts and functions',lesson:'Each cell part has a function, such as the nucleus directing the cell and mitochondria releasing energy.'},
+  {id:'cellPartsA',name:'Apply: Cell parts and functions',lesson:'Use what you know about cell parts to explain how a cell carries out life processes.'},
+  {id:'plantSuccessU',name:'Understand: Plant reproductive success',lesson:'Plants have structures and behaviors that help them reproduce successfully.'},
+  {id:'plantSuccessA',name:'Apply: Plant reproductive success',lesson:'Use plant structures and environments to explain reproductive success.'},
+  {id:'asexualPlants',name:'Asexual reproduction',lesson:'In asexual reproduction one parent produces offspring that are genetically identical to it.'},
+  {id:'sexualPlants',name:'Sexual reproduction',lesson:'In sexual reproduction, pollen and egg cells combine so offspring inherit traits from two parents.'},
+  {id:'seedDispersal',name:'Dispersal of seeds',lesson:'Wind, water, animals, and other methods carry seeds to new places.'},
+  {id:'digestionHumans',name:'Digestion in humans',lesson:'The digestive system breaks food down so the body can absorb nutrients.'},
+  {id:'digestionIntestines',name:'Digestion in the intestines',lesson:'The small intestine absorbs nutrients and the large intestine absorbs water.'},
+  {id:'humanDigestion',name:'Human digestion',lesson:'Follow food through the organs of the digestive system and explain what each organ does.'}
+];
+const BIO_GROUPS = [
+  {id:'cells',name:'Cellular organization and cell parts',quizName:'Quiz 1',learn:'Recognize cells as the basic unit of life, how they organize into tissues, organs, systems, and organisms, and what cell parts do.',skills:['cellsOrganisms','cellPartsU','cellPartsA']},
+  {id:'plants',name:'Reproduction in plants',quizName:'Quiz 2',learn:'Explore plant reproductive success, asexual and sexual reproduction, and seed dispersal.',skills:['plantSuccessU','plantSuccessA','asexualPlants','sexualPlants','seedDispersal']},
+  {id:'digestion',name:'Human digestive system',quizName:'Quiz 3',learn:'Follow digestion through the human body and the intestines.',skills:['digestionHumans','digestionIntestines','humanDigestion']}
+];
+const BIO1_QUESTIONS = {
+  cellsOrganisms:[
+    mc('What is the basic unit of life?','The cell','The organ','The system','The tissue'),
+    mc('Which sequence goes from smallest to largest?','Cell, tissue, organ, organ system','Organ, cell, tissue, system','Tissue, organ, cell, system','System, organ, tissue, cell'),
+    mc('A group of similar cells working together is a:','Tissue','Cell part','Single organism only','Habitat'),
+    mc('Which is a single-celled organism?','Bacterium','Oak tree','Dog','Human')
+  ],
+  cellPartsU:[
+    mc('Which cell part directs the cell\u2019s activities?','Nucleus','Cell wall','Vacuole','Chloroplast'),
+    mc('Which part releases energy from food for the cell?','Mitochondria','Cell membrane','Nucleus','Cytoplasm'),
+    mc('Which part controls what enters and leaves the cell?','Cell membrane','Chloroplast','Nucleus','Vacuole'),
+    mc('Which part carries out photosynthesis in plant cells?','Chloroplast','Mitochondria','Cell membrane','Nucleus')
+  ],
+  cellPartsA:[
+    mc('A plant cell stays rigid and keeps its shape. Which part helps most?','Cell wall','Mitochondria','Nucleolus only','Cytoplasm gel only'),
+    mc('A muscle cell needs lots of energy. Which part would you expect many of?','Mitochondria','Chloroplasts','Cell walls','Seeds'),
+    mc('A cell cannot make proteins correctly because its instructions are damaged. Which part is most likely affected?','Nucleus','Cell wall','Vacuole','Cell membrane'),
+    mc('A leaf cell makes food using light. Which part is most important?','Chloroplast','Nucleus','Cell membrane','Cytoplasm')
+  ],
+  plantSuccessU:[
+    mc('What is the main purpose of a flower for many plants?','To help the plant reproduce','To absorb water from soil','To anchor the plant','To make roots'),
+    mc('What do pollinators like bees help move?','Pollen','Roots','Soil','Leaves'),
+    mc('Why do brightly colored flowers help some plants?','They attract pollinators','They scare pollinators away','They make seeds disappear','They stop photosynthesis'),
+    mc('Plants that make many seeds can improve reproductive success because:','More seeds may survive and grow','Seeds never need water','Every seed always grows','Parents stop needing sunlight')
+  ],
+  plantSuccessA:[
+    mc('A plant in a field has no pollinators visiting. What is the likely effect?','Fewer seeds may form','More seeds always form','Roots stop growing','Leaves become flowers'),
+    mc('A flower smells sweet and has nectar. What structure-function idea fits?','Features attract animals that carry pollen','Features stop reproduction','Nectar makes roots','Smell removes pollen'),
+    mc('A seed with a hard coat survives winter. This helps reproduction because:','It can protect the embryo until conditions improve','It makes the seed need no water ever','It turns into a flower','It stops growth permanently'),
+    mc('Which environment change could lower a plant\u2019s reproductive success?','Loss of pollinators','More pollinators','Adequate water','Healthy soil')
+  ],
+  asexualPlants:[
+    mc('In asexual reproduction, offspring are:','Genetically identical to the parent','Mixed from two different parents','Always different species','Made from pollen and eggs'),
+    mc('Which is an example of asexual reproduction in plants?','A strawberry plant sending out runners','A bee carrying pollen','A seed floating on wind','A flower attracting insects'),
+    mc('How many parents are needed for asexual reproduction?','One','Two','Three','None'),
+    mc('A cutting grows into a new plant. This is:','Asexual reproduction','Sexual reproduction','Pollination only','Seed dispersal')
+  ],
+  sexualPlants:[
+    mc('Sexual reproduction in flowering plants involves:','Pollen and egg cells combining','One parent making a copy','A cutting growing roots','Runners spreading'),
+    mc('What is pollination?','Moving pollen to the female part of a flower','A seed growing roots','Water entering a root','A leaf making food'),
+    mc('Why can sexual reproduction increase variation?','Offspring inherit traits from two parents','Offspring copy one parent exactly','No genes are involved','Seeds never form'),
+    mc('After fertilization, an ovule can develop into a:','Seed','Root hair','Stem','Petal')
+  ],
+  seedDispersal:[
+    mc('A maple seed spins away from the tree. How is it dispersed?','By wind','By animals eating it','By water only','By fire'),
+    mc('A burr sticks to an animal\u2019s fur. How is the seed dispersed?','By animals','By wind only','By lightning','By soil only'),
+    mc('Why is seed dispersal helpful to a plant?','Seeds can grow away from the crowded parent plant','Seeds always grow faster in the shade of the parent','It removes the need for water','It prevents germination'),
+    mc('A coconut can float across water. How is it dispersed?','By water','By pollinators only','By roots','By leaves')
+  ],
+  digestionHumans:[
+    mc('What is the main job of the digestive system?','Break food down so nutrients can be absorbed','Pump blood','Exchange gases','Send nerve signals'),
+    mc('Where does digestion begin?','The mouth','The large intestine','The stomach only','The skin'),
+    mc('What does chewing do?','Breaks food into smaller pieces','Absorbs all nutrients','Makes bile','Removes water from waste'),
+    mc('The stomach helps digestion by:','Mixing food with acid and enzymes','Absorbing most water','Making blood cells','Filtering oxygen')
+  ],
+  digestionIntestines:[
+    mc('Where is most nutrient absorption?','Small intestine','Large intestine','Mouth','Esophagus'),
+    mc('What does the large intestine mostly absorb?','Water','Most protein','Light','Oxygen'),
+    mc('Why does the small intestine have villi?','They increase surface area for absorption','They crush food','They make acid','They store waste'),
+    mc('What happens to undigested material?','It is eliminated as waste','It becomes bone','It becomes blood','It is absorbed in the mouth')
+  ],
+  humanDigestion:[
+    mc('Which is the correct path of food?','Mouth, esophagus, stomach, small intestine, large intestine','Mouth, stomach, esophagus, large intestine, small intestine','Stomach, mouth, esophagus, intestines','Esophagus, mouth, stomach, intestines'),
+    mc('What does the esophagus do?','Moves food from the mouth to the stomach','Absorbs nutrients','Makes bile','Stores waste'),
+    mc('Which organ makes bile that helps digest fats?','Liver','Stomach','Mouth','Esophagus'),
+    mc('How do the digestive system and circulatory system work together?','The blood carries absorbed nutrients to cells','Blood digests food in the mouth','They are unrelated','The stomach pumps blood')
+  ]
+};
 const HISTORY_PROJECTS = {
+  bio1:{title:'Model Project: Structure and Function',summary:'Build a model of a cell or of the digestive system and explain how its parts work together.',steps:[
+    {key:'choice',label:'1. Choose a cell (plant or animal) or the human digestive system. Describe the model you will build and your materials.'},
+    {key:'parts',label:'2. List at least six parts. For each, explain its function and what it represents in your model.'},
+    {key:'organization',label:'3. Explain how cells, tissues, organs, or systems work together in your chosen example.'},
+    {key:'limits',label:'4. What does your model show well? What does it get wrong or leave out?'},
+    {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]},
+  bio1lab:{title:'Experiment: Germination Lab',summary:'Plan and carry out a fair test of one variable that could affect seed germination. Ask an adult for help and wash your hands after handling soil and seeds.',steps:[
+    {key:'question',label:'1. Write your testable question and a hypothesis (use \u201cIf ... then ... because ...\u201d).'},
+    {key:'variables',label:'2. Name the variable you will change, the variable you will measure, and at least three variables you will keep the same.'},
+    {key:'procedure',label:'3. List materials and the numbered steps you followed, including how many seeds and trials you used.'},
+    {key:'data',label:'4. Record your observations or measurements for each day (a small table is fine).'},
+    {key:'conclusion',label:'5. State your conclusion using your data. Was your hypothesis supported? Name one source of error and how to improve the test.'},
+    {key:'connection',label:'6. Connect your results to plant reproduction: why does this matter for how seeds grow in nature?'}]},
+  history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
+    {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
+    {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
+    {key:'evidence',label:'3. Give at least three pieces of evidence (texts, buildings, artifacts, or reliable sources) and what each shows.'},
+    {key:'compare',label:'4. Compare this case with another belief system or empire. What is similar and different?'},
+    {key:'claim',label:'5. Make a claim about how beliefs and empires affected each other and defend it with evidence.'},
+    {key:'sources',label:'6. List the sources you used so a teacher can check them.'}]},
+  history3:{title:'Compare Two Early Societies',summary:'Compare two early agrarian societies and explain how geography and resources shaped them.',steps:[
+    {key:'subject',label:'1. Choose two societies from this unit (for example Mesopotamia and Egypt) and say where and when each existed.'},
+    {key:'environment',label:'2. Describe each society\u2019s environment, crops, and resources.'},
+    {key:'evidence',label:'3. Give at least two pieces of evidence for each society and what the evidence shows.'},
+    {key:'compare',label:'4. Compare how farming, cities, writing, trade, or religion developed in each. What is similar and different?'},
+    {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]},
   history:{title:'Source Investigator Project',summary:'Investigate one source and explain what it can and cannot tell a historian.',steps:[
     {key:'source',label:'1. Choose and describe a source (an object, photo, document, story, or place). Who made it, when, and why?'},
     {key:'perspective',label:'2. Whose perspective does it show? Whose voices are missing?'},
@@ -5259,10 +5542,16 @@ const englishCourse = course => course === 'verbs'
     ? {id:'history',building:'histOrigins',title:'History Unit 1: Origins of History',skills:HISTORY_UNIT1,groups:HISTORY_GROUPS,finalKey:'history:final-test',testPer:2,finalPass:6,noQuizzes:true}
   : course === 'history2'
     ? {id:'history2',building:'histEarly',title:'History Unit 2: Early Humans',skills:HISTORY_UNIT2,groups:HISTORY_GROUPS2,finalKey:'history2:final-test',testPer:2,finalPass:8,noQuizzes:true}
+  : course === 'history3'
+    ? {id:'history3',building:'histAgrarian',title:'History Unit 3: Early Agrarian Societies',skills:HISTORY_UNIT3,groups:HISTORY_GROUPS3,finalKey:'history3:final-test',testPer:2,finalPass:14,noQuizzes:true}
+  : course === 'history4'
+    ? {id:'history4',building:'histEmpires',title:'History Unit 4: Empires and Belief Systems',skills:HISTORY_UNIT4,groups:HISTORY_GROUPS4,finalKey:'history4:final-test',testPer:2,finalPass:19,noQuizzes:true}
+  : course === 'bio1'
+    ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
 const testSize = course => course.skills.length * (course.testPer || 1);
 function englishProgressReportHTML(canReview = false){
-  return ['nouns','verbs','history','history2'].map(courseId => {
+  return ['nouns','verbs','history','history2','history3','history4','bio1'].map(courseId => {
     const course = englishCourse(courseId), skills = course.skills.map(skill => {
       const record = englishRecord(skill.id,courseId), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
       const summary = accuracy === null ? record.tries ? `No answer history yet · best ${record.best}/${record.questionCount || 4}` : 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`;
@@ -5272,7 +5561,7 @@ function englishProgressReportHTML(canReview = false){
       const record = englishRecord(item.key,courseId);
       return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || item.total} · ${record.tries} tries` : 'Not started'}</span></div>`;
     }).join('');
-    return `<section class="panel"><h3>${esc(course.title)}</h3><p class="muted">Per-skill accuracy and assessment progress. Review is suggested after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${skills}</div><h4>${course.noQuizzes ? 'Test' : 'Quizzes and test'}</h4><div class="ela-parent-grid">${assessments}</div>${isHistoryCourse(courseId) ? `<h4>Project</h4><div class="ela-parent-grid">${historyProjectReportHTML(courseId, canReview)}</div>` : ''}</section>`;
+    return `<section class="panel"><h3>${esc(course.title)}</h3><p class="muted">Per-skill accuracy and assessment progress. Review is suggested after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${skills}</div><h4>${course.noQuizzes ? 'Test' : 'Quizzes and test'}</h4><div class="ela-parent-grid">${assessments}</div>${isProjectCourse(courseId) ? `<h4>Project and experiment</h4><div class="ela-parent-grid">${projectKeys(courseId).map(key => historyProjectReportHTML(key, canReview)).join('')}</div>` : ''}</section>`;
   }).join('');
 }
 function readingLedgerHTML(){
@@ -5361,7 +5650,14 @@ function englishQuestions(skillId, courseId='nouns'){
     theme:readingText(chapter,'themes','friendship'),action:readingText(chapter,'notableAction','searches for a clue'),
     conflict:readingText(chapter,'conflict','a difficult problem'),joy:readingText(chapter,'joy','a joyful discovery')
   };
-  if (isHistoryCourse(courseId)) return ((courseId === 'history2' ? HISTORY2_QUESTIONS : HISTORY_QUESTIONS)[skillId] || []).map(question => ({...question,skillId}));
+  if (isScienceCourse(courseId)) return (BIO1_QUESTIONS[skillId] || []).map(question => {
+    const correct = question.options[question.answer], options = shuffle(question.options);
+    return {...question,options,answer:options.indexOf(correct),skillId};
+  });
+  if (isHistoryCourse(courseId)) return ((courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS : courseId === 'history2' ? HISTORY2_QUESTIONS : HISTORY_QUESTIONS)[skillId] || []).map(question => {
+    const correct = question.options[question.answer], options = shuffle(question.options);
+    return {...question,options,answer:options.indexOf(correct),skillId};
+  });
   if (courseId === 'verbs') return (VERB_QUESTIONS[skillId] || []).map(makeQuestion => ({...makeQuestion(context),skillId}));
   if (!reading) {
     const general = {
@@ -5448,10 +5744,10 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(button.dataset.elaCourse || 'nouns'); return; }
 });
 function englishRecord(key,courseId='nouns'){
-  const progress = isHistoryCourse(courseId) ? S.historyProgress : S.elaProgress, record = progress?.[key];
+  const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isHistoryCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => shuffle(englishQuestions(skillId, courseId)));
   const questions = [];
@@ -5465,14 +5761,15 @@ const englishFinalReady = course => course.noQuizzes
   : course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id),course.id).passed);
 /* hosted: the teacher's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"; local: a grown-up sets it */
 function historyProjectState(courseId){
-  const p = S.historyProjects[courseId] || {answers:{},status:'draft',submittedAt:0,localReview:''};
+  const p = projectStore(courseId)[courseId] || {answers:{},status:'draft',submittedAt:0,localReview:''};
   if (p.status !== 'submitted') return {...p, state:'draft'};
   const raw = Backend.me ? Backend.me.quiz_overrides?.[`project:${courseId}`] : '', [verdict, at] = String(raw || '').split(':');
   const review = Backend.me ? (+at === p.submittedAt && (verdict === 'verified' || verdict === 'revise') ? verdict : '') : p.localReview;
   return {...p, state:review || 'submitted'};
 }
 const PROJECT_STATE_TEXT = {draft:'Draft', submitted:'Submitted \u00b7 waiting for review', verified:'\u2705 Verified by your teacher', revise:'\ud83d\udd01 Revision requested'};
-function historyProjectCardHTML(courseId){
+function historyProjectCardHTML(courseId){ return projectKeys(courseId).map(historyProjectCardOne).join(''); }
+function historyProjectCardOne(courseId){
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
   return `<section class="ela-final-assessment"><div><h3>${esc(project.title)}</h3><p class="muted">${esc(project.summary)} \u00b7 ${PROJECT_STATE_TEXT[info.state]}</p></div><button type="button" class="btn small berry" data-history-project="${courseId}">${info.state === 'draft' ? 'Open project' : 'View project'}</button></section>`;
 }
@@ -5488,12 +5785,12 @@ function renderHistoryProject(courseId){
   const fields = project.steps.map(step => `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');
   const actions = locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
     : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`;
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId.replace(/lab$/, '')}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
 }
 $('#libraryWrap').addEventListener('submit', event => {
   const form = event.target.closest('#historyProjectForm'); if (!form) return;
   event.stopImmediatePropagation(); event.preventDefault();
-  const courseId = form.dataset.course, p = S.historyProjects[courseId], data = new FormData(form);
+  const courseId = form.dataset.course, p = projectStore(courseId)[courseId], data = new FormData(form);
   HISTORY_PROJECTS[courseId].steps.forEach(step => { p.answers[step.key] = String(data.get(step.key) || '').trim().slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
     if (!HISTORY_PROJECTS[courseId].steps.every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
@@ -5504,7 +5801,7 @@ $('#libraryWrap').addEventListener('submit', event => {
 $('#libraryWrap').addEventListener('click', event => {
   const open = event.target.closest('[data-history-project]'); if (open) { renderHistoryProject(open.dataset.historyProject); return; }
   const edit = event.target.closest('[data-history-project-edit]');
-  if (edit) { const p = S.historyProjects[edit.dataset.historyProjectEdit]; p.status = 'draft'; p.localReview = ''; save(); renderHistoryProject(edit.dataset.historyProjectEdit); }
+  if (edit) { const p = projectStore(edit.dataset.historyProjectEdit)[edit.dataset.historyProjectEdit]; p.status = 'draft'; p.localReview = ''; save(); renderHistoryProject(edit.dataset.historyProjectEdit); }
 });
 function renderEnglishUnit(courseId=activeEnglishCourse){
   const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
@@ -5533,7 +5830,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isHistoryCourse(course.id) ? historyProjectCardHTML(course.id) : ''}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-ela-library>Reading Log</button><button class="btn small" data-go="home">Back to town</button></div></div><div class="ela-context">${context}</div>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}`;
 }
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
@@ -5556,7 +5853,7 @@ function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   renderEnglishQuestion();
 }
 function finishEnglishRun(){
-  const run = englishRun, store = isHistoryCourse(run.courseId) ? S.historyProgress : S.elaProgress;
+  const run = englishRun, store = progressStore(run.courseId);
   const previous = englishRecord(run.progressKey,run.courseId), passed = run.score >= run.passMark;
   store[run.progressKey] = {
     ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
@@ -7048,7 +7345,7 @@ function renderParent(){
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {
-    const p = S.historyProjects[b.dataset.projectCourse]; if (!p || p.status !== 'submitted') return;
+    const p = projectStore(b.dataset.projectCourse)[b.dataset.projectCourse]; if (!p || p.status !== 'submitted') return;
     p.localReview = b.dataset.projectLocalReview; save(); renderParent();
   }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });

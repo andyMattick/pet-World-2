@@ -117,6 +117,8 @@ async function renderDashboard() {
     student.elaProgress = state?.elaProgress && typeof state.elaProgress === 'object' ? state.elaProgress as NonNullable<StudentReport['elaProgress']> : {};
     student.historyProgress = state?.historyProgress && typeof state.historyProgress === 'object' ? state.historyProgress as NonNullable<StudentReport['historyProgress']> : {};
     student.historyProjects = state?.historyProjects && typeof state.historyProjects === 'object' ? state.historyProjects as NonNullable<StudentReport['historyProjects']> : {};
+    student.scienceProgress = state?.scienceProgress && typeof state.scienceProgress === 'object' ? state.scienceProgress as NonNullable<StudentReport['scienceProgress']> : {};
+    student.scienceProjects = state?.scienceProjects && typeof state.scienceProjects === 'object' ? state.scienceProjects as NonNullable<StudentReport['scienceProjects']> : {};
   });
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
   setReportClass(cls.id, cls.game_settings?.home);
