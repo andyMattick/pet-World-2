@@ -5586,66 +5586,127 @@ function readingLedgerHTML(){
   }).join('') : '<p class="muted">No chapters added yet.</p>'}</section>`).join('');
   return `<section class="panel"><h3>Reading Log</h3><p class="muted">Student-entered book-report notes, chapter by chapter. The game does not verify book interpretations.</p>${books || '<p class="muted">No books added yet.</p>'}</section>`;
 }
+const q = (prompt, correct, ...wrong) => ({prompt, options:[correct, ...wrong], answer:0});
 const PLURAL_QUESTIONS = {
   identifyNouns:[
-    (name,place,theme) => ({prompt:`In the chapter, ${name} explores ${place}. Which word is a noun?`,options:[name,'explores','carefully','through'],answer:0}),
-    (name,place,theme) => ({prompt:`Which word names a place in your reading notes?`,options:['bravely',place,'discovers','although'],answer:1}),
-    (name,place,theme) => ({prompt:`Which choice names an idea from the chapter?`,options:['quickly','beneath','listens',theme],answer:3}),
-    (name,place,theme) => ({prompt:`In "${name} remembers the chapter," which word names a person?`,options:['remembers','chapter',name,'the'],answer:2})
+    q('Which word is a noun in this sentence? The dog barked loudly.','dog','barked','loudly','The'),
+    q('Which word is a noun in this sentence? Our teacher smiled happily.','teacher','smiled','happily','Our'),
+    q('Which word names a place? We ate lunch at the park.','park','ate','We','at'),
+    q('Which word names a person? Our coach blew the whistle.','coach','blew','Our','the'),
+    q('Which word names a thing? The sailor held a lantern.','lantern','held','The','a'),
+    q('Which word names an idea or feeling? Her bravery inspired the team.','bravery','inspired','Her','the'),
+    q('Which of these is NOT a noun?','quickly','garden','teacher','happiness'),
+    q('How many nouns are in this sentence? The cat chased a mouse.','2','1','3','4'),
+    q('Which word is a noun?','harbor','swiftly','under','sing'),
+    q('Nouns name people, places, things, and ideas. Which word names an idea?','freedom','window','doctor','kitchen')
   ],
   singularPlural:[
-    {prompt:'Which is the plural of story?',options:['storys','stories','storyes','storie'],answer:1},
-    {prompt:'Which is the plural of box?',options:['boxs','boxies','boxes','box'],answer:2},
-    {prompt:'Which sentence uses a singular noun?',options:['The chapters are exciting.','The library has a map.','The characters explore.','The books are open.'],answer:1},
-    {prompt:'Choose the plural form of "chapter".',options:['chapteres','chapters','chapteries','chapter'],answer:1}
+    q('What is the plural of bus?','buses','buss','busies',"bus's"),
+    q('What is the plural of dish?','dishes','dishs','dishies',"dish's"),
+    q('What is the plural of city?','cities','citys','cityes','citis'),
+    q('What is the plural of toy?','toys','toies','toyes','toyies'),
+    q('Which sentence uses the correct plural?','We bought two boxes of berries.','We bought two boxs of berries.','We bought two boxes of berrys.','We bought two boxes of berryes.'),
+    q('Which noun is singular?','bridge','wishes','lakes','hats'),
+    q('Which noun is plural?','foxes','fox','box','glass'),
+    q('What is the plural of class?','classes','classs','classies',"class's"),
+    q('What is the plural of potato?','potatoes','potatos','potatoies','potatoz'),
+    q('Which noun needs -es to make it plural?','watch','pen','cup','road')
   ],
   commonProper:[
-    (name,place) => ({prompt:'Which choice is a proper noun?',options:[name,'chapter','library','story'],answer:0}),
-    (name,place) => ({prompt:'Which choice is a common noun?',options:[name,'author','your school name','a character name'],answer:1}),
-    (name,place) => ({prompt:'Which sentence correctly capitalizes a proper noun?',options:[`We read about ${name} in the book.`,`We read About ${name} in the book.`,`We read about ${name} in The book.`,`we read about ${name} in the book.`],answer:0}),
-    (name,place) => ({prompt:'In your chapter notes, which is the name of a specific place?',options:['a room',place,'the library','a country'],answer:1})
+    q('Which word is a proper noun? We visited Chicago last summer.','Chicago','summer','visited','last'),
+    q('Which sentence capitalizes the proper noun correctly?','My cousin lives in Texas.','my cousin lives in texas.','My cousin lives in texas.','My Cousin lives in Texas.'),
+    q('Which word is a common noun?','river','Nile','Paris','Ms. Lee'),
+    q('Which proper noun could replace the common noun "city"?','Denver','town','street','village'),
+    q('Which common noun could replace the proper noun "Lincoln Elementary"?','school','Monday','Ohio','Lincoln'),
+    q('Which sentence contains a proper noun?','Our class read about Harriet Tubman.','Our class read about a brave woman.','Our class read about a famous leader.','Our class read about the past.'),
+    q('Which of these is a proper noun?','Mexico','country','mountain','ocean'),
+    q('In "The dog named Max ran home," which word is the proper noun?','Max','dog','home','ran'),
+    q('Which noun should begin with a capital letter?','Thursday','season','morning','week'),
+    q('A proper noun names a specific person, place, or thing. Which is the best example?','Mount Everest','mountain','hill','peak')
   ],
   concreteAbstract:[
-    (name,place,theme) => ({prompt:'Which choice names an abstract idea from the chapter?',options:[name,place,'a doorway',theme],answer:3}),
-    (name,place,theme) => ({prompt:'Which choice names something concrete you could see?',options:['friendship','hope',place,'courage'],answer:2}),
-    (name,place,theme) => ({prompt:'Which is a concrete noun?',options:['kindness','a book','fear','freedom'],answer:1}),
-    (name,place,theme) => ({prompt:'Which is an abstract noun?',options:['a window','a path','a character','bravery'],answer:3})
+    q('Which noun is concrete?','pencil','freedom','honesty','courage'),
+    q('Which noun is abstract?','friendship','bicycle','mountain','lantern'),
+    q('Which noun in the sentence is abstract? The children felt great joy at the parade.','joy','children','parade','great'),
+    q('Which noun can you detect with your five senses?','thunder','justice','loyalty','wisdom'),
+    q('Which sentence has an abstract noun?','Her kindness made everyone smile.','Her backpack fell on the floor.','The puppy chased the ball.','He drank cold water.'),
+    q('Which noun is abstract?','excitement','sandwich','window','blanket'),
+    q('Which noun is concrete?','bakery','patience','curiosity','pride'),
+    q('Is the noun "freedom" concrete or abstract?','Abstract: it names an idea','Concrete: you can touch it','Proper: it names a place','Plural: it names more than one'),
+    q('Which noun is concrete?','mitten','hope','fear','talent'),
+    q('Which pair has one concrete noun and one abstract noun?','tree, beauty','chair, table','honor, trust','river, hill')
   ],
   fToVes:[
-    {prompt:'Choose the plural of leaf.',options:['leafs','leaves','leavs','leafes'],answer:1},
-    {prompt:'Choose the plural of wolf.',options:['wolfs','wolfes','wolves','wolvs'],answer:2},
-    {prompt:'Choose the plural of knife.',options:['knifes','knives','knivs','knifees'],answer:1},
-    {prompt:'Choose the plural of shelf.',options:['shelfs','shelves','shelvs','shelfes'],answer:1}
+    q('What is the plural of leaf?','leaves','leafs','leavs','leafes'),
+    q('What is the plural of life?','lives','lifes','lifs','livs'),
+    q('What is the plural of half?','halves','halfs','halfes','halvs'),
+    q('What is the plural of wolf?','wolves','wolfs','wolfes','wolvs'),
+    q('What is the plural of knife?','knives','knifes','knifves','knifs'),
+    q('The baker made three ___ of bread.','loaves','loafs','loafes','loavs'),
+    q('Which plural is spelled correctly?','elves','elfs','elvs','elfes'),
+    q('What is the plural of thief?','thieves','thiefs','thiefes','thievs'),
+    q('Which noun does NOT change f to v in the plural?','roof','shelf','calf','wife'),
+    q('What is the plural of self?','selves','selfs','selfes','selvs')
   ],
   enPlurals:[
-    {prompt:'Choose the plural of child.',options:['childs','childes','children','childrens'],answer:2},
-    {prompt:'Choose the plural of ox.',options:['oxes','oxen','oxs','oxens'],answer:1},
-    {prompt:'Choose the plural of person.',options:['persons','people','peoples','persones'],answer:1},
-    {prompt:'Choose the plural of woman.',options:['womans','womanes','women','womens'],answer:2}
+    q('What is the plural of child?','children','childs','childes','childrens'),
+    q('What is the plural of ox?','oxen','oxes','oxs','oxens'),
+    q('What is the plural of man?','men','mans','manes','manen'),
+    q('What is the plural of woman?','women','womans','womanes','womens'),
+    q('The farmer has two strong ___.','oxen','oxes','oxs','oxens'),
+    q('Which sentence is correct?','The children are playing outside.','The childs are playing outside.','The childrens are playing outside.','The childes are playing outside.'),
+    q('What is the singular of oxen?','ox','oxe','oxn','oxens'),
+    q('What is the singular of children?','child','childe','childs','childre'),
+    q('Which sentence is correct?','Three women waited in line.','Three womans waited in line.','Three womens waited in line.','Three womanes waited in line.'),
+    q('What is the plural of person?','people','persons only','peoples','personen')
   ],
   basePlurals:[
-    {prompt:'What is the plural of sheep?',options:['sheeps','sheep','sheepes','sheepies'],answer:1},
-    {prompt:'What is the plural of deer?',options:['deers','deer','deeres','deeries'],answer:1},
-    {prompt:'Choose the correct sentence.',options:['Two fishs swam by.','Two fish swam by.','Two fishes swam by always.','Two fishies swam by.'],answer:1},
-    {prompt:'Which word has the same singular and plural form?',options:['book','child','species','leaf'],answer:2}
+    q('What is the plural of sheep?','sheep','sheeps','sheepes','sheepies'),
+    q('What is the plural of deer?','deer','deers','deeres','deerses'),
+    q('The hunter saw five ___ in the woods.','deer','deers','deeres','deerses'),
+    q('Which sentence is correct?','Two fish swam by.','Two fishs swam by.','Two fishies swam by.','Two fishses swam by.'),
+    q('Which word has the same singular and plural form?','series','book','leaf','tooth'),
+    q('What is the plural of moose?','moose','mooses','meese','moosen'),
+    q('Which sentence is correct?','We caught six salmon at the river.','We caught six salmons at the river.','We caught six salmones at the river.','We caught six salmonen at the river.'),
+    q('What is the plural of aircraft?','aircraft','aircrafts','aircrafves','aircraften'),
+    q('Which noun stays the same in the plural?','species','box','child','mouse'),
+    q('One sheep is in the barn. Five ___ are in the field.','sheep','sheeps','sheepes','sheepen')
   ],
   mutantPlurals:[
-    {prompt:'Choose the plural of mouse.',options:['mouses','mice','mouse','mices'],answer:1},
-    {prompt:'Choose the plural of goose.',options:['gooses','geese','goose','geeses'],answer:1},
-    {prompt:'Choose the plural of tooth.',options:['tooths','teeth','toothes','teeths'],answer:1},
-    {prompt:'Choose the plural of foot.',options:['foots','feet','footses','feets'],answer:1}
+    q('What is the plural of mouse?','mice','mouses','mouse','mices'),
+    q('What is the plural of goose?','geese','gooses','goose','geeses'),
+    q('What is the plural of tooth?','teeth','tooths','toothes','teeths'),
+    q('What is the plural of foot?','feet','foots','footes','feets'),
+    q('The baby has two new ___.','teeth','tooths','toothes','tooth'),
+    q('A flock of ___ flew over the pond.','geese','gooses','goose','geeses'),
+    q('Which plural changes the vowels inside the word?','geese','dishes','cats','boxes'),
+    q('What is the plural of louse?','lice','louses','louse','lices'),
+    q('Which sentence is correct?','The mice hid in the wall.','The mouses hid in the wall.','The mices hid in the wall.','The mouse hid in the wall.'),
+    q('My shoes hurt my ___.','feet','foots','foot','feets')
   ],
   foreignPlurals:[
-    {prompt:'Choose the plural of cactus.',options:['cactuses only','cacti','cactus','cactis'],answer:1},
-    {prompt:'Choose the plural of criterion.',options:['criterions','criteria','criteriones','criterias'],answer:1},
-    {prompt:'Choose the plural of alumnus.',options:['alumnuses','alumni','alumnus','alumnis'],answer:1},
-    {prompt:'Choose the plural of fungus.',options:['funguses only','fungi','fungus','fungis'],answer:1}
+    q('What is the plural of cactus?','cacti','cactuses only','cactus','cactis'),
+    q('What is the plural of criterion?','criteria','criterions','criteriones','criterias'),
+    q('What is the plural of fungus?','fungi','funguses only','fungus','fungis'),
+    q('What is the plural of alumnus?','alumni','alumnuses','alumnus','alumnis'),
+    q('What is the plural of nucleus?','nuclei','nucleuses only','nucleus','nucleis'),
+    q('What is the plural of phenomenon?','phenomena','phenomenons only','phenomenones','phenomenas'),
+    q('What is the plural of analysis?','analyses','analysises','analysi','analysis'),
+    q('What is the plural of crisis?','crises','crisises','crisi','crisis'),
+    q('What is the plural of bacterium?','bacteria','bacteriums','bacteriae','bacterias'),
+    q('What is the plural of radius?','radii','raduises','radiuses only','radius')
   ],
   pluralReview:[
-    {prompt:'Choose the plural of knife.',options:['knifes','knives','knife','knivies'],answer:1},
-    {prompt:'Choose the plural of child.',options:['childs','children','childes','child'],answer:1},
-    {prompt:'Choose the plural of mouse.',options:['mouses','mice','mouse','mices'],answer:1},
-    {prompt:'Choose the plural of sheep.',options:['sheeps','sheep','sheepes','sheepies'],answer:1}
+    q('What is the plural of knife?','knives','knifes','knife','knivies'),
+    q('What is the plural of child?','children','childs','childes','child'),
+    q('What is the plural of mouse?','mice','mouses','mouse','mices'),
+    q('What is the plural of sheep?','sheep','sheeps','sheepes','sheepies'),
+    q('What is the plural of cactus?','cacti','cactis','cactus','cactuses only'),
+    q('Which sentence uses all the plurals correctly?','The women saw geese near the lakes.','The womans saw geese near the lakes.','The women saw gooses near the lakes.','The womens saw geese near the lakes.'),
+    q('Which word is spelled correctly?','wolves','wolfs','wolfes','wolvs'),
+    q('Which noun has the same singular and plural form?','deer','tooth','ox','leaf'),
+    q('Which plural is correct?','crises','crisises','crisis','crisi'),
+    q('Which pair is correct (singular, plural)?','foot, feet','foot, foots','goose, gooses','ox, oxes')
   ]
 };
 let englishRun = null, deletingBookId = null, activeEnglishCourse = 'nouns';
@@ -5674,32 +5735,10 @@ function englishQuestions(skillId, courseId='nouns'){
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
   if (courseId === 'verbs') return (VERB_QUESTIONS[skillId] || []).map(makeQuestion => ({...makeQuestion(context),skillId}));
-  if (!reading) {
-    const general = {
-      identifyNouns:[
-        {prompt:'Which choice is a noun?',options:['quickly','mountain','because','bright'],answer:1},
-        {prompt:'Which word names an idea?',options:['under','kindness','walked','softly'],answer:1},
-        {prompt:'Which word names a person?',options:['teacher','carefully','across','blue'],answer:0},
-        {prompt:'Which word names a place?',options:['nearby','city','sing','gentle'],answer:1}
-      ],
-      commonProper:[
-        {prompt:'Which choice is a proper noun?',options:['river','Monday','book','teacher'],answer:1},
-        {prompt:'Which choice is a common noun?',options:['Maya','Canada','planet','Tuesday'],answer:2},
-        {prompt:'Which sentence correctly capitalizes a proper noun?',options:['We visited Boston in July.','We visited boston in July.','We visited Boston in july.','we visited Boston in July.'],answer:0},
-        {prompt:'Which is the name of a specific place?',options:['a country','the park','Lake Erie','a classroom'],answer:2}
-      ],
-      concreteAbstract:[
-        {prompt:'Which choice names an abstract idea?',options:['a chair','a window','honesty','a pencil'],answer:2},
-        {prompt:'Which choice names something you could see or touch?',options:['hope','courage','a shell','patience'],answer:2},
-        {prompt:'Which is a concrete noun?',options:['kindness','a book','fear','freedom'],answer:1},
-        {prompt:'Which is an abstract noun?',options:['a window','a path','a character','bravery'],answer:3}
-      ]
-    };
-    if (general[skillId]) return general[skillId].map(question => ({...question, skillId}));
-  }
-  const {name,place,theme} = context;
-  const prompts = PLURAL_QUESTIONS[skillId] || [];
-  return prompts.map(item => typeof item === 'function' ? item(name,place,theme) : item).map(question => ({...question, skillId}));
+  return (PLURAL_QUESTIONS[skillId] || []).map(question => {
+    const correct = question.options[question.answer], options = shuffle(question.options);
+    return {...question,options,answer:options.indexOf(correct),skillId};
+  });
 }
 function renderEnglishLibrary(){
   const active = selectedReading(), activeBook = selectedReadingBook(), books = S.readingBooks;
@@ -5854,8 +5893,9 @@ function renderEnglishQuestion(){
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
-  const course = englishCourse(courseId), questions = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
-  if (!skill || questions.length !== 4) return;
+  const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
+  if (!skill || pool.length < 4) return;
+  const questions = shuffle(pool).slice(0,4);
   activeEnglishCourse=course.id;englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[]}; renderEnglishQuestion();
 }
 function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
@@ -5867,27 +5907,32 @@ function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true};
   renderEnglishQuestion();
 }
-function finishEnglishRun(){
-  const run = englishRun, store = progressStore(run.courseId);
+function recordEnglishAnswer(run, question, correct){
+  const store = progressStore(run.courseId), record = englishRecord(question.skillId,run.courseId);
+  store[question.skillId] = {
+    ...record, answered:(record.answered || 0) + 1, misses:(record.misses || 0) + (correct ? 0 : 1),
+    recentAnswers:[...(record.recentAnswers || []),correct ? 1 : 0].slice(-12)
+  };
+  const day = arcadeDateKey();
+  S.mathMinutes[day] = (S.mathMinutes[day] || 0) + 0.25;   // four answers earn one arcade minute, like one math order
+  save();
+}
+function commitEnglishRun(run){
+  if (run.committed) return;
+  run.committed = true;
+  const store = progressStore(run.courseId);
   const previous = englishRecord(run.progressKey,run.courseId), passed = run.score >= run.passMark;
   store[run.progressKey] = {
     ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
     passed:!!previous.passed || passed, recentScores:[...(previous.recentScores || []),run.score].slice(-10),
     lastScore:run.score, questionCount:run.questions.length
   };
-  run.questions.forEach((question,index) => {
-    const skillId = question.skillId, record = englishRecord(skillId,run.courseId), correct = !!run.outcomes[index];
-    store[skillId] = {
-      ...record, answered:(record.answered || 0) + 1, misses:(record.misses || 0) + (correct ? 0 : 1),
-      recentAnswers:[...(record.recentAnswers || []),correct ? 1 : 0].slice(-12)
-    };
-  });
-  const arcadeMinutesEarned = Math.floor(run.questions.length / 4);
-  if (arcadeMinutesEarned) {
-    const day = arcadeDateKey();
-    S.mathMinutes[day] = (S.mathMinutes[day] || 0) + arcadeMinutesEarned;
-  }
-  save(); englishRun = null;
+  save();
+}
+function finishEnglishRun(){
+  const run = englishRun; commitEnglishRun(run);
+  const passed = run.score >= run.passMark;
+  englishRun = null;
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
   const retry = run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
     : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}" data-ela-course="${run.courseId}">Retake quiz</button>`
@@ -5903,6 +5948,8 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
+    recordEnglishAnswer(englishRun, question, correct);
+    if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
     button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
     const feedback = $('#libraryWrap .ela-feedback'); feedback.textContent = correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`;
     button.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>'); return;

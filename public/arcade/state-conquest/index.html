@@ -122,7 +122,9 @@ function init(){
 function startTurn(){
  G.named=new Set();G.sel=null;G.ph="reinf";G.bonusT=false;G.recaptureUsed=false;
  const mine=keys.filter(k=>T[k].o==1);
- G.slots=2+Math.floor(mine.length/5);
+ const caps=mine.filter(k=>T[k].co==1).length;
+ G.slots=2+Math.floor((mine.length+caps)/10);
+ G.slotNote=`${mine.length} states + ${caps} capitals`;
  render();
  if(G.capitalQueue.length)offerRecapture(()=>render(),"reinf");
 }
@@ -253,7 +255,7 @@ function render(){
  }else if(G.ph=="recapture"){
   h=`<b>🏛️ Reclaim a capital</b><br>Name the rebel-held capital to restore control. You may attempt one recapture per round.`;
  }else if(G.ph=="reinf"){
-  h=`<b>1️⃣ Reinforce</b> (${G.slots} slot${G.slots==1?"":"s"} left)<br>Tap one of your blue states and name it, or type any state you own:<br><input id="fi" placeholder="Type a state you own" onkeydown="if(event.key=='Enter')free()"><button onclick="free()">Go (4 🪖)</button><br><button onclick="buy()">🪖 Buy 2 troops (3 🪙)</button><button class="g" onclick="G.ph='attack';G.sel=null;render()">To battle ➜</button>`;
+  h=`<b>1️⃣ Reinforce</b> (${G.slots} slot${G.slots==1?"":"s"} left; you get 2 + 1 for every 10 states and capitals you own${G.slotNote?" — this turn: "+G.slotNote:""})<br>Tap one of your blue states and name it, or type any state you own:<br><input id="fi" placeholder="Type a state you own" onkeydown="if(event.key=='Enter')free()"><button onclick="free()">Go (4 🪖)</button><br><button onclick="buy()">🪖 Buy 2 troops (3 🪙)</button><button class="g" onclick="G.ph='attack';G.sel=null;render()">To battle ➜</button>`;
  }else{
   h=`<b>2️⃣ Attack</b><br>Tap your state (2+ troops), then a neighboring red or gray state, and name it to invade. You earn 🪙 each turn from capitals you hold (★). 🏛️ Conquest capital bonus: ${G.bonusT?"used this turn":"available"}.<br>${G.sel&&T[G.sel].o==1&&T[G.sel].co!=1&&!(T[G.sel].co==0&&G.recaptureUsed)?`<button class="g" onclick="seize()">🏛️ ${T[G.sel].co==0?"Reclaim":"Seize"} ${T[G.sel].n}'s capital</button>`:""}<button class="r" onclick="endTurn()">End turn ➜</button>`;
  }
