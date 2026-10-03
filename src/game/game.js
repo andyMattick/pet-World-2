@@ -5099,74 +5099,6 @@ const ENGLISH_GROUPS2 = [
   {id:'aspect',quizName:'Verb aspect Quiz',name:'Verb aspect: simple, progressive, and perfect',learn:'Compare simple, progressive, and perfect forms.',skills:['simpleAspect','progressiveAspect','perfectAspect']},
   {id:'aspectModal',quizName:'Aspect and modal verbs Quiz',name:'Verb aspect and modal verbs',learn:'Use perfect progressive aspect to manage time and choose modal verbs for meaning.',skills:['perfectProgressive','tenseAspectTime','modalVerbs']}
 ];
-const VERB_QUESTIONS = {
-  verbIdentify:(c) => [
-    {prompt:`For a sentence about ${c.name} in ${c.place}, which word is a verb?`,options:[c.name,'explores','quietly','near'],answer:1},
-    {prompt:`Your chapter notes mention “${c.action}.” Which word below is an action verb?`,options:['curious','discovers','beside','gentle'],answer:1},
-    {prompt:`Which word is the verb in “${c.name} feels joy after the conflict”?`,options:[c.name,'feels','joy','conflict'],answer:1},
-    {prompt:`Which word tells what the character does in “${c.name} searches near ${c.place}”?`,options:['near','searches',c.name,c.place],answer:1}
-  ],
-  verbAgreement:(c) => [
-    {prompt:`The main character ___ near ${c.place}.`,options:['walk','walks','walking','have walked'],answer:1},
-    {prompt:`The characters ___ together when ${c.conflict} begins.`,options:['plans','plan','planning','was plan'],answer:1},
-    {prompt:`A character and a friend ___ the clue.`,options:['finds','find','finding','has find'],answer:1},
-    {prompt:`The joy in the chapter ___ the character hopeful.`,options:['make','makes','making','were make'],answer:1}
-  ],
-  verbTense:(c) => [
-    {prompt:`A summary describes a finished event: “${c.name} ___ the clue.”`,options:['finds','found','will find','is finding'],answer:1},
-    {prompt:`The chapter is happening now: “${c.name} ___ near ${c.place}.”`,options:['walked','walks','will walked','has walks'],answer:1},
-    {prompt:`The character plans for tomorrow: “${c.name} ___ the note.”`,options:['reads yesterday','read now','will read','has read yesterday'],answer:2},
-    {prompt:`Which sentence is in the past tense?`,options:[`${c.name} notices the clue.`,`${c.name} noticed the clue.`,`${c.name} will notice the clue.`,`${c.name} is noticing the clue.`],answer:1}
-  ],
-  actionLinkHelping:(c) => [
-    {prompt:`In “${c.name} searches near ${c.place},” which word is the action verb?`,options:[c.name,'searches','near',c.place],answer:1},
-    {prompt:`In “${c.name} feels hopeful,” which verb links the character to a description?`,options:[c.name,'feels','hopeful','the'],answer:1},
-    {prompt:`In “${c.name} has found a clue,” which word helps the main verb?`,options:[c.name,'has','found','clue'],answer:1},
-    {prompt:`Which sentence uses a linking verb?`,options:[`${c.name} runs toward ${c.place}.`,`${c.name} seems joyful.`,`${c.name} has found a clue.`,`${c.name} will search.`],answer:1}
-  ],
-  irregularVerbs:(c) => [
-    {prompt:`Yesterday, ${c.name} ___ a clue.`,options:['finded','found','finds','finding'],answer:1},
-    {prompt:`In the past, the characters ___ the map.`,options:['saw','seed','seeing','sees'],answer:0},
-    {prompt:`Choose the correct past tense: “The character ___ a letter.”`,options:['writed','wrote','written yesterday','writes yesterday'],answer:1},
-    {prompt:`After ${c.conflict}, ${c.name} ___ the book home.`,options:['taked','took','taking','takes yesterday'],answer:1}
-  ],
-  simpleAspect:(c) => [
-    {prompt:`Which sentence uses simple present aspect?`,options:[`${c.name} is reading near ${c.place}.`,`${c.name} reads near ${c.place}.`,`${c.name} has read near ${c.place}.`,`${c.name} will be reading near ${c.place}.`],answer:1},
-    {prompt:`A completed chapter event is summarized in simple past:`,options:[`${c.name} was finding a clue.`,`${c.name} found a clue.`,`${c.name} has found a clue.`,`${c.name} will find a clue.`],answer:1},
-    {prompt:`Which verb phrase shows a regular habit?`,options:[`${c.name} searched once.`,`${c.name} searches each morning.`,`${c.name} has been searching.`,`${c.name} will search later.`],answer:1},
-    {prompt:`Choose the simple future form.`,options:[`${c.name} finds the path.`,`${c.name} found the path.`,`${c.name} will find the path.`,`${c.name} has found the path.`],answer:2}
-  ],
-  progressiveAspect:(c) => [
-    {prompt:`The action is happening right now: “${c.name} ___ near ${c.place}.”`,options:['searches','is searching','has searched','will search'],answer:1},
-    {prompt:`Which phrase uses progressive aspect?`,options:['noticed the clue','has noticed the clue','was noticing the clue','will notice the clue'],answer:2},
-    {prompt:`The characters are in the middle of discussing ${c.conflict}.`,options:['discuss','discussed','are discussing','have discussed'],answer:2},
-    {prompt:`Choose the present progressive form.`,options:['they explore','they explored','they are exploring','they have explored'],answer:2}
-  ],
-  perfectAspect:(c) => [
-    {prompt:`Which sentence uses present perfect aspect?`,options:[`${c.name} finds a clue.`,`${c.name} found a clue.`,`${c.name} has found a clue.`,`${c.name} is finding a clue.`],answer:2},
-    {prompt:`The character finished searching before another event.`,options:['has been searching','had searched','is searching','will search'],answer:1},
-    {prompt:`Choose the phrase with have + past participle.`,options:['is reading','read yesterday','has read','will read'],answer:2},
-    {prompt:`Which sentence connects a past action to now?`,options:[`${c.name} searched yesterday.`,`${c.name} is searching now.`,`${c.name} has searched the room.`,`${c.name} will search later.`],answer:2}
-  ],
-  perfectProgressive:(c) => [
-    {prompt:`${c.name} began searching earlier and is still searching:`,options:['has searched','has been searching','is searched','will search'],answer:1},
-    {prompt:`Which phrase uses have + been + an -ing verb?`,options:['had found','has been looking','is looking','will have looked'],answer:1},
-    {prompt:`The characters started discussing ${c.conflict} an hour ago and continue now.`,options:['discussed','have been discussing','will discuss','are discussed'],answer:1},
-    {prompt:`Choose the past perfect progressive form.`,options:['had been waiting','has waited','was waiting','will have waited'],answer:0}
-  ],
-  tenseAspectTime:(c) => [
-    {prompt:`The character began reading before the conflict started and continued until then.`,options:['reads','is reading','had been reading','will read'],answer:2},
-    {prompt:`Which sentence clearly shows an action that will be ongoing at a future time?`,options:[`${c.name} will be reading at noon.`,`${c.name} read at noon.`,`${c.name} has read at noon.`,`${c.name} reads yesterday.`],answer:0},
-    {prompt:`The notes describe an action completed before another past event.`,options:['has found','had found','is finding','will find'],answer:1},
-    {prompt:`Which time word best fits “${c.name} ___ the clue already”?`,options:['tomorrow','yesterday before','has found','next week'],answer:2}
-  ],
-  modalVerbs:(c) => [
-    {prompt:`Which modal shows ability? “${c.name} ___ solve the puzzle.”`,options:['can','was','has','does'],answer:0},
-    {prompt:`Which modal shows possibility? “The clue ___ be near ${c.place}.”`,options:['might','did','has','is'],answer:0},
-    {prompt:`Which modal shows a strong requirement?`,options:['could','might','must','would'],answer:2},
-    {prompt:`Choose a modal that politely asks permission.`,options:['May I read the note?','I read the note.','I have read the note.','I am reading the note.'],answer:0}
-  ]
-};
 const HISTORY_UNIT1 = [
   {id:'historyStories',name:'History Stories',lesson:'Compare the stories people tell about the past. Different starting points and perspectives shape what a history includes.'},
   {id:'historyScale',name:'History of Many Shapes and Sizes',lesson:'Switch scale to study local details or wider patterns, and test claims against evidence.',url:'https://www.khanacademy.org/humanities/world-history/x66f79d8a:origins-of-history/x66f79d8a:history-of-many-shapes-and-sizes-1-2/a/activity-opener-what-is-world-history-zooming-out'},
@@ -5709,6 +5641,140 @@ const PLURAL_QUESTIONS = {
     q('Which pair is correct (singular, plural)?','foot, feet','foot, foots','goose, gooses','ox, oxes')
   ]
 };
+const VERB_QUESTIONS = {
+  verbIdentify:[
+    q('Which word is the verb? The dog chased the ball.','chased','dog','ball','The'),
+    q('Which word is the verb? Maria paints a mural.','paints','Maria','mural','a'),
+    q('Which word is the verb? The birds sing at dawn.','sing','birds','dawn','at'),
+    q('Which word is a verb?','jump','happy','under','table'),
+    q('Which sentence shows a state of being?','The soup is hot.','The soup boiled.','Dad stirred the soup.','We ate the soup.'),
+    q('Which word is the verb? My brother is tall.','is','brother','tall','My'),
+    q('Which word is NOT a verb?','careful','whisper','build','travel'),
+    q('Which word is the verb? Clouds drifted across the sky.','drifted','Clouds','across','sky'),
+    q('How many verbs are in this sentence? She ran home and called her mom.','2','1','3','4'),
+    q('Which word is the verb? The students were nervous.','were','students','nervous','The')
+  ],
+  verbAgreement:[
+    q('The dog ___ in the yard.','barks','bark','barking','barked are'),
+    q('The dogs ___ in the yard.','bark','barks','barking','is bark'),
+    q('My sister and I ___ to school.','walk','walks','walking','is walk'),
+    q('Everyone ___ ready for the trip.','is','are','were','be'),
+    q('The team ___ practicing today.','is','are','were','be'),
+    q('Neither of the boys ___ here.','is','are','were','be'),
+    q('She ___ her homework every night.','does','do','doing','done'),
+    q('The books on the shelf ___ new.','are','is','was','be'),
+    q('Which sentence has correct subject-verb agreement?','The cats sleep on the couch.','The cats sleeps on the couch.','The cat sleep on the couch.','The cats is sleeping on the couch.'),
+    q('A flock of geese ___ overhead.','flies','fly','flying','are fly')
+  ],
+  verbTense:[
+    q('Which sentence is in the past tense?','We watched a movie.','We watch a movie.','We will watch a movie.','We are watching a movie.'),
+    q('Which sentence is in the future tense?','I will visit my aunt.','I visited my aunt.','I visit my aunt.','I visiting my aunt.'),
+    q('Yesterday, Sam ___ the fence.','painted','paints','will paint','painting'),
+    q('Tomorrow, we ___ to the zoo.','will go','went','going','gone'),
+    q('Right now, the cat ___ on the windowsill.','sits','sat','will sat','sitted'),
+    q('Which verb is in the present tense?','plays','played','will play','had played'),
+    q('Change to past tense: "She walks to the park."','She walked to the park.','She will walk to the park.','She walks to the park.','She walking to the park.'),
+    q('Change to future tense: "He cooks dinner."','He will cook dinner.','He cooked dinner.','He cooking dinner.','He has cooked dinner.'),
+    q('Which word signals the past tense?','yesterday','tomorrow','next week','soon'),
+    q('Which word signals the future tense?','tomorrow','yesterday','last year','ago')
+  ],
+  actionLinkHelping:[
+    q('Which word is an action verb? The runner sprinted to the finish.','sprinted','runner','finish','to'),
+    q('Which word is a linking verb? The soup smells delicious.','smells','soup','delicious','The'),
+    q('Which word is a helping verb? She has finished her essay.','has','finished','essay','She'),
+    q('Which verb is a linking verb in "The sky became dark"?','became','sky','dark','The'),
+    q('Which sentence uses a linking verb?','The pie looks tasty.','The pie burned.','Mom baked a pie.','We ate the pie.'),
+    q('Which is a helping verb?','will','run','happy','quickly'),
+    q('In "They are playing outside," which word is the helping verb?','are','They','playing','outside'),
+    q('In "Leo kicked the ball," what kind of verb is kicked?','action verb','linking verb','helping verb','noun'),
+    q('Which of these is always a linking verb?','is','jump','throw','sing'),
+    q('In "I can swim," which word is the helping verb?','can','I','swim','none')
+  ],
+  irregularVerbs:[
+    q('What is the past tense of go?','went','goed','gone','going'),
+    q('What is the past tense of eat?','ate','eated','eaten','eating'),
+    q('What is the past tense of run?','ran','runned','run','running'),
+    q('What is the past tense of bring?','brought','brung','bringed','braught'),
+    q('Yesterday, I ___ my lunch at home.','forgot','forgetted','forget','forgotten'),
+    q('She ___ a beautiful song last night.','sang','sing','singed','sung had'),
+    q('What is the past tense of buy?','bought','buyed','boughted','buyt'),
+    q('Which sentence is correct?','He drew a picture.','He drawed a picture.','He draw a picture.','He drawn a picture.'),
+    q('What is the past tense of swim?','swam','swimmed','swum','swimed'),
+    q('Which sentence is correct?','The bell rang loudly.','The bell ringed loudly.','The bell rung loudly yesterday.','The bell ring loudly.')
+  ],
+  simpleAspect:[
+    q('Which sentence is in the simple present?','Maya reads every night.','Maya is reading.','Maya has read.','Maya was reading.'),
+    q('Which sentence is in the simple past?','The team won the game.','The team is winning the game.','The team has won the game.','The team will win the game.'),
+    q('Which sentence is in the simple future?','We will visit Grandma.','We visited Grandma.','We are visiting Grandma.','We have visited Grandma.'),
+    q('Simple present often shows a habit. Which sentence shows a habit?','He brushes his teeth every morning.','He is brushing his teeth.','He brushed his teeth.','He will brush his teeth.'),
+    q('Choose the simple past: Last week, we ___ a fort.','built','build','are building','have built'),
+    q('Which verb is simple future?','will bake','baked','is baking','bakes'),
+    q('Water ___ at 100 degrees Celsius. (a fact)','boils','boiled','is boiling','will have boiled'),
+    q('Which verb is simple past?','jumped','jumps','will jump','is jumping'),
+    q('Which sentence is in the simple present?','The sun rises in the east.','The sun rose in the east.','The sun will rise in the east.','The sun was rising in the east.'),
+    q('Yesterday, Dad ___ the car.','washed','washes','will wash','is washing')
+  ],
+  progressiveAspect:[
+    q('Which sentence uses the present progressive?','Ana is writing a letter.','Ana writes a letter.','Ana wrote a letter.','Ana has written a letter.'),
+    q('Which sentence uses the past progressive?','They were playing outside.','They played outside.','They are playing outside.','They will play outside.'),
+    q('Which sentence uses the future progressive?','I will be studying at noon.','I study at noon.','I studied at noon.','I am studying at noon.'),
+    q('Right now, the kids ___ in the pool.','are swimming','swam','will swim','have swum'),
+    q('At 8 o\'clock last night, I ___ dinner.','was cooking','cook','am cooking','will cook'),
+    q('Progressive verbs use a form of be plus which ending?','-ing','-ed','-s','-en'),
+    q('Which verb phrase is progressive?','is running','runs','ran','has run'),
+    q('Tomorrow at noon, we ___ on the bus.','will be riding','rode','ride','have ridden'),
+    q('While I ___, the phone rang.','was sleeping','slept','sleep','will sleep'),
+    q('Which sentence shows an action in progress right now?','The baby is crying.','The baby cried.','The baby will cry.','The baby cries.')
+  ],
+  perfectAspect:[
+    q('Which sentence uses the present perfect?','I have finished my project.','I finish my project.','I am finishing my project.','I finished my project.'),
+    q('Which sentence uses the past perfect?','She had left before we arrived.','She leaves before we arrive.','She has left before we arrive.','She will leave before we arrive.'),
+    q('Which sentence uses the future perfect?','By Friday, I will have read the book.','By Friday, I read the book.','By Friday, I had read the book.','By Friday, I am reading the book.'),
+    q('Perfect verbs use a form of have plus a ___.','past participle','base verb','-ing verb','noun'),
+    q('We ___ lived here for five years.','have','has','had been','is'),
+    q('Before the movie started, we ___ our seats.','had found','have found','will find','are finding'),
+    q('Which is the past participle of eat?','eaten','ate','eating','eats'),
+    q('By next June, they ___ the house.','will have built','built','have build','are building'),
+    q('Which verb phrase is present perfect?','has walked','walked','is walking','had walked'),
+    q('Which sentence is correct?','He has seen that movie twice.','He has saw that movie twice.','He have seen that movie twice.','He has see that movie twice.')
+  ],
+  perfectProgressive:[
+    q('Which sentence uses the present perfect progressive?','She has been reading for an hour.','She is reading for an hour.','She had read for an hour.','She reads for an hour.'),
+    q('Which sentence uses the past perfect progressive?','They had been waiting for ages.','They have been waiting for ages.','They were waiting for ages.','They waited for ages.'),
+    q('Which sentence uses the future perfect progressive?','By noon, I will have been working for four hours.','By noon, I will work for four hours.','By noon, I have worked four hours.','By noon, I was working four hours.'),
+    q('Perfect progressive verbs use have + been + a verb ending in what?','-ing','-ed','-s','-er'),
+    q('It ___ raining all morning, and it is still raining.','has been','is being','had','was be'),
+    q('When Dad got home, I ___ for two hours.','had been studying','have been studying','will be studying','am studying'),
+    q('We ___ practicing since 3 o\'clock.','have been','has been','are','were being'),
+    q('Which verb phrase is perfect progressive?','has been singing','has sung','is singing','sang'),
+    q('Next month, she ___ here for a year.','will have been working','has working','is worked','had work'),
+    q('Which sentence is correct?','He has been running since sunrise.','He has been run since sunrise.','He have been running since sunrise.','He has being running since sunrise.')
+  ],
+  tenseAspectTime:[
+    q('Which sentence shows an action that finished before another past action?','I had eaten before she called.','I eat before she called.','I was eating before she called.','I will eat before she called.'),
+    q('Which sentence shows an action that began in the past and continues now?','We have lived here since 2020.','We lived here since 2020.','We live here since 2020.','We will live here since 2020.'),
+    q('Which sentence keeps the tense consistent?','She opened the door and walked inside.','She opened the door and walks inside.','She opens the door and walked inside.','She will open the door and walked inside.'),
+    q('Choose the best verb: By the time we arrived, the show ___.','had started','starts','will start','is starting'),
+    q('Choose the best verb: I ___ here since breakfast.','have been waiting','am waited','waited','will have wait'),
+    q('Choose the best verb: At this moment, the chef ___ soup.','is stirring','stirred','had stirred','will have stirred'),
+    q('Which sentence is about a future action in progress?','She will be flying home at noon.','She flew home at noon.','She has flown home.','She is flying home.'),
+    q('Which sentence has a tense shift error?','Yesterday he runs to school and was late.','Yesterday he ran to school and was late.','Today he runs to school and is early.','Tomorrow he will run and be early.'),
+    q('Which sentence says the action will be complete by a future time?','By May, I will have finished.','By May, I finished.','By May, I am finishing.','By May, I had finished.'),
+    q('Choose the best verb: While Mom cooked, I ___ the table.','was setting','set now','will set','have setting')
+  ],
+  modalVerbs:[
+    q('Which word is a modal verb?','might','run','happy','quickly'),
+    q('Which modal shows ability? I ___ swim across the pool.','can','must','should','might'),
+    q('Which modal shows necessity? You ___ wear a helmet.','must','can','may','could not'),
+    q('Which modal shows a possibility? It ___ rain tonight.','might','must','shall','did'),
+    q('Which modal gives permission? ___ I borrow your pen?','May','Will','Must','Did'),
+    q('Which sentence is correct?','She can play the piano.','She can plays the piano.','She cans play the piano.','She can playing the piano.'),
+    q('Which modal gives advice? You ___ drink more water.','should','can','did','are'),
+    q('A modal verb is followed by the ___ form of the verb.','base','past','-ing','-s'),
+    q('Which sentence is correct?','We should leave now.','We should to leave now.','We should leaving now.','We should left now.'),
+    q('Which modal is the strongest (a rule or must-do)?','must','might','could','may')
+  ]
+};
 let englishRun = null, deletingBookId = null, activeEnglishCourse = 'nouns';
 const readingText = (chapter,key,fallback) => (chapter?.[key] || '').split(/[\n,;]/).map(value => value.trim()).filter(Boolean)[0] || fallback;
 function selectedReading(){
@@ -5719,13 +5785,6 @@ function selectedReading(){
 }
 function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S.readingSelection?.bookId) || null; }
 function englishQuestions(skillId, courseId='nouns'){
-  const reading = selectedReading();
-  const {book,chapter} = reading || {book:{title:'your book'},chapter:{}};
-  const context = {
-    name:readingText(chapter,'characters','Mira'),place:readingText(chapter,'setting','the old library'),
-    theme:readingText(chapter,'themes','friendship'),action:readingText(chapter,'notableAction','searches for a clue'),
-    conflict:readingText(chapter,'conflict','a difficult problem'),joy:readingText(chapter,'joy','a joyful discovery')
-  };
   if (isScienceCourse(courseId)) return (BIO1_QUESTIONS[skillId] || []).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
@@ -5734,7 +5793,10 @@ function englishQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (courseId === 'verbs') return (VERB_QUESTIONS[skillId] || []).map(makeQuestion => ({...makeQuestion(context),skillId}));
+  if (courseId === 'verbs') return (VERB_QUESTIONS[skillId] || []).map(question => {
+    const correct = question.options[question.answer], options = shuffle(question.options);
+    return {...question,options,answer:options.indexOf(correct),skillId};
+  });
   return (PLURAL_QUESTIONS[skillId] || []).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
