@@ -52,6 +52,19 @@ function normalizeProjectStore(raw, ids){
     return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,12)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : ''}];
   }));
 }
+/* reading quizzes saved on each book: objective score, essay answers, and the essay review (see docs/READING-QUIZ.md) */
+function normalizeReadingQuizzes(raw){
+  return (Array.isArray(raw) ? raw : []).filter(qz => qz && typeof qz.id === 'string').slice(-20).map(qz => ({
+    id:qz.id.slice(0,40), at:Number.isFinite(+qz.at) ? +qz.at : 0,
+    chapterIds:Array.isArray(qz.chapterIds) ? qz.chapterIds.filter(id => typeof id === 'string').slice(0,30) : [],
+    chapterLabels:Array.isArray(qz.chapterLabels) ? qz.chapterLabels.filter(id => typeof id === 'string').map(x => x.slice(0,100)).slice(0,30) : [],
+    score:Number.isFinite(+qz.score) ? +qz.score : 0, total:Number.isFinite(+qz.total) ? +qz.total : 0,
+    missed:Array.isArray(qz.missed) ? qz.missed.filter(x => typeof x === 'string').map(x => x.slice(0,300)).slice(0,12) : [],
+    essays:Array.isArray(qz.essays) ? qz.essays.filter(e => e && typeof e.prompt === 'string').slice(0,3).map(e => ({prompt:e.prompt.slice(0,400), answer:typeof e.answer === 'string' ? e.answer.slice(0,2000) : ''})) : [],
+    submittedAt:Number.isFinite(+qz.submittedAt) ? +qz.submittedAt : 0,
+    localReview:qz.localReview === 'verified' || qz.localReview === 'revise' ? qz.localReview : ''
+  }));
+}
 function normalize(raw){
   const f = fresh(), s = Object.assign(f, raw || {});
   s.cafe = Object.assign({st:{}}, s.cafe || {}); s.cafe.st = Object.assign({1:0,2:0,3:0,4:0}, s.cafe.st || {});
@@ -73,9 +86,13 @@ function normalize(raw){
       setting:typeof chapter.setting === 'string' ? chapter.setting.slice(0,600) : '',
       themes:typeof chapter.themes === 'string' ? chapter.themes.slice(0,600) : '',
       detail:typeof chapter.detail === 'string' ? chapter.detail.slice(0,600) : '',
-      vocabulary:typeof chapter.vocabulary === 'string' ? chapter.vocabulary.slice(0,600) : ''
-    })) : []
+      vocabulary:typeof chapter.vocabulary === 'string' ? chapter.vocabulary.slice(0,600) : '',
+      submittedAt:Number.isFinite(+chapter.submittedAt) ? +chapter.submittedAt : 0,
+      localReview:chapter.localReview === 'verified' || chapter.localReview === 'revise' ? chapter.localReview : ''
+    })) : [],
+    quizzes:normalizeReadingQuizzes(book.quizzes)
   })) : [];
+  s.parentPin = typeof s.parentPin === 'string' && /^[0-9a-z]{1,16}$/.test(s.parentPin) ? s.parentPin : '';
   s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
@@ -4425,7 +4442,7 @@ function show(id){
   if (id === 'room') renderPetRoom();
   if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
-  if (id === 'library') renderEnglishLibrary();
+  if (id === 'library') { renderEnglishLibrary(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-library').hidden && $('#libraryWrap .ela-layout')) renderEnglishLibrary(); }); }
   if (id === 'arcade') renderArcade();
   window.scrollTo(0,0);
 }
@@ -5514,8 +5531,8 @@ function englishProgressReportHTML(canReview = false){
 function readingLedgerHTML(){
   const books = S.readingBooks.map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
     const notes = [['Main characters',chapter.characters],['Notable character action',chapter.notableAction],['Character interactions',chapter.interaction],['Conflict',chapter.conflict],['Joy or success',chapter.joy],['Environment and setting',chapter.setting],['Theme or big idea',chapter.themes],['Standout detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
-    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes added yet.</p>'}</div>`;
-  }).join('') : '<p class="muted">No chapters added yet.</p>'}</section>`).join('');
+    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b> <span class="muted">${READING_STATE_TEXT[readingChapterState(book,chapter)]}</span>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes added yet.</p>'}</div>`;
+  }).join('') : '<p class="muted">No chapters added yet.</p>'}${book.quizzes.length ? `<p><b>Reading quizzes:</b> ${book.quizzes.map(qz => `${qz.score}/${qz.total}`).join(', ')}</p>` : ''}</section>`).join('');
   return `<section class="panel"><h3>Reading Log</h3><p class="muted">Student-entered book-report notes, chapter by chapter. The game does not verify book interpretations.</p>${books || '<p class="muted">No books added yet.</p>'}</section>`;
 }
 const q = (prompt, correct, ...wrong) => ({prompt, options:[correct, ...wrong], answer:0});
@@ -5805,7 +5822,7 @@ function englishQuestions(skillId, courseId='nouns'){
 function renderEnglishLibrary(){
   const active = selectedReading(), activeBook = selectedReadingBook(), books = S.readingBooks;
   const bookList = books.map(book => `<button type="button" class="ela-book${activeBook?.id === book.id ? ' active' : ''}" data-ela-book="${esc(book.id)}"><strong>${esc(book.title)}</strong><small>${esc(book.author || 'Author not added')} · ${book.chapters.length} chapter${book.chapters.length === 1 ? '' : 's'}</small></button>`).join('');
-  const chapterList = activeBook ? activeBook.chapters.map(chapter => `<button type="button" class="ela-chapter${active?.chapter.id === chapter.id ? ' active' : ''}" data-ela-chapter="${esc(chapter.id)}">${esc(chapter.label || 'Untitled chapter')}</button>`).join('') : '';
+  const chapterList = activeBook ? activeBook.chapters.map(chapter => `<button type="button" class="ela-chapter${active?.chapter.id === chapter.id ? ' active' : ''}" data-ela-chapter="${esc(chapter.id)}">${esc(chapter.label || 'Untitled chapter')}<small>${READING_STATE_TEXT[readingChapterState(activeBook,chapter)]}</small></button>`).join('') : '';
   const chapter = active?.chapter;
   const fields = [
     ['characters','Who are the main characters in this chapter?'],['notableAction','What is one notable thing a character did?'],['interaction','How did the characters interact?'],
@@ -5814,12 +5831,13 @@ function renderEnglishLibrary(){
     ['detail','What detail or moment stands out as evidence?'],['vocabulary','What new or interesting words did you notice?']
   ];
   const editor = active ? `<div class="ela-editor"><div class="ela-reading-context"><strong>${esc(active.book.title)}</strong><span>${esc(chapter.label)}</span></div>
-    <form id="elaChapterForm"><div class="ela-prompts">${fields.map(([key,label]) => `<label>${label}<textarea name="${key}" maxlength="600" rows="2">${esc(chapter[key] || '')}</textarea></label>`).join('')}</div><button class="btn berry" type="submit">Save chapter notes</button></form>
+    <p class="reading-status reading-${readingChapterState(active.book,chapter)}">${READING_STATE_TEXT[readingChapterState(active.book,chapter)]}${readingChapterState(active.book,chapter) === 'revise' ? ': fix your notes, then send them again.' : readingChapterState(active.book,chapter) === 'verified' ? '. This chapter can be quizzed.' : ''}</p>
+    <form id="elaChapterForm"><div class="ela-prompts">${fields.map(([key,label]) => `<label>${label}<textarea name="${key}" maxlength="600" rows="2">${esc(chapter[key] || '')}</textarea></label>`).join('')}</div><div class="row"><button class="btn" type="submit" data-save-mode="draft">Save chapter notes</button>${readingChapterState(active.book,chapter) === 'verified' || readingChapterState(active.book,chapter) === 'submitted' ? '' : '<button class="btn berry" type="submit" data-save-mode="submit">Save and send to a grown-up to check</button>'}</div><p class="muted">Changing notes after they are checked means a grown-up checks them again.</p></form>
     <div class="ela-start"><p>Your notes can give practice a reading context. The game does not check whether notes match the book.</p><button class="btn mint" type="button" data-ela-unit data-ela-course="nouns">Open English Unit 1: Nouns</button>${unitOpen('elaVerbs') ? '<button class="btn mint" type="button" data-ela-unit data-ela-course="verbs">Open English Unit 2: Verbs</button>' : ''}</div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book and chapter to save notes, or practice English without choosing a book.</p><button class="btn mint" type="button" data-ela-unit data-ela-course="nouns">Practice English Unit 1: Nouns</button>${unitOpen('elaVerbs') ? '<button class="btn mint" type="button" data-ela-unit data-ela-course="verbs">Practice English Unit 2: Verbs</button>' : ''}</div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 Story Corner Library</h2><button class="btn small" data-go="home">Back to town</button></div>
     <p class="muted">Build your own book report one chapter at a time. Save your notes and return to them whenever you read more. Notes are not checked for accuracy; a parent can review them with you.</p>
     <div class="ela-layout"><aside class="ela-shelf"><h3>My books</h3>${bookList || '<p class="muted">No books added yet.</p>'}<form id="elaBookForm" class="ela-add-book"><label>Book title<input name="title" maxlength="120" required></label><label>Author <span class="muted">(optional)</span><input name="author" maxlength="120"></label><button class="btn" type="submit">Add a book</button></form></aside>
-    <div class="ela-workspace">${activeBook ? `<div class="ela-chapters"><div class="ela-chapters-head"><h3>Chapters</h3><button type="button" class="btn small" data-ela-delete="${esc(activeBook.id)}">Delete book</button></div>${deletingBookId === activeBook.id ? `<div class="ela-delete-confirm"><p>Delete this book and all its chapter notes?</p><button type="button" class="btn small" data-ela-delete-confirm="${esc(activeBook.id)}">Delete permanently</button><button type="button" class="btn small" data-ela-delete-cancel>Cancel</button></div>` : ''}${chapterList}<form id="elaAddChapter" class="ela-add-chapter"><label>Chapter name or number<input name="label" maxlength="100" required placeholder="Chapter 1"></label><button class="btn small" type="submit">Add chapter</button></form></div>` : ''}${editor}</div></div>`;
+    <div class="ela-workspace">${activeBook ? `<div class="ela-chapters"><div class="ela-chapters-head"><h3>Chapters</h3><button type="button" class="btn small" data-ela-delete="${esc(activeBook.id)}">Delete book</button></div><button type="button" class="btn mint reading-quiz-open" data-reading-quiz="${esc(activeBook.id)}">📝 Reading Quiz</button>${deletingBookId === activeBook.id ? `<div class="ela-delete-confirm"><p>Delete this book and all its chapter notes?</p><button type="button" class="btn small" data-ela-delete-confirm="${esc(activeBook.id)}">Delete permanently</button><button type="button" class="btn small" data-ela-delete-cancel>Cancel</button></div>` : ''}${chapterList}<form id="elaAddChapter" class="ela-add-chapter"><label>Chapter name or number<input name="label" maxlength="100" required placeholder="Chapter 1"></label><button class="btn small" type="submit">Add chapter</button></form></div>` : ''}${editor}</div></div>`;
 }
 $('#libraryWrap').addEventListener('submit', event => {
   event.preventDefault(); const form = event.target;
@@ -5835,8 +5853,15 @@ $('#libraryWrap').addEventListener('submit', event => {
   }
   if (form.id === 'elaChapterForm') {
     const active = selectedReading(); if (!active) return;
-    for (const field of form.querySelectorAll('textarea[name]')) active.chapter[field.name] = field.value.trim();
-    save(); renderEnglishLibrary(); toast('Chapter notes saved.');
+    let changed = false;
+    for (const field of form.querySelectorAll('textarea[name]')) { const value = field.value.trim(); if ((active.chapter[field.name] || '') !== value) changed = true; active.chapter[field.name] = value; }
+    const wasChecked = active.chapter.submittedAt > 0;
+    if (changed && wasChecked) { active.chapter.submittedAt = 0; active.chapter.localReview = ''; }
+    if (event.submitter?.dataset.saveMode === 'submit') {
+      if (!readingReadyToSend(active.chapter)) { save(); renderEnglishLibrary(); toast('Add the main characters and at least two more answers before sending.'); return; }
+      active.chapter.submittedAt = Date.now(); active.chapter.localReview = ''; save(); renderEnglishLibrary(); toast('Sent! A grown-up will check these notes.'); return;
+    }
+    save(); renderEnglishLibrary(); toast(changed && wasChecked ? 'Notes saved. Send them again so a grown-up can re-check.' : 'Chapter notes saved.');
   }
 });
 $('#libraryWrap').addEventListener('click', event => {
@@ -5858,6 +5883,197 @@ $('#libraryWrap').addEventListener('click', event => {
     S.readingSelection = {bookId:active.book.id,chapterId:button.dataset.elaChapter}; save(); renderEnglishLibrary(); return;
   }
   if (button.hasAttribute('data-ela-unit')) { renderEnglishUnit(button.dataset.elaCourse || 'nouns'); return; }
+  if (button.dataset.readingQuiz) { renderReadingQuizSetup(button.dataset.readingQuiz); return; }
+});
+/* ---------- Reading Quiz (docs/READING-QUIZ.md) ----------
+   Chapter notes are written by the student, so a grown-up checks them first.
+   hosted: the class grown-up's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"
+   under reading:<bookId>:<chapterId> (notes) and readingEssay:<quizId> (essays); local: a grown-up unlocks the review with a parent PIN.
+   Questions are built from verified notes only, with templates (no AI). Reading quizzes never award Pet Town coins. */
+const READING_STATE_TEXT = {draft:'✏️ Not sent yet', submitted:'⏳ Waiting for a grown-up', verified:'✅ Checked by a grown-up', revise:'🔁 Needs fixing'};
+const READING_FIELDS = [['characters','Main characters'],['notableAction','Notable character action'],['interaction','Character interactions'],['conflict','Conflict'],['joy','Joy or success'],['setting','Environment and setting'],['themes','Theme or big idea'],['detail','Standout detail'],['vocabulary','Vocabulary']];
+function readingVerdict(key, submittedAt, localReview){
+  if (!submittedAt) return 'draft';
+  if (Backend.me) {
+    const [verdict, at] = String(Backend.me.quiz_overrides?.[key] || '').split(':');
+    return +at === submittedAt && (verdict === 'verified' || verdict === 'revise') ? verdict : 'submitted';
+  }
+  return localReview || 'submitted';
+}
+const readingChapterState = (book, chapter) => readingVerdict(`reading:${book.id}:${chapter.id}`, chapter.submittedAt, chapter.localReview);
+const readingEssayState = quiz => quiz.essays.length ? readingVerdict(`readingEssay:${quiz.id}`, quiz.submittedAt, quiz.localReview) : 'none';
+const readingReadyToSend = chapter => !!chapter.characters && READING_FIELDS.filter(([key]) => key !== 'characters' && chapter[key]).length >= 2;
+/* split a note into list items (names, words) or keep it as one clipped sentence */
+const readingItems = text => [...new Set(String(text || '').split(/[\n,;]|\band\b/).map(x => x.trim().replace(/^[-•*]\s*/, '').replace(/[.!]+$/, '')).filter(x => x.length >= 2 && x.length <= 60))];
+const readingSentence = text => { const t = String(text || '').trim().replace(/\s+/g, ' '); return t.length > 160 ? t.slice(0,157).replace(/\s+\S*$/, '') + '…' : t; };
+const sameText = (a, b) => a.toLowerCase().replace(/[^a-z0-9]/g, '') === b.toLowerCase().replace(/[^a-z0-9]/g, '');
+const READING_FALLBACK = {
+  characters:['Captain Ortega','Lulu the cat','Mr. Pembrook','Aunt Rosalind','the mail carrier'],
+  setting:['a crowded train station','a snowy mountain cabin','an underwater city','a desert market'],
+  vocabulary:['meander','obstinate','luminous','reluctant','cascade','frugal'],
+  event:['A character wins a baking contest.','Someone finds a map hidden in a teapot.','The family moves to a lighthouse.','A storm knocks out the power in town.','Two friends build a raft.']
+};
+/* wrong answers come from other chapters' notes (any book), then from made-up fallbacks */
+function readingDistractors(correct, pool, fallback, n=3){
+  const out = [];
+  for (const item of shuffle(pool).concat(shuffle(fallback))) {
+    if (out.length >= n) break;
+    if (!item || sameText(item, correct) || out.some(x => sameText(x, item))) continue;
+    out.push(item);
+  }
+  return out;
+}
+function readingMC(prompt, correct, wrong, source){
+  const options = shuffle([correct, ...wrong]);
+  return {type:'mc', prompt, options, answer:options.indexOf(correct), source};
+}
+function buildReadingQuiz(book, chapterIds, objectiveCount=10){
+  const chosen = book.chapters.filter(ch => chapterIds.includes(ch.id) && readingChapterState(book, ch) === 'verified');
+  const others = S.readingBooks.flatMap(b => b.chapters.map(ch => ({b, ch}))).filter(x => !(x.b.id === book.id && chapterIds.includes(x.ch.id)));
+  const otherChosen = ch => chosen.filter(c => c.id !== ch.id);
+  const eventsOf = ch => ['notableAction','conflict','joy','detail'].map(k => readingSentence(ch[k])).filter(Boolean);
+  const pool = {
+    characters:ch => [...others.map(x => x.ch), ...otherChosen(ch)].flatMap(c => readingItems(c.characters)).filter(name => !readingItems(ch.characters).some(own => sameText(own, name))),
+    setting:ch => [...others.map(x => x.ch), ...otherChosen(ch)].map(c => readingSentence(c.setting)).filter(Boolean),
+    vocabulary:ch => [...others.map(x => x.ch), ...otherChosen(ch)].flatMap(c => readingItems(c.vocabulary)).filter(w => !readingItems(ch.vocabulary).some(own => sameText(own, w))),
+    events:ch => [...others.map(x => x.ch), ...otherChosen(ch)].flatMap(eventsOf).filter(e => !eventsOf(ch).some(own => sameText(own, e)))
+  };
+  const objective = [];
+  chosen.forEach(ch => {
+    const label = ch.label || 'this chapter', src = `${book.title}, ${label}`, items = [];
+    const names = readingItems(ch.characters);
+    if (names.length) items.push(() => { const name = names[Math.floor(Math.random()*names.length)]; return readingMC(`Who is a main character in ${label}?`, name, readingDistractors(name, pool.characters(ch), READING_FALLBACK.characters), src); });
+    [['notableAction',`Which of these happens in ${label}?`],['conflict',`What problem or conflict shows up in ${label}?`],['joy',`What brings a character joy or success in ${label}?`]].forEach(([key, prompt]) => {
+      const text = readingSentence(ch[key]); if (!text) return;
+      items.push(() => readingMC(prompt, text, readingDistractors(text, pool.events(ch), READING_FALLBACK.event), src));
+    });
+    const place = readingSentence(ch.setting);
+    if (place) items.push(() => readingMC(`Which best describes the setting of ${label}?`, place, readingDistractors(place, pool.setting(ch), READING_FALLBACK.setting), src));
+    const words = readingItems(ch.vocabulary);
+    if (words.length) items.push(() => { const w = words[Math.floor(Math.random()*words.length)]; return readingMC(`Which word did you collect while reading ${label}?`, w, readingDistractors(w, pool.vocabulary(ch), READING_FALLBACK.vocabulary), src); });
+    const detail = readingSentence(ch.detail);
+    if (detail && chosen.length >= 2) items.push(() => readingMC(`In which chapter does this happen? “${detail}”`, label, readingDistractors(label, chosen.filter(c => c.id !== ch.id).map(c => c.label || 'Untitled chapter'), [], 3), src));
+    /* true or false: a note from this chapter (true) or a note from somewhere else (false) */
+    const own = eventsOf(ch), elsewhere = pool.events(ch);
+    if (own.length) items.push(() => {
+      const truth = !elsewhere.length || Math.random() < .5, statement = truth ? own[Math.floor(Math.random()*own.length)] : elsewhere[Math.floor(Math.random()*elsewhere.length)];
+      return {type:'tf', prompt:`True or false? In ${label}: “${statement}”`, options:['True','False'], answer:truth ? 0 : 1, source:src};
+    });
+    objective.push(shuffle(items));
+  });
+  /* take questions round-robin so every chapter is covered */
+  const questions = [];
+  while (questions.length < objectiveCount && objective.some(list => list.length)) objective.forEach(list => { if (list.length && questions.length < objectiveCount) questions.push(list.pop()()); });
+  /* essays: one, or two when more than one chapter is quizzed */
+  const essays = [], first = chosen[0], last = chosen[chosen.length-1];
+  chosen.forEach(ch => {
+    const label = ch.label || 'this chapter', name = readingItems(ch.characters)[0];
+    if (name && ch.conflict) essays.push(`How does ${name} respond to the conflict in ${label}? Use a detail from the chapter to support your answer.`);
+    if (ch.setting) essays.push(`How does the setting of ${label} affect what happens? Explain with evidence from the chapter.`);
+    if (ch.themes) essays.push(`What does ${label} show about the theme or big idea of the book? Support your answer with a detail.`);
+    if (ch.interaction) essays.push(`Describe how the characters interact in ${label}. What does it show about them?`);
+  });
+  const along = readingItems(first?.characters).find(n => readingItems(last?.characters).some(m => sameText(m, n)));
+  const picked = chosen.length >= 2 && along ? [`How does ${along} change from ${first.label} to ${last.label}? Use details from both chapters.`, ...shuffle(essays).slice(0,1)] : shuffle(essays).slice(0, chosen.length >= 2 ? 2 : 1);
+  return {questions: shuffle(questions), essays: picked.length ? picked : [`Summarize what happens in ${chosen.map(c => c.label).join(', ')} and explain which moment matters most.`], chosen};
+}
+let readingRun = null;
+function renderReadingQuizSetup(bookId, refreshed=false){
+  readingRun = null;
+  if (Backend.me && !refreshed) void Backend.refreshSettings().then(() => { if ($('#readingQuizForm')?.dataset.book === bookId) renderReadingQuizSetup(bookId, true); });
+  const book = S.readingBooks.find(b => b.id === bookId); if (!book) { renderEnglishLibrary(); return; }
+  const rows = book.chapters.map(ch => {
+    const state = readingChapterState(book, ch), ok = state === 'verified';
+    return `<label class="reading-pick${ok ? '' : ' locked'}"><input type="checkbox" name="ch" value="${esc(ch.id)}" ${ok ? '' : 'disabled'}> <span>${esc(ch.label || 'Untitled chapter')}</span><small>${READING_STATE_TEXT[state]}</small></label>`;
+  }).join('');
+  const past = book.quizzes.slice().reverse().map(qz => {
+    const es = readingEssayState(qz);
+    return `<div class="ela-parent-row"><strong>${new Date(qz.at).toLocaleDateString()} · ${esc(qz.chapterLabels.join(', '))}</strong><span>${qz.score}/${qz.total} right${qz.essays.length ? ` · essay: ${es === 'verified' ? '✅ accepted' : es === 'revise' ? '🔁 revise' : '⏳ waiting for a grown-up'}` : ''}</span></div>`;
+  }).join('');
+  const anyVerified = book.chapters.some(ch => readingChapterState(book, ch) === 'verified');
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📝 Reading Quiz: ${esc(book.title)}</h2><button class="btn small" data-reading-back>Back to my books</button></div>
+    <p class="muted">Pick the chapters to be quizzed on. Only chapters a grown-up has checked can be picked. You get multiple-choice and true-or-false questions, plus a short essay a grown-up reads.</p>
+    <form id="readingQuizForm" data-book="${esc(book.id)}"><div class="reading-picks">${rows || '<p class="muted">Add a chapter first.</p>'}</div>
+    ${anyVerified ? '<div class="row"><button class="btn small" type="button" data-reading-all>Pick all checked chapters</button><button class="btn berry" type="submit">Start the quiz</button></div>' : '<p class="reading-status reading-submitted">No chapters are checked yet. Fill in your notes and send them to a grown-up first.</p>'}</form>
+    ${past ? `<h3>Past reading quizzes</h3><div class="ela-parent-grid">${past}</div>` : ''}`;
+}
+function renderReadingQuizRun(){
+  const run = readingRun, book = S.readingBooks.find(b => b.id === run.bookId);
+  const qs = run.questions.map((qn, i) => `<fieldset class="reading-q"><legend><b>${i+1}.</b> ${esc(qn.prompt)}</legend>${qn.options.map((opt, j) => `<label class="reading-opt"><input type="radio" name="q${i}" value="${j}" required> ${esc(opt)}</label>`).join('')}</fieldset>`).join('');
+  const es = run.essays.map((prompt, i) => `<label class="reading-essay"><b>Essay ${run.essays.length > 1 ? i+1 : ''}</b> ${esc(prompt)}<textarea name="e${i}" rows="6" maxlength="2000" required placeholder="Write at least 3 sentences."></textarea></label>`).join('');
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📝 ${esc(book?.title || 'Reading Quiz')}</h2><button class="btn small" data-reading-quiz="${esc(run.bookId)}">Quit quiz</button></div>
+    <p class="muted">Chapters: ${esc(run.chosen.map(c => c.label).join(', '))}</p><form id="readingRunForm">${qs}${es}<button class="btn berry" type="submit">Turn in my quiz</button></form>`;
+}
+function renderReadingQuizResult(quiz, run){
+  const rows = run.questions.map((qn, i) => {
+    const pick = run.picks[i], ok = pick === qn.answer;
+    return `<li class="${ok ? 'ok' : 'miss'}">${ok ? '✓' : '✗'} ${esc(qn.prompt)}${ok ? '' : `<br><span class="muted">Answer: ${esc(qn.options[qn.answer])} (from your notes on ${esc(qn.source)})</span>`}</li>`;
+  }).join('');
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📝 Quiz turned in</h2><button class="btn small" data-reading-quiz="${esc(run.bookId)}">Back to Reading Quiz</button></div>
+    <div class="panel"><h3>${quiz.score} of ${quiz.total} right</h3><ul class="list reading-results">${rows}</ul><p>${quiz.essays.length ? 'Your essay was sent to a grown-up to read.' : ''}</p></div>`;
+}
+$('#libraryWrap').addEventListener('click', event => {
+  if (event.target.closest('[data-reading-back]')) { renderEnglishLibrary(); return; }
+  if (event.target.closest('[data-reading-all]')) { $$('#readingQuizForm input[name="ch"]:not(:disabled)').forEach(input => { input.checked = true; }); return; }
+});
+$('#libraryWrap').addEventListener('submit', event => {
+  const setup = event.target.closest('#readingQuizForm'), runForm = event.target.closest('#readingRunForm');
+  if (!setup && !runForm) return;
+  event.stopImmediatePropagation(); event.preventDefault();
+  if (setup) {
+    const book = S.readingBooks.find(b => b.id === setup.dataset.book); if (!book) return;
+    const ids = $$('#readingQuizForm input[name="ch"]:checked').map(input => input.value);
+    if (!ids.length) { toast('Pick at least one checked chapter.'); return; }
+    const quiz = buildReadingQuiz(book, ids);
+    if (quiz.questions.length < 3) { toast('These notes are too short for a quiz. Add more notes or pick more chapters.'); return; }
+    readingRun = {bookId:book.id, id:'rq-' + Math.random().toString(36).slice(2,10), ...quiz, picks:[]};
+    renderReadingQuizRun(); return;
+  }
+  const run = readingRun, book = run && S.readingBooks.find(b => b.id === run.bookId); if (!book) { renderEnglishLibrary(); return; }
+  const data = new FormData(runForm);
+  run.picks = run.questions.map((_, i) => +data.get(`q${i}`));
+  const answers = run.essays.map((prompt, i) => ({prompt, answer:String(data.get(`e${i}`) || '').trim().slice(0,2000)}));
+  if (answers.some(e => e.answer.split(/[.!?]+/).filter(x => x.trim().length > 3).length < 2)) { toast('Write at least a few sentences for each essay.'); return; }
+  const score = run.picks.filter((p, i) => p === run.questions[i].answer).length, now = Date.now();
+  const quiz = {id:run.id, at:now, chapterIds:run.chosen.map(c => c.id), chapterLabels:run.chosen.map(c => c.label), score, total:run.questions.length,
+    missed:run.questions.filter((qn, i) => run.picks[i] !== qn.answer).map(qn => qn.prompt.slice(0,300)).slice(0,12), essays:answers, submittedAt:answers.length ? now : 0, localReview:''};
+  book.quizzes = [...book.quizzes, quiz].slice(-20);
+  save(); renderReadingQuizResult(quiz, run); readingRun = null;
+}, true);
+/* local mode: the grown-up check in the progress report, behind a parent PIN (hosted classes use the teacher app) */
+let parentReadingUnlocked = false;
+const pinHash = pin => { let h = 5381; for (const c of 'pet-town:' + pin) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0; return h.toString(36); };
+function readingReviewHTML(){
+  if (Backend.me) return '';
+  const waiting = S.readingBooks.flatMap(book => [
+    ...book.chapters.filter(ch => readingChapterState(book, ch) === 'submitted').map(ch => ({kind:'chapter', book, ch})),
+    ...book.quizzes.filter(qz => readingEssayState(qz) === 'submitted').map(qz => ({kind:'essay', book, qz}))
+  ]);
+  if (!parentReadingUnlocked) return `<section class="panel"><h3>Grown-up reading check</h3><p class="muted">${waiting.length} item${waiting.length === 1 ? '' : 's'} waiting. Check chapter notes against the book before they can be quizzed, and read reading-quiz essays.</p>
+    <form id="parentPinForm" class="row"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off"></label><button class="btn small primary" type="submit">${S.parentPin ? 'Unlock' : 'Save PIN and unlock'}</button></form></section>`;
+  const items = waiting.map(item => item.kind === 'chapter'
+    ? `<div class="reading-report-chapter"><b>${esc(item.book.title)} · ${esc(item.ch.label || 'Untitled chapter')}</b><dl>${READING_FIELDS.filter(([k]) => item.ch[k]).map(([k, label]) => `<dt>${label}</dt><dd>${esc(item.ch[k])}</dd>`).join('')}</dl>
+      <div class="row"><button class="btn small primary" data-reading-review="verified" data-book="${esc(item.book.id)}" data-chapter="${esc(item.ch.id)}">Notes match the book</button><button class="btn small" data-reading-review="revise" data-book="${esc(item.book.id)}" data-chapter="${esc(item.ch.id)}">Needs fixing</button></div></div>`
+    : `<div class="reading-report-chapter"><b>Essay · ${esc(item.book.title)} · ${esc(item.qz.chapterLabels.join(', '))}</b> <span class="muted">(${item.qz.score}/${item.qz.total} on the questions)</span><dl>${item.qz.essays.map(e => `<dt>${esc(e.prompt)}</dt><dd>${esc(e.answer)}</dd>`).join('')}</dl>
+      <div class="row"><button class="btn small primary" data-reading-review="verified" data-book="${esc(item.book.id)}" data-quiz="${esc(item.qz.id)}">Accept essay</button><button class="btn small" data-reading-review="revise" data-book="${esc(item.book.id)}" data-quiz="${esc(item.qz.id)}">Ask for a redo</button></div></div>`).join('');
+  return `<section class="panel"><h3>Grown-up reading check</h3>${items || '<p class="muted">Nothing is waiting right now.</p>'}<button class="btn small" id="parentPinLock">Lock</button></section>`;
+}
+$('#parentWrap').addEventListener('submit', event => {
+  const form = event.target.closest('#parentPinForm'); if (!form) return;
+  event.preventDefault();
+  const pin = String(new FormData(form).get('pin') || '');
+  if (!/^\d{4}$/.test(pin)) { toast('Use 4 digits.'); return; }
+  if (!S.parentPin) { S.parentPin = pinHash(pin); save(); }
+  else if (S.parentPin !== pinHash(pin)) { toast('That PIN does not match.'); return; }
+  parentReadingUnlocked = true; renderParent();
+});
+$('#parentWrap').addEventListener('click', event => {
+  if (event.target.closest('#parentPinLock')) { parentReadingUnlocked = false; renderParent(); return; }
+  const b = event.target.closest('[data-reading-review]'); if (!b || !parentReadingUnlocked || Backend.me) return;
+  const book = S.readingBooks.find(x => x.id === b.dataset.book); if (!book) return;
+  const target = b.dataset.chapter ? book.chapters.find(ch => ch.id === b.dataset.chapter) : book.quizzes.find(qz => qz.id === b.dataset.quiz);
+  if (!target || !target.submittedAt) return;
+  target.localReview = b.dataset.readingReview; save(); renderParent();
 });
 function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
@@ -7455,7 +7671,7 @@ function renderParent(){
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
-    ${englishProgressReportHTML(!Backend.me)}${readingLedgerHTML()}
+    ${englishProgressReportHTML(!Backend.me)}${readingLedgerHTML()}${readingReviewHTML()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>

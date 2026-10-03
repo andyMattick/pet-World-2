@@ -17,13 +17,15 @@ export interface StudentReport {
   p: Record<string, { miss?: number; slow?: number; sprint?: number }>; dr?: DrillHistory; ds?: Partial<DrillSettings> | null; dl?: DrillHistory; sp: number;
   qz?: AssessmentHistory[]; qx?: Record<string, string> | null;
   ss?: PracticeSummary;
-  readingBooks?: { title: string; author?: string; chapters: { label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string }[] }[];
+  readingBooks?: { id?: string; title: string; author?: string; chapters: ReadingChapter[]; quizzes?: ReadingQuiz[] }[];
   elaProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   historyProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   historyProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
   scienceProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
 }
+interface ReadingChapter { id?: string; label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string; submittedAt?: number }
+interface ReadingQuiz { id: string; at?: number; chapterLabels?: string[]; score?: number; total?: number; missed?: string[]; essays?: { prompt: string; answer: string }[]; submittedAt?: number }
 /* practice time from class_report(): minutes today and in the last 7 days, daily minutes for 4 weeks,
    and the 10 most recent sessions as [start ms, last seen ms, active seconds, device] */
 interface PracticeSummary { last: number | null; today: number; week: number; days: [string, number][]; recent: [number, number, number, string | null][] }
@@ -197,7 +199,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
     h += englishReadingHTML(r);
-  h += '<div id="projectCard"></div>';
+  h += '<div id="projectCard"></div><div id="readingCard"></div>';
   h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
   ORDER.forEach(k => {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
@@ -278,6 +280,12 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     card.querySelectorAll<HTMLButtonElement>('[data-project-verdict]').forEach(b => b.addEventListener('click', () => {
       void saveOverride(`project:${b.dataset.projectCourse}`, `${b.dataset.projectVerdict}:${b.dataset.projectAt}`);
     }));
+    const reading = $('#readingCard');
+    if (!reading) return;
+    reading.innerHTML = readingReviewHTML(r, overrides);
+    reading.querySelectorAll<HTMLButtonElement>('[data-reading-verdict]').forEach(b => b.addEventListener('click', () => {
+      void saveOverride(b.dataset.readingKey!, `${b.dataset.readingVerdict}:${b.dataset.readingAt}`);
+    }));
   }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
   renderQuizCard();
@@ -354,11 +362,36 @@ function englishReadingHTML(r: StudentReport) {
     }).join('');
     return `<div class="card"><h2>${esc(course.title)}</h2><h3>Practice by skill</h3><table class="steptable"><tr><th>Skill</th><th>Accuracy</th><th>Focus</th></tr>${skills}</table><h3>Quizzes and test</h3><table class="steptable"><tr><th>Assessment</th><th>Status</th><th>Attempts</th></tr>${assessments}</table></div>`;
   }).join('');
-  const books = (r.readingBooks || []).map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
-    const notes = [['Main characters',chapter.characters],['Notable character action',chapter.notableAction],['Character interactions',chapter.interaction],['Conflict',chapter.conflict],['Joy or success',chapter.joy],['Environment and setting',chapter.setting],['Theme or big idea',chapter.themes],['Standout detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
-    return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b>${notes.length ? `<dl>${notes.map(([label,value]) => `<dt>${label}</dt><dd>${esc(value)}</dd>`).join('')}</dl>` : '<p class="muted">No notes yet.</p>'}</div>`;
-  }).join('') : '<p class="muted">No chapters yet.</p>'}</section>`).join('');
-  return `${coursePanels}<div class="card"><h2>Reading Log</h2><p class="muted">Student-entered chapter book reports; the game does not verify interpretations.</p>${books || '<p class="muted">No books added yet.</p>'}</div>`;
+  return coursePanels;
+}
+/* Reading Log with the grown-up check: chapter notes must be verified before they can be quizzed (docs/READING-QUIZ.md).
+   Verdicts are saved in quiz_overrides as reading:<bookId>:<chapterId> and readingEssay:<quizId> = "verified:<submittedAt>" or "revise:<submittedAt>". */
+const READING_LABELS: [keyof ReadingChapter, string][] = [['characters','Main characters'],['notableAction','Notable character action'],['interaction','Character interactions'],['conflict','Conflict'],['joy','Joy or success'],['setting','Environment and setting'],['themes','Theme or big idea'],['detail','Standout detail'],['vocabulary','Vocabulary']];
+function readingVerdict(overrides: Record<string, string>, key: string, at: number) {
+  if (!at) return 'draft';
+  const [verdict, stamp] = String(overrides[key] || '').split(':');
+  return +stamp === at && (verdict === 'verified' || verdict === 'revise') ? verdict : 'submitted';
+}
+const READING_STATUS: Record<string, string> = { draft: 'Not sent yet', submitted: 'Waiting for your check', verified: 'Verified', revise: 'Needs fixing' };
+function readingReviewHTML(r: StudentReport, overrides: Record<string, string>) {
+  let waiting = 0;
+  const buttons = (key: string, at: number, yes: string, no: string) => `<div class="row"><button class="btn small primary" data-reading-verdict="verified" data-reading-key="${esc(key)}" data-reading-at="${at}">${yes}</button> <button class="btn small" data-reading-verdict="revise" data-reading-key="${esc(key)}" data-reading-at="${at}">${no}</button></div>`;
+  const books = (r.readingBooks || []).map(book => {
+    const chapters = book.chapters.length ? book.chapters.map(chapter => {
+      const at = chapter.submittedAt || 0, key = `reading:${book.id}:${chapter.id}`, state = book.id && chapter.id ? readingVerdict(overrides, key, at) : 'draft';
+      if (state === 'submitted') waiting++;
+      const notes = READING_LABELS.filter(([k]) => chapter[k]).map(([k, label]) => `<dt>${label}</dt><dd>${esc(chapter[k])}</dd>`).join('');
+      return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b> · <span class="muted">${READING_STATUS[state]}</span>${notes ? `<dl>${notes}</dl>` : '<p class="muted">No notes yet.</p>'}${at ? buttons(key, at, state === 'verified' ? 'Verified ✓' : 'Notes match the book', 'Needs fixing') : ''}</div>`;
+    }).join('') : '<p class="muted">No chapters yet.</p>';
+    const quizzes = (book.quizzes || []).slice().reverse().map(qz => {
+      const at = qz.submittedAt || 0, key = `readingEssay:${qz.id}`, state = (qz.essays || []).length ? readingVerdict(overrides, key, at) : 'draft';
+      if (state === 'submitted') waiting++;
+      const essays = (qz.essays || []).map(e => `<dt>${esc(e.prompt)}</dt><dd>${esc(e.answer)}</dd>`).join('');
+      return `<div class="reading-report-chapter"><b>Reading quiz ${qz.at ? esc(new Date(qz.at).toLocaleDateString()) : ''} · ${esc((qz.chapterLabels || []).join(', '))}</b> · ${qz.score ?? 0}/${qz.total ?? 0} right${essays ? ` · essay: ${state === 'verified' ? 'Accepted' : state === 'revise' ? 'Redo requested' : 'Waiting for your check'}` : ''}${(qz.missed || []).length ? `<p class="muted">Missed: ${(qz.missed || []).map(esc).join(' · ')}</p>` : ''}${essays ? `<dl>${essays}</dl>${buttons(key, at, 'Accept essay', 'Ask for a redo')}` : ''}</div>`;
+    }).join('');
+    return `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${chapters}${quizzes}</section>`;
+  }).join('');
+  return `<div class="card"><h2>Reading Log and Reading Quizzes${waiting ? ` · ${waiting} waiting` : ''}</h2><p class="muted">Students write these notes themselves. Check each chapter against the book: only verified chapters can be quizzed. Quiz questions are built from the verified notes; essays wait for you to read.</p>${books || '<p class="muted">No books added yet.</p>'}</div>`;
 }
 export function closeDetail() { $('#detail').hidden = true; }
 $('#detail').addEventListener('click', e => { if ((e.target as HTMLElement).id === 'detail') closeDetail(); });

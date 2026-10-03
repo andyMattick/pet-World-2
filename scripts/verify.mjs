@@ -14,6 +14,9 @@ for (const g of ['basic', 'tape', 'groups', 'dnlCreate', 'dnl', 'dnlTable', 'tab
 }
 for (const fn of ['function submit(', 'function completeOrder(', 'function openPractice(', 'function openJoin(', 'function buyReward(', 'function renderHall(', 'function renderParent(']) need('src/game/game.js', fn);
 need('src/teacher/main.ts', 'reset_student', 'the student reset RPC');
+need('src/game/game.js', 'function buildReadingQuiz(', 'the reading quiz builder');
+need('src/game/game.js', 'const readingChapterState = ', 'the grown-up check for reading notes');
+need('src/teacher/report.ts', 'function readingReviewHTML(', 'the teacher reading review card');
 need('src/teacher/main.ts', 'pin_plain', 'teacher-readable PIN support');
 need('src/game/game.js', 'reset_at', 'teacher reset metadata support');
 need('src/game/game.js', 'function renderBook(', 'the Sticker Book renderer');

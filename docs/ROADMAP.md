@@ -54,6 +54,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Practice time (`PRACTICE-TIME.md`): active minutes tracked in the game and the town, a progress-report panel, and teacher dashboard columns, weekly card, and 4-week chart
 - [x] Sprint: students pick the skills, more skills earn more coins, every decimal place, and "Which is lined up correctly?" (`SPRINT.md` part C)
 - [x] Music (`MUSIC.md`): 4 tracks, a music menu with volume, and a teacher Allow music switch
+- [x] Reading Quiz in the Story Corner Library: chapter notes are checked by a grown-up (teacher app, or a parent PIN in local mode) before they can be quizzed; multiple-choice, true-or-false, and essay questions are built from the checked notes (`READING-QUIZ.md`)
 - [x] Draft plans written for Bakery stations 2 to 5 (`BAKERY-2-PANS.md` to `BAKERY-5-BULK.md`) and the 4th grade version (`GRADE4.md`)
 
 ## Next up
@@ -101,6 +102,7 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3m2. 6th grade: Potion Lab stations 5 and 6, unit 7 (`POTION.md`)
 - [x] 3n. 6th grade: Pet Houses (`HOUSES.md`)
 - [x] 3o. 6th grade: the Pet Show (`SHOW.md`). 6th grade complete
+- [x] 3q. Reading Quiz with grown-up verification (`READING-QUIZ.md`). Still to check on the live site: a teacher verdict round trip
 - [ ] 3p. Next: finish the My Pet Room and Dress-up MVP (`PET-ROOM.md`), then complete Arcade prize handling and browser review before scheduling more post-6th-grade work
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
 
@@ -188,5 +190,18 @@ Math practice is the only way to earn Pet Town coins and unlock arcade minutes.
 Arcade tickets cannot pay admission or be converted to Pet Town coins.
 Short play sessions, with teacher controls for the arcade and its daily limit.
 Everything stays out of the way during quizzes.
+
+### Prep: finishing 3p (Pet Room, Dress-up, Arcade)
+
+Build steps 1 to 4 in `PET-ROOM.md` are done. What is left, in order:
+
+1. **Owner decision first: how secure do tickets need to be?** Today tickets, like Pet Town coins, live in the student's saved state, which the student's own browser writes. Two options:
+   - **A. Keep tickets client-side (small).** Same trust level as coins. Add only sanity limits in `normalize` (tickets can't exceed a ceiling, `ticketsEarnedToday` can't exceed the class cap). Turn on the ticket wearables and furniture.
+   - **B. Server-side tickets (medium).** New migration with an `arcade_rounds` table (student, game, run id, score, tickets, day) and an `arcade_award(run_id, game, score)` function that checks the run id is new, recomputes tickets from the class settings, and enforces the daily cap; the game shows the server's ticket balance. Ticket purchases go through a second function. This is `PET-ROOM.md` step 5 as written.
+2. **Browser review** (`PET-ROOM.md` step 6) at iPhone SE size and on a laptop: room dragging and keyboard nudging, stickers in and out of the room, dress-up positions, Free Play vs paid mode, admission once a day, minutes per completed order, ticket cap, prize shop, and both games inside the Arcade frame.
+3. **Hidden during quizzes:** confirm the room, dress-up, and Arcade can't be opened mid-quiz or mid-test.
+4. Then mark My Pet Room, Dress-up, and the Arcade done here and in `PET-ROOM.md`.
+
+After 3p: House tours (needs a read-only class gallery: a new Supabase function that returns classmates' room layouts, no free text), then Pet Trips, Greenhouse, and the Class Party Jar, and the 7th grade plan before next school year.
 
 **Owner decision:** My Pet Room and Dress-up are the preferred next major features. Arcade work is already in progress to integrate the two imported game prototypes; finish its prize shop, secure round-result handling, teacher controls, and browser review before calling it done.

@@ -65,6 +65,10 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 3. Make the change in small steps, running `npm run verify` along the way.
 4. Report what you changed, what you tested, and anything you couldn't test.
 
+## Reading Quiz
+
+Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet Town coins. See `docs/READING-QUIZ.md`.
+
 ## Rewards display
 
 Keep `renderBook()` and `rewardTileHTML()` in `src/game/game.js`. Open-building town tiles show their mini sticker strips; locked building tiles show no sticker extras.
