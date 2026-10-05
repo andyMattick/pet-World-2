@@ -5514,8 +5514,13 @@ function khanLinkHTML(url, name){
   const href = url || `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`;
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>`;
 }
+const REPORT_COURSES = ['nouns','verbs','history','history2','history3','history4','bio1'];
 function englishProgressReportHTML(canReview = false){
-  return ['nouns','verbs','history','history2','history3','history4','bio1'].map(courseId => {
+  return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
+}
+/* one course's skills, quizzes and test, and project rows (no panel around it) */
+function courseReportBodyHTML(courseId, canReview = false){
+  {
     const course = englishCourse(courseId), skills = course.skills.map(skill => {
       const record = englishRecord(skill.id,courseId), accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
       const summary = accuracy === null ? record.tries ? `No answer history yet · best ${record.best}/${record.questionCount || 4}` : 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`;
@@ -5525,9 +5530,91 @@ function englishProgressReportHTML(canReview = false){
       const record = englishRecord(item.key,courseId);
       return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || item.total} · ${record.tries} tries` : 'Not started'}</span></div>`;
     }).join('');
-    return `<section class="panel"><h3>${esc(course.title)}</h3><p class="muted">Per-skill accuracy and assessment progress. Review is suggested after at least four answers when accuracy is below 70%.</p><div class="ela-parent-grid">${skills}</div><h4>${course.noQuizzes ? 'Test' : 'Quizzes and test'}</h4><div class="ela-parent-grid">${assessments}</div>${isProjectCourse(courseId) ? `<h4>Project and experiment</h4><div class="ela-parent-grid">${projectKeys(courseId).map(key => historyProjectReportHTML(key, canReview)).join('')}</div>` : ''}</section>`;
+    return `<p class="muted">Review is suggested after at least four answers when accuracy is below 70%.</p><h4>Skills</h4><div class="ela-parent-grid">${skills}</div><h4>${course.noQuizzes ? 'Test' : 'Quizzes and test'}</h4><div class="ela-parent-grid">${assessments}</div>${isProjectCourse(courseId) ? `<h4>Project and experiment</h4><div class="ela-parent-grid">${projectKeys(courseId).map(key => historyProjectReportHTML(key, canReview)).join('')}</div>` : ''}`;
+  }
+}
+/* ---------- progress by subject and unit (Town Hall and the grown-ups report) ----------
+   Subject tabs (Math, History, Biology, English, Reading Log), then one fold-out per unit with a
+   one-line summary. The unit the student is working on now starts open; the rest start closed. */
+let progressSubject = 'math';
+const courseOfBuilding = id => REPORT_COURSES.find(c => englishCourse(c).building === id);   // called at render time, after every course is defined
+function mathUnitState(shopId){
+  const skills = SHOPS[shopId].stations.flatMap(st => st.skills), testKey = assessKey(shopId, null);
+  if (!unitOpen(shopId)) return 'locked';
+  if (S.quizzes[testKey]?.passed || Backend.me?.quiz_overrides?.[testKey] === 'excused') return 'done';
+  return skills.some(sk => (S.kn[sk] || 0) > 0) ? 'going' : 'new';
+}
+function courseUnitState(courseId){
+  const course = englishCourse(courseId);
+  if (!unitOpen(course.building)) return 'locked';
+  if (unitTestPassed(course.building)) return 'done';
+  return course.skills.some(skill => { const r = englishRecord(skill.id, courseId); return r.answered || r.tries; }) ? 'going' : 'new';
+}
+function mathUnitBodyHTML(shopId, detail){
+  return SHOPS[shopId].stations.filter(st => st.skills.length).map(st => {
+    const qk = assessKey(shopId, st.id), qz = S.quizzes[qk];
+    const quiz = Backend.me?.quiz_overrides?.[qk] === 'excused' ? 'quiz excused' : qz?.passed ? `quiz passed (best ${qz.best}%)` : qz?.tries ? `quiz not passed yet (best ${qz.best}%)` : 'quiz not taken';
+    const rows = st.skills.map(sk => {
+      const s = skillStatus(sk), n = S.kn[sk] || 0, info = SKILLS[sk] || {};
+      const steps = detail && S.ks[sk] ? Object.entries(S.ks[sk]).filter(([,e]) => e.t !== 'setup').map(([nm,e]) => `${nm}: ${e.c}/${e.a}`).join(', ') : '';
+      return `<div class="skillrow"><div><span class="pill p-${s}">${s}</span><b>${esc(info.name || sk)}</b> <span class="muted">${n} tried${steps ? '. ' + esc(steps) : ''}</span></div>${info.url ? `<a href="${info.url}" target="_blank" rel="noopener">Khan practice</a>` : ''}</div>`;
+    }).join('');
+    return `<div class="prog-station"><h4>${st.emoji || ''} ${esc(st.name)} <span class="muted">· ${quiz}</span></h4>${rows}</div>`;
   }).join('');
 }
+function mathUnitSummary(shopId, state){
+  if (state === 'locked') return '🔒 Locked';
+  const skills = SHOPS[shopId].stations.flatMap(st => st.skills), mastered = skills.filter(sk => skillStatus(sk) === 'mastered').length;
+  const test = S.quizzes[assessKey(shopId, null)];
+  if (state === 'new') return 'Not started';
+  return `${mastered} of ${skills.length} skills mastered · ${state === 'done' ? 'Unit Test passed ✅' : test?.tries ? 'Unit Test not passed yet' : 'Unit Test not taken'}`;
+}
+function courseUnitSummary(courseId, state){
+  if (state === 'locked') return '🔒 Locked';
+  if (state === 'new') return 'Not started';
+  const course = englishCourse(courseId), practiced = course.skills.filter(skill => { const r = englishRecord(skill.id, courseId); return r.answered || r.tries; }).length;
+  return `${practiced} of ${course.skills.length} skills practiced · ${state === 'done' ? 'Unit Test passed ✅' : englishRecord(course.finalKey, courseId).tries ? 'Unit Test not passed yet' : 'Unit Test not taken'}`;
+}
+const PROGRESS_STATE_ICON = {done:'✅', going:'✏️', new:'⚪', locked:'🔒'};
+function progressBySubjectHTML({detail = false, canReview = false, title = 'My progress', reading = ''} = {}){
+  const home = homeHood();
+  const hoodOrder = [...NEIGHBORHOODS].sort((a, b) => (b.id === home) - (a.id === home));
+  const subjects = SUBJECTS.map(subject => {
+    const hoods = hoodOrder.map(hood => {
+      const units = BUILDINGS.filter(b => b.hood === hood.id && b.subject === subject.id && b.open && (SHOPS[b.id] && subject.id === 'math' || courseOfBuilding(b.id)))
+        .map(b => {
+          const course = courseOfBuilding(b.id), state = course ? courseUnitState(course) : mathUnitState(b.id);
+          return {b, course, state};
+        });
+      return {hood, units};
+    }).filter(h => h.units.length);
+    return {subject, hoods};
+  }).filter(x => x.hoods.length);
+  const tabs = [...subjects.map(x => x.subject), {id:'reading', name:'Reading Log', emoji:'📖'}];
+  if (!tabs.some(t => t.id === progressSubject)) progressSubject = tabs[0].id;
+  const panels = subjects.map(({subject, hoods}) => {
+    const body = hoods.map(({hood, units}) => {
+      const current = units.find(u => u.state === 'going') || units.find(u => u.state === 'new');
+      const list = units.map(u => {
+        const summary = u.course ? courseUnitSummary(u.course, u.state) : mathUnitSummary(u.b.id, u.state);
+        const inner = u.state === 'locked' ? `<p class="muted">${esc(unitLockedText(u.b))}</p>` : u.course ? courseReportBodyHTML(u.course, canReview) : mathUnitBodyHTML(u.b.id, detail);
+        return `<details class="prog-unit" data-state="${u.state}"${u === current ? ' open' : ''}><summary><span class="prog-unit-name">${u.b.emoji} ${esc(u.b.name)} <small>${esc(u.b.unit)}</small></span><span class="prog-unit-status">${PROGRESS_STATE_ICON[u.state]} ${esc(summary)}</span></summary><div class="prog-unit-body">${inner}</div></details>`;
+      }).join('');
+      return `${hoods.length > 1 ? `<h4 class="prog-grade">${hood.emoji} ${esc(hood.name)}</h4>` : ''}${list}`;
+    }).join('');
+    const note = subject.id === 'math' ? '<p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>' : '';
+    return `<div data-prog-panel="${subject.id}"${subject.id === progressSubject ? '' : ' hidden'}>${note}${body}</div>`;
+  }).join('') + `<div data-prog-panel="reading"${progressSubject === 'reading' ? '' : ' hidden'}>${readingLedgerHTML()}${reading}</div>`;
+  const tabRow = tabs.map(t => `<button type="button" class="prog-tab" data-prog-subject="${t.id}" aria-pressed="${t.id === progressSubject}">${t.emoji} ${esc(t.name)}</button>`).join('');
+  return `<section class="panel prog-report"><h3>${esc(title)}</h3><div class="prog-tabs" role="group" aria-label="Subject">${tabRow}</div>${panels}</section>`;
+}
+document.addEventListener('click', e => {
+  const tab = e.target.closest && e.target.closest('.prog-report [data-prog-subject]'); if (!tab) return;
+  progressSubject = tab.dataset.progSubject;
+  const root = tab.closest('.prog-report');
+  root.querySelectorAll('[data-prog-subject]').forEach(b => b.setAttribute('aria-pressed', String(b === tab)));
+  root.querySelectorAll('[data-prog-panel]').forEach(p => { p.hidden = p.dataset.progPanel !== progressSubject; });
+});
 function readingLedgerHTML(){
   const books = S.readingBooks.map(book => `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? book.chapters.map(chapter => {
     const notes = [['Main characters',chapter.characters],['Notable character action',chapter.notableAction],['Character interactions',chapter.interaction],['Conflict',chapter.conflict],['Joy or success',chapter.joy],['Environment and setting',chapter.setting],['Theme or big idea',chapter.themes],['Standout detail',chapter.detail],['Vocabulary',chapter.vocabulary]].filter(([,value]) => value);
@@ -7579,7 +7666,7 @@ function renderHall(){
       <textarea class="code" id="restoreBox" style="min-height:70px" aria-label="Paste a backup code" placeholder="PTSZ.…"></textarea>
       <div style="margin-top:8px"><button class="btn small" id="restoreBtn">Restore my town</button></div>
     </div>
-    ${englishProgressReportHTML()}${readingLedgerHTML()}
+    ${progressBySubjectHTML()}
     <div class="panel"><h3>For grown-ups</h3><p>See which skills are strong, which step gets stuck, and which times tables need work.</p><button class="btn small" id="toParent">Open the progress report</button></div>`;
   if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); syncLanguageControls(); openJoin(); });
   if ($('#rename')) $('#rename').addEventListener('click', openName);
@@ -7642,11 +7729,6 @@ function renderParent(){
   if (ca >= 8 && ma >= 8) verdict = cP + 8 < mP ? `Understanding the ratio is the harder part (${cP}% vs ${mP}%). The arithmetic is fine. The trouble is seeing the relationship.`
     : mP + 8 < cP ? `The arithmetic is the harder part (${mP}% vs ${cP}%). The ideas are there, but facts slow things down. The Sprint Track helps most.`
     : `Ideas and arithmetic are about even (${cP}% vs ${mP}%).`;
-  const skills = STATIONS.map(st => `<h3>${st.emoji} ${st.name}</h3>` + st.skills.map(sk => {
-    const s = skillStatus(sk), n = S.kn[sk] || 0;
-    const steps = S.ks[sk] ? Object.entries(S.ks[sk]).filter(([,e]) => e.t !== 'setup').map(([nm,e]) => `${nm}: ${e.c}/${e.a}`).join(', ') : '';
-    return `<div class="skillrow"><div><span class="pill p-${s}">${s}</span><b>${esc(SKILLS[sk].name)}</b> <span class="muted">${n} tried${steps ? '. ' + esc(steps) : ''}</span></div><a href="${SKILLS[sk].url}" target="_blank" rel="noopener">Khan practice</a></div>`;
-  }).join('')).join('');
   const mis = Object.entries(S.mis).sort((a,b) => b[1].n - a[1].n);
   const log = Object.entries(S.drillLog).map(([id,v]) => ({id, label:drillLabel(id), n:(v.miss||0)+(v.slow||0)+(v.sprint||0), v})).filter(x => x.n).sort((a,b) => b.n - a.n);
   const drillSettingsNow = drillSettings(), drillStatus = v => v.reteach ? 'reteach' : v.popups && (v.missesAfter || 0) < v.popups ? 'helping' : 'watching';
@@ -7671,10 +7753,9 @@ function renderParent(){
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
-    ${englishProgressReportHTML(!Backend.me)}${readingLedgerHTML()}${readingReviewHTML()}
+    ${progressBySubjectHTML({detail:true, canReview:!Backend.me, title:'Progress by subject and unit', reading:readingReviewHTML()})}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
-    <div class="panel"><h3>Khan Academy skills (Unit 1: Ratios)</h3><p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>${skills}</div>
     <div class="two"><div class="panel"><h3>Times tables</h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small ${heatView === 'facts' ? 'mint' : ''}" data-heat="facts">Multiplying</button><button class="btn small ${heatView === 'divFacts' ? 'mint' : ''}" data-heat="divFacts">Dividing</button></div>
       <div class="heatwrap" style="margin-top:10px">${heatTable(heatView)}</div>

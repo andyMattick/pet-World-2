@@ -125,3 +125,14 @@ tr.stale td, td.stale{background:rgba(255,157,178,.22)}
 .grade-lbl{font-weight:700; min-width:7.5em}
 .grade-set{border-top:1px solid rgba(0,0,0,.1); margin-top:12px; padding-top:8px}
 .grade-set h3{margin:0 0 4px; font-size:1rem}
+
+/* student detail: progress by subject and unit */
+.subject-tabs{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 12px}
+.subject-tab[aria-pressed="true"]{background:var(--ink); color:var(--surface)}
+details.unit-card{margin-bottom:10px}
+details.unit-card>summary{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; cursor:pointer; list-style-position:inside}
+details.unit-card>summary b{font-size:1.05rem}
+details.unit-card .unit-sum{margin-left:auto; font-size:.85rem; font-weight:600}
+details.unit-card[open]>summary{margin-bottom:8px}
+.steptable tr.stn-row th{background:var(--line); padding-top:6px}
+@media print{ .subject-tabs{display:none} [data-subject-panel]{display:block !important} }

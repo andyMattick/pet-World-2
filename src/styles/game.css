@@ -713,3 +713,18 @@ table.xy-table th{font-size:.95rem}
 .reading-results li.miss{color:var(--ink)}
 #parentPinForm label{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 #parentPinForm input{width:6em; min-height:40px; border:2px solid var(--edge); border-radius:8px; padding:6px; font:inherit}
+
+/* progress by subject and unit (Town Hall and the grown-ups report) */
+.prog-tabs{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 14px}
+.prog-tab{border:3px solid var(--edge); border-radius:999px; padding:6px 14px; background:var(--surface); color:var(--ink); font:inherit; font-weight:700; cursor:pointer}
+.prog-tab[aria-pressed="true"]{background:var(--ink); color:var(--surface)}
+.prog-grade{margin:14px 0 6px}
+.prog-unit{border:2px solid var(--edge); border-radius:14px; margin-bottom:10px; background:var(--surface)}
+.prog-unit[data-state="locked"]{opacity:.7}
+.prog-unit>summary{display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; padding:10px 14px; cursor:pointer; font-weight:700; list-style-position:inside}
+.prog-unit-name small{display:block; font-weight:500; color:var(--ink-soft)}
+.prog-unit-status{font-size:.9rem; font-weight:600; color:var(--ink-soft)}
+.prog-unit-body{padding:0 14px 12px; border-top:1px dashed var(--dot)}
+.prog-station h4{margin:12px 0 4px}
+.prog-report .panel{border:0; padding:0; margin:0; background:none}
+@media print{ .prog-tabs{display:none} .prog-report [data-prog-panel]{display:block !important} }

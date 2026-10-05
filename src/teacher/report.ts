@@ -198,15 +198,14 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
-    h += englishReadingHTML(r);
-  h += '<div id="projectCard"></div><div id="readingCard"></div>';
-  h += '<h2>Skills and steps</h2><table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>';
-  ORDER.forEach(k => {
-    const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
-    const stepTxt = Object.entries(steps).map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 's' ? 'count' : v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
-    h += `<tr><td>${SHOPS[shopOfSkill(k)].emoji} ${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
-  });
-  h += '</table><div class="two" style="margin-top:14px"><div><h2>Mix-ups</h2>';
+  /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
+  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['reading', '📖 Projects and Reading Log']];
+  if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
+  const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
+  h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
+  h += panel('math', mathUnitsHTML(r)) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
+  h += panel('reading', '<div id="projectCard"></div><div id="readingCard"></div>');
+  h += '<div class="two" style="margin-top:14px"><div><h2>Mix-ups</h2>';
   h += st.mis.length ? '<ul>' + st.mis.map(([id, v]) => `<li><b>${esc(MIS[id] ? MIS[id].name : id)}</b> (${v[0]})${(v[1] || []).map(x => `<div class="muted">${esc(x)}</div>`).join('')}</li>`).join('') + '</ul>' : '<p class="muted">None spotted.</p>';
   const f = (r.f || []).map(([k, a, c, s]) => { const [x, y] = k.split('x'); return `<span class="chip">${x}×${y}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
   const df = (r.df || []).map(([k, a, c, s]) => { const [x, y] = k.split('x').map(Number); return `<span class="chip">${x * y}÷${x}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
@@ -253,9 +252,14 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       const missed = (a.missed || []).map(sk => esc(SKILLS[sk]?.name || sk)).join(', ');
       return `<tr><td>${new Date(a.t).toLocaleDateString()}</td><td>${shop?.emoji || ''} ${esc(shop?.name || a.shop)}</td><td>${label}</td><td>${a.passed ? '✅' : '✗'} ${a.score}/${a.total}</td><td>${missed || '<span class="muted">none</span>'}</td></tr>`;
     }).join('');
-    const controlRows = quizTargets.map(t => quizControlRow(t.key, t.label)).join('');
+    const controlRows = Object.values(SHOPS).map(shop => {
+      const rows = quizTargets.filter(t => t.key.split(':')[0] === shop.id).map(t => quizControlRow(t.key, t.label));
+      if (!rows.length) return '';
+      const active = rows.some(row => !row.includes('<td>—</td>'));
+      return `<details class="unit-card"${active ? ' open' : ''}><summary><b>${shop.emoji} ${esc(shop.name)}</b><span class="unit-sum">${active ? 'has activity' : 'nothing yet'}</span></summary><table class="steptable"><tr><th>Quiz</th><th>Status</th><th></th></tr>${rows.join('')}</table></details>`;
+    }).join('');
     return `<h3>History</h3><table class="steptable"><tr><th>Date</th><th>Shop</th><th>Station</th><th>Score</th><th>Missed skills</th></tr>${historyRows || '<tr><td colspan="5" class="muted">No quizzes or tests yet.</td></tr>'}</table>
-      <h3>Overrides</h3><table class="steptable"><tr><th>Quiz</th><th>Status</th><th></th></tr>${controlRows}</table><p class="status" id="studentQuizMsg"></p>`;
+      <h3>Overrides</h3>${controlRows}<p class="status" id="studentQuizMsg"></p>`;
   }
   async function saveOverride(key: string, value: string | null) {
     if (!onSaveQuizOverride) return;
@@ -288,6 +292,11 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     }));
   }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
+  $('#detailSheet').querySelectorAll<HTMLButtonElement>('[data-subject-tab]').forEach(b => b.addEventListener('click', () => {
+    detailSubject = b.dataset.subjectTab!;
+    $('#detailSheet').querySelectorAll<HTMLButtonElement>('[data-subject-tab]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    $('#detailSheet').querySelectorAll<HTMLElement>('[data-subject-panel]').forEach(p => { p.hidden = p.dataset.subjectPanel !== detailSubject; });
+  }));
   renderQuizCard();
   $('#studentDrillMode').addEventListener('change', async e => {
     if (!onSaveStudentDrills) return;
@@ -325,7 +334,29 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   }));
   $('#dClose').focus();
   $('#dClose').addEventListener('click', closeDetail);
-  $('#dPrint').addEventListener('click', () => window.print());
+  $('#dPrint').addEventListener('click', () => { document.querySelectorAll<HTMLDetailsElement>('#detailSheet details').forEach(d => { d.open = true; }); window.print(); });
+}
+/* one Khan skill row for the student detail: status and the step counts */
+function skillStepRow(r: StudentReport, k: string) {
+    const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
+    const stepTxt = Object.entries(steps).map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 's' ? 'count' : v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
+    return `<tr><td>${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
+}
+let detailSubject = 'math';
+/* the student's math skills, one fold-out per shop (unit), stations as sub-headings; home grade first */
+function mathUnitsHTML(r: StudentReport) {
+  const hoods = builtHoods().filter(n => shopsIn(n.id).length).sort((a, b) => Number(b.id === reportHome) - Number(a.id === reportHome));
+  return hoods.map(n => (hoods.length > 1 ? `<h3>${n.emoji} ${esc(n.name)}</h3>` : '') + shopsIn(n.id).map(shop => {
+    const groups = shop.stations.map(st => ({ st, skills: ORDER.filter(k => shopOfSkill(k) === shop.id && SKILLS[k].st === st.id) })).filter(g => g.skills.length);
+    if (!groups.length) return '';
+    const all = groups.flatMap(g => g.skills), tried = all.filter(k => (r.k || {})[k]).length;
+    const mastered = all.filter(k => statusFromRecent(((r.k || {})[k] || [])[1] || '') === 'mastered').length;
+    const test = shop.stations.every(st => st.skills.length) ? assessmentCell(r, shop.id, null, 'test') : '';
+    const summary = tried ? `${mastered} of ${all.length} skills mastered${test ? ` · Unit Test ${test}` : ''}` : 'Not started';
+    const rows = groups.map(({ st, skills }) => `<tr class="stn-row"><th colspan="4">${st.id}. ${esc(st.name)} · quiz ${assessmentCell(r, shop.id, st.id, 'quiz')}</th></tr>` + skills.map(k => skillStepRow(r, k)).join('')).join('');
+    return `<details class="card unit-card"${tried && !test.startsWith('✅') ? ' open' : ''}><summary><b>${shop.emoji} ${esc(shop.name)}</b> <span class="muted">${esc(shop.unitLabel)}</span><span class="unit-sum">${summary}</span></summary>
+      <table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>${rows}</table></details>`;
+  }).join('')).join('');
 }
 function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {
   const projects: Record<string, string> = { history: 'History Unit 1: Source Investigator Project', history2: 'History Unit 2: Forager or Farmer? Evidence Case', history3: 'History Unit 3: Compare Two Early Societies', history4: 'History Unit 4: Belief Systems and Empires Case Study', bio1: 'Biology Unit 1: Model Project', bio1lab: 'Biology Unit 1: Germination Lab (experiment)' };
@@ -339,7 +370,7 @@ function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>
   }).join('');
   return `<div class="card"><h2>Projects and experiments</h2><p class="muted">Student-built research projects and lab reports. Verify when the work meets your standard, or request a revision.</p>${rows}<p class="status" id="studentQuizMsg2"></p></div>`;
 }
-function englishReadingHTML(r: StudentReport) {
+function englishReadingHTML(r: StudentReport, subject = '') {
   const courses = [
     {title:'English Unit 1: Nouns',skills:{identifyNouns:'Identifying nouns',singularPlural:'Singular and plural nouns',commonProper:'Common and proper nouns',concreteAbstract:'Concrete and abstract nouns',fToVes:'f to -ves plurals',enPlurals:'-en plurals',basePlurals:'Base plurals',mutantPlurals:'Mutant plurals',foreignPlurals:'Foreign plurals',pluralReview:'Irregular plural review'},quizzes:[['quiz:intro','Introduction to nouns Quiz'],['quiz:types','Types of nouns Quiz'],['quiz:irregularBase','Irregular plurals I Quiz'],['quiz:irregularForeign','Irregular plurals II Quiz']],finalKey:'final-test',finalCount:10},
     {title:'English Unit 2: Verbs',skills:{verbIdentify:'Identifying verbs',verbAgreement:'Introduction to verb agreement',verbTense:'Introduction to verb tense',actionLinkHelping:'Action, linking, and helping verbs',irregularVerbs:'Irregular verbs',simpleAspect:'Simple verb aspect',progressiveAspect:'Progressive verb aspect',perfectAspect:'Perfect verb aspect',perfectProgressive:'Perfect progressive verb aspect',tenseAspectTime:'Managing time with tense and aspect',modalVerbs:'Modal verbs'},quizzes:[['verbs:quiz:foundation','Quiz 1 · Verbs foundations'],['verbs:quiz:irregular','Irregular verbs Quiz'],['verbs:quiz:aspect','Verb aspect Quiz'],['verbs:quiz:aspectModal','Aspect and modal verbs Quiz']],finalKey:'verbs:final-test',finalCount:11},
@@ -349,7 +380,11 @@ function englishReadingHTML(r: StudentReport) {
     {title:'History Unit 4: Empires and Belief Systems',history:true,skills:{portableBelief:'Portable Belief Systems',hinduBuddhism:'Hinduism and Buddhism',judaismChristianity:'Judaism and Christianity',islam:'Islam',comparePortable:'Comparing Portable Belief Systems',persia:'Ancient Persia',greece:'Classical Greece',imperialChina:'Ancient and Imperial China',compareEmpires:'Comparing Ancient Empires',rome:'Ancient Rome',romeHan:'Rome and Han China',womenAncient:'Women in the Ancient World'},quizzes:[] as string[][],finalKey:'history4:final-test',finalCount:24},
     {title:'Biology Unit 1: Life Sciences',science:true,skills:{cellsOrganisms:'Understand: Cells and organisms',cellPartsU:'Understand: Cell parts and functions',cellPartsA:'Apply: Cell parts and functions',plantSuccessU:'Understand: Plant reproductive success',plantSuccessA:'Apply: Plant reproductive success',asexualPlants:'Asexual reproduction',sexualPlants:'Sexual reproduction',seedDispersal:'Dispersal of seeds',digestionHumans:'Digestion in humans',digestionIntestines:'Digestion in the intestines',humanDigestion:'Human digestion'},quizzes:[['bio1:quiz:cells','Quiz 1'],['bio1:quiz:plants','Quiz 2'],['bio1:quiz:digestion','Quiz 3']],finalKey:'bio1:final-test',finalCount:22}
   ];
-  const coursePanels = courses.map(course => {
+  const coursePanels = courses.filter(course => !subject || course.title.startsWith(subject)).map(course => {
+    const store = (course as { history?: boolean }).history ? r.historyProgress : (course as { science?: boolean }).science ? r.scienceProgress : r.elaProgress;
+    const practiced = Object.keys(course.skills).filter(id => (store?.[id]?.answered || 0) > 0 || (store?.[id]?.tries || 0) > 0).length, fin = store?.[course.finalKey];
+    const summary = !practiced && !fin?.tries ? 'Not started' : `${practiced} of ${Object.keys(course.skills).length} skills practiced · ${fin?.passed ? 'Unit test passed ✅' : fin?.tries ? 'Unit test not passed yet' : 'Unit test not taken'}`;
+    const [unitTitle, unitName] = course.title.split(': ');
     const skills = Object.entries(course.skills).map(([id, name]) => {
       const progress = ((course as { history?: boolean }).history ? r.historyProgress : (course as { science?: boolean }).science ? r.scienceProgress : r.elaProgress)?.[id], answered = progress?.answered || 0, misses = progress?.misses || 0;
       const result = answered ? `${Math.round((answered - misses) * 100 / answered)}% · ${answered - misses}/${answered} correct`
@@ -360,7 +395,7 @@ function englishReadingHTML(r: StudentReport) {
       const progress = ((course as { history?: boolean }).history ? r.historyProgress : (course as { science?: boolean }).science ? r.scienceProgress : r.elaProgress)?.[item.key];
       return `<tr><td>${esc(item.name)}</td><td>${progress?.tries ? `${progress.passed ? 'Passed' : 'Not passed'} · best ${progress.best ?? 0}/${progress.questionCount || item.total}` : 'Not started'}</td><td>${progress?.tries || 0}</td></tr>`;
     }).join('');
-    return `<div class="card"><h2>${esc(course.title)}</h2><h3>Practice by skill</h3><table class="steptable"><tr><th>Skill</th><th>Accuracy</th><th>Focus</th></tr>${skills}</table><h3>Quizzes and test</h3><table class="steptable"><tr><th>Assessment</th><th>Status</th><th>Attempts</th></tr>${assessments}</table></div>`;
+    return `<details class="card unit-card"${practiced && !fin?.passed ? ' open' : ''}><summary><b>${esc(unitTitle)}</b> <span class="muted">${esc(unitName || '')}</span><span class="unit-sum">${summary}</span></summary><h3>Practice by skill</h3><table class="steptable"><tr><th>Skill</th><th>Accuracy</th><th>Focus</th></tr>${skills}</table><h3>Quizzes and test</h3><table class="steptable"><tr><th>Assessment</th><th>Status</th><th>Attempts</th></tr>${assessments}</table></details>`;
   }).join('');
   return coursePanels;
 }
