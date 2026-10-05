@@ -110,8 +110,11 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   const groups: Record<string, { r: StudentReport; n: number; ex?: string }[]> = {};
   list.forEach(r => Object.entries(r.m || {}).forEach(([id, v]) => { if (!MIS[id]) return; (groups[id] = groups[id] || []).push({ r, n: v[0], ex: v[1] && v[1][0] }); }));
   const gl = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
-  h += `<div class="card"><h2>Suggested small groups</h2><p class="muted" style="margin-top:0">Students grouped by the mix-up the game spotted. Counts show how many times it happened.</p>`;
-  h += gl.length ? '<div class="groups">' + gl.map(([id, arr]) => `<div class="group"><h3>${esc(MIS[id].name)}</h3>
+  h += `<div class="card"><h2>Suggested small groups</h2><p class="muted" style="margin-top:0">Students grouped by the mix-up the game spotted, in unit order. Counts show how many times it happened.</p>`;
+  const unitOf = (id: string) => [...new Set(MIS[id].skills.filter(k => SKILLS[k]).map(k => shopOfSkill(k)))].map(sh => SHOPS[sh] ? `${SHOPS[sh].emoji} ${esc(SHOPS[sh].name)}` : '').filter(Boolean).join(' · ') || 'All units';
+  const shopRank = (id: string) => { const k = MIS[id].skills.find(x => SKILLS[x]); return k ? Object.keys(SHOPS).indexOf(shopOfSkill(k)) : -1; };
+  gl.sort((a, b) => shopRank(a[0]) - shopRank(b[0]) || b[1].length - a[1].length);
+  h += gl.length ? '<div class="groups">' + gl.map(([id, arr]) => `<div class="group"><div class="muted">${unitOf(id)}</div><h3>${esc(MIS[id].name)}</h3>
       <div class="who">${arr.sort((a, b) => b.n - a.n).map(x => `<span class="chip">${esc(x.r.n)} (${x.n})</span>`).join('')}</div>
       <div class="muted">${esc(MIS[id].tip)}</div>
       ${arr[0].ex ? `<div class="muted" style="margin-top:6px"><i>Example: ${esc(arr[0].ex)}</i></div>` : ''}
@@ -205,8 +208,9 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
   h += panel('math', mathUnitsHTML(r)) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
   h += panel('reading', '<div id="projectCard"></div><div id="readingCard"></div>');
-  h += '<div class="two" style="margin-top:14px"><div><h2>Mix-ups</h2>';
-  h += st.mis.length ? '<ul>' + st.mis.map(([id, v]) => `<li><b>${esc(MIS[id] ? MIS[id].name : id)}</b> (${v[0]})${(v[1] || []).map(x => `<div class="muted">${esc(x)}</div>`).join('')}</li>`).join('') + '</ul>' : '<p class="muted">None spotted.</p>';
+  const loose = st.mis.filter(([id]) => !misShops(r, id).length);
+  h += '<div class="two" style="margin-top:14px"><div><h2>Mix-ups across units</h2><p class="muted" style="margin-top:0">Mix-ups tied to a unit are listed inside that unit on the Math tab.</p>';
+  h += loose.length ? misListHTML(loose) : '<p class="muted">None spotted.</p>';
   const f = (r.f || []).map(([k, a, c, s]) => { const [x, y] = k.split('x'); return `<span class="chip">${x}×${y}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
   const df = (r.df || []).map(([k, a, c, s]) => { const [x, y] = k.split('x').map(Number); return `<span class="chip">${x * y}÷${x}: ${c}/${a}${s ? `, ${s} slow` : ''}</span>`; }).join('');
   const pl = Object.entries(drillHistory(r)).map(([id, v]) => `<span class="chip">${esc(drillLabel(id))}: ${(v.miss || 0) + (v.slow || 0) + (v.sprint || 0)}</span>`).join('');
@@ -342,6 +346,13 @@ function skillStepRow(r: StudentReport, k: string) {
     const stepTxt = Object.entries(steps).map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 's' ? 'count' : v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
     return `<tr><td>${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
 }
+/* the shops a mix-up belongs to: shops with one of its skills that the student has practiced */
+function misShops(r: StudentReport, id: string) {
+  return MIS[id] ? [...new Set(MIS[id].skills.filter(k => SKILLS[k] && (r.k || {})[k]).map(k => shopOfSkill(k)))] : [];
+}
+function misListHTML(list: [string, [number, string[]]][]) {
+  return '<ul>' + list.map(([id, v]) => `<li><b>${esc(MIS[id] ? MIS[id].name : id)}</b> (${v[0]})${(v[1] || []).map(x => `<div class="muted">${esc(x)}</div>`).join('')}${MIS[id] ? `<div class="muted">Try: ${esc(MIS[id].tip)}</div>` : ''}</li>`).join('') + '</ul>';
+}
 let detailSubject = 'math';
 /* the student's math skills, one fold-out per shop (unit), stations as sub-headings; home grade first */
 function mathUnitsHTML(r: StudentReport) {
@@ -352,10 +363,11 @@ function mathUnitsHTML(r: StudentReport) {
     const all = groups.flatMap(g => g.skills), tried = all.filter(k => (r.k || {})[k]).length;
     const mastered = all.filter(k => statusFromRecent(((r.k || {})[k] || [])[1] || '') === 'mastered').length;
     const test = shop.stations.every(st => st.skills.length) ? assessmentCell(r, shop.id, null, 'test') : '';
-    const summary = tried ? `${mastered} of ${all.length} skills mastered${test ? ` · Unit Test ${test}` : ''}` : 'Not started';
+    const mis = sStats(r).mis.filter(([id]) => misShops(r, id).includes(shop.id));
+    const summary = tried ? `${mastered} of ${all.length} skills mastered${mis.length ? ` · ${mis.length} mix-up${mis.length === 1 ? '' : 's'}` : ''}${test ? ` · Unit Test ${test}` : ''}` : 'Not started';
     const rows = groups.map(({ st, skills }) => `<tr class="stn-row"><th colspan="4">${st.id}. ${esc(st.name)} · quiz ${assessmentCell(r, shop.id, st.id, 'quiz')}</th></tr>` + skills.map(k => skillStepRow(r, k)).join('')).join('');
     return `<details class="card unit-card"${tried && !test.startsWith('✅') ? ' open' : ''}><summary><b>${shop.emoji} ${esc(shop.name)}</b> <span class="muted">${esc(shop.unitLabel)}</span><span class="unit-sum">${summary}</span></summary>
-      <table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>${rows}</table></details>`;
+      <table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>${rows}</table>${mis.length ? `<h3>Mix-ups in this unit</h3>${misListHTML(mis)}` : ''}</details>`;
   }).join('')).join('');
 }
 function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {

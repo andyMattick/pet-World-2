@@ -5550,6 +5550,22 @@ function courseUnitState(courseId){
   if (unitTestPassed(course.building)) return 'done';
   return course.skills.some(skill => { const r = englishRecord(skill.id, courseId); return r.answered || r.tries; }) ? 'going' : 'new';
 }
+/* mix-ups belong to the units whose skills they come from (and that the student has practiced);
+   ones with no skill (times-table slips) or no practiced unit show at the top of the Math tab */
+const shopSkillIds = shopId => SHOPS[shopId].stations.flatMap(st => st.skills);
+function misInShop(shopId){
+  const ids = shopSkillIds(shopId);
+  return Object.entries(S.mis).filter(([id]) => MIS[id] && MIS[id].skills.some(sk => ids.includes(sk) && (S.kn[sk] || 0) > 0)).sort((a, b) => b[1].n - a[1].n);
+}
+function misUnplaced(){
+  const placed = new Set(Object.keys(SHOPS).flatMap(shopId => misInShop(shopId).map(([id]) => id)));
+  return Object.entries(S.mis).filter(([id]) => MIS[id] && !placed.has(id)).sort((a, b) => b[1].n - a[1].n);
+}
+function misListHTML(list, detail){
+  return '<ul class="list">' + list.map(([id,m]) => detail
+    ? `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})${m.ex[0] ? `<br><span class="muted">Example: ${esc(m.ex[0])}</span>` : ''}<br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`
+    : `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">${esc(MIS[id].kid)}</span></li>`).join('') + '</ul>';
+}
 function mathUnitBodyHTML(shopId, detail){
   return SHOPS[shopId].stations.filter(st => st.skills.length).map(st => {
     const qk = assessKey(shopId, st.id), qz = S.quizzes[qk];
@@ -5560,14 +5576,15 @@ function mathUnitBodyHTML(shopId, detail){
       return `<div class="skillrow"><div><span class="pill p-${s}">${s}</span><b>${esc(info.name || sk)}</b> <span class="muted">${n} tried${steps ? '. ' + esc(steps) : ''}</span></div>${info.url ? `<a href="${info.url}" target="_blank" rel="noopener">Khan practice</a>` : ''}</div>`;
     }).join('');
     return `<div class="prog-station"><h4>${st.emoji || ''} ${esc(st.name)} <span class="muted">· ${quiz}</span></h4>${rows}</div>`;
-  }).join('');
+  }).join('') + (() => { const mis = misInShop(shopId); return mis.length ? `<div class="prog-station"><h4>🔎 Mix-ups we've spotted here</h4>${misListHTML(mis, detail)}</div>` : ''; })();
 }
 function mathUnitSummary(shopId, state){
   if (state === 'locked') return '🔒 Locked';
   const skills = SHOPS[shopId].stations.flatMap(st => st.skills), mastered = skills.filter(sk => skillStatus(sk) === 'mastered').length;
   const test = S.quizzes[assessKey(shopId, null)];
   if (state === 'new') return 'Not started';
-  return `${mastered} of ${skills.length} skills mastered · ${state === 'done' ? 'Unit Test passed ✅' : test?.tries ? 'Unit Test not passed yet' : 'Unit Test not taken'}`;
+  const misN = misInShop(shopId).length;
+  return `${mastered} of ${skills.length} skills mastered${misN ? ` · ${misN} mix-up${misN === 1 ? '' : 's'}` : ''} · ${state === 'done' ? 'Unit Test passed ✅' : test?.tries ? 'Unit Test not passed yet' : 'Unit Test not taken'}`;
 }
 function courseUnitSummary(courseId, state){
   if (state === 'locked') return '🔒 Locked';
@@ -5602,7 +5619,8 @@ function progressBySubjectHTML({detail = false, canReview = false, title = 'My p
       }).join('');
       return `${hoods.length > 1 ? `<h4 class="prog-grade">${hood.emoji} ${esc(hood.name)}</h4>` : ''}${list}`;
     }).join('');
-    const note = subject.id === 'math' ? '<p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect.</p>' : '';
+    const loose = subject.id === 'math' ? misUnplaced() : [];
+    const note = subject.id === 'math' ? `<p class="muted">Mastered means at least 4 tries and 75% of the last 8 perfect. Mix-ups are listed inside the unit they came from.</p>${loose.length ? `<div class="prog-station"><h4>🔎 Mix-ups across units</h4>${misListHTML(loose, detail)}</div>` : ''}` : '';
     return `<div data-prog-panel="${subject.id}"${subject.id === progressSubject ? '' : ' hidden'}>${note}${body}</div>`;
   }).join('') + `<div data-prog-panel="reading"${progressSubject === 'reading' ? '' : ' hidden'}>${readingLedgerHTML()}${reading}</div>`;
   const tabRow = tabs.map(t => `<button type="button" class="prog-tab" data-prog-subject="${t.id}" aria-pressed="${t.id === progressSubject}">${t.emoji} ${esc(t.name)}</button>`).join('');
@@ -7729,7 +7747,6 @@ function renderParent(){
   if (ca >= 8 && ma >= 8) verdict = cP + 8 < mP ? `Understanding the ratio is the harder part (${cP}% vs ${mP}%). The arithmetic is fine. The trouble is seeing the relationship.`
     : mP + 8 < cP ? `The arithmetic is the harder part (${mP}% vs ${cP}%). The ideas are there, but facts slow things down. The Sprint Track helps most.`
     : `Ideas and arithmetic are about even (${cP}% vs ${mP}%).`;
-  const mis = Object.entries(S.mis).sort((a,b) => b[1].n - a[1].n);
   const log = Object.entries(S.drillLog).map(([id,v]) => ({id, label:drillLabel(id), n:(v.miss||0)+(v.slow||0)+(v.sprint||0), v})).filter(x => x.n).sort((a,b) => b.n - a.n);
   const drillSettingsNow = drillSettings(), drillStatus = v => v.reteach ? 'reteach' : v.popups && (v.missesAfter || 0) < v.popups ? 'helping' : 'watching';
   const drillHistory = log.length ? '<ul class="list">' + log.map(x => `<li><b>${esc(x.label)}</b>: ${x.n} time${x.n === 1 ? '' : 's'} <span class="tag">${drillStatus(x.v)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet. A pop-up appears after a missed fact or one that takes more than about 10 seconds.</p>';
@@ -7755,7 +7772,6 @@ function renderParent(){
     ${practiceTimePanel()}
     ${progressBySubjectHTML({detail:true, canReview:!Backend.me, title:'Progress by subject and unit', reading:readingReviewHTML()})}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
-    <div class="panel"><h3>Mix-ups we've spotted</h3>${mis.length ? '<ul class="list">' + mis.map(([id,m]) => `<li><b>${esc(MIS[id].name)}</b> (${m.n} time${m.n === 1 ? '' : 's'})<br><span class="muted">Example: ${esc(m.ex[0] || '')}</span><br><span class="muted">Try: ${esc(MIS[id].tip)}</span></li>`).join('') + '</ul>' : '<p class="muted">None yet.</p>'}</div>
     <div class="two"><div class="panel"><h3>Times tables</h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small ${heatView === 'facts' ? 'mint' : ''}" data-heat="facts">Multiplying</button><button class="btn small ${heatView === 'divFacts' ? 'mint' : ''}" data-heat="divFacts">Dividing</button></div>
       <div class="heatwrap" style="margin-top:10px">${heatTable(heatView)}</div>
