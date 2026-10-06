@@ -5129,28 +5129,28 @@ const HISTORY_GROUPS = [
 ];
 const HISTORY_QUESTIONS = {
   historyStories:[
-    {prompt:'Two communities tell different stories about the same event. What is a useful first step?',options:['Choose the older story automatically.','Compare each account’s perspective and supporting evidence.','Assume both accounts describe every detail.','Ignore the community that left fewer written records.'],answer:1},
-    {prompt:'A historian finds a letter written by someone who witnessed an event. What can the letter show?',options:['One person’s perspective and some evidence about the event.','Every person’s experience of the event.','That the writer’s memory is perfectly accurate.','That no other sources are needed.'],answer:0},
-    {prompt:'Why can histories of the same place begin at different points?',options:['A different starting point can highlight different people, changes, or questions.','Only one starting point is allowed in history.','The earliest date is always the most important.','Starting points change what actually happened.'],answer:0},
-    {prompt:'Which statement is the best-supported historical claim?',options:['Everyone remembers the event the same way.','This source proves every detail about the past.','Several sources describe the change, though they emphasize different experiences.','One account is true because it is the longest.'],answer:2}
+    {prompt:'Two towns tell you different stories about the same battle. You are writing your history. What is a useful first step?',options:['Choose the older story automatically.','Compare each account’s perspective and supporting evidence.','Assume both accounts describe every detail.','Ignore the community that left fewer written records.'],answer:1},
+    {prompt:'A sailor hands you a letter written by someone who saw the battle. What can this letter show you?',options:['One person’s perspective and some evidence about the event.','Every person’s experience of the event.','That the writer’s memory is perfectly accurate.','That no other sources are needed.'],answer:0},
+    {prompt:'A visitor asks why your history of Greece starts in a different place than another writer’s. How do you explain it?',options:['A different starting point can highlight different people, changes, or questions.','Only one starting point is allowed in history.','The earliest date is always the most important.','Starting points change what actually happened.'],answer:0},
+    {prompt:'You are deciding what to write in your history. Which statement is the best-supported claim?',options:['Everyone remembers the event the same way.','This source proves every detail about the past.','Several sources describe the change, though they emphasize different experiences.','One account is true because it is the longest.'],answer:2}
   ],
   historyScale:[
-    {prompt:'A historian studies one family’s experience of migration. Which scale is this?',options:['A close, local scale.','A global scale only.','A century-wide scale only.','A comparison with no people.'],answer:0},
-    {prompt:'What can “zooming out” help a historian notice?',options:['Patterns connecting many places or communities.','The exact thoughts of one person.','Details that no source records.','That local experiences do not matter.'],answer:0},
-    {prompt:'A claim says a trade route changed many communities. What is a strong way to test it?',options:['Look for evidence from multiple connected places.','Use one object and assume it explains everything.','Ignore evidence that does not fit.','Ask only whether the route was long.'],answer:0},
-    {prompt:'Why might a historian switch between close-up and wide views?',options:['Different scales reveal different details and patterns.','One scale makes all evidence unnecessary.','Wide views always prove local causes.','Close views cannot include evidence.'],answer:0}
+    {prompt:'In one town you write down a single family’s story of moving across the desert. Which scale is this?',options:['A close, local scale.','A global scale only.','A century-wide scale only.','A comparison with no people.'],answer:0},
+    {prompt:'A reporter from the future asks what you notice when you “zoom out” and look at all your travels together.',options:['Patterns connecting many places or communities.','The exact thoughts of one person.','Details that no source records.','That local experiences do not matter.'],answer:0},
+    {prompt:'A ruler claims the trade route you traveled changed many communities. How could you test that claim?',options:['Look for evidence from multiple connected places.','Use one object and assume it explains everything.','Ignore evidence that does not fit.','Ask only whether the route was long.'],answer:0},
+    {prompt:'Your student asks why you keep switching between close-up stories and big-picture views. What do you say?',options:['Different scales reveal different details and patterns.','One scale makes all evidence unnecessary.','Wide views always prove local causes.','Close views cannot include evidence.'],answer:0}
   ],
   historyFrames:[
-    {prompt:'A historian asks how families and villages formed shared practices. Which frame fits best?',options:['Communities.','Networks.','Production and distribution.','Weather only.'],answer:0},
-    {prompt:'A historian traces how ideas and goods moved between places. Which frame fits best?',options:['Communities.','Networks.','One person’s daily routine only.','A list of rulers only.'],answer:1},
-    {prompt:'A historian studies who made goods and how they reached other people. Which frame fits best?',options:['Production and distribution.','Collective memory only.','A single battle only.','A family tree only.'],answer:0},
-    {prompt:'How can a frame help when studying a complex event?',options:['It focuses attention on one useful set of details and questions.','It guarantees one complete explanation.','It removes the need to compare sources.','It makes every other perspective incorrect.'],answer:0}
+    {prompt:'You want to write about how families and villages built shared customs. Which frame fits best?',options:['Communities.','Networks.','Production and distribution.','Weather only.'],answer:0},
+    {prompt:'You want to trace how silk, ideas, and news moved between places. Which frame fits best?',options:['Communities.','Networks.','One person’s daily routine only.','A list of rulers only.'],answer:1},
+    {prompt:'You want to explain who made iron tools and how they reached farmers. Which frame fits best?',options:['Production and distribution.','Collective memory only.','A single battle only.','A family tree only.'],answer:0},
+    {prompt:'A young scribe asks why you bother choosing a frame for a big, messy event. What do you tell them?',options:['It focuses attention on one useful set of details and questions.','It guarantees one complete explanation.','It removes the need to compare sources.','It makes every other perspective incorrect.'],answer:0}
   ],
   historyMemory:[
-    {prompt:'What is collective memory?',options:['Ways a group remembers and tells stories about its past.','A list of dates that never changes.','A source that is always unbiased.','A record written by only one historian.'],answer:0},
-    {prompt:'Why compare a remembered story with other evidence?',options:['To understand what it reveals and where accounts differ or are incomplete.','To prove memories are useless.','To make all accounts identical.','To avoid asking who created a source.'],answer:0},
-    {prompt:'A new artifact disagrees with a familiar account. What should historians do?',options:['Examine the artifact and compare it with other evidence.','Discard it because the old story is familiar.','Change the artifact to fit the account.','Assume disagreement makes all history unknowable.'],answer:0},
-    {prompt:'Which question helps assess a historical narrative?',options:['Who preserved this account, and whose experiences are missing?','Is this the only story I have heard?','Does the narrative avoid all disagreement?','Can I memorize it without checking evidence?'],answer:0}
+    {prompt:'A child asks you what “collective memory” means. What do you say?',options:['Ways a group remembers and tells stories about its past.','A list of dates that never changes.','A source that is always unbiased.','A record written by only one historian.'],answer:0},
+    {prompt:'A visiting scholar asks why you would compare a remembered story with other evidence. What is your answer?',options:['To understand what it reveals and where accounts differ or are incomplete.','To prove memories are useless.','To make all accounts identical.','To avoid asking who created a source.'],answer:0},
+    {prompt:'Someone digs up an old object that does not match a story everyone knows. What should a good historian do?',options:['Examine the artifact and compare it with other evidence.','Discard it because the old story is familiar.','Change the artifact to fit the account.','Assume disagreement makes all history unknowable.'],answer:0},
+    {prompt:'You are teaching an apprentice griot. Which question helps them judge whether a history is complete?',options:['Who preserved this account, and whose experiences are missing?','Is this the only story I have heard?','Does the narrative avoid all disagreement?','Can I memorize it without checking evidence?'],answer:0}
   ]
 };
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
@@ -5176,58 +5176,58 @@ const HISTORY3_LEARN_ONLY = {villageNetworks:[{name:'Cities, Societies, and Empi
 const HISTORY_GROUPS3 = HISTORY_UNIT3.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id],extraLessons:HISTORY3_LEARN_ONLY[skill.id]}));
 const HISTORY3_QUESTIONS = {
   villageNetworks:[
-    mc('Early farming villages were small. How were they connected to others?','Through networks of exchange and communication','They were completely isolated','Only through written laws','Only through large empires'),
-    mc('Which groups did farming villages interact with?','Foragers, herders, and nomads','Only other farmers','No outsiders','Only rulers of empires'),
-    mc('Why might a village trade with herders?','They could exchange different goods and resources','Herders never traded','Villages produced nothing','Trade was impossible without writing'),
-    mc('What does a village network help historians see?','That small communities were part of wider connections','That villages never changed','That all people lived the same way','That cities appeared first')
+    mc('A traveler asks how the small villages you visit are connected to each other. What do you say?','Through networks of exchange and communication','They were completely isolated','Only through written laws','Only through large empires'),
+    mc('The traveler asks which groups the farming villages deal with. Who do you name?','Foragers, herders, and nomads','Only other farmers','No outsiders','Only rulers of empires'),
+    mc('A villager asks why they should trade with a herder like you. What is the best reason?','They could exchange different goods and resources','Herders never traded','Villages produced nothing','Trade was impossible without writing'),
+    mc('A reporter from the future asks what your trading trips show historians. What do you say?','That small communities were part of wider connections','That villages never changed','That all people lived the same way','That cities appeared first')
   ],
   firstCities:[
-    mc('What happened as agriculture spread and intensified?','Communities grew and some villages became cities','All people returned to foraging','Cities disappeared','Trade stopped'),
-    mc('What is a state?','A political organization that governs a territory and people','A single farming tool','A type of crop','A small family group'),
-    mc('How did linked cities form powerful states?','Through connections such as trade, leadership, and shared institutions','By avoiding all contact','By staying separate villages','By ending farming'),
-    mc('Which change is most connected to growing cities?','More people living together and more complex societies','Smaller and simpler communities','Less need for organization','No new leadership')
+    mc('A farmer from the countryside asks how Uruk got so big. What happened as farming spread and grew stronger?','Communities grew and some villages became cities','All people returned to foraging','Cities disappeared','Trade stopped'),
+    mc('A visitor asks what you mean when you say Uruk rules a “state.” What is a state?','A political organization that governs a territory and people','A single farming tool','A type of crop','A small family group'),
+    mc('A merchant asks how cities like yours joined together into powerful states. What do you say?','Through connections such as trade, leadership, and shared institutions','By avoiding all contact','By staying separate villages','By ending farming'),
+    mc('The visitor notices how crowded and busy Uruk is. Which change comes with growing cities?','More people living together and more complex societies','Smaller and simpler communities','Less need for organization','No new leadership')
   ],
   tradeNetworks:[
-    mc('Which kind of trade network was more common in the ancient world?','Local networks','Global airline routes','Only ocean liners','Digital markets'),
-    mc('Long-distance trade linked societies across which regions?','Afro-Eurasia and the Americas','Only one village','Only Antarctica','Only one river valley'),
-    mc('Why might a society want goods from far away?','They might lack certain resources or want valued items','Distant goods were always identical to local ones','Trade prevented all contact','Only rulers could use goods'),
-    mc('What can trade goods found far from their source suggest?','Connections between distant communities','That the goods fell from the sky','That no one traveled','That trade never happened')
+    mc('A young sailor asks which kind of trade is most common in your world. What do you tell them?','Local networks','Global airline routes','Only ocean liners','Digital markets'),
+    mc('A reporter from the future asks which regions long-distance trade connects. What do you answer?','Afro-Eurasia and the Americas','Only one village','Only Antarctica','Only one river valley'),
+    mc('Your apprentice asks why people pay so much for goods from far away. What do you say?','They might lack certain resources or want valued items','Distant goods were always identical to local ones','Trade prevented all contact','Only rulers could use goods'),
+    mc('Historians find your Indus beads buried in a Mesopotamian city. What do they suggest?','Connections between distant communities','That the goods fell from the sky','That no one traveled','That trade never happened')
   ],
   earlyAgrarian:[
-    mc('Why did complex agrarian societies develop in different ways?','Geographic context shaped their resources and choices','All used identical resources','Climate never mattered','They never farmed'),
-    mc('What is a good way to compare Mesopotamia, Egypt, the Indus Valley, and Shang China?','Identify similarities and differences in farming, cities, and trade','Assume they were the same','Compare only their names','Ignore their environments'),
-    mc('Which is a similarity among several early agrarian societies?','Farming supported growing communities','None used farming','All had identical rulers','All were in the same place'),
-    mc('Why is context important when studying a society?','It helps explain why events and choices happened','It makes evidence unnecessary','It proves every society was equal in size','It removes differences between regions')
+    mc('A young trader asks why every kingdom you visited grew up in its own way. What do you say?','Geographic context shaped their resources and choices','All used identical resources','Climate never mattered','They never farmed'),
+    mc('The trader asks how to compare Mesopotamia, Egypt, the Indus Valley, and Shang China. What is a good way?','Identify similarities and differences in farming, cities, and trade','Assume they were the same','Compare only their names','Ignore their environments'),
+    mc('The trader asks what all those kingdoms had in common. Which similarity do you name?','Farming supported growing communities','None used farming','All had identical rulers','All were in the same place'),
+    mc('A historian asks why you always explain where and when a society lived. Why is context important?','It helps explain why events and choices happened','It makes evidence unnecessary','It proves every society was equal in size','It removes differences between regions')
   ],
   mesopotamia:[
-    mc('Mesopotamia developed between which rivers?','The Tigris and Euphrates','The Nile and Congo','The Mississippi and Amazon','The Rhine and Danube'),
-    mc('Which development helped Mesopotamian governments and trade keep records?','Writing','Telephones','Printing presses','Airplanes'),
-    mc('What did early law codes help do in complex societies?','Set rules for behavior and settle disputes','Replace all farming','Prevent writing','End trade'),
-    mc('How did religion shape Mesopotamian cities?','Temples and beliefs were central to community life','Cities had no beliefs','Religion banned cities','Temples were unrelated to leaders')
+    mc('A visiting prince asks between which two rivers your land lies. What do you tell him?','The Tigris and Euphrates','The Nile and Congo','The Mississippi and Amazon','The Rhine and Danube'),
+    mc('Your scribes ask which invention helps your government and merchants keep records. What is it?','Writing','Telephones','Printing presses','Airplanes'),
+    mc('A judge asks why you had your law code carved in stone. What do law codes help do?','Set rules for behavior and settle disputes','Replace all farming','Prevent writing','End trade'),
+    mc('A traveler sees the giant temple in the center of your city. How does religion shape your cities?','Temples and beliefs were central to community life','Cities had no beliefs','Religion banned cities','Temples were unrelated to leaders')
   ],
   shangChina:[
-    mc('Which technology was important to the Shang Dynasty?','Bronze','Steel skyscrapers','Plastic','Electricity'),
-    mc('What did Shang ancestor worship involve?','Honoring ancestors in religious practice','Ignoring family history','Banning ceremonies','Worshiping only machines'),
-    mc('What kind of Shang writing evidence do historians study?','Inscriptions on bones and bronze','Digital files','Printed newspapers','Typewritten letters'),
-    mc('How did political power support Shang society?','Rulers organized people, resources, and religion','Rulers had no role','Everyone governed separately','Farming was unnecessary')
+    mc('A soldier asks which technology makes Shang weapons and ritual vessels so strong. What is it?','Bronze','Steel skyscrapers','Plastic','Electricity'),
+    mc('A child asks what Shang ancestor worship is about. What do you say?','Honoring ancestors in religious practice','Ignoring family history','Banning ceremonies','Worshiping only machines'),
+    mc('A historian from the future asks what writing from your time they can study. What do you tell them?','Inscriptions on bones and bronze','Digital files','Printed newspapers','Typewritten letters'),
+    mc('A visitor asks how the Shang king holds your society together. How does political power support it?','Rulers organized people, resources, and religion','Rulers had no role','Everyone governed separately','Farming was unnecessary')
   ],
   egyptNubia:[
-    mc('Which river shaped ancient Egypt and Nubia?','The Nile','The Yangtze','The Rhine','The Seine'),
-    mc('Why was the Nile important for farming?','Its flooding and water supported crops','It froze every year','It removed all soil','It had no effect'),
-    mc('How are Nubia and Egypt best described?','Neighboring societies that influenced each other','Societies with no contact','One society that never changed','Societies on different continents with no trade'),
-    mc('Which evidence could show influence between Nubia and Egypt?','Shared artifacts, trade, and political contact','A modern map only','A single unlabeled rock','Nothing could show it')
+    mc('A visitor asks which river shapes both your kingdom and Egypt. What do you answer?','The Nile','The Yangtze','The Rhine','The Seine'),
+    mc('A farmer asks why the river matters so much for crops. What do you say?','Its flooding and water supported crops','It froze every year','It removed all soil','It had no effect'),
+    mc('A reporter from the future asks how to describe Nubia and Egypt. What is the best description?','Neighboring societies that influenced each other','Societies with no contact','One society that never changed','Societies on different continents with no trade'),
+    mc('A historian wants proof that Nubia and Egypt influenced each other. Which evidence could show it?','Shared artifacts, trade, and political contact','A modern map only','A single unlabeled rock','Nothing could show it')
   ],
   earlyAmericas:[
-    mc('Which early society in Mesoamerica is often studied with this unit?','The Olmec','The Shang','The Sumerians','The Hittites'),
-    mc('Chavín de Huantar was located in which region?','The Andes of South America','The Nile Valley','Mesopotamia','The Arctic'),
-    mc('Why did early American societies differ by region?','They adapted to different environments and resources','All regions were identical','They had no farms','Geography did not matter'),
-    mc('How can historians learn about early American societies?','By studying artifacts, buildings, and other evidence','Only from modern novels','Only from one written law','They cannot study them')
+    mc('A visitor from the future asks the name of your people, one of the earliest complex societies in Mesoamerica. What are you called?','The Olmec','The Shang','The Sumerians','The Hittites'),
+    mc('A traveler from the south tells you about a temple called Chavín de Huantar. Where is it?','The Andes of South America','The Nile Valley','Mesopotamia','The Arctic'),
+    mc('The traveler asks why their society is so different from yours. What do you say?','They adapted to different environments and resources','All regions were identical','They had no farms','Geography did not matter'),
+    mc('A historian from the future wants to learn about your society. How can they do it?','By studying artifacts, buildings, and other evidence','Only from modern novels','Only from one written law','They cannot study them')
   ],
   ancientIndia:[
-    mc('Which river valley hosted early cities in South Asia?','The Indus','The Rhine','The Mississippi','The Seine'),
-    mc('What is notable about many Indus Valley cities?','Planned layouts and drainage systems','No streets','No buildings','No trade'),
-    mc('What are Indus seals and traded goods evidence of?','Trade networks and record-keeping practices','Modern computers','Only farming tools','A fully translated law code'),
-    mc('How do historians study a society that left few readable written records?','By analyzing archaeological evidence such as buildings and artifacts','By guessing without evidence','By ignoring the society','By using only modern newspapers')
+    mc('A visitor asks which river valley your city sits in. What do you tell them?','The Indus','The Rhine','The Mississippi','The Seine'),
+    mc('The visitor is amazed by your city. What is notable about many Indus Valley cities?','Planned layouts and drainage systems','No streets','No buildings','No trade'),
+    mc('A merchant shows you a carved stone seal. What are seals and traded goods evidence of?','Trade networks and record-keeping practices','Modern computers','Only farming tools','A fully translated law code'),
+    mc('A historian from the future cannot read your writing. How can they study your city?','By analyzing archaeological evidence such as buildings and artifacts','By guessing without evidence','By ignoring the society','By using only modern newspapers')
   ]
 };
 const HISTORY_UNIT2 = [
@@ -5240,34 +5240,34 @@ const HISTORY_UNIT2 = [
 const HISTORY_GROUPS2 = HISTORY_UNIT2.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id]}));
 const HISTORY2_QUESTIONS = {
   earliestHumans:[
-    {prompt:'For most of the 250,000 years of our species’ history, how did people mainly live?',options:['As foragers','As city dwellers','As factory workers','As farmers'],answer:0},
-    {prompt:'About how long ago did some people begin experimenting with farming?',options:['About 12,000 years ago','About 250 years ago','About 2,000 years ago','About 250,000 years ago'],answer:0},
-    {prompt:'What is the Neolithic Revolution?',options:['The shift toward farming and settled life','The invention of the printing press','A war between empires','The first use of writing'],answer:0},
-    {prompt:'Why compare life “then” and “now” when studying early humans?',options:['It reveals changes and continuities in how people live','It proves the past was identical to today','It removes the need for evidence','It shows foragers had no knowledge'],answer:0}
+    {prompt:'The reporter asks: “For most of the 250,000 years of your species’ history, how did people mainly live?”',options:['As foragers','As city dwellers','As factory workers','As farmers'],answer:0},
+    {prompt:'The reporter asks: “About how long ago did some people start experimenting with farming?”',options:['About 12,000 years ago','About 250 years ago','About 2,000 years ago','About 250,000 years ago'],answer:0},
+    {prompt:'The reporter asks: “People in my time talk about the Neolithic Revolution. What was it?”',options:['The shift toward farming and settled life','The invention of the printing press','A war between empires','The first use of writing'],answer:0},
+    {prompt:'The reporter asks: “Why should I compare how people lived then with how we live now?”',options:['It reveals changes and continuities in how people live','It proves the past was identical to today','It removes the need for evidence','It shows foragers had no knowledge'],answer:0}
   ],
   migrationArt:[
-    {prompt:'Where did Homo sapiens first develop?',options:['Africa','Antarctica','Australia only','North America'],answer:0},
-    {prompt:'What can early human art tell historians?',options:['Clues about beliefs, skills, and communities, though not everything','The exact thoughts of every person','That writing already existed everywhere','Nothing, because art is not evidence'],answer:0},
-    {prompt:'Early humans created art before writing existed. What does that show?',options:['People communicated and expressed ideas in ways other than writing','Only written sources are reliable','Early humans could not think symbolically','Art always shows daily meals'],answer:0},
-    {prompt:'A historian finds paintings in a cave. What is the best next step?',options:['Compare them with other evidence about the people and place','Assume the paintings explain all of their culture','Ignore them because they have no words','Decide the artist’s exact name'],answer:0}
+    {prompt:'A visitor from the future asks: “Where did your people, Homo sapiens, first develop?”',options:['Africa','Antarctica','Australia only','North America'],answer:0},
+    {prompt:'The visitor asks: “What can your paintings tell historians thousands of years from now?”',options:['Clues about beliefs, skills, and communities, though not everything','The exact thoughts of every person','That writing already existed everywhere','Nothing, because art is not evidence'],answer:0},
+    {prompt:'The visitor notices nobody here can write yet. What does your art show about that?',options:['People communicated and expressed ideas in ways other than writing','Only written sources are reliable','Early humans could not think symbolically','Art always shows daily meals'],answer:0},
+    {prompt:'A historian of the future finds your paintings. What is the best next step for them?',options:['Compare them with other evidence about the people and place','Assume the paintings explain all of their culture','Ignore them because they have no words','Decide the artist’s exact name'],answer:0}
   ],
   foragingSocieties:[
-    {prompt:'Foraging is also called:',options:['Hunting and gathering','Mining and trading','Planting and harvesting','Building and printing'],answer:0},
-    {prompt:'Why did foraging require great knowledge?',options:['People needed to know plants, animals, seasons, and places','Food always stayed in one spot','Tools were never used','Communities never shared information'],answer:0},
-    {prompt:'How did communities help foragers thrive?',options:['By sharing skills, knowledge, and support','By avoiding all cooperation','By storing food in factories','By depending on one person only'],answer:0},
-    {prompt:'How could networks help foraging communities?',options:['They could exchange information, goods, and help','They prevented all movement','They made tools unnecessary','They ended communication'],answer:0}
+    {prompt:'A traveler asks what your way of life is also called. You tell them foraging is also called:',options:['Hunting and gathering','Mining and trading','Planting and harvesting','Building and printing'],answer:0},
+    {prompt:'A young member of your band asks why foraging takes so much knowledge. What do you teach them?',options:['People needed to know plants, animals, seasons, and places','Food always stayed in one spot','Tools were never used','Communities never shared information'],answer:0},
+    {prompt:'The traveler asks how your community helps everyone survive. What do you say?',options:['By sharing skills, knowledge, and support','By avoiding all cooperation','By storing food in factories','By depending on one person only'],answer:0},
+    {prompt:'The traveler asks how meeting other bands helps you. How could networks help foraging communities?',options:['They could exchange information, goods, and help','They prevented all movement','They made tools unnecessary','They ended communication'],answer:0}
   ],
   agriculturalRevolution:[
-    {prompt:'What is agriculture?',options:['Growing crops and raising animals for food','Collecting wild food only','Traveling without settling','Trading written records'],answer:0},
-    {prompt:'Which is an advantage of farming?',options:['It can produce more food in one place','It guarantees perfect health','It removes the risk of drought','It ends all conflict'],answer:0},
-    {prompt:'Which is a possible disadvantage of early farming?',options:['Crops could fail and diets could become less varied','Nobody needed to plan ahead','Communities always became smaller','Tools disappeared'],answer:0},
-    {prompt:'Why did farming lay a foundation for early agricultural societies?',options:['Reliable food supported settled communities','It made people stop using resources','It prevented trade','It required no cooperation'],answer:0}
+    {prompt:'A forager passing by asks what this “agriculture” thing is. How do you explain it?',options:['Growing crops and raising animals for food','Collecting wild food only','Traveling without settling','Trading written records'],answer:0},
+    {prompt:'Your neighbor asks why you should keep farming. Which advantage do you point to?',options:['It can produce more food in one place','It guarantees perfect health','It removes the risk of drought','It ends all conflict'],answer:0},
+    {prompt:'Your neighbor worries about farming. Which disadvantage might come true?',options:['Crops could fail and diets could become less varied','Nobody needed to plan ahead','Communities always became smaller','Tools disappeared'],answer:0},
+    {prompt:'A reporter from the future asks why your farm matters for the history that comes after. What do you say?',options:['Reliable food supported settled communities','It made people stop using resources','It prevented trade','It required no cooperation'],answer:0}
   ],
   biggestMistake:[
-    {prompt:'Which kinds of change did agriculture influence?',options:['Diet, communities, lifestyles, networks, and production','Only the weather','Only the length of days','Nothing beyond food'],answer:0},
-    {prompt:'A claim says farming was “the biggest mistake.” What is the best way to test it?',options:['Compare evidence about benefits and costs for different people','Accept it because it sounds dramatic','Ignore all disadvantages','Use only one object as proof'],answer:0},
-    {prompt:'Which statement shows the question has more than one side?',options:['Farming created new possibilities and new problems','Farming had no effects','Foraging never required skill','Everyone experienced agriculture the same way'],answer:0},
-    {prompt:'Which frame is most useful for studying how food was made and shared?',options:['Production and distribution','Weather only','A single ruler','A battle map'],answer:0}
+    {prompt:'A visitor asks which parts of life farming has changed in your village. What do you list?',options:['Diet, communities, lifestyles, networks, and production','Only the weather','Only the length of days','Nothing beyond food'],answer:0},
+    {prompt:'Someone says farming was “the biggest mistake” humans ever made. How should your village test that claim?',options:['Compare evidence about benefits and costs for different people','Accept it because it sounds dramatic','Ignore all disadvantages','Use only one object as proof'],answer:0},
+    {prompt:'You want to show the visitor that the question has more than one side. Which statement shows that?',options:['Farming created new possibilities and new problems','Farming had no effects','Foraging never required skill','Everyone experienced agriculture the same way'],answer:0},
+    {prompt:'A historian asks which frame helps most for studying how your village makes and shares food. What do you say?',options:['Production and distribution','Weather only','A single ruler','A battle map'],answer:0}
   ]
 };
 const HISTORY_UNIT4 = [
@@ -5288,76 +5288,76 @@ const HISTORY4_LEARN_ONLY = {portableBelief:[{name:'Empires and Belief Systems |
 const HISTORY_GROUPS4 = HISTORY_UNIT4.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id],extraLessons:HISTORY4_LEARN_ONLY[skill.id]}));
 const HISTORY4_QUESTIONS = {
   portableBelief:[
-    mc('What makes a belief system \u201cportable\u201d?','It can travel with people to new places','It is tied to one temple only','It forbids travel','It exists only in laws'),
-    mc('How did portable belief systems often spread?','Along trade and travel networks','Only through isolation','Only by farming','By avoiding contact'),
-    mc('Why could portable belief systems connect diverse communities?','Shared beliefs and practices linked people across regions','They erased all differences','They required one language only','They stopped trade'),
-    mc('Which is an example of a portable belief system?','Buddhism','A village boundary stone','A harvest tool','A trade price list')
+    mc('A fellow traveler asks what makes a belief system “portable.” What do you say?','It can travel with people to new places','It is tied to one temple only','It forbids travel','It exists only in laws'),
+    mc('The traveler asks how portable belief systems usually spread. What have you seen on your journeys?','Along trade and travel networks','Only through isolation','Only by farming','By avoiding contact'),
+    mc('The traveler asks how one belief can link people in very different places. What do you say?','Shared beliefs and practices linked people across regions','They erased all differences','They required one language only','They stopped trade'),
+    mc('You point to monks traveling in your caravan. Which is an example of a portable belief system?','Buddhism','A village boundary stone','A harvest tool','A trade price list')
   ],
   hinduBuddhism:[
-    mc('Who founded Buddhism?','Siddhartha Gautama, the Buddha','Muhammad','Confucius','Cyrus'),
-    mc('In Hinduism, what does dharma refer to?','Duty and the right way of living','A kind of trade good','A military rank','A city wall'),
-    mc('What is the cycle of death and rebirth called?','Samsara','Mandate','Satrapy','Census'),
-    mc('Which idea is central to Buddhism?','Ending suffering by following the Eightfold Path','Building roads','Honoring emperors as gods only','Avoiding all teaching')
+    mc('A visiting monk asks if you know who founded Buddhism. What do you answer?','Siddhartha Gautama, the Buddha','Muhammad','Confucius','Cyrus'),
+    mc('A Hindu adviser in your court talks about dharma. What does dharma refer to?','Duty and the right way of living','A kind of trade good','A military rank','A city wall'),
+    mc('A child asks what the cycle of death and rebirth is called. What do you tell them?','Samsara','Mandate','Satrapy','Census'),
+    mc('A traveler asks which idea is at the heart of Buddhism. What do you say?','Ending suffering by following the Eightfold Path','Building roads','Honoring emperors as gods only','Avoiding all teaching')
   ],
   judaismChristianity:[
-    mc('Judaism is known for belief in:','One God and a covenant with the Jewish people','Many city gods only','No sacred texts','Rule by emperors only'),
-    mc('Christianity developed from the teachings about:','Jesus of Nazareth','Siddhartha Gautama','Confucius','Alexander'),
-    mc('In which region did Judaism and Christianity develop?','Southwest Asia','Northern Europe','The Americas','Southeast Asia'),
-    mc('What is the central sacred text of Judaism?','The Torah','The Quran','The Analects','The Vedas only')
+    mc('A traveler asks what Judaism is known for believing. What do you say?','One God and a covenant with the Jewish people','Many city gods only','No sacred texts','Rule by emperors only'),
+    mc('The traveler hears people speaking about a new group. Christianity developed from teachings about whom?','Jesus of Nazareth','Siddhartha Gautama','Confucius','Alexander'),
+    mc('A reporter from the future asks in which region Judaism and Christianity developed. What do you answer?','Southwest Asia','Northern Europe','The Americas','Southeast Asia'),
+    mc('A child asks you about the most important sacred text of Judaism. What is it?','The Torah','The Quran','The Analects','The Vedas only')
   ],
   islam:[
-    mc('Where did Islam begin?','Arabia','China','Rome','Mesoamerica'),
-    mc('What is the Quran?','The sacred text of Islam','A Roman law code','A Chinese dynasty','A trade route'),
-    mc('Who is regarded by Muslims as the Prophet who received revelations?','Muhammad','Augustus','Darius','Laozi'),
-    mc('What are the Five Pillars of Islam?','Core practices of Muslim life','Five Roman roads','Five Greek cities','Five Chinese dynasties')
+    mc('A traveler asks where Islam began. What do you tell them?','Arabia','China','Rome','Mesoamerica'),
+    mc('The traveler sees people reciting from a book. What is the Quran?','The sacred text of Islam','A Roman law code','A Chinese dynasty','A trade route'),
+    mc('The traveler asks who Muslims regard as the Prophet who received revelations. What do you answer?','Muhammad','Augustus','Darius','Laozi'),
+    mc('The traveler asks what the Five Pillars of Islam are. What do you say?','Core practices of Muslim life','Five Roman roads','Five Greek cities','Five Chinese dynasties')
   ],
   comparePortable:[
-    mc('Why compare portable belief systems?','To see similarities, differences, and why they spread','To prove they are identical','To ignore their histories','To avoid using evidence'),
-    mc('Which is a similarity many portable belief systems share?','Teachings about how people should live and treat others','They all began in one city','They all rejected travel','They all lacked communities'),
-    mc('What helped belief systems spread across regions?','Trade routes, travelers, and sometimes empires','Isolation','Closed borders only','Avoiding networks'),
-    mc('Which claim is best supported by comparing belief systems?','Traditions changed as they spread to new regions','Traditions never changed','Only one tradition spread','Spread had no causes')
+    mc('Back home, a student asks why you compare the belief systems you met. What do you say?','To see similarities, differences, and why they spread','To prove they are identical','To ignore their histories','To avoid using evidence'),
+    mc('The student asks what many portable belief systems have in common. Which similarity do you name?','Teachings about how people should live and treat others','They all began in one city','They all rejected travel','They all lacked communities'),
+    mc('The student asks what helped beliefs travel as far as you did. What do you answer?','Trade routes, travelers, and sometimes empires','Isolation','Closed borders only','Avoiding networks'),
+    mc('You saw Buddhism look different in each land you passed through. Which claim is best supported?','Traditions changed as they spread to new regions','Traditions never changed','Only one tradition spread','Spread had no causes')
   ],
   persia:[
-    mc('How did the Persian Empire govern its large territory?','Through provinces called satrapies','Through a single village','Without officials','By avoiding roads'),
-    mc('What was the Royal Road used for?','Communication and travel across the empire','A farming ritual','A battle formation','A religious holiday'),
-    mc('Persian rulers like Cyrus were known for:','Allowing conquered peoples to keep many customs','Banning all travel','Ending trade','Destroying every city'),
-    mc('The Persian Empire founded by Cyrus is called the:','Achaemenid Empire','Han Empire','Gupta Empire','Aksumite Empire')
+    mc('A new governor asks how you rule such a huge territory. What do you tell him?','Through provinces called satrapies','Through a single village','Without officials','By avoiding roads'),
+    mc('A royal messenger asks what the Royal Road is for. What do you say?','Communication and travel across the empire','A farming ritual','A battle formation','A religious holiday'),
+    mc('A conquered city asks what kind of ruler you will be. What are rulers like you known for?','Allowing conquered peoples to keep many customs','Banning all travel','Ending trade','Destroying every city'),
+    mc('A reporter from the future asks the name of the empire you founded. What do you answer?','Achaemenid Empire','Han Empire','Gupta Empire','Aksumite Empire')
   ],
   greece:[
-    mc('Many Greek communities were organized as:','City-states','One national government','Nomadic bands only','Provinces of Rome'),
-    mc('Athens is known for developing:','An early form of democracy among citizens','A single emperor','Bronze oracle bones','The Mandate of Heaven'),
-    mc('How did Alexander the Great spread Greek culture?','By conquering a large empire','By avoiding other lands','By closing trade','By ending the army'),
-    mc('Sparta was known for:','A military-focused society','Having no army','A mostly written law code','Being part of Han China')
+    mc('A student asks how most Greek communities are organized. What do you say?','City-states','One national government','Nomadic bands only','Provinces of Rome'),
+    mc('A visitor to Athens asks what your city is famous for developing. What is it?','An early form of democracy among citizens','A single emperor','Bronze oracle bones','The Mandate of Heaven'),
+    mc('Your old student Alexander has marched far to the east. How did he spread Greek culture?','By conquering a large empire','By avoiding other lands','By closing trade','By ending the army'),
+    mc('A student asks what Sparta is known for. What do you answer?','A military-focused society','Having no army','A mostly written law code','Being part of Han China')
   ],
   imperialChina:[
-    mc('What was the Mandate of Heaven?','The idea that rulers govern with approval that can be lost','A Roman road','A trade tax','A type of writing'),
-    mc('How did the Qin unify China?','By standardizing laws, writing, and money','By giving up power','By ending government','By closing all cities'),
-    mc('Which philosophy favored strict laws and punishments?','Legalism','Daoism','Buddhism','Christianity'),
-    mc('Which dynasty came before the Qin and used the Mandate of Heaven?','The Zhou','The Gupta','The Ptolemaic','The Achaemenid')
+    mc('A scholar asks what the Mandate of Heaven means. What do you tell him?','The idea that rulers govern with approval that can be lost','A Roman road','A trade tax','A type of writing'),
+    mc('An official asks how the Qin unified China. What do you answer?','By standardizing laws, writing, and money','By giving up power','By ending government','By closing all cities'),
+    mc('A student asks which philosophy you follow, the one that favors strict laws and punishments. What is it?','Legalism','Daoism','Buddhism','Christianity'),
+    mc('A historian asks which dynasty ruled before the Qin and used the Mandate of Heaven. What do you say?','The Zhou','The Gupta','The Ptolemaic','The Achaemenid')
   ],
   compareEmpires:[
-    mc('Why compare ancient empires?','To see how states expanded, governed diverse peoples, and justified power','To prove all were identical','To avoid evidence','To ignore geography'),
-    mc('Which is a way empires justified their power?','Claiming divine approval or successful leadership','Giving up all authority','Avoiding rules','Ignoring subjects'),
-    mc('What helped empires govern diverse peoples?','Roads, officials, laws, and local arrangements','Isolation','No communication','Only farming tools'),
-    mc('Which claim is best supported by comparing empires?','Empires used different methods to expand and govern','All empires acted the same way','Empires never changed','Power had no sources')
+    mc('The emperor asks why your report compares the empires you visited. What do you say?','To see how states expanded, governed diverse peoples, and justified power','To prove all were identical','To avoid evidence','To ignore geography'),
+    mc('The emperor asks how rulers you met convinced people they had the right to rule. Which way did they use?','Claiming divine approval or successful leadership','Giving up all authority','Avoiding rules','Ignoring subjects'),
+    mc('The emperor asks what helped those empires govern so many different peoples. What do you report?','Roads, officials, laws, and local arrangements','Isolation','No communication','Only farming tools'),
+    mc('After all your travels, which claim is best supported by comparing empires?','Empires used different methods to expand and govern','All empires acted the same way','Empires never changed','Power had no sources')
   ],
   rome:[
-    mc('Who became the first Roman emperor?','Augustus','Cyrus','Qin Shi Huangdi','Asoka'),
-    mc('What was the Pax Romana?','A long period of relative peace and stability','A Chinese philosophy','A trade tax','A religious text'),
-    mc('What helped Rome control its territory?','Roads, legions, and law','Isolation','No army','Only farming'),
-    mc('Rome began as a:','Republic','Dynasty ruled by the Qin','Satrapy','Caliphate')
+    mc('A new recruit asks who became the first Roman emperor. What do you answer?','Augustus','Cyrus','Qin Shi Huangdi','Asoka'),
+    mc('The recruit asks what people mean by the Pax Romana. What do you tell him?','A long period of relative peace and stability','A Chinese philosophy','A trade tax','A religious text'),
+    mc('A merchant asks how Rome keeps control of such a huge territory. What do you say?','Roads, legions, and law','Isolation','No army','Only farming'),
+    mc('A child asks what Rome was before it had emperors. Rome began as a:','Republic','Dynasty ruled by the Qin','Satrapy','Caliphate')
   ],
   romeHan:[
-    mc('Which philosophy did Han rulers promote in government?','Confucianism','Legalism only','Christianity','Zoroastrianism'),
-    mc('What trade network helped connect Rome and Han China indirectly?','The Silk Road','The Royal Road only','The Mississippi','The Amazon'),
-    mc('Which problem did both Rome and Han China face?','Governing large territories and defending borders','No need for rulers','No trade','No farmers'),
-    mc('How did Han rulers staff their government?','With educated officials in a bureaucracy','With no officials','Only with foreign armies','Only with priests')
+    mc('A new clerk asks which philosophy the Han emperors use to guide the government. What is it?','Confucianism','Legalism only','Christianity','Zoroastrianism'),
+    mc('A merchant tells you about Rome. Which trade network connects your empire and Rome indirectly?','The Silk Road','The Royal Road only','The Mississippi','The Amazon'),
+    mc('The merchant says Rome has problems too. Which problem do both Rome and Han China face?','Governing large territories and defending borders','No need for rulers','No trade','No farmers'),
+    mc('The merchant asks how the Han fill government jobs. What do you tell him?','With educated officials in a bureaucracy','With no officials','Only with foreign armies','Only with priests')
   ],
   womenAncient:[
-    mc('In Han China, Confucian ideas often emphasized women\u2019s roles in:','The family and household hierarchy','Voting in assemblies','Leading all armies','Writing Roman laws'),
-    mc('Elite Roman women could often:','Influence family affairs and manage property, but could not vote','Vote and hold every office','Have no family role','Govern the empire as consuls'),
-    mc('Why compare women\u2019s roles in Rome and Han China?','To see how societies shaped opportunities and limits','To prove roles were identical','To avoid evidence','To ignore social class'),
-    mc('Which statement is best supported?','Women\u2019s experiences differed by society and social class','Every woman had the same experience','Women left no influence','Evidence is unnecessary')
+    mc('A student asks what Confucian ideas say about women’s roles in Han China. Women’s roles were often focused on:','The family and household hierarchy','Voting in assemblies','Leading all armies','Writing Roman laws'),
+    mc('A traveler from Rome describes the lives of rich Roman women. What could elite Roman women often do?','Influence family affairs and manage property, but could not vote','Vote and hold every office','Have no family role','Govern the empire as consuls'),
+    mc('Your student asks why you would compare women’s lives in Rome and Han China. What do you say?','To see how societies shaped opportunities and limits','To prove roles were identical','To avoid evidence','To ignore social class'),
+    mc('After hearing about Rome, which statement is best supported?','Women\u2019s experiences differed by society and social class','Every woman had the same experience','Women left no influence','Evidence is unnecessary')
   ]
 };
 const BIO_UNIT1 = [
@@ -5378,72 +5378,117 @@ const BIO_GROUPS = [
   {id:'plants',name:'Reproduction in plants',quizName:'Quiz 2',learn:'Explore plant reproductive success, asexual and sexual reproduction, and seed dispersal.',skills:['plantSuccessU','plantSuccessA','asexualPlants','sexualPlants','seedDispersal']},
   {id:'digestion',name:'Human digestive system',quizName:'Quiz 3',learn:'Follow digestion through the human body and the intestines.',skills:['digestionHumans','digestionIntestines','humanDigestion']}
 ];
+/* History and Biology role play: in History the student is a historical figure (or an everyday person of the time) answering
+   visitors' questions; in Biology the student is a tour guide at the Nature Center. One card per skill (docs: tone change). */
+const ROLE_CARDS = {
+  historyStories:{emoji:'📜',who:'Herodotus, the Greek historian',where:'Halicarnassus, about 440 BCE',intro:'People call you the “father of history.” Travelers bring you their stories, and you decide how to tell them.'},
+  historyScale:{emoji:'🧭',who:'Ibn Battuta, the traveling scholar',where:'Morocco and beyond, about 1350 CE',intro:'You have traveled from North Africa to China. Sometimes you study one family, sometimes whole regions.'},
+  historyFrames:{emoji:'🖌️',who:'Sima Qian, court historian of the Han dynasty',where:'Chang’an, China, about 100 BCE',intro:'You are writing a giant history of China. To keep it organized, you choose a frame for each question.'},
+  historyMemory:{emoji:'🥁',who:'a griot, a keeper of history in the Mali Empire',where:'West Africa, about 1350 CE',intro:'You remember your people’s history in songs and stories and pass it down out loud.'},
+  earliestHumans:{emoji:'🔥',who:'an elder in a foraging band',where:'East Africa, long before farming',intro:'A time-traveling reporter from Pet Town has found your campfire and wants to know about human life across the ages.'},
+  migrationArt:{emoji:'🎨',who:'a cave painter',where:'Chauvet Cave, France, about 30,000 years ago',intro:'You paint horses and lions on the cave walls by torchlight. Your ancestors’ ancestors walked here from far away.'},
+  foragingSocieties:{emoji:'🏹',who:'a forager who guides your band through the seasons',where:'the Ice Age',intro:'Your band moves with the seasons, finding food wherever the land offers it.'},
+  agriculturalRevolution:{emoji:'🌾',who:'one of the first wheat farmers',where:'the Fertile Crescent, about 9000 BCE',intro:'Your family has started planting seeds and keeping goats instead of following the herds.'},
+  biggestMistake:{emoji:'🏘️',who:'the head of a farming family',where:'Abu Hureyra, Syria, about 9000 BCE',intro:'Your grandparents were foragers. Now your village farms, and people argue about whether that was a good idea.'},
+  villageNetworks:{emoji:'🐐',who:'a herder who trades with farming villages',where:'the Fertile Crescent, about 6000 BCE',intro:'You move your goats between pastures and stop at farming villages along the way.'},
+  firstCities:{emoji:'🏛️',who:'a city official in Uruk',where:'Mesopotamia, about 3200 BCE',intro:'Uruk is one of the first cities in the world, with tens of thousands of people.'},
+  tradeNetworks:{emoji:'⛵',who:'a merchant from Dilmun',where:'the island of Bahrain, about 2000 BCE',intro:'Your ships carry copper, pearls, and dates between Mesopotamia and the Indus Valley.'},
+  mesopotamia:{emoji:'⚖️',who:'Hammurabi, king of Babylon',where:'Mesopotamia, about 1750 BCE',intro:'You are famous for carving a code of laws onto a tall stone for everyone to see.'},
+  shangChina:{emoji:'🗡️',who:'Fu Hao, Shang general and queen',where:'Anyang, China, about 1200 BCE',intro:'You lead armies and perform important ceremonies for the Shang king.'},
+  egyptNubia:{emoji:'🏺',who:'Piye, king of Kush in Nubia',where:'the Nile Valley, about 740 BCE',intro:'You rule Nubia and have marched north to rule Egypt too. Your two lands have shaped each other for centuries.'},
+  earlyAmericas:{emoji:'🗿',who:'an Olmec sculptor carving a giant stone head',where:'San Lorenzo, Mexico, about 1200 BCE',intro:'You carve huge stone heads of rulers. Your people are among the earliest complex societies in the Americas.'},
+  ancientIndia:{emoji:'📐',who:'a city planner in Mohenjo-daro',where:'the Indus Valley, about 2500 BCE',intro:'You help lay out straight streets, brick houses, and covered drains.'},
+  earlyAgrarian:{emoji:'🗺️',who:'a traveling merchant who has visited many early kingdoms',where:'Afro-Eurasia, ancient times',intro:'You have seen Mesopotamia, Egypt, the Indus Valley, and Shang China with your own eyes.'},
+  portableBelief:{emoji:'🐫',who:'a Silk Road merchant',where:'Central Asia, about 400 CE',intro:'Your caravans carry silk and spices, and travelers bring their beliefs along with their goods.'},
+  hinduBuddhism:{emoji:'☸️',who:'Emperor Ashoka of the Maurya Empire',where:'India, about 250 BCE',intro:'After a terrible war you turned to Buddhism and carved messages about right living on pillars across your empire.'},
+  judaismChristianity:{emoji:'🕍',who:'a pilgrim visiting Jerusalem',where:'Southwest Asia, about 50 CE',intro:'Jerusalem is full of pilgrims, teachers, and travelers from many lands.'},
+  islam:{emoji:'🕌',who:'a trader in Mecca',where:'Arabia, about 650 CE',intro:'Caravans come and go from Mecca, and travelers ask you about the faith that began here.'},
+  comparePortable:{emoji:'🙏',who:'Xuanzang, a Buddhist monk and traveler',where:'the road from China to India, about 640 CE',intro:'You walked thousands of miles to study in India and met people of many faiths along the way.'},
+  persia:{emoji:'👑',who:'Cyrus the Great of Persia',where:'the Persian Empire, about 540 BCE',intro:'You built the largest empire the world had yet seen, stretching from Egypt to India.'},
+  greece:{emoji:'🏺',who:'Aristotle, the Greek philosopher',where:'Athens, about 340 BCE',intro:'You study everything from animals to governments, and you were once a teacher to young Alexander.'},
+  imperialChina:{emoji:'📏',who:'Li Si, chancellor of the Qin dynasty',where:'Xianyang, China, about 220 BCE',intro:'You helped the First Emperor unite China under one strict set of rules.'},
+  compareEmpires:{emoji:'🧳',who:'Zhang Qian, a Han envoy to the western lands',where:'Central Asia, about 125 BCE',intro:'The emperor sent you west to learn about faraway kingdoms. You have seen many ways to rule.'},
+  rome:{emoji:'🛡️',who:'a Roman legionary',where:'the Roman Empire, about 100 CE',intro:'You march, build roads, and guard the frontier of the empire.'},
+  romeHan:{emoji:'📚',who:'a Han government official',where:'Luoyang, China, about 100 CE',intro:'You passed tests on the classics to earn your job. Merchants bring rumors of a great empire far to the west: Rome.'},
+  womenAncient:{emoji:'✍️',who:'Ban Zhao, Han historian and writer',where:'Luoyang, China, about 100 CE',intro:'You finished your brother’s history of the Han and wrote a famous book of advice for women.'},
+  cellsOrganisms:{emoji:'🔬',who:'a tour guide at the Nature Center’s Microscope Corner',where:'Pet Town Nature Center',intro:'Your tour group is peeking through microscopes at pond water and onion skin.'},
+  cellPartsU:{emoji:'🧫',who:'a tour guide at the Giant Cell Model',where:'Pet Town Nature Center',intro:'Your group walks right inside a model cell as big as a room.'},
+  cellPartsA:{emoji:'🧩',who:'a tour guide running the Cell Detective game',where:'Pet Town Nature Center',intro:'Visitors describe a cell problem, and you figure out which part is involved.'},
+  plantSuccessU:{emoji:'🌸',who:'a tour guide in the Pollinator Garden',where:'Pet Town Nature Center',intro:'Bees and butterflies buzz around your tour group in the flower beds.'},
+  plantSuccessA:{emoji:'🐝',who:'a tour guide in the Pollinator Garden',where:'Pet Town Nature Center',intro:'Your group is solving garden puzzles about how plants make the next generation.'},
+  asexualPlants:{emoji:'🍓',who:'a tour guide in the Greenhouse',where:'Pet Town Nature Center',intro:'Your tour stops at the strawberry beds and the plant-cuttings table.'},
+  sexualPlants:{emoji:'🌼',who:'a tour guide in the Greenhouse',where:'Pet Town Nature Center',intro:'Your group is looking closely at flowers, pollen, and the seeds inside fruit.'},
+  seedDispersal:{emoji:'🍁',who:'a tour guide on the Seed Trail',where:'Pet Town Nature Center',intro:'Your group walks the trail collecting seeds that traveled in different ways.'},
+  digestionHumans:{emoji:'🍎',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet Town Nature Center',intro:'Your group walks through a giant model of the digestive system, starting at the mouth.'},
+  digestionIntestines:{emoji:'🌀',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet Town Nature Center',intro:'Your group has reached the long, twisty intestine section of the tunnel.'},
+  humanDigestion:{emoji:'🗺️',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet Town Nature Center',intro:'You are wrapping up the tour with a map of the whole trip food takes.'}
+};
 const BIO1_QUESTIONS = {
   cellsOrganisms:[
-    mc('What is the basic unit of life?','The cell','The organ','The system','The tissue'),
-    mc('Which sequence goes from smallest to largest?','Cell, tissue, organ, organ system','Organ, cell, tissue, system','Tissue, organ, cell, system','System, organ, tissue, cell'),
-    mc('A group of similar cells working together is a:','Tissue','Cell part','Single organism only','Habitat'),
-    mc('Which is a single-celled organism?','Bacterium','Oak tree','Dog','Human')
+    mc('A kid on your tour asks: “What is the basic unit of life?”','The cell','The organ','The system','The tissue'),
+    mc('A parent asks you to put these in order from smallest to largest. Which sequence is right?','Cell, tissue, organ, organ system','Organ, cell, tissue, system','Tissue, organ, cell, system','System, organ, tissue, cell'),
+    mc('A student points at a group of cells that all look alike. A group of similar cells working together is a:','Tissue','Cell part','Single organism only','Habitat'),
+    mc('You show the group a pond water slide. Which of these living things is a single-celled organism?','Bacterium','Oak tree','Dog','Human')
   ],
   cellPartsU:[
-    mc('Which cell part directs the cell\u2019s activities?','Nucleus','Cell wall','Vacuole','Chloroplast'),
-    mc('Which part releases energy from food for the cell?','Mitochondria','Cell membrane','Nucleus','Cytoplasm'),
-    mc('Which part controls what enters and leaves the cell?','Cell membrane','Chloroplast','Nucleus','Vacuole'),
-    mc('Which part carries out photosynthesis in plant cells?','Chloroplast','Mitochondria','Cell membrane','Nucleus')
+    mc('A visitor points to the big center of the model and asks which part directs the cell’s activities. What do you say?','Nucleus','Cell wall','Vacuole','Chloroplast'),
+    mc('A kid asks which part releases energy from food for the cell. What do you point to?','Mitochondria','Cell membrane','Nucleus','Cytoplasm'),
+    mc('A grandparent asks which part decides what gets in and out of the cell. What is it?','Cell membrane','Chloroplast','Nucleus','Vacuole'),
+    mc('In the plant cell room, a visitor asks which part carries out photosynthesis. What do you show them?','Chloroplast','Mitochondria','Cell membrane','Nucleus')
   ],
   cellPartsA:[
-    mc('A plant cell stays rigid and keeps its shape. Which part helps most?','Cell wall','Mitochondria','Nucleolus only','Cytoplasm gel only'),
-    mc('A muscle cell needs lots of energy. Which part would you expect many of?','Mitochondria','Chloroplasts','Cell walls','Seeds'),
-    mc('A cell cannot make proteins correctly because its instructions are damaged. Which part is most likely affected?','Nucleus','Cell wall','Vacuole','Cell membrane'),
-    mc('A leaf cell makes food using light. Which part is most important?','Chloroplast','Nucleus','Cell membrane','Cytoplasm')
+    mc('A visitor asks how a plant cell stays stiff and keeps its shape. Which part helps most?','Cell wall','Mitochondria','Nucleolus only','Cytoplasm gel only'),
+    mc('A runner on your tour asks about muscle cells, which need lots of energy. Which part would they have many of?','Mitochondria','Chloroplasts','Cell walls','Seeds'),
+    mc('A visitor describes a cell that cannot make proteins because its instructions are damaged. Which part is most likely affected?','Nucleus','Cell wall','Vacuole','Cell membrane'),
+    mc('A kid holds up a leaf and asks which part of its cells makes food from light. What do you say?','Chloroplast','Nucleus','Cell membrane','Cytoplasm')
   ],
   plantSuccessU:[
-    mc('What is the main purpose of a flower for many plants?','To help the plant reproduce','To absorb water from soil','To anchor the plant','To make roots'),
-    mc('What do pollinators like bees help move?','Pollen','Roots','Soil','Leaves'),
-    mc('Why do brightly colored flowers help some plants?','They attract pollinators','They scare pollinators away','They make seeds disappear','They stop photosynthesis'),
-    mc('Plants that make many seeds can improve reproductive success because:','More seeds may survive and grow','Seeds never need water','Every seed always grows','Parents stop needing sunlight')
+    mc('A kid asks what flowers are really for. What is the main purpose of a flower for many plants?','To help the plant reproduce','To absorb water from soil','To anchor the plant','To make roots'),
+    mc('A visitor watches a bee land on a flower. What does the bee help move?','Pollen','Roots','Soil','Leaves'),
+    mc('A parent asks why so many flowers are bright colors. What do you explain?','They attract pollinators','They scare pollinators away','They make seeds disappear','They stop photosynthesis'),
+    mc('A visitor sees a plant covered in seeds. Why can making many seeds improve reproductive success?','More seeds may survive and grow','Seeds never need water','Every seed always grows','Parents stop needing sunlight')
   ],
   plantSuccessA:[
-    mc('A plant in a field has no pollinators visiting. What is the likely effect?','Fewer seeds may form','More seeds always form','Roots stop growing','Leaves become flowers'),
-    mc('A flower smells sweet and has nectar. What structure-function idea fits?','Features attract animals that carry pollen','Features stop reproduction','Nectar makes roots','Smell removes pollen'),
-    mc('A seed with a hard coat survives winter. This helps reproduction because:','It can protect the embryo until conditions improve','It makes the seed need no water ever','It turns into a flower','It stops growth permanently'),
-    mc('Which environment change could lower a plant\u2019s reproductive success?','Loss of pollinators','More pollinators','Adequate water','Healthy soil')
+    mc('A visitor notices no bees are visiting one field of plants. What do you predict will happen?','Fewer seeds may form','More seeds always form','Roots stop growing','Leaves become flowers'),
+    mc('A kid sniffs a sweet flower full of nectar. Which structure-and-function idea do you explain?','Features attract animals that carry pollen','Features stop reproduction','Nectar makes roots','Smell removes pollen'),
+    mc('A visitor asks how a hard seed coat helps a seed that has to survive winter. What do you say?','It can protect the embryo until conditions improve','It makes the seed need no water ever','It turns into a flower','It stops growth permanently'),
+    mc('A grandparent asks what could hurt a plant’s chances of reproducing. Which change could lower its success?','Loss of pollinators','More pollinators','Adequate water','Healthy soil')
   ],
   asexualPlants:[
-    mc('In asexual reproduction, offspring are:','Genetically identical to the parent','Mixed from two different parents','Always different species','Made from pollen and eggs'),
-    mc('Which is an example of asexual reproduction in plants?','A strawberry plant sending out runners','A bee carrying pollen','A seed floating on wind','A flower attracting insects'),
-    mc('How many parents are needed for asexual reproduction?','One','Two','Three','None'),
-    mc('A cutting grows into a new plant. This is:','Asexual reproduction','Sexual reproduction','Pollination only','Seed dispersal')
+    mc('A visitor asks how new plants made by asexual reproduction compare to the parent. Offspring are:','Genetically identical to the parent','Mixed from two different parents','Always different species','Made from pollen and eggs'),
+    mc('A kid asks you for an example of asexual reproduction in plants. Which do you point to?','A strawberry plant sending out runners','A bee carrying pollen','A seed floating on wind','A flower attracting insects'),
+    mc('A parent asks how many parents asexual reproduction needs. What do you say?','One','Two','Three','None'),
+    mc('You show the group a stem cutting that grew roots and became a new plant. What is this an example of?','Asexual reproduction','Sexual reproduction','Pollination only','Seed dispersal')
   ],
   sexualPlants:[
-    mc('Sexual reproduction in flowering plants involves:','Pollen and egg cells combining','One parent making a copy','A cutting growing roots','Runners spreading'),
-    mc('What is pollination?','Moving pollen to the female part of a flower','A seed growing roots','Water entering a root','A leaf making food'),
-    mc('Why can sexual reproduction increase variation?','Offspring inherit traits from two parents','Offspring copy one parent exactly','No genes are involved','Seeds never form'),
-    mc('After fertilization, an ovule can develop into a:','Seed','Root hair','Stem','Petal')
+    mc('A visitor asks what sexual reproduction in flowering plants involves. What do you explain?','Pollen and egg cells combining','One parent making a copy','A cutting growing roots','Runners spreading'),
+    mc('A kid asks what “pollination” means. What do you say?','Moving pollen to the female part of a flower','A seed growing roots','Water entering a root','A leaf making food'),
+    mc('A parent asks why sexual reproduction makes baby plants that look a little different from each other. What is the reason?','Offspring inherit traits from two parents','Offspring copy one parent exactly','No genes are involved','Seeds never form'),
+    mc('You cut open a fruit to show the group. After fertilization, what can an ovule develop into?','Seed','Root hair','Stem','Petal')
   ],
   seedDispersal:[
-    mc('A maple seed spins away from the tree. How is it dispersed?','By wind','By animals eating it','By water only','By fire'),
-    mc('A burr sticks to an animal\u2019s fur. How is the seed dispersed?','By animals','By wind only','By lightning','By soil only'),
-    mc('Why is seed dispersal helpful to a plant?','Seeds can grow away from the crowded parent plant','Seeds always grow faster in the shade of the parent','It removes the need for water','It prevents germination'),
-    mc('A coconut can float across water. How is it dispersed?','By water','By pollinators only','By roots','By leaves')
+    mc('A maple seed spins down past your tour group. A kid asks how it travels. What do you say?','By wind','By animals eating it','By water only','By fire'),
+    mc('A burr is stuck to a visitor’s dog. How is this seed dispersed?','By animals','By wind only','By lightning','By soil only'),
+    mc('A visitor asks why it matters if seeds travel away from the parent plant. What do you explain?','Seeds can grow away from the crowded parent plant','Seeds always grow faster in the shade of the parent','It removes the need for water','It prevents germination'),
+    mc('You show the group a coconut that washed up on a beach. How does it travel?','By water','By pollinators only','By roots','By leaves')
   ],
   digestionHumans:[
-    mc('What is the main job of the digestive system?','Break food down so nutrients can be absorbed','Pump blood','Exchange gases','Send nerve signals'),
-    mc('Where does digestion begin?','The mouth','The large intestine','The stomach only','The skin'),
-    mc('What does chewing do?','Breaks food into smaller pieces','Absorbs all nutrients','Makes bile','Removes water from waste'),
-    mc('The stomach helps digestion by:','Mixing food with acid and enzymes','Absorbing most water','Making blood cells','Filtering oxygen')
+    mc('A visitor asks what the whole digestive system is for. What is its main job?','Break food down so nutrients can be absorbed','Pump blood','Exchange gases','Send nerve signals'),
+    mc('A kid asks where digestion begins. What do you say?','The mouth','The large intestine','The stomach only','The skin'),
+    mc('At the giant teeth, a visitor asks what chewing does. What do you explain?','Breaks food into smaller pieces','Absorbs all nutrients','Makes bile','Removes water from waste'),
+    mc('Your group reaches the stomach model. How does the stomach help digestion?','Mixing food with acid and enzymes','Absorbing most water','Making blood cells','Filtering oxygen')
   ],
   digestionIntestines:[
-    mc('Where is most nutrient absorption?','Small intestine','Large intestine','Mouth','Esophagus'),
-    mc('What does the large intestine mostly absorb?','Water','Most protein','Light','Oxygen'),
-    mc('Why does the small intestine have villi?','They increase surface area for absorption','They crush food','They make acid','They store waste'),
-    mc('What happens to undigested material?','It is eliminated as waste','It becomes bone','It becomes blood','It is absorbed in the mouth')
+    mc('A visitor asks where most nutrients are absorbed. What do you say?','Small intestine','Large intestine','Mouth','Esophagus'),
+    mc('A kid asks what the large intestine mostly soaks up. What do you answer?','Water','Most protein','Light','Oxygen'),
+    mc('You point to the tiny finger-like villi on the wall. Why does the small intestine have them?','They increase surface area for absorption','They crush food','They make acid','They store waste'),
+    mc('At the end of the tunnel, a visitor asks what happens to food that was not digested. What do you say?','It is eliminated as waste','It becomes bone','It becomes blood','It is absorbed in the mouth')
   ],
   humanDigestion:[
-    mc('Which is the correct path of food?','Mouth, esophagus, stomach, small intestine, large intestine','Mouth, stomach, esophagus, large intestine, small intestine','Stomach, mouth, esophagus, intestines','Esophagus, mouth, stomach, intestines'),
-    mc('What does the esophagus do?','Moves food from the mouth to the stomach','Absorbs nutrients','Makes bile','Stores waste'),
-    mc('Which organ makes bile that helps digest fats?','Liver','Stomach','Mouth','Esophagus'),
-    mc('How do the digestive system and circulatory system work together?','The blood carries absorbed nutrients to cells','Blood digests food in the mouth','They are unrelated','The stomach pumps blood')
+    mc('A visitor asks you to trace the path food takes. Which path is correct?','Mouth, esophagus, stomach, small intestine, large intestine','Mouth, stomach, esophagus, large intestine, small intestine','Stomach, mouth, esophagus, intestines','Esophagus, mouth, stomach, intestines'),
+    mc('A kid asks what the esophagus does. What do you explain?','Moves food from the mouth to the stomach','Absorbs nutrients','Makes bile','Stores waste'),
+    mc('A grandparent asks which organ makes bile to help digest fats. What do you answer?','Liver','Stomach','Mouth','Esophagus'),
+    mc('A visitor asks how the digestive system and circulatory system work together. What do you say?','The blood carries absorbed nutrients to cells','Blood digests food in the mouth','They are unrelated','The stomach pumps blood')
   ]
 };
 const HISTORY_PROJECTS = {
@@ -6252,7 +6297,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
         : record.tries ? `Best ${record.best}/4 · ${record.tries} tries · Get 3 of 4 to level up`
           : 'Not started · Get 3 of 4 to level up';
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
-      return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p><span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
+      return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
     const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key,course.id);
     const canQuiz = blockUnlocked && group.skills.every(skillId => !!englishRecord(skillId,course.id).passed);
@@ -6272,8 +6317,9 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
   const question = run.questions[run.index];
-  const active = selectedReading(), context = active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div><div class="ela-context">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  const role = ROLE_CARDS[question.skillId];
+  const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div><div class="ela-context${role ? ' role-card' : ''}">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
@@ -6334,7 +6380,10 @@ $('#libraryWrap').addEventListener('click', event => {
     recordEnglishAnswer(englishRun, question, correct);
     if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
     button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
-    const feedback = $('#libraryWrap .ela-feedback'); feedback.textContent = correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`;
+    const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(englishRun.courseId);
+    feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
+      : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
+      : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${question.options[question.answer]}.`;
     button.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>'); return;
   }
   if (button.hasAttribute('data-ela-next') && englishRun) {
