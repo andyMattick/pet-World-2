@@ -5,6 +5,7 @@ import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKI
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
+import { stageHTML, stageReact } from './stage';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -4423,6 +4424,9 @@ const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-mot
 const petReward = () => REWARDS.find(r => r.kind === 'pet' && r.id === S.pet) || REWARDS.find(r => r.kind === 'pet');
 const petEmoji = () => petReward().emoji;
 const petName = () => petReward().name.split(' ')[0];
+/** Every pet the student has unlocked, as reward objects (current pet first). */
+const ownedPets = () => REWARDS.filter(r => r.kind === 'pet' && S.owned.includes(r.id)).sort((a, b) => (b.id === S.pet) - (a.id === S.pet));
+const ownedPetEmoji = () => ownedPets().map(r => r.emoji);
 const fmtPow = p => p.toFixed(2).replace(/0$/,'').replace(/\.0$/,'');
 const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
 $('#unlockHelper').addEventListener('click', () => closeUnlock('helper'));
@@ -4455,7 +4459,10 @@ function syncRoom(id){
     : id === 'library' ? englishCourse(activeEnglishCourse).building : null;
   const b = building && BUILDINGS.find(x => x.id === building);
   if (!b) { applyRoom(null); return; }
-  applyRoom(b.id, b.subject, REWARDS.filter(r => r.unit === b.id && r.kind === 'decor' && owns(r)).map(r => r.emoji));
+  // pets unlocked in this building live in its room; museums, libraries, and the nature center get the student's pets as visitors
+  const unitPets = REWARDS.filter(r => r.unit === b.id && r.kind === 'pet' && owns(r));
+  const pets = (unitPets.length ? unitPets : b.subject === 'math' ? [] : ownedPets().slice(0, 4)).map(r => ({emoji:r.emoji, name:r.name.split(' ')[0]}));
+  applyRoom(b.id, b.subject, REWARDS.filter(r => r.unit === b.id && r.kind === 'decor' && owns(r)).map(r => r.emoji), pets);
 }
 document.addEventListener('click', e => {
   const gamesOnlyButton = e.target.closest('[data-games-only]');
@@ -6332,7 +6339,7 @@ function renderEnglishQuestion(){
   const question = run.questions[run.index];
   const role = ROLE_CARDS[question.skillId];
   const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div><div class="ela-context${role ? ' role-card' : ''}">${context}</div><div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p><h3>${esc(question.prompt)}</h3><div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div>${role ? stageHTML({role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered}) : `<div class="ela-context">${context}</div>`}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
@@ -6394,6 +6401,7 @@ $('#libraryWrap').addEventListener('click', event => {
     if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
     button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
     const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(englishRun.courseId);
+    if (role) stageReact($('#libraryWrap'), correct, question.options[answer], guide);
     feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
       : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
       : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${question.options[question.answer]}.`;
@@ -6569,7 +6577,10 @@ function nextCustomer(){
   if (shift.n >= shift.total) { endShift(); return; }
   stopOrderSpeech(); cancelReadFirst(order);
   shift.n++; renderDots();
-  const c = pick(CUSTOMERS), assessment = shift.mode === 'quiz' || shift.mode === 'test';
+  // pets the student unlocked at this shop sometimes come back as customers
+  const friends = REWARDS.filter(r => r.kind === 'pet' && r.unit === shift.shop && owns(r) && r.id !== S.pet);
+  const friend = friends.length && Math.random() < .35 ? pick(friends) : null;
+  const c = friend ? [friend.emoji, friend.name.split(' ')[0]] : pick(CUSTOMERS), assessment = shift.mode === 'quiz' || shift.mode === 'test';
   const sk = assessment ? shift.plan[shift.n-1] : chooseSkill(); shift.lastSkill = sk;
   const p = GEN[sk](assessment ? Math.max(2, lvlOf(sk)) : lvlOf(sk)); p.skill = sk;
   if (assessment && !shift.showSteps) p.steps = answerStepsFor(p);
@@ -6577,7 +6588,8 @@ function nextCustomer(){
   const ce = $('#custEmoji'); ce.textContent = c[0]; ce.classList.remove('enter'); void ce.offsetWidth; ce.classList.add('enter');
   $('#custName').textContent = c[1];
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
-  $('#custBubble').textContent = pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
+  $('#custBubble').textContent = friend ? pick([`Hi, it's me, ${c[1]}! I came back to visit.`, `${c[1]} here! Can you help a friend?`, `Remember me? It's ${c[1]}!`]) : pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
+  $('#custName').classList.toggle('friend', !!friend);
   if (!assessment) setHelper(p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
     <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div><button class="ticket-read" id="readOrderBtn" type="button" hidden>🔊 Read it to me</button></div>

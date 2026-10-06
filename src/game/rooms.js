@@ -130,18 +130,19 @@ const FLOORS = {
 };
 
 /* ---------- scene ---------- */
-let scene = null, currentRoom = '', lastExtras = '', mqBound = false;
+let scene = null, currentRoom = '', lastExtras = '', mqBound = false, lastArgs = null;
 const pick = (list, i) => list[i % list.length];
 
 function buildScene(){
   scene = document.createElement('div');
   scene.className = 'room-scene'; scene.setAttribute('aria-hidden', 'true'); scene.hidden = true;
-  scene.innerHTML = `<div class="room-wall"></div><div class="room-hero"></div><div class="room-floaties"></div><div class="room-floor"></div><div class="room-props"><div class="room-props-l"></div><div class="room-props-r"></div></div>`;
+  scene.innerHTML = `<div class="room-wall"></div><div class="room-hero"></div><div class="room-floaties"></div><div class="room-floor"></div><div class="room-pets"></div><div class="room-props"><div class="room-props-l"></div><div class="room-props-r"></div></div>`;
   document.body.prepend(scene);
 }
 
-/** Show the room for a building id (or hide the scene with null). `extras` = owned decor emoji to add to the room. */
-export function applyRoom(id, subject, extras = []){
+/** Show the room for a building id (or hide the scene with null).
+    `extras` = owned decor emoji to add to the room, `pets` = [{emoji, name}] unlocked pets who wander the floor. */
+export function applyRoom(id, subject, extras = [], pets = []){
   if (!scene) buildScene();
   const theme = id ? roomTheme(id, subject) : null;
   const body = document.body;
@@ -151,7 +152,8 @@ export function applyRoom(id, subject, extras = []){
     ['--awn1','--awn2','--wood','--wood-dark','--room-edge','--room-accent'].forEach(v => body.style.removeProperty(v));
     delete body.dataset.room; return;
   }
-  const extrasKey = extras.join('');
+  lastArgs = [id, subject, extras, pets];
+  const extrasKey = extras.join('') + '|' + pets.map(p => p.emoji).join('');
   if (currentRoom === id && lastExtras === extrasKey && scene.dataset.mode === (darkMode() ? 'd' : 'l')) return;
   currentRoom = id; lastExtras = extrasKey;
   const dark = darkMode(); scene.dataset.mode = dark ? 'd' : 'l';
@@ -180,6 +182,12 @@ export function applyRoom(id, subject, extras = []){
     return `<span class="fl ${motion}" style="${place};font-size:${size.toFixed(2)}rem;animation-duration:${dur.toFixed(1)}s;animation-delay:-${(rnd() * dur).toFixed(1)}s">${pick(floats, i)}</span>`;
   }).join('') : '';
 
+  // unlocked pets stroll back and forth along the floor, each with its own pace and patch of floor
+  scene.querySelector('.room-pets').innerHTML = pets.slice(0, 5).map((p, i) => {
+    const start = i % 2 ? 66 + ((i * 13) % 14) : 1 + ((i * 11) % 14), range = 8 + ((i * 5) % 7), dur = 9 + ((i * 7) % 8);  // left and right lanes stay visible beside the content
+    return `<span class="walker" style="left:${start}%;--range:${range}vw;--dur:${dur}s;--delay:-${(i * 3.1).toFixed(1)}s"><span class="hop">${p.emoji}</span><small>${p.name}</small></span>`;
+  }).join('');
+
   body.dataset.room = id;
   body.classList.add('in-room'); body.classList.toggle('room-dark', !!theme.dark);
   body.style.setProperty('--awn1', theme.awning[0]); body.style.setProperty('--awn2', theme.awning[1]);
@@ -189,6 +197,6 @@ export function applyRoom(id, subject, extras = []){
 
   if (!mqBound && typeof matchMedia === 'function') {
     mqBound = true;
-    matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { const r = currentRoom; if (r) { currentRoom = ''; applyRoom(r, subject, extras); } });
+    matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (currentRoom && lastArgs) { currentRoom = ''; applyRoom(...lastArgs); } });
   }
 }
