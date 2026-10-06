@@ -6401,7 +6401,7 @@ $('#libraryWrap').addEventListener('click', event => {
     if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
     button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
     const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(englishRun.courseId);
-    if (role) stageReact($('#libraryWrap'), correct, question.options[answer], guide);
+    if (role) stageReact($('#libraryWrap'), correct, question.options[answer]);
     feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
       : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
       : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${question.options[question.answer]}.`;
