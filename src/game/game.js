@@ -4,6 +4,7 @@
 import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, SUBJECTS, DEFAULT_HOME, buildingsIn, buildingsInClass, subjectsIn, prevBuilding, nextBuilding, builtHoods, townHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
+import { applyRoom } from './rooms';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -4444,7 +4445,17 @@ function show(id){
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
   if (id === 'library') { renderEnglishLibrary(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-library').hidden && $('#libraryWrap .ela-layout')) renderEnglishLibrary(); }); }
   if (id === 'arcade') renderArcade();
+  syncRoom(id);
   window.scrollTo(0,0);
+}
+/* Themed room behind building screens (src/game/rooms.js). Summary keeps the room it came from. */
+function syncRoom(id){
+  if (id === 'summary') return;
+  const building = id === 'cafe' ? currentShop : id === 'shift' ? (shift?.shop || currentShop)
+    : id === 'library' ? englishCourse(activeEnglishCourse).building : null;
+  const b = building && BUILDINGS.find(x => x.id === building);
+  if (!b) { applyRoom(null); return; }
+  applyRoom(b.id, b.subject, REWARDS.filter(r => r.unit === b.id && r.kind === 'decor' && owns(r)).map(r => r.emoji));
 }
 document.addEventListener('click', e => {
   const gamesOnlyButton = e.target.closest('[data-games-only]');
@@ -6287,6 +6298,7 @@ $('#libraryWrap').addEventListener('click', event => {
 });
 function renderEnglishUnit(courseId=activeEnglishCourse){
   const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
+  syncRoom('library');
   const groups = course.groups.map((group, groupIndex) => {
     const blockUnlocked = groupIndex === 0 || (course.noQuizzes ? course.groups[groupIndex-1].skills.every(skillId => !!englishRecord(skillId,course.id).passed) : !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id),course.id).passed);
     const exercises = group.skills.map((skillId, skillIndex) => {
@@ -6316,6 +6328,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
 }
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
+  syncRoom('library');
   const question = run.questions[run.index];
   const role = ROLE_CARDS[question.skillId];
   const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
