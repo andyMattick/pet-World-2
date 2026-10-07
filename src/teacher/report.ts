@@ -202,12 +202,12 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
-  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['reading', '📖 Projects and Reading Log']];
+  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['projects', '📁 Projects'], ['reading', '📖 Reading Log']];
   if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
   const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
   h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
   h += panel('math', mathUnitsHTML(r)) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
-  h += panel('reading', '<div id="projectCard"></div><div id="readingCard"></div>');
+  h += panel('projects', '<div id="projectCard"></div>') + panel('reading', '<div id="readingCard"></div>');
   const loose = st.mis.filter(([id]) => !misShops(r, id).length);
   h += '<div class="two" style="margin-top:14px"><div><h2>Mix-ups across units</h2><p class="muted" style="margin-top:0">Mix-ups tied to a unit are listed inside that unit on the Math tab.</p>';
   h += loose.length ? misListHTML(loose) : '<p class="muted">None spotted.</p>';
