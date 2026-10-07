@@ -5171,6 +5171,62 @@ const HISTORY_QUESTIONS = {
     {prompt:'You are teaching an apprentice griot. Which question helps them judge whether a history is complete?',options:['Who preserved this account, and whose experiences are missing?','Is this the only story I have heard?','Does the narrative avoid all disagreement?','Can I memorize it without checking evidence?'],answer:0}
   ]
 };
+// Phase 1 History Unit 1 bank: extra questions, tagged by difficulty (1-3). They join the built-in pools above.
+const histLevel = (difficulty, prompt, correct, ...wrong) => ({prompt, options:[correct, ...wrong], answer:0, difficulty});
+const HISTORY_EXTRA_QUESTIONS = {
+  historyStories:[
+    histLevel(1,'A merchant says his city’s history begins when its first market opened. A farmer says it begins with the first harvest. What explains the difference?','Each chose a starting point that matters to them.','One of them must be lying about the past.','Cities have only one true starting date.','Markets are always older than farms.'),
+    histLevel(1,'A visitor asks what makes a history different from a made-up story. What do you say?','It is based on evidence from the past.','It is always longer and more detailed.','It never includes anyone’s opinion.','It only describes kings and wars.'),
+    histLevel(2,'You are sorting notes for your history. Which statement is a claim you could test with evidence?','Trade on the river grew after the bridge opened.','Our city is the greatest city ever built.','The gods chose our people to rule the land.','Long ago, life was simply better than now.'),
+    histLevel(2,'Two travelers describe the same festival. One calls it joyful; the other calls it loud and crowded. What is the best conclusion?','Both may be accurate from different viewpoints.','The second traveler must have missed it.','Festivals can’t be studied by historians.','The first traveler is always the reliable one.'),
+    histLevel(2,'Your history of a village starts with its founding. Another writer’s starts when a new road arrived. What does the second choice highlight?','How new connections changed village life.','Who founded the village first.','Why villages never really change.','Only the oldest events in the village.'),
+    histLevel(2,'A historian writes about a war using only the winners’ letters. What is the biggest problem?','The losers’ experiences are left out.','Letters are too old to read clearly.','Winners rarely write any letters.','Wars are not part of real history.'),
+    histLevel(3,'You claim the harbor town grew richer after 1200. Which evidence best supports your claim?','Tax records showing more ships each year.','A poem praising the town’s beauty.','A legend about the town’s founder.','A modern painting of the old harbor.'),
+    histLevel(3,'A king’s official history says he won every war he fought. What should a careful historian ask first?','Who wrote it, and why?','How long is the history?','Which war was most exciting?','Was the handwriting neat?'),
+    histLevel(3,'Three sources describe a flood. Two written that year say it lasted a week. One written 200 years later says a month. What is the most reasonable conclusion?','The flood likely lasted about a week.','The flood lasted exactly one month.','No flood happened at all.','All three sources are equally reliable.'),
+    histLevel(3,'Which question would best help you choose a starting point for a history of your town?','What change do I want to explain?','What is the oldest date I can find?','Which story is the most exciting one?','Which event had the most famous guest?')
+  ],
+  historyScale:[
+    histLevel(1,'A visitor asks what it means to “zoom out” in history. What do you say?','Look at a wider area or a longer time.','Look at one person’s single day.','Read only the newest sources.','Remove the dates from a story.'),
+    histLevel(1,'You study how one market changed over ten years. What scale is this?','A small, local scale.','A global scale.','A scale of thousands of years.','A scale that leaves out places.'),
+    histLevel(1,'You compare how farming spread across three continents. What scale is this?','A large, wide scale.','A single-family scale.','A one-day scale.','A one-village scale.'),
+    histLevel(2,'Zooming in on one family’s letters helps a historian see what?','How big changes affected real people.','Patterns across the whole world.','Every event in that century.','Why all families felt the same way.'),
+    histLevel(2,'A historian studies 10,000 years of human history at once. What is she most likely to miss?','Details of individual lives.','Long-term patterns.','Changes across regions.','Connections between places.'),
+    histLevel(2,'Which question works best at a global scale?','How did ideas spread between continents?','What did one baker eat for breakfast?','Who lived in this one house?','What did one soldier write home?'),
+    histLevel(3,'A writer claims one village’s drought caused a whole empire to fall. What is the best response?','Check evidence from across the empire.','Accept it, since droughts are serious.','Study only that one village more closely.','Ignore it, since villages are small.'),
+    histLevel(3,'After a new road network was built, trade rose 40% in Village A, 35% in Village B, and 50% in Village C. Which claim fits this wider view?','The roads likely boosted trade across the region.','Only Village C gained anything from the roads.','The roads made trade fall in the region.','The roads did not affect any village.'),
+    histLevel(3,'Why might a local story and a global pattern seem to disagree?','Local places can differ from the overall trend.','One of them must be made up.','Global patterns are not based on evidence.','Local stories are never accurate.'),
+    histLevel(3,'You notice many port cities grew during the same century. What should you do next?','Zoom in on a few ports to check why.','Assume they all grew for one reason.','Stop, since the pattern proves itself.','Study only inland villages instead.')
+  ],
+  historyFrames:[
+    histLevel(1,'You study how a city shared water and settled arguments between neighbors. Which frame fits best?','Communities.','Networks.','Production and distribution.','Collective memory.'),
+    histLevel(2,'You study how salt was mined, packed, and sold, and who got rich from it. Which frame fits best?','Production and distribution.','Communities.','Networks.','Collective memory.'),
+    histLevel(2,'A historian traces how a new religion spread along trade routes. Which frame is she using?','Networks.','Communities.','Production and distribution.','Collective memory.'),
+    histLevel(2,'Which question fits the communities frame?','How did people in the town choose leaders?','How did spices travel from Asia to Europe?','How were cloth and grain made and sold?','How did a disease move between ports?'),
+    histLevel(2,'Which question fits the networks frame?','How did papermaking move west?','Who did the farming in one village?','How did a town choose its rules?','What did one family grow each year?'),
+    histLevel(2,'Which evidence best fits the production and distribution frame?','Records of how much grain each farm sold.','Letters between friends in distant cities.','A list of the town’s religious festivals.','A song about the town’s heroes.'),
+    histLevel(3,'You study the Silk Roads with the production and distribution frame. Which question would you ask?','Who made silk, and who profited from it?','How did travelers share religious ideas?','How did caravan towns govern themselves?','What stories do people tell about the roads?'),
+    histLevel(3,'Why might two historians studying the same city reach different conclusions?','They used different frames and questions.','One of them did not use any evidence.','Cities can only be studied one way.','Frames change what actually happened.'),
+    histLevel(3,'A historian studies a village using only the networks frame. What might she overlook?','How villagers lived and worked together.','Connections to other places.','Goods moving along trade routes.','Ideas arriving from far away.'),
+    histLevel(3,'A visitor says, “A frame is like a lens.” What does this mean?','Each frame brings certain details into focus.','Every frame shows the same evidence.','A frame shows the one true history.','A frame hides every source but one.')
+  ],
+  historyMemory:[
+    histLevel(1,'A griot recites the history of a people from memory. What kind of source is this?','An oral tradition.','A written census.','An archaeological dig.','A government tax record.'),
+    histLevel(1,'A town builds a statue to honor a local hero. What is this an example of?','Collective memory.','A trade network.','A production record.','A written census.'),
+    histLevel(2,'A visitor asks why some histories have “silences,” or missing voices. What do you explain?','Some groups’ records were never kept.','Everyone’s story was always written down.','Historians erase voices on purpose.','People in the past rarely spoke.'),
+    histLevel(2,'A museum shows only objects owned by rich families. What does the collection leave out?','The lives of ordinary people.','The lives of rich families.','Expensive objects from the past.','Objects that were well preserved.'),
+    histLevel(2,'A city’s archive burned in a fire 300 years ago. How does this affect its history?','Some events may be hard to know about.','Nothing important happened in that city.','The city never kept any records.','All other sources become useless.'),
+    histLevel(2,'Why can the people who choose what goes in a textbook shape what students learn?','They decide which stories are told.','They change what happened in the past.','They make all sources equally reliable.','They remove all evidence from books.'),
+    histLevel(3,'A national holiday celebrates a great victory, but letters from both armies describe heavy losses. What is the best conclusion?','Memory of an event can differ from what happened.','The letters from both armies must be fake.','Holidays are the best evidence about wars.','Neither source tells us anything useful.'),
+    histLevel(3,'Which source would best fill a silence about enslaved workers on a plantation?','Interviews with formerly enslaved people.','The owner’s list of buildings and tools.','A painting paid for by the owner.','A map of the plantation’s fields.'),
+    histLevel(3,'Two groups remember the same treaty very differently. What should a historian do?','Study both memories and the treaty itself.','Choose the group that is larger today.','Ignore both memories entirely.','Use whichever version is more popular.'),
+    histLevel(3,'You claim a city’s founding legend was shaped by later rulers. Which evidence best supports this?','It first appears in records 500 years later.','It is still very popular in the city today.','It includes many exciting details.','Some families still tell it aloud.')
+  ]
+};
+// Difficulty tags for the original 4 questions in each lesson, in their order.
+const HISTORY_BUILT_IN_LEVELS = {historyStories:[2,2,2,2], historyScale:[1,1,2,2], historyFrames:[1,1,1,2], historyMemory:[1,2,2,2]};
+Object.entries(HISTORY_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEach((level, index) => { const question = HISTORY_QUESTIONS[skillId]?.[index]; if (question && question.difficulty == null) question.difficulty = level; }));
+Object.entries(HISTORY_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { HISTORY_QUESTIONS[skillId] = [...(HISTORY_QUESTIONS[skillId] || []), ...questions]; });
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
 const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1'};
 const isScienceCourse = id => id === 'bio1';
@@ -5446,7 +5502,7 @@ const BIO1_QUESTIONS = {
     mc('A kid on your tour asks: “What is the basic unit of life?”','The cell','The organ','The system','The tissue'),
     mc('A parent asks you to put these in order from smallest to largest. Which sequence is right?','Cell, tissue, organ, organ system','Organ, cell, tissue, system','Tissue, organ, cell, system','System, organ, tissue, cell'),
     mc('A student points at a group of cells that all look alike. A group of similar cells working together is a:','Tissue','Cell part','Single organism only','Habitat'),
-    mc('You show the group a pond water slide. Which of these living things is a single-celled organism?','Bacterium','Oak tree','Dog','Human')
+    mc('You show the group a pond water slide. Which of these living things is a single-celled organism?','Bacterium','Mushroom','Moss','Earthworm')
   ],
   cellPartsU:[
     mc('A visitor points to the big center of the model and asks which part directs the cell’s activities. What do you say?','Nucleus','Cell wall','Vacuole','Chloroplast'),
@@ -5485,22 +5541,22 @@ const BIO1_QUESTIONS = {
     mc('You cut open a fruit to show the group. After fertilization, what can an ovule develop into?','Seed','Root hair','Stem','Petal')
   ],
   seedDispersal:[
-    mc('A maple seed spins down past your tour group. A kid asks how it travels. What do you say?','By wind','By animals eating it','By water only','By fire'),
-    mc('A burr is stuck to a visitor’s dog. How is this seed dispersed?','By animals','By wind only','By lightning','By soil only'),
+    mc('A maple seed spins down past your tour group. A kid asks how it travels. What do you say?','By wind','By animals eating it','By water only','By exploding pods'),
+    mc('A burr is stuck to a visitor’s dog. How is this seed dispersed?','By animals','By wind only','By water','By exploding pods'),
     mc('A visitor asks why it matters if seeds travel away from the parent plant. What do you explain?','Seeds can grow away from the crowded parent plant','Seeds always grow faster in the shade of the parent','It removes the need for water','It prevents germination'),
     mc('You show the group a coconut that washed up on a beach. How does it travel?','By water','By pollinators only','By roots','By leaves')
   ],
   digestionHumans:[
     mc('A visitor asks what the whole digestive system is for. What is its main job?','Break food down so nutrients can be absorbed','Pump blood','Exchange gases','Send nerve signals'),
-    mc('A kid asks where digestion begins. What do you say?','The mouth','The large intestine','The stomach only','The skin'),
+    mc('A kid asks where digestion begins. What do you say?','The mouth','The large intestine','The stomach only','The esophagus'),
     mc('At the giant teeth, a visitor asks what chewing does. What do you explain?','Breaks food into smaller pieces','Absorbs all nutrients','Makes bile','Removes water from waste'),
     mc('Your group reaches the stomach model. How does the stomach help digestion?','Mixing food with acid and enzymes','Absorbing most water','Making blood cells','Filtering oxygen')
   ],
   digestionIntestines:[
     mc('A visitor asks where most nutrients are absorbed. What do you say?','Small intestine','Large intestine','Mouth','Esophagus'),
-    mc('A kid asks what the large intestine mostly soaks up. What do you answer?','Water','Most protein','Light','Oxygen'),
+    mc('A kid asks what the large intestine mostly soaks up. What do you answer?','Water','Most protein','Most of the fat','Bile'),
     mc('You point to the tiny finger-like villi on the wall. Why does the small intestine have them?','They increase surface area for absorption','They crush food','They make acid','They store waste'),
-    mc('At the end of the tunnel, a visitor asks what happens to food that was not digested. What do you say?','It is eliminated as waste','It becomes bone','It becomes blood','It is absorbed in the mouth')
+    mc('At the end of the tunnel, a visitor asks what happens to food that was not digested. What do you say?','It is eliminated as waste','It is absorbed by the villi','It is stored in the liver','It goes back to the stomach')
   ],
   humanDigestion:[
     mc('A visitor asks you to trace the path food takes. Which path is correct?','Mouth, esophagus, stomach, small intestine, large intestine','Mouth, stomach, esophagus, large intestine, small intestine','Stomach, mouth, esophagus, intestines','Esophagus, mouth, stomach, intestines'),
@@ -5509,6 +5565,166 @@ const BIO1_QUESTIONS = {
     mc('A visitor asks how the digestive system and circulatory system work together. What do you say?','The blood carries absorbed nutrients to cells','Blood digests food in the mouth','They are unrelated','The stomach pumps blood')
   ]
 };
+// Phase 1 Science bank: extra Biology Unit 1 questions, tagged by difficulty (1-3).
+// They join the built-in pools above; practice still draws 4 at random and unit tests draw from the whole pool.
+const mcLevel = (difficulty, prompt, correct, ...wrong) => ({...mc(prompt, correct, ...wrong), difficulty});
+const BIO1_EXTRA_QUESTIONS = {
+  cellsOrganisms:[
+    mcLevel(1,'A kid asks what all living things have in common. What do you say?','They are made of one or more cells','They all have leaves','They all have bones','They are all made of one cell'),
+    mcLevel(1,'A visitor asks where new cells come from. What do you explain?','From cells that already exist','From nonliving dust and dirt','From mixing air and water','From sunlight hitting soil'),
+    mcLevel(1,'Your group stops at a model of a heart. What level of organization is the heart?','An organ','A single cell','An organism','An organ system'),
+    mcLevel(2,'A visitor asks how a one-celled amoeba stays alive without organs. What do you explain?','Its one cell does every life job','It borrows organs from others','It never needs food or water','It is not truly alive'),
+    mcLevel(2,'The stomach, intestines, and liver work together. What is a group of organs working together called?','An organ system','A tissue','A cell','A population'),
+    mcLevel(2,'A parent asks why a skin cell and a nerve cell look so different. What do you say?','Each cell’s shape fits its job','One of them is not alive','Nerve cells come from plants','Skin cells have no parts'),
+    mcLevel(2,'A student looks at two samples under a microscope. Sample A is a single cell. Sample B has thousands of cells forming roots and leaves. Which statement is supported?','A is unicellular; B is multicellular','A is multicellular; B is unicellular','Both are unicellular','Neither is made of cells'),
+    mcLevel(3,'Your group builds a model of a dog. Which level of organization comes right above “organ system”?','Organism','Tissue','Organ','Cell'),
+    mcLevel(3,'A student claims a mushroom is alive. Which evidence best supports the claim?','It is made of cells and grows','It is brown and soft to touch','It grows in shady places','It feels cool and damp'),
+    mcLevel(3,'A visitor asks why other body systems suffer if the digestive system stops working. What is the best answer?','Body systems depend on each other','All systems are one organ','Cells do not need nutrients','Only the stomach needs food')
+  ],
+  cellPartsU:[
+    mcLevel(1,'A kid asks what the jelly-like fluid filling a cell is called. What do you say?','Cytoplasm','Nucleus','Cell wall','Chloroplast'),
+    mcLevel(1,'A visitor asks which part stores water in a plant cell. What do you point to?','The large vacuole','The nucleus','The cell membrane','The mitochondria'),
+    mcLevel(1,'A kid asks which part holds the cell’s DNA. What do you point to?','Nucleus','Vacuole','Cytoplasm','Cell wall'),
+    mcLevel(2,'A parent asks which two parts plant cells have that animal cells do not. What do you say?','Cell wall and chloroplasts','Nucleus and membrane','Mitochondria and cytoplasm','Membrane and cytoplasm'),
+    mcLevel(2,'A visitor asks which parts both plant and animal cells have. Which answer is right?','Nucleus, membrane, mitochondria','Cell wall, chloroplast, vacuole','Chloroplast, nucleus, cell wall','Cell wall and membrane only'),
+    mcLevel(2,'A kid asks what the cell wall does. What do you explain?','Gives the cell stiff support','Makes food from sunlight','Stores the cell’s DNA','Releases energy from food'),
+    mcLevel(2,'A visitor asks which small parts build proteins for the cell. What do you say?','Ribosomes','Vacuoles','Cell walls','Chloroplasts'),
+    mcLevel(2,'In a city model of a cell, the warehouse stores water and supplies. Which cell part is the warehouse like?','Vacuole','Nucleus','Mitochondria','Chloroplast'),
+    mcLevel(3,'A student sees two cells under a microscope. Cell X has a cell wall, chloroplasts, and a large vacuole. Cell Y has none of these. Which conclusion is best supported?','X is a plant cell; Y is an animal cell','X is an animal cell; Y is a plant cell','Both are animal cells','Both are plant cells'),
+    mcLevel(3,'A visitor asks why a root cell deep underground has no chloroplasts. What is the best explanation?','No light reaches roots to make food','Roots are not made of cells','Only animal cells have chloroplasts','Root cells have no nucleus')
+  ],
+  cellPartsA:[
+    mcLevel(1,'A student wants to turn a plant cell model into an animal cell model. Which part should be removed?','Cell wall','Nucleus','Mitochondria','Cell membrane'),
+    mcLevel(2,'A cell’s membrane is damaged and harmful substances leak in. Which job has failed?','Controlling what enters and leaves','Making food from light','Storing the cell’s DNA','Giving the cell stiff support'),
+    mcLevel(2,'A plant droops after days without water. Which cell part has lost the most water?','The central vacuole','The nucleus','The cell membrane','The mitochondria'),
+    mcLevel(2,'Which cell would likely have the most chloroplasts?','A cell from the top of a leaf','A cell from deep in a root','A cell from a human’s skin','A cell from a human muscle'),
+    mcLevel(2,'A visitor asks why animal cells can change shape but plant cells mostly cannot. What do you explain?','Animal cells lack a rigid cell wall','Animal cells lack a nucleus','Plant cells lack a membrane','Plant cells lack cytoplasm'),
+    mcLevel(2,'A kid’s scraped knee heals as new skin cells form. Where do the new cells come from?','Existing skin cells dividing','The bandage material','Blood turning into skin','Air touching the scrape'),
+    mcLevel(3,'A poison stops a cell’s mitochondria from working. What is the most likely result?','The cell runs low on energy','The cell makes extra food','The cell wall grows thicker','The DNA copies faster'),
+    mcLevel(3,'Scientists remove the nucleus from a cell. What will the cell most likely be unable to do?','Divide to make new cells','Keep cytoplasm inside','Keep its membrane','Take up space'),
+    mcLevel(3,'Chloroplast counts in a leaf: top-layer cells average 40, bottom-layer cells average 10. Which statement is best supported?','Top cells likely get more light','Bottom cells make more food','Bottom cells have no nucleus','Top cells have no cell walls'),
+    mcLevel(3,'A student’s cell model has a nucleus, membrane, cytoplasm, mitochondria, and a cell wall, but no chloroplasts. Which cell could it be?','A plant root cell','A human muscle cell','A human skin cell','A cell from a leaf’s top')
+  ],
+  plantSuccessU:[
+    mcLevel(1,'A kid asks which flower part makes pollen. What do you point to?','The stamen','The pistil','The petal','The sepal'),
+    mcLevel(1,'A visitor asks which flower part receives pollen and holds the ovules. What do you say?','The pistil','The stamen','The sepal','The stem'),
+    mcLevel(1,'A visitor asks why many fruits taste sweet. What do you explain?','Animals eat them and spread seeds','Sweetness keeps animals away','It helps roots absorb water','It makes leaves greener'),
+    mcLevel(2,'A flower smells like rotting meat. Which animal is it most likely trying to attract?','Flies','Bees','Hummingbirds','Butterflies'),
+    mcLevel(2,'A visitor asks why wind-pollinated grasses have small, plain flowers. What is the best explanation?','They do not need to attract animals','They only grow at night','Their pollen is too heavy to move','They make no pollen at all'),
+    mcLevel(2,'Which plant behavior helps reproductive success?','Flowers opening when bees are out','Leaves turning brown in winter','Roots growing deeper for water','Stems bending toward light'),
+    mcLevel(2,'A hummingbird drinks nectar from a long red flower. How does this help the plant?','The bird carries pollen to other flowers','The bird eats the flower’s seeds','The bird waters the plant','The bird removes old petals'),
+    mcLevel(2,'Students counted bee visits in one hour. Flower A (bright, scented): 42 visits. Flower B (pale, no scent): 6 visits. Which claim is best supported?','Bright, scented flowers attract more bees','Bees prefer pale flowers','Scent keeps bees away','Flower traits do not matter to bees'),
+    mcLevel(3,'One plant makes 1,000 tiny seeds. Another makes 5 large seeds full of stored food. Which statement is true?','Both are strategies for reproductive success','Only the tiny seeds can grow','Only the large seeds are real seeds','Neither plant can reproduce'),
+    mcLevel(3,'A farm loses most of its bees. Which crop would be hurt the least?','Wind-pollinated wheat','Bee-pollinated apples','Bee-pollinated squash','Bee-pollinated melons')
+  ],
+  plantSuccessA:[
+    mcLevel(1,'A bee picks up pollen from one flower. What must happen next for the plant to make seeds?','Pollen reaches another flower’s pistil','Pollen falls down into the soil','The bee eats all of the pollen','Pollen turns into a new leaf'),
+    mcLevel(2,'A gardener wants more tomatoes. Which action would most help pollination?','Plant bee-attracting flowers nearby','Use a spray that kills bees','Pick off all the flowers','Cover the plants in plastic'),
+    mcLevel(2,'A plant grows beside a river, and its seeds have air pockets. How does this trait help it reproduce?','Its seeds can float to new places','Its seeds sink and rot faster','Its seeds attract more bees','Its seeds never need water'),
+    mcLevel(2,'A flower has patterns that only bees can see. What is the best explanation?','The patterns guide bees to nectar','The patterns scare bees away','The patterns help roots grow','The patterns block sunlight'),
+    mcLevel(2,'Which flower is most likely pollinated by bats?','Large and pale, opens at night','Small and green, wind-blown','Tiny and red, opens at noon','Blue and closed all night'),
+    mcLevel(3,'Which trait would most help a plant that lives where very few insects live?','Pollen that blows in the wind','Bright, sweet-smelling petals','Lots of sugary nectar','Landing pads for bees'),
+    mcLevel(3,'Students cover some apple blossoms with mesh bags so insects can’t reach them. Covered: 3 apples. Uncovered: 41 apples. What do the results show?','Insect pollination increases fruit','Mesh bags make apples bigger','Apples form without pollination','Insects damage apple flowers'),
+    mcLevel(3,'A student wants to test whether scent attracts moths. Which setup is a fair test?','Two identical flowers, one scented','One red flower and one white flower','Flowers in sun and flowers in shade','Different flowers on different nights'),
+    mcLevel(3,'Why might it help a bee-pollinated plant to bloom at the same time as others of its kind?','More pollen gets shared between them','Bees only fly during winter','Flowers last longer when alone','Its seeds need no pollen at all'),
+    mcLevel(3,'A student claims large seeds with more stored food survive better in shade. Which evidence would best support this?','Large seeds sprout more often in shade','Small seeds blow farther in wind','Large seeds weigh more','Shade plants have fewer leaves')
+  ],
+  asexualPlants:[
+    mcLevel(1,'A visitor asks what a potato “eye” can do when planted. What do you say?','Grow into a new potato plant','Make pollen for flowers','Turn into a seed','Attract pollinators'),
+    mcLevel(1,'Which is an example of asexual reproduction?','A spider plant growing baby plantlets','A bee carrying pollen','A seed forming after pollination','A fruit forming from a flower'),
+    mcLevel(2,'A farmer has a strawberry plant with perfect, sweet berries. Why might she grow new plants from its runners instead of seeds?','Runners make copies with the same traits','Runners make plants with new traits','Seeds always make identical copies','Runners need pollinators to work'),
+    mcLevel(2,'A visitor asks for one downside of asexual reproduction. What do you explain?','One disease can harm every copy','It always needs two parents','It cannot make new plants','It only works for trees'),
+    mcLevel(2,'A gardener sets a succulent leaf on soil, and it grows roots and a new plant. What does this show?','Some plants can grow from body parts','Leaves are a kind of seed','Succulents need pollen to grow','The plant reproduced sexually'),
+    mcLevel(2,'Onions and tulips grow new bulbs underground from one parent bulb. What kind of reproduction is this?','Asexual reproduction','Sexual reproduction','Pollination','Seed dispersal'),
+    mcLevel(2,'A kid asks if one plant can use both seeds and runners. What do you say?','Yes, strawberries do both','No, plants use only one way','Only trees can do both','Only animals can do both'),
+    mcLevel(3,'In a field of identical banana plants, 90% got sick from one fungus. In a mixed field grown from seeds, 20% got sick. Which explanation fits best?','Identical plants share the same weakness','Seeds always prevent disease','The fungus only attacks mixed fields','Banana plants cannot get sick'),
+    mcLevel(3,'Why can asexual reproduction help a plant spread quickly in a good habitat?','It needs no partner or pollinator','It always makes larger plants','It mixes traits from two parents','It only happens in winter'),
+    mcLevel(3,'A grower wants to keep a rare orchid’s traits exactly the same. Which method should she use?','Take cuttings from the plant','Plant seeds from cross-pollination','Let bees pollinate it with others','Collect seeds from wild orchids')
+  ],
+  sexualPlants:[
+    mcLevel(1,'A kid asks how many parents are usually involved in sexual reproduction. What do you say?','Two','One','Three','None'),
+    mcLevel(1,'A visitor asks what grows inside most fruits. What do you say?','Seeds','Roots','Pollen','Leaves'),
+    mcLevel(2,'After pollination, a sperm cell from the pollen joins an egg cell. What is this step called?','Fertilization','Germination','Dispersal','Photosynthesis'),
+    mcLevel(2,'Which flower part grows into the fruit after fertilization?','The ovary','The petal','The stamen','The sepal'),
+    mcLevel(2,'A visitor asks what is inside a seed. Which answer is best?','A tiny plant and stored food','Only water and air','Pollen and sweet nectar','A small flower and fruit'),
+    mcLevel(2,'Which step comes right before fertilization in flowering plants?','Pollination','Seed dispersal','Germination','Fruit ripening'),
+    mcLevel(2,'A flower’s petals fall off and a pod starts to swell. What is most likely happening?','Seeds are forming inside','The plant is dying','Roots are forming','Pollen is being made'),
+    mcLevel(3,'A visitor asks for one benefit of sexual reproduction. What is the best answer?','Variety helps some offspring survive','Offspring are always identical','Only one parent is ever needed','No pollen is needed at all'),
+    mcLevel(3,'Which order is correct for a flowering plant’s life cycle?','Pollination, fertilization, seed, germination','Germination, pollination, seed, fertilization','Seed, fertilization, pollination, germination','Fertilization, pollination, germination, seed'),
+    mcLevel(3,'A red-flowered plant is crossed with a white-flowered plant. Of 40 offspring: 22 pink, 10 red, 8 white. What does this show?','Offspring can differ from both parents','All offspring copy one parent','Only one parent passed on traits','The plant reproduced asexually')
+  ],
+  seedDispersal:[
+    mcLevel(1,'A squirrel buries acorns and forgets some. How does this help the oak tree?','Some acorns grow in new places','The acorns turn into leaves','The squirrel waters the tree','The tree stops making acorns'),
+    mcLevel(1,'Dandelion seeds have fluffy parachutes. How are they dispersed?','By wind','By water','By animals eating them','By exploding pods'),
+    mcLevel(2,'A bird eats berries and later drops the seeds far away in its waste. What does this show?','Animals can disperse seeds','Birds plant seeds on purpose','Seeds can’t survive digestion','Berries are not fruits'),
+    mcLevel(2,'Some pea pods dry out and burst open, flinging seeds. How does this help the plant?','Seeds land away from the parent','Seeds stay right under the parent','It attracts pollinators','It keeps seeds from growing'),
+    mcLevel(2,'A seed has a hard, waterproof coat and floats. Where would it most likely spread?','Along rivers and coasts','Only on mountaintops','Inside animal fur','Only under its parent'),
+    mcLevel(2,'A plant grows on a cliff above the ocean. Which seed type would most help it spread?','Seeds that float','Seeds with hooks','Heavy seeds that drop','Seeds that need burying'),
+    mcLevel(3,'Students dropped seeds in front of a fan. Average distance: Seed A (wings) 3.1 m, Seed B (round, smooth) 0.4 m, Seed C (fluffy) 4.8 m. Which seed is best adapted for wind?','Seed C','Seed A','Seed B','All are equal'),
+    mcLevel(3,'Students test how far different seeds travel in wind from a fan. What should stay the same for every seed?','Drop height and fan speed','The type of seed','The distance traveled','The seed’s shape'),
+    mcLevel(3,'Why do many fruits change from green to bright red when ripe?','To show animals seeds are ready','To keep hungry animals away','To catch more of the wind','To help the fruit float'),
+    mcLevel(3,'A student claims animals that eat fruit help plants spread. Which evidence best supports this?','Seeds in droppings sprout far away','Animals also eat many leaves','Fruit rots if nobody eats it','Some animals dig up roots')
+  ],
+  digestionHumans:[
+    mcLevel(1,'A visitor asks what saliva does. What do you say?','Starts breaking down food','Pumps food to the stomach','Absorbs nutrients','Stores bile'),
+    mcLevel(1,'Which organ connects the mouth to the stomach?','Esophagus','Small intestine','Liver','Large intestine'),
+    mcLevel(1,'A kid asks what the tongue does during digestion. What do you say?','Moves food and helps swallowing','Makes acid for the stomach','Absorbs water from food','Makes bile to digest fat'),
+    mcLevel(1,'Which teeth are best for biting off pieces of food?','Incisors','Molars','Premolars','Wisdom teeth'),
+    mcLevel(2,'Chewing is mechanical digestion. Which is an example of chemical digestion?','Saliva breaking down starch','Teeth grinding up food','The tongue moving food','Swallowing a big bite'),
+    mcLevel(2,'When the stomach churns and squeezes food, what kind of digestion is it?','Mechanical digestion','Nutrient absorption','Waste elimination','Blood circulation'),
+    mcLevel(3,'A kid notices a cracker starts to taste sweet after long chewing. What explains this?','Saliva breaks starch into sugar','Teeth add sugar to food','The tongue makes sugar','Air turns starch into sugar'),
+    mcLevel(3,'A visitor asks how food moves down the esophagus, even when you lie down. What do you explain?','Muscles squeeze it along in waves','Gravity is the only force','Saliva pushes the food down','The stomach sucks it down'),
+    mcLevel(3,'A visitor asks why stomach acid doesn’t digest the stomach itself. What do you explain?','A mucus lining protects it','The acid is not very strong','The stomach is made of bone','Food blocks all the acid'),
+    mcLevel(3,'A student mixes starch with saliva in one tube and with water in another. After 10 minutes, the saliva tube has little starch left; the water tube has lots. What does this show?','Saliva breaks down starch','Water breaks down starch','Starch cannot be broken down','Both tubes acted the same')
+  ],
+  digestionIntestines:[
+    mcLevel(1,'A visitor asks where absorbed nutrients go from the small intestine. What do you say?','Into the blood','Into the lungs','Back to the stomach','Into the bones directly'),
+    mcLevel(1,'Which is the longest part of the digestive tract?','Small intestine','Large intestine','Stomach','Esophagus'),
+    mcLevel(2,'What does the pancreas send to the small intestine?','Digestive enzymes','Saliva','Stomach acid','Blood cells'),
+    mcLevel(2,'A kid asks what helpful bacteria in the large intestine do. What do you say?','Break down some leftover food','Make acid for the stomach','Grind food into pieces','Carry oxygen to cells'),
+    mcLevel(2,'A visitor asks what bile does in the small intestine. What do you explain?','Breaks fat into small drops','Absorbs water','Kills all bacteria','Turns starch into sugar'),
+    mcLevel(2,'After the large intestine absorbs water, where does the leftover waste go?','To the rectum to leave the body','Back to the small intestine','Into the blood','Back to the stomach'),
+    mcLevel(3,'A person has very watery waste. Which organ is most likely not doing its job well?','Large intestine','Esophagus','Mouth','Liver'),
+    mcLevel(3,'A student compares two tubes of the same length: one smooth inside, one with many folds. Which could absorb more?','The folded tube','The smooth tube','Both exactly the same','Neither tube'),
+    mcLevel(3,'An illness flattens the villi in the small intestine. What would most likely happen?','Fewer nutrients would be absorbed','More water would be absorbed','Food would be chewed better','The stomach would shrink'),
+    mcLevel(3,'Lab samples show protein is only partly broken down in the stomach, but protein, fat, and starch are fully broken down in the small intestine. Which conclusion fits?','Most digestion finishes in the small intestine','The stomach finishes all digestion','The small intestine does no digestion','Only the mouth breaks down protein')
+  ],
+  humanDigestion:[
+    mcLevel(1,'A visitor asks why we need a digestive system at all. What do you say?','Cells need small nutrient pieces','Food is already small enough','It makes blood cells','It controls breathing'),
+    mcLevel(2,'Which two organs make digestive juices but are not on food’s path?','Liver and pancreas','Stomach and esophagus','Mouth and tongue','Small and large intestine'),
+    mcLevel(2,'Fiber is not digested. Why is it still useful?','It helps waste move through','It gives the most energy','It turns into muscle','It is absorbed into blood'),
+    mcLevel(2,'Average time food spends in each organ: mouth 1 minute, stomach 3 hours, small intestine 5 hours, large intestine 30 hours. Where does food stay longest?','Large intestine','Stomach','Small intestine','Mouth'),
+    mcLevel(2,'Which systems deliver the oxygen that digestive organs need?','Respiratory and circulatory','Skeletal and muscular','Nervous and skeletal','Digestive system alone'),
+    mcLevel(3,'A person’s pancreas stops making enzymes. Which problem is most likely?','Food is not fully broken down','Food cannot be swallowed','Teeth stop working','The mouth absorbs no water'),
+    mcLevel(3,'A visitor asks how the nervous system helps digestion. What do you explain?','It signals muscles to move food','It absorbs the nutrients','It makes bile for fats','It stores extra waste'),
+    mcLevel(3,'Which pair shows mechanical digestion and then chemical digestion?','Teeth chewing, then enzymes acting','Enzymes acting, then absorption','Absorption, then chewing','Water absorbed, then chewing'),
+    mcLevel(3,'Blood leaving the small intestine carries more nutrients than blood going in. What does this show?','Nutrients were absorbed there','Blood makes its own nutrients','The intestine removes nutrients','Nothing happens in the intestine'),
+    mcLevel(3,'A student claims the small intestine is built for absorption. Which evidence best supports this?','It is long and lined with villi','It is next to the stomach','It is shaped like a tube','It contains some bacteria')
+  ]
+};
+Object.entries(BIO1_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { BIO1_QUESTIONS[skillId] = [...(BIO1_QUESTIONS[skillId] || []), ...questions]; });
+// Difficulty tags (1-3) for the original Biology Unit 1 questions, in their order in BIO1_QUESTIONS.
+const BIO1_BUILT_IN_LEVELS = {
+  cellsOrganisms:[1,2,1,2], cellPartsU:[1,1,1,1], cellPartsA:[1,2,2,1], plantSuccessU:[1,1,1,2],
+  plantSuccessA:[2,2,2,2], asexualPlants:[1,1,1,1], sexualPlants:[1,1,2,2], seedDispersal:[1,1,2,1],
+  digestionHumans:[1,1,1,1], digestionIntestines:[1,1,2,1], humanDigestion:[2,1,1,2]
+};
+Object.entries(BIO1_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEach((level, index) => {
+  const question = BIO1_QUESTIONS[skillId]?.[index];
+  if (question && question.difficulty == null) question.difficulty = level;
+}));
+/* Difficulty-aware picking. Untagged questions count as level 1, so untagged banks still pick at random. */
+const questionLevel = question => question.difficulty || 1;
+/* practice: 4 random questions, easiest first, so a practice builds up */
+function practiceOrder(pool, count){
+  return shuffle(pool).slice(0, count).sort((a, b) => questionLevel(a) - questionLevel(b));
+}
+/* quizzes and tests: weighted random order, so level 3 is 5x and level 2 is 3x as likely as level 1 to come first */
+const LEVEL_WEIGHT = {1:1, 2:3, 3:5};
+function leanHard(pool){
+  return pool.map(question => ({question, key: Math.random() ** (1 / (LEVEL_WEIGHT[questionLevel(question)] || 1))}))
+    .sort((a, b) => b.key - a.key).map(item => item.question);
+}
 const HISTORY_PROJECTS = {
   bio1:{title:'Model Project: Structure and Function',summary:'Build a model of a cell or of the digestive system and explain how its parts work together.',steps:[
     {key:'choice',label:'1. Choose a cell (plant or animal) or the human digestive system. Describe the model you will build and your materials.'},
@@ -6249,7 +6465,7 @@ function englishRecord(key,courseId='nouns'){
 }
 const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
-  const pools = skillIds.map(skillId => shuffle(englishQuestions(skillId, courseId)));
+  const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
   while (questions.length < count && pools.some(pool => pool.length)) {
     pools.forEach(pool => { if (pool.length && questions.length < count) questions.push(pool.pop()); });
@@ -6344,14 +6560,14 @@ function renderEnglishQuestion(){
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
   if (!skill || pool.length < 4) return;
-  const questions = shuffle(pool).slice(0,4);
+  const questions = practiceOrder(pool, 4);
   activeEnglishCourse=course.id;englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[]}; renderEnglishQuestion();
 }
 function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
   if (final ? !englishFinalReady(course) : !group || !group.skills.every(skillId => englishRecord(skillId,course.id).passed)) return;
   const questions = final
-    ? shuffle(course.skills.flatMap(skill => shuffle(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
+    ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
     : englishAssessmentQuestions(group.quizSkills || group.skills, 4,course.id);
   activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true};
   renderEnglishQuestion();
