@@ -309,7 +309,8 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'whack-a-mole', name: 'Whack-a-Mole Stats Lab', emoji: '🔨', description: 'Play a quick round and explore your score statistics.', src: '/arcade/whack-a-mole/', available: true },
   { id: 'state-conquest', name: 'State Conquest', emoji: '🗺️', description: 'Learn all 50 states, capitals, and neighboring geography in a saveable strategy campaign.', src: '/arcade/state-conquest/', available: true },
   { id: 'fly-fly-butterfly', name: 'Fly, Fly Butterfly', emoji: '🦋', description: 'Learn butterfly life stages and ecology in a strategic card game with a persistent campaign.', src: '/arcade/fly-fly-butterfly/', available: true },
-  { id: 'museum-caper', name: 'Museum Caper', emoji: '🖼️', description: 'Sneak through a museum as the art thief or catch the thief as the detectives, and learn about famous paintings.', src: '/arcade/museum-caper/', available: true }
+  { id: 'museum-caper', name: 'Museum Caper', emoji: '🖼️', description: 'Sneak through a museum as the art thief or catch the thief as the detectives, and learn about famous paintings.', src: '/arcade/museum-caper/', available: true },
+  { id: 'triad-arcade', name: 'Triad Arcade', emoji: '🃏', description: 'Five card and memory games: Bingo War, Battleship, Bingo Duel, Casino War and Memory Matrix.', src: '/arcade/triad-arcade/', available: true }
 ];
 
 export interface ArcadeSettings {

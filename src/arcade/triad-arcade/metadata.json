@@ -1,0 +1,6 @@
+{
+  "name": "Triad Arcade: Memory, Bingo & War",
+  "description": "A hybrid arcade suite featuring Memory Bingo fusion, high-stakes Casino War duels, Classic Memory Matrix, and a cross-mode competitive leaderboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
