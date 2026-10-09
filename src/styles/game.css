@@ -130,6 +130,12 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .arcade-play{margin-top:18px; background:var(--board); border:3px solid var(--edge); border-radius:18px; padding:10px; color:var(--chalk)}
 .arcade-play-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px}.arcade-play iframe{display:block; width:100%; height:min(72vh,720px); border:0; border-radius:10px; background:#101820}
 @media (max-width:600px){.arcade-summary{grid-template-columns:1fr}.arcade-play iframe{height:70vh}}
+/* An open Arcade game covers the whole window (and the screen, when the browser allows full screen) */
+.arcade-play.arcade-full{position:fixed; inset:0; z-index:60; margin:0; border:0; border-radius:0; display:flex; flex-direction:column; padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+.arcade-play.arcade-full[hidden]{display:none}
+.arcade-play.arcade-full iframe{flex:1; height:auto; min-height:0}
+.arcade-play-buttons{display:flex; gap:8px}
+body.arcade-open{overflow:hidden}
 
 /* Pet Room and Dress-up */
 .room-layout{display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start}

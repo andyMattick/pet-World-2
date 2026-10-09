@@ -4898,6 +4898,18 @@ function renderArcade(){
     ${prizeShop}
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
 }
+/* Arcade games fill the whole window, and the whole screen where the browser allows it (the Play click
+   counts as the user gesture). The page itself goes full screen, not just the game, so toasts still show. */
+function enterArcadeFullscreen(){
+  const root = document.documentElement, request = root.requestFullscreen || root.webkitRequestFullscreen;
+  if (!request || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { const result = request.call(root); if (result && result.catch) result.catch(() => {}); } catch(e){}
+}
+function exitArcadeFullscreen(){
+  document.body.classList.remove('arcade-open');
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) { try { const result = exit.call(document); if (result && result.catch) result.catch(() => {}); } catch(e){} }
+}
 function startArcadeGame(id){
   const policy = arcadePolicy(), game = arcadeGamesForClass().find(item => item.id === id), remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds();
   if (!game || (!gamesOnlyMode && remaining <= 0) || (!gamesOnlyMode && !policy.freePlay && (!policy.enabled || !policy.games[id] || !arcadeAdmitted() && S.coins < arcadeEntryCost))) return;
@@ -4907,8 +4919,10 @@ function startArcadeGame(id){
   activeArcadeRun = {id:runId, gameId:game.id, freePlay:policy.freePlay, gameOfDay:arcadeGameOfTheDay(new Date(), arcadeGamesForClass())?.id === game.id, highestScore:0, completed:new Set()};
   const play = $('#arcadePlayWrap');
   play.hidden = false;
-  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${gamesOnlyMode ? 'Games only' : `${Math.ceil(remaining / 60)} min left`}</span><button class="btn small" id="arcadeClose">Leave game</button></div><iframe id="arcadeFrame" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}&arcadeRun=${encodeURIComponent(runId)}" loading="eager"></iframe>`;
-  $('#arcadeClose').addEventListener('click', () => { if (arcadeTimer) clearInterval(arcadeTimer); activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); });
+  play.innerHTML = `<div class="arcade-play-head"><strong>${game.emoji} ${esc(game.name)}</strong><span id="arcadeClock">${gamesOnlyMode ? 'Games only' : `${Math.ceil(remaining / 60)} min left`}</span><span class="arcade-play-buttons"><button class="btn small" id="arcadeFull">⛶ Full screen</button><button class="btn small" id="arcadeClose">Leave game</button></span></div><iframe id="arcadeFrame" allow="fullscreen" title="${esc(game.name)}" src="${esc(game.src)}?student=${encodeURIComponent(S.sid)}&arcadeRun=${encodeURIComponent(runId)}" loading="eager"></iframe>`;
+  play.classList.add('arcade-full'); document.body.classList.add('arcade-open'); enterArcadeFullscreen();
+  $('#arcadeFull').addEventListener('click', enterArcadeFullscreen);
+  $('#arcadeClose').addEventListener('click', () => { if (arcadeTimer) clearInterval(arcadeTimer); activeArcadeRun = null; exitArcadeFullscreen(); play.hidden = true; play.innerHTML = ''; renderArcade(); });
   if (gamesOnlyMode) return;
   const started = performance.now();
   let elapsedPreviously = 0;
@@ -4920,7 +4934,7 @@ function startArcadeGame(id){
     save();
     const left = arcadeRemainingSeconds();
     const clock = $('#arcadeClock'); if (clock) clock.textContent = `${Math.ceil(left / 60)} min left`;
-    if (!left) { clearInterval(arcadeTimer); arcadeTimer = null; activeArcadeRun = null; play.hidden = true; play.innerHTML = ''; renderArcade(); toast('Today\'s arcade time is used up.'); }
+    if (!left) { clearInterval(arcadeTimer); arcadeTimer = null; activeArcadeRun = null; exitArcadeFullscreen(); play.hidden = true; play.innerHTML = ''; renderArcade(); toast('Today\'s arcade time is used up.'); }
   }, 1000);
 }
 $('#arcadeWrap').addEventListener('click', event => {
