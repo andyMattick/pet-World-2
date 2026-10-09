@@ -1755,6 +1755,16 @@ const LEMON_GEN = {
   },
   cmpWord(lvl){
     const [e, n] = pick(LEMON_KIDS), small = rand(2, 9), k = rand(2, lvl === 1 ? 5 : 9), big = small * k;
+    if (lvl === 3 && Math.random() < 0.6) {                                    // two steps: find the big amount, then combine or compare
+      const both = Math.random() < 0.5;
+      const story = `${n}'s small pitcher holds ${small} cups. The big pitcher holds ${k} times as many cups. ${both ? 'How many cups do the two pitchers hold together?' : 'How many more cups does the big pitcher hold than the small one?'}`;
+      const opts = choiceOf({text:'Multiply ( × )'}, [{text:'Add ( + )', mis:'additiveCompare'}, {text:'Divide ( ÷ )', mis:'wrongOperation'}]);
+      return {title:'Pitchers', ctx:`${both ? 'total' : 'difference'}: ${small} × ${k}`, bubble:story, helper:'First find the big pitcher. Then use it to answer the question.',
+        visual:`<div style="text-align:center; font-size:1.6rem">${e} 🍋🥤 + 🥤</div>`,
+        steps:[{name:'First step', type:'concept', kind:'choice', prompt:'How do you find how much the big pitcher holds?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => '"Times as many" means multiply.'},
+          numStep('Big pitcher', 'compute', `${small} × ${k} = ?`, big, {fact:{x:small, y:k}, mis:v => v === small + k ? 'additiveCompare' : null}),
+          numStep(both ? 'Together' : 'How many more', 'compute', `${big} ${both ? '+' : '−'} ${small} = ?`, both ? big + small : big - small, {hint:() => both ? 'Add the two pitchers.' : 'Subtract the small pitcher from the big one.'})], answerSteps:[2]};
+    }
     const kind = lvl === 1 ? pick(['bigger', 'bigger', 'smaller']) : pick(['bigger', 'smaller', 'times', ...(lvl === 3 ? ['more', 'more'] : ['more'])]);
     const more = rand(2, 9);
     const T = {
@@ -1825,7 +1835,13 @@ const LEMON_GEN = {
   },
   eqWord(lvl){
     const [e, n] = pick(LEMON_KIDS), L = pick(['c', 'n', 'p']);
-    const T = pick([
+    const HARD = [                                                               // level 3: three numbers, two operations, often parentheses
+      () => { const k = rand(3, 6), m = rand(6, 12), x = rand(3, 12), y = rand(2, Math.min(9, k * m - x - 1)); return {story:`${n} made ${k} pitchers with ${m} cups in each. ${n} sold ${x} cups and spilled ${y}. ${L} is the number of cups left.`, right:`${L} = ${k} × ${m} − ${x} − ${y}`, wrong:[`${L} = ${k} × (${m} − ${x} − ${y})`, `${L} = ${k} × ${m} − ${x} + ${y}`, `${L} = ${k} + ${m} − ${x} − ${y}`], val:k * m - x - y}; },
+      () => { const p = rand(2, 5), k = rand(6, 15), k2 = rand(4, 12); return {story:`${n} sells lemonade for $${p} a cup. ${n} sold ${k} cups on Saturday and ${k2} cups on Sunday. ${L} is the money ${n} made.`, right:`${L} = (${k} + ${k2}) × ${p}`, wrong:[`${L} = ${k} + ${k2} × ${p}`, `${L} = ${k} × ${k2} × ${p}`, `${L} = (${k} + ${k2}) + ${p}`], val:(k + k2) * p}; },
+      () => { const g = rand(4, 9), m = rand(4, 8), x = rand(5, g * m - 5); return {story:`${g} tables each need ${m} cups. ${n} has already set out ${x} cups. ${L} is the number of cups ${n} still needs.`, right:`${L} = ${g} × ${m} − ${x}`, wrong:[`${L} = ${g} × (${m} − ${x})`, `${L} = ${g} + ${m} − ${x}`, `${L} = ${x} − ${g} × ${m}`], val:g * m - x}; },
+      () => { const g = rand(3, 6), q = rand(5, 12), tot = g * q, a = rand(10, tot - 10), h = rand(1, q - 1); return {story:`${n} picked ${a} lemons and a friend picked ${tot - a}. They packed them equally into ${g} crates, then gave away ${h} lemons from one crate. ${L} is the number of lemons left in that crate.`, right:`${L} = (${a} + ${tot - a}) ÷ ${g} − ${h}`, wrong:[`${L} = ${a} + ${tot - a} ÷ ${g} − ${h}`, `${L} = (${a} + ${tot - a}) ÷ (${g} − ${h})`, `${L} = (${a} + ${tot - a}) × ${g} − ${h}`], val:q - h}; }
+    ];
+    const T = lvl === 3 ? pick(HARD)() : pick([
       () => { const k = rand(2, 5), m = rand(3, 9), s = k * m + rand(5, lvl === 1 ? 30 : 60); return {story:`${n} had ${s} cups. ${n} used ${k} stacks of ${m} cups. ${L} is the number of cups left.`, right:`${L} = ${s} − ${k} × ${m}`, wrong:[`${L} = ${s} − ${k} + ${m}`, `${L} = ${k} × ${m} − ${s}`, `${L} = (${s} − ${k}) × ${m}`], val:s - k * m}; },
       () => { const k = rand(2, 6), m = rand(3, 9), x = rand(2, 12); return {story:`${n} bought ${k} bags of ${m} lemons and ${x} more loose lemons. ${L} is the number of lemons.`, right:`${L} = ${k} × ${m} + ${x}`, wrong:[`${L} = ${k} + ${m} + ${x}`, `${L} = ${k} × (${m} + ${x})`, `${L} = ${k} × ${m} × ${x}`], val:k * m + x}; },
       () => { const g = rand(2, 6), a = rand(10, 30), b = rand(5, 20), tot = a + b, t2 = tot - tot % g, a2 = t2 - b; return {story:`${n} made ${a2} cups in the morning and ${b} in the afternoon, then shared them equally among ${g} tables. ${L} is the number of cups at each table.`, right:`${L} = (${a2} + ${b}) ÷ ${g}`, wrong:[`${L} = ${a2} + ${b} ÷ ${g}`, `${L} = (${a2} + ${b}) × ${g}`, `${L} = ${g} ÷ (${a2} + ${b})`], val:(a2 + b) / g}; },
@@ -1876,6 +1892,21 @@ const LEMON_GEN = {
       visual:`<div style="text-align:center; font-size:1.6rem">🥤 ${N} cups</div>`, steps};
   },
   relateFM(lvl){
+    if (lvl === 3) {                                                             // no fact shown: decide from the numbers alone
+      let N, f, x;
+      for (let t = 0; t < 200; t++){
+        N = rand(24, 96); const fs = []; for (let y = 3; y <= 12; y++) if (N % y === 0 && y * y !== N) fs.push(y);
+        const non = []; for (let y = 3; y <= 12; y++) if (N % y !== 0) non.push(y);
+        if (fs.length && non.length) { f = pick(fs); x = pick(non); break; }
+      }
+      const asFactor = Math.random() < 0.5, kid = pick(LEMON_KIDS)[1];
+      const opts = asFactor ? choiceOf({text:`${f} is a factor of ${N}`}, [{text:`${N} is a factor of ${f}`, mis:'factorMultipleSwap'}, {text:`${x} is a factor of ${N}`}, {text:`${f} is a multiple of ${N}`, mis:'factorMultipleSwap'}])
+        : choiceOf({text:`${N} is a multiple of ${f}`}, [{text:`${f} is a multiple of ${N}`, mis:'factorMultipleSwap'}, {text:`${N} is a multiple of ${x}`}, {text:`${N} is a factor of ${f}`, mis:'factorMultipleSwap'}]);
+      return {title:'Cup Stacks', ctx:`${f} and ${N}, no fact`, bubble:`${kid} has ${N} cups to stack in equal rows. Which sentence is true?`, helper:'A factor divides in with nothing left over. A multiple is what you get when you multiply.',
+        visual:`<div style="text-align:center; font-size:1.6rem">🥤 ${N} cups</div>`,
+        steps:[{name:'Factor or multiple', type:'concept', kind:'choice', prompt:'Which sentence is true?', options:opts, hint:() => `Check by dividing: does ${N} ÷ the small number come out even?`},
+          numStep('Check it', 'compute', `${N} ÷ ${f} = ?`, N / f, {fact:{x:f, y:N / f, div:true}})]};
+    }
     const a = rand(2, 12), k = rand(2, 12), N = a * k;
     const opts = choiceOf({text:`${N} is a multiple of ${a}`}, [{text:`${a} is a multiple of ${N}`, mis:'factorMultipleSwap'}, {text:`${N} is a factor of ${a}`, mis:'factorMultipleSwap'}, {text:`${a} is a multiple of ${a + 1}`, mis:null}]);
     const opts2 = choiceOf({text:`${a} is a factor of ${N}`}, [{text:`${N} is a factor of ${a}`, mis:'factorMultipleSwap'}, {text:`${a} is a multiple of ${N}`, mis:'factorMultipleSwap'}]);
@@ -1886,6 +1917,23 @@ const LEMON_GEN = {
         numStep('Find the other factor', 'compute', `${a} × ? = ${N}`, k, {fact:{x:a, y:k, div:true}})].slice(0, lvl === 1 ? 1 : 2)};
   },
   identMultiples(lvl){
+    if (lvl === 3) {                                                             // a common multiple of two numbers
+      for (let t = 0; t < 300; t++){
+        const n1 = rand(2, 9), n2 = rand(n1 + 1, 10);
+        if (n2 % n1 === 0) continue;
+        const g = (a, b) => b ? g(b, a % b) : a, l = n1 * n2 / g(n1, n2), m = l * rand(1, Math.max(1, Math.floor(100 / l)));
+        if (m > 100) continue;
+        const only1 = [m - n1, m + n1].find(v => v > 0 && v % n2 !== 0), only2 = [m - n2, m + n2].find(v => v > 0 && v % n1 !== 0), sum = n1 + n2;
+        const wrongs = [{text:String(only1), mis:'notAMultiple'}, {text:String(only2), mis:'notAMultiple'}, ...(sum % n1 && sum % n2 ? [{text:String(sum), mis:'notAMultiple'}] : [])].filter(w => w.text !== 'undefined');
+        const opts = choiceOf({text:String(m)}, wrongs);
+        if (opts.length < 3) continue;
+        return {title:'Cup Stacks', ctx:`multiple of ${n1} and ${n2}`, bubble:`Some cups come in stacks of ${n1} and some in stacks of ${n2}. Which amount can I make with full stacks of ${n1} AND with full stacks of ${n2}?`,
+          helper:`The number must be a multiple of ${n1} and a multiple of ${n2}.`, visual:`<div style="text-align:center; font-size:1.6rem">🥤 stacks of ${n1} · stacks of ${n2}</div>`,
+          steps:[{name:'Pick the multiple', type:'concept', kind:'choice', prompt:`Which number is a multiple of both ${n1} and ${n2}?`, options:opts, hint:() => `Skip-count by ${n2}s and check which ones ${n1} also divides.`},
+            numStep(`Stacks of ${n1}`, 'compute', `${n1} × ? = ${m}`, m / n1, {fact:{x:n1, y:m / n1, div:true}}),
+            numStep(`Stacks of ${n2}`, 'compute', `${n2} × ? = ${m}`, m / n2, {fact:{x:n2, y:m / n2, div:true}})]};
+      }
+    }
     const n = rand(3, lvl === 1 ? 6 : 12), k = rand(2, lvl === 1 ? 6 : 10), m = n * k;
     const facs = []; for (let x = 2; x < n; x++) if (n % x === 0) facs.push(x);
     const wrongs = [{text:String(m + 1), mis:'notAMultiple'}, {text:String(m - 1), mis:'notAMultiple'}, {text:String(n + k), mis:'notAMultiple'}];
@@ -2018,6 +2066,9 @@ function wholeColumnStep(a, b, op){
     mis:v => v !== exact && v === noCarry ? (op === '+' ? 'noRegroup' : 'smallerFromLarger') : null,
     hint:() => op === '+' ? 'Add each column from the right. When a column makes 10 or more, carry the 1.' : 'Subtract from the right. When the top digit is smaller, regroup from the next column.'};
 }
+/* how many columns carry when adding, or regroup when subtracting (level 3 needs several) */
+function carryCount(a, b){ let c = 0, k = 0; while (a || b || c) { const t = a % 10 + b % 10 + c; c = t >= 10 ? 1 : 0; k += c; a = Math.floor(a / 10); b = Math.floor(b / 10); } return k; }
+function borrowCount(a, b){ let c = 0, k = 0; while (a || b) { const t = a % 10 - b % 10 - c; c = t < 0 ? 1 : 0; k += c; a = Math.floor(a / 10); b = Math.floor(b / 10); } return k; }
 const TOY_ITEMS = [['🧸', 'teddy bears'], ['🪀', 'yo-yos'], ['🧩', 'puzzle pieces'], ['🎲', 'dice'], ['🪁', 'kites'], ['🚂', 'toy trains']];
 const TOYS_GEN = {
   pvBlocks(lvl){
@@ -2031,6 +2082,15 @@ const TOYS_GEN = {
         hint:() => counts.map((c, i) => c ? `${c} × ${commas(PV_VALUES[i])}` : '').filter(Boolean).reverse().join(' + ')}]};
   },
   pvTable(lvl){
+    if (lvl === 3) {                                                             // read the table, then 10 / 100 / 1,000 / 10,000 more or less
+      const n = pvNumber(6), up = Math.random() < 0.5, pl = rand(1, 4), c = PV_VALUES[pl], m = up ? n + c : n - c;
+      const others = [pl - 1, pl + 1].filter(i => i >= 0 && i <= 5).map(i => up ? n + PV_VALUES[i] : n - PV_VALUES[i]);
+      return {title:'Stock Room', ctx:`${commas(n)} table ${up ? '+' : '−'} ${c}`, bubble:`This place-value table shows how many toys are in the warehouse. Then ${up ? `${commas(c)} more toys arrive` : `${commas(c)} toys are shipped out`}. How many toys are there now?`,
+        helper:`Read the number, then change only the ${PV_NAMES[pl]} place. If it goes past 9 or below 0, regroup.`, visual:pvTableHTML(n, -1),
+        steps:[{name:'Read the table', type:'concept', kind:'num', prompt:'What number does the table show?', answer:n, eq:v => v === n, hint:() => 'Read the digits across, left to right.'},
+          numStep(up ? `${commas(c)} more` : `${commas(c)} less`, 'concept', `What number is ${commas(c)} ${up ? 'more' : 'less'} than ${commas(n)}?`, m,
+            {mis:v => others.includes(v) ? 'placeValueName' : null, hint:() => `${commas(c)} is 1 in the ${PV_NAMES[pl]} place.`})]};
+    }
     const n = pvNumber(digitsFor(lvl)), s = String(n), hide = rand(0, s.length - 1), place = s.length - 1 - hide;
     const read = Math.random() < 0.5;
     return {title:'Stock Room', ctx:`${commas(n)} table`, bubble:read ? 'This place-value table shows a number of toys. What is the number?' : `The table shows ${commas(n)}, with one digit hidden. What digit goes in the ${PV_NAMES[place]} place?`,
@@ -2146,17 +2206,39 @@ const TOYS_GEN = {
       steps:roundSteps(n, place)};
   },
   addMulti(lvl){
-    const n = digitsFor(lvl) - (lvl === 3 ? 1 : 0); let a, b;
-    do { a = pvNumber(n); b = pvNumber(n - (Math.random() < 0.4 ? 1 : 0)); } while (lvl >= 2 && noCarryK(a * 1000, b * 1000) === (a + b) * 1000);   // levels 2 and 3 always carry
     const [e, item] = pick(TOY_ITEMS);
+    if (lvl === 3) {                                                             // 6 digits, at least 3 carries; sometimes a second delivery
+      let a, b; do { a = pvNumber(6); b = pvNumber(6 - (Math.random() < 0.4 ? 1 : 0)); } while (carryCount(a, b) < 3 || a + b > 999999);
+      let c = 0; for (let t = 0; t < 300 && !c; t++) { const x = pvNumber(5); if (carryCount(a + b, x) >= 2 && a + b + x <= 999999) c = x; }   // stay under a million
+      if (c && Math.random() < 0.4) {
+        return {title:'Price Tags', ctx:`${a} + ${b} + ${c}`, bubble:`The warehouse had ${commas(a)} ${item}. A truck brought ${commas(b)} more, then a second truck brought ${commas(c)}. How many ${item} now?`,
+          helper:'Add the first truck, then add the second truck to that total.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(a)} + ${commas(b)} + ${commas(c)}</div>`,
+          steps:[wholeColumnStep(a, b, '+'), {...wholeColumnStep(a + b, c, '+'), name:'Add again'}]};
+      }
+      return {title:'Price Tags', ctx:`${a} + ${b}`, bubble:`The warehouse had ${commas(a)} ${item} and got ${commas(b)} more. How many now?`, helper:'Line up the places and add from the right.',
+        visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(a)} + ${commas(b)}</div>`, steps:[wholeColumnStep(a, b, '+')]};
+    }
+    const n = digitsFor(lvl); let a, b;
+    do { a = pvNumber(n); b = pvNumber(n - (Math.random() < 0.4 ? 1 : 0)); } while (lvl === 2 && noCarryK(a * 1000, b * 1000) === (a + b) * 1000);   // level 2 always carries
     return {title:'Price Tags', ctx:`${a} + ${b}`, bubble:`The shop had ${commas(a)} ${item} and got ${commas(b)} more. How many now?`, helper:'Line up the places and add from the right.',
       visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(a)} + ${commas(b)}</div>`, steps:[wholeColumnStep(a, b, '+')]};
   },
   subMulti(lvl){
-    const n = digitsFor(lvl) - (lvl === 3 ? 1 : 0); let a, b;
-    do { a = pvNumber(n); b = pvNumber(n - (Math.random() < 0.4 ? 1 : 0)); if (b > a) [a, b] = [b, a]; } while (a === b || (lvl >= 2 && smallerFromLargerK(a * 1000, b * 1000) === (a - b) * 1000));   // levels 2 and 3 always regroup
-    if (lvl === 3 && Math.random() < 0.5) { a = Number(String(a)[0] + '0'.repeat(n - 1)); if (b >= a) b = pvNumber(n - 1); }   // across zeros: 5,000 − 1,234
     const [e, item] = pick(TOY_ITEMS);
+    if (lvl === 3) {                                                             // 6 digits, at least 2 regroups (often across zeros); sometimes a second sale
+      let a, b;
+      do { a = pvNumber(6); if (Math.random() < 0.4) a = Number(String(a).slice(0, 2) + '0000'); b = pvNumber(6 - (Math.random() < 0.5 ? 1 : 0)); } while (b >= a || borrowCount(a, b) < 2);
+      if (Math.random() < 0.35) {
+        let c, t = 0; do { c = pvNumber(rand(4, 5)); t++; } while ((c >= a - b || borrowCount(a - b, c) < 1) && t < 200);
+        if (c < a - b) return {title:'Price Tags', ctx:`${a} − ${b} − ${c}`, bubble:`The warehouse had ${commas(a)} ${item}. It shipped ${commas(b)} to one store and ${commas(c)} to another. How many are left?`,
+          helper:'Subtract the first shipment, then subtract the second one from what is left.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(a)} − ${commas(b)} − ${commas(c)}</div>`,
+          steps:[wholeColumnStep(a, b, '-'), {...wholeColumnStep(a - b, c, '-'), name:'Subtract again'}]};
+      }
+      return {title:'Price Tags', ctx:`${a} − ${b}`, bubble:`The warehouse had ${commas(a)} ${item} and shipped ${commas(b)}. How many are left?`, helper:'Line up the places and subtract from the right. Regroup when the top digit is smaller.',
+        visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(a)} − ${commas(b)}</div>`, steps:[wholeColumnStep(a, b, '-')]};
+    }
+    const n = digitsFor(lvl); let a, b;
+    do { a = pvNumber(n); b = pvNumber(n - (Math.random() < 0.4 ? 1 : 0)); if (b > a) [a, b] = [b, a]; } while (a === b || (lvl === 2 && smallerFromLargerK(a * 1000, b * 1000) === (a - b) * 1000));   // level 2 always regroups
     return {title:'Price Tags', ctx:`${a} − ${b}`, bubble:`The shop had ${commas(a)} ${item} and sold ${commas(b)}. How many are left?`, helper:'Line up the places and subtract from the right. Regroup when the top digit is smaller.',
       visual:`<div style="text-align:center; font-size:1.6rem">${e} ${commas(a)} − ${commas(b)}</div>`, steps:[wholeColumnStep(a, b, '-')]};
   }
@@ -2243,6 +2325,18 @@ const TOYS2_GEN = {
         finalAnswer(`${commas(a)} × ${d} = ?`, total)], answerSteps:[1]};
   },
   areaMult2(lvl){
+    if (lvl === 3) {                                                             // work backward: one side label and one part are missing
+      const a = rand(5, 9) * 10 + rand(3, 9), b = rand(3, 9) * 10 + rand(3, 9), A = splitPlaces(a), B = splitPlaces(b), cells = B.map(r => A.map(c => r * c)), total = a * b;
+      const lbl = (k) => A.map((c, j) => j === 0 && k < 1 ? '?' : c), hid = (k) => cells.map((row, i) => row.map((v, j) => i === 1 && j === 0 && k < 2 ? (k === 1 ? '?' : '') : v));
+      const steps = [
+        numStep('Missing side', 'compute', `${B[0]} × ? = ${commas(cells[0][0])}`, A[0], {fact:{x:B[0] / 10, y:A[0] / 10, div:true}, work:areaHTML(lbl(0), B, hid(0)),
+          mis:v => v * 10 === A[0] || v === A[0] * 10 ? 'shiftWrong' : null, hint:() => `${B[0]} times what makes ${commas(cells[0][0])}? Think ${B[0] / 10} × ? = ${cells[0][0] / 100}.`}),
+        numStep('Missing part', 'compute', `${B[1]} × ${A[0]} = ?`, cells[1][0], {fact:{x:B[1], y:A[0] / 10}, work:areaHTML(lbl(1), B, hid(1)), mis:v => v * 10 === cells[1][0] || v === cells[1][0] * 10 ? 'shiftWrong' : null}),
+        numStep('Add the parts', 'compute', `${cells.flat().map(commas).join(' + ')} = ?`, total, {work:areaHTML(A, B, cells),
+          mis:v => v === cells[0][0] + cells[1][1] || v === total - cells[1][0] ? 'partialMissing' : null, hint:() => 'Add all four parts.'})];
+      return {title:'Toy Crates', ctx:`${a} × ${b} area, missing side`, bubble:`This area model shows a toy rug that is ${b} squares wide. One side length and one part are missing. Find them, then find the whole area.`,
+        helper:'Each part is its row number times its column number. Divide to find a missing side.', visual:areaHTML(lbl(0), B, hid(0)), steps, answerSteps:[2]};
+    }
     const a = lvl === 1 ? rand(11, 29) : rand(21, 99), b = lvl === 1 ? rand(11, 19) : rand(12, 99), A = splitPlaces(a), B = splitPlaces(b);
     const cells = B.map(r => A.map(c => r * c)), total = a * b, flat = cells.flat(), order = [];
     B.forEach((r, i) => A.forEach((c, j) => order.push([i, j])));
@@ -2255,12 +2349,15 @@ const TOYS2_GEN = {
       visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
   },
   partialProd2(lvl){
-    const a = lvl === 1 ? rand(11, 39) : rand(21, 99), b = lvl === 1 ? rand(11, 29) : rand(12, 99), [at, ao] = [a - a % 10, a % 10], [bt, bo] = [b - b % 10, b % 10];
+    const a = lvl === 1 ? rand(11, 39) : lvl === 2 ? rand(21, 99) : rand(5, 9) * 10 + rand(5, 9), b = lvl === 1 ? rand(11, 29) : lvl === 2 ? rand(12, 99) : rand(4, 9) * 10 + rand(4, 9), [at, ao] = [a - a % 10, a % 10], [bt, bo] = [b - b % 10, b % 10];
     const pairs = [[bo, ao], [bo, at], [bt, ao], [bt, at]].filter(([x, y]) => x && y), total = a * b;
     const steps = pairs.map(([x, y]) => ({name:`${x} × ${y}`, type:'compute', kind:'num', prompt:`${x} × ${y} = ?`, answer:x * y, eq:v => v === x * y,
       fact:{x:Number(String(x)[0]), y:Number(String(y)[0])}, mis:v => v !== x * y && (v * 10 === x * y || v === x * y * 10) ? 'shiftWrong' : null}));
     steps.push({name:'Add the partial products', type:'compute', kind:'num', prompt:`${pairs.map(([x, y]) => commas(x * y)).join(' + ')} = ?`, answer:total, eq:v => v === total,
       mis:v => v !== total && v === at * bt + ao * bo ? 'partialMissing' : null});
+    if (lvl === 3) steps.unshift({name:'Which parts?', type:'concept', kind:'choice', prompt:`Which shows ${a} × ${b} broken into partial products?`,
+      options:choiceOf({text:`${bo} × ${ao} + ${bo} × ${at} + ${bt} × ${ao} + ${bt} × ${at}`}, [{text:`${bt} × ${at} + ${bo} × ${ao}`, mis:'partialMissing'}, {text:`${bo} × ${a} + ${bt}`, mis:'partialMissing'}, {text:`${at / 10} × ${bt / 10} + ${ao} × ${bo}`, mis:'shiftWrong'}]),
+      hint:() => 'Every part of one number times every part of the other: four products.'});
     return {title:'Toy Crates', ctx:`${a} × ${b} partial products`, bubble:`Find ${a} × ${b} with partial products: multiply every part of one number by every part of the other.`, helper:'Ones × ones, ones × tens, tens × ones, tens × tens. Then add them all.',
       visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
   },
@@ -2275,13 +2372,16 @@ const TOYS2_GEN = {
   estDiv(lvl){ return estimateDivision(lvl, false); },
   estQuot(lvl){ return estimateDivision(lvl, true); },
   interpRem(lvl){
-    const [e, item] = pick(TOY_BOX), d = rand(3, 9), q = rand(lvl === 1 ? 3 : 8, lvl === 1 ? 9 : 30), r = rand(1, d - 1), N = d * q + r, kind = pick(['all', 'full', 'left']);
-    const story = kind === 'all' ? `${N} ${item} go in boxes of ${d}. How many boxes are needed for all of them?` : kind === 'full' ? `${N} ${item} go in boxes of ${d}. How many boxes are full?` : `${N} ${item} go in boxes of ${d}. How many are left over?`;
-    const ans = kind === 'all' ? q + 1 : kind === 'full' ? q : r;
+    const [e, item] = pick(TOY_BOX), d = rand(3, 9), q = lvl === 3 ? rand(Math.ceil(100 / d), 99) : rand(lvl === 1 ? 3 : 8, lvl === 1 ? 9 : 30), r = rand(1, d - 1), N = d * q + r;
+    const kind = lvl === 3 ? pick(['all', 'full', 'left', 'more', 'more']) : pick(['all', 'full', 'left']);
+    const story = kind === 'all' ? `${N} ${item} go in boxes of ${d}. How many boxes are needed for all of them?` : kind === 'full' ? `${N} ${item} go in boxes of ${d}. How many boxes are full?`
+      : kind === 'more' ? `${N} ${item} go in boxes of ${d}. How many more ${item} are needed to fill one more box?` : `${N} ${item} go in boxes of ${d}. How many are left over?`;
+    const ans = kind === 'all' ? q + 1 : kind === 'full' ? q : kind === 'more' ? d - r : r;
     return {title:'Sharing Shelves', ctx:`${N} ÷ ${d} ${kind}`, bubble:story, helper:'Divide, then decide what the remainder means.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${N} ÷ ${d}</div>`,
       steps:[{name:'Divide', type:'compute', kind:'qr', prompt:`${N} ÷ ${d} = ? R ?`, answer:[q, r], eq:v => Array.isArray(v) && v[0] === q && v[1] === r, hint:() => `${d} × ${q} = ${d * q}.`},
-        {name:'What it means', type:'concept', kind:'num', prompt:kind === 'all' ? 'How many boxes are needed?' : kind === 'full' ? 'How many boxes are full?' : 'How many are left over?', answer:ans, eq:v => v === ans,
-          mis:v => v !== ans && [q, q + 1, r].includes(v) ? 'remainderMeaning' : null, hint:() => kind === 'all' ? `The ${r} extra need one more box.` : kind === 'full' ? `The ${r} extra don't fill a box.` : 'That\'s the remainder.'}], answerSteps:[1]};
+        {name:'What it means', type:'concept', kind:'num', prompt:kind === 'all' ? 'How many boxes are needed?' : kind === 'full' ? 'How many boxes are full?' : kind === 'more' ? `How many more ${item} fill another box?` : 'How many are left over?', answer:ans, eq:v => v === ans,
+          mis:v => v !== ans && [q, q + 1, r].includes(v) ? 'remainderMeaning' : null,
+          hint:() => kind === 'all' ? `The ${r} extra need one more box.` : kind === 'full' ? `The ${r} extra don't fill a box.` : kind === 'more' ? `${r} are already in the last box. A full box holds ${d}.` : 'That\'s the remainder.'}], answerSteps:[1]};
   },
   divRem(lvl){
     const d = rand(3, 9), q = rand(lvl === 1 ? 2 : 5, lvl === 1 ? 9 : lvl === 2 ? 12 : 19), r = rand(1, d - 1), N = d * q + r;
@@ -2293,6 +2393,25 @@ const TOYS2_GEN = {
         finalAnswer(`${N} ÷ ${d} = ? R ?`, [q, r])], answerSteps:[2]};
   },
   divPV(lvl){
+    if (lvl === 3) {                                                             // 4 digits, and the split is not given
+      for (let t = 0; t < 300; t++){
+        const d = rand(3, 9), q = rand(Math.ceil(1000 / d), Math.floor(9999 / d)), parts = splitPlaces(q), N = q * d, dParts = parts.map(p => p * d);
+        if (parts.length < 3) continue;
+        const pv = splitPlaces(N);
+        if (pv.every(x => x % d === 0)) continue;                               // the place-value split of N must not also work
+        const shift = [100, 10].find(x => dParts[0] - x > 0 && (dParts[0] - x) % d !== 0);
+        if (!shift) continue;
+        const near = [dParts[0] - shift, dParts[1] + shift, ...dParts.slice(2)];
+        const opts = choiceOf({text:dParts.map(commas).join(' + ')}, [{text:pv.map(commas).join(' + ')}, {text:near.map(commas).join(' + ')}]);
+        if (opts.length < 3) continue;
+        return {title:'Sharing Shelves', ctx:`${N} ÷ ${d} place value, pick the split`, bubble:`Share ${commas(N)} stickers among ${d} friends. First split ${commas(N)} into parts that are easy to divide by ${d}.`, helper:'Pick a split where every part divides evenly. Then divide each part and add.',
+          visual:`<div style="text-align:center; font-size:1.4rem">${commas(N)} ÷ ${d}</div>`,
+          steps:[{name:'Pick the split', type:'concept', kind:'choice', prompt:`Which split of ${commas(N)} makes every part easy to divide by ${d}?`, options:opts, hint:() => `Each part should be ${d} times a number like ${commas(parts[0])} or ${commas(parts[1])}.`},
+            ...dParts.map((p, i) => ({name:`${commas(p)} ÷ ${d}`, type:'compute', kind:'num', prompt:`${commas(p)} ÷ ${d} = ?`, answer:parts[i], eq:v => v === parts[i], fact:{x:d, y:Number(String(parts[i])[0]), div:true},
+              mis:v => v !== parts[i] && (v * 10 === parts[i] || v === parts[i] * 10) ? 'shiftWrong' : null})),
+            {name:'Add', type:'compute', kind:'num', prompt:`${parts.map(commas).join(' + ')} = ?`, answer:q, eq:v => v === q}], answerSteps:[dParts.length + 1]};
+      }
+    }
     const d = rand(2, 9);
     let parts; do { const q = lvl === 1 ? rand(11, 49) : rand(101, 499); parts = splitPlaces(q); } while (lvl === 1 && parts.length < 2);
     const q = parts.reduce((s, x) => s + x, 0), N = q * d, dParts = parts.map(p => p * d);
@@ -2303,6 +2422,23 @@ const TOYS2_GEN = {
         {name:'Add', type:'compute', kind:'num', prompt:`${parts.join(' + ')} = ?`, answer:q, eq:v => v === q}], answerSteps:[dParts.length]};
   },
   areaDiv(lvl){
+    if (lvl === 3) {                                                             // no parts given: find the biggest part that fits, take it away, repeat
+      let d, q, parts; do { d = rand(3, 9); q = rand(Math.max(112, Math.ceil(1000 / d)), Math.min(999, Math.floor(9999 / d))); parts = splitPlaces(q); } while (parts.length < 3);
+      const areas = parts.map(p => p * d), N = q * d, steps = [];
+      let left = N;
+      parts.forEach((p, k) => {
+        const unit = Math.pow(10, String(p).length - 1), shown = parts.map((x, i) => i < k ? x : '?'), cellRow = [areas.map((a, i) => i < k ? a : '')];
+        if (k < parts.length - 1) {
+          steps.push(numStep(`${PV_NAMES[String(p).length - 1]} part`, 'compute', `${commas(left)} square feet are left to cover. How long can the next part be? Use the biggest ${unit === 100 ? 'hundred (100, 200, 300, …)' : 'ten (10, 20, 30, …)'} where ${d} × length is not more than ${commas(left)}.`, p,
+            {fact:{x:d, y:p / unit, div:true}, work:areaHTML(shown, [d], cellRow), mis:v => v * 10 === p || v === p * 10 ? 'shiftWrong' : null, hint:() => `${d} × ${commas(p)} = ${commas(p * d)}, and ${d} × ${commas(p + unit)} = ${commas((p + unit) * d)} is too much.`}));
+          steps.push(numStep('Area left', 'compute', `${commas(left)} − ${commas(p * d)} = ?`, left - p * d, {work:areaHTML(parts.map((x, i) => i <= k ? x : '?'), [d], [areas.map((a, i) => i <= k ? a : '')])}));
+          left -= p * d;
+        } else steps.push(numStep('Last part', 'compute', `${commas(left)} ÷ ${d} = ?`, p, {fact:{x:d, y:p, div:true}, work:areaHTML(shown, [d], cellRow)}));
+      });
+      steps.push(numStep('Add the lengths', 'compute', `${parts.map(commas).join(' + ')} = ?`, q, {work:areaHTML(parts, [d], [areas])}));
+      return {title:'Sharing Shelves', ctx:`${N} ÷ ${d} area, find the parts`, bubble:`A rug has an area of ${commas(N)} square feet and is ${d} feet wide. How long is it? This time, find each part yourself.`,
+        helper:'Take the biggest hundreds part that fits, subtract its area, then do the same with tens and ones. Add the lengths.', visual:`<div class="area-total">Total area: ${commas(N)}</div>`, steps, answerSteps:[steps.length - 1]};
+    }
     const d = rand(3, 9), q = lvl === 1 ? rand(12, 49) : rand(112, 399), parts = splitPlaces(q).filter(Boolean), areas = parts.map(p => p * d), N = q * d;
     const steps = parts.map((p, k) => ({name:`${commas(areas[k])} ÷ ${d}`, type:'compute', kind:'num', prompt:`This part has an area of ${commas(areas[k])} and a height of ${d}. How long is it?`, answer:p, eq:v => v === p,
       fact:{x:d, y:Number(String(p)[0]), div:true}, work:areaHTML(parts.map((x, i) => i < k ? x : '?'), [d], [areas]), mis:v => v !== p && (v * 10 === p || v === p * 10) ? 'shiftWrong' : null}));
@@ -2314,7 +2450,7 @@ const TOYS2_GEN = {
   divBy6789(lvl){ return toyLongDivision(lvl, [6, 7, 8, 9]); }
 };
 function estimateDivision(lvl, big){
-  const d = rand(3, 9), scale = big ? 100 : 10;
+  const d = rand(3, 9), scale = big || lvl === 3 ? 100 : 10;
   for (let t = 0; t < 200; t++){
     const k = rand(2, 9), good = d * k * scale, N = good + pick([-1, 1]) * rand(1, scale - 1);   // near a friendly multiple of d
     if (N <= 0 || N % d === 0) continue;
@@ -2326,7 +2462,10 @@ function estimateDivision(lvl, big){
       visual:`<div style="text-align:center; font-size:1.6rem">about ${commas(N)} ÷ ${d}</div>`,
       steps:[{name:'Friendly number', type:'concept', kind:'choice', prompt:`Which number is close to ${commas(N)} and easy to divide by ${d}?`, options:choiceOf({text:commas(good)}, wrongs.slice(0, 2)),
           hint:() => `Use a ${d} times table fact: ${d} × ${k} = ${d * k}.`},
-        {name:'Estimate', type:'compute', kind:'num', prompt:`${commas(good)} ÷ ${d} = ?`, answer:q, eq:v => v === q, fact:{x:d, y:k, div:true}, mis:v => v !== q && (v === q * 10 || v * 10 === q) ? 'shiftWrong' : null}]};
+        {name:'Estimate', type:'compute', kind:'num', prompt:`${commas(good)} ÷ ${d} = ?`, answer:q, eq:v => v === q, fact:{x:d, y:k, div:true}, mis:v => v !== q && (v === q * 10 || v * 10 === q) ? 'shiftWrong' : null},
+        ...(lvl === 3 ? [{name:'More or less?', type:'concept', kind:'choice', prompt:`Is the exact answer to ${commas(N)} ÷ ${d} a little more or a little less than ${commas(q)}?`,
+          options:choiceOf({text:N > good ? 'A little more' : 'A little less'}, [{text:N > good ? 'A little less' : 'A little more'}]),
+          hint:() => `You divided ${commas(good)}, which is ${N > good ? 'less' : 'more'} than ${commas(N)}.`}] : [])]};
   }
   return TOYS2_GEN.divRem(lvl);
 }
@@ -2944,6 +3083,21 @@ const areaStep = (l, w, unit, extra = {}) => numStep('Area', 'compute', `${l} ×
 const perimStep = (l, w, unit, extra = {}) => numStep('Perimeter', 'compute', `${l} + ${w} + ${l} + ${w} = ? ${unit}`, 2 * (l + w), {mis:apMis(l, w, 'P'), hint:() => 'Add all four sides: 2 lengths and 2 widths.', ...extra});
 const GARDEN_AP = {
   apSituation(lvl){
+    if (lvl === 3) {                                                             // two steps: leave a gap in the edge, or leave a square uncovered
+      const [what, kind] = pick(AP_SITUATIONS), l = rand(8, 20), w = rand(4, Math.min(12, l - 1)), unit = pick(['feet', 'meters', 'yards']), one = {feet:'foot', meters:'meter', yards:'yard'}[unit], short = {feet:'ft', meters:'m', yards:'yd'}[unit];
+      const opts = choiceOf({text:kind === 'A' ? 'Area' : 'Perimeter'}, [{text:kind === 'A' ? 'Perimeter' : 'Area', mis:'areaPerimeterSwap'}]);
+      const first = {name:'Area or perimeter?', type:'concept', kind:'choice', prompt:`For ${what}, do you need the area or the perimeter?`, options:opts, hint:() => kind === 'A' ? 'It covers the whole inside: that is area.' : 'It goes around the edge: that is perimeter.'};
+      if (kind === 'P') {
+        const gap = rand(2, Math.min(6, w - 1)), P = 2 * (l + w);
+        return {title:'Garden Beds', ctx:`${what} (P) minus ${gap}`, bubble:`I need ${what}. It is ${l} ${unit} long and ${w} ${unit} wide, but I will leave a ${gap}-${one} opening. How much do I need?`,
+          helper:'Find the whole way around, then take away the opening.', visual:rectSVG(l, w, {unit:short}),
+          steps:[first, perimStep(l, w, unit), numStep('Leave the opening', 'compute', `${P} − ${gap} = ? ${unit}`, P - gap, {mis:v => v === l * w - gap ? 'areaPerimeterSwap' : null, hint:() => `The opening does not need any, so subtract ${gap}.`})], answerSteps:[2]};
+      }
+      const sq = rand(2, Math.min(5, w - 1)), A = l * w;
+      return {title:'Garden Beds', ctx:`${what} (A) minus ${sq}×${sq}`, bubble:`I need ${what}. It is ${l} ${unit} long and ${w} ${unit} wide, but a square ${sq} ${unit} on each side stays uncovered. How many square ${unit} do I need?`,
+        helper:'Find the area of the whole rectangle, then take away the area of the square.', visual:rectSVG(l, w, {unit:short}),
+        steps:[first, areaStep(l, w, unit), numStep('Take out the square', 'compute', `${A} − ${sq} × ${sq} = ? square ${unit}`, A - sq * sq, {mis:v => v === A - sq || v === A - 4 * sq ? 'areaPerimeterSwap' : null, hint:() => `The square's area is ${sq} × ${sq} = ${sq * sq}.`})], answerSteps:[2]};
+    }
     const [what, kind] = pick(AP_SITUATIONS), l = rand(3, lvl === 1 ? 9 : 12), w = rand(2, l - 1), unit = pick(['feet', 'meters', 'yards']);
     const opts = choiceOf({text:kind === 'A' ? 'Area' : 'Perimeter'}, [{text:kind === 'A' ? 'Perimeter' : 'Area', mis:'areaPerimeterSwap'}]);
     const steps = [{name:'Area or perimeter?', type:'concept', kind:'choice', prompt:`For ${what}, do you need the area or the perimeter?`, options:opts,
