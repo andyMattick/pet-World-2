@@ -6,6 +6,8 @@ export interface StudentInfo {
   class_drills: Record<string, unknown> | null; student_drills: Record<string, unknown> | null;
   quiz_settings: Record<string, unknown>; quiz_overrides: Record<string, unknown> | null;
   game_settings?: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null;
+  lesson_links?: Record<string, { url?: string; title?: string; note?: string; showKhan?: boolean }> | null;
+  question_edits?: { hidden?: string[]; edited?: Record<string, unknown>; added?: Record<string, unknown[]> } | null;
   state: Record<string, unknown> | null; saved_at: string | null; reset_at: string | null;
 }
 export interface RosterEntry { out_id: string; out_name: string; out_class: string }
@@ -138,6 +140,8 @@ class StudentBackend {
     this.me.quiz_settings = next.quiz_settings;
     this.me.quiz_overrides = next.quiz_overrides;
     this.me.game_settings = next.game_settings;
+    this.me.lesson_links = next.lesson_links;
+    this.me.question_edits = next.question_edits;
     this.me.min_station = next.min_station;
     this.me.reset_at = next.reset_at;
   }

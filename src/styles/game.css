@@ -693,6 +693,8 @@ table.xy-table th{font-size:.95rem}
 .stat-pic .box-med{stroke:var(--berry); stroke-width:4}
 .opt svg.stat-pic{max-width:100%; height:auto}
 .ela-khan-link{display:inline-block; margin:6px 0; font-weight:700}
+.ela-teacher-note{margin:0 0 4px; color:var(--ink-soft); font-size:.9rem}
+.ela-khan-also{display:block; margin:2px 0 6px; font-size:.82rem; font-weight:600}
 .ela-learn-note{margin:8px 0}
 
 /* Reading Quiz (docs/READING-QUIZ.md) */

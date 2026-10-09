@@ -4,8 +4,9 @@ import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
+import { renderLessons, type LessonLink, type QuestionEdits } from './lessons';
 
-interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; created_at: string }
+interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
 interface NewPin { name: string; pin: string }
 
@@ -27,7 +28,7 @@ document.addEventListener('click', event => {
 
 let classes: ClassRow[] = [];
 let current: ClassRow | null = null;
-let tab: 'dashboard' | 'roster' | 'settings' = 'dashboard';
+let tab: 'dashboard' | 'roster' | 'settings' | 'lessons' = 'dashboard';
 let channel: RealtimeChannel | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 const gameUrl = () => new URL('./', location.href).href;
@@ -61,7 +62,10 @@ function renderAuth(msg = '') {
 
 /* ---------- classes ---------- */
 async function loadClasses(selectId?: string) {
-  const { data, error } = await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,quiz_settings,game_settings,created_at').order('created_at');
+  /* lesson_links and question_edits come from the lesson-content migration; until it is run, load the classes without them */
+  const withLessons: string = 'id,name,join_code,min_station,drill_settings,quiz_settings,game_settings,lesson_links,question_edits,created_at';
+  const full = await sb!.from('classes').select(withLessons).order('created_at');
+  const { data, error } = full.error && /lesson_links|question_edits/.test(full.error.message) ? await sb!.from('classes').select('id,name,join_code,min_station,drill_settings,quiz_settings,game_settings,created_at').order('created_at') : full;
   if (error) { renderAuth(error.message); return; }
   classes = (data || []) as ClassRow[];
   current = classes.find(c => c.id === (selectId || current?.id)) || classes[0] || null;
@@ -92,10 +96,10 @@ function alertMain(msg: string) { const m = document.getElementById('main'); if 
 function renderMain() {
   const main = $('#main');
   if (!current) { stopLive(); main.innerHTML = '<div class="card empty">Add your first class on the left to get a class code.</div>'; return; }
-  main.innerHTML = `<div class="tabs">${(['dashboard', 'roster', 'settings'] as const).map(t => `<button class="tab ${tab === t ? 'on' : ''}" data-tab="${t}">${t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
+  main.innerHTML = `<div class="tabs">${(['dashboard', 'roster', 'settings', 'lessons'] as const).map(t => `<button class="tab ${tab === t ? 'on' : ''}" data-tab="${t}">${t === 'lessons' ? 'Lessons &amp; questions' : t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
     <span style="flex:1"></span><span class="muted">Class code <b>${esc(current.join_code)}</b></span></div><div id="pane"></div>`;
   main.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab as typeof tab; renderMain(); }));
-  if (tab === 'dashboard') void renderDashboard(); else { stopLive(); if (tab === 'roster') void renderRoster(); else renderSettings(); }
+  if (tab === 'dashboard') void renderDashboard(); else { stopLive(); if (tab === 'roster') void renderRoster(); else if (tab === 'lessons') renderLessonsTab(); else renderSettings(); }
 }
 
 /* ---------- dashboard (live) ---------- */
@@ -243,6 +247,15 @@ function printCards(pins: NewPin[]) {
   document.body.classList.add('print-cards');
   window.addEventListener('afterprint', () => { document.body.classList.remove('print-cards'); area.innerHTML = ''; }, { once: true });
   window.print();
+}
+
+/* ---------- lessons & questions (src/teacher/lessons.ts) ---------- */
+function renderLessonsTab() {
+  const cls = current!;
+  renderLessons($('#pane'), cls, classes.filter(c => c.id !== cls.id), async (id, patch) => {
+    const { error } = await sb!.from('classes').update(patch).eq('id', id);
+    return error ? error.message : null;
+  }, () => loadClasses(cls.id));
 }
 
 /* ---------- class settings ---------- */

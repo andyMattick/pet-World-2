@@ -37,7 +37,7 @@ let reportHome = DEFAULT_HOME, reportClass = '';
 /* the dashboard opens on the class's home grade; picking another class starts over there */
 export function setReportClass(classId: string, home: unknown) {
   if (classId !== reportClass) { reportClass = classId; reportShop = null; }
-  reportHome = validHood(home) ? home : DEFAULT_HOME;
+  reportHome = validHood(home) ? home as string : DEFAULT_HOME;
 }
 const shopsIn = (hood: string) => Object.values(SHOPS).filter(s => BUILDINGS.some(b => b.id === s.id && b.hood === hood));
 
