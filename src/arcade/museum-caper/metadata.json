@@ -1,0 +1,6 @@
+{
+  "name": "Museum Caper",
+  "description": "A digital recreation of the classic stealth board game Clue: The Great Museum Caper. Play as the hidden art thief dodging cameras and guards, or lead the security detectives hunting the invisible prowler.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

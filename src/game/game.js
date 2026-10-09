@@ -798,7 +798,8 @@ basic(lvl){
   const [X, Y] = twoCountables();
   const top = lvl === 1 ? 6 : 9;
   let x = rand(1, top), y = rand(1, top); if (x === y) y = y === top ? y - 1 : y + 1;
-  const whole = lvl >= 2 && Math.random() < 0.45;
+  if (lvl === 3) { const g = pick([2, 3]); x = g * rand(1, 4); do { y = g * rand(1, 4); } while (y === x); }   // level 3: the ratio always needs simplifying
+  const whole = lvl >= 2 && Math.random() < (lvl === 3 ? 0.6 : 0.45);
   const tray = shuffle([...Array(x).fill(X[0]), ...Array(y).fill(Y[0])]);
   const target = whole ? [x, x+y] : [x, y];
   const secondName = whole ? 'all the treats' : `${Y[0]} ${Y[1]}`;
@@ -883,8 +884,8 @@ groups(lvl){
 
 dnlCreate(lvl){
   const r = pick(RECIPES), [A, B] = r.items;
-  let a = rand(2, lvl === 1 ? 5 : 9), b = rand(2, lvl === 1 ? 5 : 9); if (a === b) b = b === 2 ? 3 : b - 1;
-  const last = lvl === 1 ? 3 : 4, topGiven = lvl >= 2;
+  let a = rand(2, lvl === 1 ? 5 : lvl === 2 ? 9 : 12), b = rand(2, lvl === 1 ? 5 : lvl === 2 ? 9 : 12); if (a === b) b = b === 2 ? 3 : b - 1;
+  const last = lvl === 1 ? 3 : 4, topGiven = lvl === 2;   // level 3: bigger numbers, and both lines to fill
   const ticks = [{t:0, b:0}, {t:a, b:b}], steps = [
     {name:'Find each jump', type:'concept', kind:'num', prompt:`Each jump on the ${A[0]} line adds ${a}. How much does each jump add on the ${B[0]} line?`, answer:b,
       mis:v => v === a ? 'dnlSame' : null, hint:() => `Look at the first jump: 0 to ${b} on the ${B[0]} line.`}
@@ -929,12 +930,13 @@ dnl(lvl){
 dnlTable(lvl){
   const r = pick(RECIPES), [A, B] = r.items;
   let a = rand(2, lvl === 1 ? 5 : 8), b = rand(2, lvl === 1 ? 5 : 8); if (a === b) b = b === 2 ? 3 : b - 1;
-  const ks = [1,2,3];
+  const ks = lvl === 3 ? [2,3,5] : [1,2,3];   // level 3: the tables skip batches, and one table has a single wrong row
   const opts = shuffle([
     {rows:ks.map(k => [a*k, b*k]), ok:true, mis:null},
     {rows:ks.map(k => [b*k, a*k]), ok:false, mis:'reversed'},
-    {rows:ks.map(k => [a*k, b + (k-1)*a]), ok:false, mis:'additive'}
-  ]).map((o,i) => ({html:`<div>Table ${'ABC'[i]}</div>${miniTable(A[0], B[0], o.rows)}`, text:`Table ${'ABC'[i]}`, ok:o.ok, mis:o.mis}));
+    {rows:ks.map(k => [a*k, b + (k-1)*a]), ok:false, mis:'additive'},
+    ...(lvl === 3 ? [{rows:ks.map((k, i) => [a*k, i === 2 ? b*k + b : b*k]), ok:false, mis:'missedEquivalent'}] : [])
+  ]).map((o,i) => ({html:`<div>Table ${'ABCD'[i]}</div>${miniTable(A[0], B[0], o.rows)}`, text:`Table ${'ABCD'[i]}`, ok:o.ok, mis:o.mis}));
   return {
     title:'Match the recipe card', ctx:`${a}:${b}`,
     bubble:'I wrote my recipe as a double number line. Which table shows the same recipe?',
@@ -1045,6 +1047,13 @@ understand(lvl){
   const r = pick(RECIPES), [A, B] = r.items, c = pick(CUSTOMERS);
   const [a, b] = coprimePair(5, 5, 2), k = rand(2, lvl === 1 ? 4 : 6);
   let prompt, opts, bubble;
+  if (lvl === 3) {   // level 3: spot the one batch that is NOT equivalent (made by adding instead of multiplying)
+    const ks = shuffle([2, 3, 4, 5, 6]).slice(0, 3), add = rand(2, 6);
+    opts = shuffle([{html:`${a + add} ${A[0]} and ${b + add} ${B[0]}`, ok:true, mis:null}, ...ks.map(m => ({html:`${a * m} ${A[0]} and ${b * m} ${B[0]}`, ok:false, mis:'missedEquivalent'}))]).map(o => Object.assign(o, {text:o.html}));
+    return {title:'Think it through', ctx:`${a}:${b}, not equivalent +${add}`, bubble:`My ${r.name.toLowerCase()} uses ${a} ${A[1]} for every ${b} ${B[1]}. Three of these batches taste exactly the same. Which batch tastes different?`, helper:'Equivalent ratios multiply both amounts by the same number. Adding the same number changes the taste.',
+      visual:`<div style="text-align:center; font-size:1.8rem">${a} ${A[0]} : ${b} ${B[0]}</div>`,
+      steps:[{name:'Explain equivalence', type:'concept', kind:'choice', prompt:'Which batch tastes different?', options:opts, hint:() => `For each batch, is there one number that multiplies ${a} and ${b}?`}]};
+  }
   if (Math.random() < 0.5) {
     bubble = `My ${r.name.toLowerCase()} uses ${a} ${A[1]} for every ${b} ${B[1]}. I want to make more. Which change keeps the taste exactly the same?`;
     prompt = 'Which change keeps the taste the same?';
@@ -1084,12 +1093,15 @@ coord(lvl){
   const steps = plotKs.map(k => ({name:'Plot a point', type:'concept', kind:'grid', prompt:`Plot the point for ${k} batches: (${A[0]}, ${B[0]}). Click the grid or type it.`, answer:[a*k, b*k],
     eq:v => v[0] === a*k && v[1] === b*k, plot:true, mis:v => (v[0] === b*k && v[1] === a*k) ? 'coordSwap' : null,
     hint:() => `Go across to ${a*k}, then up to ${b*k}.`}));
-  steps.push({name:'Read a point', type:'compute', kind:'num', prompt:`The ⭐ point is on the same line. It has ${starPt[0]} ${A[0]}. How many ${B[0]} ${B[1]}?`, answer:starPt[1], fact:{x:b, y:K},
+  const far = lvl === 3 ? rand(Math.floor(max / a) + 1, Math.floor(max / a) + 4) : 0;   // level 3: a point past the edge of the grid, found from the pattern
+  if (far) steps.push({name:'Read a point', type:'compute', kind:'num', prompt:`Another point on the same line is past the edge of the map. It has ${a * far} ${A[0]}. How many ${B[0]} ${B[1]}?`, answer:b * far, fact:{x:b, y:far},
+    mis:v => v === a * far ? 'coordSwap' : v === a * far + (b - a) ? 'additive' : null, hint:() => `${a * far} is ${far} × ${a}, so multiply ${b} by ${far} too.`});
+  else steps.push({name:'Read a point', type:'compute', kind:'num', prompt:`The ⭐ point is on the same line. It has ${starPt[0]} ${A[0]}. How many ${B[0]} ${B[1]}?`, answer:starPt[1], fact:{x:b, y:K},
     mis:v => v === starPt[0] ? 'coordSwap' : null, hint:() => `Look straight up from ${starPt[0]} to the ⭐, then across to the y-axis.`});
   return {title:'Delivery map', ctx:`${a}:${b}`,
     bubble:`Plot my ${r.name.toLowerCase()} batches so the delivery driver can see the pattern!`,
     helper:'x goes across, y goes up. Every batch lands on the same straight line.',
-    visual:`<div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:center">${rowsHTML}${gridSVG(max, A[0], B[0], starPt)}</div>`, steps};
+    visual:`<div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:center">${rowsHTML}${gridSVG(max, A[0], B[0], lvl === 3 ? null : starPt)}</div>`, steps};
 },
 
 units(lvl){
@@ -2387,6 +2399,12 @@ const PIZZA_GEN = {
         hint:() => down ? `Every ${k} small slices make 1 big slice. ${top} ÷ ${k} = ?` : `Each ${FRAC.part(b)} becomes ${k} slices. ${a} × ${k} = ?`}]};
   },
   eqFracLine(lvl){
+    if (lvl === 3) {   // level 3: from the finer line back to the simpler fraction
+      const b = pick([3, 4, 5, 6]), k = rand(2, 4), a = rand(1, b - 1), big = b * k;
+      return {title:'Slices', ctx:`${a * k}/${big} on ${b}ths`, bubble:`The dot on the top line is at ${a * k}/${big}. Where is the same spot on the bottom line?`, helper:'Equal fractions sit at the same spot. Group the small jumps into bigger ones.',
+        visual:`<div class="frac-pics">${numberLineSVG(big, a * k, {labels:big <= 10 ? 'all' : 'ends'})}${numberLineSVG(b, null)}</div>`,   // label every tick only when they fit
+        steps:[{name:'Same point', type:'concept', kind:'num', prompt:`${a * k}/${big} = ?/${b}`, answer:a, eq:v => v === a, mis:v => v !== a && v === a * k - (big - b) ? 'additiveEquiv' : null, hint:() => `Every ${k} small jumps on top make 1 jump on the bottom.`}]};
+    }
     const b = pick(lvl === 1 ? [2, 3, 4] : [3, 4, 5, 6]), k = rand(2, lvl === 1 ? 2 : 3), a = rand(1, b - 1), big = b * k;
     return {title:'Slices', ctx:`${a}/${b} on ${big}ths`, bubble:`The dot on the top line is at ${a}/${b}. Where is the same spot on the bottom line?`, helper:'Equal fractions sit at the same spot on the number line.',
       visual:`<div class="frac-pics">${numberLineSVG(b, a, {labels:'all'})}${numberLineSVG(big, null)}</div>`,
@@ -2429,6 +2447,13 @@ const PIZZA_GEN = {
         {name:`Rewrite ${a2}/${b2}`, type:'compute', kind:'num', prompt:`${a2}/${b2} = ?/${L}`, answer:a2 * L / b2, eq:v => v === a2 * L / b2, fact:{x:a2, y:L / b2}, mis:v => v !== a2 * L / b2 && v === a2 + L - b2 ? 'additiveEquiv' : null}]};
   },
   cmpVisual(lvl){
+    if (lvl === 3) {   // level 3: three fractions, which is the biggest?
+      let F; do { F = [properFrac(2, 8), properFrac(2, 8), properFrac(2, 8)]; } while (new Set(F.map(f => f[1])).size < 3 || new Set(F.map(f => f[0] / f[1])).size < 3);
+      const best = F.reduce((m, f) => f[0] / f[1] > m[0] / m[1] ? f : m), maxDen = Math.max(...F.map(f => f[1]));
+      return {title:'Which Is Bigger?', ctx:`biggest of ${F.map(f => f.join('/')).join(', ')}`, bubble:`Three pizzas the same size. Which piece is the biggest: ${F.map(f => `${f[0]}/${f[1]}`).join(', ')}?`, helper:'The bars are the same size, so compare how much of each is shaded.',
+        visual:`<div class="frac-pics">${F.map(([a, b]) => `${fracBarSVG(a, b)}<div style="text-align:center">${a}/${b}</div>`).join('')}</div>`,
+        steps:[{name:'Biggest', type:'concept', kind:'choice', prompt:'Which is the biggest?', options:choiceOf({text:`${best[0]}/${best[1]}`}, F.filter(f => f !== best).map(f => ({text:`${f[0]}/${f[1]}`, mis:f[1] === maxDen ? 'biggerDenBigger' : null}))), hint:() => 'Which bar is shaded the farthest?'}]};
+    }
     let a, b, c, d; do { [a, b] = properFrac(2, lvl === 1 ? 6 : 8); [c, d] = properFrac(2, lvl === 1 ? 6 : 8); } while (b === d || a * d === b * c && lvl === 1);
     const right = a * d > b * c ? '>' : a * d < b * c ? '<' : '=';
     return {title:'Which Is Bigger?', ctx:`${a}/${b} ? ${c}/${d} bars`, bubble:`Two pizzas the same size. Which piece is bigger: ${a}/${b} or ${c}/${d}?`, helper:'The bars are the same size, so compare how much is shaded.',
@@ -2436,6 +2461,14 @@ const PIZZA_GEN = {
       steps:[compareStep(a, b, c, d, right)]};
   },
   cmpBench(lvl){
+    if (lvl === 3) {   // level 3: compare to 1 instead of 1/2 (each is one piece short of a whole)
+      let b, d; do { b = rand(3, 12); d = rand(3, 12); } while (b === d);
+      const a = b - 1, c = d - 1, right = b > d ? '>' : '<', smallGap = b > d ? `1/${b}` : `1/${d}`;
+      return {title:'Which Is Bigger?', ctx:`${a}/${b} ? ${c}/${d} benchmark 1`, bubble:`Compare ${a}/${b} and ${c}/${d}. Each one is just one piece short of 1 whole.`, helper:'The one with the smaller missing piece is closer to 1, so it is bigger.',
+        visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`,
+        steps:[{name:'Missing piece', type:'concept', kind:'choice', prompt:`Which missing piece is smaller: 1/${b} or 1/${d}?`, options:choiceOf({text:smallGap}, [{text:smallGap === `1/${b}` ? `1/${d}` : `1/${b}`, mis:'biggerDenBigger'}]), hint:() => 'More pieces in a whole means each piece is smaller.'},
+          compareStep(a, b, c, d, right)], answerSteps:[1]};
+    }
     let a, b, c, d;
     do { [a, b] = properFrac(2, 12); [c, d] = properFrac(2, 12); } while (2 * a === b || 2 * c === d || (2 * a < b) === (2 * c < d));   // one below 1/2, one above
     const right = a * d > b * c ? '>' : '<', side = (x, y) => 2 * x < y ? 'Less than 1/2' : 'More than 1/2';
@@ -2445,7 +2478,7 @@ const PIZZA_GEN = {
       visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`, steps:[bench(a, b), bench(c, d), compareStep(a, b, c, d, right)]};
   },
   cmpFrac(lvl){
-    let a, b, c, d; do { [a, b] = properFrac(2, lvl === 1 ? 6 : 10); [c, d] = properFrac(2, lvl === 1 ? 6 : 10); } while (b === d || a * d === b * c);
+    let a, b, c, d; do { [a, b] = properFrac(2, lvl === 1 ? 6 : lvl === 2 ? 10 : 12); [c, d] = properFrac(2, lvl === 1 ? 6 : lvl === 2 ? 10 : 12); } while (b === d || a * d === b * c || (lvl === 3 && (gcd(b, d) === 1 || Math.abs(a * (b * d / gcd(b, d)) / b - c * (b * d / gcd(b, d)) / d) !== 1)));   // level 3: very close fractions
     const L = b * d / gcd(b, d), n1 = a * L / b, n2 = c * L / d, right = n1 > n2 ? '>' : '<';
     return {title:'Which Is Bigger?', ctx:`${a}/${b} ? ${c}/${d}`, bubble:`Which is bigger: ${a}/${b} or ${c}/${d}?`, helper:'Give them the same denominator, then compare the numerators.',
       visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`,
@@ -2455,14 +2488,23 @@ const PIZZA_GEN = {
   },
   cmpFracWord(lvl){
     const [[e1, n1], [e2, n2]] = shuffle(PIZZA_KIDS).slice(0, 2);
-    let a, b, c, d; do { [a, b] = properFrac(2, 8); [c, d] = properFrac(2, 8); } while (b === d || a * d === b * c);
-    const first = a * d > b * c, what = pick([['pizza', 'ate', 'more pizza'], ['mile', 'ran', 'farther'], ['pitcher of lemonade', 'drank', 'more lemonade']]);
-    const opts = shuffle([{html:n1, text:n1, ok:first, mis:first ? null : 'biggerDenBigger'}, {html:n2, text:n2, ok:!first, mis:!first ? null : 'biggerDenBigger'}]);
+    let a, b, c, d; do { [a, b] = properFrac(2, 8); [c, d] = properFrac(2, 8); } while (b === d || (a * d === b * c && lvl < 3));
+    if (lvl === 3 && Math.random() < 0.35) { [a, b] = properFrac(2, 6); const m = rand(2, 3); [c, d] = [a * m, b * m]; }   // level 3: sometimes the same amount
+    const same = a * d === b * c, first = a * d > b * c, what = pick([['pizza', 'ate', 'more pizza'], ['mile', 'ran', 'farther'], ['pitcher of lemonade', 'drank', 'more lemonade']]);
+    const opts = shuffle([{html:n1, text:n1, ok:!same && first, mis:!same && first ? null : 'biggerDenBigger'}, {html:n2, text:n2, ok:!same && !first, mis:!same && !first ? null : 'biggerDenBigger'},
+      ...(lvl === 3 ? [{html:'The same amount', text:'The same amount', ok:same, mis:same ? null : 'compareFractions'}] : [])]);
     return {title:'Which Is Bigger?', ctx:`${a}/${b} vs ${c}/${d} story`, bubble:`${n1} ${what[1]} ${a}/${b} of a ${what[0]}. ${n2} ${what[1]} ${c}/${d} of a ${what[0]}. Who ${what[1]} ${what[2]}?`, helper:'Compare the fractions the way you would with numbers alone.',
       visual:`<div style="text-align:center; font-size:1.6rem">${e1} ${a}/${b} · ${e2} ${c}/${d}</div>`,
       steps:[{name:'Who has more?', type:'concept', kind:'choice', prompt:`Who ${what[1]} ${what[2]}?`, options:opts, hint:() => 'Rewrite both with the same denominator, or compare each to 1/2.'}]};
   },
   decompVisual(lvl){
+    if (lvl === 3) {   // level 3: more than one whole, broken into 1 + a fraction
+      const d = pick([4, 5, 6, 8]), r = rand(1, d - 1), n = d + r;
+      const wrongs = [{text:`1 + ${n}/${d}`, mis:'decomposeSum'}, {text:`1 + ${r + 1}/${d}`, mis:'decomposeSum'}, {text:`${d - 1}/${d} + ${r}/${d}`, mis:'decomposeSum'}];
+      return {title:'Toppings', ctx:`${n}/${d} = 1 + ${r}/${d}`, bubble:`${n}/${d} pizzas have toppings. Which sum shows the same amount?`, helper:`${d}/${d} is 1 whole pizza.`,
+        visual:`<div class="frac-pics">${fracBarSVG(n, d, {w:200})}<div style="text-align:center">${n}/${d}</div></div>`,
+        steps:[{name:'Break it apart', type:'concept', kind:'choice', prompt:`Which sum equals ${n}/${d}?`, options:choiceOf({text:`1 + ${r}/${d}`}, wrongs), hint:() => `Take ${d}/${d} out as 1 whole. What is left?`}]};
+    }
     const d = pick([4, 5, 6, 8, 10]), n = rand(3, d - 1), s1 = rand(1, n - 1), s2 = n - s1;
     const wrongs = [{text:`${s1}/${d} + ${s2 + 1}/${d}`, mis:'decomposeSum'}, {text:`${s1 + 1}/${d} + ${s2 + 1}/${d}`, mis:'decomposeSum'}, {text:`${s1}/${d} + ${s2}/${d} + 1/${d}`, mis:'decomposeSum'}];
     return {title:'Toppings', ctx:`${n}/${d} = ${s1}/${d} + ${s2}/${d}`, bubble:`${n}/${d} of the pizza has toppings. Which sum shows the same amount?`, helper:'The parts must add up to the same number of slices.',
@@ -2484,6 +2526,13 @@ const PIZZA_GEN = {
   addLike(lvl){ return likeFractions(lvl, '+'); },
   subLike(lvl){ return likeFractions(lvl, '−'); },
   fracWordAS(lvl){
+    if (lvl === 3) {   // level 3: two steps, take away then add
+      const [, n] = pick(PIZZA_KIDS), d = pick([6, 8, 10, 12]); let a, b, c; do { a = rand(3, d - 1); b = rand(1, a - 1); c = rand(1, d - 1); } while (a - b + c === d);
+      const mid = a - b, end = mid + c;
+      return {title:'Toppings', ctx:`${a}/${d} − ${b}/${d} + ${c}/${d} story`, bubble:`There was ${a}/${d} of a pizza left. ${n} ate ${b}/${d} of the pizza. Then a friend brought ${c}/${d} of a pizza more. How much pizza is there now?`, helper:'Take away what was eaten, then add what was brought.', visual:'<div style="text-align:center; font-size:1.6rem">🍕 − 🍕 + 🍕</div>',
+        steps:[fracStep('After eating', `${a}/${d} − ${b}/${d} = ?`, mid, d, {mis:v => fracMis(v, mid, d, [['wrongOperation', a + b, d]])}),
+          fracStep('Now', `${mid}/${d} + ${c}/${d} = ?`, end, d, {mis:v => fracMis(v, end, d, [['addDenominators', end, 2 * d]]), hint:() => `${mid} + ${c} = ${end}.`})], answerSteps:[1]};
+    }
     const [e, n] = pick(PIZZA_KIDS), d = pick([4, 5, 6, 8, 10, 12]), op = pick(['+', '−']);
     let a = rand(1, d - 1), b = rand(1, d - 1); if (op === '−' && a < b) [a, b] = [b, a]; if (op === '−' && a === b) a = Math.min(d - 1, a + 1), b = Math.max(1, b - 1);
     if (op === '+' && lvl === 1 && a + b > d) b = d - a || 1;
@@ -2495,7 +2544,7 @@ const PIZZA_GEN = {
         fracStep(op === '+' ? 'Add' : 'Subtract', `${a}/${d} ${op} ${b}/${d} = ?`, p, d, {mis:v => fracMis(v, p, d, op === '+' ? [['addDenominators', a + b, 2 * d]] : []), hint:() => `${op === '+' ? 'Add' : 'Subtract'} the numerators. The slices stay ${FRAC.part(d, true)}.`})]};
   },
   mixedImproper(lvl){
-    const d = pick([2, 3, 4, 5, 6, 8]), w = rand(1, lvl === 1 ? 3 : 6), n = rand(1, d - 1), top = w * d + n;
+    const d = pick(lvl === 3 ? [6, 8, 10, 12] : [2, 3, 4, 5, 6, 8]), w = rand(lvl === 3 ? 4 : 1, lvl === 1 ? 3 : lvl === 2 ? 6 : 9), n = rand(1, d - 1), top = w * d + n;   // level 3: bigger wholes and denominators
     if (Math.random() < 0.5) return {title:'Toppings', ctx:`${w} ${n}/${d} to improper`, bubble:`Write ${w} ${n}/${d} as an improper fraction.`, helper:`Each whole is ${d}/${d}.`, visual:`<div class="frac-pics">${fracBarSVG(top, d, {w:200})}</div>`,
       steps:[{name:'Wholes to fractions', type:'compute', kind:'num', prompt:`${w} whole${w === 1 ? '' : 's'} = ?/${d}`, answer:w * d, eq:v => v === w * d, fact:{x:w, y:d}},
         {name:'Improper fraction', type:'compute', kind:'num', prompt:`${w} ${n}/${d} = ?/${d}`, answer:top, eq:v => v === top, mis:v => v !== top && (v === w + n || v === w * d || v === w * n + d) ? 'improperWrong' : null, hint:() => `${w * d} + ${n} = ?`}]};
@@ -2528,6 +2577,13 @@ function likeFractions(lvl, op){
   if (op === '+' && lvl === 1 && a + b > d) b = Math.max(1, d - a);
   const p = op === '+' ? a + b : a - b;
   if (lvl === 3 && op === '−') { const w = rand(1, 3); a += w * d; }                                  // 2 3/8 − 5/8 style: start from a mixed amount, as an improper fraction
+  if (lvl === 3 && op === '+') {   // level 3: three fractions, adding up to more than 1
+    let c; do { a = rand(1, d - 1); b = rand(1, d - 1); c = rand(1, d - 1); } while (a + b + c <= d);
+    const P = a + b + c;
+    return {title:'Toppings', ctx:`${a}/${d} + ${b}/${d} + ${c}/${d}`, bubble:`Add: ${a}/${d} + ${b}/${d} + ${c}/${d}`, helper:'Same-size slices: add all the numerators, keep the denominator.',
+      visual:`<div class="frac-pics">${fracBarSVG(a, d)}</div>`,
+      steps:[fracStep('Add', `${a}/${d} + ${b}/${d} + ${c}/${d} = ?`, P, d, {mis:v => fracMis(v, P, d, [['addDenominators', P, 3 * d]]), hint:() => `${a} + ${b} + ${c} = ${P}, so it's ${P}/${d}. That is more than 1 whole.`})]};
+  }
   const P = op === '+' ? a + b : a - b;
   return {title:'Toppings', ctx:`${a}/${d} ${op} ${b}/${d}`, bubble:`${op === '+' ? 'Add' : 'Subtract'}: ${a}/${d} ${op} ${b}/${d}`, helper:'Same-size slices: add or subtract the numerators, keep the denominator.',
     visual:`<div class="frac-pics">${fracBarSVG(a, d)}</div>`,
@@ -2536,7 +2592,7 @@ function likeFractions(lvl, op){
 }
 /* mixed numbers with like denominators; regroup: adding makes more than a whole, or subtracting needs to borrow a whole */
 function mixedProblem(lvl, regroup){
-  const d = pick([3, 4, 5, 6, 8, 10]), op = pick(['+', '−']);
+  const d = pick(lvl === 3 ? [4, 6, 8, 10, 12] : [3, 4, 5, 6, 8, 10]), op = pick(['+', '−']);
   let w1, n1, w2, n2;
   for (let t = 0; t < 100; t++){
     w1 = rand(1, lvl === 1 ? 3 : 6); w2 = rand(1, lvl === 1 ? 3 : 5); n1 = rand(1, d - 1); n2 = rand(1, d - 1);
@@ -2554,7 +2610,8 @@ function mixedProblem(lvl, regroup){
     mis:v => { if (!FRAC.ok(v)) return null; if (FRAC.same(v, P, d) && v[1] >= v[2]) return 'notMixed';
       if (op === '−' && regroup && FRAC.same(v, (w1 - w2) * d + (n2 - n1), d)) return 'smallerFromLarger'; return null; },
     hint:() => op === '+' && regroup ? `${n1 + n2}/${d} is more than 1 whole. Trade ${d}/${d} for 1 whole.` : 'Put the wholes and the fraction together.'}));
-  return {title:'Toppings', ctx:`${mixedTxt(w1, n1, d)} ${op} ${mixedTxt(w2, n2, d)}`, nums:[w1, n1, w2, n2, d, op], bubble:`${op === '+' ? 'Add' : 'Subtract'}: ${mixedTxt(w1, n1, d)} ${op} ${mixedTxt(w2, n2, d)}`,
+  const [, kid] = pick(PIZZA_KIDS), story = op === '+' ? `${kid} used ${mixedTxt(w1, n1, d)} cups of flour for one batch of dough and ${mixedTxt(w2, n2, d)} cups for another. How many cups of flour is that in all?` : `There were ${mixedTxt(w1, n1, d)} pizzas at the party. The guests ate ${mixedTxt(w2, n2, d)} pizzas. How much pizza is left?`;   // level 3: a story
+  return {title:'Toppings', ctx:`${mixedTxt(w1, n1, d)} ${op} ${mixedTxt(w2, n2, d)}`, nums:[w1, n1, w2, n2, d, op], bubble:lvl === 3 ? story : `${op === '+' ? 'Add' : 'Subtract'}: ${mixedTxt(w1, n1, d)} ${op} ${mixedTxt(w2, n2, d)}`,
     helper:'Work with the fractions, then the wholes.', visual:`<div style="text-align:center; font-size:1.8rem">${mixedTxt(w1, n1, d)} ${op} ${mixedTxt(w2, n2, d)}</div>`, steps, answerSteps:[steps.length - 1]};
 }
 Object.assign(GEN, PIZZA_GEN);
@@ -2590,12 +2647,24 @@ const PIZZA2_GEN = {
         ...(p > b ? [fracStep('As a mixed number', `${p}/${b} = ?`, p, b, {mixedOnly:true, mis:v => FRAC.ok(v) && FRAC.same(v, p, b) && v[1] >= v[2] ? 'notMixed' : null})] : [])]};
   },
   multFracLine(lvl){
+    if (lvl === 3) {   // level 3: work backward, from where it landed to the size of each jump
+      const b = pick([3, 4, 5, 6]), a = rand(2, b - 1), k = rand(2, 5), p = k * a;
+      return {title:'Party Orders', ctx:`${p}/${b} ÷ ${k} jumps`, bubble:`A frog made ${k} jumps, all the same size, and landed at ${p}/${b} of a meter. How long was each jump?`, helper:`${k} equal jumps make ${p}/${b}, so each jump is ${p}/${b} split into ${k} equal parts.`,
+        visual:jumpsLineSVG(a, b, k),
+        steps:[{name:'Each jump', type:'concept', kind:'num', prompt:`${k} × ?/${b} = ${p}/${b}`, answer:a, eq:v => v === a, fact:{x:k, y:a, div:true}, mis:v => v !== a && v === p - k ? 'additiveEquiv' : null, hint:() => `What number times ${k} is ${p}?`}]};
+    }
     const b = pick([2, 3, 4, 5, 6]), a = lvl === 1 ? 1 : rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), p = k * a;
     return {title:'Party Orders', ctx:`${k} × ${a}/${b} jumps`, bubble:`A frog jumps ${a}/${b} of a meter, ${k} times. Where does it land?`, helper:'Count the jumps: each one is the same size.',
       visual:jumpsLineSVG(a, b, k),
       steps:[{name:'Where it lands', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ?/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null, hint:() => `Each jump is ${a} small step${a > 1 ? 's' : ''}. ${k} jumps.`}]};
   },
   multUnitFrac(lvl){
+    if (lvl === 3) {   // level 3: the product is more than 1; write it as a mixed number
+      const B3 = pick([3, 4, 5, 6, 8]), k = B3 + rand(1, 2 * B3 - 1), P3 = k;
+      if (k % B3 === 0) return PIZZA2_GEN.multUnitFrac(lvl);
+      return {title:'Party Orders', ctx:`${k} × 1/${B3} mixed`, bubble:`Multiply: ${k} × 1/${B3}. Write the answer as a mixed number.`, helper:`${k} copies of 1/${B3} is ${k}/${B3}. Every ${B3}/${B3} is 1 whole.`, visual:`<div style="text-align:center; font-size:1.8rem">${k} × 1/${B3}</div>`,
+        steps:[fracStep('Multiply', `${k} × 1/${B3} = ? (mixed number)`, k, B3, {mixedOnly:true, mis:v => FRAC.ok(v) && FRAC.same(v, P3, B3) && v[1] >= v[2] ? 'notMixed' : null, hint:() => `${k}/${B3}: how many wholes, and what is left?`})]};
+    }
     const b = pick([2, 3, 4, 5, 6, 8, 10, 12]), k = rand(2, lvl === 1 ? b - 1 : 12);
     if (lvl >= 2 && Math.random() < 0.5) return {title:'Party Orders', ctx:`${k}/${b} as unit fractions`, bubble:`Write ${k}/${b} as a whole number times a unit fraction.`, helper:`${k}/${b} is ${k} copies of 1/${b}.`,
       visual:`<div class="frac-pics">${fracBarSVG(k, b, {w:200})}</div>`,
@@ -2604,17 +2673,24 @@ const PIZZA2_GEN = {
       steps:[fracStep('Multiply', `${k} × 1/${b} = ?`, k, b, {mis:v => fracMis(v, k, b, [['multBoth', k, k * b]]), hint:() => `${k} copies of 1/${b} is ${k}/${b}.`})]};
   },
   multFracWhole(lvl){
+    if (lvl === 3) {   // level 3: the product is more than 1; write it as a mixed number
+      let B3, a, k, P3; do { B3 = pick([3, 4, 5, 6, 8, 10]); a = rand(2, B3 - 1); k = rand(3, 9); P3 = k * a; } while (P3 <= B3 || P3 % B3 === 0);
+      return {title:'Party Orders', ctx:`${k} × ${a}/${B3} mixed`, bubble:`Multiply: ${k} × ${a}/${B3}. Write the answer as a mixed number.`, helper:'Multiply the whole number by the numerator, then take out the wholes.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${a}/${B3}</div>`,
+        steps:[{name:'Count unit fractions', type:'concept', kind:'num', prompt:`${k} × ${a}/${B3} = ? × 1/${B3}`, answer:P3, eq:v => v === P3, fact:{x:k, y:a}, mis:v => v !== P3 && v === k + a ? 'additiveEquiv' : null},
+          fracStep('Mixed number', `${P3}/${B3} = ? (mixed number)`, P3, B3, {mixedOnly:true, mis:v => FRAC.ok(v) && FRAC.same(v, P3, B3) && v[1] >= v[2] ? 'notMixed' : null, hint:() => `How many groups of ${B3} are in ${P3}?`})], answerSteps:[1]};
+    }
     const b = pick([3, 4, 5, 6, 8, 10]), a = rand(2, b - 1), k = rand(2, lvl === 1 ? 5 : 9), p = k * a;
     return {title:'Party Orders', ctx:`${k} × ${a}/${b}`, bubble:`Multiply: ${k} × ${a}/${b}`, helper:'Multiply the whole number by the numerator. The denominator stays the same.', visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${a}/${b}</div>`,
       steps:[{name:'Count unit fractions', type:'concept', kind:'num', prompt:`${k} × ${a}/${b} = ? × 1/${b}`, answer:p, eq:v => v === p, fact:{x:k, y:a}, mis:v => v !== p && v === k + a ? 'additiveEquiv' : null},
         fracStep('Multiply', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]]), hint:() => `${k} × ${a} = ${p}, so it's ${p}/${b}.${p > b ? ' That\'s more than 1: you can write it as a mixed number.' : ''}`})]};
   },
   multMixedWhole(lvl){
-    const b = pick([2, 3, 4, 5, 6, 8]), w = rand(1, lvl === 1 ? 2 : 4), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : 6), top = w * b + a, P = k * top;
+    const b = pick([2, 3, 4, 5, 6, 8]), w = rand(1, lvl === 1 ? 2 : 4), a = rand(1, b - 1), k = rand(2, lvl === 1 ? 4 : lvl === 2 ? 6 : 9), top = w * b + a, P = k * top;
+    if (lvl === 3 && P % b === 0) return PIZZA2_GEN.multMixedWhole(lvl);   // level 3: bigger orders, and the answer must be a mixed number
     return {title:'Party Orders', ctx:`${k} × ${w} ${a}/${b}`, bubble:`Each pizza box needs ${w} ${a}/${b} feet of ribbon. How much ribbon for ${k} boxes?`, helper:'Turn the mixed number into a fraction, then multiply.',
       visual:`<div style="text-align:center; font-size:1.8rem">${k} × ${w} ${a}/${b}</div>`,
       steps:[{name:'Improper fraction', type:'compute', kind:'num', prompt:`${w} ${a}/${b} = ?/${b}`, answer:top, eq:v => v === top, mis:v => v !== top && (v === w + a || v === w * a + b) ? 'improperWrong' : null},
-        fracStep('Multiply', `${k} × ${top}/${b} = ?`, P, b, {mis:v => { const id = fracMis(v, P, b, [['multBoth', P, k * b], ['wholeOnly', k * w * b + a, b]]); return id; }, hint:() => `${k} × ${top} = ${P}, so ${P}/${b}.`})],
+        fracStep('Multiply', `${k} × ${top}/${b} = ?${lvl === 3 ? ' (mixed number)' : ''}`, P, b, {mixedOnly:lvl === 3, mis:v => { if (lvl === 3 && FRAC.ok(v) && FRAC.same(v, P, b) && v[1] >= v[2]) return 'notMixed'; const id = fracMis(v, P, b, [['multBoth', P, k * b], ['wholeOnly', k * w * b + a, b]]); return id; }, hint:() => `${k} × ${top} = ${P}, so ${P}/${b}.${lvl === 3 ? ' Then take out the wholes.' : ''}`})],
       answerSteps:[1]};
   },
   multFracWord(lvl){
@@ -2624,9 +2700,16 @@ const PIZZA2_GEN = {
     const opts = choiceOf({text:`${k} × ${a}/${b}`}, [{text:`${k} + ${a}/${b}`, mis:'wrongOperation'}, {text:`${a}/${b} ÷ ${k}`, mis:'wrongOperation'}]);
     return {title:'Party Orders', ctx:`${k} × ${a}/${b} story`, bubble:story, helper:'Equal groups of a fraction: multiply.', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${k} × ${a}/${b}</div>`,
       steps:[{name:'Pick the math', type:'concept', kind:'choice', prompt:'Which one matches the story?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => `${k} equal groups of ${a}/${b}.`},
-        fracStep('Solve', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]])})]};
+        fracStep('Solve', `${k} × ${a}/${b} = ?`, p, b, {mis:v => fracMis(v, p, b, [['multBoth', p, k * b]])}),
+        ...(lvl === 3 && unit !== 'mile' ? (() => { const W = Math.floor(p / b) + rand(1, 3), left = W * b - p;   // level 3: then how much is left from a full bag
+          return [fracStep('Left over', `${W} − ${p}/${b} = ? cups`, left, b, {mis:v => fracMis(v, left, b, [['wrongOperation', W * b + p, b]]), hint:() => `${W} cups is ${W * b}/${b}. Take away ${p}/${b}.`, prompt:`${n} started with ${W} cups. How much is left? ${W} − ${p}/${b} = ?`})]; })() : [])], ...(lvl === 3 && unit !== 'mile' ? {answerSteps:[2]} : {})};
   },
   eqFrac10(lvl){
+    if (lvl === 3) {   // level 3: which one is NOT equal to the tenths fraction?
+      const t = rand(1, 9), opts = choiceOf({text:`${t}/100`}, [`${t * 10}/100`, decStr(t * 10), `0.${t}0`].map(x => ({text:x, mis:'tenthsHundredths'})));
+      return {title:'Pizza Money', ctx:`not equal ${t}/10`, bubble:`Three of these are equal to ${t}/10. Which one is NOT?`, helper:'1 tenth is 10 hundredths. 0.5 and 0.50 are the same amount.', visual:`<div class="frac-pics">${hundredGridSVG(t * 10)}</div>`,
+        steps:[{name:'Not equal', type:'concept', kind:'choice', prompt:`Which is NOT equal to ${t}/10?`, options:opts, hint:() => `${t}/10 = ${t * 10}/100. Which one has the wrong number of hundredths?`}]};
+    }
     const t = rand(1, 9), toHund = lvl === 1 || Math.random() < 0.5;
     return {title:'Pizza Money', ctx:toHund ? `${t}/10 = ?/100` : `${t * 10}/100 = ?/10`, bubble:toHund ? `Write ${t}/10 in hundredths.` : `Write ${t * 10}/100 in tenths.`, helper:'1 tenth is the same as 10 hundredths.',
       visual:`<div class="frac-pics">${hundredGridSVG(t * 10)}</div>`,
@@ -2661,13 +2744,13 @@ const PIZZA2_GEN = {
   decLine(lvl){
     if (lvl === 1) { const t = rand(1, 9); return {title:'Pizza Money', ctx:`line 0.${t}`, bubble:'The dot shows how full the pitcher is. What decimal is it at?', helper:'The line from 0 to 1 is split into 10 tenths.', visual:numberLineSVG(10, t),
       steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(t * 10), eq:decEq(t * 10), decimal:true, mis:v => !decEq(t * 10)(v) && decEq(t)(v) ? 'tenthsHundredths' : null}]}; }
-    const t = rand(0, 9), o = rand(1, 9), H = t * 10 + o;
+    const W = lvl === 3 ? rand(1, 3) * 100 : 0, t = rand(0, 9), o = rand(1, 9), H = W + t * 10 + o;   // level 3: between two numbers past 1, like 2.3 and 2.4
     const L = 14, R = 286, step = (R - L) / 10, y = 30; let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
-    for (let i = 0; i <= 10; i++){ const x = L + i * step; g += `<line x1="${x}" y1="${y - (i % 10 === 0 ? 10 : 6)}" x2="${x}" y2="${y + (i % 10 === 0 ? 10 : 6)}" class="nl-line"/>`; if (i === 0 || i === 10) g += `<text x="${x}" y="${y + 26}" class="nl-text">${decStr(t * 10 + i)}</text>`; }
+    for (let i = 0; i <= 10; i++){ const x = L + i * step; g += `<line x1="${x}" y1="${y - (i % 10 === 0 ? 10 : 6)}" x2="${x}" y2="${y + (i % 10 === 0 ? 10 : 6)}" class="nl-line"/>`; if (i === 0 || i === 10) g += `<text x="${x}" y="${y + 26}" class="nl-text">${decStr(W + t * 10 + i)}</text>`; }
     g += `<circle cx="${L + o * step}" cy="${y}" r="7" class="nl-dot"/>`;
-    return {title:'Pizza Money', ctx:`line ${decStr(H)}`, bubble:`The line is zoomed in between ${decStr(t * 10)} and ${decStr(t * 10 + 10)}. What decimal is at the dot?`, helper:'Between two tenths there are 10 hundredths.',
-      visual:`<svg class="num-line" viewBox="0 0 300 62" width="300" role="img" aria-label="number line from ${decStr(t * 10)} to ${decStr(t * 10 + 10)}">${g}</svg>`,
-      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(H), eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && (decEq(t * 10 + o * 10)(v) || decEq(o)(v)) ? 'tenthsHundredths' : null, hint:() => `Each small step is 0.01. Start at ${decStr(t * 10)} and count ${o}.`}]};
+    return {title:'Pizza Money', ctx:`line ${decStr(H)}`, bubble:`The line is zoomed in between ${decStr(W + t * 10)} and ${decStr(W + t * 10 + 10)}. What decimal is at the dot?`, helper:'Between two tenths there are 10 hundredths.',
+      visual:`<svg class="num-line" viewBox="0 0 300 62" width="300" role="img" aria-label="number line from ${decStr(W + t * 10)} to ${decStr(W + t * 10 + 10)}">${g}</svg>`,
+      steps:[{name:'Read the line', type:'concept', kind:'num', prompt:'What decimal is at the dot?', answer:decStr(H), eq:decEq(H), decimal:true, mis:v => !decEq(H)(v) && (decEq(W + t * 10 + o * 10)(v) || decEq(W + o)(v)) ? 'tenthsHundredths' : null, hint:() => `Each small step is 0.01. Start at ${decStr(W + t * 10)} and count ${o}.`}]};
   },
   decToFrac(lvl){
     const tenth = lvl === 1 || Math.random() < 0.3, h = tenth ? rand(1, 9) * 10 : rand(1, 99), w = lvl === 3 ? rand(1, 9) : 0, d = decStr(w * 100 + h), den = tenth ? 10 : 100, num = tenth ? h / 10 : h;
@@ -2679,6 +2762,7 @@ const PIZZA2_GEN = {
   cmpDec(lvl){
     let a, b;
     do { a = lvl === 1 ? rand(1, 9) * 10 : rand(1, 99); b = rand(1, 99); if (lvl >= 2 && Math.random() < 0.6) { a = rand(1, 9) * 10; b = a - rand(1, 9); if (Math.random() < 0.5) [a, b] = [b, a]; } } while (a === b || b <= 0);
+    if (lvl === 3) { const w = rand(1, 9) * 100; a += w; b += w; }   // level 3: same whole number, like 3.5 and 3.45
     const right = a > b ? '>' : '<', sa = decStr(a), sb = decStr(b);
     const longer = sa.length > sb.length ? '>' : sa.length < sb.length ? '<' : null;       // "more digits is bigger": 0.45 > 0.5
     const opts = choiceOf({text:right}, ['>', '<', '='].map(t => ({text:t, mis:longer && t === longer ? 'longerIsBigger' : 'compareDecimals'}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
@@ -3062,14 +3146,14 @@ const MARKET_GEN = {
         numStep(`${P}%`, 'compute', `${times} × ${unit} = ?`, unit * times, {fact:unit <= 12 ? fx(times, unit) : undefined, mis:v => v === N - unit * times ? 'percentComplement' : null})], answerSteps:[1]};
   },
   pctEquivalent(lvl){
-    const P = lvl === 1 ? rand(1, 9) * 10 : rand(1, 19) * 5, u = P % 10 === 0 ? 10 : 20, N = rand(2, lvl === 1 ? 9 : 12) * u, part = P * N / 100;
+    const P = lvl === 1 ? rand(1, 9) * 10 : lvl === 2 ? rand(1, 19) * 5 : rand(21, 50) * 5, u = P % 10 === 0 ? 10 : 20, N = rand(2, lvl === 1 ? 9 : 12) * u, part = P * N / 100;   // level 3: more than 100%
     const [fn, fd] = FRAC.red(P, 100), dec = XD.fmt(P, 2);
     const right = pick([`${dec} × ${N}`, `${fn}/${fd} × ${N}`, `${N} ÷ 100 × ${P}`]);
     const wrongs = shuffle([{text:`${P} × ${N}`, mis:'percentAsNumber', val:P * N}, {text:`${N} ÷ ${P}`, mis:'percentAsNumber', val:N / P}, {text:`${XD.fmt(P, 3)} × ${N}`, mis:'percentShift', val:P * N / 1000}, {text:`${XD.fmt(P, 1)} × ${N}`, mis:'percentShift', val:P * N / 10}])
       .filter(w => Math.abs(w.val - part) > 1e-9).slice(0, 3);   // 10% of 80 is also 80 ÷ 10, so that one can't be a wrong answer
     const steps = [{name:'Same as', type:'concept', kind:'choice', prompt:`Which is the same as ${P}% of ${N}?`, options:choiceOf({text:right}, wrongs), hint:() => `${P}% = ${dec} = ${fn}/${fd}.`}];
     if (lvl >= 2) steps.push(numStep('Find it', 'compute', `${P}% of ${N} = ?`, part, {mis:v => v === P * N ? 'percentAsNumber' : v === N - part ? 'percentComplement' : null, hint:() => `${N} ÷ 100 × ${P}, or 10% is ${N / 10}.`}));
-    return {title:'Sale Signs', ctx:`${P}% of ${N}: ${right}`, bubble:`A sign says ${P}% of the ${N} baskets are sold. Which math finds how many baskets are sold?${lvl >= 2 ? ' Then find it.' : ''}`,
+    return {title:'Sale Signs', ctx:`${P}% of ${N}: ${right}`, bubble:P > 100 ? `This year the farm picked ${P}% of last year's ${N} baskets. Which math finds how many baskets the farm picked this year? Then find it.` : `A sign says ${P}% of the ${N} baskets are sold. Which math finds how many baskets are sold?${lvl >= 2 ? ' Then find it.' : ''}`,
       helper:'A percent can be written as a decimal or a fraction.', visual:`<div style="text-align:center; font-size:1.8rem">🧺 ${P}% of ${N}</div>`, steps, ...(lvl >= 2 ? {answerSteps:[1]} : {})};
   },
 
@@ -3444,6 +3528,14 @@ const RINK_GEN = {
 
   /* ----- station 3: Race Board (comparing and ordering) ----- */
   cmpLine(lvl){
+    if (lvl === 3) {   // level 3: negative decimals between −5 and 5
+      let a, b; do { a = rand(-49, 49); b = rand(-49, 49); } while (a === b || Math.abs(a - b) < 2 || (a >= 0 && b >= 0) || ((a > 0 || b > 0) && Math.random() < 0.8));
+      const r = a > b ? '>' : '<', trap = Math.abs(a) > Math.abs(b) ? '>' : '<', A = sgnD(a / 10), B = sgnD(b / 10);
+      const opts = choiceOf({text:r}, ['>', '<', '='].map(t => ({text:t, mis:t === trap && t !== r ? 'negCompare' : null}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
+      return {title:'Race Board', ctx:`${A} ? ${B}`, bubble:`Use the number line. Compare ${A} and ${B}.`, helper:'Farther right is greater, even for negative decimals.',
+        visual:iceLineSVG(-50, 50, 10, {labelEvery:10, dots:[{t:a, name:A}, {t:b, name:B}], labelFn:u => sgnD(u / 10)}),
+        steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${A} ◯ ${B}`, options:opts, hint:() => 'Which one is farther right?'}]};
+    }
     let a, b; do { a = rand(-10, 10); b = rand(-10, 10); } while (a === b || Math.abs(a - b) < 2 || (a >= 0 && b >= 0) || (lvl >= 2 && (a > 0 || b > 0) && Math.random() < 0.7));
     const r = a > b ? '>' : '<', trap = Math.abs(a) > Math.abs(b) ? '>' : Math.abs(a) < Math.abs(b) ? '<' : null;
     const opts = choiceOf({text:r}, ['>', '<', '='].map(t => ({text:t, mis:t === trap && t !== r ? 'negCompare' : null}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
@@ -3473,6 +3565,13 @@ const RINK_GEN = {
       steps:[{name:'Least to greatest', type:'concept', kind:'choice', prompt:'Which order goes from least to greatest?', options:choiceOf({text:T(up)}, wrongs), hint:() => 'The negative with the biggest digits is the least.'}]};
   },
   numIneq(lvl){
+    if (lvl === 3 && Math.random() < 0.6) {   // level 3: an inequality with a variable, from words
+      const c = -rand(2, 15), [place, emoji] = pick([['the pond', '🦆'], ['the lake', '🏞️'], ['the rink', '⛸️']]), below = Math.random() < 0.5;
+      const right = below ? `t < ${sgn(c)}` : `t > ${sgn(c)}`, flip = below ? `t > ${sgn(c)}` : `t < ${sgn(c)}`;
+      const story = below ? `Ice forms on ${place} when the temperature t is colder than ${sgn(c)}°F.` : `The ice on ${place} starts to melt when the temperature t is warmer than ${sgn(c)}°F.`;
+      return {title:'Race Board', ctx:`${right} words`, bubble:`${story} Which inequality shows those temperatures?`, helper:'Colder is less (<). Warmer is greater (>).', visual:`<div style="text-align:center; font-size:1.6rem">${emoji} ${sgn(c)}°F</div>`,
+        steps:[{name:'Write it', type:'concept', kind:'choice', prompt:'Which inequality matches?', options:choiceOf({text:right}, [{text:flip, mis:'negCompare'}, {text:below ? `t < ${sgn(-c)}` : `t > ${sgn(-c)}`, mis:'signWrong'}, {text:`t = ${sgn(c)}`}]), hint:() => below ? 'Colder means less than.' : 'Warmer means greater than.'}]};
+    }
     const places = shuffle([['Fargo', '🏙️'], ['the rink', '⛸️'], ['Denver', '🏔️'], ['the lake', '🏞️'], ['Anchorage', '🌨️'], ['the pond', '🦆']]).slice(0, 2);
     let a, b; do { a = rand(-20, lvl === 1 ? 10 : 5); b = rand(-20, lvl === 1 ? 10 : 5); } while (a === b || (lvl >= 2 && (a >= 0 || b >= 0)));
     const colder = a < b ? 0 : 1, lo = Math.min(a, b), hi = Math.max(a, b);
@@ -3639,6 +3738,17 @@ const POTION_GEN = {
       [`${n} times ${v}`, EX(`${n}${v}`, x => n * x), [{...EX(`${v} + ${n}`, x => x + n), mis:'wrongOperation'}, EX(`${v}${SUP(n)}`, x => Math.pow(x, n))]],
       [`${v} subtracted from ${n}`, EX(`${n} − ${v}`, x => n - x), [{...EX(`${v} − ${n}`, x => x - n), mis:'lessThanOrder'}, EX(`${n} + ${v}`, x => n + x)]]]);
     const [words, right, wrongs] = T, g = pick(POTION_WORDS);
+    if (lvl === 3) {   // level 3: the reverse question, which words match an expression; then its value
+      const cands = [[`${n} more than ${v}`, x => x + n], [`${n} less than ${v}`, x => x - n], [`${v} less than ${n}`, x => n - x], [`${n} times ${v}`, x => n * x], [`${v} divided by ${n}`, x => x / n], [`${n} divided by ${v}`, x => n / x]];
+      const swapF = sameFn(right.f, x => x - n) ? (x => n - x) : sameFn(right.f, x => n - x) ? (x => x - n) : sameFn(right.f, x => x / n) ? (x => n / x) : null;   // the same operation in the wrong order
+      const wrongWords = cands.filter(([t, f]) => !sameFn(f, right.f)).map(([t, f]) => ({text:t, mis:swapF && sameFn(f, swapF) ? 'lessThanOrder' : null}))
+        .sort((p, q) => (q.mis ? 1 : 0) - (p.mis ? 1 : 0) || Math.random() - 0.5).slice(0, 3);
+      const val = rand(2, 12) * (words.includes('divided') ? n : 1), out = right.f(val);
+      return {title:'Recipe Cards', ctx:`words for ${right.text}`, bubble:`The recipe card says the number of ${g[1]} is ${right.text}. Which words mean the same thing? Then find its value when ${v} = ${val}.`, helper:'More, sum, added: +. Less, difference, decreased: −. Times, product: ×. Divided, quotient: ÷.',
+        visual:`<div style="text-align:center; font-size:1.6rem">${g[0]} ${right.text}</div>`,
+        steps:[{name:'Words', type:'concept', kind:'choice', prompt:`Which words mean ${right.text}?`, options:choiceOf({text:words}, wrongWords), hint:() => /−|÷/.test(right.text) ? 'Careful with order: "5 less than n" means n − 5.' : 'Find the operation, then check the order.'},
+          ...(out >= 0 && Number.isInteger(out) ? [numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {})] : [])], answerSteps:[0]};
+    }
     const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:`Which expression means "${words}"?`, options:exprChoice(right, wrongs.map(w => ({...w, mis:w.mis || null}))),
       hint:() => /less than|subtracted from/.test(words) ? 'Careful with order: "5 less than n" starts with n and takes 5 away.' : 'Find the operation word, then put the numbers in order.'}];
     if (lvl >= 2) { const val = rand(2, 12) * (words.includes('divided') ? n : 1), out = right.f(val); if (out >= 0 && Number.isInteger(out)) steps.push(numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {})); }
@@ -3655,6 +3765,17 @@ const POTION_GEN = {
       [`${b} more than the quotient of ${v} and ${a}`, EX(`${v} ÷ ${a} + ${b}`, x => x / a + b), [{...EX(`(${v} + ${b}) ÷ ${a}`, x => (x + b) / a), mis:'missingParens'}, EX(`${a} ÷ ${v} + ${b}`, x => a / x + b)]],
       [`the product of ${a} and ${v}, plus ${b}`, EX(`${a}${v} + ${b}`, x => a * x + b), [{...EX(`${a}(${v} + ${b})`, x => a * (x + b)), mis:'missingParens'}, EX(`${a} + ${b}${v}`, x => a + b * x)]]]);
     const [words, right, wrongs] = T;
+    if (lvl === 3) {   // level 3: the reverse question, which words match the expression (the parentheses decide)
+      const pool = [
+        [`${a} times the sum of ${v} and ${b}`, x => a * (x + b)], [`${a} times ${v}, plus ${b}`, x => a * x + b], [`${b} less than ${a} times ${v}`, x => a * x - b], [`${a} times the difference of ${v} and ${b}`, x => a * (x - b)],
+        [`the sum of ${v} and ${b}, divided by ${a}`, x => (x + b) / a], [`${b} more than the quotient of ${v} and ${a}`, x => x / a + b], [`${a} more than ${b} times ${v}`, x => b * x + a]];
+      const wrongWords = shuffle(pool.filter(([t, f]) => !sameFn(f, right.f))).slice(0, 3).map(([t, f]) => ({text:t, mis:wrongs.some(w => w.mis === 'missingParens' && sameFn(w.f, f)) ? 'missingParens' : null}));
+      return {title:'Recipe Cards', ctx:`words for ${right.text}`, bubble:`The spell book says ${right.text}. Which words mean the same thing? Then find its value.`, helper:'Parentheses group two things first: "times the sum of" or "the sum of …, divided by".',
+        visual:`<div style="text-align:center; font-size:1.6rem">📜 ${right.text}</div>`,
+        steps:[{name:'Words', type:'concept', kind:'choice', prompt:`Which words mean ${right.text}?`, options:choiceOf({text:words.replace(`the product of ${a} and ${v}, plus ${b}`, `${a} times ${v}, plus ${b}`)}, wrongWords), hint:() => right.text.includes('(') ? 'The part in parentheses happens first: look for "the sum of" or "the difference of".' : 'With no parentheses, multiply or divide first.'},
+          ...(() => { let val = rand(b + 1, 20); if (words.includes('quotient') || words.includes('divided')) { val = a * rand(2, 8) - (words.includes('sum') ? b : 0); if (val <= 0) val += a * 3; } const out = right.f(val);
+            return out >= 0 && Number.isInteger(out) ? [numStep('Value', 'compute', `${right.text} when n = ${val}`, out, {slowOK:true})] : []; })()], answerSteps:[0]};
+    }
     const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:`Which expression means "${words}"?`, options:exprChoice(right, wrongs.map(w => ({...w, mis:w.mis || null}))),
       hint:() => /sum of|difference of/.test(words) && /times/.test(words) ? '"Times the sum" means the whole sum is multiplied: use parentheses.' : 'Decide what happens first and what happens last.'}];
     if (lvl >= 2) { let val = rand(b + 1, 20); if (words.includes('quotient') || words.includes('divided')) { val = a * rand(2, 8) - (words.includes('sum') ? b : 0); if (val <= 0) val += a * 3; } const out = right.f(val);
@@ -3671,7 +3792,10 @@ const POTION_GEN = {
       [`${n} had ${b} ${g[1]} and used u of them.`, 'u', EX(`${b} − u`, x => b - x), [{...EX(`u − ${b}`, x => x - b), mis:'lessThanOrder'}, {...EX(`${b} + u`, x => b + x), mis:'wrongOperation'}]]] : [
       [`${n} has $${b}. Each bottle costs $${a}. ${n} buys k bottles.`, 'k', EX(`${b} − ${a}k`, x => b - a * x), [{...EX(`${a}k − ${b}`, x => a * x - b), mis:'lessThanOrder'}, {...EX(`(${b} − ${a})k`, x => (b - a) * x), mis:'missingParens'}]],
       [`A cauldron holds ${b} ${g[1]}. ${n} adds ${a} more to each of m cauldrons.`, 'm', EX(`(${b} + ${a})m`, x => (b + a) * x), [{...EX(`${b} + ${a}m`, x => b + a * x), mis:'missingParens'}, EX(`${b}m + ${a}`, x => b * x + a)]],
-      [`${n} pours ${b} drops, then ${a} drops for every spell s.`, 's', EX(`${b} + ${a}s`, x => b + a * x), [{...EX(`(${b} + ${a})s`, x => (b + a) * x), mis:'missingParens'}, EX(`${b}s + ${a}`, x => b * x + a)]]]);
+      [`${n} pours ${b} drops, then ${a} drops for every spell s.`, 's', EX(`${b} + ${a}s`, x => b + a * x), [{...EX(`(${b} + ${a})s`, x => (b + a) * x), mis:'missingParens'}, EX(`${b}s + ${a}`, x => b * x + a)]],
+      ...(lvl === 3 ? [   // level 3 adds stories with division and two operations
+      [`${n} shares ${a * b} ${g[1]} equally among c cauldrons, then adds ${a} more to each cauldron.`, 'c', EX(`${a * b} ÷ c + ${a}`, x => a * b / x + a), [{...EX(`${a * b} ÷ (c + ${a})`, x => a * b / (x + a)), mis:'missingParens'}, {...EX(`c ÷ ${a * b} + ${a}`, x => x / (a * b) + a), mis:'lessThanOrder'}]],
+      [`${n} brews b bottles a day for ${a} days, then gives away ${b} bottles.`, 'b', EX(`${a}b − ${b}`, x => a * x - b), [{...EX(`${a}(b − ${b})`, x => a * (x - b)), mis:'missingParens'}, {...EX(`${b} − ${a}b`, x => b - a * x), mis:'lessThanOrder'}]]] : [])]);
     const [story, v, right, wrongs] = T;
     const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:'Which expression matches the story?', options:exprChoice(right, wrongs), drill:{type:'story', key:'addSub'}, hint:() => 'What happens to the starting amount? What changes with the letter?'}];
     if (lvl >= 2) { let val, out; for (let t = 0; t < 20; t++) { val = rand(2, 9); out = right.f(val); if (out >= 0 && Number.isInteger(out)) break; } if (out >= 0 && Number.isInteger(out)) steps.push(numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {slowOK:true})); }
@@ -3688,6 +3812,13 @@ const POTION_GEN = {
       steps:[numStep('GCF', 'compute', `GCF of ${a} and ${b} = ?`, G, {drill:{type:'factors', key:'pairs'}, mis:v => v === L || v === a * b ? 'gcfLcmSwap' : smaller.includes(v) ? 'notGreatest' : null, hint:() => `Factors of ${a}: ${factorsOf(a).join(', ')}.`})]};
   },
   lcm(lvl){
+    if (lvl === 3 && Math.random() < 0.5) {   // level 3: three numbers
+      let a, b, c, L; do { [a, b, c] = [rand(2, 6), rand(3, 9), rand(4, 12)]; L = [a, b, c].reduce((m, x) => m * x / gcd(m, x)); } while (new Set([a, b, c]).size < 3 || L > 120 || L === a * b * c || [a, b, c].includes(L));
+      return {title:'Mixing Bowl', ctx:`LCM(${a}, ${b}, ${c})`, bubble:`Three potions bubble every ${a}, ${b}, and ${c} minutes. What is the least common multiple of ${a}, ${b}, and ${c}?`, helper:'Count by the biggest number. Stop at the first one that the other two numbers both divide.',
+        visual:`<div style="text-align:center; font-size:1.8rem">🥣 ${a}, ${b}, ${c}</div>`,
+        steps:[numStep('LCM', 'compute', `LCM of ${a}, ${b}, and ${c} = ?`, L, {mis:v => v === a * b * c ? 'notLeast' : v % a === 0 && v % b === 0 && v % c === 0 && v > L ? 'notLeast' : null,
+          hint:() => `Multiples of ${c}: ${[1, 2, 3, 4, 5, 6].map(k => k * c).join(', ')}, …`})]};
+    }
     let a, b; do { a = rand(2, lvl === 1 ? 10 : 12); b = rand(2, lvl === 1 ? 10 : lvl === 2 ? 12 : 18); } while (a === b || a % b === 0 && lvl > 1 || b % a === 0 && lvl > 1 || (lvl === 3 && gcd(a, b) === 1));
     const G = gcd(a, b), L = a * b / G;
     return {title:'Mixing Bowl', ctx:`LCM(${a}, ${b})`, bubble:`What is the least common multiple of ${a} and ${b}?`, helper:'Count by each number. The first number on both lists is the LCM.',
@@ -3723,6 +3854,14 @@ const POTION_GEN = {
 
   /* ----- station 4: Cauldron (distributive property, equivalent expressions) ----- */
   factorDist(lvl){
+    if (lvl === 3) {   // level 3: three numbers share the GCF
+      let G, m; do { G = rand(2, 9); m = shuffle([2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3); } while (m.reduce((x, y) => gcd(x, y)) !== 1 || m.some(k => G * k > 100));
+      const [a, b, c] = m.map(k => G * k), d = [...Array(G).keys()].map(i => i + 1).find(x => x > 1 && x < G && G % x === 0), right = `${G}(${m.join(' + ')})`;
+      const wrongs = [{text:`${G}(${a} + ${b} + ${c})`, mis:'distributeWrong'}, {text:`${G}(${m[0]} + ${m[1]} + ${c})`, mis:'distributeWrong'}, ...(d ? [{text:`${d}(${a / d} + ${b / d} + ${c / d})`, mis:'notGreatest'}] : [])];
+      return {title:'Cauldron', ctx:`${a} + ${b} + ${c} = ${right}`, bubble:`Write ${a} + ${b} + ${c} as the GCF times a sum.`, helper:'Find the GCF of all three numbers, then divide each one by it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${a} + ${b} + ${c}</div>`,
+        steps:[numStep('GCF', 'compute', `GCF of ${a}, ${b}, and ${c} = ?`, G, {mis:v => d && G % v === 0 && v < G && v > 1 ? 'notGreatest' : null}),
+          {name:'Factored', type:'concept', kind:'choice', prompt:`${a} + ${b} + ${c} = ?`, options:choiceOf({text:right}, wrongs), hint:() => `${a} ÷ ${G} = ${m[0]}, ${b} ÷ ${G} = ${m[1]}, ${c} ÷ ${G} = ${m[2]}.`}], answerSteps:[1]};
+    }
     let a, b, G; do { G = rand(2, lvl === 1 ? 6 : 12); const m = rand(2, 9); let k; do { k = rand(2, 9); } while (gcd(m, k) !== 1 || k === m); a = G * m; b = G * k; } while (a > 100 || b > 100);
     const [p, q] = [a / G, b / G], d = [...Array(G).keys()].map(i => i + 1).find(x => x > 1 && x < G && G % x === 0);
     const right = `${G}(${p} + ${q})`, wrongs = [{text:`${G}(${a} + ${b})`, mis:'distributeWrong'}, {text:`${G}(${p} + ${b})`, mis:'distributeWrong'}];
@@ -3784,8 +3923,9 @@ const EQ_FORMS = {
 const POTION2_GEN = {
   /* ----- station 5: Balance Scale (one-step equations) ----- */
   testSol(lvl){
-    const a = rand(2, 9), b = rand(1, 15), x = rand(1, 10), kind = pick(lvl === 1 ? ['add', 'mul'] : ['lin', 'lin', 'mul', 'sub']);
-    const [text, f] = kind === 'add' ? [`x + ${b} = ${x + b}`, v => v + b] : kind === 'mul' ? [`${a}x = ${a * x}`, v => a * v] : kind === 'sub' ? [`${a}x ${MINUS} ${b} = ${a * x - b}`, v => a * v - b] : [`${a}x + ${b} = ${a * x + b}`, v => a * v + b];
+    const a = rand(2, 9), b = rand(1, 15), kind = pick(lvl === 1 ? ['add', 'mul'] : lvl === 2 ? ['lin', 'lin', 'mul', 'sub'] : ['paren', 'paren', 'div', 'sub']), x = kind === 'div' ? a * rand(1, 8) : rand(1, 10);   // level 3: parentheses and division
+    const [text, f] = kind === 'add' ? [`x + ${b} = ${x + b}`, v => v + b] : kind === 'mul' ? [`${a}x = ${a * x}`, v => a * v] : kind === 'sub' ? [`${a}x ${MINUS} ${b} = ${a * x - b}`, v => a * v - b]
+      : kind === 'paren' ? [`${a}(x + ${b}) = ${a * (x + b)}`, v => a * (v + b)] : kind === 'div' ? [`x ÷ ${a} + ${b} = ${x / a + b}`, v => v / a + b] : [`${a}x + ${b} = ${a * x + b}`, v => a * v + b];
     if (kind === 'sub' && a * x - b < 0) return POTION2_GEN.testSol(lvl);
     const target = Number(text.split(' = ')[1]);
     if (lvl === 1) {
@@ -3795,7 +3935,7 @@ const POTION2_GEN = {
         steps:[numStep('Put it in', 'compute', `${lhs} = ?`, out, {hint:() => `Replace x with ${tryV}.`}),
           {name:'Solution?', type:'concept', kind:'choice', prompt:`Is x = ${tryV} a solution?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes'}]), hint:() => `Does ${out} equal ${target}?`}], answerSteps:[1]};
     }
-    const cands = shuffle([...new Set([x, x + 1, x - 1, x + 2, target, Math.max(0, x - 2)])].filter(v => v >= 0 && (v === x || f(v) !== target))).slice(0, 3);
+    const cands = shuffle([...new Set([x, x + 1, x - 1, x + 2, target, Math.max(0, x - 2), ...(kind === 'paren' ? [target / a - b > 0 && Number.isInteger(target / a) ? target / a : x + 3] : kind === 'div' ? [(target - b), x + a] : [])])].filter(v => v >= 0 && (v === x || f(v) !== target))).slice(0, 3);
     if (!cands.includes(x)) cands[0] = x;
     const opts = shuffle(cands).map(v => ({html:`x = ${v}`, text:`x = ${v}`, ok:v === x, mis:v === target && v !== x ? 'solutionIsTotal' : null}));
     return {title:'Balance Scale', ctx:`${text}: which x`, bubble:`Which value of x makes ${text} true?`, helper:'Try each value in the equation.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
@@ -3837,7 +3977,10 @@ const POTION2_GEN = {
       [`${n} had some ${g[1]}. ${n} made ${a + 3} more and now has ${x + a + 3}. How many did ${n} have at first?`, `x + ${a + 3} = ${x + a + 3}`, [`x ${MINUS} ${a + 3} = ${x + a + 3}`, `${a + 3}x = ${x + a + 3}`], x],
       [`Each crate holds ${a} bottles. ${n} filled some crates with ${a * x} bottles. How many crates?`, `${a}x = ${a * x}`, [`x + ${a} = ${a * x}`, `x ÷ ${a} = ${a * x}`], x],
       [`${n} gave away ${a} ${g[1]} and has ${x} left. How many did ${n} start with?`, `x ${MINUS} ${a} = ${x}`, [`x + ${a} = ${x}`, `${a}x = ${x}`], x + a],
-      [`${n} shared some ${g[1]} equally into ${a} bags. Each bag got ${x}. How many were there?`, `x ÷ ${a} = ${x}`, [`${a}x = ${x}`, `x ${MINUS} ${a} = ${x}`], a * x]]);
+      [`${n} shared some ${g[1]} equally into ${a} bags. Each bag got ${x}. How many were there?`, `x ÷ ${a} = ${x}`, [`${a}x = ${x}`, `x ${MINUS} ${a} = ${x}`], a * x],
+      ...(lvl === 3 ? [   // level 3: "times as many" (a common trap) and decimal prices
+      [`${n} has ${a * x} ${g[1]}. That is ${a} times as many as Tia has. How many does Tia have?`, `${a}x = ${a * x}`, [`x ÷ ${a} = ${a * x}`, `x + ${a} = ${a * x}`], x],
+      [`Each bottle costs $${a}.50. ${n} spent $${((a + 0.5) * x).toFixed(2)} on bottles. How many bottles did ${n} buy?`, `${a}.5x = ${String((a + 0.5) * x)}`, [`x + ${a}.5 = ${String((a + 0.5) * x)}`, `x ÷ ${a}.5 = ${String((a + 0.5) * x)}`], x]] : [])]);
     const [story, right, wrongs, ans] = T;
     return {title:'Balance Scale', ctx:right, bubble:story, helper:'Let x be the unknown amount. What happened to it?', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]} x = ?</div>`,
       steps:[{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?', options:choiceOf({text:right}, wrongs.map(w => ({text:w, mis:'wrongOperation'}))), drill:{type:'story', key:'addSub'}, hint:() => 'Start with x and do what the story does to it.'},
@@ -3928,6 +4071,12 @@ const nz = r => { let v; do { v = rand(-r, r); } while (v === 0); return v; };
 const HOUSES_GEN = {
   /* ----- station 1: Floor Plans (parallelograms and triangles) ----- */
   areaPara(lvl){
+    if (lvl === 3) {   // level 3: work backward from the area to the height; the slanted side is a distractor
+      const b = rand(4, 15), [run, h, sl] = pick(TRIPLES), A = b * h, poly = [[0, 0], [b, 0], [b + run, h], [run, h]];
+      return {title:'Floor Plans', ctx:`parallelogram A ${A} b ${b} find h`, bubble:`The dog run is a parallelogram with an area of ${A} square meters. Its base is ${b} m and its slanted side is ${sl} m. What is its height?`, helper:'Area = base × height, so height = area ÷ base. The slanted side is not the height.',
+        visual:shapeSVG([poly], [[[b / 2, -0.9], `${b}`], [[run + 0.25, h / 2], '?', 'start'], [[run / 2 - 0.6, h / 2], `${sl}`, 'end']], [[[run, 0], [run, h]]]),
+        steps:[numStep('Height', 'compute', `${A} ÷ ${b} = ? meters`, h, {fact:fx(b, h, true), mis:v => v === sl ? 'slantHeight' : v === 2 * h ? 'halfWrong' : null, hint:() => `What number times ${b} makes ${A}?`})]};
+    }
     const b = rand(4, lvl === 1 ? 10 : 15), [run, h, sl] = lvl === 1 ? [rand(1, 3), rand(2, 8), null] : pick(TRIPLES), A = b * h;
     const poly = [[0, 0], [b, 0], [b + run, h], [run, h]];
     const labels = [[[b / 2, -0.9], `${b}`], [[run + 0.25, h / 2], `${h}`, 'start']]; if (sl) labels.push([[run / 2 - 0.6, h / 2], `${sl}`, 'end']);
@@ -3936,6 +4085,13 @@ const HOUSES_GEN = {
       steps:[halfAreaStep('Area', `${b} × ${h} = ? square meters`, 2 * A, {fact:fx(b, h), mis:v => sl && v === b * sl ? 'slantHeight' : v === 2 * (b + (sl || h)) ? 'areaPerimeterSwap' : Math.abs(v * 2 - A) < 1e-9 ? 'halfWrong' : null})]};
   },
   areaRightTri(lvl){
+    if (lvl === 3) {   // level 3: find a missing leg from the area
+      const [a, b, c] = pick(TRIPLES), A2 = a * b;
+      return {title:'Floor Plans', ctx:`right triangle A ${half(A2)} leg ${a} find ${b}`, bubble:`A corner of the cat's bed is a right triangle with an area of ${half(A2)} square cm. One leg is ${a} cm and the long side is ${c} cm. How long is the other leg?`, helper:'Area = ½ × leg × leg. Double the area to get the rectangle, then divide by the leg you know.',
+        visual:shapeSVG([[[0, 0], [a, 0], [0, b]]], [[[a / 2, -0.9], `${a}`], [[-0.4, b / 2], '?', 'end'], [[a / 2 + 0.5, b / 2 + 0.5], `${c}`, 'start']]),
+        steps:[numStep('Double the area', 'compute', `2 × ${half(A2)} = ?`, A2, {mis:v => Math.abs(v * 2 - A2) < 1e-9 ? 'halfWrong' : null}),
+          numStep('Other leg', 'compute', `${A2} ÷ ${a} = ? cm`, b, {fact:fx(a, b, true), mis:v => v === c ? 'slantHeight' : Math.abs(v * 2 - b) < 1e-9 ? 'halfWrong' : null})], answerSteps:[1]};
+    }
     const [a, b, c] = lvl === 1 ? [rand(2, 10), rand(2, 10), null] : pick(TRIPLES), A2 = a * b;
     const labels = [[[a / 2, -0.9], `${a}`], [[-0.4, b / 2], `${b}`, 'end']]; if (c) labels.push([[a / 2 + 0.5, b / 2 + 0.5], `${c}`, 'start']);
     return {title:'Floor Plans', ctx:`right triangle ${a} × ${b}`, bubble:`A corner of the cat's bed is a right triangle with legs ${a} cm and ${b} cm${c ? ` (the long side is ${c} cm)` : ''}. What is its area?`, helper:'A right triangle is half of a rectangle: ½ × base × height.',
@@ -3955,6 +4111,13 @@ const HOUSES_GEN = {
   /* ----- station 2: Rooms (composite shapes) ----- */
   areaComposite(lvl){
     const W = rand(6, 14), H = rand(5, 12), w = rand(2, W - 2), h = rand(2, H - 2), big = W * H, cut = w * h;
+    if (lvl === 3) {   // level 3: the notch's sides are not labeled; find them from the other sides first
+      const poly = [[0, 0], [W, 0], [W, H - h], [W - w, H - h], [W - w, H], [0, H]];
+      return {title:'Rooms', ctx:`L ${W}×${H} missing ${w}×${h}`, bubble:`The pet house floor is a ${W} ft by ${H} ft rectangle with a corner cut out. Two sides of the cut-out are not labeled. What is the area of the floor?`, helper:'Find the missing side lengths from the full lengths, then subtract the missing corner from the whole rectangle.',
+        visual:shapeSVG([poly], [[[W / 2, -0.9], `${W}`], [[-0.4, H / 2], `${H}`, 'end'], [[(W - w) / 2, H + 0.4], `${W - w}`], [[W + 0.3, (H - h) / 2], `${H - h}`, 'start']]),
+        steps:[numStep('Missing width', 'compute', `${W} − ${W - w} = ? ft`, w, {}), numStep('Missing height', 'compute', `${H} − ${H - h} = ? ft`, h, {}),
+          numStep('Area', 'compute', `${W} × ${H} − ${w} × ${h} = ? square feet`, big - cut, {mis:v => v === big ? 'compositeWrong' : v === big + cut ? 'compositeWrong' : null, hint:() => `${big} − ${cut}`})], answerSteps:[2]};
+    }
     if (lvl === 1) {
       const poly = [[0, 0], [W, 0], [W, H - h], [W - w, H - h], [W - w, H], [0, H]];
       return {title:'Rooms', ctx:`L ${W}×${H} minus ${w}×${h}`, bubble:`The pet house floor is L-shaped. Split it into two rectangles to find its area.`, helper:'Split the shape into rectangles, find each area, then add.',
@@ -3988,11 +4151,19 @@ const HOUSES_GEN = {
   /* ----- station 3: Yard Map (points and quadrants) ----- */
   pointsId(lvl){
     const R = lvl === 1 ? 6 : 8; let x, y; do { x = lvl === 1 ? rand(1, R) * pick([1, -1]) : nz(R); y = nz(R); } while (Math.abs(x) === Math.abs(y));
-    const opts = choiceOf({text:pt(x, y)}, [{text:pt(y, x), mis:'coordSwap'}, {text:pt(-x, y), mis:'signWrong'}, {text:pt(x, -y), mis:'signWrong'}]);
+    if (lvl === 3 && Math.random() < 0.5) { if (Math.random() < 0.5) x = 0; else y = 0; }   // level 3: half the points sit on an axis
+    const zero = x === 0 || y === 0, wrongs = [{text:pt(y, x), mis:'coordSwap'}, ...(zero ? [{text:pt(-y, -x), mis:'coordSwap'}] : []), {text:pt(-x, y), mis:'signWrong'}, {text:pt(x, -y), mis:'signWrong'}];
+    const opts = choiceOf({text:pt(x, y)}, wrongs.filter((w, i, arr) => w.text !== pt(x, y) && arr.findIndex(u => u.text === w.text) === i).slice(0, 3));
     return {title:'Yard Map', ctx:`point ${pt(x, y)}`, bubble:'Where is the bone buried? Give the coordinates of point A.', helper:'(x, y): go left or right first (x), then up or down (y).', visual:planeSVG(R, [{x, y, name:'A'}]),
       steps:[{name:'Coordinates', type:'concept', kind:'choice', prompt:'What are the coordinates of A?', options:opts, hint:() => `Start at the origin. How far ${x > 0 ? 'right' : 'left'}? Then how far ${y > 0 ? 'up' : 'down'}?`}]};
   },
   graphQuad(lvl){
+    if (lvl === 3 && Math.random() < 0.5) {   // level 3: the reverse question, which point is in a given quadrant
+      let x = nz(9), y = nz(9); while (Math.abs(x) === Math.abs(y)) y = nz(9);
+      const q = quadOf(x, y), wrongs = [[-x, y], [x, -y], [-x, -y]].map(([a, b]) => ({text:pt(a, b), mis:'quadrantWrong'}));
+      return {title:'Yard Map', ctx:`which point in ${q}`, bubble:`The cat hid its ball in ${q}. Which point could be the ball?`, helper:'Quadrant I is top right (+, +). Go counterclockwise: II (−, +), III (−, −), IV (+, −).', visual:'<div style="text-align:center; font-size:2rem">📍 ❓</div>',
+        steps:[{name:'Which point', type:'concept', kind:'choice', prompt:`Which point is in ${q}?`, options:choiceOf({text:pt(x, y)}, wrongs), hint:() => `In ${q}, x is ${x > 0 ? 'positive' : 'negative'} and y is ${y > 0 ? 'positive' : 'negative'}.`}]};
+    }
     let x = nz(9), y = nz(9); if (lvl === 3 && Math.random() < 0.3) { if (Math.random() < 0.5) x = 0; else y = 0; }
     const right = quadOf(x, y), all = ['Quadrant I', 'Quadrant II', 'Quadrant III', 'Quadrant IV', ...(lvl === 3 ? ['the x-axis', 'the y-axis'] : [])];
     const swapQ = quadOf(y, x), flipQ = quadOf(-x, -y);
@@ -4015,6 +4186,14 @@ const HOUSES_GEN = {
 
   /* ----- station 4: Fence Lines (distance, polygons, word problems) ----- */
   distPoints(lvl){
+    if (lvl === 3) {   // level 3: find the second point from the distance; it lands on the other side of an axis
+      const horiz = Math.random() < 0.5, k = nz(7), a = nz(6), d = Math.abs(a) + rand(1, 7), b = a > 0 ? a - d : a + d, dir = horiz ? (a > 0 ? 'left' : 'right') : (a > 0 ? 'down' : 'up');
+      const P1 = horiz ? [a, k] : [k, a], P2 = horiz ? [b, k] : [k, b];
+      return {title:'Fence Lines', ctx:`${pt(...P1)} ${dir} ${d}`, bubble:`A fence starts at post P ${pt(...P1)} and runs ${d} m ${dir} to post Q. Each unit is 1 meter. What are the coordinates of Q?`, helper:`Moving ${dir} changes only the ${horiz ? 'x' : 'y'}-coordinate. Count past 0 if you need to.`,
+        visual:planeSVG(8, [{x:P1[0], y:P1[1], name:'P'}]),
+        steps:[negStep(`${horiz ? 'x' : 'y'} of Q`, 'compute', `${sgn(a)} ${a > 0 ? '−' : '+'} ${d} = ?`, b, {mis:v => v === -b ? 'signWrong' : null, hint:() => `${Math.abs(a)} to get to 0, then ${d - Math.abs(a)} more.`}),
+          {name:'Q', type:'concept', kind:'choice', prompt:'So Q is at…', options:choiceOf({text:pt(...P2)}, [{text:pt(...(horiz ? [-b, k] : [k, -b])), mis:'signWrong'}, {text:pt(...(horiz ? [k, b] : [b, k])), mis:'coordSwap'}].filter(w => w.text !== pt(...P2))), hint:() => `Only the ${horiz ? 'x' : 'y'}-coordinate changed.`}], answerSteps:[1]};
+    }
     const horiz = Math.random() < 0.5, k = nz(7); let a, b; do { a = lvl === 1 ? rand(0, 8) : rand(-8, 8); b = rand(-8, 8); } while (a === b || (lvl >= 2 && Math.sign(a) === Math.sign(b) && Math.random() < 0.7) || (lvl === 1 && b < 0 && a < 0));
     const P1 = horiz ? [a, k] : [k, a], P2 = horiz ? [b, k] : [k, b], d = Math.abs(a - b), fake = Math.abs(Math.abs(a) - Math.abs(b));
     return {title:'Fence Lines', ctx:`${pt(...P1)} to ${pt(...P2)}`, bubble:`How long is a fence from ${pt(...P1)} to ${pt(...P2)}? Each unit is 1 meter.`, helper:'Same ' + (horiz ? 'y' : 'x') + ', so count along the other coordinate. On opposite sides of 0, add the distances from 0.',
@@ -4095,6 +4274,13 @@ const HOUSES2_GEN = {
   volWord(lvl){
     const [e, n] = pick(LEMON_KIDS), D = [RQ.of(3, 2), [2, 1], RQ.of(5, 2), [3, 1], RQ.of(7, 2), [4, 1]], H = [[1, 1], RQ.of(3, 2), [2, 1], RQ.of(5, 2), RQ.of(3, 4), RQ.of(5, 4)];
     const l = pick(D), w = pick(D.slice(0, 4)), h = pick(H), base = RQ.mul(l, w), V = RQ.mul(base, h);
+    if (lvl === 3) {   // level 3: a second step that uses the volume
+      const c = V[1] * rand(2, 6), cost = V[0] * c / V[1];
+      return {title:'Toy Boxes', ctx:`sand ${qt(l)}×${qt(w)}×${qt(h)} $${c}`, bubble:`${n} fills a sandbox for the dogs. It is ${qt(l)} ft long and ${qt(w)} ft wide, and the sand will be ${qt(h)} ft deep. Sand costs $${c} per cubic foot. How much will the sand cost?`, helper:'Find the volume of the sand first, then multiply by the price of one cubic foot.',
+        visual:boxSVG(`${qt(l)} ft`, `${qt(w)} ft`, `${qt(h)} ft`, {l:3, w:2, h:2}),
+        steps:[rqStep('Base area', `${qt(l)} × ${qt(w)} = ? square feet`, base), rqStep('Volume', `${qt(base)} × ${qt(h)} = ? cubic feet`, V, {simplest:true}),
+          numStep('Cost', 'compute', `${qt(V)} × $${c} = ? dollars`, cost, {slowOK:true})], answerSteps:[2]};
+    }
     if (lvl === 1) return {title:'Toy Boxes', ctx:`fish tank ${qt(l)}×${qt(w)}×${qt(h)}`, bubble:`${n}'s fish tank is ${qt(l)} ft long, ${qt(w)} ft wide, and ${qt(h)} ft deep. How much water fills it?`, helper:'Volume = length × width × height.',
       visual:boxSVG(`${qt(l)} ft`, `${qt(w)} ft`, `${qt(h)} ft`, {l:3, w:2, h:2}), steps:[rqStep('Base area', `${qt(l)} × ${qt(w)} = ? square feet`, base), rqStep('Volume', `${qt(base)} × ${qt(h)} = ? cubic feet`, V, {simplest:true})], answerSteps:[1]};
     return {title:'Toy Boxes', ctx:`V ${qt(V)} base ${qt(l)}×${qt(w)}`, bubble:`${n}'s hamster cage holds ${qt(V)} cubic feet. Its floor is ${qt(l)} ft by ${qt(w)} ft. How tall is it?`, helper:'Volume = base area × height, so height = volume ÷ base area.',
@@ -4104,11 +4290,24 @@ const HOUSES2_GEN = {
   /* ----- station 6: Wrapping Paper (nets and surface area) ----- */
   netsId(lvl){
     const names = Object.keys(NETS), right = pick(lvl === 1 ? ['cube', 'rectangular prism', 'square pyramid'] : names);
+    if (lvl === 3) {   // level 3: the reverse question, pick the net that folds into a named solid
+      const opts = shuffle([right, ...shuffle(names.filter(nm => nm !== right)).slice(0, 2)].map(nm => ({html:netSVG(nm), text:`net of ${nm}`, ok:nm === right, mis:nm === right ? null : 'netWrong'})));
+      return {title:'Wrapping Paper', ctx:`pick net ${right}`, bubble:`Which net folds up into a ${right}?`, helper:'Count the faces and look at their shapes: squares, rectangles, or triangles.', visual:'<div style="text-align:center; font-size:2rem">📦 ✂️</div>',
+        steps:[{name:'Which net', type:'concept', kind:'choice', prompt:`Which net makes a ${right}?`, options:opts, hint:() => right.includes('pyramid') ? 'A pyramid has one base and triangles that meet at a point.' : right.includes('triangular') ? 'A triangular prism has two triangles and three rectangles.' : 'Count six faces.'}]};
+    }
     const wrongs = shuffle(names.filter(nm => nm !== right)).slice(0, 3).map(nm => ({text:nm, mis:'netWrong'}));
     return {title:'Wrapping Paper', ctx:`net of ${right}`, bubble:'Fold up this net. What shape does it make?', helper:'Count the faces and look at their shapes: squares, rectangles, or triangles.', visual:netSVG(right),
       steps:[{name:'Which shape', type:'concept', kind:'choice', prompt:'What 3D shape does the net make?', options:choiceOf({text:right}, wrongs), hint:() => right.includes('pyramid') ? 'Triangles meet at a point: a pyramid.' : right.includes('triangular') ? 'Two triangle ends and rectangles around the side.' : 'Six faces, all rectangles (or all squares).'}]};
   },
   surfaceArea(lvl){
+    if (lvl === 3) {   // level 3: an open box, so only 5 faces
+      const l = rand(3, 12), w = rand(2, 9), h = rand(2, 9), a = l * w, b = l * h, c = w * h, SA = a + 2 * b + 2 * c;
+      return {title:'Wrapping Paper', ctx:`open box ${l}×${w}×${h}`, bubble:`A toy bin is an open box with no lid. It is ${l} in. long, ${w} in. wide, and ${h} in. tall. How much fabric covers the outside, with no overlap?`, helper:'An open box has 5 faces: the bottom and 4 sides. There is no top.',
+        visual:boxSVG(`${l} in.`, `${w} in.`, `${h} in.`, {l, w, h}),
+        steps:[numStep('Bottom only', 'compute', `${l} × ${w} = ?`, a, {fact:fx(l, w), mis:v => v === 2 * a ? 'surfaceMissingFaces' : null}), numStep('Front and back', 'compute', `2 × ${l} × ${h} = ?`, 2 * b, {mis:v => v === b ? 'surfaceMissingFaces' : null}),
+          numStep('Left and right', 'compute', `2 × ${w} × ${h} = ?`, 2 * c, {mis:v => v === c ? 'surfaceMissingFaces' : null}),
+          numStep('Surface area', 'compute', `${a} + ${2 * b} + ${2 * c} = ? square inches`, SA, {mis:v => v === SA + a ? 'surfaceMissingFaces' : v === l * w * h ? 'volumeAddWrong' : null})], answerSteps:[3]};
+    }
     const l = rand(2, lvl === 1 ? 6 : 10), w = rand(2, 8), h = lvl === 1 ? w : rand(2, 9), a = l * w, b = l * h, c = w * h, SA = 2 * (a + b + c);
     return {title:'Wrapping Paper', ctx:`SA ${l}×${w}×${h}`, bubble:`How much wrapping paper covers a gift box ${l} in. by ${w} in. by ${h} in., with no overlap?`, helper:'Surface area = the area of all 6 faces. Opposite faces match, so find 3 areas and double each.',
       visual:boxSVG(`${l} in.`, `${w} in.`, `${h} in.`, {l, w, h}),
@@ -4118,6 +4317,15 @@ const HOUSES2_GEN = {
   },
   surfacePyramid(lvl){
     const s = rand(2, lvl === 1 ? 6 : 12), t = rand(s, s + 8), base = s * s, tri2 = s * t;                 // t is the height of each triangle face
+    if (lvl === 3) {   // level 3: then how many fabric pieces to buy (round up)
+      const SA = base + 2 * tri2, F = pick([20, 25, 50]), pieces = Math.ceil(SA / F);
+      if (SA % F === 0) return HOUSES2_GEN.surfacePyramid(lvl);
+      return {title:'Wrapping Paper', ctx:`pyramid ${s} slant ${t} fabric ${F}`, bubble:`A pet tent is a square pyramid with a floor. The square base is ${s} ft on each side, and each triangle face is ${t} ft tall. Tent fabric comes in pieces of ${F} square feet. How many pieces must you buy?`, helper:'1 square + 4 triangles. Then divide by the size of a piece, and round up so there is enough.',
+        visual:netSVG('square pyramid'),
+        steps:[numStep('Square base', 'compute', `${s} × ${s} = ?`, base, {fact:fx(s, s)}), numStep('Four triangles', 'compute', `4 × ½ × ${s} × ${t} = ?`, 2 * tri2, {mis:v => v === tri2 || v === 4 * tri2 ? 'halfWrong' : null}),
+          numStep('Surface area', 'compute', `${base} + ${2 * tri2} = ? square feet`, SA, {mis:v => v === 2 * tri2 ? 'surfaceMissingFaces' : null}),
+          numStep('Pieces', 'compute', `${SA} ÷ ${F}, rounded up = ? pieces`, pieces, {hint:() => `${F * (pieces - 1)} square feet is not enough. ${F * pieces} is.`})], answerSteps:[3]};
+    }
     return {title:'Wrapping Paper', ctx:`pyramid ${s} slant ${t}`, bubble:`A pet tent is a square pyramid. The square base is ${s} ft on each side, and each triangle face is ${t} ft tall. What is the surface area, including the floor?`, helper:'1 square + 4 triangles. Each triangle is ½ × base × height.',
       visual:netSVG('square pyramid'),
       steps:[numStep('Square base', 'compute', `${s} × ${s} = ?`, base, {fact:fx(s, s)}), halfAreaStep('One triangle', `½ × ${s} × ${t} = ?`, tri2, {mis:v => v === tri2 ? 'halfWrong' : null}),
@@ -4183,6 +4391,11 @@ const SHOW_GEN = {
   /* ----- station 1: Judges' Table (statistical questions, dot plots, histograms) ----- */
   statQ(lvl){
     const [yes, no] = pick(STAT_QS);
+    if (lvl === 3) {   // level 3: the reverse, find the one that is NOT statistical
+      const yeses = shuffle(STAT_QS.filter(q => q[1] !== no)).slice(0, 3).map(q => q[0]);
+      return {title:"Judges' Table", ctx:`statQ not`, bubble:'Three of these are statistical questions. Which one is NOT?', helper:'A statistical question expects answers that vary. A question about one thing has one answer.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
+        steps:[{name:'Not statistical', type:'concept', kind:'choice', prompt:'Which is NOT a statistical question?', options:choiceOf({text:no}, yeses.map(t => ({text:t, mis:'statQWrong'}))), hint:() => 'Look for the question about just one person, pet, or thing.'}]};
+    }
     if (lvl === 1) { const ask = pick([yes, no]), isStat = ask === yes;
       return {title:"Judges' Table", ctx:`statQ ${isStat}`, bubble:`Is this a statistical question? "${ask}"`, helper:'A statistical question expects answers that vary: it asks about a group, not one thing.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
         steps:[{name:'Statistical?', type:'concept', kind:'choice', prompt:`"${ask}"`, options:choiceOf({text:isStat ? 'Yes, it is statistical' : 'No, it has one answer'}, [{text:isStat ? 'No, it has one answer' : 'Yes, it is statistical', mis:'statQWrong'}]), hint:() => 'Would different members of the group give different answers?'}]}; }
@@ -4192,13 +4405,14 @@ const SHOW_GEN = {
   },
   readDot(lvl){
     const [e, what, label, say] = pick(PETS), lo = rand(1, 5), hi = lo + rand(6, 9), data = dataSet(rand(10, 18), lo, hi), cut = rand(lo + 2, hi - 2);
-    const kind = lvl === 1 ? pick(['count', 'value']) : pick(['more', 'atMost', 'value']);
+    const kind = lvl === 1 ? pick(['count', 'value']) : lvl === 2 ? pick(['more', 'atMost', 'value']) : pick(['between', 'between', 'atLeast']), cut2 = Math.min(hi, cut + rand(2, 4));   // level 3: two boundaries
     const counts = {}; data.forEach(v => counts[v] = (counts[v] || 0) + 1);
     const T = {count:[`How many ${what} are in the show?`, data.length, null], value:[`How many ${what} ${say(`exactly ${cut}`)}?`, counts[cut] || 0, null],
-      more:[`How many ${what} ${say(`more than ${cut}`)}?`, data.filter(v => v > cut).length, data.filter(v => v >= cut).length], atMost:[`How many ${what} ${say(`at most ${cut}`)}?`, data.filter(v => v <= cut).length, data.filter(v => v < cut).length]}[kind];
+      more:[`How many ${what} ${say(`more than ${cut}`)}?`, data.filter(v => v > cut).length, data.filter(v => v >= cut).length], atMost:[`How many ${what} ${say(`at most ${cut}`)}?`, data.filter(v => v <= cut).length, data.filter(v => v < cut).length],
+      between:[`How many ${what} ${say(`from ${cut} to ${cut2}`)}, including both?`, data.filter(v => v >= cut && v <= cut2).length, data.filter(v => v > cut && v < cut2).length], atLeast:[`How many ${what} ${say(`at least ${cut}`)}?`, data.filter(v => v >= cut).length, data.filter(v => v > cut).length]}[kind];
     if (T[1] === 0) return SHOW_GEN.readDot(lvl);
     return {title:"Judges' Table", ctx:`dot ${kind} ${cut}`, bubble:`The dot plot shows the ${label} of the ${what} at the pet show. ${T[0]}`, helper:'Each dot is one pet.', visual:dotPlotSVG(data, {lo, hi, label}),
-      steps:[numStep('Count', 'concept', T[0], T[1], {mis:v => T[2] !== null && v === T[2] && T[2] !== T[1] ? 'boundaryCount' : null, hint:() => kind === 'more' ? `Do not count the ${cut}s.` : kind === 'atMost' ? `Count the ${cut}s too.` : 'Count the dots.'})]};
+      steps:[numStep('Count', 'concept', T[0], T[1], {mis:v => T[2] !== null && v === T[2] && T[2] !== T[1] ? 'boundaryCount' : null, hint:() => kind === 'more' ? `Do not count the ${cut}s.` : kind === 'atMost' || kind === 'atLeast' ? `Count the ${cut}s too.` : kind === 'between' ? `Count the ${cut}s and the ${cut2}s too.` : 'Count the dots.'})]};
   },
   readHist(lvl){
     const [e, what] = pick(PETS), w = pick([5, 10]), start = w === 5 ? 0 : 10, bins = Array.from({length:rand(4, 6)}, (_, i) => [start + i * w, start + i * w + w - 1, rand(1, 9)]);   // [from, to, count]
@@ -4210,6 +4424,12 @@ const SHOW_GEN = {
         steps:[{name:'Tallest bar', type:'concept', kind:'choice', prompt:'Which interval has the most?', options:choiceOf({text:`${best[0]}–${best[1]}`}, shuffle(bins.filter(b => b !== best)).slice(0, 3).map(b => ({text:`${b[0]}–${b[1]}`, mis:'binRead'}))), hint:() => 'Find the tallest bar, then read the interval under it.'}]};
     }
     const ans = sumOf(bins.slice(k).map(b => b[2])), inBin = bins[k][2];
+    if (lvl === 3) {   // level 3: find the total first, then how many are below an interval
+      const total = sumOf(bins.map(b => b[2])), below = total - ans;
+      return {title:"Judges' Table", ctx:`hist < ${from}`, bubble:`The histogram shows the ${label} of the ${what}. How many ${what} are there in all? How many are less than ${from}?`, helper:'Add all the bars for the total. "Less than" means only the bars to the left of that interval.', visual:histSVG(bins, label),
+        steps:[numStep('In all', 'compute', `${bins.map(b => b[2]).join(' + ')} = ?`, total, {mis:v => v === bins.length ? 'binRead' : null}),
+          numStep('Less than', 'compute', `How many are less than ${from}?`, below, {mis:v => v === below + inBin ? 'binRead' : v === ans ? 'binRead' : null, hint:() => `Add the bars before ${from}: ${bins.slice(0, k).map(b => b[2]).join(' + ')}.`})], answerSteps:[1]};
+    }
     return {title:"Judges' Table", ctx:`hist ≥ ${from}`, bubble:`The histogram shows the ${label} of the ${what}. How many ${what} are ${from} or more?`, helper:'Add the heights of every bar from that interval on.', visual:histSVG(bins, label),
       steps:[numStep('Add the bars', 'compute', `${bins.slice(k).map(b => b[2]).join(' + ')} = ?`, ans, {mis:v => v === inBin && bins.length - k > 1 ? 'binRead' : v === bins.slice(k).length ? 'binRead' : null, hint:() => `The bars from ${from} on are ${bins.slice(k).map(b => b[2]).join(', ')}.`})]};
   },
@@ -4228,6 +4448,12 @@ const SHOW_GEN = {
     if (m === undefined) return SHOW_GEN.meanDisplay(lvl);
     const counts = {}; data.forEach(v => counts[v] = (counts[v] || 0) + 1); const vals = Object.keys(counts).map(Number).sort((a, b) => a - b);
     const S = sumOf(data), n = data.length, parts = vals.map(v => counts[v] > 1 ? `${counts[v]} × ${v}` : `${v}`);
+    if (lvl === 3) {   // level 3: work backward, a new pet raises the mean by 1
+      const newScore = (m + 1) * (n + 1) - S;
+      return {title:'Score Cards', ctx:`mean dot add ${listTxt(sortN(data))}`, bubble:`The dot plot shows the ${label} of the ${what}. Its mean is ${m}. One more pet joins, and the mean goes up to ${m + 1}. What is the new pet's value?`, helper:'Mean × how many = total. Compare the total before and after the new pet joins.', visual:dotPlotSVG(data, {label}),
+        steps:[numStep('Total now', 'compute', `${m} × ${n} = ?`, S, {fact:fx(m, n)}), numStep('Total after', 'compute', `${m + 1} × ${n + 1} = ?`, (m + 1) * (n + 1), {fact:fx(m + 1, n + 1)}),
+          numStep('New pet', 'compute', `${(m + 1) * (n + 1)} − ${S} = ?`, newScore, {hint:() => `The new pet adds ${(m + 1) * (n + 1)} − ${S} to the total.`})], answerSteps:[2]};
+    }
     return {title:'Score Cards', ctx:`mean dot ${listTxt(sortN(data))}`, bubble:`The dot plot shows the ${label} of the ${what}. What is the mean?`, helper:'Several dots on one number means that value several times.', visual:dotPlotSVG(data, {label}),
       steps:[numStep('How many', 'concept', 'How many dots are there?', n, {}), numStep('Total', 'compute', `${parts.join(' + ')} = ?`, S, {mis:v => v === sumOf(vals) ? 'meanNoDivide' : null, hint:() => 'Multiply each value by its number of dots, then add.'}),
         numStep('Mean', 'compute', `${S} ÷ ${n} = ?`, m, {fact:fx(n, m, true), mis:v => v === S ? 'meanNoDivide' : v === medianOf(data) && v !== m ? 'meanMedianSwap' : null})], answerSteps:[2]};
@@ -4245,6 +4471,16 @@ const SHOW_GEN = {
 
   /* ----- station 3: Ribbon Ranges (IQR and MAD) ----- */
   iqr(lvl){
+    if (lvl === 3) {   // level 3: compare the IQRs of two groups
+      const mk = () => { const lo = rand(1, 20); return dataSet(8, lo, lo + rand(10, 30)); }; let A, B, iA, iB;
+      do { A = mk(); B = mk(); const [a1, a3] = quartiles(A), [b1, b3] = quartiles(B); iA = a3 - a1; iB = b3 - b1; } while (Math.abs(iA - iB) < 1);
+      const [pa, pb] = shuffle(PETS).slice(0, 2), sa = sortN(A), sb = sortN(B), big = iA > iB ? pa[1] : pb[1];
+      return {title:'Ribbon Ranges', ctx:`iqr compare ${listTxt(A)} | ${listTxt(B)}`, bubble:`Jump distances (inches). The ${pa[1]}: ${listTxt(sa)}. The ${pb[1]}: ${listTxt(sb)}. Which group's middle half is more spread out?`, helper:'IQR = Q3 − Q1 for each group. The bigger IQR means the middle half is more spread out.',
+        visual:`<div style="text-align:center; font-size:1.2rem">${pa[0]} ${listTxt(sa)}<br>${pb[0]} ${listTxt(sb)}</div>`,
+        steps:[statStep(`IQR of the ${pa[1]}`, `${numTxt(quartiles(A)[1])} − ${numTxt(quartiles(A)[0])} = ?`, iA, {mis:v => near2(v, sa[7] - sa[0]) ? 'rangeNotIqr' : null, hint:() => `Q1 is the median of ${listTxt(sa.slice(0, 4))}. Q3 is the median of ${listTxt(sa.slice(4))}.`}),
+          statStep(`IQR of the ${pb[1]}`, `IQR of the ${pb[1]} = ?`, iB, {mis:v => near2(v, sb[7] - sb[0]) ? 'rangeNotIqr' : null, hint:() => `Q1 is the median of ${listTxt(sb.slice(0, 4))}. Q3 is the median of ${listTxt(sb.slice(4))}.`}),
+          {name:'More spread', type:'concept', kind:'choice', prompt:'Whose middle half is more spread out?', options:choiceOf({text:`The ${big}`}, [{text:`The ${big === pa[1] ? pb[1] : pa[1]}`}]), hint:() => 'Pick the group with the bigger IQR.'}], answerSteps:[2]};
+    }
     const n = lvl === 1 ? pick([8, 10]) : pick([7, 9, 10, 11, 12]), lo = rand(1, 20), data = dataSet(n, lo, lo + rand(10, 30)), shown = lvl === 1 ? sortN(data) : data, [q1, q3] = quartiles(data), s = sortN(data);
     return {title:'Ribbon Ranges', ctx:`iqr ${listTxt(data)}`, bubble:`The ${pick(PETS)[1]} jumped these distances (inches): ${listTxt(shown)}. What is the interquartile range (IQR)?`, helper:'Order the data. Q1 is the median of the lower half, Q3 is the median of the upper half. IQR = Q3 − Q1.',
       visual:`<div style="text-align:center; font-size:1.3rem">📏 ${listTxt(shown)}</div>`,
@@ -4252,6 +4488,16 @@ const SHOW_GEN = {
         statStep('IQR', `${numTxt(q3)} − ${numTxt(q1)} = ?`, q3 - q1, {mis:v => near2(v, s[n - 1] - s[0]) ? 'rangeNotIqr' : null})], answerSteps:[2]};
   },
   mad(lvl){
+    if (lvl === 3) {   // level 3: the mean ends in .5, so the distances are decimals
+      const n = pick([4, 6]); let data, m;
+      for (let t = 0; t < 1000; t++) { m = rand(4, 20) + 0.5; data = Array.from({length:n - 1}, () => Math.round(m) + rand(-5, 5)); data.push(m * n - sumOf(data)); if (data.every(v => v > 0) && new Set(data).size > 2) break; }
+      data = shuffle(data); const dev = data.map(v => Math.abs(v - m)), D = sumOf(dev), M = D / n;
+      if (!Number.isInteger(M * 1000) || data.some(v => v <= 0)) return SHOW_GEN.mad(lvl);
+      return {title:'Ribbon Ranges', ctx:`mad ${listTxt(data)}`, bubble:`The ${pick(PETS)[1]} scored ${listTxt(data)}. What is the mean absolute deviation (MAD)?`, helper:'Find the mean, find how far each value is from the mean, then find the mean of those distances.',
+        visual:`<div style="text-align:center; font-size:1.4rem">📏 ${listTxt(data)}</div>`,
+        steps:[statStep('Mean', `(${data.join(' + ')}) ÷ ${n} = ?`, m, {mis:v => v === sumOf(data) ? 'meanNoDivide' : null}), statStep('Distances', `${dev.map(numTxt).join(' + ')} = ?`, D, {hint:() => `Each distance from ${numTxt(m)}: ${data.map(v => `|${v} − ${numTxt(m)}| = ${numTxt(Math.abs(v - m))}`).join(', ')}.`}),
+          statStep('MAD', `${numTxt(D)} ÷ ${n} = ?`, M, {mis:v => near2(v, D) ? 'madNoDivide' : null})], answerSteps:[2]};
+    }
     const n = pick(lvl === 1 ? [4, 5] : [4, 5, 8, 10]); let data, m;
     for (let t = 0; t < 1000; t++) { m = rand(4, 20); data = Array.from({length:n - 1}, () => m + rand(-5, 5)); data.push(m * n - sumOf(data)); if (data.every(v => v > 0) && new Set(data).size > 2) break; }
     data = shuffle(data); const dev = data.map(v => Math.abs(v - m)), D = sumOf(dev), M = D / n;
@@ -4287,7 +4533,8 @@ const SHOW_GEN = {
     return {title:'Box Seats', ctx:`make box ${listTxt(data)}`, bubble:`Make a box plot of the ${pick(PETS)[1]}' scores: ${listTxt(data)}.`, helper:'Order the data and find the five numbers: minimum, Q1, median, Q3, maximum.',
       visual:`<div style="text-align:center; font-size:1.3rem">📦 ${listTxt(data)}</div>`,
       steps:[statStep('Median', `Median of ${listTxt(s)} = ?`, md, {mis:v => near2(v, (s[0] + s[n - 1]) / 2) && md !== (s[0] + s[n - 1]) / 2 ? 'boxReadWrong' : null}), statStep('Q1', `Q1 (median of ${listTxt(s.slice(0, Math.floor(n / 2)))}) = ?`, q1, {}),
-        statStep('Q3', `Q3 (median of ${listTxt(s.slice(Math.ceil(n / 2)))}) = ?`, q3, {}), ...(opts.length >= 2 ? [{name:'Pick the plot', type:'concept', kind:'choice', prompt:`Which box plot shows ${five.map(numTxt).join(', ')}?`, options:opts, hint:() => 'Whiskers at the minimum and maximum, the box from Q1 to Q3, and the line at the median.'}] : [])],
+        statStep('Q3', `Q3 (median of ${listTxt(s.slice(Math.ceil(n / 2)))}) = ?`, q3, {}), ...(opts.length >= 2 ? [{name:'Pick the plot', type:'concept', kind:'choice', prompt:`Which box plot shows ${five.map(numTxt).join(', ')}?`, options:opts, hint:() => 'Whiskers at the minimum and maximum, the box from Q1 to Q3, and the line at the median.'}] : []),
+        ...(lvl === 3 ? [statStep('IQR', `From your box plot, IQR = ${numTxt(q3)} − ${numTxt(q1)} = ?`, q3 - q1, {mis:v => near2(v, s[n - 1] - s[0]) ? 'rangeNotIqr' : null})] : [])],   // level 3: read the IQR off the plot too
       answerSteps:[opts.length >= 2 ? 3 : 0]};
   },
 
@@ -4298,7 +4545,9 @@ const SHOW_GEN = {
     w.forEach((c, i) => { const k = Math.max(0, c + rand(-1, 0)); for (let j = 0; j < k; j++) data.push(lo + i); });
     const tail = {symmetric:'The data are about the same on both sides of the middle.', 'skewed right':'The data pile up on the left and trail off to the right.', 'skewed left':'The data pile up on the right and trail off to the left.'};
     return {title:'Best in Show', ctx:`shape ${shape}`, bubble:`What is the shape of this data?`, helper:'Skewed means a long tail. The tail\'s side names the skew: a tail to the right is skewed right.', visual:dotPlotSVG(data, {lo, hi, label:'score'}),
-      steps:[{name:'Shape', type:'concept', kind:'choice', prompt:'Which describes the shape?', options:choiceOf({text:tail[shape]}, Object.entries(tail).filter(([k]) => k !== shape).map(([k, t]) => ({text:t, mis:(k === 'skewed left' && shape === 'skewed right') || (k === 'skewed right' && shape === 'skewed left') ? 'skewDirection' : null}))), hint:() => 'Where is the tall pile? Which way does the thin tail go?'}]};
+      steps:[{name:'Shape', type:'concept', kind:'choice', prompt:'Which describes the shape?', options:choiceOf({text:tail[shape]}, Object.entries(tail).filter(([k]) => k !== shape).map(([k, t]) => ({text:t, mis:(k === 'skewed left' && shape === 'skewed right') || (k === 'skewed right' && shape === 'skewed left') ? 'skewDirection' : null}))), hint:() => 'Where is the tall pile? Which way does the thin tail go?'},
+        ...(lvl === 3 ? [{name:'Best center', type:'concept', kind:'choice', prompt:'Which measure of center describes a typical value best?', options:choiceOf({text:shape === 'symmetric' ? 'The mean (or the median: they are close)' : 'The median, because the tail pulls the mean'}, [{text:shape === 'symmetric' ? 'Only the median, because of the tail' : 'The mean, because it uses every value', mis:'meanMedianSwap'}, {text:'The range'}]), hint:() => 'A long tail pulls the mean toward it. The median stays in the middle.'}] : [])],   // level 3: which center fits the shape
+      ...(lvl === 3 ? {answerSteps:[0]} : {})};
   },
   cmpDisplays(lvl){
     if (lvl === 1) {

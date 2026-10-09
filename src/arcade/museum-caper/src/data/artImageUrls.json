@@ -1,0 +1,386 @@
+{
+  "art-mona-lisa": {
+    "wikiTitle": "Mona_Lisa",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6a/Mona_Lisa.jpg/330px-Mona_Lisa.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Mona Lisa is a half-length portrait painting by the Italian artist Leonardo da Vinci. Considered an archetypal masterpiece of the Italian Renaissance, it has been described as \"the best known, the most visited, the most written about, the most sung about, [and] the most parodied work of art in the world\". The painting's novel qualities include the subject's enigmatic expression, the monumentality of the composition, the subtle modelling of forms, and the atmospheric illusionism."
+  },
+  "art-starry-night": {
+    "wikiTitle": "The_Starry_Night",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/330px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/3840px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Starry Night is an oil-on-canvas painting by the Dutch Post-Impressionist painter Vincent van Gogh. Painted in June 1889, it depicts the view from the east-facing window of his asylum room at Saint-Rémy-de-Provence, just before sunrise, with the addition of an imaginary village. It has been in the permanent collection of the Museum of Modern Art in New York City since 1941, acquired through the Lillie P. Bliss Bequest. Described as a \"touchstone of modern art\", The Starry Night has been regarded as one of the most recognizable paintings in the Western canon."
+  },
+  "art-scream": {
+    "wikiTitle": "The_Scream",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg/330px-Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c5/Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Scream is an image first created by the Norwegian artist Edvard Munch in 1893, and later repeated by him in different versions. The agonized face in the painting has become one of the most iconic images in art, seen as representing a profound experience of existential dread related to the human condition. Munch's work, including The Scream, had a formative influence on the Expressionist movement."
+  },
+  "art-girl-pearl-earring": {
+    "wikiTitle": "Girl_with_a_Pearl_Earring",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/330px-1665_Girl_with_a_Pearl_Earring.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/3840px-1665_Girl_with_a_Pearl_Earring.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Girl with a Pearl Earring is an oil painting by Dutch Golden Age painter Johannes Vermeer, dated c. 1665. Going by various names over the centuries, it acquired its present title towards the end of the 20th century. The work has been in the collection of the Mauritshuis in The Hague since 1902 and has been the subject of various literary and cinematic treatments."
+  },
+  "art-great-wave": {
+    "wikiTitle": "The_Great_Wave_off_Kanagawa",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/330px-Tsunami_by_hokusai_19th_century.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/3840px-Tsunami_by_hokusai_19th_century.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Great Wave off Kanagawa  is a woodblock print by the Japanese ukiyo-e artist Hokusai (1760–1849), created in late 1831 during the Edo period of Japanese history. The print depicts three boats moving through a storm-tossed sea, with a large, cresting wave forming a spiral in the centre over the boats and Mount Fuji in the background."
+  },
+  "art-the-kiss": {
+    "wikiTitle": "The_Kiss_(Klimt)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg/330px-The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg/3840px-The_Kiss_-_Gustav_Klimt_-_Google_Cultural_Institute.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Kiss is an oil-on-canvas painting with added gold leaf, silver and platinum by the Austrian Symbolist painter Gustav Klimt. It was painted at some point in 1907 and 1908, during the height of what scholars call his \"Golden Period\". It was exhibited in 1908 under the title Liebespaar as stated in the catalogue of the exhibition. The painting depicts a couple embracing each other, their bodies entwined in elaborate robes decorated in a style influenced by the contemporary Art Nouveau style and the organic forms of the earlier Arts and Crafts movement."
+  },
+  "art-birth-of-venus": {
+    "wikiTitle": "The_Birth_of_Venus",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/330px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg/3840px-Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Birth of Venus is a painting by the Italian artist Sandro Botticelli, probably executed in the mid-1480s. It depicts the goddess Venus arriving at the shore after her birth, when she had emerged from the sea fully grown. The painting is in the Uffizi Gallery in Florence, Italy."
+  },
+  "art-night-watch": {
+    "wikiTitle": "The_Night_Watch",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/La_ronda_de_noche%2C_por_Rembrandt_van_Rijn.jpg/330px-La_ronda_de_noche%2C_por_Rembrandt_van_Rijn.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/La_ronda_de_noche%2C_por_Rembrandt_van_Rijn.jpg/3840px-La_ronda_de_noche%2C_por_Rembrandt_van_Rijn.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Militia Company of District II under the Command of Captain Frans Banninck Cocq, also known as The Shooting Company of Frans Banning Cocq and Willem van Ruytenburch, but commonly referred to as The Night Watch, is a 1642 painting by Rembrandt van Rijn. It is in the collection of the Amsterdam Museum but is prominently displayed in the Rijksmuseum as the best-known painting in its collection. The Night Watch is one of the most famous Dutch Golden Age paintings. Rembrandt's large painting of 363 by 437 centimetres is famed for transforming a group portrait of a civic militia guards company into a compelling drama energised by light and shadow (tenebrism). The title is a misnomer; the painting does not depict a nocturnal scene."
+  },
+  "art-las-meninas": {
+    "wikiTitle": "Las_Meninas",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_Earth.jpg/330px-Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_Earth.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_Earth.jpg/3840px-Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_Earth.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Las Meninas is a 1656 oil painting in the Museo del Prado in Madrid, by Diego Velázquez, the leading artist in the court of King Philip IV of Spain and Portugal, and of the Spanish Golden Age. It has become one of the most widely analysed works in Western painting for the way its complex and enigmatic composition raises questions about reality and illusion, and for the uncertain relationship it creates between the viewer and the figures depicted."
+  },
+  "art-third-of-may": {
+    "wikiTitle": "The_Third_of_May_1808",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/El_Tres_de_Mayo%2C_by_Francisco_de_Goya%2C_from_Prado_thin_black_margin.jpg/330px-El_Tres_de_Mayo%2C_by_Francisco_de_Goya%2C_from_Prado_thin_black_margin.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/El_Tres_de_Mayo%2C_by_Francisco_de_Goya%2C_from_Prado_thin_black_margin.jpg/960px-El_Tres_de_Mayo%2C_by_Francisco_de_Goya%2C_from_Prado_thin_black_margin.jpg",
+    "extract": "The Third of May 1808 is an 1814 painting by the Spanish artist Francisco Goya, now in the Museo del Prado in Madrid. It shows Spanish civilians being executed by French soldiers during the Peninsular War and is often called one of the first modern anti-war paintings."
+  },
+  "art-hay-wain": {
+    "wikiTitle": "The_Hay_Wain",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/John_Constable_-_The_Hay_Wain_%281821%29.jpg/330px-John_Constable_-_The_Hay_Wain_%281821%29.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/John_Constable_-_The_Hay_Wain_%281821%29.jpg/960px-John_Constable_-_The_Hay_Wain_%281821%29.jpg",
+    "extract": "The Hay Wain is an 1821 painting by the English artist John Constable, now in the National Gallery in London. It shows a horse-drawn hay cart crossing the River Stour in the Suffolk countryside."
+  },
+  "art-water-lilies": {
+    "wikiTitle": "Water_Lilies_(Monet_series)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Reflections_of_Clouds_on_the_Water-Lily_Pond.jpg/330px-Reflections_of_Clouds_on_the_Water-Lily_Pond.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Reflections_of_Clouds_on_the_Water-Lily_Pond.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "Water Lilies is a series of approximately 250 oil paintings by French Impressionist Claude Monet (1840–1926). The paintings depict his flower garden at his home in Giverny, and were the main focus of his artistic production during the last 31 years of his life. Many of the works were painted while Monet suffered from cataracts."
+  },
+  "art-american-gothic": {
+    "wikiTitle": "American_Gothic",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Grant_Wood_-_American_Gothic_%281930%29.jpg/330px-Grant_Wood_-_American_Gothic_%281930%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Grant_Wood_-_American_Gothic_%281930%29.jpg/3840px-Grant_Wood_-_American_Gothic_%281930%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "American Gothic is a 1930 oil painting on beaverboard by the American Regionalist artist Grant Wood, depicting a Midwestern farmer and his daughter standing in front of their Carpenter Gothic style home. It is one of the most famous American paintings of the 20th century and is frequently referenced in popular culture."
+  },
+  "art-the-swing": {
+    "wikiTitle": "The_Swing_(Fragonard)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Fragonard%2C_The_Swing%2C_Wallace_Collection.jpg/330px-Fragonard%2C_The_Swing%2C_Wallace_Collection.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Fragonard%2C_The_Swing%2C_Wallace_Collection.jpg/960px-Fragonard%2C_The_Swing%2C_Wallace_Collection.jpg",
+    "extract": "The Swing is an 18th-century painting by the French artist Jean-Honoré Fragonard, now in the Wallace Collection in London. It is one of the best-known works of the Rococo style."
+  },
+  "art-nighthawks": {
+    "wikiTitle": "Nighthawks_(Hopper)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Nighthawks_by_Edward_Hopper_1942.jpg/330px-Nighthawks_by_Edward_Hopper_1942.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Nighthawks_by_Edward_Hopper_1942.jpg/3840px-Nighthawks_by_Edward_Hopper_1942.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Nighthawks is a 1942 oil on canvas painting by the American artist Edward Hopper that portrays four people in a downtown diner late at night, as viewed through the diner's large glass window. The light coming from the diner illuminates a darkened and deserted urban streetscape."
+  },
+  "art-sunflowers": {
+    "wikiTitle": "Sunflowers_(Van_Gogh_series)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Vincent_Willem_van_Gogh_127.jpg/330px-Vincent_Willem_van_Gogh_127.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/46/Vincent_Willem_van_Gogh_127.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "Sunflowers is the title of two series of still life paintings by the Dutch painter Vincent van Gogh. The first series, executed in Paris in 1887, depicts the flowers lying on the ground, while the second set, made a year later in Arles, shows a bouquet of sunflowers in a vase. In the artist's mind, both sets were linked by the name of his friend Paul Gauguin, who acquired two of the Paris versions. About eight months later, van Gogh hoped to welcome and impress Gauguin again with Sunflowers, now part of the painted Décoration for the Yellow House that he prepared for the guestroom of his home in Arles, where Gauguin was supposed to stay."
+  },
+  "art-creation-of-adam": {
+    "wikiTitle": "The_Creation_of_Adam",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg/330px-Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Michelangelo_-_Creation_of_Adam_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Creation of Adam, also known as The Creation of Man, is a fresco painting by Italian artist Michelangelo, which forms part of the Sistine Chapel's ceiling, painted 1508–1512. It illustrates the Biblical creation narrative from the Book of Genesis in which God gives life to Adam, the first man. The fresco is part of a complex scheme and is chronologically the fourth in the series of panels depicting episodes from Genesis."
+  },
+  "art-school-of-athens": {
+    "wikiTitle": "The_School_of_Athens",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg/330px-%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/49/%22The_School_of_Athens%22_by_Raffaello_Sanzio_da_Urbino.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The School of Athens is a fresco by the Italian Renaissance artist Raphael. It was painted between 1509 and 1511 as part of a commission by Pope Julius II to decorate the rooms now called the Stanze di Raffaello in the Apostolic Palace in Vatican City."
+  },
+  "art-sunday-grande-jatte": {
+    "wikiTitle": "A_Sunday_on_La_Grande_Jatte",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/330px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg/3840px-A_Sunday_on_La_Grande_Jatte%2C_Georges_Seurat%2C_1884.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "A Sunday Afternoon on the Island of La Grande Jatte was painted from 1884 to 1886 and is Georges Seurat's most famous work. It is recognised as a leading example of pointillist technique and as a founding work of the neo-impressionist movement."
+  },
+  "art-wanderer-fog": {
+    "wikiTitle": "Wanderer_above_the_Sea_of_Fog",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/af/Caspar_David_Friedrich_-_Wanderer_above_the_Sea_of_Fog.jpeg/330px-Caspar_David_Friedrich_-_Wanderer_above_the_Sea_of_Fog.jpeg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/af/Caspar_David_Friedrich_-_Wanderer_above_the_Sea_of_Fog.jpeg/3840px-Caspar_David_Friedrich_-_Wanderer_above_the_Sea_of_Fog.jpeg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Wanderer Above the Sea of Fog is a painting by German Romanticist artist Caspar David Friedrich in 1818. It depicts a man standing upon a rocky precipice with his back to the viewer; he is gazing out on a landscape covered in a thick sea of fog through which other ridges, trees, and mountains pierce, which stretches out into the distance indefinitely."
+  },
+  "art-liberty-leading": {
+    "wikiTitle": "Liberty_Leading_the_People",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/La_Libert%C3%A9_guidant_le_peuple_-_Eug%C3%A8ne_Delacroix_-_Mus%C3%A9e_du_Louvre_Peintures_RF_129_-_apr%C3%A8s_restauration_2024.jpg/330px-La_Libert%C3%A9_guidant_le_peuple_-_Eug%C3%A8ne_Delacroix_-_Mus%C3%A9e_du_Louvre_Peintures_RF_129_-_apr%C3%A8s_restauration_2024.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/02/La_Libert%C3%A9_guidant_le_peuple_-_Eug%C3%A8ne_Delacroix_-_Mus%C3%A9e_du_Louvre_Peintures_RF_129_-_apr%C3%A8s_restauration_2024.jpg/3840px-La_Libert%C3%A9_guidant_le_peuple_-_Eug%C3%A8ne_Delacroix_-_Mus%C3%A9e_du_Louvre_Peintures_RF_129_-_apr%C3%A8s_restauration_2024.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Liberty Leading the People is a painting of the Romantic era by the French artist Eugène Delacroix, commemorating the July Revolution of 1830 that toppled King Charles X. A bare-breasted \"woman of the people\" with a Phrygian cap personifying the concept and Goddess of Liberty, accompanied by a young boy brandishing a pistol in each hand, leads a group of various people forward over a barricade and the bodies of the fallen while holding aloft the flag of the French Revolution—the tricolour, which again became France's national flag after these events—in one hand, and brandishing a bayonetted musket with the other. The figure of Liberty is also viewed as a symbol of France and the French Republic known as Marianne. The painting is sometimes wrongly thought to depict the French Revolution of 1789."
+  },
+  "art-composition-viii": {
+    "wikiTitle": "Composition_VIII",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg/600px-Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Vassily_Kandinsky%2C_1913_-_Composition_7.jpg",
+    "extract": null
+  },
+  "art-broadway-boogie": {
+    "wikiTitle": "Broadway_Boogie_Woogie",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/30/Piet_Mondrian%2C_1942_-_Broadway_Boogie_Woogie.jpg/330px-Piet_Mondrian%2C_1942_-_Broadway_Boogie_Woogie.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/30/Piet_Mondrian%2C_1942_-_Broadway_Boogie_Woogie.jpg/3840px-Piet_Mondrian%2C_1942_-_Broadway_Boogie_Woogie.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Broadway Boogie Woogie is an oil on canvas painting by Piet Mondrian, completed in 1943, after he had moved to New York in 1940."
+  },
+  "art-childs-bath": {
+    "wikiTitle": "The_Child's_Bath",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Mary_Cassatt_-_The_Child%27s_Bath_-_Google_Art_Project.jpg/330px-Mary_Cassatt_-_The_Child%27s_Bath_-_Google_Art_Project.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Mary_Cassatt_-_The_Child%27s_Bath_-_Google_Art_Project.jpg/960px-Mary_Cassatt_-_The_Child%27s_Bath_-_Google_Art_Project.jpg",
+    "extract": "The Child's Bath is an 1893 painting by the American artist Mary Cassatt, now in the Art Institute of Chicago. It shows a woman washing a young girl's feet, seen from above in a style inspired by Japanese prints."
+  },
+  "art-david": {
+    "wikiTitle": "David_(Michelangelo)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/%27David%27_by_Michelangelo_Fir_JBU004.jpg/330px-%27David%27_by_Michelangelo_Fir_JBU004.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bb/%27David%27_by_Michelangelo_Fir_JBU004.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "David is a masterpiece of Italian Renaissance sculpture in marble created from 1501 to 1504 by Michelangelo. With a height of 5.17 metres, the David was not only the first colossal marble statue made in the High Renaissance, but also the first since classical antiquity, setting a precedent for the 16th century and beyond. David was originally commissioned as one of a series of statues of twelve prophets to be positioned along the roofline of the east end of Florence Cathedral, but was instead placed in the public square in front of the Piazza della Signoria, the seat of civic government in Florence, where it was unveiled on 8 September 1504. In 1873, the statue was moved to the Galleria dell'Accademia, Florence. In 1910 a replica was installed at the original site on the public square."
+  },
+  "art-the-thinker": {
+    "wikiTitle": "The_Thinker",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG/330px-Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Le_Penseur_by_Rodin_%28Kunsthalle_Bielefeld%29_2014-04-10.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Thinker, by Auguste Rodin, is a bronze sculpture depicting a nude male figure of heroic size, seated on a large rock, leaning forward, his right elbow placed upon his left thigh, with the back of his right hand supporting his chin in a posture evocative of deep thought and contemplation. This universally recognized expression of \"deep thought\" has made the sculpture one of the most widely known artworks in the world. It has become the iconic symbol of thinking; images of the sculpture in profile are often used to indicate philosophy and other practices of contemplation or introspection."
+  },
+  "art-venus-de-milo": {
+    "wikiTitle": "Venus_de_Milo",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Front_views_of_the_Venus_de_Milo.jpg/330px-Front_views_of_the_Venus_de_Milo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Front_views_of_the_Venus_de_Milo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Venus de Milo or Aphrodite of Melos is an ancient Greek marble sculpture that was created during the Hellenistic period. Its exact dating is uncertain, but the modern consensus places it in the 2nd century BC, perhaps between 160 and 110 BC. It was discovered in 1820 on the island of Milos, Greece, and has been displayed at the Louvre in Paris since 1821. Since the statue's discovery, it has become one of the most famous works of ancient Greek sculpture in the world."
+  },
+  "art-winged-victory": {
+    "wikiTitle": "Winged_Victory_of_Samothrace",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bf/Victoire_de_Samothrace_-_Musee_du_Louvre_-_20190812.jpg/330px-Victoire_de_Samothrace_-_Musee_du_Louvre_-_20190812.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Victoire_de_Samothrace_-_Musee_du_Louvre_-_20190812.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Winged Victory of Samothrace, or the Nike of Samothrace, is a votive monument originally discovered on the island of Samothrace in the northeastern Aegean Sea. It is a masterpiece of Greek sculpture from the Hellenistic era, dating from the beginning of the 2nd century BC. It is composed of a statue representing the goddess Nike (Victory), whose head and arms are missing, and a base in the shape of a ship's bow."
+  },
+  "art-pieta": {
+    "wikiTitle": "Pietà_(Michelangelo)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Pieta_de_Michelangelo_-_Vaticano.jpg/330px-Pieta_de_Michelangelo_-_Vaticano.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/65/Pieta_de_Michelangelo_-_Vaticano.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Pietà is a Carrara marble sculpture of Jesus and Mary at Mount Golgotha representing the \"Sixth Sorrow\" of the Virgin Mary by Michelangelo Buonarroti, in Saint Peter's Basilica, Vatican City, for which it was made. It is a key work of Italian Renaissance sculpture and often taken as the start of the High Renaissance."
+  },
+  "art-apollo-and-daphne": {
+    "wikiTitle": "Apollo_and_Daphne_(Bernini)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Apollo_and_Daphne_%28Bernini%29_%28cropped%29.jpg/330px-Apollo_and_Daphne_%28Bernini%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Apollo_and_Daphne_%28Bernini%29_%28cropped%29.jpg/3840px-Apollo_and_Daphne_%28Bernini%29_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Apollo and Daphne is a life-sized marble sculpture by the Italian artist Gian Lorenzo Bernini, which was executed between 1622 and ‘25. It is regarded as one of the artistic marvels of the Baroque age. The statue is housed in the Galleria Borghese in Rome, along with several other examples of the artist's most important early works. The sculpture depicts the climax of the story of Apollo and Daphne, as written in Ovid's Metamorphoses, wherein the nymph Daphne escapes Apollo's advances by transforming into a laurel tree."
+  },
+  "art-discobolus": {
+    "wikiTitle": "Discobolus",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/Roman_bronze_copy_of_Myron%E2%80%99s_Discobolos%2C_2nd_century_CE_%28Glyptothek_Munich%29.jpg/330px-Roman_bronze_copy_of_Myron%E2%80%99s_Discobolos%2C_2nd_century_CE_%28Glyptothek_Munich%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/42/Roman_bronze_copy_of_Myron%E2%80%99s_Discobolos%2C_2nd_century_CE_%28Glyptothek_Munich%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Discobolus by Myron is an ancient Greek sculpture completed at the start of the Classical period in around 460–450 BC that depicts an ancient Greek athlete throwing a discus."
+  },
+  "art-bird-in-space": {
+    "wikiTitle": "Bird_in_Space",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/Bird_in_Space.jpg/330px-Bird_in_Space.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/69/Bird_in_Space.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "Bird in Space is a series of sculptures by Romanian sculptor Constantin Brâncuși. The original work was created in 1923 and made of marble. This sculpture is also known for containing seven marble figures and nine bronze casts. Brancusi created the piece over 14 times and in several mediums over a period of 20 years. It was sold in 2005 for $25.8 million, at the time a record price for a sculpture sold in an auction. The original title in Romanian is Pasărea în văzduh."
+  },
+  "art-augustus-prima-porta": {
+    "wikiTitle": "Augustus_of_Prima_Porta",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Statue-Augustus.jpg/330px-Statue-Augustus.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Statue-Augustus.jpg/960px-Statue-Augustus.jpg",
+    "extract": "Augustus of Prima Porta is a marble statue of Augustus, the first Roman emperor, found in 1863 at his wife Livia's villa at Prima Porta near Rome. It is now in the Vatican Museums."
+  },
+  "art-terracotta-archer": {
+    "wikiTitle": "Terracotta_Army",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/51714-Terracota-Army.jpg/330px-51714-Terracota-Army.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/88/51714-Terracota-Army.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Terracotta Army is a collection of terracotta sculptures depicting the armies of Qin Shi Huang, the first emperor of China. It is a form of funerary art buried with the emperor in 210–209 BCE in his mausoleum with the purpose of protecting him in his afterlife."
+  },
+  "art-laocoon": {
+    "wikiTitle": "Laocoön_and_His_Sons",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Laoco%C3%B6n_and_his_sons_group.jpg/330px-Laoco%C3%B6n_and_his_sons_group.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Laoco%C3%B6n_and_his_sons_group.jpg/3840px-Laoco%C3%B6n_and_his_sons_group.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The statue of Laocoön and His Sons, also called the Laocoön Group, has been one of the most famous ancient sculptures since it was excavated in Rome in 1506 and put on public display in the Vatican Museums, where it remains today. The statue is very likely the same one praised in the highest terms by Pliny the Elder, the main Roman writer on art, who attributed it to Greek sculptors but did not say when it was created. The figures are nearly life-sized, with the entire group measuring just over 2 m in height. The sculpture depicts the Trojan priest Laocoön and his sons Antiphantes and Thymbraeus being attacked by sea serpents."
+  },
+  "art-bronze-david": {
+    "wikiTitle": "David_(Donatello)",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Florence%2C_Bargello%2C_Sala_di_Donatello_%28detail%29.jpg/600px-Florence%2C_Bargello%2C_Sala_di_Donatello_%28detail%29.jpg",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/af/Florence%2C_Bargello%2C_Sala_di_Donatello_%28detail%29.jpg",
+    "extract": "David was the second king of the United Kingdom of Israel and a figure in the scriptures of Abrahamic religions."
+  },
+  "art-tut-mask": {
+    "wikiTitle": "Mask_of_Tutankhamun",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/CairoEgMuseumTaaMaskMostlyPhotographed.jpg/330px-CairoEgMuseumTaaMaskMostlyPhotographed.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/27/CairoEgMuseumTaaMaskMostlyPhotographed.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The mask of Tutankhamun is a gold funerary mask that belonged to Tutankhamun, who reigned over the New Kingdom of Egypt from 1332 BC to 1323 BC, during the Eighteenth Dynasty. After being buried with Tutankhamun's mummy for over 3,000 years, it was found in 1922 following the discovery of Tutankhamun's tomb three years earlier by the British archaeologist Howard Carter at the Valley of the Kings. It is on public display at the Grand Egyptian Museum in Cairo."
+  },
+  "art-rosetta-stone": {
+    "wikiTitle": "Rosetta_Stone",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Rosetta_Stone.JPG/330px-Rosetta_Stone.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/23/Rosetta_Stone.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Rosetta Stone is a stele of granodiorite inscribed with three versions of a decree issued in 196 BC during the Ptolemaic dynasty of Egypt, on behalf of King Ptolemy V Epiphanes. The top and middle texts are in Ancient Egyptian using hieroglyphic and Demotic scripts, respectively, while the bottom is in Ancient Greek. The decree has only minor differences across the three versions, making the Rosetta Stone key to deciphering the Egyptian scripts."
+  },
+  "art-nefertiti-bust": {
+    "wikiTitle": "Nefertiti_Bust",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1f/Nofretete_Neues_Museum.jpg/330px-Nofretete_Neues_Museum.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Nofretete_Neues_Museum.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Nefertiti Bust is a painted stucco-coated limestone bust of Nefertiti, the Great Royal Wife of Egyptian pharaoh Akhenaten. It is on display in the Neues Museum of Berlin."
+  },
+  "art-code-hammurabi": {
+    "wikiTitle": "Code_of_Hammurabi",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/64/P1050763_Louvre_code_Hammurabi_face_rwk.JPG/330px-P1050763_Louvre_code_Hammurabi_face_rwk.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/64/P1050763_Louvre_code_Hammurabi_face_rwk.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Code of Hammurabi is a Babylonian legal text composed c. 1753 BC. It is the longest, best-organized, and best-preserved legal text from the ancient Near East. It is written in the Old Babylonian dialect of Akkadian, purportedly by Hammurabi, sixth king of the First Dynasty of Babylon. The primary copy of the text is inscribed on a basalt stele 2.25 m tall."
+  },
+  "art-ishtar-gate": {
+    "wikiTitle": "Ishtar_Gate",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1f/Berl%C3%ADn%2C_Museo_de_P%C3%A9rgamo_05.jpg/330px-Berl%C3%ADn%2C_Museo_de_P%C3%A9rgamo_05.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1f/Berl%C3%ADn%2C_Museo_de_P%C3%A9rgamo_05.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Ishtar Gate was the eighth gate to the inner city wall of Babylon. It was constructed c. 569 BC by order of King Nebuchadnezzar II on the north side of the city. It was part of a grand walled processional way leading into the city."
+  },
+  "art-sutton-hoo-helmet": {
+    "wikiTitle": "Sutton_Hoo_helmet",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ee/Sutton_Hoo_helmet_2016.png/330px-Sutton_Hoo_helmet_2016.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Sutton_Hoo_helmet_2016.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Sutton Hoo helmet is a decorated Anglo-Saxon helmet found during a 1939 excavation of the Sutton Hoo ship-burial. It was thought to be buried around the years c. 620–625 AD and is widely associated with an Anglo-Saxon leader, King Rædwald of East Anglia; its elaborate decoration may have given it a secondary function akin to a crown. The helmet was both a functional piece of armour and a decorative piece of metalwork. An iconic object from an archaeological find hailed as the \"British Tutankhamen\", it has become a symbol of the Early Middle Ages, \"of Archaeology in general\", and of England."
+  },
+  "art-portland-vase": {
+    "wikiTitle": "Portland_Vase",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Portland_Vase_BM_Gem4036_n1.jpg/330px-Portland_Vase_BM_Gem4036_n1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Portland_Vase_BM_Gem4036_n1.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Portland Vase is a Roman cameo glass vase, which dates between AD 1 and AD 25, though low BC dates have some scholarly support. It is the best known piece of Roman cameo glass and has served as an inspiration to many glass and porcelain makers from about the beginning of the 18th century onwards. It was first recorded in Rome in 1600–1601, and since 1810 has been in the British Museum in London. The museum held it on loan from the dukes of Portland until 1945, and bought it from them that year. It is normally on display in Room 70."
+  },
+  "art-cyrus-cylinder": {
+    "wikiTitle": "Cyrus_Cylinder",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Cyrus_Cylinder_front.jpg/330px-Cyrus_Cylinder_front.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Cyrus_Cylinder_front.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Cyrus Cylinder is an ancient clay cylinder, now broken into several pieces, on which is written an Achaemenid royal inscription in Akkadian cuneiform script in the name of the Persian king Cyrus the Great. It dates from the 6th century BC and was discovered in the ruins of the ancient Mesopotamian city of Babylon in 1879. It is currently in the possession of the British Museum. It was created and used as a foundation deposit following the Persian conquest of Babylon in 539 BC, when the Neo-Babylonian Empire was invaded by Cyrus and incorporated into his Persian Empire."
+  },
+  "art-antikythera-mechanism": {
+    "wikiTitle": "Antikythera_mechanism",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c8/Antikythera_Fragment_A_%28Front%29.webp/330px-Antikythera_Fragment_A_%28Front%29.webp?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c8/Antikythera_Fragment_A_%28Front%29.webp?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Antikythera mechanism is an ancient Greek hand-powered orrery built in the 2nd century BC and discovered in 1901. It is the oldest known example of an analogue computer. It could be used to predict astronomical positions and eclipses decades in advance. It could also be used to track the four-year cycle of athletic games similar to an olympiad, the cycle of the ancient Olympic Games."
+  },
+  "art-aztec-sun-stone": {
+    "wikiTitle": "Aztec_sun_stone",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Monolito_de_la_Piedra_del_Sol.jpg/330px-Monolito_de_la_Piedra_del_Sol.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/65/Monolito_de_la_Piedra_del_Sol.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Aztec sun stone is a late post-classic Mexica sculpture housed in the National Anthropology Museum in Mexico City, and is perhaps the most famous work of Mexica sculpture. It measures 3.6 metres (12 ft) in diameter and 98 centimetres (39 in) thick, and weighs 24,590 kg (54,210 lb). Shortly after the Spanish conquest, the monolithic sculpture was buried in the Zócalo, the main square of Mexico City. It was rediscovered on 17 December 1790 during repairs on the Mexico City Cathedral. Following its rediscovery, the sun stone was mounted on an exterior wall of the cathedral, where it remained until 1885. Early scholars initially thought that the stone was carved in the 1470s, though modern research suggests that it was carved some time between 1502 and 1521."
+  },
+  "art-faberge-coronation": {
+    "wikiTitle": "Imperial_Coronation_(Fabergé_egg)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Faberg%C3%A9_egg_Rome_05.JPG/330px-Faberg%C3%A9_egg_Rome_05.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Faberg%C3%A9_egg_Rome_05.JPG?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Imperial Coronation egg is a jewelled Fabergé egg made under the supervision of the Russian jeweller, Peter Carl Fabergé, in 1897 by Fabergé ateliers, Mikhail Perkhin and Henrik Wigstrom. The egg was made to commemorate Tsarina, Empress Alexandra Fyodorovna."
+  },
+  "art-unicorn-tapestry": {
+    "wikiTitle": "The_Unicorn_Tapestries",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/The_Unicorn_in_Captivity_%28from_the_Unicorn_Tapestries%29_MET_DP118991.jpg/330px-The_Unicorn_in_Captivity_%28from_the_Unicorn_Tapestries%29_MET_DP118991.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/83/The_Unicorn_in_Captivity_%28from_the_Unicorn_Tapestries%29_MET_DP118991.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Unicorn Tapestries or the Hunt of the Unicorn is a series of seven tapestries made in the Southern Netherlands around 1495–1505, and now in The Cloisters in New York City. They were possibly designed in Paris and woven in Brussels. They depict a group of noblemen and hunters in pursuit of a unicorn through an idealised French landscape. The tapestries were woven in wool, metallic threads, and silk. The vibrant colours, still evident today, were produced from dye plants: weld (yellow), madder (red), and woad (blue)."
+  },
+  "art-lady-and-unicorn": {
+    "wikiTitle": "The_Lady_and_the_Unicorn",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/%28Toulouse%29_Mon_seul_d%C3%A9sir_%28La_Dame_%C3%A0_la_licorne%29_-_Mus%C3%A9e_de_Cluny_Paris.jpg/330px-%28Toulouse%29_Mon_seul_d%C3%A9sir_%28La_Dame_%C3%A0_la_licorne%29_-_Mus%C3%A9e_de_Cluny_Paris.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/%28Toulouse%29_Mon_seul_d%C3%A9sir_%28La_Dame_%C3%A0_la_licorne%29_-_Mus%C3%A9e_de_Cluny_Paris.jpg/3840px-%28Toulouse%29_Mon_seul_d%C3%A9sir_%28La_Dame_%C3%A0_la_licorne%29_-_Mus%C3%A9e_de_Cluny_Paris.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Lady and the Unicorn is the modern title given to a series of six tapestries created in the style of mille-fleurs and woven in Flanders from wool and silk, from designs (\"cartoons\") drawn in Paris around 1500. The set is on display in the Musée de Cluny in Paris."
+  },
+  "art-bayeux-tapestry": {
+    "wikiTitle": "Bayeux_Tapestry",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Odo_bayeux_tapestry.png/330px-Odo_bayeux_tapestry.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Odo_bayeux_tapestry.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Bayeux Tapestry is an embroidered cloth nearly 70 metres long and 50 centimetres tall that depicts the events leading up to the Norman conquest of England, led by William, Duke of Normandy, and the Battle of Hastings in 1066. It is normally thought to have been made in England in the decades after the events it shows, although the earliest known written reference to it was in 1476. Since 2007 it has been inscribed on UNESCO's Memory of the World Register. It is normally displayed in the Bayeux Tapestry Museum in Bayeux, Normandy, France, but this is closed for renovation until 2027, and the work is currently on display in London."
+  },
+  "art-arnolfini": {
+    "wikiTitle": "Arnolfini_Portrait",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/The_Arnolfini_portrait_%281434%29.jpg/330px-The_Arnolfini_portrait_%281434%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/The_Arnolfini_portrait_%281434%29.jpg/3840px-The_Arnolfini_portrait_%281434%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Arnolfini Portrait is an oil painting on oak panel by the Early Netherlandish painter Jan van Eyck, dated 1434 and now in the National Gallery, London. It is a full-length double portrait, believed to depict the Italian merchant Giovanni di Nicolao Arnolfini and his wife, presumably in their residence at the Flemish city of Bruges."
+  },
+  "art-garden-delights": {
+    "wikiTitle": "The_Garden_of_Earthly_Delights",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/The_Garden_of_earthly_delights.jpg/330px-The_Garden_of_earthly_delights.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/The_Garden_of_earthly_delights.jpg/3840px-The_Garden_of_earthly_delights.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Garden of Earthly Delights is the modern title given to a five-panel triptych by the Early Netherlandish master Hieronymus Bosch, between 1490 and 1510, when Bosch was between 40 and 60 years old. Because of Bosch's religious beliefs, interpretations of the work typically assume it is a warning against the perils of temptation. The outer panels place the work on the Third Day of Creation. The intricacy of its symbolism, particularly that of the central panel, has led to a wide range of scholarly interpretations over the centuries."
+  },
+  "art-tower-of-babel": {
+    "wikiTitle": "The_Tower_of_Babel_(Bruegel)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg/330px-Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg/3840px-Pieter_Bruegel_the_Elder_-_The_Tower_of_Babel_%28Vienna%29_-_Google_Art_Project_-_edited.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Tower of Babel was the subject of two surviving paintings and one lost painting by Dutch and Flemish Renaissance painter Pieter Bruegel the Elder. The earliest of the three, a miniature painted on ivory, was completed in 1552–1553 while Bruegel was in Rome, and is now lost. The two surviving works are oil paintings on wood panels, sometimes distinguished by the prefix \"Great\" and \"Little\" and by their present location: Kunsthistorisches Museum Wien in Vienna and the latter in the Museum Boijmans Van Beuningen in Rotterdam. The Tower of Babel in Vienna is dated 1563, while the version in Rotterdam is undated but widely believed to have been painted sometime after."
+  },
+  "art-praying-hands": {
+    "wikiTitle": "Praying_Hands_(Dürer)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/63/Albrecht_D%C3%BCrer_-_Praying_Hands%2C_1508_-_Google_Art_Project.jpg/330px-Albrecht_D%C3%BCrer_-_Praying_Hands%2C_1508_-_Google_Art_Project.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/6/63/Albrecht_D%C3%BCrer_-_Praying_Hands%2C_1508_-_Google_Art_Project.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "Praying Hands, also known as Study of the Hands of an Apostle, is a pen-and-ink drawing by the German printmaker, painter and theorist Albrecht Dürer. The work is today stored at the Albertina museum in Vienna, Austria."
+  },
+  "art-judith-beheading": {
+    "wikiTitle": "Judith_Beheading_Holofernes_(Caravaggio)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/Caravaggio_-_Giuditta_e_Oloferne_%28ca._1599%29.jpg/330px-Caravaggio_-_Giuditta_e_Oloferne_%28ca._1599%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/Caravaggio_-_Giuditta_e_Oloferne_%28ca._1599%29.jpg/3840px-Caravaggio_-_Giuditta_e_Oloferne_%28ca._1599%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "Judith Beheading Holofernes is a painting of the biblical episode by the Italian Baroque artist Caravaggio, painted in c. 1599 – 1600 or 1602, in which the widow Judith stayed with the Assyrian general Holofernes in his tent after a banquet then decapitated him after he passed out drunk. The painting was rediscovered in 1950 and is part of the collection of the Galleria Nazionale d'Arte Antica in Rome. The exhibition 'Dentro Caravaggio', Royal Palace of Milan, suggests a date of 1602 on account of the use of light underlying sketches not seen in Caravaggio's early work but characteristic of his later works. The exhibition catalogue also cites biographer artist Giovanni Pietro Baglione's account that the work was commissioned by Genoese banker Ottavio Costa."
+  },
+  "art-calling-matthew": {
+    "wikiTitle": "The_Calling_of_Saint_Matthew_(Caravaggio)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Caravaggio_%E2%80%94_The_Calling_of_Saint_Matthew.jpg/330px-Caravaggio_%E2%80%94_The_Calling_of_Saint_Matthew.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Caravaggio_%E2%80%94_The_Calling_of_Saint_Matthew.jpg/3840px-Caravaggio_%E2%80%94_The_Calling_of_Saint_Matthew.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Calling of Saint Matthew is an oil painting by the Italian Baroque master Caravaggio that depicts the moment Jesus Christ calls on the tax collector Matthew to follow him. It was completed in 1599–1600 for the Contarelli Chapel in the church of the French congregation, San Luigi dei Francesi in Rome, where it remains. It hangs alongside two other paintings of Matthew by Caravaggio: The Martyrdom of Saint Matthew and The Inspiration of Saint Matthew (1602)."
+  },
+  "art-liberty-statue": {
+    "wikiTitle": "Statue_of_Liberty",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/Front_view_of_Statue_of_Liberty_%28cropped%29.jpg/330px-Front_view_of_Statue_of_Liberty_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/89/Front_view_of_Statue_of_Liberty_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Statue of Liberty is a colossal neoclassical sculpture of a robed and crowned woman on Liberty Island, part of New York City, in New York Harbor. The copper-clad statue, a gift to the United States from the people of France, was designed by French sculptor Frédéric Auguste Bartholdi, and its metal framework built by Gustave Eiffel. The statue was dedicated on October 28, 1886."
+  },
+  "art-christ-redeemer": {
+    "wikiTitle": "Christ_the_Redeemer_(statue)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg/330px-Christ_the_Redeemer_-_Cristo_Redentor.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Christ_the_Redeemer_-_Cristo_Redentor.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "Christ the Redeemer is an Art Deco statue of Jesus in Rio de Janeiro, Brazil, created by French-Polish sculptor Paul Landowski and built by Brazilian engineer Heitor da Silva Costa, in collaboration with French engineer Albert Caquot and Romanian sculptor Gheorghe Leonida who sculpted the face. Constructed between 1922 and 1931, the statue is 30 metres (98 ft) high, excluding its 8-metre (26 ft) pedestal, and faces east. The arms stretch 28 metres (92 ft) wide. It is made of reinforced concrete and soapstone. Christ the Redeemer differs considerably from its original design, as the initial plan was a large Christ with a globe in one hand and a cross in the other. Although the project organizers originally accepted the design, it later changed to the statue of today, with the arms spread out wide."
+  },
+  "art-golden-stool": {
+    "wikiTitle": "Golden_Stool",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Golden_stool_31_January_1935.jpg/330px-Golden_stool_31_January_1935.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Golden_stool_31_January_1935.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Golden Stool is the royal and divine throne of kings of the Asante people and the ultimate symbol of power in Asante. According to legend, Okomfo Anokye, High Priest and one of the two chief founders of the Asante Confederacy, caused the stool to descend from the sky and land on the lap of the first Asante king, Osei Tutu. Such seats were traditionally symbolic of a chieftain's leadership, but the Golden Stool is believed to house the spirit of the Asante nation—living, dead and yet to be born."
+  },
+  "art-benin-bronzes": {
+    "wikiTitle": "Benin_Bronzes",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Benin_brass_plaque_03_%28cropped%29.jpg/330px-Benin_brass_plaque_03_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/7/73/Benin_brass_plaque_03_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Benin Bronzes are a group of several thousand metal plaques and sculptures that decorated the royal palace of the Kingdom of Benin, in what is now Edo State, Nigeria. The metal plaques were produced by the Guild of Benin Bronze Casters, now located in Igun Street, also known as Igun-Eronmwon Quarters. Collectively, the objects form the best examples of Benin art and were created from the fourteenth century by artists of the Edo people. The plaques, which in the Edo language are called Ama, depict scenes or represent themes in the history of the kingdom. Apart from the plaques, other sculptures in brass or bronze include portrait heads, jewellery, and smaller pieces."
+  },
+  "art-clover-egg": {
+    "wikiTitle": "Clover_Leaf_(Fabergé_egg)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Cloveregg2.jpg/330px-Cloveregg2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Cloveregg2.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Clover Leaf egg is a jewelled Easter egg made under the supervision of the Russian jeweller Peter Carl Fabergé in 1902 for Tsar Nicholas II of Russia. It was presented by Nicholas as an Easter gift to his wife, the Tsarina Alexandra Feodorovna. It is currently held in the Kremlin Armoury Museum in Moscow, and it is one of the few imperial Fabergé eggs that were never sold after the Russian Revolution."
+  },
+  "art-kiss-rodin": {
+    "wikiTitle": "The_Kiss_(Rodin_sculpture)",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Rodin_-_Le_Baiser_06.jpg/330px-Rodin_-_Le_Baiser_06.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/Rodin_-_Le_Baiser_06.jpg/3840px-Rodin_-_Le_Baiser_06.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "extract": "The Kiss is an 1882 marble sculpture by the French sculptor Auguste Rodin."
+  },
+  "art-water-carrier": {
+    "wikiTitle": "The_Waterseller_of_Seville",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2a/El_aguador_de_Sevilla%2C_por_Diego_Vel%C3%A1zquez.jpg/330px-El_aguador_de_Sevilla%2C_por_Diego_Vel%C3%A1zquez.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2a/El_aguador_de_Sevilla%2C_por_Diego_Vel%C3%A1zquez.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Waterseller of Seville is the title of three paintings by Spanish artist Diego Velázquez, dating from 1618–1622. The original version is considered to be among the finest works of the painter's Seville period and is displayed in the Wellington Collection of Apsley House. The original version was painted by Velázquez when he was in his late teens or early twenties. Looking at this painting, there is an older man, a young boy, and a bystander in the background. The old man is handing the young boy a glass of water, but they never look at each other, nor do they make eye contact with the viewer."
+  },
+  "art-liberty-bell": {
+    "wikiTitle": "Liberty_Bell",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/37/Liberty_Bell_2017a.jpg/330px-Liberty_Bell_2017a.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "fullImageUrl": "https://upload.wikimedia.org/wikipedia/commons/3/37/Liberty_Bell_2017a.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "extract": "The Liberty Bell, previously called the State House Bell or Old State House Bell, is an iconic symbol of American independence, located in Philadelphia. It was first called the Liberty Bell by members of the American abolitionist movement, who used it as a symbol. Originally placed in the steeple of the Pennsylvania State House, the Liberty Bell today is located across the street from Independence Hall in the Liberty Bell Center in Independence National Historical Park."
+  }
+}
