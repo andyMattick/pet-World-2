@@ -441,78 +441,228 @@ const HISTORY4_LEARN_ONLY = {portableBelief:[{name:'Empires and Belief Systems |
 const HISTORY_GROUPS4 = HISTORY_UNIT4.map(skill => ({id:skill.id,name:skill.name,learn:skill.lesson,skills:[skill.id],extraLessons:HISTORY4_LEARN_ONLY[skill.id]}));
 const HISTORY4_QUESTIONS = {
   portableBelief:[
-    mc('A fellow traveler asks what makes a belief system “portable.” What do you say?','It can travel with people to new places','It is tied to one temple only','It forbids travel','It exists only in laws'),
-    mc('The traveler asks how portable belief systems usually spread. What have you seen on your journeys?','Along trade and travel networks','Only through isolation','Only by farming','By avoiding contact'),
-    mc('The traveler asks how one belief can link people in very different places. What do you say?','Shared beliefs and practices linked people across regions','They erased all differences','They required one language only','They stopped trade'),
-    mc('You point to monks traveling in your caravan. Which is an example of a portable belief system?','Buddhism','A village boundary stone','A harvest tool','A trade price list')
+    mc('A fellow traveler asks what makes a belief system “portable.” What do you say?',"It travels with people to new places","It is tied to one temple only","It is only practiced by one family","It can only be followed inside one city"),
+    mc('The traveler asks how portable belief systems usually spread. What have you seen on your journeys?',"Along trade and travel routes","Only through farming villages","Only through written laws","By keeping away from others"),
+    mc('The traveler asks how one belief can link people in very different places. What do you say?',"Followers share beliefs and practices","They all speak the very same language everywhere","They all live under one king","They stop trading with outsiders"),
+    mc('You point to monks traveling in your caravan. Which is an example of a portable belief system?',"Buddhism","A local river god","A single town’s festival","A family’s house shrine")
   ],
   hinduBuddhism:[
-    mc('A visiting monk asks if you know who founded Buddhism. What do you answer?','Siddhartha Gautama, the Buddha','Muhammad','Confucius','Cyrus'),
-    mc('A Hindu adviser in your court talks about dharma. What does dharma refer to?','Duty and the right way of living','A kind of trade good','A military rank','A city wall'),
-    mc('A child asks what the cycle of death and rebirth is called. What do you tell them?','Samsara','Mandate','Satrapy','Census'),
-    mc('A traveler asks which idea is at the heart of Buddhism. What do you say?','Ending suffering by following the Eightfold Path','Building roads','Honoring emperors as gods only','Avoiding all teaching')
+    mc('A visiting monk asks if you know who founded Buddhism. What do you answer?',"Siddhartha Gautama","Confucius of China","Mahavira of India","Laozi of China"),
+    mc('A Hindu adviser in your court talks about dharma. What does dharma refer to?',"Duty and the right way to live","Wealth earned through trade","The power held by a king","Freedom from the cycle of rebirth"),
+    mc('A child asks what the cycle of death and rebirth is called. What do you tell them?',"Samsara","Nirvana","Karma","Dharma"),
+    mc('A traveler asks which idea is at the heart of Buddhism. What do you say?',"Ending suffering through the Eightfold Path","Gaining wealth to escape all suffering","Obeying the king as a living god","Keeping each person in a fixed caste forever")
   ],
   judaismChristianity:[
-    mc('A traveler asks what Judaism is known for believing. What do you say?','One God and a covenant with the Jewish people','Many city gods only','No sacred texts','Rule by emperors only'),
-    mc('The traveler hears people speaking about a new group. Christianity developed from teachings about whom?','Jesus of Nazareth','Siddhartha Gautama','Confucius','Alexander'),
-    mc('A reporter from the future asks in which region Judaism and Christianity developed. What do you answer?','Southwest Asia','Northern Europe','The Americas','Southeast Asia'),
-    mc('A child asks you about the most important sacred text of Judaism. What is it?','The Torah','The Quran','The Analects','The Vedas only')
+    mc('A traveler asks what Judaism is known for believing. What do you say?',"One God and a covenant with Him","Many gods, one for each city","No sacred writings at all","The Roman emperor as a living god"),
+    mc('The traveler hears people speaking about a new group. Christianity developed from teachings about whom?',"Jesus of Nazareth","Moses the lawgiver","Siddhartha Gautama","Zoroaster of Persia"),
+    mc('A reporter from the future asks in which region Judaism and Christianity developed. What do you answer?',"Southwest Asia","South Asia","North Africa","Southern Europe"),
+    mc('A child asks you about the most important sacred text of Judaism. What is it?',"The Torah","The Quran","The Vedas","The Avesta")
   ],
   islam:[
-    mc('A traveler asks where Islam began. What do you tell them?','Arabia','China','Rome','Mesoamerica'),
-    mc('The traveler sees people reciting from a book. What is the Quran?','The sacred text of Islam','A Roman law code','A Chinese dynasty','A trade route'),
-    mc('The traveler asks who Muslims regard as the Prophet who received revelations. What do you answer?','Muhammad','Augustus','Darius','Laozi'),
-    mc('The traveler asks what the Five Pillars of Islam are. What do you say?','Core practices of Muslim life','Five Roman roads','Five Greek cities','Five Chinese dynasties')
+    mc('A traveler asks where Islam began. What do you tell them?',"Arabia","Persia","Egypt","India"),
+    mc('The traveler sees people reciting from a book. What is the Quran?',"The sacred text of Islam","A book of laws written by a caliph","A list of the trade routes to Mecca","A collection of poems about battles"),
+    mc('The traveler asks who Muslims regard as the Prophet who received revelations. What do you answer?',"Muhammad","Abu Bakr","Zoroaster","Constantine"),
+    mc('The traveler asks what the Five Pillars of Islam are. What do you say?',"Core duties of every Muslim","Five holy cities in Arabia","Five chapters of the Quran","Five rulers who came after Muhammad")
   ],
   comparePortable:[
-    mc('Back home, a student asks why you compare the belief systems you met. What do you say?','To see similarities, differences, and why they spread','To prove they are identical','To ignore their histories','To avoid using evidence'),
-    mc('The student asks what many portable belief systems have in common. Which similarity do you name?','Teachings about how people should live and treat others','They all began in one city','They all rejected travel','They all lacked communities'),
-    mc('The student asks what helped beliefs travel as far as you did. What do you answer?','Trade routes, travelers, and sometimes empires','Isolation','Closed borders only','Avoiding networks'),
-    mc('You saw Buddhism look different in each land you passed through. Which claim is best supported?','Traditions changed as they spread to new regions','Traditions never changed','Only one tradition spread','Spread had no causes')
+    mc('Back home, a student asks why you compare the belief systems you met. What do you say?',"To see what is alike, what differs, and why","To prove all the faiths are exactly the same","To decide which faith is the only true one","To forget their histories"),
+    mc('The student asks what many portable belief systems have in common. Which similarity do you name?',"Teachings about how to live and treat others","They all began in the very same city","They all forbid their followers to travel to other lands","They all have no followers or communities"),
+    mc('The student asks what helped beliefs travel as far as you did. What do you answer?',"Trade routes, travelers, and empires","Staying at home and avoiding all strangers","Closed borders and high walls","Living far from any roads"),
+    mc('You saw Buddhism look different in each land you passed through. Which claim is best supported?',"Faiths changed as they spread to new lands","Faiths never change, no matter where they move","Only one faith ever spread far","Faiths spread for no reason at all")
   ],
   persia:[
-    mc('A new governor asks how you rule such a huge territory. What do you tell him?','Through provinces called satrapies','Through a single village','Without officials','By avoiding roads'),
-    mc('A royal messenger asks what the Royal Road is for. What do you say?','Communication and travel across the empire','A farming ritual','A battle formation','A religious holiday'),
-    mc('A conquered city asks what kind of ruler you will be. What are rulers like you known for?','Allowing conquered peoples to keep many customs','Banning all travel','Ending trade','Destroying every city'),
-    mc('A reporter from the future asks the name of the empire you founded. What do you answer?','Achaemenid Empire','Han Empire','Gupta Empire','Aksumite Empire')
+    mc('A new governor asks how you rule such a huge territory. What do you tell him?',"Through provinces called satrapies","Through city-states that rule themselves","Through one army camp in each town","Through the priests of each temple"),
+    mc('A royal messenger asks what the Royal Road is for. What do you say?',"Sending messages fast across the empire","Carrying water to the farm fields in dry seasons","Marching armies only to Greece","Holding races during holidays"),
+    mc('A conquered city asks what kind of ruler you will be. What are rulers like you known for?',"Letting conquered peoples keep their customs","Forcing everyone to speak Persian","Destroying the temples of each city","Moving every person they conquered to Persia"),
+    mc('A reporter from the future asks the name of the empire you founded. What do you answer?',"Achaemenid Empire","Babylonian Empire","Assyrian Empire","Macedonian Empire")
   ],
   greece:[
-    mc('A student asks how most Greek communities are organized. What do you say?','City-states','One national government','Nomadic bands only','Provinces of Rome'),
-    mc('A visitor to Athens asks what your city is famous for developing. What is it?','An early form of democracy among citizens','A single emperor','Bronze oracle bones','The Mandate of Heaven'),
-    mc('Your old student Alexander has marched far to the east. How did he spread Greek culture?','By conquering a large empire','By avoiding other lands','By closing trade','By ending the army'),
-    mc('A student asks what Sparta is known for. What do you answer?','A military-focused society','Having no army','A mostly written law code','Being part of Han China')
+    mc('A student asks how most Greek communities are organized. What do you say?',"City-states","One empire under a king","Bands of nomads","Provinces of Persia"),
+    mc('A visitor to Athens asks what your city is famous for developing. What is it?',"Democracy, rule by the citizens","Rule by a single emperor","Rule by the priests of the city temple","Rule by the Mandate of Heaven"),
+    mc('Your old student Alexander has marched far to the east. How did he spread Greek culture?',"By conquering a large empire","By staying home in Macedonia","By closing every trade route","By sending teachers but no army"),
+    mc('A student asks what Sparta is known for. What do you answer?',"A military-focused society","A city with no army","A city ruled by philosophers","A city known for its theaters")
   ],
   imperialChina:[
-    mc('A scholar asks what the Mandate of Heaven means. What do you tell him?','The idea that rulers govern with approval that can be lost','A Roman road','A trade tax','A type of writing'),
-    mc('An official asks how the Qin unified China. What do you answer?','By standardizing laws, writing, and money','By giving up power','By ending government','By closing all cities'),
-    mc('A student asks which philosophy you follow, the one that favors strict laws and punishments. What is it?','Legalism','Daoism','Buddhism','Christianity'),
-    mc('A historian asks which dynasty ruled before the Qin and used the Mandate of Heaven. What do you say?','The Zhou','The Gupta','The Ptolemaic','The Achaemenid')
+    mc('A scholar asks what the Mandate of Heaven means. What do you tell him?',"Heaven’s approval to rule, which can be lost","A law that gives every single ruler power forever","A tax that farmers pay to the emperor","A rule that only priests may govern"),
+    mc('An official asks how the Qin unified China. What do you answer?',"By making laws, writing, and coins the same","By letting each state keep all of its own rules","By giving power back to local lords","By teaching kindness instead of laws"),
+    mc('A student asks which philosophy you follow, the one that favors strict laws and punishments. What is it?',"Legalism","Daoism","Confucianism","Buddhism"),
+    mc('A historian asks which dynasty ruled before the Qin and used the Mandate of Heaven. What do you say?',"The Zhou","The Han","The Tang","The Shang")
   ],
   compareEmpires:[
-    mc('The emperor asks why your report compares the empires you visited. What do you say?','To see how states expanded, governed diverse peoples, and justified power','To prove all were identical','To avoid evidence','To ignore geography'),
-    mc('The emperor asks how rulers you met convinced people they had the right to rule. Which way did they use?','Claiming divine approval or successful leadership','Giving up all authority','Avoiding rules','Ignoring subjects'),
-    mc('The emperor asks what helped those empires govern so many different peoples. What do you report?','Roads, officials, laws, and local arrangements','Isolation','No communication','Only farming tools'),
-    mc('After all your travels, which claim is best supported by comparing empires?','Empires used different methods to expand and govern','All empires acted the same way','Empires never changed','Power had no sources')
+    mc('The emperor asks why your report compares the empires you visited. What do you say?',"To learn how rulers grow, govern, and hold power","To prove that all of the empires were exactly alike","To pick which empire is the strongest","To avoid using any evidence at all"),
+    mc('The emperor asks how rulers you met convinced people they had the right to rule. Which way did they use?',"Claiming the gods or Heaven chose them","Letting the people vote them out each year","Giving up all their authority","Ignoring the people they ruled"),
+    mc('The emperor asks what helped those empires govern so many different peoples. What do you report?',"Roads, officials, and laws","Staying apart from other peoples","Having no way to send messages","Using only farming tools"),
+    mc('After all your travels, which claim is best supported by comparing empires?',"Empires ruled and grew in different ways","All empires acted in exactly the same way","Empires never changed over time","Power came from nowhere at all")
   ],
   rome:[
-    mc('A new recruit asks who became the first Roman emperor. What do you answer?','Augustus','Cyrus','Qin Shi Huangdi','Asoka'),
-    mc('The recruit asks what people mean by the Pax Romana. What do you tell him?','A long period of relative peace and stability','A Chinese philosophy','A trade tax','A religious text'),
-    mc('A merchant asks how Rome keeps control of such a huge territory. What do you say?','Roads, legions, and law','Isolation','No army','Only farming'),
-    mc('A child asks what Rome was before it had emperors. Rome began as a:','Republic','Dynasty ruled by the Qin','Satrapy','Caliphate')
+    mc('A new recruit asks who became the first Roman emperor. What do you answer?',"Augustus","Julius Caesar","Constantine","Nero"),
+    mc('The recruit asks what people mean by the Pax Romana. What do you tell him?',"A long time of peace across the empire","A great war that lasted two hundred years","The Roman law code carved on tablets","The road from Rome to the frontier"),
+    mc('A merchant asks how Rome keeps control of such a huge territory. What do you say?',"Roads, legions, and law","Letting each city have its own army","Closing the borders to all trade","Asking the Senate to vote each day"),
+    mc('A child asks what Rome was before it had emperors. Rome began as a:',"Republic","Province of Persia","Greek city-state","Colony of Carthage")
   ],
   romeHan:[
-    mc('A new clerk asks which philosophy the Han emperors use to guide the government. What is it?','Confucianism','Legalism only','Christianity','Zoroastrianism'),
-    mc('A merchant tells you about Rome. Which trade network connects your empire and Rome indirectly?','The Silk Road','The Royal Road only','The Mississippi','The Amazon'),
-    mc('The merchant says Rome has problems too. Which problem do both Rome and Han China face?','Governing large territories and defending borders','No need for rulers','No trade','No farmers'),
-    mc('The merchant asks how the Han fill government jobs. What do you tell him?','With educated officials in a bureaucracy','With no officials','Only with foreign armies','Only with priests')
+    mc('A new clerk asks which philosophy the Han emperors use to guide the government. What is it?',"Confucianism","Strict Legalism","Daoism","Buddhism"),
+    mc('A merchant tells you about Rome. Which trade network connects your empire and Rome indirectly?',"The Silk Road","The Royal Road","The Appian Way","The Nile River"),
+    mc('The merchant says Rome has problems too. Which problem do both Rome and Han China face?',"Ruling huge lands and guarding borders","Having no rulers at all","Having no trade with anyone","Having far too few people in the empire to govern"),
+    mc('The merchant asks how the Han fill government jobs. What do you tell him?',"With educated officials who pass tests","With lords who inherit their jobs from their fathers","With soldiers from foreign armies","With priests chosen by temples")
   ],
   womenAncient:[
-    mc('A student asks what Confucian ideas say about women’s roles in Han China. Women’s roles were often focused on:','The family and household hierarchy','Voting in assemblies','Leading all armies','Writing Roman laws'),
-    mc('A traveler from Rome describes the lives of rich Roman women. What could elite Roman women often do?','Influence family affairs and manage property, but could not vote','Vote and hold every office','Have no family role','Govern the empire as consuls'),
-    mc('Your student asks why you would compare women’s lives in Rome and Han China. What do you say?','To see how societies shaped opportunities and limits','To prove roles were identical','To avoid evidence','To ignore social class'),
-    mc('After hearing about Rome, which statement is best supported?','Women\u2019s experiences differed by society and social class','Every woman had the same experience','Women left no influence','Evidence is unnecessary')
+    mc('A student asks what Confucian ideas say about women’s roles in Han China. Women’s roles were often focused on:',"The family and household hierarchy","Voting in the assemblies of the cities","Leading the army into battle","Running the imperial exams"),
+    mc('A traveler from Rome describes the lives of rich Roman women. What could elite Roman women often do?',"Own property, but not vote or hold office","Vote in elections and hold any office they wanted","Lead the legions as generals","Serve in the Senate as members"),
+    mc('Your student asks why you would compare women’s lives in Rome and Han China. What do you say?',"To see how each society shaped their lives","To prove that women everywhere lived the same way","To show that women had no influence","To ignore differences of rich and poor"),
+    mc('After hearing about Rome, which statement is best supported?',"Women’s lives differed by society and class","Every woman in every land lived exactly the same life","Women had no influence at all","Class made no difference to women")
   ]
 };
+// Phase 1 History Unit 4 bank: extra questions, tagged by difficulty (1-3). They join the built-in pools above.
+const HISTORY4_EXTRA_QUESTIONS = {
+  portableBelief:[
+    histLevel(1,"A traveler asks what your caravans carry besides silk and spices. What do you say?","Travelers and their beliefs","Only empty sacks","Soldiers sent by the emperor to guard us","Grain for distant farms"),
+    histLevel(1,"Which belief system have you seen spread along the Silk Road from India to China?","Buddhism","Shinto","Olmec religion","Greek city gods"),
+    histLevel(1,"A trader asks where people often first hear about a new faith. What do you say?","At markets and trading towns","Only in their home villages","Only inside the king’s own palace","Only from books they buy"),
+    histLevel(2,"A young trader asks why merchants carry their beliefs so far from home. What do you say?","They travel long distances for trade","They are paid to preach by kings","Beliefs are sold as trade goods","Their faiths forbid them to stay at home for long"),
+    histLevel(2,"The ruler of an oasis city wants more trade. Why might he welcome traveling monks and teachers?","They bring visitors, ideas, and links","They pay every one of the city’s taxes","They build his army for free","They forbid trade with outsiders"),
+    histLevel(2,"Empires and belief systems often helped each other spread. How might an empire help a faith?","Its roads and peace made travel safer","It banned all travel between lands","It kept every belief in one city","It made all trade with outsiders illegal"),
+    histLevel(3,"A historian claims Buddhism reached China along the Silk Road. Which evidence best supports this?","Buddhist cave temples at oasis towns on the route","Buddhist temples built only in the south of India itself","Silk found in Roman markets","Chinese farm tools from the same years"),
+    histLevel(3,"Someone says beliefs spread only when armies forced them on people. Which evidence would challenge this?","Merchants and monks spreading faiths peacefully","Records of soldiers forcing a faith on a captured city","An emperor ordering everyone to convert","Walls built around a temple"),
+    histLevel(3,"What would most likely happen to the spread of beliefs if the Silk Road closed for many years?","Beliefs would spread more slowly","Beliefs would spread faster than ever","Every faith would disappear at once","Trade goods would carry the beliefs"),
+    histLevel(3,"A faith arrives in a new land and mixes with local customs. What does this show?","Beliefs can change as they spread","Beliefs never change when they move","Local people reject all new ideas","The faith disappears right away")
+  ],
+  hinduBuddhism:[
+    histLevel(1,"A visitor asks what you carved on pillars across your empire. What do you say?","Messages about right living","Lists of the taxes owed","Maps of all the trade roads","Stories of my great battles"),
+    histLevel(1,"A child asks what karma means. What do you say?","Actions have effects, now and later","Every person has the same fate","The gods alone decide everything that happens","Rebirth only happens to kings"),
+    histLevel(1,"A monk asks in which region both Hinduism and Buddhism began. What do you say?","South Asia","East Asia","Southwest Asia","North Africa"),
+    histLevel(2,"A monk asks why you turned to Buddhism after your war in Kalinga. What do you say?","You were sorry for the suffering it caused","You wanted to conquer even more lands, faster","Your army refused to fight any longer","Buddhism promised you more gold"),
+    histLevel(2,"A monk asks what nirvana means in Buddhism. What do you say?","Freedom from suffering and rebirth","A heaven for kings and soldiers","The duty of each person in society","A great festival held each spring"),
+    histLevel(2,"A Hindu adviser says each person has duties that fit their place and stage of life. Which idea is this?","Dharma","Nirvana","Samsara","The Eightfold Path"),
+    histLevel(3,"A historian claims you spread Buddhist ideas across your empire. Which evidence best supports this?","Pillars with your Buddhist messages in many regions","A single statue of you standing in your capital city","Records of the taxes you collected","Coins with your name on them"),
+    histLevel(3,"Your pillars praise your own goodness. Why should a historian be careful with them?","You wrote them to make yourself look good","They were carved after you died","Nobody in the empire could read them at the time","They say nothing about your rule"),
+    histLevel(3,"A historian compares Hinduism and Buddhism. Which statement is accurate?","Both teach about rebirth and escaping it","Only Hinduism teaches about rebirth","Both were founded by the same teacher","Buddhism began in China, Hinduism in India"),
+    histLevel(3,"What would most likely happen to Buddhism if your empire stopped supporting monks and missionaries?","It would spread more slowly","It would spread faster than ever","It would vanish overnight","It would become the only faith")
+  ],
+  judaismChristianity:[
+    histLevel(1,"A traveler asks why so many pilgrims come to Jerusalem. What do you say?","To worship at the Temple","To buy silk from China","To sign up for the Roman army","To see the pyramids"),
+    histLevel(1,"A traveler asks what the Ten Commandments are. What do you say?","Rules from God given through Moses","Laws written down by a Roman emperor","Sayings collected by Confucius","Ten steps on the path to nirvana"),
+    histLevel(1,"A visitor asks which faith from Persia also teaches about a struggle between good and evil. What do you say?","Zoroastrianism","Buddhism","Greek city religion","Hinduism"),
+    histLevel(2,"Many followers of Jesus are Jewish, like Jesus himself. What does this show about early Christianity?","It grew out of Judaism","It began far away in India","It had no link to Judaism","It started in ancient Greece"),
+    histLevel(2,"Followers of Jesus travel to Greece and Rome to teach. Why can Christianity spread so far?","Roman roads and sea routes linked many lands","The Roman emperors ordered everyone to join it","Only one city was allowed to hear it","People were not allowed to travel"),
+    histLevel(2,"Jews living far from Jerusalem still follow the Torah. What makes this possible?","The Torah goes wherever they go","They return to Jerusalem every week","The Romans teach them the Torah","They cannot practice outside the city"),
+    histLevel(3,"A historian claims Christianity spread quickly to cities around the Mediterranean. Which evidence best supports this?","Letters to Christian groups in many cities","One church found in a single village","Roman coins that show the face of the emperor","A Greek play performed in Athens"),
+    histLevel(3,"A Roman writer calls the Christians troublemakers. Why should a historian be careful with this?","He may have been biased against them","He was a Christian leader himself","Romans never wrote anything about Christians","It was written in the year 1900"),
+    histLevel(3,"A historian compares Judaism and Christianity. Which statement is accurate?","Both believe in one God and share sacred texts","Both teach that there are many gods in every city","Christianity is older than Judaism","Neither has any sacred writings"),
+    histLevel(3,"What would most likely happen to worship if the Temple in Jerusalem were destroyed?","People would find new ways to worship","Everyone would stop believing","The Temple would move to Rome","Nothing at all about the way people worship would change")
+  ],
+  islam:[
+    histLevel(1,"A traveler asks what the Kaaba in Mecca is. What do you say?","A holy shrine Muslims pray toward","The palace of the caliph","A busy market for spices and silk from Asia","A tomb for the kings of Arabia"),
+    histLevel(1,"A traveler asks what the hajj is. What do you say?","A pilgrimage to Mecca","A tax paid to the caliph","A month of feasting","A prayer said at sunset"),
+    histLevel(1,"A child asks what a mosque is. What do you say?","A place where Muslims pray","A school for traders","A house where the caliph lives","A tomb for the prophets"),
+    histLevel(2,"Muhammad and his followers moved from Mecca to Medina in 622. What is this journey called?","The Hijra","The Hajj","The Kaaba","The Ramadan"),
+    histLevel(2,"A traveler asks why Islam spread so quickly from Arabia. Which reason do you give?","Trade routes and new Muslim rulers","Every merchant was forced to join","Arabia had no contact with others","It was spread only by sailors from China"),
+    histLevel(2,"A visitor sees people fasting from dawn to sunset for a whole month. Which month is it?","Ramadan","Muharram","The Hijra","The Hajj"),
+    histLevel(3,"A historian claims Islam spread along trade routes. Which evidence best supports this?","Early mosques in port and market towns","A mosque built in Mecca itself","Arabic poems that were written before Islam","A map of the deserts of Arabia"),
+    histLevel(3,"Islam teaches that Muhammad was the last of a line of prophets that includes Abraham, Moses, and Jesus. What does this show?","Islam shares roots with Judaism and Christianity","Islam has no link at all to any other faith before it","Islam began long before Judaism","Muslims reject all earlier prophets"),
+    histLevel(3,"A historian reads a story about Muhammad written 200 years after his death. What is a limit of this source?","Details may have changed over time","It was written too close to his life","It cannot tell us anything at all","It was written by Roman emperors"),
+    histLevel(3,"What would most likely happen to Mecca’s markets if fewer pilgrims came for the hajj?","Its markets would earn less money","Its markets would earn far more money than before","The Kaaba would move to Medina","Arabia would stop all farming")
+  ],
+  comparePortable:[
+    histLevel(1,"A student asks why you walked all the way to India. What do you say?","To study Buddhism where it began","To sell silk in the big markets of India","To lead an army for the emperor","To find a new route to Rome"),
+    histLevel(1,"A student asks which faith began recently in Arabia, far from the lands you visited. What do you say?","Islam","Buddhism","Hinduism","Confucianism"),
+    histLevel(1,"Which faith you met in India teaches dharma, karma, and worship of many gods?","Hinduism","Islam","Judaism","Christianity"),
+    histLevel(2,"You bring hundreds of Buddhist texts back to China and translate them. Why does this matter?","More people can read the teachings","Fewer people can learn about Buddhism","The texts can only be read in India","China will stop all trade with India"),
+    histLevel(2,"A student asks what Buddhism, Christianity, and Islam have in common. What do you say?","They welcome people from many lands","They all began in the very same region","They are all tied to one family","They all worship the same founder"),
+    histLevel(2,"A student asks why Buddhist temples in China look different from those in India. What do you say?","Builders mixed in their own local styles","Chinese law banned all temples","Indian monks built every temple in China","Buddhism does not allow buildings"),
+    histLevel(3,"A historian claims Buddhism changed as it reached China. Which evidence best supports this?","Chinese Buddhist art showing local styles","Buddhist texts that stayed only in India forever","Silk sold in the markets of India","Temples in India built before the Buddha"),
+    histLevel(3,"Your travel diary describes India for the Chinese emperor. What is a limit of it as a source?","It shows India through one traveler’s eyes","It was written centuries after the trip ended","It describes only China, not India","Its writer never left China at all"),
+    histLevel(3,"Someone says a faith can only grow if a ruler forces it on people. Which evidence would challenge this?","Faiths spread by monks, merchants, and teachers","A ruler ordering a whole conquered city to convert","An army bringing a faith into a land","A law that bans all other beliefs"),
+    histLevel(3,"What would most likely happen to a faith that stayed only in its home region?","It would reach far fewer people","It would reach far more people","It would spread along trade routes","It would change faster than others")
+  ],
+  persia:[
+    histLevel(1,"A visitor asks how far your empire stretches. What do you say?","From Egypt to India","From Rome to China","From Greece to Spain","Only across Persia"),
+    histLevel(1,"A new official asks what a satrap is. What do you say?","A governor of a province","A soldier in the royal guard","A priest of the sun god","A merchant on the Royal Road"),
+    histLevel(1,"After you take Babylon, what do you do for the Jewish people who were held captive there?","Let them return home to Jerusalem","Keep them all as slaves forever","Send every one of them to fight in Greece","Force them to worship your gods"),
+    histLevel(2,"A general asks why you let conquered peoples keep their own religions. What do you say?","It makes them less likely to rebel","Persia has no religion of its own","Our army is too small to fight","My own priests ordered me to do it"),
+    histLevel(2,"A messenger rides the Royal Road, changing horses at each station. What is the main advantage?","News crosses the empire in days","Messengers never need to rest at all","Armies no longer need horses","Trade on the road is stopped"),
+    histLevel(2,"Your empire collects taxes from every province. What do the taxes pay for?","Armies, roads, and officials","Gifts for the Greek cities","Nothing; they are simply stored","Only the king’s private feasts"),
+    histLevel(3,"A historian claims the Persians respected local customs. Which evidence best supports this?","A record of Cyrus restoring local temples","Records of Persian soldiers marching to war","A map of the Royal Road","Greek stories calling Persians cruel"),
+    histLevel(3,"Greek writers called the Persian kings proud and cruel. Why should a historian be careful with this?","The Greeks were Persia’s enemies","The Greeks never met any Persians","It was written by Persian kings","Greek writers always praised Persia"),
+    histLevel(3,"What would most likely happen if the satraps stopped obeying the king?","The empire could break into parts","The empire would grow much larger","Trade on the roads would double","The king would gain more power"),
+    histLevel(3,"A historian compares Persian rule with Assyrian rule, which was known for harsh punishments. Which statement is accurate?","Persia ruled more through tolerance than fear","Persia ruled only through fear and terror","Both empires let every city completely rule itself","Assyria was the more tolerant of the two")
+  ],
+  greece:[
+    histLevel(1,"A student asks who could vote in Athens. What do you say?","Free adult men who were citizens","Every person living in Athens","Only the richest family in the city","Women, men, and enslaved people"),
+    histLevel(1,"A student asks which philosopher taught your own teacher, Plato. What do you say?","Socrates","Homer","Pericles","Alexander"),
+    histLevel(1,"A visitor asks where Greek city-states sent ships to start new colonies. What do you say?","Around the Mediterranean Sea","Up the rivers of northern Europe","Along the coast of India","Only to the islands near Athens"),
+    histLevel(2,"After Alexander died, his generals split his empire. Which land did Ptolemy take?","Egypt","Persia","Greece","India"),
+    histLevel(2,"A student asks why the Greek city-states joined together in the wars against Persia. What do you say?","To face a common enemy","They were ruled by one king","Persia ordered them to unite","They had no armies of their own"),
+    histLevel(2,"A student asks why Greek ideas have spread as far as Egypt and India. What do you say?","Alexander’s conquests carried them","Greek merchants never left home","Egypt and India sent teachers to Greece","Persian kings banned Greek ideas"),
+    histLevel(3,"A historian claims Greek culture spread after Alexander’s conquests. Which evidence best supports this?","Greek-style cities and coins found in Egypt and Asia","Greek temples built in Athens","Persian palaces built long before Alexander was even born","Spartan soldiers training at home"),
+    histLevel(3,"You write that some people are slaves by nature. Why must historians read your views with care?","Writers reflect the beliefs of their time","You never wrote anything down at all","Everyone in Athens agreed with every word you wrote","Slavery did not exist in Athens"),
+    histLevel(3,"A historian compares Athens and Sparta. Which statement is accurate?","Athens valued debate; Sparta valued military training","Sparta valued debate; Athens valued military training","Both cities were ruled by the same king","Neither city had any citizens at all"),
+    histLevel(3,"What would most likely happen to democracy in Athens if few citizens came to the assembly?","A small group could make all decisions","Every citizen would gain more power","The city would get an emperor at once","Sparta would hold the votes for Athens")
+  ],
+  imperialChina:[
+    histLevel(1,"A scholar asks what title your ruler took after uniting China. What do you say?","First Emperor","Son of the Buddha","King of the Zhou","Great Satrap"),
+    histLevel(1,"A builder asks what the emperor ordered built to protect the north. What do you say?","Long defensive walls","A royal road to Persia","Huge pyramids for tombs","A canal to India"),
+    histLevel(1,"A student asks what Confucius taught about ruling well. What do you say?","Rulers should set a good example","Rulers should use harsh punishments","Rulers should avoid all duties","Rulers should obey the farmers"),
+    histLevel(2,"An official asks why all of China must now use the same written characters. What do you say?","So orders can be read everywhere","So no one can ever learn to read","So merchants can avoid taxes","So each state can keep its own"),
+    histLevel(2,"A Daoist hermit says rulers should do less and follow nature. How does your Legalism differ?","It wants strict laws and harsh punishments","It agrees completely that rulers should do less","It says nature should rule the land","It says there should be no rulers"),
+    histLevel(2,"Under the Zhou, lords ruled their own lands for the king. What problem did this cause?","Lords grew strong and fought each other","The king had far too much power over them","There were no lords at all","Farmers ruled over the lords"),
+    histLevel(3,"A historian claims the Qin ruled harshly. Which evidence best supports this?","Records of burned books and forced labor","Coins that looked the same all across China","Roads connecting distant regions","Walls built along the northern border"),
+    histLevel(3,"Later Han historians wrote that the Qin were cruel. Why should a historian be careful with this?","The Han took over and wanted to look better","The Han never wrote about the Qin","Han historians lived long before the Qin did","The Qin wrote the Han histories"),
+    histLevel(3,"What would most likely happen if the Qin made laws harsher while the people suffered from hunger?","People would rebel against the emperor","People would thank the emperor","The empire would grow more and more peaceful","Farmers would grow more rice"),
+    histLevel(3,"A historian compares Zhou and Qin rule. Which statement is accurate?","The Qin ruled more strictly from the center","The Zhou ruled far more strictly than the Qin","Both let lords rule with no king","The Qin gave lords more power")
+  ],
+  compareEmpires:[
+    histLevel(1,"The emperor asks what animals you saw in Ferghana that he wants for his army. What do you say?","Strong, fast horses","War elephants","Camels for the desert","Trained hunting dogs"),
+    histLevel(1,"The emperor asks which road your journey helped open between China and the West. What do you say?","The Silk Road","The Royal Road","The Appian Way","The Grand Canal"),
+    histLevel(1,"A young official asks what an empire is. What do you say?","One ruler governing many lands and peoples","A single city that governs only itself and no others","A village ruled by its elders","A group of traders on a road"),
+    histLevel(2,"You saw empires let local leaders keep some power. Why might rulers do this?","It is hard to rule faraway lands directly","Local leaders never paid any taxes at all","Rulers did not want any power","Faraway lands had no people"),
+    histLevel(2,"Why do large empires build roads and post stations?","To move armies, messages, and goods","To keep all of the people from traveling","To mark where farming ends","To stop trade with outsiders"),
+    histLevel(2,"You were held captive by the Xiongnu nomads for years. Why does the Han care so much about them?","They raid Han lands from the north","They are Han farmers living in the south","They rule the Roman Empire","They are monks spreading Buddhism"),
+    histLevel(3,"A historian claims empires used religion to justify power. Which evidence best supports this?","Rulers calling themselves chosen by gods or Heaven","Roads built from one end of the empire to the other","Taxes collected from farmers","Armies guarding the border"),
+    histLevel(3,"Your reports describe foreign lands for the Han emperor. What is a limit of them as a source?","They show other lands from a Han point of view","They were written by the rulers of Rome","They describe only the Han capital","They were written a thousand years after the trip"),
+    histLevel(3,"Someone says every empire ruled by force alone. Which evidence would challenge this?","Empires that won loyalty with tolerance and trade","Armies that conquered many new lands in a few years","Walls built to keep out raiders","Rulers who punished rebels harshly"),
+    histLevel(3,"What would most likely happen to an empire whose rulers lost the support of their officials?","It would become harder to govern","It would become much easier to rule","It would conquer more lands at once","Its taxes would double right away")
+  ],
+  rome:[
+    histLevel(1,"A new recruit asks what a legion is. What do you say?","A large unit of Roman soldiers","A Roman law about taxes","A road built by the army","A temple built for all the Roman gods"),
+    histLevel(1,"A recruit asks which language is spoken across the western empire. What do you say?","Latin","Greek","Persian","Arabic"),
+    histLevel(1,"A recruit asks why the army builds roads everywhere. What do you say?","So soldiers can march quickly","So farmers can avoid paying taxes","So enemies can reach Rome faster","So the roads can be sold to traders"),
+    histLevel(2,"Conquered people could become Roman citizens. Why would this help the empire?","It made them more loyal to Rome","It meant they paid no taxes at all","It let them leave the empire","It ended the need for an army"),
+    histLevel(2,"A merchant asks how Roman law helps trade across the empire. What do you say?","The same laws apply in every province","Each town has completely different rules","Only soldiers may buy and sell goods","Trade is banned outside the city of Rome"),
+    histLevel(2,"A recruit asks why Rome keeps so many soldiers on the frontier. What do you say?","To defend the borders from raids","To attack the city of Rome itself","To collect silk from Han China","To keep farmers from leaving Italy"),
+    histLevel(3,"A historian claims Roman roads held the empire together. Which evidence best supports this?","Roads linking Rome to its farthest provinces","A handful of roads found only close to Rome itself","Roman coins found in a single city","Paintings of emperors in palaces"),
+    histLevel(3,"A Roman historian praises the emperor who pays him. Why should a historian be careful with this source?","He may flatter the emperor to keep his pay","He was known as the emperor’s greatest enemy","He wrote nothing about the emperor","He lived in Han China"),
+    histLevel(3,"What would most likely happen if the army stopped guarding the frontier?","Raiders could cross into the empire","Trade with Han China would end at once","The empire would grow much larger","Rome would become a republic again"),
+    histLevel(3,"A historian compares the Roman Republic with the Roman Empire. Which statement is accurate?","The Republic elected leaders; the Empire had one ruler","The Empire elected leaders; the Republic had one ruler","Both were ruled by the same family of kings","Neither had any laws or any army")
+  ],
+  romeHan:[
+    histLevel(1,"A clerk asks what you studied to pass your exams. What do you say?","The Confucian classics","Legalist books of punishment","Roman law codes","Buddhist texts from India"),
+    histLevel(1,"A merchant asks which product China is most famous for sending west. What do you say?","Silk","Glass","Olive oil","Wool"),
+    histLevel(1,"A clerk asks which city is the capital of the Han. What do you say?","Luoyang","Rome","Babylon","Athens"),
+    histLevel(2,"Rome uses legions and the Han use large armies on their borders. What does this show?","Both had to defend long frontiers","Neither empire had any enemies","Only Rome had to guard borders","Both empires were peaceful islands"),
+    histLevel(2,"A clerk asks why the Han prefer officials chosen by tests. What do you say?","Tests pick people for skill, not family","Tests let the rich buy every job","Tests were the only way to read","Tests kept every scholar far away from power"),
+    histLevel(2,"Merchants tell you about Rome, but no Han official has been there. Why not?","Parthia sits between and controls trade","Rome forbids all trade with China","China and Rome are right next to each other","The Silk Road ends in India"),
+    histLevel(3,"A historian claims Rome and Han China traded indirectly. Which evidence best supports this?","Chinese silk worn by rich Romans","Han coins found only in Luoyang","Roman roads built in Britain","Han officials who lived in the city of Rome"),
+    histLevel(3,"Roman writers complain that buying silk wastes money. Why might they say this?","Rome sent so much gold east to buy it","Silk was cheap and easy to find","Romans could not wear any cloth","The Han emperors gave all their silk away for free"),
+    histLevel(3,"A historian compares how Rome and the Han chose officials. Which statement is accurate?","The Han used tests; Rome relied on rank and wealth","Rome used tests; the Han relied on rank and wealth","Both chose officials by drawing names","Neither empire had any officials"),
+    histLevel(3,"What would most likely happen to the Han if officials were chosen only for their family?","Government work would be done less well","Officials would become far more skilled","The exams would become much harder","Rome would invade the Han at once")
+  ],
+  womenAncient:[
+    histLevel(1,"A student asks what famous history you finished for your brother. What do you say?","The history of the Han dynasty","A history of the Roman Empire in the west","A book of Buddhist teachings","The laws of the Qin dynasty"),
+    histLevel(1,"A student asks what your book Lessons for Women teaches. What do you say?","How women should behave in the family","How women can lead the emperor’s armies in war","How women can pass the exams","How women can rule the empire"),
+    histLevel(1,"A visitor asks if girls in Han China usually go to school. What is true?","Few girls got an education","All girls went to state schools","Girls took the official exams","Girls studied in Rome"),
+    histLevel(2,"You are an educated woman who advises the empress. What does this show?","Some elite women gained influence","All women held government jobs","Women could never read or write","Only men could ever advise rulers"),
+    histLevel(2,"A Roman visitor says wealthy Roman women can own businesses. What does this show?","Some Roman women had economic power","No Roman woman could ever own any property","Roman women ruled the Senate","Every Roman woman was rich"),
+    histLevel(2,"A student asks how a poor farm woman’s life differs from an empress’s. What do you say?","She works the fields and has little power","She has even more power than the empress does","Their lives are exactly the same","She takes the official exams"),
+    histLevel(3,"A historian claims elite Han women could gain influence. Which evidence best supports this?","Records of empresses guiding young emperors","Farm tools found in a village house","A law banning women from the exams","A painting of a soldier riding a horse into battle"),
+    histLevel(3,"Your Lessons for Women was written by an elite woman. What is a limit of it as a source?","It may not show the lives of poor women","It was written by a Roman man","It says nothing about women at all","It was written a thousand years after the Han"),
+    histLevel(3,"A historian compares women in Rome and Han China. Which statement is accurate?","In both, men held power but some women had influence","In both empires, women held all of the government offices","Roman women voted, but Han women could not","Han women ruled, but Roman women could not"),
+    histLevel(3,"Under Confucian family rules, what would most likely happen to a Han widow with no sons?","She would depend on her husband’s family","She would become the head of the whole government","She would join the army as a general","She would gain all of the family’s land")
+  ]
+};
+const HISTORY4_BUILT_IN_LEVELS = {"portableBelief":[1,1,2,1],"hinduBuddhism":[1,1,1,2],"judaismChristianity":[1,1,1,1],"islam":[1,1,1,1],"comparePortable":[2,2,1,3],"persia":[1,1,2,1],"greece":[1,1,2,1],"imperialChina":[1,2,1,1],"compareEmpires":[2,1,2,3],"rome":[1,1,1,1],"romeHan":[1,1,2,2],"womenAncient":[1,2,2,3]};
+Object.entries(HISTORY4_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEach((level, index) => { const question = HISTORY4_QUESTIONS[skillId]?.[index]; if (question && question.difficulty == null) question.difficulty = level; }));
+Object.entries(HISTORY4_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { HISTORY4_QUESTIONS[skillId] = [...(HISTORY4_QUESTIONS[skillId] || []), ...questions]; });
 const BIO_UNIT1 = [
   {id:'cellsOrganisms',name:'Understand: Cells and organisms',lesson:'Cells are the basic unit of life. Cells form tissues, tissues form organs, organs form systems, and systems work together in an organism.'},
   {id:'cellPartsU',name:'Understand: Cell parts and functions',lesson:'Each cell part has a function, such as the nucleus directing the cell and mitochondria releasing energy.'},
@@ -781,7 +931,7 @@ const PLURAL_QUESTIONS = {
     q('Which noun is plural?','foxes','fox','box','glass'),
     q('What is the plural of class?','classes','classs','classies',"class's"),
     q('What is the plural of potato?','potatoes','potatos','potatoies','potatoz'),
-    q('Which noun needs -es to make it plural?','watch','pen','cup','road')
+    q('Which noun needs -es to make it plural?',"watch","plant","chair","robot")
   ],
   commonProper:[
     q('Which word is a proper noun? We visited Chicago last summer.','Chicago','summer','visited','last'),
@@ -792,16 +942,16 @@ const PLURAL_QUESTIONS = {
     q('Which sentence contains a proper noun?','Our class read about Harriet Tubman.','Our class read about a brave woman.','Our class read about a famous leader.','Our class read about the past.'),
     q('Which of these is a proper noun?','Mexico','country','mountain','ocean'),
     q('In "The dog named Max ran home," which word is the proper noun?','Max','dog','home','ran'),
-    q('Which noun should begin with a capital letter?','Thursday','season','morning','week'),
-    q('A proper noun names a specific person, place, or thing. Which is the best example?','Mount Everest','mountain','hill','peak')
+    q('Which noun should begin with a capital letter?',"Thursday","weekend","birthday","vacation"),
+    q('A proper noun names a specific person, place, or thing. Which is the best example?',"Mount Everest","a tall mountain","the highest peak","a snowy volcano")
   ],
   concreteAbstract:[
     q('Which noun is concrete?','pencil','freedom','honesty','courage'),
-    q('Which noun is abstract?','friendship','bicycle','mountain','lantern'),
+    q('Which noun is abstract?',"friendship","playground","skateboard","toothbrush"),
     q('Which noun in the sentence is abstract? The children felt great joy at the parade.','joy','children','parade','great'),
     q('Which noun can you detect with your five senses?','thunder','justice','loyalty','wisdom'),
-    q('Which sentence has an abstract noun?','Her kindness made everyone smile.','Her backpack fell on the floor.','The puppy chased the ball.','He drank cold water.'),
-    q('Which noun is abstract?','excitement','sandwich','window','blanket'),
+    q('Which sentence has an abstract noun?',"Her kindness made everyone smile.","Her backpack fell onto the kitchen floor.","The puppy chased the ball around.","He drank a glass of cold water."),
+    q('Which noun is abstract?',"excitement","toothpaste","sunglasses","motorcycle"),
     q('Which noun is concrete?','bakery','patience','curiosity','pride'),
     q('Is the noun "freedom" concrete or abstract?','Abstract: it names an idea','Concrete: you can touch it','Proper: it names a place','Plural: it names more than one'),
     q('Which noun is concrete?','mitten','hope','fear','talent'),
@@ -829,18 +979,18 @@ const PLURAL_QUESTIONS = {
     q('What is the singular of oxen?','ox','oxe','oxn','oxens'),
     q('What is the singular of children?','child','childe','childs','childre'),
     q('Which sentence is correct?','Three women waited in line.','Three womans waited in line.','Three womens waited in line.','Three womanes waited in line.'),
-    q('What is the plural of person?','people','persons only','peoples','personen')
+    q('What is the plural of person?',"people","peoplen","personen","personses")
   ],
   basePlurals:[
     q('What is the plural of sheep?','sheep','sheeps','sheepes','sheepies'),
     q('What is the plural of deer?','deer','deers','deeres','deerses'),
     q('The hunter saw five ___ in the woods.','deer','deers','deeres','deerses'),
     q('Which sentence is correct?','Two fish swam by.','Two fishs swam by.','Two fishies swam by.','Two fishses swam by.'),
-    q('Which word has the same singular and plural form?','series','book','leaf','tooth'),
+    q('Which word has the same singular and plural form?',"series","bridge","kitten","window"),
     q('What is the plural of moose?','moose','mooses','meese','moosen'),
     q('Which sentence is correct?','We caught six salmon at the river.','We caught six salmons at the river.','We caught six salmones at the river.','We caught six salmonen at the river.'),
     q('What is the plural of aircraft?','aircraft','aircrafts','aircrafves','aircraften'),
-    q('Which noun stays the same in the plural?','species','box','child','mouse'),
+    q('Which noun stays the same in the plural?',"species","dolphin","teacher","pumpkin"),
     q('One sheep is in the barn. Five ___ are in the field.','sheep','sheeps','sheepes','sheepen')
   ],
   mutantPlurals:[
@@ -856,23 +1006,23 @@ const PLURAL_QUESTIONS = {
     q('My shoes hurt my ___.','feet','foots','foot','feets')
   ],
   foreignPlurals:[
-    q('What is the plural of cactus?','cacti','cactuses only','cactus','cactis'),
+    q('What is the plural of cactus?',"cacti","cactae","cactis","cactus"),
     q('What is the plural of criterion?','criteria','criterions','criteriones','criterias'),
-    q('What is the plural of fungus?','fungi','funguses only','fungus','fungis'),
+    q('What is the plural of fungus?',"fungi","fungae","fungis","fungus"),
     q('What is the plural of alumnus?','alumni','alumnuses','alumnus','alumnis'),
-    q('What is the plural of nucleus?','nuclei','nucleuses only','nucleus','nucleis'),
-    q('What is the plural of phenomenon?','phenomena','phenomenons only','phenomenones','phenomenas'),
+    q('What is the plural of nucleus?',"nuclei","nucleae","nucleis","nucleus"),
+    q('What is the plural of phenomenon?',"phenomena","phenomenae","phenomenones","phenomenas"),
     q('What is the plural of analysis?','analyses','analysises','analysi','analysis'),
     q('What is the plural of crisis?','crises','crisises','crisi','crisis'),
     q('What is the plural of bacterium?','bacteria','bacteriums','bacteriae','bacterias'),
-    q('What is the plural of radius?','radii','raduises','radiuses only','radius')
+    q('What is the plural of radius?',"radii","radiae","radis","radius")
   ],
   pluralReview:[
     q('What is the plural of knife?','knives','knifes','knife','knivies'),
-    q('What is the plural of child?','children','childs','childes','child'),
+    q('What is the plural of child?',"children","childs","childes","childrens"),
     q('What is the plural of mouse?','mice','mouses','mouse','mices'),
     q('What is the plural of sheep?','sheep','sheeps','sheepes','sheepies'),
-    q('What is the plural of cactus?','cacti','cactis','cactus','cactuses only'),
+    q('What is the plural of cactus?',"cacti","cactis","cactus","cactae"),
     q('Which sentence uses all the plurals correctly?','The women saw geese near the lakes.','The womans saw geese near the lakes.','The women saw gooses near the lakes.','The womens saw geese near the lakes.'),
     q('Which word is spelled correctly?','wolves','wolfs','wolfes','wolvs'),
     q('Which noun has the same singular and plural form?','deer','tooth','ox','leaf'),
@@ -907,9 +1057,9 @@ const VERB_QUESTIONS = {
   ],
   verbTense:[
     q('Which sentence is in the past tense?','We watched a movie.','We watch a movie.','We will watch a movie.','We are watching a movie.'),
-    q('Which sentence is in the future tense?','I will visit my aunt.','I visited my aunt.','I visit my aunt.','I visiting my aunt.'),
+    q('Which sentence is in the future tense?',"I will visit my aunt.","I visited my aunt.","I have visited my aunt.","I visit my aunt every day."),
     q('Yesterday, Sam ___ the fence.','painted','paints','will paint','painting'),
-    q('Tomorrow, we ___ to the zoo.','will go','went','going','gone'),
+    q('Tomorrow, we ___ to the zoo.',"will go","have gone","were going","had gone"),
     q('Right now, the cat ___ on the windowsill.','sits','sat','will sat','sitted'),
     q('Which verb is in the present tense?','plays','played','will play','had played'),
     q('Change to past tense: "She walks to the park."','She walked to the park.','She will walk to the park.','She walks to the park.','She walking to the park.'),
@@ -922,7 +1072,7 @@ const VERB_QUESTIONS = {
     q('Which word is a linking verb? The soup smells delicious.','smells','soup','delicious','The'),
     q('Which word is a helping verb? She has finished her essay.','has','finished','essay','She'),
     q('Which verb is a linking verb in "The sky became dark"?','became','sky','dark','The'),
-    q('Which sentence uses a linking verb?','The pie looks tasty.','The pie burned.','Mom baked a pie.','We ate the pie.'),
+    q('Which sentence uses a linking verb?',"The pie looks tasty.","The pie burned.","Mom baked a pie.","We ate the whole pie fast."),
     q('Which is a helping verb?','will','run','happy','quickly'),
     q('In "They are playing outside," which word is the helping verb?','are','They','playing','outside'),
     q('In "Leo kicked the ball," what kind of verb is kicked?','action verb','linking verb','helping verb','noun'),
@@ -942,10 +1092,10 @@ const VERB_QUESTIONS = {
     q('Which sentence is correct?','The bell rang loudly.','The bell ringed loudly.','The bell rung loudly yesterday.','The bell ring loudly.')
   ],
   simpleAspect:[
-    q('Which sentence is in the simple present?','Maya reads every night.','Maya is reading.','Maya has read.','Maya was reading.'),
+    q('Which sentence is in the simple present?',"Maya reads every night.","Maya is reading every night.","Maya has read every night.","Maya was reading last night."),
     q('Which sentence is in the simple past?','The team won the game.','The team is winning the game.','The team has won the game.','The team will win the game.'),
     q('Which sentence is in the simple future?','We will visit Grandma.','We visited Grandma.','We are visiting Grandma.','We have visited Grandma.'),
-    q('Simple present often shows a habit. Which sentence shows a habit?','He brushes his teeth every morning.','He is brushing his teeth.','He brushed his teeth.','He will brush his teeth.'),
+    q('Simple present often shows a habit. Which sentence shows a habit?',"He brushes his teeth every morning.","He is brushing his teeth right now.","He brushed his teeth this morning.","He will brush his teeth after lunch."),
     q('Choose the simple past: Last week, we ___ a fort.','built','build','are building','have built'),
     q('Which verb is simple future?','will bake','baked','is baking','bakes'),
     q('Water ___ at 100 degrees Celsius. (a fact)','boils','boiled','is boiling','will have boiled'),
@@ -955,50 +1105,50 @@ const VERB_QUESTIONS = {
   ],
   progressiveAspect:[
     q('Which sentence uses the present progressive?','Ana is writing a letter.','Ana writes a letter.','Ana wrote a letter.','Ana has written a letter.'),
-    q('Which sentence uses the past progressive?','They were playing outside.','They played outside.','They are playing outside.','They will play outside.'),
-    q('Which sentence uses the future progressive?','I will be studying at noon.','I study at noon.','I studied at noon.','I am studying at noon.'),
-    q('Right now, the kids ___ in the pool.','are swimming','swam','will swim','have swum'),
-    q('At 8 o\'clock last night, I ___ dinner.','was cooking','cook','am cooking','will cook'),
-    q('Progressive verbs use a form of be plus which ending?','-ing','-ed','-s','-en'),
-    q('Which verb phrase is progressive?','is running','runs','ran','has run'),
-    q('Tomorrow at noon, we ___ on the bus.','will be riding','rode','ride','have ridden'),
-    q('While I ___, the phone rang.','was sleeping','slept','sleep','will sleep'),
-    q('Which sentence shows an action in progress right now?','The baby is crying.','The baby cried.','The baby will cry.','The baby cries.')
+    q('Which sentence uses the past progressive?',"They were playing outside.","They have played outside.","They are playing outside.","They will have played outside."),
+    q('Which sentence uses the future progressive?',"I will be studying at noon.","I will have studied at noon.","I was studying at noon.","I am studying at noon."),
+    q('Right now, the kids ___ in the pool.',"are swimming","have swum","will swim","had been swimming"),
+    q('At 8 o\'clock last night, I ___ dinner.',"was cooking","am cooking","will cook","have been cooking"),
+    q('Progressive verbs use a form of be plus which ending?',"-ing","-ed","-en","-est"),
+    q('Which verb phrase is progressive?',"is running","runs","ran","will have run"),
+    q('Tomorrow at noon, we ___ on the bus.',"will be riding","will have ridden","rode","ride"),
+    q('While I ___, the phone rang.',"was sleeping","slept","sleep","have been sleeping"),
+    q('Which sentence shows an action in progress right now?',"The baby is crying.","The baby cried.","The baby will cry.","The baby has cried all day.")
   ],
   perfectAspect:[
-    q('Which sentence uses the present perfect?','I have finished my project.','I finish my project.','I am finishing my project.','I finished my project.'),
+    q('Which sentence uses the present perfect?',"I have finished my project.","I was finishing my project.","I am finishing my project.","I finished my project."),
     q('Which sentence uses the past perfect?','She had left before we arrived.','She leaves before we arrive.','She has left before we arrive.','She will leave before we arrive.'),
-    q('Which sentence uses the future perfect?','By Friday, I will have read the book.','By Friday, I read the book.','By Friday, I had read the book.','By Friday, I am reading the book.'),
-    q('Perfect verbs use a form of have plus a ___.','past participle','base verb','-ing verb','noun'),
+    q('Which sentence uses the future perfect?',"By Friday, I will have read the book.","By Friday, I read the book.","By Friday, I had read the book.","By Friday, I will be reading the book."),
+    q('Perfect verbs use a form of have plus a ___.',"past participle","present participle","base verb","-ing verb"),
     q('We ___ lived here for five years.','have','has','had been','is'),
     q('Before the movie started, we ___ our seats.','had found','have found','will find','are finding'),
     q('Which is the past participle of eat?','eaten','ate','eating','eats'),
-    q('By next June, they ___ the house.','will have built','built','have build','are building'),
+    q('By next June, they ___ the house.',"will have built","will be building","have built","are building"),
     q('Which verb phrase is present perfect?','has walked','walked','is walking','had walked'),
     q('Which sentence is correct?','He has seen that movie twice.','He has saw that movie twice.','He have seen that movie twice.','He has see that movie twice.')
   ],
   perfectProgressive:[
-    q('Which sentence uses the present perfect progressive?','She has been reading for an hour.','She is reading for an hour.','She had read for an hour.','She reads for an hour.'),
+    q('Which sentence uses the present perfect progressive?',"She has been reading for an hour.","She had read for an hour.","She is reading for an hour.","She was reading for an hour or so."),
     q('Which sentence uses the past perfect progressive?','They had been waiting for ages.','They have been waiting for ages.','They were waiting for ages.','They waited for ages.'),
-    q('Which sentence uses the future perfect progressive?','By noon, I will have been working for four hours.','By noon, I will work for four hours.','By noon, I have worked four hours.','By noon, I was working four hours.'),
-    q('Perfect progressive verbs use have + been + a verb ending in what?','-ing','-ed','-s','-er'),
+    q('Which sentence uses the future perfect progressive?',"By noon, I will have been working for four hours.","By noon, I will be working for four hours.","By noon, I had been working for four hours.","By noon, I will have worked for four whole hours."),
+    q('Perfect progressive verbs use have + been + a verb ending in what?',"-ing","-ed","-en","-est"),
     q('It ___ raining all morning, and it is still raining.','has been','is being','had','was be'),
     q('When Dad got home, I ___ for two hours.','had been studying','have been studying','will be studying','am studying'),
     q('We ___ practicing since 3 o\'clock.','have been','has been','are','were being'),
-    q('Which verb phrase is perfect progressive?','has been singing','has sung','is singing','sang'),
-    q('Next month, she ___ here for a year.','will have been working','has working','is worked','had work'),
+    q('Which verb phrase is perfect progressive?',"has been singing","had already sung","is singing","sang"),
+    q('Next month, she ___ here for a year.',"will have been working","will be working","had been working","would have been working"),
     q('Which sentence is correct?','He has been running since sunrise.','He has been run since sunrise.','He have been running since sunrise.','He has being running since sunrise.')
   ],
   tenseAspectTime:[
     q('Which sentence shows an action that finished before another past action?','I had eaten before she called.','I eat before she called.','I was eating before she called.','I will eat before she called.'),
-    q('Which sentence shows an action that began in the past and continues now?','We have lived here since 2020.','We lived here since 2020.','We live here since 2020.','We will live here since 2020.'),
+    q('Which sentence shows an action that began in the past and continues now?',"We have lived here since 2020.","We lived here since 2020.","We had been living here in 2020.","We will live here since 2020."),
     q('Which sentence keeps the tense consistent?','She opened the door and walked inside.','She opened the door and walks inside.','She opens the door and walked inside.','She will open the door and walked inside.'),
     q('Choose the best verb: By the time we arrived, the show ___.','had started','starts','will start','is starting'),
-    q('Choose the best verb: I ___ here since breakfast.','have been waiting','am waited','waited','will have wait'),
+    q('Choose the best verb: I ___ here since breakfast.',"have been waiting","had been waiting","will be waiting","would have been waiting"),
     q('Choose the best verb: At this moment, the chef ___ soup.','is stirring','stirred','had stirred','will have stirred'),
-    q('Which sentence is about a future action in progress?','She will be flying home at noon.','She flew home at noon.','She has flown home.','She is flying home.'),
-    q('Which sentence has a tense shift error?','Yesterday he runs to school and was late.','Yesterday he ran to school and was late.','Today he runs to school and is early.','Tomorrow he will run and be early.'),
-    q('Which sentence says the action will be complete by a future time?','By May, I will have finished.','By May, I finished.','By May, I am finishing.','By May, I had finished.'),
+    q('Which sentence is about a future action in progress?',"She will be flying home at noon.","She flew home at noon.","She has been flying home since noon.","She is flying home."),
+    q('Which sentence has a tense shift error?',"Yesterday he runs to school and was late.","Yesterday he ran to school and was late.","Today he runs to school and is early.","Tomorrow he will run to school and be early."),
+    q('Which sentence says the action will be complete by a future time?',"By May, I will have finished.","By May, I finished.","By May, I will be finishing it.","By May, I had finished."),
     q('Choose the best verb: While Mom cooked, I ___ the table.','was setting','set now','will set','have setting')
   ],
   modalVerbs:[
@@ -1008,12 +1158,148 @@ const VERB_QUESTIONS = {
     q('Which modal shows a possibility? It ___ rain tonight.','might','must','shall','did'),
     q('Which modal gives permission? ___ I borrow your pen?','May','Will','Must','Did'),
     q('Which sentence is correct?','She can play the piano.','She can plays the piano.','She cans play the piano.','She can playing the piano.'),
-    q('Which modal gives advice? You ___ drink more water.','should','can','did','are'),
+    q('Which modal gives advice? You ___ drink more water.',"should","did not","might","are"),
     q('A modal verb is followed by the ___ form of the verb.','base','past','-ing','-s'),
     q('Which sentence is correct?','We should leave now.','We should to leave now.','We should leaving now.','We should left now.'),
     q('Which modal is the strongest (a rule or must-do)?','must','might','could','may')
   ]
 };
+// Phase 1 English banks: difficulty tags (1-3) for the built-in questions, and 4 harder questions per lesson.
+const qLevel = (difficulty, prompt, correct, ...wrong) => ({...q(prompt, correct, ...wrong), difficulty});
+const PLURAL_EXTRA_QUESTIONS = {
+  identifyNouns:[
+    qLevel(2,"Which sentence has exactly three nouns?","The girl put her book on the desk.","The girl quickly ran to her desk.","She sang loudly and happily all day.","The tall boy and his sister laughed."),
+    qLevel(3,"Which word is used as a noun? We went for a long swim.","swim","went","long","for"),
+    qLevel(3,"In which sentence is “light” used as a noun?","Turn on the light, please.","This box is very light.","We light the candles at dinner.","She packed a light jacket."),
+    qLevel(2,"Which sentence has a noun that names an idea?","Their courage surprised the coach.","The team bus arrived at the school.","The coach blew a loud whistle.","Our dog sleeps under the table.")
+  ],
+  singularPlural:[
+    qLevel(2,"Which sentence uses the correct plurals?","The ponies ate apples from two bushes.","The ponys ate apples from two bushes.","The ponies ate apples from two bushs.","The ponyes ate apples from two bushes."),
+    qLevel(2,"What is the plural of monkey?","monkeys","monkies","monkeyes","monkeis"),
+    qLevel(3,"Which sentence needs a correction?","Three wishs came true for the girl.","Three wishes came true for the girl.","Two lunches sat on the table.","The babies napped after lunch."),
+    qLevel(3,"Fix the sentence: “The family bought two new sofaes and three lamps.”","The family bought two new sofas and three lamps.","The family bought two new sofaies and three lamps.","The family bought two new sofas and three lampes.","The family bought two new sofa and three lamps.")
+  ],
+  commonProper:[
+    qLevel(2,"Which sentence capitalizes every proper noun correctly?","We flew to Florida on Monday.","We flew to florida on Monday.","We flew to Florida on monday.","We Flew to Florida on Monday."),
+    qLevel(2,"Which group of words is all proper nouns?","Ohio, Friday, Ms. Diaz","Ohio, river, Ms. Diaz","state, Friday, teacher","city, holiday, teacher"),
+    qLevel(3,"Which sentence needs a capital letter fixed?","Our class visited the grand canyon.","Our class visited a big canyon.","Our class visited Arizona in May.","Our teacher, Mr. Ortiz, drove the bus."),
+    qLevel(3,"Fix the sentence: “On saturday, my Aunt took me to the Museum.”","On Saturday, my aunt took me to the museum.","On saturday, my aunt took me to the museum.","On Saturday, my Aunt took me to the Museum.","On Saturday, My Aunt took me to the Museum.")
+  ],
+  concreteAbstract:[
+    qLevel(2,"Which word is an abstract noun made from the adjective “brave”?","bravery","bravely","braver","braving"),
+    qLevel(2,"Which noun is abstract? The students showed respect for the visitor.","respect","students","visitor","showed"),
+    qLevel(3,"Which sentence has one concrete noun and one abstract noun?","The gift filled her with joy.","The gift was in the box.","Her joy turned into pride.","The box and the shiny gift fell over."),
+    qLevel(3,"Which abstract noun best completes the sentence? “Winning the race filled Leo with ___.”","pride","medals","sneakers","trophies")
+  ],
+  fToVes:[
+    qLevel(2,"What is the plural of calf?","calves","calfs","calfes","calvs"),
+    qLevel(2,"Which sentence uses the correct plurals?","The wolves hid behind the shelves.","The wolfs hid behind the shelves.","The wolves hid behind the shelfs.","The wolfes hid behind the shelves."),
+    qLevel(3,"Which noun keeps its f in the plural?","chief","loaf","wife","shelf"),
+    qLevel(3,"Fix the sentence: “The thiefs took both of our knifes.”","The thieves took both of our knives.","The thieves took both of our knifes.","The thiefs took both of our knives.","The thiefes took both of our knives.")
+  ],
+  enPlurals:[
+    qLevel(2,"Which sentence is correct?","The men and women cheered.","The mens and women cheered.","The men and womans cheered.","The mans and women cheered."),
+    qLevel(2,"What is the singular of women?","woman","women","womans","womon"),
+    qLevel(3,"Which sentence needs a correction?","The childrens played with the oxen.","The children played next to the oxen.","The men fed the oxen hay.","Two women led the children home."),
+    qLevel(3,"Fix the sentence: “Two womans and three childs waited for the bus.”","Two women and three children waited for the bus.","Two women and three childs waited for the bus.","Two womans and three children waited for the bus.","Two womens and three childrens waited for the bus.")
+  ],
+  basePlurals:[
+    qLevel(2,"Which sentence is correct?","The farmer counted twelve sheep.","The farmer counted twelve sheeps.","The farmer counted twelve sheepes.","The farmer counted twelve sheepen."),
+    qLevel(2,"Which noun is the same in the singular and the plural?","trout","goose","wolf","mouse"),
+    qLevel(3,"Which sentence needs a correction?","Many deers ran across the road.","Many deer ran across the road.","Two moose drank from the cold lake.","We saw three salmon jump."),
+    qLevel(3,"Fix the sentence: “We saw four mooses and many sheeps at the farm.”","We saw four moose and many sheep at the farm.","We saw four mooses and many sheep at the farm.","We saw four moose and many sheeps at the farm.","We saw four meese and many sheep at the farm.")
+  ],
+  mutantPlurals:[
+    qLevel(2,"Which sentence is correct?","The geese hissed at the mice.","The gooses hissed at the mice.","The geese hissed at the mouses.","The geeses hissed at the mices."),
+    qLevel(2,"What is the singular of teeth?","tooth","teeth","tooths","teethe"),
+    qLevel(3,"Which sentence needs a correction?","My two front tooths are loose.","My two front teeth are loose.","Both of my feet are cold and wet.","The mice ran past my feet."),
+    qLevel(3,"Fix the sentence: “The cat chased three mouses past the gooses.”","The cat chased three mice past the geese.","The cat chased three mice past the gooses.","The cat chased three mouses past the geese.","The cat chased three mices past the geeses.")
+  ],
+  foreignPlurals:[
+    qLevel(2,"What is the plural of stimulus?","stimuli","stimulae","stimulis","stimulus"),
+    qLevel(2,"Scientists collect data. What is the singular of data?","datum","datas","dati","datae"),
+    qLevel(3,"Which sentence uses the correct plural?","The scientists studied two fungi.","The scientists studied two fungis.","The scientists studied two fungae.","The scientists studied two funguss."),
+    qLevel(3,"Fix the sentence: “The team faced two crisises and checked three criterions.”","The team faced two crises and checked three criteria.","The team faced two crises and checked three criterions.","The team faced two crisises and checked three criteria.","The team faced two crisis and checked three criterias.")
+  ],
+  pluralReview:[
+    qLevel(2,"Which word is spelled correctly?","halves","halfs","halfes","halvs"),
+    qLevel(2,"Which noun forms its plural by changing its vowels?","tooth","deer","knife","cactus"),
+    qLevel(3,"Which sentence uses every plural correctly?","The children fed the geese and the sheep.","The childs fed the geese and the sheep.","The children fed the gooses and the sheep.","The children fed the geese and the sheeps."),
+    qLevel(3,"Which sentence needs a correction?","The elfs put loaves on the shelves.","The elves put loaves on the shelves.","The women put loaves on the shelves.","The men put two loaves on the shelf.")
+  ]
+};
+const VERB_EXTRA_QUESTIONS = {
+  verbIdentify:[
+    qLevel(2,"Which sentence has two verbs?","Leo laughed and clapped.","Leo and Mia laughed.","The happy boy laughed.","Leo laughed at the clown."),
+    qLevel(2,"Which word is the verb? The sunset was beautiful.","was","sunset","beautiful","The"),
+    qLevel(3,"In which sentence is “watch” used as a verb?","We watch the game every Sunday.","My watch stopped at noon.","He wore a gold watch.","The new watch was a gift from my dad."),
+    qLevel(3,"How many verbs are in this sentence? The dogs bark and jump when the doorbell rings.","3","1","2","4")
+  ],
+  verbAgreement:[
+    qLevel(2,"The puppies and their mother ___ in the barn.","sleep","sleeps","sleeping","is sleeping"),
+    qLevel(2,"Each of the students ___ a pencil.","has","have","having","are having"),
+    qLevel(3,"Which sentence needs a correction?","The box of crayons are on the desk.","The box of crayons is on the desk.","The boxes of crayons are on the desk.","My crayons are on the desk."),
+    qLevel(3,"Fix the sentence: “Neither my brother nor my sisters likes spinach.”","Neither my brother nor my sisters like spinach.","Neither my brother nor my sisters is liking spinach.","Neither my brother nor my sister like spinach.","Neither my brothers nor my sisters likes spinach.")
+  ],
+  verbTense:[
+    qLevel(2,"Which sentence is in the future tense?","The bus will leave at noon.","The bus left at noon.","The bus leaves every day at noon.","The bus was leaving at noon."),
+    qLevel(2,"Last summer, my family ___ to the beach.","drove","drives","will drive","is driving"),
+    qLevel(3,"Which sentence needs a correction?","Yesterday, we will plant a tree.","Yesterday, we planted a tree.","Tomorrow, we will plant a tree.","Today, we plant a tree together."),
+    qLevel(3,"Fix the sentence: “Last night, Tia finishes her book and goes to bed.”","Last night, Tia finished her book and went to bed.","Last night, Tia finished her book and goes to bed.","Last night, Tia finishes her book and went to bed.","Last night, Tia will finish her book and go to bed.")
+  ],
+  actionLinkHelping:[
+    qLevel(2,"Which sentence uses “felt” as a linking verb?","The blanket felt soft.","She felt the soft blanket.","He felt his way in the dark.","I felt a raindrop fall."),
+    qLevel(2,"Which sentence has a helping verb?","We are building a fort.","We built a fort in the yard.","We love our fort.","Our new fort is very big and strong."),
+    qLevel(3,"In “The soup tasted salty,” what kind of verb is tasted?","linking verb","action verb","helping verb","modal verb"),
+    qLevel(3,"Which sentence has both a helping verb and an action verb?","Maya will bake a cake.","Maya seems tired today.","Maya is a good baker.","Maya bakes cakes.")
+  ],
+  irregularVerbs:[
+    qLevel(2,"What is the past tense of teach?","taught","teached","tought","teacht"),
+    qLevel(2,"Last week, we ___ a nest in the tree.","found","finded","founded","find"),
+    qLevel(3,"Which sentence needs a correction?","She throwed the ball to me.","She threw the ball to me.","He caught the ball with both hands.","They took the ball home."),
+    qLevel(3,"Fix the sentence: “Yesterday I writed a letter and sended it.”","Yesterday I wrote a letter and sent it.","Yesterday I wrote a letter and sended it.","Yesterday I writed a letter and sent it.","Yesterday I written a letter and sent it.")
+  ],
+  simpleAspect:[
+    qLevel(2,"Which sentence states a fact in the simple present?","Bees make honey.","Bees are making honey.","Bees have made honey.","Bees were making honey."),
+    qLevel(2,"Choose the simple future: Next year, my sister ___ middle school.","will start","started","was starting","has started"),
+    qLevel(3,"Which sentence needs a correction?","Every morning, Sam walk his dog.","Every morning, Sam walks his dog.","Last night, Sam walked his dog.","Tomorrow, Sam will walk his dog."),
+    qLevel(3,"Which sentence uses the simple aspect for all of its verbs?","She opened the box, smiled, and laughed.","She was opening the box and smiling at us.","She has opened the box and smiled.","She is opening the box and laughing.")
+  ],
+  progressiveAspect:[
+    qLevel(2,"Which sentence uses the past progressive?","We were eating when it rained.","We are eating while it rains.","We ate after it rained.","We will be eating after it rains."),
+    qLevel(2,"Choose the present progressive: Listen! The birds ___.","are singing","sang","were singing","have sung"),
+    qLevel(3,"Which sentence needs a correction?","Right now, the kids are play soccer.","Right now, the kids are playing soccer.","Yesterday, the kids were playing soccer.","Soon, the kids will be playing soccer."),
+    qLevel(3,"Fix the sentence: “At noon tomorrow, we will riding the train.”","At noon tomorrow, we will be riding the train.","At noon tomorrow, we were riding the train.","At noon tomorrow, we will rode the train.","At noon tomorrow, we will been riding the train.")
+  ],
+  perfectAspect:[
+    qLevel(2,"Which sentence uses the past perfect?","The game had ended when we arrived.","The game has ended now that we are here.","The game ends when we arrive.","The game will end before we arrive."),
+    qLevel(2,"What is the past participle of write?","written","wrote","writed","writing"),
+    qLevel(3,"Which sentence needs a correction?","I have went to that park before.","I have gone to that park before.","I had gone to the park before lunch.","I will have gone to the park by noon."),
+    qLevel(3,"Fix the sentence: “By the time we got there, the bus has left.”","By the time we got there, the bus had left.","By the time we got there, the bus has leaved.","By the time we got there, the bus will have left.","By the time we got there, the bus has been leaving.")
+  ],
+  perfectProgressive:[
+    qLevel(2,"Which sentence uses the past perfect progressive?","He had been practicing before the show.","He has been practicing for the show.","He was practicing before the show.","He will have practiced before the show."),
+    qLevel(2,"Choose the best verb: My aunt ___ at the bakery for ten years now.","has been working","had been working","will be working","was working"),
+    qLevel(3,"Which sentence needs a correction?","We have been wait for the bus.","We have been waiting for the bus.","We had been waiting for the bus.","We will have been waiting an hour."),
+    qLevel(3,"Fix the sentence: “By June, Kai will have be training for a year.”","By June, Kai will have been training for a year.","By June, Kai will have been trained for a whole year.","By June, Kai has been training for a year.","By June, Kai will be have training for a year.")
+  ],
+  tenseAspectTime:[
+    qLevel(2,"Choose the best verb: When the alarm rang, I ___ for an hour.","had been sleeping","have been sleeping","will be sleeping","am sleeping"),
+    qLevel(2,"Which sentence shows an action in progress at a moment in the past?","At 9 p.m., I was reading.","At 9 p.m., I will read.","At 9 p.m., I have read.","At 9 p.m., I will be reading."),
+    qLevel(3,"Which sentence needs a correction to keep the tense consistent?","She finished lunch and goes outside.","She finished lunch and went outside.","She finishes lunch and goes outside.","She will finish lunch and go outside."),
+    qLevel(3,"Fix the sentence: “I have been living here since I am six.”","I have been living here since I was six.","I had been living here since I am six.","I am living here since I was six.","I have been living here since I will be six.")
+  ],
+  modalVerbs:[
+    qLevel(2,"Which modal shows a strong guess? The lights are off, so they ___ be asleep.","must","can","shall","may not"),
+    qLevel(2,"Which sentence uses a modal to give advice?","You should rest your ankle.","You rested your ankle.","You are resting your ankle.","You will rest your ankle today."),
+    qLevel(3,"Which sentence needs a correction?","We must to finish our project.","We must finish our project.","We should finish our project.","We might finish our project soon."),
+    qLevel(3,"Which sentence shows the weakest possibility?","It might snow tomorrow.","It will snow tomorrow.","It must snow tomorrow.","It is going to snow tomorrow.")
+  ]
+};
+const ENGLISH_BUILT_IN_LEVELS = {"identifyNouns":[1,1,1,1,1,2,2,2,1,1],"singularPlural":[1,1,1,1,2,1,1,1,2,2],"commonProper":[1,2,1,2,2,2,1,1,1,1],"concreteAbstract":[1,1,2,1,2,1,1,1,1,2],"fToVes":[1,1,1,1,1,2,1,1,2,1],"enPlurals":[1,1,1,1,2,2,1,1,2,1],"basePlurals":[1,1,2,2,2,1,2,1,2,1],"mutantPlurals":[1,1,1,1,2,2,2,1,2,2],"foreignPlurals":[1,2,2,2,2,3,2,2,2,2],"pluralReview":[1,1,1,1,2,3,1,2,2,2],"verbIdentify":[1,1,1,1,2,2,1,1,2,2],"verbAgreement":[1,1,2,2,2,3,1,2,2,3],"verbTense":[1,1,1,1,1,1,2,2,1,1],"actionLinkHelping":[1,2,2,2,2,1,2,1,2,1],"irregularVerbs":[1,1,1,1,2,2,1,2,1,2],"simpleAspect":[1,1,1,2,2,1,2,1,1,1],"progressiveAspect":[1,2,2,1,2,1,1,2,2,1],"perfectAspect":[2,2,2,1,2,2,1,2,2,2],"perfectProgressive":[2,2,3,1,2,3,2,2,3,2],"tenseAspectTime":[2,2,2,2,2,2,2,3,2,2],"modalVerbs":[1,1,1,1,1,2,1,2,2,2]};
+[PLURAL_QUESTIONS, VERB_QUESTIONS].forEach(bank => Object.entries(ENGLISH_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEach((level, index) => { const question = bank[skillId]?.[index]; if (question && question.difficulty == null) question.difficulty = level; })));
+Object.entries(PLURAL_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { PLURAL_QUESTIONS[skillId] = [...(PLURAL_QUESTIONS[skillId] || []), ...questions]; });
+Object.entries(VERB_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { VERB_QUESTIONS[skillId] = [...(VERB_QUESTIONS[skillId] || []), ...questions]; });
 /* ---------- end of the moved banks ---------- */
 
 export {

@@ -3697,17 +3697,28 @@ const POTION_GEN = {
   },
   gcfLcmWord(lvl){
     const useG = Math.random() < 0.5, [e, n] = pick(LEMON_KIDS);
-    let a, b, story, ans;
-    if (useG) { const G = rand(2, lvl === 1 ? 6 : 12); let m, k; do { m = rand(2, 7); k = rand(2, 7); } while (gcd(m, k) !== 1 || m === k); a = G * m; b = G * k; ans = G;
-      story = pick([`${n} has ${a} glow mushrooms and ${b} moon leaves. ${n} wants to make identical potion kits with no leftovers. What is the greatest number of kits?`, `There are ${a} red crystals and ${b} blue crystals to put in matching bags, with none left over. What is the greatest number of bags?`]); }
-    else { do { a = rand(3, lvl === 1 ? 8 : 12); b = rand(3, lvl === 1 ? 8 : 12); } while (a === b || a % b === 0 || b % a === 0); ans = a * b / gcd(a, b);
-      story = pick([`Feathers come in packs of ${a} and bottles come in packs of ${b}. ${n} wants the same number of each. What is the least number of each ${n} can buy?`, `One potion bubbles every ${a} minutes and another every ${b} minutes. They just bubbled together. In how many minutes will they bubble together again?`]); }
+    let a, b, ans, S;   // S: [story, level-3 follow-up question, its answer]
+    if (useG) { const G = rand(2, lvl === 1 ? 6 : lvl === 2 ? 12 : 15); let m, k; do { m = rand(2, lvl === 3 ? 9 : 7); k = rand(2, lvl === 3 ? 9 : 7); } while (gcd(m, k) !== 1 || m === k); a = G * m; b = G * k; ans = G;
+      S = pick([
+        [`${n} has ${a} glow mushrooms and ${b} moon leaves. ${n} wants to make identical potion kits with no leftovers. What is the greatest number of kits?`, 'How many glow mushrooms go in each kit?', a / G],
+        [`There are ${a} red crystals and ${b} blue crystals to put in matching bags, with none left over. What is the greatest number of bags?`, 'How many blue crystals go in each bag?', b / G],
+        [`A garden bed is ${a} feet long and ${b} feet wide. ${n} wants to cover it exactly with the largest square tiles possible. How long is each side of a tile, in feet?`, 'How many tiles cover the whole bed?', (a / G) * (b / G)],
+        [`${n} has one ribbon ${a} inches long and another ${b} inches long. ${n} cuts both into pieces that are all the same length, as long as possible, with nothing left over. How long is each piece, in inches?`, 'How many pieces are there in all?', a / G + b / G],
+        [`${a} cats and ${b} dogs march in a parade. Every row has the same number of pets, and each row has only cats or only dogs. What is the greatest number of pets in each row?`, 'How many rows of cats are there?', a / G]]); }
+    else { do { a = rand(3, lvl === 1 ? 8 : 12); b = rand(3, lvl === 1 ? 8 : lvl === 2 ? 12 : 15); } while (a === b || a % b === 0 || b % a === 0 || (lvl === 3 && gcd(a, b) === 1)); ans = a * b / gcd(a, b);
+      S = pick([
+        [`Feathers come in packs of ${a} and bottles come in packs of ${b}. ${n} wants the same number of each. What is the least number of each ${n} can buy?`, 'How many packs of feathers is that?', ans / a],
+        [`One potion bubbles every ${a} minutes and another every ${b} minutes. They just bubbled together. In how many minutes will they bubble together again?`, 'How many times will the first potion bubble in that time?', ans / a],
+        [`Two pets race around a track. One finishes a lap every ${a} minutes and the other every ${b} minutes. They start together. After how many minutes are they at the start line together again?`, 'How many laps has the faster pet run by then?', ans / Math.min(a, b)],
+        [`${n} waters the moonflowers every ${a} days and the sunflowers every ${b} days. Both were watered today. In how many days will both be watered on the same day again?`, 'How many times will the moonflowers be watered in those days?', ans / a],
+        [`Cups come in stacks of ${a} and lids come in stacks of ${b}. ${n} wants exactly as many lids as cups. What is the least number of cups ${n} can buy?`, 'How many stacks of lids is that?', ans / b]]); }
     const opts = choiceOf({text:useG ? 'Greatest common factor (GCF)' : 'Least common multiple (LCM)'}, [{text:useG ? 'Least common multiple (LCM)' : 'Greatest common factor (GCF)', mis:'gcfLcmSwap'}]);
-    const G = gcd(a, b), L = a * b / G;
-    return {title:'Mixing Bowl', ctx:`${useG ? 'GCF' : 'LCM'} ${a}, ${b}`, bubble:story, helper:'Splitting into equal groups: GCF. Things lining up again, or buying equal amounts: LCM.',
+    const G = gcd(a, b), L = a * b / G, follow = lvl === 3;   // level 3 adds a second step that uses the answer
+    return {title:'Mixing Bowl', ctx:`${useG ? 'GCF' : 'LCM'} ${a}, ${b}`, bubble:follow ? `${S[0]} Then: ${S[1]}` : S[0], helper:'Splitting into equal groups: GCF. Things lining up again, or buying equal amounts: LCM.',
       visual:`<div style="text-align:center; font-size:1.8rem">${e} ${a} and ${b}</div>`,
       steps:[{name:'GCF or LCM?', type:'concept', kind:'choice', prompt:'Which one answers the question?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => useG ? 'You are splitting into the most equal groups.' : 'You need a number both of them reach.'},
-        numStep(useG ? 'GCF' : 'LCM', 'compute', `${useG ? 'GCF' : 'LCM'} of ${a} and ${b} = ?`, ans, {mis:v => useG ? (v === L ? 'gcfLcmSwap' : null) : (v === G ? 'gcfLcmSwap' : v === a * b && G > 1 ? 'notLeast' : null)})], answerSteps:[1]};
+        numStep(useG ? 'GCF' : 'LCM', 'compute', `${useG ? 'GCF' : 'LCM'} of ${a} and ${b} = ?`, ans, {mis:v => useG ? (v === L ? 'gcfLcmSwap' : null) : (v === G ? 'gcfLcmSwap' : v === a * b && G > 1 ? 'notLeast' : null)}),
+        ...(follow ? [numStep('Then', 'compute', S[1], S[2], {slowOK:true, hint:() => `Use your ${useG ? 'GCF' : 'LCM'}, ${ans}.`})] : [])], answerSteps:[1]};
   },
 
   /* ----- station 4: Cauldron (distributive property, equivalent expressions) ----- */
@@ -4290,14 +4301,52 @@ const SHOW_GEN = {
       steps:[{name:'Shape', type:'concept', kind:'choice', prompt:'Which describes the shape?', options:choiceOf({text:tail[shape]}, Object.entries(tail).filter(([k]) => k !== shape).map(([k, t]) => ({text:t, mis:(k === 'skewed left' && shape === 'skewed right') || (k === 'skewed right' && shape === 'skewed left') ? 'skewDirection' : null}))), hint:() => 'Where is the tall pile? Which way does the thin tail go?'}]};
   },
   cmpDisplays(lvl){
-    const Q = pick([
-      ['Which display shows every single value?', 'Dot plot', ['Histogram', 'Box plot']],
-      ['Which display shows the median and the quartiles directly?', 'Box plot', ['Dot plot', 'Histogram']],
-      ['Which display groups the values into equal intervals?', 'Histogram', ['Dot plot', 'Box plot']],
-      ['Which display can you use to find the mean exactly?', 'Dot plot', ['Histogram', 'Box plot']],
-      ['Which display lets you read the IQR without any math on the list?', 'Box plot', ['Histogram', 'Dot plot']]]);
-    return {title:'Best in Show', ctx:Q[0], bubble:Q[0], helper:'Dot plots show each value. Histograms show counts in intervals. Box plots show the five-number summary.', visual:'<div style="text-align:center; font-size:2rem">📊 🟢 📦</div>',
-      steps:[{name:'Which display', type:'concept', kind:'choice', prompt:Q[0], options:choiceOf({text:Q[1]}, Q[2].map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'Think about what you can and can\'t see in each one.'}]};
+    if (lvl === 1) {
+      const Q = pick([
+        ['Which display shows every single value?', 'Dot plot', ['Histogram', 'Box plot']],
+        ['Which display shows the median and the quartiles directly?', 'Box plot', ['Dot plot', 'Histogram']],
+        ['Which display groups the values into equal intervals?', 'Histogram', ['Dot plot', 'Box plot']],
+        ['Which display can you use to find the mean exactly?', 'Dot plot', ['Histogram', 'Box plot']],
+        ['Which display lets you read the IQR without any math on the list?', 'Box plot', ['Histogram', 'Dot plot']],
+        ['Which display makes the mode easiest to see?', 'Dot plot', ['Box plot', 'Histogram']],
+        ['Which display works best for a very large data set with many different values?', 'Histogram', ['Dot plot', 'Box plot']],
+        ['Which display does NOT show how many values are in the data set?', 'Box plot', ['Dot plot', 'Histogram']]]);
+      return {title:'Best in Show', ctx:Q[0], bubble:Q[0], helper:'Dot plots show each value. Histograms show counts in intervals. Box plots show the five-number summary.', visual:'<div style="text-align:center; font-size:2rem">📊 🟢 📦</div>',
+        steps:[{name:'Which display', type:'concept', kind:'choice', prompt:Q[0], options:choiceOf({text:Q[1]}, Q[2].map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'Think about what you can and can\'t see in each one.'}]};
+    }
+    /* levels 2 and 3: real displays of one pet show's data, as on Khan's "comparing data displays" */
+    const [e, what, label, say] = pick(PETS), lo = rand(2, 6), hi = lo + rand(10, 14), n = rand(11, 17);
+    let data; do { data = dataSet(n, lo, hi); } while (new Set(data).size < 6);
+    const s = sortN(data), [q1, q3] = quartiles(data), md = medianOf(data), five = [s[0], q1, md, q3, s[n - 1]], range = {lo:lo - 1, hi:hi + 1};
+    const helper = 'Dot plots show each value. Histograms show counts in intervals. Box plots show the five-number summary, but not how many values there are.';
+    if (lvl === 2) {
+      const exact = pick(s), show = pick(['box', 'hist']);
+      if (show === 'box') {
+        const right = pick(['What is the median?', 'What is the interquartile range (IQR)?', 'What is the greatest value?']);
+        const wrongs = [`How many ${what} are in the show?`, `How many ${what} ${say(`exactly ${exact}`)}?`, 'What is the mean?'];
+        return {title:'Best in Show', ctx:`cmp box ${five}`, bubble:`The box plot shows the ${label} of the ${what} at the pet show. Which question can you answer from this box plot alone?`, helper, visual:boxPlotSVG(five, range),
+          steps:[{name:'What it shows', type:'concept', kind:'choice', prompt:'Which question can the box plot answer?', options:choiceOf({text:right}, wrongs.map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'A box plot shows only five numbers: minimum, Q1, median, Q3 and maximum.'}]};
+      }
+      const start = Math.floor(lo / 5) * 5, bins = [];
+      for (let f = start; f <= hi; f += 5) bins.push([f, f + 4, data.filter(v => v >= f && v <= f + 4).length]);
+      const full = bins.filter(b => b[2] > 0), bin = pick(full);
+      const right = pick([`How many ${what} are in the ${bin[0]}–${bin[1]} interval?`, `How many ${what} are in the show?`]);
+      const wrongs = ['What is the exact median?', `How many ${what} ${say(`exactly ${exact}`)}?`, 'What is the greatest value?'];
+      return {title:'Best in Show', ctx:`cmp hist ${bins.map(b => b[2])}`, bubble:`The histogram shows the ${label} of the ${what} at the pet show. Which question can you answer from this histogram alone?`, helper, visual:histSVG(bins, label),
+        steps:[{name:'What it shows', type:'concept', kind:'choice', prompt:'Which question can the histogram answer?', options:choiceOf({text:right}, wrongs.map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'A histogram shows how many values fall in each interval, not the exact values.'}]};
+    }
+    /* level 3: the same data as a dot plot and a box plot; choose the display, then use it */
+    const both = `<div style="text-align:center"><div class="muted">Dot plot</div>${dotPlotSVG(data, {lo, hi, label})}<div class="muted">Box plot</div>${boxPlotSVG(five, range)}</div>`;
+    if (Math.random() < 0.5) {
+      let cut, count; for (let t = 0; t < 20; t++) { cut = rand(lo + 2, hi - 2); count = data.filter(v => v > cut).length; if (count > 0 && count < n) break; }
+      const ask = `How many ${what} ${say(`more than ${cut}`)}?`;
+      return {title:'Best in Show', ctx:`cmp both count ${cut} ${listTxt(s)}`, bubble:`Both displays show the ${label} of the same ${what}. ${ask}`, helper, visual:both,
+        steps:[{name:'Which display', type:'concept', kind:'choice', prompt:'Which display can answer this question?', options:choiceOf({text:'Only the dot plot'}, [{text:'Only the box plot', mis:'displayWrong'}, {text:'Both of them', mis:'displayWrong'}]), hint:() => 'Can you count single pets on a box plot?'},
+          numStep('Count', 'concept', ask, count, {mis:v => v === data.filter(x => x >= cut).length && v !== count ? 'boundaryCount' : null, hint:() => `Count the dots to the right of ${cut}. Do not count the ${cut}s.`})], answerSteps:[1]};
+    }
+    return {title:'Best in Show', ctx:`cmp both iqr ${listTxt(s)}`, bubble:`Both displays show the ${label} of the same ${what}. What is the interquartile range (IQR)?`, helper, visual:both,
+      steps:[{name:'Which display', type:'concept', kind:'choice', prompt:'Which display shows Q1 and Q3 directly?', options:choiceOf({text:'The box plot'}, [{text:'The dot plot', mis:'displayWrong'}, {text:'Neither of them', mis:'displayWrong'}]), hint:() => 'The edges of the box are Q1 and Q3.'},
+        statStep('IQR', `IQR = ${numTxt(q3)} − ${numTxt(q1)} = ?`, q3 - q1, {mis:v => near2(v, s[n - 1] - s[0]) ? 'rangeNotIqr' : null})], answerSteps:[1]};
   }
 };
 Object.assign(GEN, SHOW_GEN);
