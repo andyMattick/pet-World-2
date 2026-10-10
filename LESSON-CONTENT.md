@@ -49,7 +49,38 @@ Then `create or replace` `my_student()` so it also returns `lesson_links` and `q
 }
 ```
 
-`options[0]` is always the correct answer, the same as `mc()`. `status` is `"approved"` or `"draft"`, and students only see approved ones. Drafts are not used yet, but Phase 2 import (Copy prompt, Import) will add drafts here.
+`options[0]` is always the correct answer, the same as `mc()`. `status` is `"approved"` or `"draft"`, and students only see approved ones. Imported questions arrive as drafts (see Copy prompt and Import below).
+
+## Copy prompt and Import (roadmap step 8)
+
+All in `src/teacher/lessons.ts`; no API key and no new database columns.
+
+- **Copy prompt** copies a ready-made prompt for the chosen lesson: course, lesson, Khan topic and link, every question already in the lesson (so the chatbot doesn't repeat them), the style rules (about 40% level 3, believable wrong answers, right answer not longer, 6th grade reading length, no "all of the above"), an instruction to re-solve every question before replying, and the exact JSON reply format. If the browser blocks the clipboard, the prompt is shown in a box to copy by hand.
+- **Import questions** takes the pasted reply (JSON, even with extra text or a code fence around it; `options` + `answer` index is also accepted) or a CSV file in the template's columns: question, correct, wrong 1, wrong 2, wrong 3, level. Up to 40 per import and 80 drafts waiting per lesson. Each question is saved in `question_edits.added` with `status: "draft"`.
+- **Checks, no AI.** Skipped with a reason: not exactly three wrong answers, two answers the same, too long (the same limits as the question form). Warnings shown on the draft: matches a question already in the lesson, right answer much longer than the wrong ones, over 40 words, "all/none of the above".
+- **Review.** Drafts are listed with a Draft badge and their warnings: Approve, Edit (it stays a draft) or Reject (deleted). "Approve the N without warnings" approves the clean ones at once. Students only ever get approved questions, and drafts don't count toward the 4-question minimum.
+
+## Miss rates (roadmap step 9)
+
+No new tables or columns: the tallies live in each student's save.
+
+- **Game** (`recordEnglishAnswer` → `recordQuestionStat` in `src/game/game.js`): every answer to a bank question (practice, block quiz, unit test) adds to `state.questionStats[id] = [answered, missed]`, using the same ids as `applyQuestionEdits`. An edited built-in question is counted under `id~e`, so editing a confusing question starts its count over. Only the newest 400 questions are kept, which keeps the save small (about 20 KB at most).
+- **Teacher app** (`loadQuestionStats` in `src/teacher/main.ts`, `sumQuestionStats` in `lessons.ts`): the Lessons & questions tab fetches only `state->questionStats` from the class's saves (the existing `saves_teacher_select` policy allows it) and sums them. The question table has a **Missed** column ("7 of 10 (70%)"). A question missed 60% of the time or more, after at least 5 answers, gets an "Often missed" warning; Edit or Hide fixes it in one click. Counts start from when this update goes live.
+
+## Khan unit test check (roadmap step 10)
+
+Run `supabase/migrations/20261010000000_khan_results.sql` first. It adds one jsonb column, `classes.khan_results`, read and written only by the teacher app (`my_student()` doesn't return it):
+
+```json
+{"passScore": 80, "students": {"<student id>": {"bio1": {"date": "2026-10-10", "score": 85, "missed": ["bio1:cells"], "cleared": []}}}}
+```
+
+- **Where:** a "Khan unit test check" card at the bottom of the Lessons & questions tab, for the selected course. One row per student: their Pet Town unit test result (from `state.elaProgress` / `historyProgress` / `scienceProgress`, the course's `final-test` key, see `UNIT_TESTS` in `lessons.ts`), their logged Khan result, and a badge.
+- **Logging:** Log result opens a short form: date, score (%) and a tick box per Khan topic (one per block, the same keys as `lesson_links`). Topic names only, never Khan's questions. Update replaces the entry; Remove result deletes it.
+- **Retaught:** each open missed topic has a Retaught button, which moves it to `cleared`.
+- **Badges:** ✅ Passed Khan (score at or above the class's pass mark, no open topics) · Khan-ready (Pet Town unit test passed, no open topics) · Reteach first (open missed topics) · Not yet. The pass mark is set per class in the card (default 80%).
+- **Copy prompt:** when students have this lesson's Khan topic open, the prompt says how many missed it and asks for questions aimed at it.
+- **Not copied** by Copy to my other classes, because results belong to students.
 
 ## Part B: Shared code
 
@@ -85,8 +116,6 @@ Add `lesson_links` and `question_edits` to `ClassRow` and to the `classes` selec
 
 - File uploads (teachers paste links only).
 - Editing math questions (generated, so no bank).
-- Copy prompt and Import (Phase 2). The `status: "draft"` field is ready for it.
-- Logging question ids with answers and the miss-rate report (later roadmap steps).
 
 ## How to check it
 

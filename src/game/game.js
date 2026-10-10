@@ -40,11 +40,12 @@ const CUSTOMERS = [['🐻','Biscuit'],['🐶','Waffles'],['🐭','Pip'],['🐨',
 const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
+const QUESTION_STATS_MAX = 400;   // bank questions with a saved answered/missed tally (questionStats)
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -97,6 +98,8 @@ function normalize(raw){
   })) : [];
   s.parentPin = typeof s.parentPin === 'string' && /^[0-9a-z]{1,16}$/.test(s.parentPin) ? s.parentPin : '';
   s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
+  s.questionStats = Object.fromEntries(Object.entries(s.questionStats && typeof s.questionStats === 'object' ? s.questionStats : {})   // bank question id → [answered, missed]
+    .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','history2','history3','history4']);
@@ -6215,7 +6218,19 @@ function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true};
   renderEnglishQuestion();
 }
+/* Per-question tallies for the teacher's miss-rate column (Lessons & questions tab). Kept in the save, newest last;
+   an edited built-in question gets its own key, so editing a confusing question starts its count over. */
+const questionStatKey = question => question.source === 'edited' ? `${question.id}~e` : question.id;
+function recordQuestionStat(question, correct){
+  if (typeof question?.id !== 'string') return;
+  const key = questionStatKey(question), [answered, missed] = S.questionStats[key] || [0, 0];
+  delete S.questionStats[key];                       // re-insert so the newest stay when the list is trimmed
+  S.questionStats[key] = [answered + 1, missed + (correct ? 0 : 1)];
+  const keys = Object.keys(S.questionStats);
+  for (let i = 0; i < keys.length - QUESTION_STATS_MAX; i++) delete S.questionStats[keys[i]];
+}
 function recordEnglishAnswer(run, question, correct){
+  recordQuestionStat(question, correct);
   const store = progressStore(run.courseId), record = englishRecord(question.skillId,run.courseId);
   store[question.skillId] = {
     ...record, answered:(record.answered || 0) + 1, misses:(record.misses || 0) + (correct ? 0 : 1),

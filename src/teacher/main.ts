@@ -4,7 +4,7 @@ import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
-import { renderLessons, type LessonLink, type QuestionEdits } from './lessons';
+import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
@@ -250,12 +250,46 @@ function printCards(pins: NewPin[]) {
 }
 
 /* ---------- lessons & questions (src/teacher/lessons.ts) ---------- */
+/* per class: the miss-rate tallies and the Khan-check roster, from the students' saves, plus classes.khan_results */
+interface LessonExtras { stats: QuestionStats | null; khan: KhanData }
+const lessonExtrasCache = new Map<string, LessonExtras>();
 function renderLessonsTab() {
   const cls = current!;
-  renderLessons($('#pane'), cls, classes.filter(c => c.id !== cls.id), async (id, patch) => {
+  const draw = () => { const extras = lessonExtrasCache.get(cls.id); renderLessons($('#pane'), cls, classes.filter(c => c.id !== cls.id), async (id, patch) => {
     const { error } = await sb!.from('classes').update(patch).eq('id', id);
     return error ? error.message : null;
-  }, () => loadClasses(cls.id));
+  }, () => loadClasses(cls.id), extras?.stats, extras?.khan); };
+  draw();
+  void loadLessonExtras(cls.id).then(extras => {
+    const shape = (x?: LessonExtras) => JSON.stringify(x ? [x.stats, x.khan.roster, x.khan.results] : 'none');
+    const before = shape(lessonExtrasCache.get(cls.id));
+    lessonExtrasCache.set(cls.id, extras);
+    if (current?.id === cls.id && tab === 'lessons' && shape(extras) !== before) draw();
+  });
+}
+/* Only the parts of each save that this tab needs are fetched (question tallies and unit test progress), not the whole town. */
+async function loadLessonExtras(classId: string): Promise<LessonExtras> {
+  const saveKhan = async (next: KhanResults) => {
+    const { error } = await sb!.from('classes').update({ khan_results: next }).eq('id', classId);
+    if (error) return error.message;
+    const cached = lessonExtrasCache.get(classId); if (cached) cached.khan.results = next;
+    return null;
+  };
+  const khanRow = await sb!.from('classes').select('khan_results').eq('id', classId).single();
+  const results: KhanResults | null = khanRow.error ? null : ((khanRow.data as { khan_results?: KhanResults } | null)?.khan_results || {});
+  const { data: kids, error } = await sb!.from('students').select('id,display_name').eq('class_id', classId).order('display_name');
+  if (error) return { stats: null, khan: { roster: null, results, save: saveKhan } };
+  const list = (kids || []) as { id: string; display_name: string }[];
+  if (!list.length) return { stats: { students: 0, byId: {} }, khan: { roster: [], results, save: saveKhan } };
+  const { data, error: saveError } = await sb!.from('saves')
+    .select('student_id, qs:state->questionStats, ela:state->elaProgress, hist:state->historyProgress, sci:state->scienceProgress').in('student_id', list.map(k => k.id));
+  if (saveError) return { stats: null, khan: { roster: null, results, save: saveKhan } };
+  type Row = { student_id: string; qs?: unknown; ela?: unknown; hist?: unknown; sci?: unknown };
+  const rows = (data || []) as Row[], byStudent = new Map(rows.map(row => [row.student_id, row]));
+  const obj = (v: unknown) => v && typeof v === 'object' ? v as RosterRow['progress'][string] : undefined;
+  const roster: RosterRow[] = list.map(k => { const row = byStudent.get(k.id);
+    return { id: k.id, name: k.display_name, progress: { elaProgress: obj(row?.ela), historyProgress: obj(row?.hist), scienceProgress: obj(row?.sci) } }; });
+  return { stats: sumQuestionStats(rows.map(row => row.qs)), khan: { roster, results, save: saveKhan } };
 }
 
 /* ---------- class settings ---------- */
