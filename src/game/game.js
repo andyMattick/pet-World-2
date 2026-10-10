@@ -6,6 +6,7 @@ import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
 import { stageHTML, stageReact } from './stage';
+import { lessonVideo, videoEmbedUrl } from '../shared/lessonVideos';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -45,7 +46,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -98,6 +99,8 @@ function normalize(raw){
   })) : [];
   s.parentPin = typeof s.parentPin === 'string' && /^[0-9a-z]{1,16}$/.test(s.parentPin) ? s.parentPin : '';
   s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
+  s.videosWatched = Object.fromEntries(Object.entries(s.videosWatched && typeof s.videosWatched === 'object' ? s.videosWatched : {})   // lesson video key → date watched (80% played)
+    .filter(([key, day]) => key.length <= 80 && typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)).slice(-300));
   s.questionStats = Object.fromEntries(Object.entries(s.questionStats && typeof s.questionStats === 'object' ? s.questionStats : {})   // bank question id → [answered, missed]
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
@@ -5686,13 +5689,72 @@ const englishCourse = course => course === 'verbs'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
 const testSize = course => course.skills.length * (course.testPer || 1);
+/* ---------- Pet Town lesson videos (docs: LESSON-VIDEOS.md) ----------
+   YouTube (unlisted), played in a Pet Town window. Watching 80% of a video marks it watched in the save. */
+const WATCHED_SHARE = 0.8;
+/* style: 'main' (a lesson's own button), 'station' (a math station card), 'also' (under a teacher's own link) */
+function lessonVideoButtonHTML(video, style = 'main'){
+  const watched = S.videosWatched?.[video.key];
+  const label = style === 'also' ? 'Also: watch the Pet Town lesson' : style === 'station' ? 'Watch the lesson' : `Watch the lesson: ${esc(video.title)}`;
+  return `<button type="button" class="btn ${style === 'main' ? 'berry' : 'small'} lesson-video-btn" data-lesson-video="${esc(video.key)}" data-video-style="${style}"${style === 'main' ? '' : ` title="${esc(video.title)}"`}>▶ ${label}${video.minutes ? ` <span class="lesson-video-min">· ${video.minutes} min</span>` : ''}${watched ? ' <span class="lesson-video-done">✓ watched</span>' : ''}</button>`;
+}
+let videoSession = null;
+function closeLessonVideo(){
+  if (!videoSession) return;
+  clearTimeout(videoSession.blockedTimer); window.removeEventListener('message', videoSession.onMessage);
+  videoSession.modal.remove(); videoSession = null;
+  document.querySelectorAll('[data-video-style]').forEach(button => { const video = lessonVideo(button.dataset.lessonVideo); if (video) button.outerHTML = lessonVideoButtonHTML(video, button.dataset.videoStyle); });
+}
+function openLessonVideo(key){
+  const video = lessonVideo(key); if (!video) return;
+  closeLessonVideo();
+  const teacher = validLessonLink(Backend.me?.lesson_links?.[key]);
+  const modal = document.createElement('div');
+  modal.className = 'modal video-modal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-label', video.title);
+  modal.innerHTML = `<div class="modal-card video-card"><div class="backrow"><h2>▶ ${esc(video.title)}</h2><button type="button" class="btn small" data-video-close>Close</button></div>
+    <div class="video-frame"><iframe title="${esc(video.title)}" src="${esc(videoEmbedUrl(video.youtube, location.origin))}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <p class="muted video-note">${S.videosWatched?.[key] ? '✓ You watched this lesson.' : 'Watch to the end, then practice.'}${video.kind === 'placeholder' ? ' (Computer voice for now.)' : ''}</p>
+    <p class="video-blocked" hidden>The video did not load. If YouTube is blocked on this computer, ${teacher ? `try <a href="${esc(teacher.url)}" target="_blank" rel="noopener noreferrer">${esc(teacher.title || 'your teacher’s lesson')}</a> or ` : ''}ask your teacher.</p></div>`;
+  document.body.appendChild(modal);
+  const frame = modal.querySelector('iframe');
+  const session = videoSession = { key, modal, heard:false, last:null, played:0, onMessage:null, blockedTimer:0 };
+  /* the YouTube embed reports playing time by postMessage once told we are listening (the same messages its iframe API uses) */
+  session.onMessage = event => {
+    if (event.source !== frame.contentWindow || !/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(event.origin)) return;
+    let data; try { data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch { return; }
+    session.heard = true;
+    const info = data?.info; if (!info || typeof info !== 'object') return;
+    if (typeof info.playerState === 'number') session.state = info.playerState;
+    if (typeof info.duration === 'number' && info.duration > 0) session.duration = info.duration;
+    if (typeof info.currentTime === 'number') {
+      const step = session.last == null ? 0 : info.currentTime - session.last;
+      if (session.state === 1 && step > 0 && step <= 3) session.played += step;   // count only time actually played, not skipping ahead
+      session.last = info.currentTime;
+    }
+    if (session.duration && session.played >= WATCHED_SHARE * session.duration && !S.videosWatched[key]) {
+      S.videosWatched[key] = arcadeDateKey(); save();
+      const note = modal.querySelector('.video-note'); if (note) note.textContent = '✓ Lesson watched. Nice work! Now try the practice.';
+    }
+  };
+  window.addEventListener('message', session.onMessage);
+  frame.addEventListener('load', () => {
+    const hello = () => frame.contentWindow?.postMessage(JSON.stringify({ event:'listening', id:'pet-town-video', channel:'widget' }), '*');
+    hello(); setTimeout(hello, 1000);
+    session.blockedTimer = setTimeout(() => { if (!session.heard && videoSession === session) modal.querySelector('.video-blocked').hidden = false; }, 10000);
+  });
+  modal.addEventListener('click', event => { if (event.target === modal || event.target.closest('[data-video-close]')) closeLessonVideo(); });
+  modal.querySelector('[data-video-close]').focus();
+}
+document.addEventListener('click', event => { const button = event.target.closest('[data-lesson-video]'); if (button) openLessonVideo(button.dataset.lessonVideo); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && videoSession) closeLessonVideo(); });
 /* exact lesson URLs are used where known; otherwise a Khan Academy search for the lesson name */
 /* key ("<courseId>:<groupId>", or ":<n>" after it for an extra reading): if the class's teacher saved their own
    https:// link for this lesson, it comes first, with a smaller Khan link under it unless the teacher turned that off */
 function khanLinkHTML(url, name, key){
   const href = url || `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`;
-  const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null;
-  if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${mine.showKhan ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
+  const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, video = key ? lessonVideo(key) : null;
+  if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${video ? lessonVideoButtonHTML(video, 'also') : mine.showKhan ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
+  if (video) return lessonVideoButtonHTML(video);   // our own video replaces the Khan link (docs: LESSON-VIDEOS.md)
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>`;
 }
 const REPORT_COURSES = ['nouns','verbs','history','history2','history3','history4','bio1'];
@@ -6320,13 +6382,14 @@ function renderShopFloor(shop){
       : open ? '' : settings.requireQuiz
         ? `<p class="muted" style="margin:0">Pass ${prevName.startsWith('The ') ? '' : 'the '}${esc(prevName)} quiz to open this station.</p>`
         : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${config.stations[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
-    const skills = st.skills.map(sk => { const s = skillStatus(sk); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}</li>`; }).join('');
+    const skills = st.skills.map(sk => { const s = skillStatus(sk), skillVideo = lessonVideo(`math:${sk}`); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}${skillVideo ? ` <button type="button" class="lesson-video-mini" data-lesson-video="${esc(skillVideo.key)}" aria-label="Watch: ${esc(skillVideo.title)}" title="Watch: ${esc(skillVideo.title)}">▶</button>` : ''}</li>`; }).join('');
     let quizCard = '';
     if (passed) quizCard = `<p class="muted" style="margin:0">✅ Quiz passed${quiz?.best ? ` (${quiz.best}%)` : ''}</p>`;
     else if (reviewSkills.length) quizCard = `<p class="muted" style="margin:0">🔁 Review: ${reviewSkills.length} skill${reviewSkills.length === 1 ? '' : 's'} to practice</p><button class="btn" data-review-key="${esc(quizKey)}" data-review-station="${st.id}" data-shop="${config.id}">Review practice</button>`;
     else if (quiz?.tries) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">Retake quiz</button>`;
     else if (open && mastered) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">📝 Station Quiz</button>`;
-    return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>
+    const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
+    return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
       <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}</div>`;
   }).join('');
@@ -7858,3 +7921,11 @@ function enterAs(me){
   try { me = await Backend.restore(); } catch(e){}
   if (me) enterAs(me); else openJoin();
 })();
+
+/* Video builder hook (scripts/build-video.mjs, docs: LESSON-VIDEOS.md): only with ?videoSlides in the address, the
+   drawing helpers are exposed so lesson-video slides show exactly the pictures students practice with. */
+if (new URLSearchParams(location.search).has('videoSlides')) window.PetTownDraw = {
+  tape:tapeHTML, doubleNumberLine:dnlHTML, numberLine:numberLineSVG, fractionBar:fracBarSVG, area:areaHTML, placeValueTable:pvTableHTML,
+  blocks:blocksHTML, rectangle:rectSVG, grid:gridSVG, hundredGrid:hundredGridSVG, jumps:jumpsLineSVG, iceLine:iceLineSVG, inequality:ineqSVG,
+  shape:shapeSVG, plane:planeSVG, box:boxSVG, net:netSVG, dotPlot:dotPlotSVG, histogram:histSVG, boxPlot:boxPlotSVG
+};

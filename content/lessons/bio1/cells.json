@@ -1,0 +1,75 @@
+{
+  "key": "bio1:cells",
+  "title": "Cells: the building blocks of life",
+  "course": "Biology Unit 1: Life Sciences",
+  "goal": "Students can say what a cell is, put the levels from cell to organism in order, and name what four cell parts do.",
+  "scenes": [
+    { "say": "Welcome to Pet Town. In this lesson you will find out what cells are, how they team up to build a whole living thing, and what a few important cell parts do.",
+      "show": { "type": "title", "text": "Cells: the building blocks of life", "sub": "Biology Unit 1 · Cellular organization and cell parts" } },
+    { "say": [
+        "Here is the big idea. Every living thing is made of cells. A cell is the smallest unit that is alive.",
+        "Some living things are just one cell. A bacterium is a whole living thing made of a single cell. It eats, grows, and makes more bacteria, all inside that one cell.",
+        "Other living things are made of many cells. A mushroom, an oak tree, and your dog are each made of millions or even trillions of cells.",
+        "And new cells always come from cells that already exist. A cell splits to make new cells."
+      ],
+      "show": { "type": "bullets", "heading": "Every living thing is made of cells", "items": [
+        "A cell is the smallest unit that is alive",
+        "One cell: a bacterium does every life job by itself",
+        "Many cells: a mushroom, a tree, a dog",
+        "New cells come from cells that already exist"
+      ] } },
+    { "say": [
+        "In a many-celled living thing, cells are organized in levels. It starts with a single cell, like one muscle cell.",
+        "A group of similar cells working together is a tissue. Many muscle cells together make muscle tissue.",
+        "Different tissues working together make an organ. Your heart has muscle tissue, nerve tissue, and other tissues.",
+        "Organs working together make an organ system. The heart and blood vessels together move blood around your body.",
+        "All of the organ systems working together make the organism: the whole living thing."
+      ],
+      "show": { "type": "steps", "heading": "From cell to organism", "items": [
+        "Cell: the smallest living unit",
+        "Tissue: similar cells working together",
+        "Organ: different tissues working together",
+        "Organ system: organs working together",
+        "Organism: the whole living thing"
+      ] } },
+    { "say": [
+        "Let's follow one example. Your stomach is lined with cells.",
+        "Those cells form stomach tissue, and different tissues form the stomach, which is an organ.",
+        "The stomach, the intestines, and the liver work together as the digestive system.",
+        "And the digestive system works with your other systems to keep you, the organism, alive. If one system stops working, the others have trouble too."
+      ],
+      "show": { "type": "steps", "heading": "Example: your stomach", "items": [
+        "Stomach cells",
+        "Stomach tissue → the stomach (an organ)",
+        "Stomach + intestines + liver = the digestive system",
+        "All the systems together = you, the organism"
+      ] } },
+    { "say": [
+        "Now let's look inside a cell. Every cell has a cell membrane. It is the outer layer that controls what goes in and what comes out.",
+        "Inside is the cytoplasm, a jelly-like fluid where most of the cell's work happens.",
+        "Most cells have a nucleus. It holds the cell's DNA, the instructions for everything the cell does.",
+        "Mitochondria release energy from food, so the cell has the energy it needs to do its jobs.",
+        "Plant cells also have a cell wall, which gives them a stiff shape, and chloroplasts, which use sunlight to make food."
+      ],
+      "show": { "type": "bullets", "heading": "Cell parts and their jobs", "items": [
+        "Cell membrane: controls what goes in and out",
+        "Cytoplasm: the jelly where the cell's work happens",
+        "Nucleus: holds DNA, the cell's instructions",
+        "Mitochondria: release energy from food",
+        "Plant cells only: cell wall (support) and chloroplasts (make food from sunlight)"
+      ] } },
+    { "say": "Your turn. Pause the video and choose your answer.",
+      "answer": "The answer is cell, tissue, organ, organ system. Similar cells make a tissue, tissues make an organ, and organs make an organ system.",
+      "show": { "type": "check", "question": "bio1:cellsOrganisms:1urcawe" } },
+    { "say": [
+        "Let's sum up. Every living thing is made of one or more cells.",
+        "Cells build tissues, tissues build organs, organs build organ systems, and systems build the organism.",
+        "Each cell part has a job, from the membrane on the outside to the nucleus in the middle. Now go practice in Pet Town!"
+      ],
+      "show": { "type": "bullets", "heading": "What to remember", "items": [
+        "All living things are made of cells",
+        "Cell → tissue → organ → organ system → organism",
+        "Each cell part has its own job"
+      ] } }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "key": "math:cafe:2",
+  "title": "Recipe Cards: tape diagrams and double number lines",
+  "course": "6th grade math · Pet Café (ratios)",
+  "goal": "Students can show a ratio with a tape diagram, use equal parts to scale it, and read equivalent ratios on a double number line.",
+  "scenes": [
+    { "say": "Welcome to the Recipe Cards station at the Pet Café. In this lesson you will use two pictures, tape diagrams and double number lines, to scale a recipe up.",
+      "show": { "type": "title", "text": "Recipe Cards", "sub": "Tape diagrams and double number lines · Pet Café, station 2" } },
+    { "say": "Here is a recipe card. Puppy mix uses 3 scoops of kibble for every 2 treats. The ratio of kibble to treats is 3 to 2.",
+      "show": { "type": "bullets", "heading": "A ratio compares two amounts", "items": [
+        "Puppy mix: 3 scoops of kibble for every 2 treats",
+        "Kibble to treats is 3 : 2"
+      ] } },
+    { "say": "A tape diagram shows the ratio as equal boxes. Kibble gets 3 boxes and treats get 2 boxes. Every box is the same size, so every box stands for the same amount.",
+      "show": { "type": "visual", "heading": "A tape diagram", "draw": "tape", "args": [[{ "e": "Kibble", "n": 3 }, { "e": "Treats", "n": 2 }], "5 equal parts"], "caption": "3 boxes of kibble, 2 boxes of treats" } },
+    { "say": [
+        "Now a big order uses 15 scoops of kibble. How many treats go with it?",
+        "The kibble is 3 boxes, and those 3 boxes hold 15 scoops.",
+        "So one box is 15 divided by 3, which is 5.",
+        "Treats are 2 boxes, so the treats are 2 times 5, which is 10 treats."
+      ],
+      "show": { "type": "worked", "heading": "Scale it up with the tape", "problem": "The recipe uses 15 scoops of kibble. How many treats?", "steps": [
+        "Kibble is 3 boxes = 15 scoops",
+        "1 box = 15 ÷ 3 = 5",
+        "Treats are 2 boxes = 2 × 5 = 10 treats"
+      ] } },
+    { "say": [
+        "A double number line shows the same thing in a different way. The top line counts scoops of kibble, and the bottom line counts treats.",
+        "Every tick lines up a matching pair. 3 scoops go with 2 treats, 6 go with 4, 9 go with 6, and 15 scoops go with 10 treats. Each pair is an equivalent ratio."
+      ],
+      "show": { "type": "visual", "heading": "A double number line", "draw": "doubleNumberLine", "args": ["Kibble", "Treats", [{ "t": 0, "b": 0 }, { "t": 3, "b": 2 }, { "t": 6, "b": 4 }, { "t": 9, "b": 6 }, { "t": 12, "b": 8 }, { "t": 15, "b": 10 }]], "caption": "Matching ticks are equivalent ratios: 3 : 2 = 6 : 4 = 15 : 10" } },
+    { "say": [
+        "The top and bottom numbers always grow by the same jumps. Kibble jumps by 3 and treats jump by 2.",
+        "Each pair of ticks is also a row in a ratio table, so you can move between the two pictures."
+      ],
+      "show": { "type": "bullets", "heading": "Reading the double number line", "items": [
+        "Top jumps by 3, bottom jumps by 2: the same number of jumps",
+        "Each pair of ticks is one row of a ratio table"
+      ] } },
+    { "say": "Your turn. A drink uses 4 cups of water for every 3 scoops of mix. How much water goes with 12 scoops? Pause the video and choose.",
+      "answer": "The answer is 16 cups. 12 scoops is 4 groups of 3 scoops, so the water is 4 groups of 4 cups, which is 16 cups. Adding 9 to both amounts does not keep the ratio the same.",
+      "show": { "type": "check", "question": { "prompt": "A drink uses 4 cups of water for every 3 scoops of mix. How many cups of water go with 12 scoops?", "options": ["16 cups", "13 cups", "9 cups", "12 cups"], "answer": 0 } } },
+    { "say": [
+        "To sum up: a ratio compares two amounts.",
+        "In a tape diagram every box is the same size, so find what one box is worth, then scale.",
+        "On a double number line, matching ticks are equivalent ratios. Now head to the Recipe Cards station and practice!"
+      ],
+      "show": { "type": "bullets", "heading": "What to remember", "items": [
+        "A ratio compares two amounts",
+        "Tape diagram: find one box, then scale",
+        "Double number line: matching ticks are equivalent ratios"
+      ] } }
+  ]
+}

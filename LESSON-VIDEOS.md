@@ -16,7 +16,7 @@ Same rules as the question bank roadmap: no live AI and no API key at run time, 
 | Math (4th grade, 6th grade) | 200 skills | `SKILLS[id].url` in `src/shared/registry.ts`, shown on the skill rows |
 | English, History, Biology | 62 lessons in 40 blocks, plus 9 extra readings | `KHAN_LINKS` and `lesson.url` in `src/shared/questionBanks.js`, shown by `khanLinkHTML()` in `game.js` |
 
-Math does not need 200 separate videos. One video per **station** (about 4 to 6 skills that share a method) is the target, with a short clip per skill only where a skill needs its own example. That is about 60 math videos and 49 non-math videos: **about 110 videos** for full coverage.
+Math does not need 200 separate videos. One video per **station** (about 4 to 6 skills that share a method) is the target, with a short clip per skill only where a skill needs its own example. That is 52 math station videos and 49 non-math videos: **101 videos** for full coverage (`scripts/video-status.mjs` counts them).
 
 ## The four parts
 
@@ -86,9 +86,36 @@ node scripts/build-video.mjs --course bio1                         →  every sc
 1. **Slides:** each scene is rendered as a 1280×720 slide in headless Chromium (Playwright). `visual` scenes call Pet Town's own drawing functions, so math pictures match practice exactly.
 2. **Voice:** narration comes from **Piper**, a free, offline text-to-speech program (one voice file, about 60 MB, downloaded once; `espeak-ng` is the fallback). Each scene's audio sets how long its slide stays on screen.
 3. **Video:** `ffmpeg` joins the slides and audio into an MP4, and the `say` text becomes a captions file with the right timings.
-4. **Label:** the first slide says "Pet Town lesson · computer voice", so students and teachers can tell it's a placeholder.
+4. **Label:** every slide says "Pet Town lesson · computer voice" in the corner, so students and teachers can tell it's a placeholder.
 
 `videos/` is git-ignored; videos live on YouTube, not in the repo.
+
+#### Setting up the builder (once per Codespace)
+
+```
+sudo apt-get update && sudo apt-get install -y ffmpeg espeak-ng fonts-noto-color-emoji
+npm install -D playwright && npx playwright install --with-deps chromium
+```
+
+That is enough to build with the `espeak-ng` voice, which sounds robotic but works everywhere. For the better free voice, add **Piper**:
+
+```
+pip install piper-tts
+mkdir -p ~/voices && cd ~/voices
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+cd /workspaces/pet-World-2 && export PIPER_MODEL=~/voices/en_US-lessac-medium.onnx
+```
+
+When `PIPER_MODEL` is set, the builder uses Piper. Otherwise it uses espeak-ng. `--voice silent` builds timed slides with no voice, which is useful for checking the slides quickly.
+
+#### How the builder works
+
+- **Pet Town:** it starts Pet Town with Vite and opens `index.html?videoSlides=1`. That address exposes Pet Town's drawing helpers as `window.PetTownDraw` (tape, doubleNumberLine, numberLine, fractionBar, area, placeValueTable, rectangle, dotPlot, boxPlot and more), so a `visual` scene draws exactly what students practice with, on the same chalkboard.
+- **Frames:** each scene becomes one or more frames. When `say` is a list, a bullets, steps or worked scene reveals one item per line. A first extra line is an opening sentence before the first item. A `check` scene makes two frames: the question with a 5-second pause, then the answer, which is the scene's `answer` text.
+- **Checking scripts:** `node scripts/build-video.mjs --check <script>` checks a script without building it.
+- **Reading symbols aloud:** the voice reads ÷ as "divided by", × as "times", → as "to", and 3 : 2 as "3 to 2".
+- **Output:** `videos/out/<key>.mp4` plus a `.vtt` captions file, timed to the narration. The builder then prints the exact `set-video.mjs` command to run after uploading to YouTube.
 
 ### 4. Publishing and the student player
 
@@ -117,10 +144,20 @@ This is the to-do list for recording: record the lessons with the most practice 
 
 ## Order of work
 
+**Step 13 is built.** It adds `src/shared/lessonVideos.js` (empty until the first video), `scripts/set-video.mjs`, the in-Pet-Town player (`openLessonVideo` in `game.js`), `state.videosWatched` and the video line in the teacher's Lesson link card. To add a video:
+
+```
+node scripts/set-video.mjs bio1:cells https://youtu.be/<id> --kind placeholder --minutes 4.5 --title "Cells: the building blocks of life"
+node scripts/set-video.mjs --list
+```
+
+- **Math:** a station video (`math:cafe:2`) shows **▶ Watch the lesson** on the station card. A skill video (`math:<skillId>`) shows a small ▶ next to the skill.
+- **Khan practice links:** the "Khan practice" links in the math progress report point to Khan exercises, not videos, so they stay for now.
+
 | # | Step | What it delivers |
 |---|---|---|
-| 13 | Catalog and player | `lessonVideos.js`, the in-Pet-Town player, the Khan link hidden when a video exists, `set-video.mjs`, and watched tracking. Tested with one hand-made video. |
-| 14 | Script format and builder | `build-video.mjs`, set up with Piper and ffmpeg in the Codespace, and `video-status.mjs`. Prototype: one Biology lesson and one math station, end to end on YouTube. **Andy decides if placeholder quality is good enough before step 15.** |
+| 13 ✅ | Catalog and player | `lessonVideos.js`, the in-Pet-Town player, the Khan link hidden when a video exists, `set-video.mjs`, and watched tracking. Tested with one hand-made video. |
+| 14 ✅ | Script format and builder | `build-video.mjs`, set up with Piper and ffmpeg in the Codespace, and `video-status.mjs`. Prototype: one Biology lesson and one math station, end to end on YouTube. **Andy decides if placeholder quality is good enough before step 15.** |
 | 15 | Scripts, unit by unit | Written with Claude in chat, reviewed, then built: Biology, then History 1 to 4, then English, then math stations (6th grade, then 4th). One patch per unit, like the question banks. |
 | 16 | Recording swaps | Andy records over placeholders, starting with the lessons most used in practice; `set-video.mjs --kind recorded`. |
 | 17 | Teacher view | The Lessons & questions tab shows each lesson's video (placeholder or recorded) and how many students watched it. The report shows "watched before practicing" next to practice results. |

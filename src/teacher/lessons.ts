@@ -4,6 +4,7 @@
    teacher approves one by one; students only ever see approved questions. Built-in questions are never deleted, only hidden (Restore) or edited (Undo edit).
    Everything is saved on the class (classes.lesson_links, classes.question_edits); students get it through my_student(). */
 import { esc } from './report';
+import { lessonVideo } from '../shared/lessonVideos';
 import { LESSON_COURSES, builtInBank, lessonLinkSlots, khanSearchUrl, validLessonLink, validQuestion, applyQuestionEdits, QUESTION_LIMITS } from '../shared/questionBanks';
 
 export interface LessonLink { url: string; title?: string; note?: string; showKhan?: boolean }
@@ -189,6 +190,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   const slot = slots.find(s => s.key === pick.slot);
   const links = cls.lesson_links || {};
   const mine = slot ? validLessonLink(links[slot.key]) : null;
+  const slotVideo = slot ? lessonVideo(slot.key) as { key: string; title: string; youtube: string; kind: string; minutes: number | null } | null : null;
   const all = shownQuestions(cls, true), visible = all.filter(q => !q.hidden && q.status !== 'draft'), drafts = all.filter(q => q.status === 'draft');
   /* warnings for a draft: compared with every other question in the lesson */
   const warningsFor = (q: Shown) => draftWarnings(q.prompt, [q.options[q.answer], ...q.options.filter((_, i) => i !== q.answer)], new Set(all.filter(o => o.id !== q.id).map(o => norm(o.prompt))));
@@ -213,11 +215,12 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
     <div class="two">
       <div class="card"><h2>Lesson link</h2>
         ${slots.length > 1 ? `<label for="lqSlot">Link shown for</label><select id="lqSlot">${slots.map(s => `<option value="${esc(s.key)}" ${s.key === pick.slot ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : slot ? `<p class="muted" style="margin-top:0">Shown at the top of <b>${esc(slot.name)}</b>${slot.skills.length > 1 ? ', for all of its lessons' : ''}.</p>` : ''}
-        ${slot ? `<p>Khan default: <a href="${esc(slot.khan || khanSearchUrl(slot.name))}" target="_blank" rel="noopener noreferrer">${slot.khan ? 'Khan Academy lesson' : 'Khan Academy search'}</a>${mine ? ' <span class="tag i">Students see your link first</span>' : ''}</p>
+        ${slot ? `${slotVideo ? `<p>Pet Town video: <a href="https://www.youtube.com/watch?v=${esc(slotVideo.youtube)}" target="_blank" rel="noopener noreferrer">${esc(slotVideo.title)}</a> <span class="tag ${slotVideo.kind === 'recorded' ? 'i' : 'a'}">${slotVideo.kind === 'recorded' ? 'Recorded' : 'Placeholder'}</span>${slotVideo.minutes ? ` <span class="muted">${slotVideo.minutes} min</span>` : ''}<br><span class="muted">Students watch it in Pet Town instead of going to Khan${mine ? '; your link comes first, with the video under it' : ''}.</span></p>` : ''}
+        <p>${slotVideo ? 'Khan lesson (for your reference only)' : 'Khan default'}: <a href="${esc(slot.khan || khanSearchUrl(slot.name))}" target="_blank" rel="noopener noreferrer">${slot.khan ? 'Khan Academy lesson' : 'Khan Academy search'}</a>${mine ? ' <span class="tag i">Students see your link first</span>' : ''}</p>
         <label for="lqUrl">My link (https://)</label><input type="url" id="lqUrl" maxlength="500" placeholder="https://www.youtube.com/watch?v=…" value="${esc(mine?.url || '')}">
         <label for="lqTitle">Title</label><input type="text" id="lqTitle" maxlength="100" placeholder="Watch your teacher’s lesson" value="${esc(mine?.title || '')}">
         <label for="lqNote">Note (up to 200 characters)</label><input type="text" id="lqNote" maxlength="200" placeholder="Watch this before you practice." value="${esc(mine?.note || '')}">
-        <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="lqShowKhan" ${mine && !mine.showKhan ? '' : 'checked'}> Also show the Khan link</label>
+        <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="lqShowKhan" ${mine && !mine.showKhan ? '' : 'checked'}> ${slotVideo ? 'Also show the Pet Town video' : 'Also show the Khan link'}</label>
         <div class="row"><button class="btn primary" id="lqSaveLink">Save</button>${links[slot.key] ? '<button class="btn" id="lqBackToKhan">Back to Khan</button>' : ''}<span class="status" id="lqLinkMsg"></span></div>`
         : '<p class="muted">This lesson has no Khan link to replace.</p>'}
       </div>

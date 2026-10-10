@@ -5,3 +5,6 @@ dist
 .DS_Store
 # patch files uploaded to apply changes (git am); never commit them
 *.patch
+
+# lesson videos are built here and uploaded to YouTube, never committed (LESSON-VIDEOS.md)
+videos/
