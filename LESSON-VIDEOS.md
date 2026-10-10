@@ -142,7 +142,18 @@ Coverage: 2 of 49 with video (1 recorded) · math 0 of 60
 
 This is the to-do list for recording: record the lessons with the most practice first.
 
-## Order of work
+## Replacing a Khan video from the teacher app (no commands)
+
+Until a lesson has a video Andy is happy with, it keeps its Khan link. To swap in a video from inside Pet Town:
+
+1. Upload the video to YouTube as **Unlisted**.
+2. In the teacher app, open **Lessons & questions** and pick the course and lesson.
+3. In **Lesson video or link**, paste the YouTube link, add a title and an optional note, and press **Save**.
+
+Students in that class then get **▶ Watch the lesson: <title>**, played inside Pet Town with the same watched tracking (`studentVideo()` in `game.js`). **Also show the Khan link** keeps a small Khan link under it; **Back to Khan** undoes it. Copy to my other classes copies it to Andy's other classes. A non-YouTube link (Google Drive, a website) still opens in a new tab.
+
+A class's teacher video comes first. Next is a Pet Town-wide video from `src/shared/lessonVideos.js` (`set-video.mjs`), then Khan. The Pet Town-wide list is empty for now: the computer-voice placeholders were not good enough (October 10, 2026).
+
 
 **Step 13 is built.** It adds `src/shared/lessonVideos.js` (empty until the first video), `scripts/set-video.mjs`, the in-Pet-Town player (`openLessonVideo` in `game.js`), `state.videosWatched` and the video line in the teacher's Lesson link card. To add a video:
 

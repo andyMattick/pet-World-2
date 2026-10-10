@@ -6,7 +6,7 @@ import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
 import { stageHTML, stageReact } from './stage';
-import { lessonVideo, videoEmbedUrl } from '../shared/lessonVideos';
+import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -5692,6 +5692,13 @@ const testSize = course => course.skills.length * (course.testPer || 1);
 /* ---------- Pet Town lesson videos (docs: LESSON-VIDEOS.md) ----------
    YouTube (unlisted), played in a Pet Town window. Watching 80% of a video marks it watched in the save. */
 const WATCHED_SHARE = 0.8;
+/* The video a student gets for a lesson: the class teacher's own YouTube link first (Lessons & questions tab), then
+   Pet Town's own video (src/shared/lessonVideos.js), else null, and the lesson keeps its Khan link. */
+function studentVideo(key){
+  const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, id = mine ? youtubeId(mine.url) : null;
+  if (id) return {key, title:mine.title || 'Watch your teacher\u2019s lesson', youtube:id, kind:'teacher', minutes:null, note:mine.note};
+  return key ? lessonVideo(key) : null;
+}
 /* style: 'main' (a lesson's own button), 'station' (a math station card), 'also' (under a teacher's own link) */
 function lessonVideoButtonHTML(video, style = 'main'){
   const watched = S.videosWatched?.[video.key];
@@ -5703,12 +5710,12 @@ function closeLessonVideo(){
   if (!videoSession) return;
   clearTimeout(videoSession.blockedTimer); window.removeEventListener('message', videoSession.onMessage);
   videoSession.modal.remove(); videoSession = null;
-  document.querySelectorAll('[data-video-style]').forEach(button => { const video = lessonVideo(button.dataset.lessonVideo); if (video) button.outerHTML = lessonVideoButtonHTML(video, button.dataset.videoStyle); });
+  document.querySelectorAll('[data-video-style]').forEach(button => { const video = studentVideo(button.dataset.lessonVideo); if (video) button.outerHTML = lessonVideoButtonHTML(video, button.dataset.videoStyle); });
 }
 function openLessonVideo(key){
-  const video = lessonVideo(key); if (!video) return;
+  const video = studentVideo(key); if (!video) return;
   closeLessonVideo();
-  const teacher = validLessonLink(Backend.me?.lesson_links?.[key]);
+  const teacher = video.kind === 'teacher' ? null : validLessonLink(Backend.me?.lesson_links?.[key]);   // a fallback link when YouTube is blocked
   const modal = document.createElement('div');
   modal.className = 'modal video-modal'; modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-label', video.title);
   modal.innerHTML = `<div class="modal-card video-card"><div class="backrow"><h2>▶ ${esc(video.title)}</h2><button type="button" class="btn small" data-video-close>Close</button></div>
@@ -5753,6 +5760,8 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape' && vi
 function khanLinkHTML(url, name, key){
   const href = url || `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`;
   const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, video = key ? lessonVideo(key) : null;
+  const khanAlso = `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>`;
+  if (mine && youtubeId(mine.url)) return `${lessonVideoButtonHTML(studentVideo(key))}${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${mine.showKhan ? khanAlso : ''}`;   // the teacher's YouTube video plays in Pet Town
   if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${video ? lessonVideoButtonHTML(video, 'also') : mine.showKhan ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
   if (video) return lessonVideoButtonHTML(video);   // our own video replaces the Khan link (docs: LESSON-VIDEOS.md)
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>`;

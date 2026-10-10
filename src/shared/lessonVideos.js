@@ -12,9 +12,7 @@
    Everything between the two VIDEO LIST lines is rewritten by that script. */
 
 /* VIDEO LIST START */
-export const LESSON_VIDEOS = {
-  "bio1:cells": {"title":"Cells: the building blocks of life","video":{"youtube":"TocmZ8cpXnc","kind":"placeholder","minutes":3.4,"updated":"2026-10-10"}}
-};
+export const LESSON_VIDEOS = {};
 /* VIDEO LIST END */
 
 export const VIDEO_KINDS = ['placeholder', 'recorded'];

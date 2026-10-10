@@ -4,7 +4,7 @@
    teacher approves one by one; students only ever see approved questions. Built-in questions are never deleted, only hidden (Restore) or edited (Undo edit).
    Everything is saved on the class (classes.lesson_links, classes.question_edits); students get it through my_student(). */
 import { esc } from './report';
-import { lessonVideo } from '../shared/lessonVideos';
+import { lessonVideo, youtubeId } from '../shared/lessonVideos';
 import { LESSON_COURSES, builtInBank, lessonLinkSlots, khanSearchUrl, validLessonLink, validQuestion, applyQuestionEdits, QUESTION_LIMITS } from '../shared/questionBanks';
 
 export interface LessonLink { url: string; title?: string; note?: string; showKhan?: boolean }
@@ -213,11 +213,13 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
       <div><label for="lqSkill">Lesson</label><select id="lqSkill">${course.skills.map(s => `<option value="${s.id}" ${s.id === pick.skill ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div></div>
     </div>
     <div class="two">
-      <div class="card"><h2>Lesson link</h2>
+      <div class="card"><h2>Lesson video or link</h2>
         ${slots.length > 1 ? `<label for="lqSlot">Link shown for</label><select id="lqSlot">${slots.map(s => `<option value="${esc(s.key)}" ${s.key === pick.slot ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : slot ? `<p class="muted" style="margin-top:0">Shown at the top of <b>${esc(slot.name)}</b>${slot.skills.length > 1 ? ', for all of its lessons' : ''}.</p>` : ''}
         ${slot ? `${slotVideo ? `<p>Pet Town video: <a href="https://www.youtube.com/watch?v=${esc(slotVideo.youtube)}" target="_blank" rel="noopener noreferrer">${esc(slotVideo.title)}</a> <span class="tag ${slotVideo.kind === 'recorded' ? 'i' : 'a'}">${slotVideo.kind === 'recorded' ? 'Recorded' : 'Placeholder'}</span>${slotVideo.minutes ? ` <span class="muted">${slotVideo.minutes} min</span>` : ''}<br><span class="muted">Students watch it in Pet Town instead of going to Khan${mine ? '; your link comes first, with the video under it' : ''}.</span></p>` : ''}
         <p>${slotVideo ? 'Khan lesson (for your reference only)' : 'Khan default'}: <a href="${esc(slot.khan || khanSearchUrl(slot.name))}" target="_blank" rel="noopener noreferrer">${slot.khan ? 'Khan Academy lesson' : 'Khan Academy search'}</a>${mine ? ' <span class="tag i">Students see your link first</span>' : ''}</p>
-        <label for="lqUrl">My link (https://)</label><input type="url" id="lqUrl" maxlength="500" placeholder="https://www.youtube.com/watch?v=…" value="${esc(mine?.url || '')}">
+        <p class="muted" style="margin:6px 0 0">Replace the Khan video with your own: paste a <b>YouTube link</b> (Unlisted is fine) and students watch it right inside Pet Town, with a ✓ when they finish it. Any other https:// link (Google Drive, your site) opens in a new tab.</p>
+        ${mine && youtubeId(mine.url) ? '<p><span class="tag i">▶ Your YouTube video plays in Pet Town</span></p>' : ''}
+        <label for="lqUrl">My video or link (https://)</label><input type="url" id="lqUrl" maxlength="500" placeholder="https://youtu.be/…" value="${esc(mine?.url || '')}">
         <label for="lqTitle">Title</label><input type="text" id="lqTitle" maxlength="100" placeholder="Watch your teacher’s lesson" value="${esc(mine?.title || '')}">
         <label for="lqNote">Note (up to 200 characters)</label><input type="text" id="lqNote" maxlength="200" placeholder="Watch this before you practice." value="${esc(mine?.note || '')}">
         <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="lqShowKhan" ${mine && !mine.showKhan ? '' : 'checked'}> ${slotVideo ? 'Also show the Pet Town video' : 'Also show the Khan link'}</label>
