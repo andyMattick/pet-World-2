@@ -73,19 +73,37 @@ function splitPrompt(prompt){
 }
 const shortWho = who => { const w = who.split(',')[0].trim(); return /^a tour guide/i.test(who) ? 'Tour guide' : w.charAt(0).toUpperCase() + w.slice(1); };
 
-/**
- * opts: {role, prompt, science, you (pet emoji), pets (owned pet emoji), index, first}
- * Two characters talking in front of the place: the student's pet (as the figure or tour guide) and the asker.
- */
-export function stageHTML({role, prompt, science, you, pets = [], index = 0, first = false}){
-  const scene = SCENES[sceneFor(role)] || SCENES.travel;
+/** Who asks one question: their emoji, the name on their speech bubble, and what they say. */
+function askerFor(prompt, science, index, crowd){
   const {lead, said} = splitPrompt(prompt);
-  const others = pets.filter(p => p !== you), crowd = [...others, ...SPARE_PETS.filter(p => !others.includes(p) && p !== you)];
   let npc = '🧑';
   const rule = lead && SPEAKERS.find(([re]) => re.test(lead));
   if (science || rule?.[1] === 'PET') npc = crowd[index % crowd.length];
   else if (rule) npc = rule[1];
   const speaker = (lead || (science ? 'Someone on your tour' : 'A visitor')).replace(/\s+(asks|says|tells you|wonders|wants to know)$/i, '');
+  return {npc, speaker, said};
+}
+
+/** The earlier questions in this practice, quiz or test, kept on stage so it reads as one conversation. */
+function historyHTML(history, science, crowd){
+  if (!history.length) return '';
+  return `<div class="stage-history" role="log" aria-label="Earlier in this conversation">${history.map(h => {
+    const {npc, speaker, said} = askerFor(h.prompt, science, h.index, crowd);
+    return `<div class="talk-bubble ask past"><span class="speaker">${npc} ${esc(speaker)}</span>${esc(said)}</div>
+      <div class="talk-bubble reply past${h.correct ? '' : ' missed'}"><span class="speaker">You</span>${esc(h.text)}</div>
+      ${h.correct ? '' : `<div class="talk-bubble ask past fix"><span class="speaker">${npc} ${esc(speaker)}</span>Hmm, I read that it's: ${esc(h.answer)}</div>`}`;
+  }).join('')}</div>`;
+}
+
+/**
+ * opts: {role, prompt, science, you (pet emoji), pets (owned pet emoji), index, first, history}
+ * Two characters talking in front of the place: the student's pet (as the figure or tour guide) and the asker.
+ * history: the earlier questions in this run, [{prompt, index, text (the student's answer), correct, answer (the right one)}].
+ */
+export function stageHTML({role, prompt, science, you, pets = [], index = 0, first = false, history = []}){
+  const scene = SCENES[sceneFor(role)] || SCENES.travel;
+  const others = pets.filter(p => p !== you), crowd = [...others, ...SPARE_PETS.filter(p => !others.includes(p) && p !== you)];
+  const {npc, speaker, said} = askerFor(prompt, science, index, crowd);
   const place = science ? role.who.replace(/^a tour guide (at|in|on|running) (the )?/i, '').replace(/^\w/, c => c.toUpperCase()) : role.where;
   const portal = first ? `<div class="stage-portal" aria-hidden="true">${science ? '🎟️ Your tour is starting…' : `⏳ Traveling to ${esc(role.where)}…`}</div>` : '';
   return `<div class="role-stage${scene.night ? ' night' : ''}${scene.sea ? ' sea' : ''}${first ? ' arrive' : ''}" style="--sky1:${scene.sky[0]};--sky2:${scene.sky[1]};--g1:${scene.ground[0]};--g2:${scene.ground[1]}">
@@ -94,6 +112,7 @@ export function stageHTML({role, prompt, science, you, pets = [], index = 0, fir
     <div class="stage-row">
       <div class="stage-actor you" aria-hidden="true"><span class="body">${you}</span><span class="plate">You · ${esc(shortWho(role.who))}</span></div>
       <div class="stage-talk">
+        ${historyHTML(history, science, crowd)}
         <div class="talk-bubble ask"><span class="speaker">${esc(speaker)}</span><h3>${esc(said)}</h3></div>
         <div class="stage-replies" aria-live="polite"></div>
       </div>

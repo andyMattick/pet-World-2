@@ -6298,8 +6298,10 @@ function renderEnglishQuestion(){
   const question = run.questions[run.index];
   const role = ROLE_CARDS[question.skillId];
   const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div>${role ? stageHTML({role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div>${role ? stageHTML({role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered,
+    history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
   addCrossOuts($('#libraryWrap'), '.ela-option');
+  const talkLog = $('#libraryWrap .stage-history'); if (talkLog) talkLog.scrollTop = talkLog.scrollHeight;   // newest exchange in view
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
@@ -6370,6 +6372,7 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
+    (englishRun.replies = englishRun.replies || [])[englishRun.index] = {text:question.options[answer], correct, answer:question.options[question.answer]};   // kept on stage as the conversation goes on
     recordEnglishAnswer(englishRun, question, correct);
     if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
     button.closest('.ela-options').querySelectorAll('[data-ela-answer]').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });

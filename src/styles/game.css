@@ -865,3 +865,15 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .xo-wrap > :disabled + .xo{visibility:hidden}
 .xo-wrap > .crossed.correct, .xo-wrap > .crossed.yes{text-decoration:none; opacity:1}   /* never strike through the right answer once it is shown */
 
+/* The conversation so far on the role stage (stage.js historyHTML): earlier questions and answers stay above the new one */
+.stage-history{display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding:2px 4px 6px; scroll-behavior:smooth;
+  mask-image:linear-gradient(180deg, transparent 0, #000 28px); -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 28px)}
+.talk-bubble.past{font-size:.92rem; padding:6px 10px; box-shadow:none; border-width:2px; opacity:.88; animation:none}
+.talk-bubble.past::after{display:none}
+.talk-bubble.past .speaker{font-size:.72rem}
+.talk-bubble.reply.past{align-self:flex-start; max-width:88%}
+.talk-bubble.ask.past{align-self:flex-end; max-width:88%}
+.talk-bubble.reply.past.missed{background:color-mix(in srgb,var(--bad) 30%,var(--surface))}
+.talk-bubble.ask.past.fix{font-style:italic}
+@media (max-width:600px){.stage-history{max-height:170px}}
+
