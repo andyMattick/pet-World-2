@@ -22,15 +22,15 @@ export interface StudentReport {
   readingBooks?: { id?: string; title: string; author?: string; chapters: ReadingChapter[]; quizzes?: ReadingQuiz[] }[];
   elaProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   historyProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
-  historyProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
+  historyProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   scienceProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
-  scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
+  scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   writtenAnswers?: WrittenEntry[];
 }
 /* a short answer or paragraph from the student's save (docs: QUESTION-TYPES.md) */
 interface WrittenEntry { id: string; courseId: string; skillId: string; type: string; prompt: string; rubric: string[]; model: string; text: string; at: number; where: string; parentReview?: { points: number[]; comment: string; redo: boolean } }
-interface ReadingChapter { id?: string; label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string; submittedAt?: number }
-interface ReadingQuiz { id: string; at?: number; chapterLabels?: string[]; score?: number; total?: number; missed?: string[]; essays?: { prompt: string; answer: string }[]; submittedAt?: number }
+interface ReadingChapter { id?: string; label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string; submittedAt?: number; localReview?: string }
+interface ReadingQuiz { id: string; at?: number; chapterLabels?: string[]; score?: number; total?: number; missed?: string[]; essays?: { prompt: string; answer: string }[]; submittedAt?: number; localReview?: string }
 /* practice time from class_report(): minutes today and in the last 7 days, daily minutes for 4 weeks,
    and the 10 most recent sessions as [start ms, last seen ms, active seconds, device] */
 interface PracticeSummary { last: number | null; today: number; week: number; days: [string, number][]; recent: [number, number, number, string | null][] }
@@ -436,7 +436,8 @@ function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>
   const rows = Object.entries(projects).map(([id, title]) => {
     const p = (id.startsWith('bio') ? r.scienceProjects : r.historyProjects)?.[id], at = p?.submittedAt || 0, submitted = p?.status === 'submitted' && at > 0;
     const [verdict, stamp] = String(overrides[`project:${id}`] || '').split(':'), current = +stamp === at && (verdict === 'verified' || verdict === 'revise') ? verdict : '';
-    const status = !submitted ? 'Not submitted' : current === 'verified' ? 'Verified' : current === 'revise' ? 'Revision requested' : 'Waiting for review';
+    const parent = !current && (p?.localReview === 'verified' || p?.localReview === 'revise') ? p.localReview : '';   // a parent's check at home (grown-up PIN)
+    const status = !submitted ? 'Not submitted' : current === 'verified' ? 'Verified' : current === 'revise' ? 'Revision requested' : parent === 'verified' ? 'Verified by a parent' : parent === 'revise' ? 'Revision requested by a parent' : 'Waiting for review';
     const answers = Object.entries(p?.answers || {}).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(labels[k] || k)}</dt><dd>${esc(v)}</dd>`).join('');
     return `<h3>${esc(title)} · ${status}</h3>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl></div>` : '<p class="muted">No work yet.</p>'}${submitted ? `<div class="row"><button class="btn small primary" data-project-verdict="verified" data-project-course="${id}" data-project-at="${at}">Verify</button> <button class="btn small" data-project-verdict="revise" data-project-course="${id}" data-project-at="${at}">Request revision</button></div>` : ''}`;
   }).join('');
@@ -474,27 +475,28 @@ function englishReadingHTML(r: StudentReport, subject = '') {
 /* Reading Log with the grown-up check: chapter notes must be verified before they can be quizzed (docs/READING-QUIZ.md).
    Verdicts are saved in quiz_overrides as reading:<bookId>:<chapterId> and readingEssay:<quizId> = "verified:<submittedAt>" or "revise:<submittedAt>". */
 const READING_LABELS: [keyof ReadingChapter, string][] = [['characters','Main characters'],['notableAction','Notable character action'],['interaction','Character interactions'],['conflict','Conflict'],['joy','Joy or success'],['setting','Environment and setting'],['themes','Theme or big idea'],['detail','Standout detail'],['vocabulary','Vocabulary']];
-function readingVerdict(overrides: Record<string, string>, key: string, at: number) {
+function readingVerdict(overrides: Record<string, string>, key: string, at: number, parent = '') {
   if (!at) return 'draft';
   const [verdict, stamp] = String(overrides[key] || '').split(':');
-  return +stamp === at && (verdict === 'verified' || verdict === 'revise') ? verdict : 'submitted';
+  if (+stamp === at && (verdict === 'verified' || verdict === 'revise')) return verdict;
+  return parent === 'verified' ? 'parentVerified' : parent === 'revise' ? 'parentRevise' : 'submitted';   // a parent's check at home
 }
-const READING_STATUS: Record<string, string> = { draft: 'Not sent yet', submitted: 'Waiting for your check', verified: 'Verified', revise: 'Needs fixing' };
+const READING_STATUS: Record<string, string> = { draft: 'Not sent yet', submitted: 'Waiting for your check', verified: 'Verified', revise: 'Needs fixing', parentVerified: 'Checked by a parent', parentRevise: 'A parent asked for a fix' };
 function readingReviewHTML(r: StudentReport, overrides: Record<string, string>) {
   let waiting = 0;
   const buttons = (key: string, at: number, yes: string, no: string) => `<div class="row"><button class="btn small primary" data-reading-verdict="verified" data-reading-key="${esc(key)}" data-reading-at="${at}">${yes}</button> <button class="btn small" data-reading-verdict="revise" data-reading-key="${esc(key)}" data-reading-at="${at}">${no}</button></div>`;
   const books = (r.readingBooks || []).map(book => {
     const chapters = book.chapters.length ? book.chapters.map(chapter => {
-      const at = chapter.submittedAt || 0, key = `reading:${book.id}:${chapter.id}`, state = book.id && chapter.id ? readingVerdict(overrides, key, at) : 'draft';
+      const at = chapter.submittedAt || 0, key = `reading:${book.id}:${chapter.id}`, state = book.id && chapter.id ? readingVerdict(overrides, key, at, chapter.localReview) : 'draft';
       if (state === 'submitted') waiting++;
       const notes = READING_LABELS.filter(([k]) => chapter[k]).map(([k, label]) => `<dt>${label}</dt><dd>${esc(chapter[k])}</dd>`).join('');
       return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b> · <span class="muted">${READING_STATUS[state]}</span>${notes ? `<dl>${notes}</dl>` : '<p class="muted">No notes yet.</p>'}${at ? buttons(key, at, state === 'verified' ? 'Verified ✓' : 'Notes match the book', 'Needs fixing') : ''}</div>`;
     }).join('') : '<p class="muted">No chapters yet.</p>';
     const quizzes = (book.quizzes || []).slice().reverse().map(qz => {
-      const at = qz.submittedAt || 0, key = `readingEssay:${qz.id}`, state = (qz.essays || []).length ? readingVerdict(overrides, key, at) : 'draft';
+      const at = qz.submittedAt || 0, key = `readingEssay:${qz.id}`, state = (qz.essays || []).length ? readingVerdict(overrides, key, at, qz.localReview) : 'draft';
       if (state === 'submitted') waiting++;
       const essays = (qz.essays || []).map(e => `<dt>${esc(e.prompt)}</dt><dd>${esc(e.answer)}</dd>`).join('');
-      return `<div class="reading-report-chapter"><b>Reading quiz ${qz.at ? esc(new Date(qz.at).toLocaleDateString()) : ''} · ${esc((qz.chapterLabels || []).join(', '))}</b> · ${qz.score ?? 0}/${qz.total ?? 0} right${essays ? ` · essay: ${state === 'verified' ? 'Accepted' : state === 'revise' ? 'Redo requested' : 'Waiting for your check'}` : ''}${(qz.missed || []).length ? `<p class="muted">Missed: ${(qz.missed || []).map(esc).join(' · ')}</p>` : ''}${essays ? `<dl>${essays}</dl>${buttons(key, at, 'Accept essay', 'Ask for a redo')}` : ''}</div>`;
+      return `<div class="reading-report-chapter"><b>Reading quiz ${qz.at ? esc(new Date(qz.at).toLocaleDateString()) : ''} · ${esc((qz.chapterLabels || []).join(', '))}</b> · ${qz.score ?? 0}/${qz.total ?? 0} right${essays ? ` · essay: ${state === 'verified' ? 'Accepted' : state === 'revise' ? 'Redo requested' : state === 'parentVerified' ? 'Accepted by a parent' : state === 'parentRevise' ? 'A parent asked for a redo' : 'Waiting for your check'}` : ''}${(qz.missed || []).length ? `<p class="muted">Missed: ${(qz.missed || []).map(esc).join(' · ')}</p>` : ''}${essays ? `<dl>${essays}</dl>${buttons(key, at, 'Accept essay', 'Ask for a redo')}` : ''}</div>`;
     }).join('');
     return `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${chapters}${quizzes}</section>`;
   }).join('');

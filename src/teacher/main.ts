@@ -322,8 +322,8 @@ function renderVocabularyTab() {
     const list = (kids || []) as { id: string; display_name: string }[];
     const { data, error: saveError } = list.length ? await sb!.from('saves').select('student_id, vocab:state->vocab').in('student_id', list.map(k => k.id)) : { data: [], error: null };
     if (saveError) { roster = null; draw(); return; }
-    const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }> } }[]).map(row => [row.student_id, row.vocab?.stats || {}]));
-    roster = list.map(k => ({ name: k.display_name, stats: byStudent.get(k.id) || {} }));
+    const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[] } }[]).map(row => [row.student_id, row.vocab || {}]));
+    roster = list.map(k => ({ name: k.display_name, stats: byStudent.get(k.id)?.stats || {}, flagged: Array.isArray(byStudent.get(k.id)?.flagged) ? byStudent.get(k.id)!.flagged! : [] }));
     draw();
   })();
 }

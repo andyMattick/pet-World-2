@@ -163,6 +163,18 @@ export function wordStatus(stat){
   return recent.filter(Boolean).length / recent.length >= 0.6 ? 'close' : 'work';
 }
 export const STATUS_TEXT = { new: 'Not seen yet', work: 'Needs practice', close: 'Getting there', solid: 'Solid' };
+/* the word as written in a book or question, matched to a list word: "erupted" finds "erupt", "cities" finds "city" */
+export function findWord(list, raw){
+  const w = wordKey(raw).replace(/[’']s$/, ''), byKey = new Map(list.map(v => [wordKey(v.w), v]));
+  const tries = [w, w.replace(/ies$/, 'y'), w.replace(/es$/, ''), w.replace(/s$/, ''), w.replace(/ied$/, 'y'), w.replace(/ed$/, ''), w.replace(/d$/, ''), w.replace(/ing$/, ''), w.replace(/ing$/, 'e'), w.replace(/ly$/, '')];
+  for (const t of tries) if (t && byKey.has(t)) return byKey.get(t);
+  return null;
+}
+/* an example sentence from where the word was found, with ___ in its place (empty if the word isn't in it) */
+export function blankSentence(ctx, word){
+  const text = clean(ctx, VOCAB_LIMITS.sentence), re = new RegExp(`\\b${String(word).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  return re.test(text) ? text.replace(re, '___') : '';
+}
 /* weaker words come up more often */
 export const wordWeight = stat => ({ new: 3, work: 4, close: 2, solid: 1 })[wordStatus(stat)];
 
@@ -173,8 +185,11 @@ export function normalizeVocabState(v){
     if (k.length <= VOCAB_LIMITS.word && s && Array.isArray(s.r)) stats[k] = { r: s.r.slice(-8).map(x => (x ? 1 : 0)) };
   }
   const home = out.home && typeof out.home === 'object' ? out.home : {};
+  /* words the student flagged while reading (highlight → 📌), waiting for a grown-up to add the meaning */
+  const flagged = (Array.isArray(out.flagged) ? out.flagged : []).filter(f => f && typeof f.w === 'string' && /^[\p{L}][\p{L}'’-]{0,39}$/u.test(f.w.trim()))
+    .map(f => ({ w: f.w.trim().toLowerCase(), ctx: clean(f.ctx, VOCAB_LIMITS.sentence), at: Number.isFinite(+f.at) ? +f.at : 0 })).slice(-60);
   return {
-    stats, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
+    flagged, stats, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
     home: { builtIn: home.builtIn !== false, words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) }
   };

@@ -21,6 +21,15 @@ Every 4 answers earn one arcade minute, the same as English practice.
 
 **Focus words:** every word is in focus by default. The teacher can pick the class's focus words, and a parent's choice wins on that student's device. **Turning off Pet Town's list** (either place) leaves only the added words.
 
+## 📌 Flag a word while reading
+
+Anywhere in Pet Town (questions, stories, reading notes, math problems), the student can highlight one word, or press and hold it on a tablet, and tap **📌 What does it mean?**
+- **A word on her lists** (Pet Town's, the class's or the family's) shows its meaning and example sentence right away. Simple endings are matched too: "observed" finds *observe*, "cities" finds *city*.
+- **Any other word** is saved as flagged, along with the sentence it came from. There is no dictionary service and no AI.
+  - **Parent:** at home, Word Workshop → For grown-ups (PIN) shows each flagged word with its sentence. The ___ blank is already filled in. Type a kid-friendly meaning and tap **Add**, and the word joins the practice words. A **Look it up ↗** link opens a dictionary for the grown-up.
+  - **Teacher:** the Vocabulary tab lists every word students flagged, who flagged it and where. Add a meaning and it joins the class list.
+  - Once a word has a meaning on any list, it drops off the student's flagged list by itself.
+
 ## What grown-ups see
 
 - **Teacher:** Vocabulary tab → "Class progress on focus words" shows each student's counts and the words to reteach.

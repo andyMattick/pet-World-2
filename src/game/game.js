@@ -9,7 +9,7 @@ import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, normalizeVocabState } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -5944,6 +5944,7 @@ function renderEnglishLibrary(){
   ];
   const editor = active ? `<div class="ela-editor"><div class="ela-reading-context"><strong>${esc(active.book.title)}</strong><span>${esc(chapter.label)}</span></div>
     <p class="reading-status reading-${readingChapterState(active.book,chapter)}">${READING_STATE_TEXT[readingChapterState(active.book,chapter)]}${readingChapterState(active.book,chapter) === 'revise' ? ': fix your notes, then send them again.' : readingChapterState(active.book,chapter) === 'verified' ? '. This chapter can be quizzed.' : ''}</p>
+    ${chapter.submittedAt ? grownUpCheckHTML('chapter', `${active.book.id}|${chapter.id}`, readingChapterState(active.book,chapter)) : ''}
     <form id="elaChapterForm"><div class="ela-prompts">${fields.map(([key,label]) => `<label>${label}<textarea name="${key}" maxlength="600" rows="2">${esc(chapter[key] || '')}</textarea></label>`).join('')}</div><div class="row"><button class="btn" type="submit" data-save-mode="draft">Save chapter notes</button>${readingChapterState(active.book,chapter) === 'verified' || readingChapterState(active.book,chapter) === 'submitted' ? '' : '<button class="btn berry" type="submit" data-save-mode="submit">Save and send to a grown-up to check</button>'}</div><p class="muted">Changing notes after they are checked means a grown-up checks them again.</p></form>
     <div class="ela-start"><p>The game does not check whether notes match the book.</p></div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book, then add a chapter to save your notes.</p></div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📖 Reading Log</h2><button class="btn small" data-go="home">Back to town</button></div>
@@ -6004,11 +6005,13 @@ $('#libraryWrap').addEventListener('click', event => {
    Questions are built from verified notes only, with templates (no AI). Reading quizzes never award Pet Town coins. */
 const READING_STATE_TEXT = {draft:'✏️ Not sent yet', submitted:'⏳ Waiting for a grown-up', verified:'✅ Checked by a grown-up', revise:'🔁 Needs fixing'};
 const READING_FIELDS = [['characters','Main characters'],['notableAction','Notable character action'],['interaction','Character interactions'],['conflict','Conflict'],['joy','Joy or success'],['setting','Environment and setting'],['themes','Theme or big idea'],['detail','Standout detail'],['vocabulary','Vocabulary']];
+/* a grown-up's check: the teacher's (quiz_overrides, for this submission) wins; otherwise a parent's, made behind the grown-up PIN
+   and saved with the work (localReview, cleared whenever the work is sent again) */
 function readingVerdict(key, submittedAt, localReview){
   if (!submittedAt) return 'draft';
   if (Backend.me) {
     const [verdict, at] = String(Backend.me.quiz_overrides?.[key] || '').split(':');
-    return +at === submittedAt && (verdict === 'verified' || verdict === 'revise') ? verdict : 'submitted';
+    if (+at === submittedAt && (verdict === 'verified' || verdict === 'revise')) return verdict;
   }
   return localReview || 'submitted';
 }
@@ -6156,7 +6159,6 @@ $('#libraryWrap').addEventListener('submit', event => {
 let parentReadingUnlocked = false;
 const pinHash = pin => { let h = 5381; for (const c of 'pet-town:' + pin) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0; return h.toString(36); };
 function readingReviewHTML(){
-  if (Backend.me) return '';
   const waiting = S.readingBooks.flatMap(book => [
     ...book.chapters.filter(ch => readingChapterState(book, ch) === 'submitted').map(ch => ({kind:'chapter', book, ch})),
     ...book.quizzes.filter(qz => readingEssayState(qz) === 'submitted').map(qz => ({kind:'essay', book, qz}))
@@ -6181,7 +6183,7 @@ $('#parentWrap').addEventListener('submit', event => {
 });
 $('#parentWrap').addEventListener('click', event => {
   if (event.target.closest('#parentPinLock')) { parentReadingUnlocked = false; renderParent(); return; }
-  const b = event.target.closest('[data-reading-review]'); if (!b || !parentReadingUnlocked || Backend.me) return;
+  const b = event.target.closest('[data-reading-review]'); if (!b || !parentReadingUnlocked) return;
   const book = S.readingBooks.find(x => x.id === b.dataset.book); if (!book) return;
   const target = b.dataset.chapter ? book.chapters.find(ch => ch.id === b.dataset.chapter) : book.quizzes.find(qz => qz.id === b.dataset.quiz);
   if (!target || !target.submittedAt) return;
@@ -6219,10 +6221,10 @@ function historyProjectState(courseId){
   const p = projectStore(courseId)[courseId] || {answers:{},status:'draft',submittedAt:0,localReview:''};
   if (p.status !== 'submitted') return {...p, state:'draft'};
   const raw = Backend.me ? Backend.me.quiz_overrides?.[`project:${courseId}`] : '', [verdict, at] = String(raw || '').split(':');
-  const review = Backend.me ? (+at === p.submittedAt && (verdict === 'verified' || verdict === 'revise') ? verdict : '') : p.localReview;
+  const review = (+at === p.submittedAt && (verdict === 'verified' || verdict === 'revise') ? verdict : '') || p.localReview;   // teacher first, then a parent (PIN)
   return {...p, state:review || 'submitted'};
 }
-const PROJECT_STATE_TEXT = {draft:'Draft', submitted:'Submitted \u00b7 waiting for review', verified:'\u2705 Verified by your teacher', revise:'\ud83d\udd01 Revision requested'};
+const PROJECT_STATE_TEXT = {draft:'Draft', submitted:'Submitted \u00b7 waiting for review', verified:'\u2705 Verified', revise:'\ud83d\udd01 Revision requested'};
 function historyProjectCardHTML(courseId){ return projectKeys(courseId).map(historyProjectCardOne).join(''); }
 function historyProjectCardOne(courseId){
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
@@ -6238,8 +6240,9 @@ function renderHistoryProject(courseId){
   void Backend.refreshSettings();
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId), locked = info.state === 'submitted' || info.state === 'verified';
   const fields = project.steps.map(step => `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');
-  const actions = locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
-    : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`;
+  const actions = (locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
+    : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`)
+    + (info.state === 'draft' ? '' : grownUpCheckHTML('project', courseId, info.state));   // a parent can check it right here, behind the grown-up PIN
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId.replace(/lab$/, '')}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
 }
 $('#libraryWrap').addEventListener('submit', event => {
@@ -6665,7 +6668,8 @@ function renderVocab(){
   }
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
-    <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}</div>${vocabGrownUpHTML(all)}`;
+    <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}
+    ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: <b>${flaggedWaiting().map(f => esc(f.w)).join(', ')}</b> · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet Town, highlight it (or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
 }
 function startVocab(mode){
   const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
@@ -6723,12 +6727,15 @@ function finishVocab(){
 /* grown-ups: add or import words and choose focus words, behind the grown-up PIN (the class's words come from the teacher) */
 function vocabGrownUpHTML(all){
   const v = S.vocab.home, classWords = Backend.me?.game_settings?.vocab?.words?.length || 0;
-  if (!parentReadingUnlocked) return `<section class="panel vocab-grownup"><h3>For grown-ups: word list</h3><p class="muted">Add your own words (for example, this week’s Wordly Wise lesson), import a list, or choose which words to focus on.</p>
+  if (!parentReadingUnlocked) return `<section class="panel vocab-grownup"><h3>For grown-ups: word list</h3><p class="muted">Add your own words (for example, this week’s Wordly Wise lesson), import a list, or choose which words to focus on.${flaggedWaiting().length ? ` <b>${flaggedWaiting().length} word${flaggedWaiting().length === 1 ? '' : 's'} your child flagged ${flaggedWaiting().length === 1 ? 'needs' : 'need'} a meaning.</b>` : ''}</p>
     <form id="vocabPinForm" class="row"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off"></label><button class="btn small primary" type="submit">${S.parentPin ? 'Unlock' : 'Save PIN and unlock'}</button></form></section>`;
   const focus = new Set(v.focus.map(wordKey)), allFocus = !focus.size;
   const sets = [...new Set(all.map(x => x.set))];
   return `<section class="panel vocab-grownup"><h3>For grown-ups: word list</h3>
     <p class="muted">${classWords ? `Your child’s teacher added ${classWords} word${classWords === 1 ? '' : 's'}. ` : ''}Words you add are saved with this town${Backend.me ? ' and the teacher can see progress on them' : ''}.</p>
+    ${flaggedWaiting().length ? `<h4>📌 Words your child flagged</h4><p class="muted" style="margin-top:0">Add a kid-friendly meaning (and the sentence it came from, with ___ for the word) and it joins the practice words.</p>${flaggedWaiting().map(f => `<div class="vocab-flag-row" data-flag-row="${esc(f.w)}"><b>${esc(f.w)}</b>${f.ctx ? `<span class="muted">“${esc(f.ctx)}”</span>` : ''}
+      <input type="text" data-flag-def maxlength="200" placeholder="What it means" aria-label="What ${esc(f.w)} means"><input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w))}" placeholder="Sentence with ___ (optional)" aria-label="Example sentence">
+      <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
     <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
     <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> You can also paste two columns from a spreadsheet.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
@@ -6770,6 +6777,14 @@ $('#vocabWrap').addEventListener('click', event => {
     if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, ...words.map(w => wordKey(w.w))])];   // new words join the focus list
     save(); renderVocab(); $('#vocabMsg').textContent = `${words.filter(w => !have.has(wordKey(w.w))).length} added.${errors.length ? ` ${errors.length} line${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 2).join(' ')}` : ''}`; return;
   }
+  if (b.dataset.flagDismiss) { S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagDismiss); save(); renderVocab(); return; }
+  if (b.dataset.flagAdd) {
+    const row = b.closest('[data-flag-row]'), entry = validWord({w:b.dataset.flagAdd, d:row.querySelector('[data-flag-def]').value, s:row.querySelector('[data-flag-sentence]').value});
+    if (!entry) { toast('Type what the word means first.'); row.querySelector('[data-flag-def]').focus(); return; }
+    S.vocab.home.words = [...S.vocab.home.words.filter(x => wordKey(x.w) !== wordKey(entry.w)), entry].slice(0, VOCAB_LIMITS.list);
+    if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, wordKey(entry.w)])];
+    S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagAdd); save(); toast(`${entry.w} added to the practice words.`); renderVocab(); return;
+  }
   if (b.dataset.vocabRemove) { S.vocab.home.words = S.vocab.home.words.filter(x => x.w !== b.dataset.vocabRemove); save(); renderVocab(); return; }
   if (b.hasAttribute('data-vocab-focus-all') || b.hasAttribute('data-vocab-focus-none')) { const on = b.hasAttribute('data-vocab-focus-all'); $$('#vocabWrap [data-vocab-focus]').forEach(x => { x.checked = on; }); return; }
   if (b.hasAttribute('data-vocab-save-focus')) {
@@ -6785,6 +6800,81 @@ function vocabReportHTML(){
   return `<div class="panel"><h3>🔤 Vocabulary</h3><p><b>${count('solid')}</b> solid · <b>${count('close')}</b> getting there · <b>${count('work')}</b> need practice · <b>${count('new')}</b> not seen yet (of ${focus.length} focus words). Sprint best: ${S.vocab.sprintBest}.</p><button class="btn small" data-go-vocab>Open Word Workshop</button></div>`;
 }
 document.addEventListener('click', event => { if (event.target.closest('[data-go-vocab]')) { vocabTab = 'chart'; show('vocab'); } });
+
+/* ---------- 📌 highlight a word to look it up (docs: VOCAB.md) ----------
+   Select (or long-press) one word in a question, story or reading note: a 📌 button appears. A word on any of the
+   student's lists shows its meaning right away; any other word is saved as "flagged" for a grown-up (Word Workshop,
+   behind the PIN) or the teacher (Vocabulary tab) to add the meaning. No dictionary service and no AI. */
+const flagBtn = document.createElement('button'), flagPop = document.createElement('div');
+flagBtn.type = 'button'; flagBtn.className = 'word-flag-btn'; flagBtn.hidden = true; flagBtn.textContent = '📌 What does it mean?';
+flagPop.className = 'word-flag-pop'; flagPop.hidden = true; flagPop.setAttribute('role', 'dialog'); flagPop.setAttribute('aria-live', 'polite');
+document.body.append(flagBtn, flagPop);
+let flagPick = null, flagTimer = null;
+const FLAG_WORD = /^[\p{L}][\p{L}'’-]{1,29}$/u;
+function flagSelection(){
+  const sel = window.getSelection(), text = String(sel?.toString() || '').trim().replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+  const node = sel?.anchorNode?.nodeType === 3 ? sel.anchorNode.parentElement : sel?.anchorNode;
+  const ok = sel && !sel.isCollapsed && FLAG_WORD.test(text) && node?.closest?.('main') && !node.closest('input, textarea, select, [contenteditable], #scr-vocab, .word-flag-pop, #scr-join, #scr-name');
+  if (!ok) { flagBtn.hidden = true; flagPick = null; return; }
+  const box = sel.getRangeAt(0).getBoundingClientRect(), block = node.closest('p, li, dd, h3, h2, label, .stage-bubble, .talk-bubble, .ela-question, div') || node;
+  flagPick = {w:text, ctx:String(block.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200)};
+  flagBtn.hidden = false;
+  flagBtn.style.left = `${Math.max(8, Math.min(window.innerWidth - flagBtn.offsetWidth - 8, box.left + box.width / 2 - flagBtn.offsetWidth / 2))}px`;
+  flagBtn.style.top = `${Math.max(8, box.top - flagBtn.offsetHeight - 8 < 8 ? box.bottom + 8 : box.top - flagBtn.offsetHeight - 8)}px`;
+}
+document.addEventListener('selectionchange', () => { clearTimeout(flagTimer); flagTimer = setTimeout(flagSelection, 250); });
+flagBtn.addEventListener('pointerdown', event => event.preventDefault());   // keep the selection while tapping the button
+flagBtn.addEventListener('click', () => {
+  if (!flagPick) return;
+  const {w, ctx} = flagPick, found = findWord(vocabWords().all, w);
+  let html;
+  if (found) html = `<b>${esc(found.w)}</b>: ${esc(found.d)}${found.s ? `<br><span class="muted">${esc(found.s.replace('___', found.w))}</span>` : ''}`;
+  else {
+    const key = wordKey(w);
+    if (!S.vocab.flagged.some(f => f.w === key)) { S.vocab.flagged = [...S.vocab.flagged, {w:key, ctx, at:Date.now()}].slice(-60); save(); }
+    html = `📌 <b>${esc(w)}</b> is saved. A grown-up will add what it means, and then it shows up in your 🔤 Word Workshop.`;
+  }
+  flagPop.innerHTML = `${html}<button type="button" class="btn small" data-flag-close>Got it</button>`;
+  flagPop.hidden = false; flagPop.style.left = flagBtn.style.left; flagPop.style.top = flagBtn.style.top;
+  flagBtn.hidden = true; window.getSelection()?.removeAllRanges(); sfx('tick');
+  flagPop.querySelector('[data-flag-close]').focus();
+});
+flagPop.addEventListener('click', event => { if (event.target.closest('[data-flag-close]')) flagPop.hidden = true; });
+document.addEventListener('pointerdown', event => { if (!flagPop.hidden && !event.target.closest('.word-flag-pop')) flagPop.hidden = true; });
+/* flagged words still waiting for a meaning (a word that now has one on any list drops off by itself) */
+const flaggedWaiting = () => { const all = vocabWords().all; return S.vocab.flagged.filter(f => !findWord(all, f.w)); };
+
+/* ---------- grown-up check on the spot (projects, labs, reading notes) ----------
+   A parent unlocks with the grown-up PIN right where the work is, then marks it checked or asks for a fix. Saved with the
+   work (localReview), so it also works in a class; the teacher sees it in the dashboard and the teacher's own check wins. */
+function grownUpCheckHTML(kind, id, state){
+  const label = kind === 'project' ? ['Verify', 'Request revision'] : ['Notes match the book', 'Needs fixing'];
+  const [bookId, chapterId] = id.split('|');
+  const key = kind === 'project' ? `project:${id}` : `reading:${bookId}:${chapterId}`;
+  const at = kind === 'project' ? projectStore(id)[id]?.submittedAt : S.readingBooks.find(x => x.id === bookId)?.chapters.find(x => x.id === chapterId)?.submittedAt;
+  const [teacherVerdict, teacherAt] = String(Backend.me?.quiz_overrides?.[key] || '').split(':');
+  if (at && +teacherAt === at && (teacherVerdict === 'verified' || teacherVerdict === 'revise')) return '<p class="muted">Checked by the teacher.</p>';   // the teacher's check wins
+  if (!parentReadingUnlocked) return `<div class="grownup-check"><b>Grown-up check</b><span class="muted">Parents can check this here.</span><span class="row"><input type="password" class="grownup-pin" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'}" placeholder="${S.parentPin ? 'PIN' : 'New PIN'}"><button type="button" class="btn small" data-grownup-unlock>${S.parentPin ? 'Unlock' : 'Save PIN'}</button></span></div>`;
+  return `<div class="grownup-check"><b>Grown-up check</b><span class="row"><button type="button" class="btn small primary" data-grownup-review="verified" data-kind="${kind}" data-id="${esc(id)}" ${state === 'verified' ? 'disabled' : ''}>${state === 'verified' ? '✓ ' : ''}${label[0]}</button><button type="button" class="btn small" data-grownup-review="revise" data-kind="${kind}" data-id="${esc(id)}" ${state === 'revise' ? 'disabled' : ''}>${label[1]}</button><button type="button" class="btn small" data-grownup-lock>Lock</button></span></div>`;
+}
+function rerenderLibraryPage(){ const project = $('#historyProjectForm'); if (project) renderHistoryProject(project.dataset.course); else renderEnglishLibrary(); }
+function unlockGrownUp(input){
+  const pin = String(input?.value || '');
+  if (!/^\d{4}$/.test(pin)) { toast('Use 4 digits.'); return false; }
+  if (!S.parentPin) { S.parentPin = pinHash(pin); save(); } else if (S.parentPin !== pinHash(pin)) { toast('That PIN does not match.'); return false; }
+  parentReadingUnlocked = true; return true;
+}
+$('#libraryWrap').addEventListener('click', event => {
+  const unlock = event.target.closest('[data-grownup-unlock]');
+  if (unlock) { if (unlockGrownUp(unlock.closest('.grownup-check').querySelector('.grownup-pin'))) rerenderLibraryPage(); return; }
+  if (event.target.closest('[data-grownup-lock]')) { parentReadingUnlocked = false; rerenderLibraryPage(); return; }
+  const b = event.target.closest('[data-grownup-review]'); if (!b || !parentReadingUnlocked) return;
+  const verdict = b.dataset.grownupReview;
+  if (b.dataset.kind === 'project') { const p = projectStore(b.dataset.id)[b.dataset.id]; if (!p || p.status !== 'submitted') return; p.localReview = verdict; }
+  else { const [bookId, chapterId] = b.dataset.id.split('|'), ch = S.readingBooks.find(x => x.id === bookId)?.chapters.find(x => x.id === chapterId); if (!ch || !ch.submittedAt) return; ch.localReview = verdict; }
+  save(); toast(verdict === 'verified' ? 'Checked. Thank you!' : 'Sent back for a fix.'); rerenderLibraryPage();
+});
+$('#libraryWrap').addEventListener('keydown', event => { if (event.key === 'Enter' && event.target.matches('.grownup-pin')) { event.preventDefault(); event.target.closest('.grownup-check').querySelector('[data-grownup-unlock]').click(); } });
 
 /* ---------- shop stations ---------- */
 function renderShopFloor(shop){
@@ -8221,7 +8311,7 @@ function renderParent(){
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
     ${vocabReportHTML()}
-    ${progressBySubjectHTML({detail:true, canReview:!Backend.me, title:'Progress by subject and unit', reading:readingReviewHTML()})}
+    ${progressBySubjectHTML({detail:true, canReview:parentReadingUnlocked, title:'Progress by subject and unit', reading:readingReviewHTML()})}
     ${writtenParentHTML()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="two"><div class="panel"><h3>Times tables</h3>
