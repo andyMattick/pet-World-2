@@ -10,7 +10,7 @@ const ENGLISH_UNIT1 = [
   {id:'concreteAbstract', group:'Types of nouns', lesson:'Concrete nouns can be experienced with the senses. Abstract nouns name ideas, feelings, or qualities.', name:'Concrete and abstract nouns'},
   {id:'fToVes', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'Some nouns ending in f or fe change to -ves in the plural.', name:'Irregular plural nouns: f to -ves plurals'},
   {id:'enPlurals', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'A few nouns form their plural with -en or another special ending.', name:'Irregular plural nouns: -en plurals'},
-  {id:'basePlurals', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'Some nouns use the same form for one and for more than one.', name:'Irregular plural nouns: the base plural'},
+  {id:'basePlurals', group:'Irregular plural nouns: base plurals and irregular endings', lesson:'Some nouns use the same form for one and for more than one, especially animals people fish or hunt: sheep, deer, moose, fish, salmon, trout, cod, and squid.', name:'Irregular plural nouns: the base plural'},
   {id:'mutantPlurals', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Some plurals change the inside of the word instead of adding an ending.', name:'Irregular plural nouns: mutant plurals'},
   {id:'foreignPlurals', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Some nouns borrowed from other languages keep a plural form from that language.', name:'Irregular plural nouns: foreign plurals'},
   {id:'pluralReview', group:'Irregular plural nouns: mutant and foreign plurals', lesson:'Review regular and irregular plural patterns, including words that change or stay the same.', name:'Irregular plural nouns review'}
@@ -1204,6 +1204,7 @@ const PLURAL_EXTRA_QUESTIONS = {
     qLevel(3,"Fix the sentence: “Two womans and three childs waited for the bus.”","Two women and three children waited for the bus.","Two women and three childs waited for the bus.","Two womans and three children waited for the bus.","Two womens and three childrens waited for the bus.")
   ],
   basePlurals:[
+    qLevel(2,"The fishing boat came back with dozens of ___.","squid","squides","squidden","squiddes"),
     qLevel(2,"Which sentence is correct?","The farmer counted twelve sheep.","The farmer counted twelve sheeps.","The farmer counted twelve sheepes.","The farmer counted twelve sheepen."),
     qLevel(2,"Which noun is the same in the singular and the plural?","trout","goose","wolf","mouse"),
     qLevel(3,"Which sentence needs a correction?","Many deers ran across the road.","Many deer ran across the road.","Two moose drank from the cold lake.","We saw three salmon jump."),
