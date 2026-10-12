@@ -29,10 +29,12 @@ Every 4 answers earn one arcade minute, the same as English practice.
 
 Anywhere in Pet Town (questions, stories, reading notes, math problems), the student can highlight one word, or press and hold it on a tablet, and tap **📌 What does it mean?**
 - **A word on her lists** (Pet Town's, the class's or the family's) shows its meaning and example sentence right away. Simple endings are matched too: "observed" finds *observe*, "cities" finds *city*.
+  - The word also joins her practice: it's added to her focus words, even if a grown-up picked other focus words. It comes up twice as often until it's **Solid**, and the 📊 My words chart lists it under **📌 Words you looked up**. These are saved in the student's save as `vocab.lookedUp`.
+  - A flagged word works the same way once a grown-up adds its meaning.
 - **Any other word** is saved as flagged, along with the sentence it came from. There is no dictionary service and no AI.
   - **Parent:** at home, Word Workshop → For grown-ups (PIN) shows each flagged word with its sentence. The ___ blank is already filled in. Type a kid-friendly meaning and tap **Add**, and the word joins the practice words. A **Look it up ↗** link opens a dictionary for the grown-up.
   - **Teacher:** the Vocabulary tab lists every word students flagged, who flagged it and where. Add a meaning and it joins the class list.
-  - Once a word has a meaning on any list, it drops off the student's flagged list by itself.
+  - Once a word has a meaning on any list, it drops off the student's flagged list by itself and joins her looked-up words.
 
 ## What grown-ups see
 

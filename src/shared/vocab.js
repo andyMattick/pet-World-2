@@ -194,8 +194,11 @@ export function normalizeVocabState(v){
   /* words the student flagged while reading (highlight → 📌), waiting for a grown-up to add the meaning */
   const flagged = (Array.isArray(out.flagged) ? out.flagged : []).filter(f => f && typeof f.w === 'string' && /^[\p{L}][\p{L}'’-]{0,39}$/u.test(f.w.trim()))
     .map(f => ({ w: f.w.trim().toLowerCase(), ctx: clean(f.ctx, VOCAB_LIMITS.sentence), at: Number.isFinite(+f.at) ? +f.at : 0 })).slice(-60);
+  /* words the student looked up with 📌 that were already on a list: they join practice and come up more often */
+  const lookedUp = (Array.isArray(out.lookedUp) ? out.lookedUp : []).filter(f => f && typeof f.w === 'string' && f.w.length <= VOCAB_LIMITS.word)
+    .map(f => ({ w: wordKey(f.w), at: Number.isFinite(+f.at) ? +f.at : 0 })).slice(-60);
   return {
-    flagged, stats, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
+    flagged, lookedUp, stats, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
     home: { builtIn: home.builtIn !== false, words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) }
   };

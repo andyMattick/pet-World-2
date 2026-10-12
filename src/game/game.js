@@ -6632,7 +6632,18 @@ $('#libraryWrap').addEventListener('click', event => {
    Practice cards (meaning, use it in a sentence, spell it), a 60-second Sprint, Spell it, and a mastery chart like the
    times-tables heat map. Words: Pet Town's list + the class's (teacher) + the family's (grown-up, behind the PIN). */
 let vocabRun = null, vocabTab = 'practice', vocabTimer = null;
-const vocabWords = () => vocabList({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
+/* the student's words: the lists (vocabList), plus every word they looked up with 📌 (a known word, or a flagged word
+   a grown-up has since defined) added to the focus words even if a grown-up picked other focus words */
+const vocabWords = () => {
+  const list = vocabList({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
+  const mine = lookedUpWords(list.all), have = new Set(list.focus.map(v => wordKey(v.w)));
+  return {...list, focus:[...list.focus, ...mine.filter(v => !have.has(wordKey(v.w)))], lookedUp:mine};
+};
+function lookedUpWords(all){
+  const seen = new Set(), out = [];
+  for (const f of [...S.vocab.lookedUp, ...S.vocab.flagged]) { const v = findWord(all, f.w); if (v && !seen.has(wordKey(v.w))) { seen.add(wordKey(v.w)); out.push(v); } }
+  return out;
+}
 const vocabStat = word => S.vocab.stats[wordKey(word)];
 function recordVocab(word, ok){
   const key = wordKey(word), stat = S.vocab.stats[key] || {r:[]};
@@ -6644,7 +6655,8 @@ function recordVocab(word, ok){
 /* a word to ask about, weaker words more often, never the same one twice in a row */
 function nextVocabWord(list, last){
   const pool = list.length > 1 ? list.filter(v => wordKey(v.w) !== wordKey(last)) : list;
-  return weightedPick(pool, v => wordWeight(vocabStat(v.w)));
+  const looked = new Set(lookedUpWords(pool).map(v => wordKey(v.w)));
+  return weightedPick(pool, v => wordWeight(vocabStat(v.w)) * (looked.has(wordKey(v.w)) && wordStatus(vocabStat(v.w)) !== 'solid' ? 2 : 1));   // looked-up words come up twice as often until solid
 }
 /* 3 wrong choices; for "use it in a sentence", from other sets first so only one word fits the sentence */
 function vocabDistractors(word, all, otherSetsFirst){
@@ -6665,8 +6677,9 @@ function renderVocab(){
   const solid = focus.filter(v => wordStatus(vocabStat(v.w)) === 'solid').length;
   let body = '';
   if (vocabTab === 'chart') {
-    const sets = [...new Set(focus.map(v => v.set))];
-    body = `<p class="muted">${solid} of ${focus.length} focus words are solid. Tap a word to see what it means.</p>${sets.map(set => `<h4 class="vocab-set">${esc(set)}</h4><div class="vocab-grid">${focus.filter(v => v.set === set).map(v => {
+    const looked = new Set(vocabWords().lookedUp.map(v => wordKey(v.w))), groups = [...(looked.size ? [['📌 Words you looked up', v => looked.has(wordKey(v.w))]] : []),
+      ...[...new Set(focus.filter(v => !looked.has(wordKey(v.w))).map(v => v.set))].map(set => [set, v => v.set === set && !looked.has(wordKey(v.w))])];
+    body = `<p class="muted">${solid} of ${focus.length} focus words are solid. Tap a word to see what it means.</p>${groups.map(([set, inGroup]) => `<h4 class="vocab-set">${esc(set)}</h4><div class="vocab-grid">${focus.filter(inGroup).map(v => {
       const st = wordStatus(vocabStat(v.w)); return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st])}">${esc(v.w)}</button>`; }).join('')}</div>`).join('')}
       <p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
   } else {
@@ -6838,7 +6851,11 @@ flagBtn.addEventListener('click', () => {
   if (!flagPick) return;
   const {w, ctx} = flagPick, found = findWord(vocabWords().all, w);
   let html;
-  if (found) html = `<b>${esc(found.w)}</b>: ${esc(found.d)}${found.s ? `<br><span class="muted">${esc(found.s.replace('___', found.w))}</span>` : ''}`;
+  if (found) {
+    const key = wordKey(found.w);
+    S.vocab.lookedUp = [...S.vocab.lookedUp.filter(f => f.w !== key), {w:key, at:Date.now()}].slice(-60); save();   // it joins her practice (vocabWords)
+    html = `<b>${esc(found.w)}</b>: ${esc(found.d)}${found.s ? `<br><span class="muted">${esc(found.s.replace('___', found.w))}</span>` : ''}<br><span class="muted">📌 Added to your 🔤 Word Workshop to practice.</span>`;
+  }
   else {
     const key = wordKey(w);
     if (!S.vocab.flagged.some(f => f.w === key)) { S.vocab.flagged = [...S.vocab.flagged, {w:key, ctx, at:Date.now()}].slice(-60); save(); }
@@ -8467,6 +8484,7 @@ function mergeWork(base, other){
   }
   base.writtenAnswers.sort((a, b) => a.at - b.at);
   for (const f of other.vocab?.flagged || []) if (!base.vocab.flagged.some(x => x.w === f.w)) { base.vocab.flagged = [...base.vocab.flagged, f].slice(-60); n++; }
+  for (const f of other.vocab?.lookedUp || []) if (!base.vocab.lookedUp.some(x => x.w === f.w)) { base.vocab.lookedUp = [...base.vocab.lookedUp, f].slice(-60); n++; }
   return n;
 }
 function enterAs(me){
