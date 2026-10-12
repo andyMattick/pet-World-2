@@ -13,7 +13,7 @@ export interface LessonLink { url: string; title?: string; note?: string; showKh
 interface QuestionText { prompt: string; options: string[]; difficulty?: number }
 interface TeacherQuestion extends QuestionText { id: string; status: 'approved' | 'draft' }
 export interface QuestionEdits { hidden?: string[]; edited?: Record<string, QuestionText>; added?: Record<string, TeacherQuestion[]> }
-export interface LessonClass { id: string; name: string; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null }
+export interface LessonClass { id: string; name: string; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; game_settings?: { khan?: unknown; [key: string]: unknown } | null }
 /* saves columns on one class and returns an error message, or null when it worked */
 type SaveClass = (classId: string, patch: { lesson_links?: Record<string, LessonLink>; question_edits?: QuestionEdits }) => Promise<string | null>;
 
@@ -203,6 +203,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   const cleanDrafts = drafts.filter(q => !warningsFor(q).length);
   const message = flash; flash = '';
   /* Khan results for this course */
+  const khanUsed = cls.game_settings?.khan !== false;   // Class settings → Use Khan Academy (docs: KHAN.md)
   const topics = khanTopics(course.id), passScore = khan?.results?.passScore ?? DEFAULT_KHAN_PASS;
   const khanFor = (studentId: string) => khan?.results?.students?.[studentId]?.[course.id];
   const [store, finalKey] = UNIT_TESTS[course.id] || ['', ''];
@@ -295,6 +296,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   }
 
   function khanCardHTML() {
+    if (!khanUsed) return `<div class="card"><h2>Khan unit test check</h2><p class="muted" style="margin-top:0">Khan Academy is turned off for <b>${esc(cls.name)}</b>, so students don't see Khan links and there are no Khan scores to log. Turn it back on in Class settings → Use Khan Academy.</p></div>`;
     const head = `<h2>Khan unit test check</h2><p class="muted" style="margin-top:0">After a student passes the Pet Town unit test for <b>${esc(course.title)}</b>, they take the matching Khan Academy unit test. Log their score and the Khan topics they missed (topic names only). <b>Khan-ready</b> means the Pet Town unit test is passed and no missed topics are still open. Missed topics send the student back to those lessons as <b>🔁 Review</b>; a topic clears itself when every practice in it is passed again (or click Retaught).</p>`;
     if (khan === undefined) return `<div class="card">${head}<p class="muted">Loading students…</p></div>`;
     if (khan.results === null) return `<div class="card">${head}<p class="err">The database needs the Khan results column first. Run <code>supabase/migrations/20261010000000_khan_results.sql</code> in Supabase, then reload this page.</p></div>`;
@@ -487,7 +489,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   });
 
   /* ---- Khan unit test results ---- */
-  if (khan?.results && khan.roster) {
+  if (khanUsed && khan?.results && khan.roster) {
     const results = khan.results;
     /* the student's lessons to review: every practice lesson in each still-open missed topic */
     const reviewsFor = (entry: KhanEntry | null) => {

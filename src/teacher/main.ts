@@ -127,7 +127,7 @@ async function renderDashboard() {
     student.writtenAnswers = Array.isArray(state?.writtenAnswers) ? state.writtenAnswers as NonNullable<StudentReport['writtenAnswers']> : [];
   });
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
-  setReportClass(cls.id, cls.game_settings?.home);
+  setReportClass(cls.id, cls.game_settings?.home, cls.game_settings?.khan);
   renderClassReport($('#report'), reports, saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = reports.find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
   startLive(cls.id);
 }
@@ -350,6 +350,7 @@ function renderSettings() {
       <p class="muted">Later stations still open on their own: after 6 orders at the one before, or after its quiz when quizzes open stations. Skipped stations are open right away. The unit test still needs every station quiz passed, or excused on a student's page.</p>
       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${cls.game_settings?.khan === false ? '' : 'checked'}> Use Khan Academy</label><p class="muted" style="margin-top:0">When it's off, students and families never see Khan links or mentions, and the Khan unit test check is hidden. Lessons keep their own text, Pet Town videos, and your own lesson links. Nothing is deleted, so you can turn it back on any time.</p>
       <h3>Arcade</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade for paid-entry mode</label>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: banked math time only, no admission or tickets</label>
@@ -398,7 +399,7 @@ function renderSettings() {
   $('#saveCls').addEventListener('click', async () => {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
     const openUnits = [...pane.querySelectorAll<HTMLInputElement>('[data-open-unit]')].filter(input => input.checked).map(input => input.dataset.openUnit!);
-    const allowMusic = ($('#allowMusic') as HTMLInputElement).checked;
+    const allowMusic = ($('#allowMusic') as HTMLInputElement).checked, khan = ($('#useKhan') as HTMLInputElement).checked;
     const arcadeGames: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { arcadeGames[input.dataset.arcadeGame!] = input.checked; });
     const arcadeSettingsForClass = arcadeSettings({
@@ -413,7 +414,7 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, minStations, arcade: arcadeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, minStations, arcade: arcadeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);

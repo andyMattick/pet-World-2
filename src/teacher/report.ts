@@ -38,10 +38,11 @@ interface PracticeSummary { last: number | null; today: number; week: number; da
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
 export const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 let reportShop: string | null = null;   // null: the first shop of the class's home grade
-let reportHome = DEFAULT_HOME, reportClass = '';
+let reportHome = DEFAULT_HOME, reportClass = '', reportKhan = true;
 /* the dashboard opens on the class's home grade; picking another class starts over there */
-export function setReportClass(classId: string, home: unknown) {
+export function setReportClass(classId: string, home: unknown, khan: unknown = true) {
   if (classId !== reportClass) { reportClass = classId; reportShop = null; }
+  reportKhan = khan !== false;   // Class settings → Use Khan Academy (docs: KHAN.md)
   reportHome = validHood(home) ? home as string : DEFAULT_HOME;
 }
 const shopsIn = (hood: string) => Object.values(SHOPS).filter(s => BUILDINGS.some(b => b.id === s.id && b.hood === hood));
@@ -124,7 +125,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
       <div class="who">${arr.sort((a, b) => b.n - a.n).map(x => `<span class="chip">${esc(x.r.n)} (${x.n})</span>`).join('')}</div>
       <div class="muted">${esc(MIS[id].tip)}</div>
       ${arr[0].ex ? `<div class="muted" style="margin-top:6px"><i>Example: ${esc(arr[0].ex)}</i></div>` : ''}
-      ${MIS[id].skills.length ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${SHOPS[shopOfSkill(s)].emoji} ${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
+      ${MIS[id].skills.length && reportKhan ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${SHOPS[shopOfSkill(s)].emoji} ${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
     : '<p class="muted">No mix-ups spotted yet.</p>';
   const inReview = list.flatMap(r => {
     const latest = new Map<string, AssessmentHistory>();
@@ -174,7 +175,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     <div class="row noprint"><button class="btn small" id="csv">Download CSV</button><button class="btn small" id="printDash">Print</button></div></div>`;
 
   const needs = ORDER.map(k => ({ k, who: list.filter(r => statusFromRecent(((r.k || {})[k] || [])[1] || '') === 'struggling') })).filter(x => x.who.length).sort((a, b) => b.who.length - a.who.length);
-  h += `<div class="two"><div class="card"><h2>Skills to reteach or assign</h2>${needs.length ? needs.map(x => `<p style="margin:0 0 10px"><b>${SHOPS[shopOfSkill(x.k)].emoji} ${esc(SKILLS[x.k].name)}</b>: ${x.who.map(r => esc(r.n)).join(', ')}<br><a href="${SKILLS[x.k].url}" target="_blank" rel="noopener">Assign on Khan Academy</a></p>`).join('') : '<p class="muted">Nobody is struggling on a skill right now.</p>'}</div>`;
+  h += `<div class="two"><div class="card"><h2>Skills to reteach or assign</h2>${needs.length ? needs.map(x => `<p style="margin:0 0 10px"><b>${SHOPS[shopOfSkill(x.k)].emoji} ${esc(SKILLS[x.k].name)}</b>: ${x.who.map(r => esc(r.n)).join(', ')}${reportKhan ? `<br><a href="${SKILLS[x.k].url}" target="_blank" rel="noopener">Assign on Khan Academy</a>` : ''}</p>`).join('') : '<p class="muted">Nobody is struggling on a skill right now.</p>'}</div>`;
 
   const facts: Record<string, { miss: number; who: Set<string> }> = {}, tables: Record<string, number> = {};
   list.forEach(r => {
@@ -374,7 +375,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
 function skillStepRow(r: StudentReport, k: string) {
     const e = (r.k || {})[k], s = statusFromRecent(e ? e[1] : ''), steps = (r.s || {})[k] || {};
     const stepTxt = Object.entries(steps).map(([nm, v]) => `<span class="tag ${v[3]}">${v[3] === 's' ? 'count' : v[3] === 'i' ? 'idea' : 'arith'}</span> ${esc(nm)}: ${v[1]}/${v[0]}${v[2] ? ` (${v[2]} slow)` : ''}`).join('<br>');
-    return `<tr><td>${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td><a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a></td></tr>`;
+    return `<tr><td>${esc(SKILLS[k].name)}</td><td><span class="tag s-${s}" style="color:#3B2724">${s}</span></td><td>${stepTxt || '<span class="muted">not yet</span>'}</td><td>${reportKhan ? `<a href="${SKILLS[k].url}" target="_blank" rel="noopener">Khan</a>` : ''}</td></tr>`;
 }
 /* the shops a mix-up belongs to: shops with one of its skills that the student has practiced */
 function misShops(r: StudentReport, id: string) {
