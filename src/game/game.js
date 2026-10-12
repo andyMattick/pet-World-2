@@ -57,7 +57,7 @@ const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop =
 function normalizeProjectStore(raw, ids){
   return Object.fromEntries(ids.map(id => {
     const p = raw?.[id] || {}, answers = p.answers && typeof p.answers === 'object' ? p.answers : {};
-    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,12)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : ''}];
+    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,12)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : '', updatedAt:Number.isFinite(+p.updatedAt) ? +p.updatedAt : 0}];
   }));
 }
 /* reading quizzes saved on each book: objective score, essay answers, and the essay review (see docs/READING-QUIZ.md) */
@@ -96,7 +96,8 @@ function normalize(raw){
       detail:typeof chapter.detail === 'string' ? chapter.detail.slice(0,600) : '',
       vocabulary:typeof chapter.vocabulary === 'string' ? chapter.vocabulary.slice(0,600) : '',
       submittedAt:Number.isFinite(+chapter.submittedAt) ? +chapter.submittedAt : 0,
-      localReview:chapter.localReview === 'verified' || chapter.localReview === 'revise' ? chapter.localReview : ''
+      localReview:chapter.localReview === 'verified' || chapter.localReview === 'revise' ? chapter.localReview : '',
+      updatedAt:Number.isFinite(+chapter.updatedAt) ? +chapter.updatedAt : 0   // last edit or check, for merging two devices' saves (mergeWork)
     })) : [],
     quizzes:normalizeReadingQuizzes(book.quizzes)
   })) : [];
@@ -111,6 +112,7 @@ function normalize(raw){
   s.writtenAnswers = normalizeWrittenAnswers(s.writtenAnswers);   // short answers and paragraphs, with a parent's check (docs: QUESTION-TYPES.md)
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
+  s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
   s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','history2','history3','history4']);
   s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
@@ -5966,7 +5968,7 @@ $('#libraryWrap').addEventListener('submit', event => {
   }
   if (form.id === 'elaAddChapter') {
     const book = selectedReadingBook(), label = String(new FormData(form).get('label') || '').trim(); if (!book || !label) return;
-    const chapter = {id:'chapter-' + Math.random().toString(36).slice(2,10),label,characters:'',notableAction:'',conflict:'',interaction:'',joy:'',setting:'',themes:'',detail:'',vocabulary:''};
+    const chapter = {id:'chapter-' + Math.random().toString(36).slice(2,10),label,characters:'',notableAction:'',conflict:'',interaction:'',joy:'',setting:'',themes:'',detail:'',vocabulary:'',updatedAt:Date.now()};
     book.chapters.push(chapter); S.readingSelection = {bookId:book.id,chapterId:chapter.id}; save(); renderEnglishLibrary(); $('#elaChapterForm textarea')?.focus(); return;
   }
   if (form.id === 'elaChapterForm') {
@@ -5975,6 +5977,7 @@ $('#libraryWrap').addEventListener('submit', event => {
     for (const field of form.querySelectorAll('textarea[name]')) { const value = field.value.trim(); if ((active.chapter[field.name] || '') !== value) changed = true; active.chapter[field.name] = value; }
     const wasChecked = active.chapter.submittedAt > 0;
     if (changed && wasChecked) { active.chapter.submittedAt = 0; active.chapter.localReview = ''; }
+    if (changed || event.submitter?.dataset.saveMode === 'submit') active.chapter.updatedAt = Date.now();
     if (event.submitter?.dataset.saveMode === 'submit') {
       if (!readingReadyToSend(active.chapter)) { save(); renderEnglishLibrary(); toast('Add the main characters and at least two more answers before sending.'); return; }
       active.chapter.submittedAt = Date.now(); active.chapter.localReview = ''; save(); renderEnglishLibrary(); toast('Sent! A grown-up will check these notes.'); return;
@@ -5988,7 +5991,7 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.hasAttribute('data-ela-delete-cancel')) { deletingBookId = null; renderEnglishLibrary(); return; }
   if (button.dataset.elaDeleteConfirm) {
     const id = button.dataset.elaDeleteConfirm;
-    S.readingBooks = S.readingBooks.filter(book => book.id !== id);
+    S.readingBooks = S.readingBooks.filter(book => book.id !== id); S.deletedBooks = [...S.deletedBooks, id].slice(-100);
     if (S.readingSelection?.bookId === id) S.readingSelection = null;
     deletingBookId = null; save(); renderEnglishLibrary(); toast('Book and chapter notes deleted.'); return;
   }
@@ -6192,7 +6195,7 @@ $('#parentWrap').addEventListener('click', event => {
   const book = S.readingBooks.find(x => x.id === b.dataset.book); if (!book) return;
   const target = b.dataset.chapter ? book.chapters.find(ch => ch.id === b.dataset.chapter) : book.quizzes.find(qz => qz.id === b.dataset.quiz);
   if (!target || !target.submittedAt) return;
-  target.localReview = b.dataset.readingReview; save(); renderParent();
+  target.localReview = b.dataset.readingReview; target.updatedAt = Date.now(); save(); renderParent();
 });
 function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
@@ -6254,6 +6257,7 @@ $('#libraryWrap').addEventListener('submit', event => {
   const form = event.target.closest('#historyProjectForm'); if (!form) return;
   event.stopImmediatePropagation(); event.preventDefault();
   const courseId = form.dataset.course, p = projectStore(courseId)[courseId], data = new FormData(form);
+  p.updatedAt = Date.now();
   HISTORY_PROJECTS[courseId].steps.forEach(step => { p.answers[step.key] = String(data.get(step.key) || '').trim().slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
     if (!HISTORY_PROJECTS[courseId].steps.every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
@@ -6264,7 +6268,7 @@ $('#libraryWrap').addEventListener('submit', event => {
 $('#libraryWrap').addEventListener('click', event => {
   const open = event.target.closest('[data-history-project]'); if (open) { renderHistoryProject(open.dataset.historyProject); return; }
   const edit = event.target.closest('[data-history-project-edit]');
-  if (edit) { const p = projectStore(edit.dataset.historyProjectEdit)[edit.dataset.historyProjectEdit]; p.status = 'draft'; p.localReview = ''; save(); renderHistoryProject(edit.dataset.historyProjectEdit); }
+  if (edit) { const p = projectStore(edit.dataset.historyProjectEdit)[edit.dataset.historyProjectEdit]; p.status = 'draft'; p.localReview = ''; p.updatedAt = Date.now(); save(); renderHistoryProject(edit.dataset.historyProjectEdit); }
 });
 function renderEnglishUnit(courseId=activeEnglishCourse){
   const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
@@ -6876,8 +6880,8 @@ $('#libraryWrap').addEventListener('click', event => {
   if (event.target.closest('[data-grownup-lock]')) { parentReadingUnlocked = false; rerenderLibraryPage(); return; }
   const b = event.target.closest('[data-grownup-review]'); if (!b || !parentReadingUnlocked) return;
   const verdict = b.dataset.grownupReview;
-  if (b.dataset.kind === 'project') { const p = projectStore(b.dataset.id)[b.dataset.id]; if (!p || p.status !== 'submitted') return; p.localReview = verdict; }
-  else { const [bookId, chapterId] = b.dataset.id.split('|'), ch = S.readingBooks.find(x => x.id === bookId)?.chapters.find(x => x.id === chapterId); if (!ch || !ch.submittedAt) return; ch.localReview = verdict; }
+  if (b.dataset.kind === 'project') { const p = projectStore(b.dataset.id)[b.dataset.id]; if (!p || p.status !== 'submitted') return; p.localReview = verdict; p.updatedAt = Date.now(); }
+  else { const [bookId, chapterId] = b.dataset.id.split('|'), ch = S.readingBooks.find(x => x.id === bookId)?.chapters.find(x => x.id === chapterId); if (!ch || !ch.submittedAt) return; ch.localReview = verdict; ch.updatedAt = Date.now(); }
   save(); toast(verdict === 'verified' ? 'Checked. Thank you!' : 'Sent back for a fix.'); rerenderLibraryPage();
 });
 $('#libraryWrap').addEventListener('keydown', event => { if (event.key === 'Enter' && event.target.matches('.grownup-pin')) { event.preventDefault(); event.target.closest('.grownup-check').querySelector('[data-grownup-unlock]').click(); } });
@@ -8331,7 +8335,7 @@ function renderParent(){
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {
     const p = projectStore(b.dataset.projectCourse)[b.dataset.projectCourse]; if (!p || p.status !== 'submitted') return;
-    p.localReview = b.dataset.projectLocalReview; save(); renderParent();
+    p.localReview = b.dataset.projectLocalReview; p.updatedAt = Date.now(); save(); renderParent();
   }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
   if ($('#useKhan')) $('#useKhan').addEventListener('change', e => { S.noKhan = !e.target.checked; save(); renderParent(); });
@@ -8431,6 +8435,40 @@ const townTracker = new ActivityTracker(seconds => {
   return true;
 });
 function startTownTracker(){ localSession = null; townTracker.start(); }
+/* Two devices, one student: the save is one record and the newer one is loaded, so work done on the other device
+   could be lost (a draft saved on a tablet that went to sleep before it reached the server, then the town opened on
+   another computer). After picking the newer save, mergeWork() brings in the student's own work from the other one:
+   projects and Reading Log chapters (the newer edit wins; with no edit times, the one with more written wins), books,
+   reading quizzes, written answers, and flagged words. Returns how many pieces it brought in. Practice counts aren't merged. */
+function mergeWork(base, other){
+  let n = 0;
+  const filled = obj => Object.values(obj || {}).filter(v => typeof v === 'string' && v.trim()).length;
+  const newer = (a, b, text) => (a.updatedAt || 0) !== (b.updatedAt || 0) ? (a.updatedAt || 0) > (b.updatedAt || 0)
+    : (a.submittedAt || 0) !== (b.submittedAt || 0) ? (a.submittedAt || 0) > (b.submittedAt || 0) : text(a) > text(b);
+  for (const store of ['historyProjects', 'scienceProjects']) for (const [id, p] of Object.entries(other[store] || {})) {
+    if (base[store][id] && newer(p, base[store][id], x => filled(x.answers))) { base[store][id] = p; n++; }
+  }
+  const deleted = new Set([...base.deletedBooks, ...other.deletedBooks]);
+  base.deletedBooks = [...deleted].slice(-100); base.readingBooks = base.readingBooks.filter(book => !deleted.has(book.id));
+  const chapterText = ch => filled({...ch, id:'', label:'', localReview:''});
+  for (const book of other.readingBooks || []) {
+    if (deleted.has(book.id)) continue;
+    const mine = base.readingBooks.find(b => b.id === book.id);
+    if (!mine) { base.readingBooks.push(book); n++; continue; }
+    for (const ch of book.chapters) {
+      const i = mine.chapters.findIndex(c => c.id === ch.id);
+      if (i < 0) { mine.chapters.push(ch); n++; } else if (newer(ch, mine.chapters[i], chapterText)) { mine.chapters[i] = ch; n++; }
+    }
+    for (const qz of book.quizzes || []) if (!mine.quizzes.some(q => q.id === qz.id)) { mine.quizzes.push(qz); n++; }
+  }
+  for (const entry of other.writtenAnswers || []) {
+    const i = base.writtenAnswers.findIndex(e => e.id === entry.id);
+    if (i < 0) { base.writtenAnswers.push(entry); n++; } else if (entry.parentReview && !base.writtenAnswers[i].parentReview) { base.writtenAnswers[i] = entry; n++; }
+  }
+  base.writtenAnswers.sort((a, b) => a.at - b.at);
+  for (const f of other.vocab?.flagged || []) if (!base.vocab.flagged.some(x => x.w === f.w)) { base.vocab.flagged = [...base.vocab.flagged, f].slice(-60); n++; }
+  return n;
+}
 function enterAs(me){
   viewHood = null; viewSubject = null;
   storeKey = 'pettown:v1:' + me.student_id;
@@ -8439,7 +8477,9 @@ function enterAs(me){
   const resetAt = me.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
   if (resetAt && Number.isFinite(resetMs) && (local.savedAt || 0) < resetMs) resetTown(resetAt);
   else {
-    S = (remote && (remote.savedAt || 0) > (local.savedAt || 0)) ? normalize(remote) : local;
+    const remoteNewer = !!remote && (remote.savedAt || 0) > (local.savedAt || 0);
+    S = remoteNewer ? normalize(remote) : local;
+    if (remote) mergeWork(S, remoteNewer ? local : normalize(remote));   // keep work saved on either device (see mergeWork)
     S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
   }
   syncLanguageControls();
