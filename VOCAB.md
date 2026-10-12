@@ -19,6 +19,10 @@ Every 4 answers earn one arcade minute, the same as English practice.
 
 **Adding words:** paste one per line as `word - meaning`, or `word - meaning - sentence with ___`. You can also paste two or three columns from a spreadsheet, or a JSON list. Lines that can't be read are skipped and listed.
 
+**Sets:** a heading line like `Set: Wordly Wise Lesson 4` (or `# Wordly Wise Lesson 4`) puts every word below it in that set, until the next heading. Use an existing name such as `Set: Set 3` to add words to one of Pet Town's sets. Words before any heading go in **My words**. In a JSON list, give each word a `"set"`. To add the word "set" itself, write it with a dash (`set - a group of things that go together`), because `set:` starts a heading.
+
+**Changing a built-in word:** add the same word with your own meaning (and `Set:` heading if you want it to stay in its set). The added version replaces Pet Town's for that class or student. To skip a word, untick it in the focus words.
+
 **Focus words:** every word is in focus by default. The teacher can pick the class's focus words, and a parent's choice wins on that student's device. **Turning off Pet Town's list** (either place) leaves only the added words.
 
 ## 📌 Flag a word while reading

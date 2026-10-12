@@ -122,9 +122,13 @@ export function validWord(entry){
 }
 
 /* Paste in a list: one word per line as "word - definition", "word: definition", "word<TAB>definition" or "word, definition"
-   (a third part after another separator is an example sentence with ___), or a JSON array of {word, definition}. */
+   (a third part after another separator is an example sentence with ___), or a JSON array of {word, definition, set}.
+   A heading line "Set: Lesson 4" (or "# Lesson 4") puts the words under it in that set; before any heading they go in
+   "My words". To add the word "set" itself, write it with a dash: "set - a group of things that go together". */
+const SET_HEADING = /^(?:set\s*:|#+)\s*(.+)$/i;
 export function parseVocabImport(text){
   const raw = String(text || '').trim(), words = [], errors = [];
+  let set = '';
   if (!raw) return { words, errors };
   if (raw.startsWith('[')) {
     try { for (const item of JSON.parse(raw)) { const v = validWord(item); if (v) words.push(v); else errors.push(`Skipped: ${JSON.stringify(item).slice(0, 60)}`); } return { words, errors }; }
@@ -132,9 +136,11 @@ export function parseVocabImport(text){
   }
   for (const line of raw.split(/\r?\n/)) {
     const t = line.trim(); if (!t || /^word\s*[,\t]\s*definition/i.test(t)) continue;
+    const heading = t.match(SET_HEADING);
+    if (heading) { set = clean(heading[1], 40); continue; }
     const parts = t.includes('\t') ? t.split('\t') : / [-–—] /.test(t) ? t.split(/ [-–—] /) : t.includes(':') ? t.split(/:(.*)/s).filter(x => x !== undefined && x !== '') : t.split(/,(.*)/s).filter(x => x !== undefined && x !== '');
     const [w, d, ...rest] = parts.map(p => p.trim().replace(/^"|"$/g, ''));
-    const v = validWord({ w, d, s: rest.join(' ') });
+    const v = validWord({ w, d, s: rest.join(' '), set });
     if (v) words.push(v); else errors.push(`Skipped: “${t.slice(0, 60)}” (use word - definition)`);
   }
   return { words, errors };
