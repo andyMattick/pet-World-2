@@ -853,3 +853,15 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .video-frame{position:relative; width:100%; padding-top:56.25%; border-radius:14px; overflow:hidden; background:#000}
 .video-frame iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
 .video-blocked{color:var(--berry, #b0325a); font-weight:700}
+
+/* Cross out a multiple-choice option (addCrossOuts in game.js) */
+.xo-wrap{display:inline-flex; align-items:center; gap:6px; min-width:0}
+.ela-options .xo-wrap{display:flex}
+.xo-wrap > .ela-option, .xo-wrap > .opt{flex:1; min-width:0}
+.xo{flex:none; width:30px; height:30px; padding:0; border:2px solid var(--edge); border-radius:50%; background:var(--surface); color:var(--ink); font-size:.85rem; font-weight:800; line-height:1; cursor:pointer; opacity:.75}
+.xo:hover, .xo:focus-visible{opacity:1; border-color:var(--berry)}
+.xo[aria-pressed="true"]{background:var(--ink); color:var(--surface); opacity:1}
+.xo-wrap > .crossed{text-decoration:line-through; text-decoration-thickness:2px; opacity:.4}
+.xo-wrap > :disabled + .xo{visibility:hidden}
+.xo-wrap > .crossed.correct, .xo-wrap > .crossed.yes{text-decoration:none; opacity:1}   /* never strike through the right answer once it is shown */
+

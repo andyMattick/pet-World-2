@@ -6266,6 +6266,32 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it. Sections marked “Learn” with no practice are reading only.</p>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}`;
 }
+/* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
+   through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
+   it back; a crossed-out choice is never picked by accident. Used for English, History and Science questions and
+   for math choice steps (not timed sprints). */
+function addCrossOuts(container, selector){
+  container.querySelectorAll(selector).forEach(option => {
+    if (option.parentElement.classList.contains('xo-wrap')) return;
+    const wrap = document.createElement('span'), x = document.createElement('button');
+    wrap.className = 'xo-wrap'; option.replaceWith(wrap); wrap.append(option, x);
+    x.type = 'button'; x.className = 'xo'; x.textContent = '✕'; x.title = 'Cross out this choice';
+    x.setAttribute('aria-pressed', 'false');
+    x.setAttribute('aria-label', `Cross out: ${option.textContent.replace(/^\d\s*/, '').trim().slice(0, 80)}`);
+  });
+}
+function setCrossed(option, on){
+  const x = option.parentElement.querySelector('.xo');
+  option.classList.toggle('crossed', on);
+  if (x) { x.textContent = on ? '↺' : '✕'; x.title = on ? 'Bring this choice back' : 'Cross out this choice'; x.setAttribute('aria-pressed', String(on)); }
+}
+document.addEventListener('click', event => {   /* capture: runs before the option's own click handler */
+  const x = event.target.closest('.xo');
+  const option = x ? x.parentElement.firstElementChild : event.target.closest('.xo-wrap > .crossed');
+  if (!option) return;
+  event.preventDefault(); event.stopPropagation();
+  if (!option.disabled) setCrossed(option, x ? !option.classList.contains('crossed') : false);
+}, true);
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
   syncRoom('library');
@@ -6273,6 +6299,7 @@ function renderEnglishQuestion(){
   const role = ROLE_CARDS[question.skillId];
   const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div>${role ? stageHTML({role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  addCrossOuts($('#libraryWrap'), '.ela-option');
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
@@ -6345,7 +6372,7 @@ $('#libraryWrap').addEventListener('click', event => {
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
     recordEnglishAnswer(englishRun, question, correct);
     if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
-    button.parentElement.querySelectorAll('button').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
+    button.closest('.ela-options').querySelectorAll('[data-ela-answer]').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
     const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(englishRun.courseId);
     if (role) stageReact($('#libraryWrap'), correct, question.options[answer]);
     feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
@@ -6626,6 +6653,7 @@ function activateStep(i){
   } else if (st.kind === 'choice') {
     box.innerHTML = `<div class="opts">${st.options.map((o,k) => `<button class="opt" data-k="${k}"><span class="okey" aria-hidden="true">${k + 1}</span>${o.html}</button>`).join('')}</div>`;
     box.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => { if (!b.disabled) submit(+b.dataset.k); }));
+    addCrossOuts(box, '.opt');
     setTimeout(() => { const f = box.querySelector('.opt'); if (f) f.focus(); }, 40);
   } else if (st.kind === 'grid') {
     box.innerHTML = `<span style="font-size:1.1rem">Or type it: (</span>${numInput('gx','x')}<span>,</span>${numInput('gy','y')}<span>)</span>`;
