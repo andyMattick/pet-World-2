@@ -6734,7 +6734,8 @@ function vocabGrownUpHTML(all){
   return `<section class="panel vocab-grownup"><h3>For grown-ups: word list</h3>
     <p class="muted">${classWords ? `Your child’s teacher added ${classWords} word${classWords === 1 ? '' : 's'}. ` : ''}Words you add are saved with this town${Backend.me ? ' and the teacher can see progress on them' : ''}.</p>
     ${flaggedWaiting().length ? `<h4>📌 Words your child flagged</h4><p class="muted" style="margin-top:0">Add a kid-friendly meaning (and the sentence it came from, with ___ for the word) and it joins the practice words.</p>${flaggedWaiting().map(f => `<div class="vocab-flag-row" data-flag-row="${esc(f.w)}"><b>${esc(f.w)}</b>${f.ctx ? `<span class="muted">“${esc(f.ctx)}”</span>` : ''}
-      <input type="text" data-flag-def maxlength="200" placeholder="What it means" aria-label="What ${esc(f.w)} means"><input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w))}" placeholder="Sentence with ___ (optional)" aria-label="Example sentence">
+      <label>Meaning (kid-friendly)<input type="text" data-flag-def maxlength="200" placeholder="What it means"></label>
+      <label>Example sentence, with ___ where the word goes (optional)<input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, f.w) : '')}" placeholder="The volcano ___ with a loud boom."></label>
       <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
     <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
     <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> You can also paste two columns from a spreadsheet.</p>
@@ -6814,7 +6815,7 @@ const FLAG_WORD = /^[\p{L}][\p{L}'’-]{1,29}$/u;
 function flagSelection(){
   const sel = window.getSelection(), text = String(sel?.toString() || '').trim().replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
   const node = sel?.anchorNode?.nodeType === 3 ? sel.anchorNode.parentElement : sel?.anchorNode;
-  const ok = sel && !sel.isCollapsed && FLAG_WORD.test(text) && node?.closest?.('main') && !node.closest('input, textarea, select, [contenteditable], #scr-vocab, .word-flag-pop, #scr-join, #scr-name');
+  const ok = sel && !sel.isCollapsed && FLAG_WORD.test(text) && node?.closest?.('main') && !node.closest('input, textarea, select, [contenteditable], button, a, nav, .tile, .tabs, .backrow, header, #scr-vocab, .word-flag-pop, #scr-join, #scr-name');   // reading text only, not buttons, tiles or titles
   if (!ok) { flagBtn.hidden = true; flagPick = null; return; }
   const box = sel.getRangeAt(0).getBoundingClientRect(), block = node.closest('p, li, dd, h3, h2, label, .stage-bubble, .talk-bubble, .ela-question, div') || node;
   flagPick = {w:text, ctx:String(block.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200)};
