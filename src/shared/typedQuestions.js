@@ -1,0 +1,411 @@
+/* Built-in questions of the newer types (docs: QUESTION-TYPES.md), per course and lesson, plus one essay per unit test.
+   Math is keyed by station ("cafe:1") and played as each station's Think it through set.
+   Checked by typedProblems() in questionTypes.js; a question with a problem is skipped, never shown broken.
+   Teachers can hide any of them per class (Lessons & questions tab), the same way as the multiple-choice bank. */
+
+export const TYPED_QUESTIONS = {
+  nouns: {
+    identifyNouns: [
+      {"type": "pick", "difficulty": 1, "prompt": "Tap every noun in the sentence.", "sentence": "The baker sold warm bread to a hungry boy.", "answers": [1, 4, 8]},
+      {"type": "pick", "difficulty": 2, "prompt": "Tap every noun in the sentence. Remember: ideas can be nouns too.", "sentence": "Our team felt great pride after the game in Denver.", "answers": [1, 4, 7, 9]},
+      {"type": "short", "prompt": "A friend says nouns are just “things you can touch.” Explain why that is not the whole story, and give an example.", "rubric": ["Says nouns name people, places, things, and ideas", "Gives a noun you cannot touch (an idea or feeling)", "Uses the example correctly"], "model": "Nouns name people, places, things, and ideas. Some nouns, like “courage” or “friendship,” name ideas you cannot touch, but they are still nouns.", "minWords": 8},
+    ],
+    singularPlural: [
+      {"type": "fill", "difficulty": 1, "prompt": "Type the plural of “box.”", "accept": ["boxes"]},
+      {"type": "sort", "difficulty": 2, "prompt": "Sort each plural by how it was made.", "groups": ["Added -s", "Added -es", "Changed y to -ies"], "items": [["cats", 0], ["dishes", 1], ["stories", 2], ["trees", 0], ["foxes", 1], ["berries", 2]]},
+      {"type": "short", "prompt": "Explain when you add -es instead of -s to make a noun plural. Give two examples.", "rubric": ["Names an ending that takes -es (s, x, z, ch, or sh)", "Gives two correct examples", "Spells both plurals correctly"], "model": "Add -es when a noun ends in s, x, z, ch, or sh, because you need an extra sound: bus becomes buses and lunch becomes lunches.", "minWords": 8},
+    ],
+    commonProper: [
+      {"type": "sort", "difficulty": 1, "prompt": "Sort the nouns.", "groups": ["Common noun", "Proper noun"], "items": [["city", 0], ["Chicago", 1], ["holiday", 0], ["Thanksgiving", 1], ["river", 0], ["the Nile", 1]]},
+      {"type": "pick", "difficulty": 2, "prompt": "Tap the proper nouns.", "sentence": "Last July, my aunt drove to Lake Erie with her dog.", "answers": [1, 6, 7]},
+      {"type": "short", "prompt": "Rewrite this sentence so the proper nouns are capitalized: “we visited mount rushmore in south dakota.” Then explain one proper-noun capital you added.", "rubric": ["Capitalizes We (the first word), Mount Rushmore, and South Dakota", "Explains that proper nouns name a specific place", "Leaves common words lowercase"], "model": "We visited Mount Rushmore in South Dakota. “Mount Rushmore” gets capitals because it names one specific mountain carving, not mountains in general.", "minWords": 8},
+    ],
+    concreteAbstract: [
+      {"type": "sort", "difficulty": 2, "prompt": "Sort the nouns.", "groups": ["Concrete (you can see, hear, touch, taste, or smell it)", "Abstract (an idea, feeling, or quality)"], "items": [["thunder", 0], ["bravery", 1], ["pillow", 0], ["honesty", 1], ["perfume", 0], ["childhood", 1]]},
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the abstract nouns.", "options": ["kindness", "fear", "freedom", "pencil", "drum", "puppy"], "answers": [0, 1, 2]},
+      {"type": "short", "prompt": "Write one sentence that uses both a concrete noun and an abstract noun. Then label which is which.", "rubric": ["Writes a complete sentence", "Includes a correct concrete noun and labels it", "Includes a correct abstract noun and labels it"], "model": "The trophy filled me with pride. “Trophy” is concrete because I can see and touch it; “pride” is abstract because it is a feeling.", "minWords": 8},
+    ],
+    fToVes: [
+      {"type": "fill", "difficulty": 1, "prompt": "Type the plural of “wolf.”", "accept": ["wolves"]},
+      {"type": "sort", "difficulty": 3, "prompt": "Which plurals change f or fe to -ves?", "groups": ["Changes to -ves", "Just adds -s"], "items": [["leaf → leaves", 0], ["roof → roofs", 1], ["knife → knives", 0], ["chief → chiefs", 1], ["shelf → shelves", 0], ["cliff → cliffs", 1]]},
+      {"type": "short", "prompt": "Your little cousin writes “three leafs fell.” Explain the mistake and how to fix it.", "rubric": ["Says the plural of leaf is leaves", "Explains that some f words change f to v and add -es", "Rewrites the sentence correctly"], "model": "The plural of leaf is leaves. Some nouns that end in f change the f to v and add -es, so it should say “three leaves fell.”", "minWords": 8},
+    ],
+    enPlurals: [
+      {"type": "fill", "difficulty": 1, "prompt": "Type the plural of “child.”", "accept": ["children"]},
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the nouns that form their plural with -en.", "options": ["ox", "child", "dog", "tooth", "girl"], "answers": [0, 1]},
+      {"type": "short", "prompt": "Most plurals end in -s. Explain what is different about “oxen” and “children,” and use one in a sentence.", "rubric": ["Says they add -en (or a special ending) instead of -s", "Uses oxen or children correctly in a sentence"], "model": "Oxen and children form the plural with an -en ending instead of -s. The children fed the oxen in the barn.", "minWords": 8},
+    ],
+    basePlurals: [
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the nouns that stay the same for one and for more than one.", "options": ["sheep", "deer", "moose", "goat", "horse", "cow"], "answers": [0, 1, 2]},
+      {"type": "pick", "difficulty": 1, "prompt": "Tap the noun that is plural even though it doesn’t end in -s.", "sentence": "Two deer drank from the stream near our cabin.", "answers": [1]},
+      {"type": "short", "prompt": "How can you tell whether “sheep” means one animal or many? Use a sentence as an example.", "rubric": ["Explains that the rest of the sentence (number words, verb, “a/many”) shows it", "Gives an example sentence that makes the number clear"], "model": "Sheep is the same for one or many, so you look at other words. In “Three sheep are grazing,” the word “three” and the verb “are” show it is plural.", "minWords": 8},
+    ],
+    mutantPlurals: [
+      {"type": "fill", "difficulty": 1, "prompt": "Type the plural of “goose.”", "accept": ["geese"]},
+      {"type": "sort", "difficulty": 2, "prompt": "Sort the plurals.", "groups": ["Mutant plural (a vowel inside changes, no ending added)", "Another kind of plural"], "items": [["mice", 0], ["feet", 0], ["women", 0], ["buses", 1], ["children", 1], ["cacti", 1]]},
+      {"type": "short", "prompt": "Why are words like “tooth/teeth” called mutant plurals? Give another example.", "rubric": ["Explains that the vowels inside the word change instead of adding an ending", "Gives another correct example (man/men, foot/feet, mouse/mice, goose/geese, woman/women)"], "model": "They are called mutant plurals because the inside of the word changes instead of adding -s. Another example is man and men.", "minWords": 8},
+    ],
+    foreignPlurals: [
+      {"type": "fill", "difficulty": 2, "prompt": "Type the plural of “cactus.” (Either correct plural counts.)", "accept": ["cacti", "cactuses"]},
+      {"type": "sort", "difficulty": 3, "prompt": "Sort the borrowed nouns by how they become plural.", "groups": ["-us becomes -i", "-is becomes -es", "-on becomes -a"], "items": [["fungus → fungi", 0], ["crisis → crises", 1], ["phenomenon → phenomena", 2], ["stimulus → stimuli", 0], ["thesis → theses", 1], ["criterion → criteria", 2]]},
+      {"type": "short", "prompt": "Some English nouns keep plurals from Latin or Greek. Pick one, show the singular and plural, and use the plural in a sentence.", "rubric": ["Gives a correct singular and plural pair", "Uses the plural correctly in a sentence"], "model": "Analysis becomes analyses. The scientists compared the analyses from both labs.", "minWords": 8},
+    ],
+    pluralReview: [
+      {"type": "sort", "difficulty": 2, "prompt": "Sort the plurals.", "groups": ["Regular (adds -s or -es)", "Irregular"], "items": [["glasses", 0], ["women", 1], ["knives", 1], ["pianos", 0], ["fish", 1], ["churches", 0]]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: Which sentence uses the correct plural?", "options": ["The dentist cleaned both of my front teeth.", "The dentist cleaned both of my front tooths.", "The dentist cleaned both of my front teeths."], "answer": 0, "partB": {"prompt": "Part B: Which rule explains your answer to Part A?", "options": ["Some plurals change the vowels inside the word.", "Words ending in -th add -es.", "Plural nouns never change their spelling."], "answer": 0}},
+      {"type": "short", "prompt": "Write a sentence that uses three different kinds of irregular plurals (for example, -ves, -en, and a base plural). Underline or name them.", "rubric": ["Uses three irregular plurals correctly", "Includes three different kinds of irregular plural", "Writes a complete sentence"], "model": "The children saw two wolves chasing a herd of deer. (children: -en plural; wolves: f to -ves; deer: base plural)", "minWords": 10},
+    ],
+  },
+  history: {
+    historyStories: [
+      {"type": "multi", "difficulty": 2, "prompt": "A museum asks you which sources could show what the battle was like for the people who were there. Select all that fit.", "options": ["A soldier’s diary from the battle", "A letter a farmer wrote the week after", "Arrowheads found in the field", "A movie made about the battle last year", "A poem written 500 years later"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: Two histories of your city start in different years. What is the best explanation?", "options": ["Each writer chose a starting point that fit the story they were telling.", "One writer must have made a mistake about the facts.", "The city was founded twice."], "answer": 0, "partB": {"prompt": "Part B: Which evidence would best support your answer to Part A?", "options": ["One history is about the market; the other is about the first farms.", "Both histories are the same length.", "Both writers lived in the city."], "answer": 0}},
+      {"type": "short", "prompt": "Two towns tell different stories about the same flood. As the historian, what would you do with the two stories? Explain in 2–3 sentences.", "rubric": ["Compares the stories instead of picking one at random", "Mentions checking evidence or each teller’s perspective", "Explains what the comparison could show"], "model": "I would compare the two stories and ask who told each one and what they could have seen. Then I would look for other evidence, like records of damage, to see which details hold up and why the towns remember it differently.", "minWords": 15},
+    ],
+    historyScale: [
+      {"type": "sort", "difficulty": 2, "prompt": "Sort each question by the scale it uses.", "groups": ["Close-up (one person, family, or town)", "Big picture (many places or a long time)"], "items": [["What did one baker sell each week?", 0], ["How did trade routes connect three continents?", 1], ["How did one family survive the drought?", 0], ["How did farming spread over 5,000 years?", 1], ["Who lived in this house?", 0], ["Why did many cities grow in the same century?", 1]]},
+      {"type": "order", "difficulty": 1, "prompt": "Put these scales in order from smallest to largest.", "items": ["One family", "A village", "A whole region", "The world"]},
+      {"type": "short", "prompt": "Why might a historian zoom in on one family’s letters after studying a big pattern across a whole region?", "rubric": ["Says the close-up shows how the pattern affected real people", "Notes that one place can differ from the overall trend, or can test the pattern"], "model": "The family’s letters show how the big change actually felt in people’s lives. They can also show that one place did not always follow the regional pattern, which tests whether the big claim is true everywhere.", "minWords": 8},
+    ],
+    historyFrames: [
+      {"type": "sort", "difficulty": 3, "prompt": "Which frame does each question use?", "groups": ["Communities", "Networks", "Production and distribution"], "items": [["How did neighbors share chores and celebrations?", 0], ["How did news travel between ports?", 1], ["Who made the cloth, and who sold it?", 2], ["What rules did the village follow?", 0], ["Which roads connected the towns?", 1], ["How was salt mined, and who sold it?", 2]]},
+      {"type": "multi", "difficulty": 2, "prompt": "You are studying a big trade city. Select all the questions that use the networks frame.", "options": ["Which cities sent ships here?", "How did ideas from far away arrive?", "Who made the pottery in the city?", "How did families in one neighborhood help each other?"], "answers": [0, 1]},
+      {"type": "short", "prompt": "Pick one frame (communities, networks, or production and distribution) and write a history question about your own town that uses it.", "rubric": ["Names a frame", "Writes a real question about a town", "The question fits the frame named"], "model": "Production and distribution: Where does the food in our grocery store come from, and who makes money at each step?", "minWords": 8},
+    ],
+    historyMemory: [
+      {"type": "two", "difficulty": 3, "prompt": "Part A: A town holiday celebrates a famous victory, but letters from that time describe heavy losses. What does this show?", "options": ["Collective memory can leave out parts of what happened.", "The letters must be fake.", "The holiday proves there were no losses."], "answer": 0, "partB": {"prompt": "Part B: Which question should a historian ask next?", "options": ["Who wrote the letters, and who created the holiday?", "Which version is more fun to remember?", "How many people go to the holiday now?"], "answer": 0}},
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the questions that help you judge whether a remembered story is complete.", "options": ["Whose experiences are missing?", "Who kept this story alive, and why?", "What other evidence tells the same story?", "Is this the version I heard first?", "Is the story exciting?"], "answers": [0, 1, 2]},
+      {"type": "short", "prompt": "Choose an event your family or school remembers. How might two people remember it differently? Explain why.", "rubric": ["Names an event", "Describes two different memories of it", "Explains a reason (perspective, role, what they saw)"], "model": "At our school play, the actors remember being nervous backstage, while the audience remembers the funny ending. They remember different parts because they saw the event from different places.", "minWords": 8},
+    ],
+  },
+  bio1: {
+    cellsOrganisms: [
+      {"type": "order", "difficulty": 1, "prompt": "Put these in order from smallest to largest.", "items": ["Cell", "Tissue", "Organ", "Organ system", "Organism"]},
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the statements that are true of every living thing.", "options": ["It is made of one or more cells", "Its cells come from other cells", "It has a heart", "It is made of many cells", "It can move from place to place"], "answers": [0, 1]},
+      {"type": "short", "prompt": "A visitor says a single-celled amoeba can’t be alive because it has no organs. How do you answer?", "rubric": ["Says the amoeba is one cell that is a whole organism", "Explains that its one cell carries out all life processes (eat, grow, get rid of waste, reproduce)"], "model": "An amoeba is alive because its one cell does every job of life: it takes in food, uses energy, gets rid of waste, and reproduces. It doesn’t need organs because the cell is the whole organism.", "minWords": 8},
+    ],
+    cellPartsU: [
+      {"type": "fill", "difficulty": 1, "prompt": "Which cell part controls the cell’s activities and holds its DNA? Type its name.", "accept": ["nucleus", "the nucleus"]},
+      {"type": "sort", "difficulty": 2, "prompt": "Sort the cell parts.", "groups": ["Found in plant and animal cells", "Found only in plant cells"], "items": [["nucleus", 0], ["cell wall", 1], ["cell membrane", 0], ["chloroplast", 1], ["mitochondria", 0], ["cytoplasm", 0]]},
+      {"type": "short", "prompt": "Explain the difference between the cell membrane and the cell wall.", "rubric": ["Says the membrane controls what goes in and out", "Says the cell wall is a stiff outer layer for support", "Says only plant (and some other) cells have a cell wall"], "model": "The cell membrane surrounds every cell and controls what moves in and out. A cell wall is a stiff layer outside the membrane that supports and protects plant cells; animal cells don’t have one.", "minWords": 8},
+    ],
+    cellPartsA: [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A leaf cell is placed in the dark for a week. Which cell part can’t do its job?", "options": ["Chloroplasts", "Mitochondria", "The nucleus"], "answer": 0, "partB": {"prompt": "Part B: Why can’t it do its job?", "options": ["It needs light energy to make food.", "It needs darkness to release energy.", "It only works at night."], "answer": 0}},
+      {"type": "multi", "difficulty": 2, "prompt": "Muscle cells use a lot of energy. Select all the predictions that make sense.", "options": ["They have many mitochondria", "They need a steady supply of food and oxygen", "They have extra chloroplasts", "They have no cell membrane"], "answers": [0, 1]},
+      {"type": "short", "prompt": "Some cells in your body need lots of energy. Which cell part would you expect them to have many of, and why?", "rubric": ["Names mitochondria", "Explains that mitochondria release energy from food"], "model": "They would have many mitochondria, because mitochondria release the energy stored in food so the cell can use it.", "minWords": 8},
+    ],
+    plantSuccessU: [
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the flower features that help attract pollinators.", "options": ["Bright petals", "Sweet nectar", "A strong scent", "Thick bark", "Deep roots"], "answers": [0, 1, 2]},
+      {"type": "sort", "difficulty": 2, "prompt": "Does each feature mostly help pollination or seed dispersal?", "groups": ["Pollination", "Seed dispersal"], "items": [["Colorful petals", 0], ["Hooks on a seed", 1], ["Nectar", 0], ["Fluffy parachute on a seed", 1], ["Sweet fruit around a seed", 1], ["Scent at night", 0]]},
+      {"type": "short", "prompt": "Pick one plant structure or behavior and explain how it helps the plant reproduce.", "rubric": ["Names a real structure or behavior (petals, nectar, fruit, scent, seed shape, etc.)", "Explains how it helps pollination or seed dispersal"], "model": "Bright petals attract bees. When a bee visits for nectar, pollen sticks to it and is carried to another flower, which helps the plant make seeds.", "minWords": 8},
+    ],
+    plantSuccessA: [
+      {"type": "two", "difficulty": 3, "prompt": "Part A: A flower opens only at night and smells strong. Which animal most likely pollinates it?", "options": ["Moths", "Hummingbirds", "Butterflies"], "answer": 0, "partB": {"prompt": "Part B: Which detail supports your answer?", "options": ["It opens at night, when moths are active.", "It has a strong smell, which keeps birds away.", "Butterflies only visit white flowers."], "answer": 0}},
+      {"type": "order", "difficulty": 2, "prompt": "Put the steps in order for a bee-pollinated apple.", "items": ["A bee visits a blossom for nectar", "Pollen sticks to the bee", "The bee carries pollen to another blossom", "The blossom is fertilized", "An apple with seeds grows"]},
+      {"type": "short", "prompt": "Bee numbers are dropping in an area with many apple orchards. Predict what will happen to the apple harvest and explain why.", "rubric": ["Predicts fewer apples", "Explains that fewer bees means less pollination", "Connects pollination to fruit and seeds forming"], "model": "The harvest will probably shrink. Apple blossoms need bees to carry pollen between flowers; with fewer bees, fewer blossoms are pollinated, so fewer apples (which hold the seeds) grow.", "minWords": 8},
+    ],
+    asexualPlants: [
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the examples of asexual reproduction.", "options": ["A potato sprouting from its eyes", "Strawberry runners growing new plants", "A cutting of a plant growing roots", "A bee carrying pollen between flowers", "A seed formed from pollen and an egg cell"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: A farmer grows 100 plants from cuttings of one plant. How do the new plants compare with the parent?", "options": ["They are genetically identical to it.", "They are each a mix of two parents.", "They are each a different species."], "answer": 0, "partB": {"prompt": "Part B: Why could this be risky for the farmer?", "options": ["One disease could harm all the plants the same way.", "The plants will grow too slowly to sell.", "Cuttings never grow roots."], "answer": 0}},
+      {"type": "short", "prompt": "Give one advantage and one disadvantage of asexual reproduction for a plant.", "rubric": ["Gives a correct advantage (fast, needs only one parent, no pollinator needed)", "Gives a correct disadvantage (no variety, one disease can harm all)"], "model": "An advantage is that it is fast and needs only one parent. A disadvantage is that all the offspring are identical, so a disease that harms one can harm them all.", "minWords": 8},
+    ],
+    sexualPlants: [
+      {"type": "order", "difficulty": 2, "prompt": "Put the steps of sexual reproduction in flowering plants in order.", "items": ["Pollen lands on the stigma", "A pollen tube grows down to the ovary", "Sperm from the pollen joins the egg cell", "A seed forms", "The seed sprouts into a new plant"]},
+      {"type": "sort", "difficulty": 2, "prompt": "Sort the flower parts.", "groups": ["Male part (makes pollen)", "Female part (holds the egg cells)"], "items": [["Anther", 0], ["Stigma", 1], ["Filament", 0], ["Ovary", 1], ["Style", 1]]},
+      {"type": "short", "prompt": "Why do offspring from sexual reproduction look a little different from each parent?", "rubric": ["Says the offspring get genetic information (traits) from two parents", "Explains that the mix makes each offspring a little different"], "model": "Each offspring gets half its genetic information from each parent, so it gets a new mix of traits and doesn’t look exactly like either one.", "minWords": 8},
+    ],
+    seedDispersal: [
+      {"type": "sort", "difficulty": 2, "prompt": "How is each seed most likely spread?", "groups": ["Wind", "Water", "Animals"], "items": [["Dandelion seed with fluffy parachute", 0], ["Coconut that floats", 1], ["Burr that sticks to fur", 2], ["Maple seed with a wing", 0], ["Berry that birds eat", 2], ["Seed of a plant on a riverbank that floats downstream", 1]]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: Why is it helpful for a seed to land far from its parent plant?", "options": ["It doesn’t have to compete with the parent for light, water, and space.", "It grows faster when it is cold.", "It gets more pollen there."], "answer": 0, "partB": {"prompt": "Part B: Which observation supports your answer?", "options": ["Seedlings under a big parent tree are often small and weak.", "Big trees make more pollen than small ones.", "Seeds weigh less than leaves."], "answer": 0}},
+      {"type": "short", "prompt": "Invent a new plant. Describe its seed and explain how the seed gets spread.", "rubric": ["Describes a seed feature", "Names a dispersal method (wind, water, animals, or bursting)", "Explains how the feature helps that method"], "model": "My plant makes seeds with tiny sticky hairs. When a deer brushes past, the seeds stick to its fur and fall off far away, so new plants grow in new places.", "minWords": 8},
+    ],
+    digestionHumans: [
+      {"type": "order", "difficulty": 1, "prompt": "Put the organs in the order food passes through them.", "items": ["Mouth", "Esophagus", "Stomach", "Small intestine", "Large intestine"]},
+      {"type": "multi", "difficulty": 2, "prompt": "Select all the ways the mouth starts digestion.", "options": ["Teeth break food into smaller pieces", "Saliva starts breaking down starch", "Bile breaks down fat", "Villi absorb nutrients"], "answers": [0, 1]},
+      {"type": "short", "prompt": "Explain the difference between mechanical and chemical digestion, with one example of each.", "rubric": ["Mechanical: physically breaking food into smaller pieces, with an example (chewing, stomach churning)", "Chemical: enzymes or acids breaking food into simpler substances, with an example (saliva, stomach acid)"], "model": "Mechanical digestion physically breaks food into smaller pieces, like teeth chewing. Chemical digestion uses substances like saliva or stomach acid to break food down into simpler nutrients.", "minWords": 8},
+    ],
+    digestionIntestines: [
+      {"type": "sort", "difficulty": 2, "prompt": "Which intestine mostly does each job?", "groups": ["Small intestine", "Large intestine"], "items": [["Absorbs most nutrients", 0], ["Absorbs leftover water", 1], ["Has villi", 0], ["Forms solid waste", 1], ["Gets bile and juices to finish digestion", 0]]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: Why is the small intestine lined with millions of villi?", "options": ["They give it more surface area to absorb nutrients.", "They push food back up to the stomach.", "They make the intestine shorter."], "answer": 0, "partB": {"prompt": "Part B: What would happen if the villi were damaged?", "options": ["Fewer nutrients would reach the blood.", "Food would move faster through the stomach.", "The large intestine would absorb more nutrients instead."], "answer": 0}},
+      {"type": "short", "prompt": "A student says the large intestine is where most nutrients are absorbed. Correct the student and explain.", "rubric": ["Says most nutrients are absorbed in the small intestine", "Says the large intestine mostly absorbs water"], "model": "Most nutrients are absorbed in the small intestine, through its villi. The large intestine mostly absorbs water and forms solid waste.", "minWords": 8},
+    ],
+    humanDigestion: [
+      {"type": "order", "difficulty": 2, "prompt": "Follow a bite of pizza from start to finish.", "items": ["Chewed in the mouth", "Swallowed down the esophagus", "Churned with acid in the stomach", "Nutrients absorbed in the small intestine", "Water absorbed in the large intestine"]},
+      {"type": "fill", "difficulty": 2, "prompt": "Which organ makes bile that helps digest fat? Type its name.", "accept": ["liver", "the liver"]},
+      {"type": "short", "prompt": "Pick one digestive organ. Explain its job and what would happen if it stopped working.", "rubric": ["Names an organ and its job correctly", "Predicts a reasonable effect if it stopped working"], "model": "The stomach churns food and mixes it with acid. If it stopped working, food would not be broken down enough, so the small intestine could not absorb as many nutrients.", "minWords": 8},
+    ],
+  },
+  math: {
+    "cafe:1": [
+      {"type": "multi", "difficulty": 2, "prompt": "A tray has 4 cupcakes and 6 cookies. Select every ratio that describes the tray correctly.", "options": ["4 : 6 (cupcakes to cookies)", "6 : 4 (cookies to cupcakes)", "4 : 10 (cupcakes to all treats)", "6 : 10 (cupcakes to all treats)", "4 : 4 (cupcakes to cookies)"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A fish bowl has 3 orange fish and 5 blue fish. What is the ratio of blue fish to orange fish?", "options": ["5 : 3", "3 : 5", "5 : 8"], "answer": 0, "partB": {"prompt": "Part B: Why does the order of the numbers matter?", "options": ["The first number has to match the first thing named.", "The bigger number always goes first.", "Ratios are always written smallest to largest."], "answer": 0}},
+      {"type": "short", "prompt": "A customer orders 2 muffins for every 3 juices. Explain what the ratio 2 : 3 means, and give one more order with the same ratio.", "rubric": ["Says there are 2 muffins for every 3 juices (in that order)", "Gives an equivalent order, like 4 muffins and 6 juices"], "model": "It means for every 2 muffins there are 3 juices. Doubling both gives the same ratio: 4 muffins and 6 juices.", "minWords": 8},
+    ],
+    "cafe:2": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A double number line shows 2 cups of flour for every 3 eggs. How many eggs go with 8 cups of flour?", "options": ["12 eggs", "9 eggs", "11 eggs"], "answer": 0, "partB": {"prompt": "Part B: Which pair is also on the same double number line?", "options": ["6 cups of flour and 9 eggs", "5 cups of flour and 6 eggs", "3 cups of flour and 2 eggs"], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "A recipe uses 3 scoops of berries for every 5 cups of milk. How many scoops of berries go with 20 cups of milk? Type the number.", "accept": ["12"]},
+      {"type": "short", "prompt": "Explain how a tape diagram can show the ratio 2 : 3 of apples to pears, and how you would use it to find how many apples there are if there are 15 pears.", "rubric": ["Describes 2 equal boxes for apples and 3 for pears", "Finds each box is worth 5 (15 ÷ 3)", "Concludes there are 10 apples"], "model": "Draw 2 equal boxes for apples and 3 equal boxes for pears. The 3 pear boxes are 15, so each box is 5. The 2 apple boxes are 2 × 5 = 10 apples.", "minWords": 15},
+    ],
+    "cafe:3": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every ratio that is equivalent to 3 : 4.", "options": ["6 : 8", "9 : 12", "15 : 20", "4 : 5", "6 : 7", "12 : 15"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A ratio table shows 2 pizzas feed 7 kids. How many kids do 6 pizzas feed?", "options": ["21", "11", "18"], "answer": 0, "partB": {"prompt": "Part B: Which reasoning gives that answer?", "options": ["6 pizzas is 3 times as many, so multiply 7 by 3.", "6 pizzas is 4 more, so add 4 to 7.", "Multiply 6 by 7 and divide by 3."], "answer": 0}},
+      {"type": "short", "prompt": "Lena says 2 : 3 and 4 : 5 are equivalent because you add 2 to each number. Is she right? Explain.", "rubric": ["Says she is not right", "Explains equivalent ratios come from multiplying (or dividing) both numbers by the same number", "Shows an example or check (4 : 6 is equivalent to 2 : 3)"], "model": "She is not right. Equivalent ratios multiply both numbers by the same number, not add. 2 : 3 times 2 is 4 : 6, not 4 : 5.", "minWords": 8},
+    ],
+    "cafe:4": [
+      {"type": "sort", "difficulty": 2, "prompt": "A recipe uses 1 cup of sugar for every 4 cups of flour. Sort each point (sugar, flour) by whether it fits the recipe.", "groups": ["Fits the ratio", "Doesn’t fit"], "items": [["(2, 8)", 0], ["(3, 12)", 0], ["(5, 20)", 0], ["(2, 6)", 1], ["(4, 1)", 1], ["(3, 7)", 1]]},
+      {"type": "fill", "difficulty": 3, "prompt": "A snack mix is 2 parts nuts to 3 parts raisins. In a bag with 25 cups of mix, how many cups are nuts? Type the number.", "accept": ["10"]},
+      {"type": "short", "prompt": "Points (1, 3), (2, 6), and (3, 9) show cups of juice and cups of water. What do you notice about the points, and what does it tell you about the ratio?", "rubric": ["Notices the points are on a straight line through (0, 0), or that y is always 3 times x", "Says the ratio is the same, 1 : 3 (juice to water)"], "model": "The points line up in a straight line that would go through (0, 0), and each water amount is 3 times the juice. That means every point has the same ratio, 1 cup of juice to 3 cups of water.", "minWords": 8},
+    ],
+    "bakery:1": [
+      {"type": "order", "difficulty": 2, "prompt": "Put these decimals in order from least to greatest.", "items": ["0.09", "0.4", "0.45", "1.2", "1.25"]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Sam adds 3.5 + 1.25 and gets 1.60. What is the right sum?", "options": ["4.75", "4.30", "1.60"], "answer": 0, "partB": {"prompt": "Part B: What was Sam’s mistake?", "options": ["He lined up the last digits instead of the decimal points.", "He forgot to carry a 1.", "He added when he should have subtracted."], "answer": 0}},
+      {"type": "short", "prompt": "Explain why you line up the decimal points when you add 2.4 + 0.35.", "rubric": ["Says lining up the points puts each place value (ones, tenths, hundredths) together", "Gets the sum 2.75"], "model": "Lining up the decimal points keeps ones with ones, tenths with tenths, and hundredths with hundredths. Then 2.40 + 0.35 = 2.75.", "minWords": 8},
+    ],
+    "bakery:2": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: 3 friends share 1/2 of a pan of brownies equally. What fraction of the whole pan does each friend get?", "options": ["1/6", "3/2", "1/5"], "answer": 0, "partB": {"prompt": "Part B: Which expression shows this?", "options": ["1/2 ÷ 3", "3 ÷ 1/2", "1/2 × 3"], "answer": 0}},
+      {"type": "fill", "difficulty": 1, "prompt": "How many 1/4-cup scoops are in 3 cups of flour? Type the number.", "accept": ["12"]},
+      {"type": "short", "prompt": "Explain why 4 ÷ 1/2 is bigger than 4.", "rubric": ["Says it asks how many halves fit in 4", "Explains each whole has 2 halves, so the answer is 8"], "model": "4 ÷ 1/2 asks how many halves are in 4. Each whole has 2 halves, so 4 wholes have 8 halves. Dividing by a number less than 1 gives a bigger answer.", "minWords": 8},
+    ],
+    "bakery:3": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every expression that equals 3/4 ÷ 1/8.", "options": ["6", "3/4 × 8", "24/4", "3/32", "3/4 × 1/8", "1/6"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: A ribbon is 2 1/2 feet long. How many 1/2-foot pieces can you cut?", "options": ["5", "4", "1 1/4"], "answer": 0, "partB": {"prompt": "Part B: Which question does 2 1/2 ÷ 1/2 answer?", "options": ["How many halves fit in 2 1/2?", "What is half of 2 1/2?", "How much is left after cutting off 1/2?"], "answer": 0}},
+      {"type": "short", "prompt": "Write a short story problem that 3/4 ÷ 1/4 could answer, and solve it.", "rubric": ["Writes a story where something is split into 1/4-size parts (how many fit)", "Gives the answer 3 with a label"], "model": "I have 3/4 of a pizza and each kid eats 1/4 of a pizza. How many kids can eat? 3/4 ÷ 1/4 = 3 kids.", "minWords": 8},
+    ],
+    "bakery:4": [
+      {"type": "fill", "difficulty": 2, "prompt": "0.6 × 0.3 = ? Type the answer as a decimal.", "accept": ["0.18", ".18"]},
+      {"type": "sort", "difficulty": 2, "prompt": "Without working them out, sort each product by size.", "groups": ["Less than 5", "More than 5"], "items": [["5 × 0.8", 0], ["5 × 1.2", 1], ["5 × 0.99", 0], ["5 × 2.5", 1], ["5 × 1/2", 0], ["5 × 1.01", 1]]},
+      {"type": "short", "prompt": "Explain how you know where to put the decimal point in 2.3 × 0.4.", "rubric": ["Counts the decimal places in the factors (1 + 1 = 2) or estimates (about 2 × 0.4 = 0.8)", "Gets 0.92"], "model": "23 × 4 = 92. The factors have 2 decimal places in all (one each), so the product has 2: 0.92. That makes sense because 2 × 0.4 = 0.8.", "minWords": 8},
+    ],
+    "bakery:5": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: 6.4 ÷ 0.8 = ?", "options": ["8", "0.8", "80"], "answer": 0, "partB": {"prompt": "Part B: Which division has the same answer?", "options": ["64 ÷ 8", "6.4 ÷ 8", "640 ÷ 8"], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "A 7-pound bag of flour is split equally into 4 tubs. How many pounds go in each tub? Type the decimal.", "accept": ["1.75"]},
+      {"type": "short", "prompt": "Explain why 1.5 ÷ 0.05 gives the same answer as 150 ÷ 5.", "rubric": ["Says both numbers were multiplied by 100 (the same amount)", "Explains multiplying both by the same number doesn’t change the quotient", "Gets 30"], "model": "Multiplying both 1.5 and 0.05 by 100 gives 150 and 5. Multiplying both numbers by the same amount keeps the quotient the same, so both equal 30.", "minWords": 8},
+    ],
+    "market:1": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Which is the better buy for apples?", "options": ["5 apples for $2.00", "3 apples for $1.50", "They cost the same per apple"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["It costs $0.40 per apple instead of $0.50.", "It has more apples in the bag.", "$2.00 is a rounder number."], "answer": 0}},
+      {"type": "fill", "difficulty": 1, "prompt": "A car goes 180 miles in 3 hours at a steady speed. How many miles per hour is that? Type the number.", "accept": ["60"]},
+      {"type": "short", "prompt": "Explain what a unit rate is, using an example from a store.", "rubric": ["Says a unit rate is an amount for 1 (one item, one hour, etc.)", "Gives a correct store example (price per item, per pound)"], "model": "A unit rate tells how much for just 1 of something. If 4 cans cost $6, the unit rate is $1.50 per can.", "minWords": 8},
+    ],
+    "market:2": [
+      {"type": "multi", "difficulty": 1, "prompt": "A 10 by 10 grid has 35 squares shaded. Select every way to describe the shaded part.", "options": ["35%", "35/100", "0.35", "3.5%", "35/10", "0.035"], "answers": [0, 1, 2]},
+      {"type": "sort", "difficulty": 2, "prompt": "Is each amount more or less than half?", "groups": ["Less than 50%", "More than 50%"], "items": [["3/10", 0], ["0.7", 1], ["45%", 0], ["6/10", 1], ["49/100", 0], ["0.52", 1]]},
+      {"type": "short", "prompt": "Explain what 25% means, and show it with a fraction.", "rubric": ["Says percent means out of 100, so 25 out of 100", "Writes 25/100 or 1/4"], "model": "25% means 25 out of every 100. As a fraction that is 25/100, which simplifies to 1/4.", "minWords": 8},
+    ],
+    "market:3": [
+      {"type": "order", "difficulty": 2, "prompt": "Put these in order from least to greatest.", "items": ["1/5", "0.25", "30%", "2/5", "0.6"]},
+      {"type": "multi", "difficulty": 1, "prompt": "Select everything equal to 3/4.", "options": ["75%", "0.75", "15/20", "0.34", "34%", "7.5%"], "answers": [0, 1, 2]},
+      {"type": "short", "prompt": "Explain how to change 3/5 into a percent.", "rubric": ["Makes an equivalent fraction out of 100 (60/100) or divides 3 by 5 (0.6)", "Gets 60%"], "model": "Multiply the top and bottom by 20 to get 60/100, which is 60%. Or 3 ÷ 5 = 0.6, which is 60%.", "minWords": 8},
+    ],
+    "market:4": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A $40 jacket is 25% off. What is the sale price?", "options": ["$30", "$10", "$15"], "answer": 0, "partB": {"prompt": "Part B: Which steps give the sale price?", "options": ["Find 25% of the price, then subtract it from the price.", "Subtract 25 from 40.", "Divide $40 by 25."], "answer": 0}},
+      {"type": "fill", "difficulty": 3, "prompt": "12 is 20% of what number? Type the number.", "accept": ["60"]},
+      {"type": "short", "prompt": "Mia says 10% of 80 and 80% of 10 are the same. Is she right? Explain.", "rubric": ["Says she is right", "Shows both equal 8 (10% of 80 = 8 and 80% of 10 = 8)"], "model": "She is right. 10% of 80 is 8, and 80% of 10 is 0.8 × 10 = 8. Switching the numbers gives the same product.", "minWords": 8},
+    ],
+    "clock:1": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every expression equal to 2⁴.", "options": ["16", "2 × 2 × 2 × 2", "4²", "8", "2 × 4", "4 × 4 × 4"], "answers": [0, 1, 2]},
+      {"type": "order", "difficulty": 2, "prompt": "Put these in order from least to greatest.", "items": ["(1/2)²", "0.5", "1³", "2²", "3²"]},
+      {"type": "short", "prompt": "Ben says 5³ = 15. Explain his mistake and find the right answer.", "rubric": ["Says he multiplied 5 × 3 instead of using 5 as a factor 3 times", "Gets 125"], "model": "He multiplied 5 × 3. The exponent means use 5 as a factor 3 times: 5 × 5 × 5 = 125.", "minWords": 8},
+    ],
+    "clock:2": [
+      {"type": "two", "difficulty": 1, "prompt": "Part A: 8 + 4 × 3 = ?", "options": ["20", "36", "15"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["Multiplication comes before addition.", "You always work left to right.", "Addition comes before multiplication."], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "(12 − 4) ÷ 2 + 3 = ? Type the number.", "accept": ["7"]},
+      {"type": "short", "prompt": "Explain why 10 − 2 × 3 and (10 − 2) × 3 have different answers.", "rubric": ["Explains multiplication comes first without parentheses (10 − 6 = 4)", "Explains parentheses come first in the second (8 × 3 = 24)"], "model": "In 10 − 2 × 3 you multiply first: 10 − 6 = 4. In (10 − 2) × 3 the parentheses come first: 8 × 3 = 24.", "minWords": 8},
+    ],
+    "clock:3": [
+      {"type": "sort", "difficulty": 3, "prompt": "Sort each expression by its value.", "groups": ["Equals 10", "Doesn’t equal 10"], "items": [["2 × 3² − 8", 0], ["(2 + 3)²", 1], ["1/2 × 4² + 2", 0], ["5² − 15", 0], ["2³ + 3", 1], ["100 ÷ 10²", 1]]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Which is greater, 3⁴ or 4³?", "options": ["3⁴", "4³", "They are equal"], "answer": 0, "partB": {"prompt": "Part B: What are the values of 3⁴ and 4³, in that order?", "options": ["81 and 64", "12 and 12", "64 and 81"], "answer": 0}},
+      {"type": "short", "prompt": "Explain the order of steps you use for 6 + (1/2)² × 8, and give the answer.", "rubric": ["Does the exponent first: (1/2)² = 1/4", "Then multiplies: 1/4 × 8 = 2", "Then adds: 6 + 2 = 8"], "model": "First the exponent: (1/2)² = 1/4. Next multiply: 1/4 × 8 = 2. Last add: 6 + 2 = 8.", "minWords": 8},
+    ],
+    "rink:1": [
+      {"type": "sort", "difficulty": 1, "prompt": "Would you use a positive or a negative number?", "groups": ["Positive", "Negative"], "items": [["10 feet below sea level", 1], ["A $5 deposit", 0], ["3 degrees below zero", 1], ["A gain of 8 yards", 0], ["A $20 debt", 1], ["Climbing 50 feet", 0]]},
+      {"type": "fill", "difficulty": 1, "prompt": "What is the opposite of −7? Type the number.", "accept": ["7", "+7"]},
+      {"type": "short", "prompt": "Explain what the opposite of a number is, using a number line.", "rubric": ["Says opposites are the same distance from 0", "Says they are on opposite sides of 0 (gives an example like 4 and −4)"], "model": "Opposites are the same distance from 0 on the number line but on opposite sides. 4 and −4 are both 4 units from 0.", "minWords": 8},
+    ],
+    "rink:2": [
+      {"type": "order", "difficulty": 2, "prompt": "Put these in order from left to right on a number line.", "items": ["−2.5", "−1 1/2", "−0.75", "0", "1/4"]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Which number is between −1 and −2?", "options": ["−1.6", "−0.6", "−2.4"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["It is more than 1 unit but less than 2 units left of 0.", "It has a 1 in it.", "It is the biggest number shown."], "answer": 0}},
+      {"type": "short", "prompt": "Explain where −3/4 goes on a number line marked from −1 to 1.", "rubric": ["Says it is between −1 and 0", "Says it is 3/4 of the way from 0 to −1 (closer to −1)"], "model": "It goes between −1 and 0, three-fourths of the way from 0 toward −1, so it is closer to −1 than to 0.", "minWords": 8},
+    ],
+    "rink:3": [
+      {"type": "order", "difficulty": 2, "prompt": "Put these temperatures in order from coldest to warmest.", "items": ["−12°", "−5°", "−4.5°", "0°", "3°"]},
+      {"type": "multi", "difficulty": 2, "prompt": "Select every true statement.", "options": ["−3 < −1", "−8 < 2", "−0.5 > −5", "−6 > −2", "−4 < −10"], "answers": [0, 1, 2]},
+      {"type": "short", "prompt": "Explain why −10 is less than −2, even though 10 is greater than 2.", "rubric": ["Says −10 is farther left on the number line (farther below 0)", "Uses a real example, like temperature or owing money"], "model": "−10 is farther left of 0 than −2, so it is less. A temperature of −10° is colder than −2°.", "minWords": 8},
+    ],
+    "rink:4": [
+      {"type": "sort", "difficulty": 2, "prompt": "Sort by absolute value.", "groups": ["Absolute value is 6", "Absolute value is not 6"], "items": [["−6", 0], ["6", 0], ["6 units left of 0", 0], ["−3", 1], ["0", 1], ["−12", 1]]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A diver is at −30 feet and a bird is at 20 feet. Which is farther from sea level?", "options": ["The diver", "The bird", "They are the same distance"], "answer": 0, "partB": {"prompt": "Part B: Which numbers show why?", "options": ["|−30| = 30 and |20| = 20", "−30 < 20", "−30 + 20 = −10"], "answer": 0}},
+      {"type": "short", "prompt": "Explain why a debt of $50 is a bigger debt than a debt of $20, even though −50 < −20.", "rubric": ["Uses absolute value: |−50| = 50 is bigger than |−20| = 20", "Explains the absolute value is the size of the debt"], "model": "The size of a debt is its absolute value. |−50| = 50 and |−20| = 20, so you owe more with the $50 debt, even though −50 is lower on the number line.", "minWords": 8},
+    ],
+    "potion:1": [
+      {"type": "pick", "difficulty": 1, "prompt": "Tap every term in the expression.", "sentence": "4x + 7 + 2y", "answers": [0, 2, 4]},
+      {"type": "fill", "difficulty": 1, "prompt": "What is 3x + 5 when x = 4? Type the number.", "accept": ["17"]},
+      {"type": "short", "prompt": "In the expression 5n + 3, explain what 5 and 3 are called and what each one does.", "rubric": ["Says 5 is the coefficient (it multiplies n)", "Says 3 is a constant (a number that doesn’t change)"], "model": "5 is the coefficient: it multiplies n. 3 is the constant: it stays 3 no matter what n is.", "minWords": 8},
+    ],
+    "potion:2": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every expression that means “5 less than a number n.”", "options": ["n − 5", "n + (−5)", "5 − n", "5n", "n ÷ 5"], "answers": [0, 1]},
+      {"type": "two", "difficulty": 1, "prompt": "Part A: Pens cost $3 each. Which expression gives the cost of p pens?", "options": ["3p", "p + 3", "p ÷ 3"], "answer": 0, "partB": {"prompt": "Part B: What does 3p mean?", "options": ["3 times the number of pens", "3 more than the number of pens", "The number of pens split into 3"], "answer": 0}},
+      {"type": "short", "prompt": "Write an expression for “twice a number, plus 4,” and explain each part.", "rubric": ["Writes 2n + 4 (any letter)", "Explains 2n is twice the number and + 4 adds four"], "model": "2n + 4. The 2n means 2 times the number, and the + 4 adds four more.", "minWords": 8},
+    ],
+    "potion:3": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: What is the greatest common factor of 18 and 24?", "options": ["6", "3", "72"], "answer": 0, "partB": {"prompt": "Part B: When would you use it?", "options": ["To split two groups into the most equal teams with nothing left over", "To find when two schedules line up again", "To find the total of both numbers"], "answer": 0}},
+      {"type": "fill", "difficulty": 1, "prompt": "What is the least common multiple of 4 and 6? Type the number.", "accept": ["12"]},
+      {"type": "short", "prompt": "Hot dogs come in packs of 8 and buns in packs of 6. Explain how to find the fewest of each you can buy to have the same number of hot dogs and buns.", "rubric": ["Uses multiples or the least common multiple", "Finds 24 (3 packs of hot dogs and 4 packs of buns)"], "model": "List multiples: 8, 16, 24 and 6, 12, 18, 24. The LCM is 24, so buy 3 packs of hot dogs and 4 packs of buns.", "minWords": 8},
+    ],
+    "potion:4": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every expression equivalent to 3(x + 2).", "options": ["3x + 6", "x + 2 + x + 2 + x + 2", "3x + 3 × 2", "3x + 2", "x + 6", "3x + 5"], "answers": [0, 1, 2]},
+      {"type": "fill", "difficulty": 2, "prompt": "Use the distributive property: 24 + 36 = 12( ___ + 3). Type the missing number.", "accept": ["2"]},
+      {"type": "short", "prompt": "Explain why 4(n + 5) is not equal to 4n + 5.", "rubric": ["Says the 4 multiplies both n and 5", "Shows 4(n + 5) = 4n + 20 (or tests a value)"], "model": "The 4 multiplies everything in the parentheses, so 4(n + 5) = 4n + 20, not 4n + 5. For n = 1: 4 × 6 = 24 but 4 + 5 = 9.", "minWords": 8},
+    ],
+    "potion:5": [
+      {"type": "sort", "difficulty": 1, "prompt": "Is x = 6 a solution?", "groups": ["Yes", "No"], "items": [["x + 4 = 10", 0], ["3x = 18", 0], ["x ÷ 2 = 3", 0], ["x − 6 = 1", 1], ["2x = 8", 1], ["x + 1 = 6", 1]]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Solve x/4 = 9.", "options": ["x = 36", "x = 13", "x = 2.25"], "answer": 0, "partB": {"prompt": "Part B: Which step solves it?", "options": ["Multiply both sides by 4.", "Divide both sides by 4.", "Add 4 to both sides."], "answer": 0}},
+      {"type": "short", "prompt": "Write a story that the equation n + 7 = 20 could describe, then solve it.", "rubric": ["Writes a story where an unknown amount plus 7 makes 20", "Solves n = 13 with a label"], "model": "I had some stickers and got 7 more. Now I have 20. How many did I have? n = 20 − 7 = 13 stickers.", "minWords": 8},
+    ],
+    "potion:6": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every value that is a solution of x > 4.", "options": ["5", "4.1", "10", "4", "3", "−5"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Plants grow taller when they get more hours of sunlight. Which is the dependent variable?", "options": ["Plant height", "Hours of sunlight", "The kind of plant"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["It changes because of the other variable.", "It is the bigger number.", "You choose it before the experiment."], "answer": 0}},
+      {"type": "short", "prompt": "Explain the difference between x < 3 and x ≤ 3, and how each looks on a number line.", "rubric": ["Says ≤ includes 3 and < does not", "Says < uses an open circle and ≤ a closed (filled) circle at 3, with the arrow pointing left"], "model": "x < 3 means numbers less than 3, not 3 itself: an open circle at 3 with an arrow to the left. x ≤ 3 includes 3: a filled circle at 3 with an arrow to the left.", "minWords": 8},
+    ],
+    "houses:1": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A triangle has a base of 10 cm and a height of 6 cm. What is its area?", "options": ["30 square cm", "60 square cm", "16 square cm"], "answer": 0, "partB": {"prompt": "Part B: Why do you divide by 2?", "options": ["A triangle is half of a parallelogram with the same base and height.", "Triangles have 2 equal sides.", "You always divide area by 2."], "answer": 0}},
+      {"type": "fill", "difficulty": 1, "prompt": "A parallelogram has a base of 8 m and a height of 5 m. What is its area in square meters? Type the number.", "accept": ["40"]},
+      {"type": "short", "prompt": "Explain why the slanted side of a parallelogram is not used to find its area.", "rubric": ["Says area uses the height, which is perpendicular (straight up) to the base", "Mentions cutting and moving a triangle to make a rectangle, or that the slant is longer than the height"], "model": "Area uses the height, which is straight up from the base at a right angle. If you cut off the triangle on one end and move it, you get a rectangle with that base and height; the slanted side is longer than the height.", "minWords": 8},
+    ],
+    "houses:2": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: An L-shaped room is a 6 m by 4 m rectangle with a 2 m by 2 m square cut from one corner. What is its area?", "options": ["20 square m", "24 square m", "28 square m"], "answer": 0, "partB": {"prompt": "Part B: Which method works?", "options": ["Find the big rectangle, then subtract the missing square.", "Add all the side lengths.", "Multiply the two longest sides only."], "answer": 0}},
+      {"type": "order", "difficulty": 1, "prompt": "Put the steps in order to find the area of a shape made of a rectangle and a triangle.", "items": ["Split the shape into a rectangle and a triangle", "Measure the base and height of each part", "Find the area of each part", "Add the two areas"]},
+      {"type": "short", "prompt": "Explain two different ways to find the area of an L-shaped figure.", "rubric": ["Describes splitting it into rectangles and adding", "Describes a big rectangle minus the missing part"], "model": "One way is to split the L into two rectangles and add their areas. Another way is to find the area of the whole big rectangle and subtract the corner that is missing.", "minWords": 8},
+    ],
+    "houses:3": [
+      {"type": "sort", "difficulty": 2, "prompt": "Which quadrant is each point in?", "groups": ["Quadrant I", "Quadrant II", "Quadrant III"], "items": [["(3, 5)", 0], ["(−2, 4)", 1], ["(−1, −6)", 2], ["(7, 1)", 0], ["(−5, 2)", 1], ["(−3, −3)", 2]]},
+      {"type": "fill", "difficulty": 2, "prompt": "Reflect the point (4, −3) across the x-axis. What is the new point? Type it like (x, y).", "accept": ["(4, 3)", "(4,3)", "4, 3", "4,3"]},
+      {"type": "short", "prompt": "Explain what happens to a point’s coordinates when you reflect it across the y-axis.", "rubric": ["Says the x-coordinate changes to its opposite", "Says the y-coordinate stays the same (gives an example)"], "model": "The x-coordinate becomes its opposite and the y-coordinate stays the same. (2, 5) becomes (−2, 5).", "minWords": 8},
+    ],
+    "houses:4": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: What is the distance between (−3, 2) and (5, 2)?", "options": ["8 units", "2 units", "5 units"], "answer": 0, "partB": {"prompt": "Part B: How do you know?", "options": ["Count the units from −3 to 0, then from 0 to 5, and add them.", "Subtract 2 from 5.", "Add −3 and 5."], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "A rectangle has corners at (1, 1), (1, 4), (6, 4), and (6, 1). What is its perimeter? Type the number.", "accept": ["16"]},
+      {"type": "short", "prompt": "Explain how to find the distance between two points that are on opposite sides of an axis, like (0, −4) and (0, 3).", "rubric": ["Uses absolute values or counts through 0", "Adds 4 + 3 to get 7"], "model": "Find how far each point is from 0: |−4| = 4 and |3| = 3. They are on opposite sides, so add: 4 + 3 = 7 units.", "minWords": 8},
+    ],
+    "houses:5": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A box is 2 ft long, 1 1/2 ft wide, and 1 ft tall. What is its volume?", "options": ["3 cubic feet", "4 1/2 cubic feet", "1 1/2 cubic feet"], "answer": 0, "partB": {"prompt": "Part B: Which formula did you use?", "options": ["Volume = length × width × height", "Volume = length + width + height", "Volume = 2 × length × width"], "answer": 0}},
+      {"type": "fill", "difficulty": 3, "prompt": "How many 1/2-inch cubes fit in a 1-inch cube? Type the number.", "accept": ["8"]},
+      {"type": "short", "prompt": "Explain why a box that is 1/2 ft by 1/2 ft by 1/2 ft has a volume of 1/8 cubic foot.", "rubric": ["Multiplies 1/2 × 1/2 × 1/2 = 1/8", "Or explains 8 of these small cubes fill a 1-foot cube"], "model": "1/2 × 1/2 × 1/2 = 1/8. You can also see it: 8 of those small cubes stack to fill one cubic foot, so each is 1/8 of it.", "minWords": 8},
+    ],
+    "houses:6": [
+      {"type": "multi", "difficulty": 2, "prompt": "A cube has edges of 3 cm. Select every true statement.", "options": ["Each face has an area of 9 square cm", "It has 6 faces", "Its surface area is 54 square cm", "Its surface area is 27 square cm", "It has 8 faces"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Which 3D figure does a net of 1 square and 4 triangles make?", "options": ["A square pyramid", "A cube", "A triangular prism"], "answer": 0, "partB": {"prompt": "Part B: How do you find its surface area?", "options": ["Add the area of the square and the 4 triangles.", "Multiply length × width × height.", "Find the area of one triangle only."], "answer": 0}},
+      {"type": "short", "prompt": "Explain the difference between surface area and volume, using a gift box.", "rubric": ["Surface area: the wrapping paper that covers the outside (square units)", "Volume: the space inside the box (cubic units)"], "model": "Surface area is how much wrapping paper covers the outside of the box, in square units. Volume is how much space is inside the box, in cubic units.", "minWords": 8},
+    ],
+    "show:1": [
+      {"type": "sort", "difficulty": 2, "prompt": "Is each one a statistical question?", "groups": ["Statistical question", "Not a statistical question"], "items": [["How many hours do kids in my class sleep?", 0], ["How old is my dog?", 1], ["How tall are the sunflowers in our garden?", 0], ["What time is it now?", 1], ["How many pets do families on my street have?", 0], ["How many legs does a cat have?", 1]]},
+      {"type": "fill", "difficulty": 1, "prompt": "A dot plot shows dogs’ weights: 3 dots above 20 lb, 5 dots above 25 lb, and 2 dots above 30 lb. How many dogs are there? Type the number.", "accept": ["10"]},
+      {"type": "short", "prompt": "Explain what makes a question statistical, with an example.", "rubric": ["Says the answers vary (there is variability, many different answers)", "Gives a correct example"], "model": "A statistical question expects answers that vary. “How many books did each student read this month?” is statistical because students give different answers.", "minWords": 8},
+    ],
+    "show:2": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Scores are 4, 6, 6, 8, 11. What is the mean?", "options": ["7", "6", "8"], "answer": 0, "partB": {"prompt": "Part B: What is the median?", "options": ["6", "7", "8"], "answer": 0}},
+      {"type": "multi", "difficulty": 3, "prompt": "Data: 2, 3, 3, 5, 12. Select every true statement.", "options": ["The median is 3", "The mean is 5", "The 12 pulls the mean up", "The median is 5", "The mean is less than the median"], "answers": [0, 1, 2]},
+      {"type": "short", "prompt": "A data set has one very large value. Explain whether the mean or the median better describes a typical value, and why.", "rubric": ["Chooses the median", "Explains the large value pulls the mean up but barely changes the median"], "model": "The median is better. One very large value pulls the mean up, but the median stays in the middle of the data.", "minWords": 8},
+    ],
+    "show:3": [
+      {"type": "two", "difficulty": 3, "prompt": "Part A: Data: 1, 3, 5, 7, 9, 11, 13, 15. What is the interquartile range (IQR)?", "options": ["8", "14", "6"], "answer": 0, "partB": {"prompt": "Part B: What does the IQR measure?", "options": ["How spread out the middle half of the data is", "The average value", "The most common value"], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "Data: 2, 4, 6, 8. The mean is 5. What is the mean absolute deviation (MAD)? Type the number.", "accept": ["2"]},
+      {"type": "short", "prompt": "Two teams have the same mean score, but one has a MAD of 1 and the other a MAD of 6. Explain what that tells you.", "rubric": ["Says the team with a MAD of 1 has scores close to the mean (consistent)", "Says the team with a MAD of 6 has scores more spread out"], "model": "Both teams score about the same on average, but the team with a MAD of 1 is consistent, with scores close to the mean. The team with a MAD of 6 has scores that are more spread out.", "minWords": 8},
+    ],
+    "show:4": [
+      {"type": "multi", "difficulty": 3, "prompt": "A box plot has min 10, Q1 15, median 20, Q3 30, max 40. Select every true statement.", "options": ["The range is 30", "The IQR is 15", "About half the data is between 15 and 30", "The median is 25", "The IQR is 20"], "answers": [0, 1, 2]},
+      {"type": "order", "difficulty": 1, "prompt": "Put the five numbers you need to draw a box plot in order from smallest to largest.", "items": ["Minimum", "First quartile (Q1)", "Median", "Third quartile (Q3)", "Maximum"]},
+      {"type": "short", "prompt": "Explain what the box in a box plot shows.", "rubric": ["Says the box goes from Q1 to Q3", "Says it holds the middle half (50%) of the data, with the median inside"], "model": "The box goes from the first quartile to the third quartile, so it shows the middle half of the data. The line inside the box is the median.", "minWords": 8},
+    ],
+    "show:5": [
+      {"type": "sort", "difficulty": 3, "prompt": "Which display fits best?", "groups": ["Show one data set (dot plot or histogram)", "Compare two data sets side by side (box plots)"], "items": [["Each student’s number of pets", 0], ["Comparing test scores of two classes", 1], ["Heights of 30 sunflowers", 0], ["Comparing the spread of two teams’ times", 1]]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: A histogram is tall on the left with a long tail to the right. What is its shape?", "options": ["Skewed right", "Skewed left", "Symmetric"], "answer": 0, "partB": {"prompt": "Part B: Which is probably bigger?", "options": ["The mean", "The median", "They are about equal"], "answer": 0}},
+      {"type": "short", "prompt": "Describe the shape of a data set that is symmetric, and give a real example that might look like that.", "rubric": ["Says both sides are mirror images around the center (mean and median close)", "Gives a reasonable example (heights of students in one grade)"], "model": "A symmetric data set looks about the same on both sides of the middle, so the mean and median are close. Heights of students in one grade might look like that.", "minWords": 8},
+    ],
+    "lemonade:1": [
+      {"type": "two", "difficulty": 1, "prompt": "Part A: A large pitcher holds 4 times as much as a small one. The small one holds 3 cups. How much does the large one hold?", "options": ["12 cups", "7 cups", "1 cup"], "answer": 0, "partB": {"prompt": "Part B: Which operation do you use?", "options": ["Multiply the small pitcher’s cups by 4", "Add 4 to the small pitcher’s cups", "Divide the small pitcher’s cups by 4"], "answer": 0}},
+      {"type": "sort", "difficulty": 2, "prompt": "Is each sentence about “times as many” or “more than”?", "groups": ["Times as many (multiply)", "More than (add)"], "items": [["Sam has 3 times as many cups as Jo", 0], ["Sam has 3 more cups than Jo", 1], ["The tree is 5 times as tall", 0], ["The dog is 5 pounds heavier", 1]]},
+      {"type": "short", "prompt": "Explain the difference between “6 more than 2” and “6 times as many as 2.”", "rubric": ["Says 6 more than 2 is adding: 8", "Says 6 times as many as 2 is multiplying: 12"], "model": "“6 more than 2” means add: 2 + 6 = 8. “6 times as many as 2” means multiply: 6 × 2 = 12.", "minWords": 8},
+    ],
+    "lemonade:2": [
+      {"type": "order", "difficulty": 2, "prompt": "Put the steps in order: You buy 3 boxes of 24 lemons and use 15. How many are left?", "items": ["Find the total: 3 × 24 = 72", "Subtract the used lemons: 72 − 15", "Answer: 57 lemons are left"]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Cups cost $2 each. You buy 7 cups and pay with a $20 bill. How much change?", "options": ["$6", "$14", "$13"], "answer": 0, "partB": {"prompt": "Part B: Which equation matches?", "options": ["20 − 7 × 2 = c", "20 − 7 − 2 = c", "(20 − 7) × 2 = c"], "answer": 0}},
+      {"type": "short", "prompt": "Explain how you can use estimation to check an answer to 49 × 6.", "rubric": ["Rounds 49 to 50 and multiplies: 50 × 6 = 300", "Says the exact answer should be close to 300 (it is 294)"], "model": "Round 49 to 50. 50 × 6 = 300, so the answer should be a little less than 300. The exact answer is 294, which is close.", "minWords": 8},
+    ],
+    "lemonade:3": [
+      {"type": "sort", "difficulty": 2, "prompt": "Prime or composite?", "groups": ["Prime", "Composite"], "items": [["13", 0], ["21", 1], ["29", 0], ["27", 1], ["2", 0], ["51", 1]]},
+      {"type": "multi", "difficulty": 1, "prompt": "Select every factor of 24.", "options": ["3", "4", "8", "12", "5", "7", "9"], "answers": [0, 1, 2, 3]},
+      {"type": "short", "prompt": "Explain how you can tell that 39 is composite.", "rubric": ["Finds a factor other than 1 and 39 (3 or 13)", "Says a composite number has more than two factors"], "model": "39 = 3 × 13, so it has factors other than 1 and itself. A number with more than two factors is composite.", "minWords": 8},
+    ],
+    "lemonade:4": [
+      {"type": "fill", "difficulty": 1, "prompt": "What number comes next? 3, 7, 11, 15, ___", "accept": ["19"]},
+      {"type": "two", "difficulty": 3, "prompt": "Part A: A pattern starts at 5 and the rule is “add 4.” Will the numbers be odd or even?", "options": ["Always odd", "Always even", "They switch between odd and even"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["Odd plus even is always odd.", "4 is an even number, so the answers are even.", "5 is the biggest number."], "answer": 0}},
+      {"type": "short", "prompt": "A pattern goes 2, 6, 18, 54. Explain the rule and find the next number.", "rubric": ["Says the rule is multiply by 3", "Gets 162"], "model": "Each number is 3 times the one before it, so the rule is “multiply by 3.” The next number is 54 × 3 = 162.", "minWords": 8},
+    ],
+    "toys:1": [
+      {"type": "two", "difficulty": 1, "prompt": "Part A: In 4,725, what is the value of the 7?", "options": ["700", "7", "70"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["The 7 is in the hundreds place.", "7 is the second digit.", "There are 3 digits after it."], "answer": 0}},
+      {"type": "order", "difficulty": 2, "prompt": "Put these numbers in order from least to greatest.", "items": ["3,099", "3,909", "3,990", "9,003", "9,030"]},
+      {"type": "short", "prompt": "Explain why the 4 in 4,000 is worth 10 times the 4 in 400.", "rubric": ["Says each place is 10 times the place to its right", "Says 4,000 = 10 × 400 (thousands vs hundreds)"], "model": "The 4 in 4,000 is in the thousands place and the 4 in 400 is in the hundreds place. Each place is worth 10 times the one to its right, so 4,000 is 10 × 400.", "minWords": 8},
+    ],
+    "toys:2": [
+      {"type": "sort", "difficulty": 2, "prompt": "Round to the nearest hundred.", "groups": ["Rounds to 500", "Rounds to 600"], "items": [["549", 0], ["551", 1], ["450", 0], ["583", 1], ["505", 0], ["649", 1]]},
+      {"type": "fill", "difficulty": 2, "prompt": "5,302 − 1,876 = ? Type the number.", "accept": ["3426", "3,426"]},
+      {"type": "short", "prompt": "Explain how you regroup to solve 600 − 248.", "rubric": ["Explains there are no ones or tens to subtract from, so you regroup a hundred into tens and a ten into ones", "Gets 352"], "model": "There are 0 ones and 0 tens, so I regroup: 600 becomes 5 hundreds, 9 tens, and 10 ones. Then 10 − 8 = 2, 9 − 4 = 5, 5 − 2 = 3, so the answer is 352.", "minWords": 8},
+    ],
+    "toys:3": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every expression equal to 6 × 34.", "options": ["6 × 30 + 6 × 4", "180 + 24", "204", "6 × 3 + 6 × 4", "6 + 34", "180 + 4"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: 23 × 15 = ?", "options": ["345", "230", "115"], "answer": 0, "partB": {"prompt": "Part B: Which partial products add up to it?", "options": ["200 + 30 + 100 + 15", "20 + 3 + 10 + 5", "200 + 15"], "answer": 0}},
+      {"type": "short", "prompt": "Explain how an area model helps you multiply 14 × 12.", "rubric": ["Splits the numbers into tens and ones (10 + 4 and 10 + 2)", "Finds the four parts and adds them (100 + 20 + 40 + 8 = 168)"], "model": "Draw a rectangle split into 10 + 4 by 10 + 2. The parts are 10 × 10 = 100, 10 × 2 = 20, 4 × 10 = 40, and 4 × 2 = 8. Add them: 168.", "minWords": 8},
+    ],
+    "toys:4": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: 29 kids ride in vans that hold 6 kids each. How many vans are needed?", "options": ["5 vans", "4 vans", "4 R 5 vans"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["The 5 kids left over still need a van.", "You always round down.", "29 ÷ 6 = 5 exactly."], "answer": 0}},
+      {"type": "fill", "difficulty": 1, "prompt": "84 ÷ 4 = ? Type the number.", "accept": ["21"]},
+      {"type": "short", "prompt": "A teacher has 50 pencils for 8 students. Explain what the remainder means in 50 ÷ 8 = 6 R 2.", "rubric": ["Says each student gets 6 pencils", "Says 2 pencils are left over"], "model": "Each of the 8 students gets 6 pencils, and the remainder 2 means 2 pencils are left over.", "minWords": 8},
+    ],
+    "pizza:1": [
+      {"type": "multi", "difficulty": 1, "prompt": "Select every fraction equivalent to 2/3.", "options": ["4/6", "6/9", "8/12", "3/4", "2/6", "5/6"], "answers": [0, 1, 2]},
+      {"type": "fill", "difficulty": 1, "prompt": "3/4 = ?/12. Type the missing number.", "accept": ["9"]},
+      {"type": "short", "prompt": "Explain why 1/2 of a small pizza and 1/2 of a large pizza are not the same amount of pizza.", "rubric": ["Says the wholes are different sizes", "Says half of a bigger whole is more pizza"], "model": "They are both half, but the wholes are different sizes. Half of the large pizza is more pizza because the whole is bigger.", "minWords": 8},
+    ],
+    "pizza:2": [
+      {"type": "order", "difficulty": 2, "prompt": "Put these fractions in order from least to greatest.", "items": ["1/8", "2/5", "1/2", "5/8", "7/8"]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Which is greater, 3/8 or 3/5?", "options": ["3/5", "3/8", "They are equal"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["Fifths are bigger pieces than eighths.", "8 is bigger than 5.", "They have the same top number, so they are equal."], "answer": 0}},
+      {"type": "short", "prompt": "Explain how you can use 1/2 as a benchmark to compare 3/7 and 5/9.", "rubric": ["Says 3/7 is less than 1/2 (3.5 would be half of 7)", "Says 5/9 is more than 1/2, so 5/9 is greater"], "model": "3/7 is less than half because half of 7 is 3.5. 5/9 is more than half because half of 9 is 4.5. So 5/9 > 3/7.", "minWords": 8},
+    ],
+    "pizza:3": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every way to make 5/6.", "options": ["1/6 + 4/6", "2/6 + 3/6", "1/6 + 1/6 + 3/6", "2/3 + 3/3", "5/12 + 0/12", "1/6 + 5/6"], "answers": [0, 1, 2]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Which mixed number equals 11/4?", "options": ["2 3/4", "3 1/4", "2 1/4"], "answer": 0, "partB": {"prompt": "Part B: How do you know?", "options": ["8/4 make 2 wholes, and 3/4 is left.", "11 − 4 = 7, so 2 7/4.", "4 goes into 11 three times."], "answer": 0}},
+      {"type": "short", "prompt": "Explain how to solve 3 1/4 − 1 3/4.", "rubric": ["Regroups 3 1/4 as 2 5/4 (or changes both to improper fractions)", "Subtracts to get 1 2/4 (or 1 1/2)"], "model": "You can’t take 3/4 from 1/4, so regroup 3 1/4 as 2 5/4. Then 2 5/4 − 1 3/4 = 1 2/4, which is 1 1/2.", "minWords": 8},
+    ],
+    "pizza:4": [
+      {"type": "fill", "difficulty": 2, "prompt": "4 × 2/3 = ? Type the answer as a fraction or mixed number.", "accept": ["8/3", "2 2/3", "2-2/3"]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Each pizza needs 3/4 cup of cheese. How much cheese for 5 pizzas?", "options": ["3 3/4 cups", "15/20 cup", "5 3/4 cups"], "answer": 0, "partB": {"prompt": "Part B: Which equation shows it?", "options": ["5 × 3/4 = 15/4", "5 + 3/4 = 5 3/4", "3/4 ÷ 5"], "answer": 0}},
+      {"type": "short", "prompt": "Explain why 3 × 2/5 = 6/5. Use a model or repeated addition.", "rubric": ["Shows repeated addition: 2/5 + 2/5 + 2/5", "Explains it makes 6 fifths, 6/5 (or 1 1/5)"], "model": "3 × 2/5 means 2/5 + 2/5 + 2/5. That is 6 fifths, or 6/5, which is 1 1/5.", "minWords": 8},
+    ],
+    "pizza:5": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select everything equal to 0.4.", "options": ["4/10", "40/100", "four tenths", "4/100", "four hundredths", "0.04"], "answers": [0, 1, 2]},
+      {"type": "order", "difficulty": 2, "prompt": "Put these decimals in order from least to greatest.", "items": ["0.07", "0.3", "0.35", "0.5", "0.53"]},
+      {"type": "short", "prompt": "Leo says 0.8 is less than 0.75 because 8 is less than 75. Explain his mistake.", "rubric": ["Says to compare the same place values (0.80 vs 0.75, or tenths first)", "Says 0.8 is greater"], "model": "Compare tenths first: 8 tenths is more than 7 tenths. Writing 0.8 as 0.80 shows 80 hundredths > 75 hundredths, so 0.8 is greater.", "minWords": 8},
+    ],
+    "garden:1": [
+      {"type": "sort", "difficulty": 1, "prompt": "Is each statement true or false?", "groups": ["True", "False"], "items": [["1 kg = 1,000 g", 0], ["1 m = 100 cm", 0], ["1 ft = 12 in", 0], ["1 L = 100 mL", 1], ["1 hr = 100 min", 1], ["1 lb = 10 oz", 1]]},
+      {"type": "fill", "difficulty": 2, "prompt": "How many minutes are in 3 1/2 hours? Type the number.", "accept": ["210"]},
+      {"type": "short", "prompt": "Explain why you multiply when you change 4 meters into centimeters.", "rubric": ["Says centimeters are smaller units, so you need more of them", "Multiplies by 100 to get 400 cm"], "model": "Centimeters are smaller than meters, so it takes more of them. Each meter is 100 cm, so 4 × 100 = 400 cm.", "minWords": 8},
+    ],
+    "garden:2": [
+      {"type": "two", "difficulty": 1, "prompt": "Part A: A garden bed is 8 ft by 3 ft. What is its perimeter?", "options": ["22 ft", "24 ft", "11 ft"], "answer": 0, "partB": {"prompt": "Part B: What is its area?", "options": ["24 square feet", "22 square feet", "11 square feet"], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "A rectangle has an area of 36 square inches and a length of 9 inches. What is its width in inches? Type the number.", "accept": ["4"]},
+      {"type": "short", "prompt": "Explain when you would need to know the perimeter of a garden, and when you would need the area.", "rubric": ["Perimeter: the distance around (fencing, border)", "Area: the space inside (soil, grass, planting)"], "model": "You need the perimeter to buy fencing that goes around the garden. You need the area to know how much soil or how many plants fit inside.", "minWords": 8},
+    ],
+  },
+};
+
+/* The unit test's written question: the last item of every unit test, read by a grown-up. */
+export const UNIT_ESSAYS = {
+  nouns: {"type": "essay", "prompt": "Write a paragraph that teaches a younger student about irregular plural nouns. Include at least three kinds (for example f to -ves, -en, base plurals, mutant plurals, or foreign plurals), with an example of each.", "rubric": ["Explains what makes a plural irregular", "Names at least three kinds with correct examples", "Writes in complete, clear sentences a younger student could follow", "Spells every plural correctly"], "model": "Most nouns add -s to show more than one, but irregular plurals follow other patterns. Some words that end in f change to -ves, like leaf and leaves. A few add -en, like child and children. Some stay the same, like one deer and two deer. Others change the vowels inside, like mouse and mice. Words borrowed from other languages may keep their old plural, like cactus and cacti.", "minWords": 40},
+  verbs: {"type": "essay", "prompt": "Write a paragraph about something you did last weekend. Use at least one verb in the past progressive, one in the present perfect, and one modal verb. Then list which verbs you used for each.", "rubric": ["Writes a clear paragraph about the weekend", "Uses the past progressive correctly (was/were + -ing)", "Uses the present perfect correctly (has/have + past participle)", "Uses a modal verb correctly and labels all three"], "model": "On Saturday I was helping my dad in the garden when it started to rain. I have planted tomatoes every spring, so I knew what to do. Next time we should check the weather first. (Past progressive: was helping. Present perfect: have planted. Modal: should.)", "minWords": 40},
+  history: {"type": "essay", "prompt": "Pick an event your town, school, or family remembers. Write a paragraph explaining how a historian could tell the story of that event: the question they would ask, at least two sources they would use, one perspective that might be missing, and why comparing the sources matters.", "rubric": ["Names an event and the question a historian would ask", "Names at least two sources and what each could show", "Identifies a missing or different perspective", "Explains why comparing evidence matters"], "model": "Our school remembers the year the gym flooded. A historian could ask how the school recovered. They could use the principal’s letters to families and photos from the yearbook. The janitors’ point of view might be missing, even though they did much of the cleanup. Comparing these sources would show a fuller story than any one of them.", "minWords": 40},
+  history2: {"type": "essay", "prompt": "Was farming a good change for early humans? Write a paragraph that makes a claim and supports it with at least two pieces of evidence. Then explain one way someone could disagree.", "rubric": ["States a clear claim", "Gives at least two pieces of accurate evidence", "Explains how the evidence supports the claim", "Describes a counterargument"], "model": "Farming helped humans as a group but was hard on many individuals. Farming produced a food surplus, so populations grew and towns formed. But farmers’ skeletons show more disease and shorter heights than foragers’, because their diets depended on a few crops. Someone could disagree by saying the surplus allowed jobs like pottery and writing, which made life better over time.", "minWords": 40},
+  history3: {"type": "essay", "prompt": "Compare two early agrarian societies you studied (for example Mesopotamia, Egypt, the Indus Valley, or Shang China). Write a paragraph explaining one way they were alike and one way they were different, using evidence.", "rubric": ["Names two societies", "Explains one similarity with evidence", "Explains one difference with evidence", "Connects the comparison to geography or resources"], "model": "Mesopotamia and Egypt both grew beside rivers that flooded and left rich soil, which let farmers grow surplus grain and support cities. They were different in how they were ruled: Egypt was united under one pharaoh, while Mesopotamia was made up of separate city-states that often fought. Egypt’s long, protected river valley made unity easier.", "minWords": 40},
+  history4: {"type": "essay", "prompt": "Choose a belief system or an empire you studied. Write a paragraph explaining how it spread or held power, using at least two specific examples.", "rubric": ["Names a belief system or empire", "Explains how it spread or held power", "Gives at least two specific, accurate examples", "Explains how the examples connect to the claim"], "model": "Buddhism spread from India across Asia mostly along trade routes. Merchants and monks carried its teachings on the Silk Roads, and travelers like Xuanzang brought texts back to China. As it spread, it changed to fit local cultures, which is why Buddhist temples in China look different from those in India.", "minWords": 40},
+  bio1: {"type": "essay", "prompt": "Explain how your body gets energy from a meal. Follow the food from your mouth to your cells, naming at least four organs and what each does, and say where the energy is finally released.", "rubric": ["Names at least four digestive organs in order", "Explains the job of each organ correctly", "Explains that nutrients are absorbed into the blood and carried to cells", "Says mitochondria release energy in the cells"], "model": "Digestion starts in the mouth, where teeth chew food and saliva begins breaking down starch. The esophagus moves food to the stomach, which churns it with acid. In the small intestine, nutrients are absorbed through villi into the blood, and the large intestine absorbs water. The blood carries nutrients to every cell, where mitochondria release the energy in the food.", "minWords": 50},
+};

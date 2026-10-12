@@ -1,4 +1,6 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
+import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '../shared/questionTypes';
+import { LESSON_COURSES } from '../shared/questionBanks';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
@@ -23,7 +25,10 @@ export interface StudentReport {
   historyProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
   scienceProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number }>;
+  writtenAnswers?: WrittenEntry[];
 }
+/* a short answer or paragraph from the student's save (docs: QUESTION-TYPES.md) */
+interface WrittenEntry { id: string; courseId: string; skillId: string; type: string; prompt: string; rubric: string[]; model: string; text: string; at: number; where: string; parentReview?: { points: number[]; comment: string; redo: boolean } }
 interface ReadingChapter { id?: string; label?: string; characters?: string; notableAction?: string; interaction?: string; conflict?: string; joy?: string; setting?: string; themes?: string; detail?: string; vocabulary?: string; submittedAt?: number }
 interface ReadingQuiz { id: string; at?: number; chapterLabels?: string[]; score?: number; total?: number; missed?: string[]; essays?: { prompt: string; answer: string }[]; submittedAt?: number }
 /* practice time from class_report(): minutes today and in the last 7 days, daily minutes for 4 weeks,
@@ -106,6 +111,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     <div class="kpi"><b>${pctTxt(ip)}</b>idea steps right, first try</div>
     <div class="kpi"><b>${pctTxt(ap)}</b>arithmetic steps right, first try</div>
     <div class="kpi"><b>${readingStudents}</b>students with Reading Logs · ${englishStudents} practiced English</div></div>`;
+  h += writtenWaitingHTML(list);
 
   const groups: Record<string, { r: StudentReport; n: number; ex?: string }[]> = {};
   list.forEach(r => Object.entries(r.m || {}).forEach(([id, v]) => { if (!MIS[id]) return; (groups[id] = groups[id] || []).push({ r, n: v[0], ex: v[1] && v[1][0] }); }));
@@ -185,7 +191,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     reportShop = b.dataset.reportShop || null;
     renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
   }));
-  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride)));
+  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => { if (b.dataset.written) detailSubject = 'written'; openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride); }));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
 }
@@ -202,12 +208,12 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
-  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['projects', '📁 Projects'], ['reading', '📖 Reading Log']];
+  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log']];
   if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
   const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
   h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
   h += panel('math', mathUnitsHTML(r)) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
-  h += panel('projects', '<div id="projectCard"></div>') + panel('reading', '<div id="readingCard"></div>');
+  h += panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>');
   const loose = st.mis.filter(([id]) => !misShops(r, id).length);
   h += '<div class="two" style="margin-top:14px"><div><h2>Mix-ups across units</h2><p class="muted" style="margin-top:0">Mix-ups tied to a unit are listed inside that unit on the Math tab.</p>';
   h += loose.length ? misListHTML(loose) : '<p class="muted">None spotted.</p>';
@@ -288,11 +294,25 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     card.querySelectorAll<HTMLButtonElement>('[data-project-verdict]').forEach(b => b.addEventListener('click', () => {
       void saveOverride(`project:${b.dataset.projectCourse}`, `${b.dataset.projectVerdict}:${b.dataset.projectAt}`);
     }));
+    renderWrittenCard();
     const reading = $('#readingCard');
     if (!reading) return;
     reading.innerHTML = readingReviewHTML(r, overrides);
     reading.querySelectorAll<HTMLButtonElement>('[data-reading-verdict]').forEach(b => b.addEventListener('click', () => {
       void saveOverride(b.dataset.readingKey!, `${b.dataset.readingVerdict}:${b.dataset.readingAt}`);
+    }));
+  }
+  /* short answers and paragraphs: tick the rubric points, add a note, or ask for a redo. Saved in quiz_overrides as written:<id>. */
+  function renderWrittenCard() {
+    const card = $('#writtenCard');
+    if (!card) return;
+    card.innerHTML = writtenCardHTML(r, overrides);
+    card.querySelectorAll<HTMLButtonElement>('[data-written-save]').forEach(b => b.addEventListener('click', () => {
+      const entry = (r.writtenAnswers || []).find(e => e.id === b.dataset.writtenSave), box = b.closest<HTMLElement>('[data-written-entry]');
+      if (!entry || !box) return;
+      const points = entry.rubric.map((_, i) => (box.querySelector<HTMLInputElement>(`[data-written-point="${i}"]`)?.checked ? 1 : 0));
+      const comment = box.querySelector<HTMLInputElement>('[data-written-comment]')?.value || '', redo = !!box.querySelector<HTMLInputElement>('[data-written-redo]')?.checked;
+      void saveOverride(`written:${entry.id}`, encodeTeacherReview(entry.at, points, redo, comment));
     }));
   }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
@@ -369,6 +389,36 @@ function mathUnitsHTML(r: StudentReport) {
     return `<details class="card unit-card"${tried && !test.startsWith('✅') ? ' open' : ''}><summary><b>${shop.emoji} ${esc(shop.name)}</b> <span class="muted">${esc(shop.unitLabel)}</span><span class="unit-sum">${summary}</span></summary>
       <table class="steptable"><tr><th>Khan skill</th><th>Status</th><th>Steps (right first try / tried)</th><th></th></tr>${rows}</table>${mis.length ? `<h3>Mix-ups in this unit</h3>${misListHTML(mis)}` : ''}</details>`;
   }).join('')).join('');
+}
+const courseTitle = (id: string) => (LESSON_COURSES as { id: string; title: string; skills: { id: string; name: string }[] }[]).find(c => c.id === id);
+const lessonName = (courseId: string, skillId: string) => {
+  if (courseId === 'math') { const [shop, id] = skillId.split(':'), st = SHOPS[shop]?.stations.find(x => x.id === +id); return st ? `${st.name} · Think it through` : skillId; }
+  return skillId === 'unit-test' ? 'Unit test' : courseTitle(courseId)?.skills.find(s => s.id === skillId)?.name || skillId;
+};
+const placeTitle = (courseId: string, skillId: string) => courseId === 'math' ? `${SHOPS[skillId.split(':')[0]]?.emoji || ''} ${SHOPS[skillId.split(':')[0]]?.name || 'Math'}` : courseTitle(courseId)?.title || courseId;
+const writtenWaiting = (r: StudentReport) => (r.writtenAnswers || []).filter(e => !writtenReview(e, r.qx || {}));
+/* the class dashboard: who has written answers nobody has read yet (a parent's check counts as read) */
+function writtenWaitingHTML(list: StudentReport[]) {
+  const waiting = list.map(r => ({ r, n: writtenWaiting(r).length })).filter(x => x.n);
+  if (!list.some(r => r.writtenAnswers?.length)) return '';
+  return `<div class="card"><h2>✍️ Written answers to read${waiting.length ? ` · ${waiting.reduce((s, x) => s + x.n, 0)} waiting` : ''}</h2><p class="muted" style="margin-top:0">Short answers from practice and paragraphs from unit tests. Open a student to tick the rubric, add a note, or ask for a redo. A parent's check at home counts as read; you can still change it.</p>
+    ${waiting.length ? `<div class="who">${waiting.map(x => `<button class="namebtn chip" data-id="${esc(x.r.id)}" data-written="1">${esc(x.r.n)} (${x.n})</button>`).join(' ')}</div>` : '<p class="muted">Everything has been read.</p>'}</div>`;
+}
+function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
+  const entries = [...(r.writtenAnswers || [])].sort((a, b) => Number(!!writtenReview(a, overrides)) - Number(!!writtenReview(b, overrides)) || b.at - a.at);
+  const rows = entries.map(e => {
+    const review = writtenReview(e, overrides), mine = review?.by === 'teacher', parent = e.parentReview && !mine ? writtenReview({ ...e }, {}) : null;
+    const status = !review ? '<span class="tag a">Waiting</span>' : `<span class="tag i">${review.redo ? 'Redo asked for' : 'Read'} · ${reviewScore(review)}/${e.rubric.length}${review.by === 'parent' ? ' (parent)' : ''}</span>`;
+    return `<div class="reading-report-chapter" data-written-entry="${esc(e.id)}"><b>${esc(placeTitle(e.courseId, e.skillId))} · ${esc(lessonName(e.courseId, e.skillId))}</b> · <span class="muted">${esc((TYPE_LABELS as Record<string, string>)[e.type] || e.type)}${e.where === 'test' ? ' on the unit test' : ' in practice'} · ${esc(new Date(e.at).toLocaleDateString())}</span> ${status}
+      <p>${esc(e.prompt)}</p><blockquote style="white-space:pre-wrap; margin:6px 0; padding:6px 10px; border-left:4px solid #E4577A">${esc(e.text)}</blockquote>
+      <details><summary class="muted">Model answer</summary><p class="muted">${esc(e.model)}</p></details>
+      ${parent ? `<p class="muted">Parent’s check: ${reviewScore(parent)}/${e.rubric.length}${parent.comment ? ` · “${esc(parent.comment)}”` : ''}${parent.redo ? ' · redo asked for' : ''}</p>` : ''}
+      <div style="display:grid; gap:4px; margin:6px 0">${e.rubric.map((point, i) => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-written-point="${i}" ${review?.points[i] ? 'checked' : ''}> ${esc(point)}</label>`).join('')}</div>
+      <label>Note for the student <input type="text" data-written-comment maxlength="300" value="${esc(review?.comment || '')}"></label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-written-redo ${review?.redo ? 'checked' : ''}> Ask for a redo (the question comes back in practice)</label>
+      <div class="row"><button class="btn small primary" data-written-save="${esc(e.id)}">${mine ? 'Update check' : 'Save check'}</button></div></div>`;
+  }).join('');
+  return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.”</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
 }
 function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {
   const projects: Record<string, string> = { history: 'History Unit 1: Source Investigator Project', history2: 'History Unit 2: Forager or Farmer? Evidence Case', history3: 'History Unit 3: Compare Two Early Societies', history4: 'History Unit 4: Belief Systems and Empires Case Study', bio1: 'Biology Unit 1: Model Project', bio1lab: 'Biology Unit 1: Germination Lab (experiment)' };

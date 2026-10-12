@@ -953,7 +953,7 @@ const PLURAL_QUESTIONS = {
     q('Which sentence has an abstract noun?',"Her kindness made everyone smile.","Her backpack fell onto the kitchen floor.","The puppy chased the ball around.","He drank a glass of cold water."),
     q('Which noun is abstract?',"excitement","toothpaste","sunglasses","motorcycle"),
     q('Which noun is concrete?','bakery','patience','curiosity','pride'),
-    q('Is the noun "freedom" concrete or abstract?','Abstract: it names an idea','Concrete: you can touch it','Proper: it names a place','Plural: it names more than one'),
+    q('Is the noun "freedom" concrete or abstract?','Abstract: it names an idea','Concrete: you can touch it','Concrete: it names a place','Abstract: it names a person'),
     q('Which noun is concrete?','mitten','hope','fear','talent'),
     q('Which pair has one concrete noun and one abstract noun?','tree, beauty','chair, table','honor, trust','river, hill')
   ],
@@ -1002,7 +1002,7 @@ const PLURAL_QUESTIONS = {
     q('A flock of ___ flew over the pond.','geese','gooses','goose','geeses'),
     q('Which plural changes the vowels inside the word?','geese','dishes','cats','boxes'),
     q('What is the plural of louse?','lice','louses','louse','lices'),
-    q('Which sentence is correct?','The mice hid in the wall.','The mouses hid in the wall.','The mices hid in the wall.','The mouse hid in the wall.'),
+    q('Which sentence is correct?','The mice hid in the wall.','The mouses hid in the wall.','The mices hid in the wall.','A mice hid in the wall.'),
     q('My shoes hurt my ___.','feet','foots','foot','feets')
   ],
   foreignPlurals:[
@@ -1048,19 +1048,19 @@ const VERB_QUESTIONS = {
     q('The dogs ___ in the yard.','bark','barks','barking','is bark'),
     q('My sister and I ___ to school.','walk','walks','walking','is walk'),
     q('Everyone ___ ready for the trip.','is','are','were','be'),
-    q('The team ___ practicing today.','is','are','were','be'),
+    q('In American English, the team ___ practicing today.','is','are','were','be'),
     q('Neither of the boys ___ here.','is','are','were','be'),
     q('She ___ her homework every night.','does','do','doing','done'),
     q('The books on the shelf ___ new.','are','is','was','be'),
     q('Which sentence has correct subject-verb agreement?','The cats sleep on the couch.','The cats sleeps on the couch.','The cat sleep on the couch.','The cats is sleeping on the couch.'),
-    q('A flock of geese ___ overhead.','flies','fly','flying','are fly')
+    q('In American English, a flock of geese ___ overhead.','flies','fly','flying','are fly')
   ],
   verbTense:[
     q('Which sentence is in the past tense?','We watched a movie.','We watch a movie.','We will watch a movie.','We are watching a movie.'),
     q('Which sentence is in the future tense?',"I will visit my aunt.","I visited my aunt.","I have visited my aunt.","I visit my aunt every day."),
     q('Yesterday, Sam ___ the fence.','painted','paints','will paint','painting'),
     q('Tomorrow, we ___ to the zoo.',"will go","have gone","were going","had gone"),
-    q('Right now, the cat ___ on the windowsill.','sits','sat','will sat','sitted'),
+    q('Every afternoon, the cat ___ on the windowsill.','sits','sitting','will sat','sitted'),
     q('Which verb is in the present tense?','plays','played','will play','had played'),
     q('Change to past tense: "She walks to the park."','She walked to the park.','She will walk to the park.','She walks to the park.','She walking to the park.'),
     q('Change to future tense: "He cooks dinner."','He will cook dinner.','He cooked dinner.','He cooking dinner.','He has cooked dinner.'),
@@ -1076,7 +1076,7 @@ const VERB_QUESTIONS = {
     q('Which is a helping verb?','will','run','happy','quickly'),
     q('In "They are playing outside," which word is the helping verb?','are','They','playing','outside'),
     q('In "Leo kicked the ball," what kind of verb is kicked?','action verb','linking verb','helping verb','noun'),
-    q('Which of these is always a linking verb?','is','jump','throw','sing'),
+    q('Which of these verbs is a form of “be,” a common linking verb?','is','jump','throw','sing'),
     q('In "I can swim," which word is the helping verb?','can','I','swim','none')
   ],
   irregularVerbs:[
@@ -1112,7 +1112,7 @@ const VERB_QUESTIONS = {
     q('Progressive verbs use a form of be plus which ending?',"-ing","-ed","-en","-est"),
     q('Which verb phrase is progressive?',"is running","runs","ran","will have run"),
     q('Tomorrow at noon, we ___ on the bus.',"will be riding","will have ridden","rode","ride"),
-    q('While I ___, the phone rang.',"was sleeping","slept","sleep","have been sleeping"),
+    q('While I ___, the phone rang.',"was sleeping","will sleep","sleep","have been sleeping"),
     q('Which sentence shows an action in progress right now?',"The baby is crying.","The baby cried.","The baby will cry.","The baby has cried all day.")
   ],
   perfectAspect:[

@@ -5,6 +5,8 @@
    Everything is saved on the class (classes.lesson_links, classes.question_edits); students get it through my_student(). */
 import { esc } from './report';
 import { lessonVideo, youtubeId } from '../shared/lessonVideos';
+import { typedQuestions, typeOf, isWritten, answerText, TYPE_LABELS } from '../shared/questionTypes';
+import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { LESSON_COURSES, builtInBank, lessonLinkSlots, khanSearchUrl, validLessonLink, validQuestion, applyQuestionEdits, QUESTION_LIMITS } from '../shared/questionBanks';
 
 export interface LessonLink { url: string; title?: string; note?: string; showKhan?: boolean }
@@ -264,7 +266,25 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
       }).join('')}
       </tbody></table>
     </div>
+    ${typedCardHTML()}
     ${khanCardHTML()}`;
+
+  /* the built-in questions of the newer types for this lesson, and the unit test's paragraph (docs: QUESTION-TYPES.md) */
+  function typedCardHTML() {
+    type Typed = { id: string; type?: string; prompt: string; hidden: boolean; difficulty?: number; rubric?: string[]; partB?: { prompt: string }; sentence?: string };
+    const edits = cls.question_edits || {};
+    const lesson = typedQuestions(course.id, pick.skill, (TYPED_QUESTIONS as Record<string, Record<string, unknown[]>>)[course.id]?.[pick.skill], edits, { includeHidden: true }) as Typed[];
+    const essay = (UNIT_ESSAYS as Record<string, unknown>)[course.id] ? typedQuestions(course.id, 'unit-test', [(UNIT_ESSAYS as Record<string, unknown>)[course.id]], edits, { includeHidden: true }) as Typed[] : [];
+    const label = (q: Typed) => (TYPE_LABELS as Record<string, string>)[typeOf(q)] || 'Question';
+    const row = (q: Typed, where: string) => {
+      const [answered, missed] = stats?.byId[q.id] || [0, 0];
+      const shown = isWritten(q) ? `<span class="muted">A grown-up checks: ${(q.rubric || []).map(esc).join(' · ')}</span>` : `<b>${esc(answerText(q))}</b>`;
+      return `<tr${q.hidden ? ' style="opacity:.5"' : ''}><td><span class="tag i">${esc(label(q))}</span> <span class="muted">${esc(where)}</span><br>${esc(q.prompt)}${q.sentence ? `<br><i>${esc(q.sentence)}</i>` : ''}${q.partB ? `<br><span class="muted">Part B: ${esc(q.partB.prompt)}</span>` : ''}<br>${shown}</td><td>${q.difficulty || '–'}</td><td style="white-space:nowrap">${isWritten(q) || !stats ? '–' : answered ? `${missed} of ${answered}` : '<span class="muted">no answers yet</span>'}</td><td style="text-align:right; white-space:nowrap">${q.hidden ? `<button class="btn small" data-q-restore="${esc(q.id)}">Restore</button>` : `<button class="btn small" data-tq-hide="${esc(q.id)}">Hide</button>`}</td></tr>`;
+    };
+    if (!lesson.length && !essay.length) return '';
+    return `<div class="card"><h2>More question types</h2><p class="muted" style="margin-top:0">Built-in select-all, two-part, put-in-order, type-the-answer, sort, and tap-the-words questions mix into practice, quizzes and the unit test. The short answer comes once at the end of this lesson's practice; the paragraph ends the unit test. A grown-up reads both (Dashboard → a student → ✍️ Written). Hide any you don't want.</p>
+      <table class="steptable"><thead><tr><th>Question</th><th>Level</th><th>Missed</th><th></th></tr></thead><tbody>${lesson.map(q => row(q, 'this lesson')).join('')}${essay.map(q => row(q, 'unit test, every student')).join('')}</tbody></table></div>`;
+  }
 
   function khanCardHTML() {
     const head = `<h2>Khan unit test check</h2><p class="muted" style="margin-top:0">After a student passes the Pet Town unit test for <b>${esc(course.title)}</b>, they take the matching Khan Academy unit test. Log their score and the Khan topics they missed (topic names only). <b>Khan-ready</b> means the Pet Town unit test is passed and no missed topics are still open.</p>`;
@@ -371,6 +391,10 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   pane.querySelectorAll<HTMLButtonElement>('[data-q-hide]').forEach(b => b.addEventListener('click', () => {
     if (visible.length - 1 < MIN_QUESTIONS) { $('#lqMsg').textContent = 'A lesson needs at least 4 questions for practice.'; $('#lqMsg').className = 'status err'; return; }
     const next = edits(); next.hidden = [...new Set([...(next.hidden || []), b.dataset.qHide!])];
+    void saveEdits(next, 'Question hidden. Restore brings it back.');
+  }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-tq-hide]').forEach(b => b.addEventListener('click', () => {
+    const next = edits(); next.hidden = [...new Set([...(next.hidden || []), b.dataset.tqHide!])];
     void saveEdits(next, 'Question hidden. Restore brings it back.');
   }));
   pane.querySelectorAll<HTMLButtonElement>('[data-q-restore]').forEach(b => b.addEventListener('click', () => {

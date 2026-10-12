@@ -7,6 +7,8 @@ import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
 import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
+import { typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
+import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -46,7 +48,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{},
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -103,6 +105,8 @@ function normalize(raw){
     .filter(([key, day]) => key.length <= 80 && typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)).slice(-300));
   s.questionStats = Object.fromEntries(Object.entries(s.questionStats && typeof s.questionStats === 'object' ? s.questionStats : {})   // bank question id → [answered, missed]
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
+  s.mathThink = s.mathThink && typeof s.mathThink === 'object' ? s.mathThink : {};   // math Think it through sets, by station ("cafe:1")
+  s.writtenAnswers = normalizeWrittenAnswers(s.writtenAnswers);   // short answers and paragraphs, with a parent's check (docs: QUESTION-TYPES.md)
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','history2','history3','history4']);
@@ -4915,7 +4919,7 @@ function show(id){
 function syncRoom(id){
   if (id === 'summary') return;
   const building = id === 'cafe' ? currentShop : id === 'shift' ? (shift?.shop || currentShop)
-    : id === 'library' ? englishCourse(activeEnglishCourse).building : null;
+    : id === 'library' ? (englishRun?.shop || englishCourse(activeEnglishCourse).building) : null;   // a math Think it through set stays in its shop
   const b = building && BUILDINGS.find(x => x.id === building);
   if (!b) { applyRoom(null); return; }
   // pets unlocked in this building live in its room; museums, libraries, and the nature center get the student's pets as visitors
@@ -5576,7 +5580,7 @@ const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'h
 const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1'};
 const isScienceCourse = id => id === 'bio1';
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id);
-const progressStore = id => isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
+const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
 const projectStore = key => String(key).startsWith('history') ? S.historyProjects : S.scienceProjects;
 const projectKeys = id => [id, `${id}lab`].filter(key => HISTORY_PROJECTS[key]);
 /* History and Biology role play: in History the student is a historical figure (or an everyday person of the time) answering
@@ -5901,7 +5905,9 @@ function selectedReading(){
   return book && chapter ? {book,chapter} : null;
 }
 function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S.readingSelection?.bookId) || null; }
-function englishQuestions(skillId, courseId='nouns'){
+/* a lesson's questions: the multiple-choice bank plus the scored questions of the newer types */
+function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId)]; }
+function englishBankQuestions(skillId, courseId='nouns'){
   const edits = Backend.me?.question_edits || {};   // this class's hidden, edited and added questions (docs: LESSON-CONTENT.md)
   if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, BIO1_QUESTIONS[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
@@ -6160,7 +6166,7 @@ function readingReviewHTML(){
   return `<section class="panel"><h3>Grown-up reading check</h3>${items || '<p class="muted">Nothing is waiting right now.</p>'}<button class="btn small" id="parentPinLock">Lock</button></section>`;
 }
 $('#parentWrap').addEventListener('submit', event => {
-  const form = event.target.closest('#parentPinForm'); if (!form) return;
+  const form = event.target.closest('#parentPinForm, #writtenPinForm'); if (!form) return;
   event.preventDefault();
   const pin = String(new FormData(form).get('pin') || '');
   if (!/^\d{4}$/.test(pin)) { toast('Use 4 digits.'); return; }
@@ -6264,7 +6270,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it. Sections marked “Learn” with no practice are reading only.</p>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it. Sections marked “Learn” with no practice are reading only.</p>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -6296,18 +6302,22 @@ function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
   syncRoom('library');
   const question = run.questions[run.index];
+  if (run.viewIndex !== run.index) {   // a new question: no answer yet; put-in-order items start shuffled (never already in order)
+    run.viewIndex = run.index; run.response = undefined; run.orderView = null;
+    if (typeOf(question) === 'order') { const items = question.items.map((_, i) => i); do run.orderView = shuffle(items); while (run.orderView.every((item, i) => item === i)); }
+  }
   const role = ROLE_CARDS[question.skillId];
   const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button></div>${role ? stageHTML({role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered,
-    history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
-  addCrossOuts($('#libraryWrap'), '.ela-option');
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to the shop</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button>`}</div>${role ? stageHTML({role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered,
+    history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}${typeOf(question) === 'mc' ? `<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div>` : `<div class="typed" data-type="${typeOf(question)}">${typedBodyHTML(question, run)}</div>`}<div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+  addCrossOuts($('#libraryWrap'), '.ela-option:not([data-typed-place]):not([data-typed-unplace])');
   const talkLog = $('#libraryWrap .stage-history'); if (talkLog) talkLog.scrollTop = talkLog.scrollHeight;   // newest exchange in view
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
   if (!skill || pool.length < 4) return;
   const questions = practiceOrder(pool, 4);
-  activeEnglishCourse=course.id;englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[]}; renderEnglishQuestion();
+  activeEnglishCourse=course.id;englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[],written:pendingWritten(course.id, skillId)}; renderEnglishQuestion();
 }
 function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
@@ -6315,7 +6325,7 @@ function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const questions = final
     ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
     : englishAssessmentQuestions(group.quizSkills || group.skills, 4,course.id);
-  activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true};
+  activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true,written:final ? unitEssay(course.id) : null};
   renderEnglishQuestion();
 }
 /* Per-question tallies for the teacher's miss-rate column (Lessons & questions tab). Kept in the save, newest last;
@@ -6358,10 +6368,11 @@ function finishEnglishRun(){
   const passed = run.score >= run.passMark;
   englishRun = null;
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
-  const retry = run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
+  const retry = run.retryType === 'think' ? `<button class="btn berry" type="button" data-think="${run.retryId}">Try again</button>`
+    : run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
     : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}" data-ela-course="${run.courseId}">Retake quiz</button>`
       : `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">Retake test</button>`;
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button></div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${store[run.progressKey].best} of ${run.questions.length} · Attempts: ${store[run.progressKey].tries}</p>${retry}</div>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to ${esc(SHOPS[run.shop].name)}</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button>`}</div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${store[run.progressKey].best} of ${run.questions.length} · Attempts: ${store[run.progressKey].tries}</p>${run.writtenSent ? `<p>✍️ Your written answer was sent. Its review shows under “My written answers” on the ${run.shop ? 'shop' : 'unit'} page.</p>` : ''}${retry}</div>`;
 }
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
@@ -6385,8 +6396,206 @@ $('#libraryWrap').addEventListener('click', event => {
   }
   if (button.hasAttribute('data-ela-next') && englishRun) {
     englishRun.index++; englishRun.answered = false;
-    if (englishRun.index === englishRun.questions.length) finishEnglishRun(); else renderEnglishQuestion();
+    if (englishRun.index === englishRun.questions.length) { if (englishRun.written && !englishRun.writtenDone) renderWrittenStep(); else finishEnglishRun(); } else renderEnglishQuestion();
   }
+});
+
+/* ---------- more question types and written answers (docs: QUESTION-TYPES.md) ----------
+   Select all, two-part, put in order, type the answer, sort and tap the words are scored right away, like multiple
+   choice. Short answers and paragraphs are read by a grown-up: the teacher in the dashboard, or a parent at home
+   behind the grown-up PIN. Practice asks one short answer per lesson (until it is sent, or a redo is asked for);
+   every unit test ends with a paragraph. Written answers never change a practice or test score. */
+const typedAutoQuestions = (skillId, courseId) => typedQuestions(courseId, skillId, TYPED_QUESTIONS[courseId]?.[skillId], Backend.me?.question_edits || {})
+  .filter(question => !isWritten(question)).map(question => shuffledCopy(question, shuffle));
+const latestWritten = qid => S.writtenAnswers.filter(entry => entry.qid === qid).sort((a, b) => b.at - a.at)[0] || null;
+const writtenReviewOf = entry => writtenReview(entry, Backend.me?.quiz_overrides || {});
+/* the lesson's short answer the student still owes: never sent, or a grown-up asked for a redo */
+function pendingWritten(courseId, skillId){
+  return typedQuestions(courseId, skillId, TYPED_QUESTIONS[courseId]?.[skillId], Backend.me?.question_edits || {}).filter(isWritten)
+    .find(question => { const last = latestWritten(question.id); return !last || !!writtenReviewOf(last)?.redo; }) || null;
+}
+const unitEssay = courseId => UNIT_ESSAYS[courseId] ? typedQuestions(courseId, 'unit-test', [UNIT_ESSAYS[courseId]], Backend.me?.question_edits || {})[0] || null : null;
+const WRITTEN_STATE_TEXT = {waiting:'Waiting for a grown-up to read it', redo:'🔁 Redo asked for', reviewed:'✅ Read'};
+function writtenState(entry){ const review = writtenReviewOf(entry); return !review ? 'waiting' : review.redo ? 'redo' : 'reviewed'; }
+
+/* the answer area for one question of a newer type; run.response holds the answer so far */
+function typedBodyHTML(question, run){
+  const type = typeOf(question), r = run.response, done = run.answered, off = done ? 'disabled' : '';
+  const chosen = i => Array.isArray(r) && r.includes(i);
+  const check = done ? '' : `<button type="button" class="btn berry typed-check" data-typed-check ${responseReady(question, r) ? '' : 'disabled'}>Check</button>`;
+  if (type === 'multi') return `<p class="typed-hint">Select all that apply.</p><div class="ela-options">${question.options.map((option, i) => `<button type="button" class="ela-option" data-typed-toggle="${i}" aria-pressed="${chosen(i)}" ${off}>${esc(option)}</button>`).join('')}</div>${check}`;
+  if (type === 'two') {
+    const part = (options, which, value) => `<div class="ela-options">${options.map((option, i) => `<button type="button" class="ela-option" data-typed-part="${which}" data-typed-choice="${i}" aria-pressed="${value === i}" ${off}>${esc(option)}</button>`).join('')}</div>`;
+    return `<p class="typed-part">Part A</p>${part(question.options, 0, r?.[0])}<p class="typed-part">${esc(question.partB.prompt)}</p>${part(question.partB.options, 1, r?.[1])}${check}`;
+  }
+  if (type === 'order') {
+    const placed = Array.isArray(r) ? r : [], left = run.orderView.filter(i => !placed.includes(i));
+    return `<p class="typed-hint">Tap the items in order. Tap a placed item to take it back.</p><ol class="typed-order">${placed.map(i => `<li><button type="button" class="ela-option" data-typed-unplace="${i}" ${off}>${esc(question.items[i])}</button></li>`).join('')}</ol>
+      <div class="ela-options typed-pool">${left.map(i => `<button type="button" class="ela-option" data-typed-place="${i}" ${off}>${esc(question.items[i])}</button>`).join('')}</div>${check}`;
+  }
+  if (type === 'fill') return `<form class="typed-fill" data-typed-fill><input type="text" class="typed-input" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your answer" value="${esc(r || '')}" ${off}>${check.replace('type="button"', 'type="submit"')}</form>`;
+  if (type === 'sort') return `<p class="typed-hint">Choose a group for each one.</p><div class="typed-sort">${question.items.map(([text], i) => `<div class="typed-sort-row"><span>${esc(text)}</span><span class="typed-seg" role="group" aria-label="${esc(text)}">${question.groups.map((group, g) => `<button type="button" data-typed-sort="${i}" data-typed-group="${g}" aria-pressed="${r?.[i] === g}" ${off}>${esc(group)}</button>`).join('')}</span></div>`).join('')}</div>${check}`;
+  if (type === 'pick') return `<p class="typed-hint">Tap the words. Tap again to undo.</p><p class="typed-words">${pickWords(question.sentence).map((word, i) => `<button type="button" class="typed-word" data-typed-toggle="${i}" aria-pressed="${chosen(i)}" ${off}>${esc(word)}</button>`).join(' ')}</p>${check}`;
+  return '';
+}
+/* after Check: show what was right and wrong, item by item where the type allows it */
+function markTyped(host, question, response){
+  const type = typeOf(question);
+  host.querySelectorAll('button, input').forEach(el => { if (!el.hasAttribute('data-ela-next')) el.disabled = true; });
+  host.querySelector('[data-typed-check]')?.remove();
+  if (type === 'multi') host.querySelectorAll('[data-typed-toggle]').forEach(el => { const i = +el.dataset.typedToggle, right = question.answers.includes(i), picked = response.includes(i); if (right) el.classList.add('correct'); else if (picked) el.classList.add('incorrect'); if (right && !picked) el.classList.add('missed'); });
+  if (type === 'pick') host.querySelectorAll('[data-typed-toggle]').forEach(el => { const i = +el.dataset.typedToggle, right = question.answers.includes(i), picked = response.includes(i); if (right) el.classList.add(picked ? 'correct' : 'missed'); else if (picked) el.classList.add('incorrect'); });
+  if (type === 'two') host.querySelectorAll('[data-typed-choice]').forEach(el => { const part = +el.dataset.typedPart, i = +el.dataset.typedChoice, key = part ? question.partB.answer : question.answer; if (i === key) el.classList.add('correct'); else if (response[part] === i) el.classList.add('incorrect'); });
+  if (type === 'order') host.querySelectorAll('[data-typed-unplace]').forEach((el, place) => el.classList.add(+el.dataset.typedUnplace === place ? 'correct' : 'incorrect'));
+  if (type === 'sort') host.querySelectorAll('[data-typed-sort]').forEach(el => { const i = +el.dataset.typedSort, g = +el.dataset.typedGroup; if (g === question.items[i][1]) el.classList.add('correct'); else if (response[i] === g) el.classList.add('incorrect'); });
+  if (type === 'fill') host.querySelector('.typed-input')?.classList.add(checkTyped(question, response) ? 'correct' : 'incorrect');
+}
+function refreshTyped(){
+  const run = englishRun, host = $('#libraryWrap .typed'); if (!run || !host) return;
+  const question = run.questions[run.index];
+  host.innerHTML = typedBodyHTML(question, run);
+  addCrossOuts(host, '.ela-option:not([data-typed-unplace]):not([data-typed-place])');
+}
+$('#libraryWrap').addEventListener('click', event => {
+  const run = englishRun, button = event.target.closest('button'); if (!run || run.answered || !button || !button.closest('.typed')) return;
+  const question = run.questions[run.index], type = typeOf(question);
+  if (button.dataset.typedToggle != null) {                     // select all, tap the words: toggle in place (keeps cross-outs)
+    const i = +button.dataset.typedToggle, list = Array.isArray(run.response) ? run.response : [];
+    run.response = list.includes(i) ? list.filter(x => x !== i) : [...list, i];
+    button.setAttribute('aria-pressed', String(run.response.includes(i)));
+  } else if (button.dataset.typedChoice != null) {              // two-part: one choice per part
+    const part = +button.dataset.typedPart, i = +button.dataset.typedChoice;
+    run.response = Array.isArray(run.response) ? [...run.response] : [];
+    run.response[part] = i;
+    button.closest('.ela-options').querySelectorAll('[data-typed-choice]').forEach(el => el.setAttribute('aria-pressed', String(+el.dataset.typedChoice === i)));
+  } else if (button.dataset.typedSort != null) {
+    const i = +button.dataset.typedSort, g = +button.dataset.typedGroup;
+    run.response = Array.isArray(run.response) ? [...run.response] : [];
+    run.response[i] = g;
+    button.parentElement.querySelectorAll('button').forEach(el => el.setAttribute('aria-pressed', String(+el.dataset.typedGroup === g)));
+  } else if (button.dataset.typedPlace != null) { run.response = [...(run.response || []), +button.dataset.typedPlace]; refreshTyped(); return; }
+  else if (button.dataset.typedUnplace != null) { run.response = (run.response || []).filter(i => i !== +button.dataset.typedUnplace); refreshTyped(); return; }
+  else if (button.hasAttribute('data-typed-check') && type !== 'fill') { answerTyped(); return; }
+  else return;
+  const check = $('#libraryWrap [data-typed-check]'); if (check) check.disabled = !responseReady(question, run.response);
+});
+$('#libraryWrap').addEventListener('input', event => {
+  const run = englishRun;
+  if (event.target.matches('.typed-input') && run && !run.answered) {
+    run.response = event.target.value;
+    const check = $('#libraryWrap [data-typed-check]'); if (check) check.disabled = !responseReady(run.questions[run.index], run.response);
+  }
+  if (event.target.matches('.written-text') && run?.written) {
+    run.writtenText = event.target.value;
+    const words = wordCount(run.writtenText), need = run.written.minWords || 1;
+    $('#libraryWrap .written-count').textContent = `${words} word${words === 1 ? '' : 's'}${words < need ? ` · at least ${need}` : ' ✓'}`;
+    $('#libraryWrap [data-written-send]').disabled = words < need;
+  }
+});
+$('#libraryWrap').addEventListener('submit', event => {
+  if (!event.target.closest('[data-typed-fill]')) return;
+  event.preventDefault();
+  if (englishRun && !englishRun.answered && responseReady(englishRun.questions[englishRun.index], englishRun.response)) answerTyped();
+});
+/* the same bookkeeping as a multiple-choice answer: score, the stage conversation, miss rates and progress */
+function answerTyped(){
+  const run = englishRun, question = run.questions[run.index], response = run.response, correct = checkTyped(question, response);
+  run.answered = true; run.outcomes[run.index] = correct; if (correct) run.score++;
+  (run.replies = run.replies || [])[run.index] = {text:responseText(question, response), correct, answer:answerText(question)};
+  recordEnglishAnswer(run, question, correct);
+  if (run.index === run.questions.length - 1) commitEnglishRun(run);
+  const host = $('#libraryWrap .typed'); markTyped(host, question, response);
+  const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(run.courseId);
+  if (role) stageReact($('#libraryWrap'), correct, responseText(question, response));
+  feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${answerText(question)}.`)
+    : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
+    : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${answerText(question)}.`;
+  host.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>');
+}
+/* the written step at the end of a practice (short answer) or a unit test (paragraph) */
+function renderWrittenStep(){
+  const run = englishRun, question = run.written, test = run.retryType === 'final', need = question.minWords || 1, words = wordCount(run.writtenText || '');
+  const who = Backend.me ? 'your teacher' : 'a grown-up';
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to the shop</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Exit</button>`}</div>
+    <div class="ela-question written-step"><p class="muted">${test ? `Last part · written answer · your score so far: ${run.score} of ${run.questions.length}` : `One more: a written answer · ${run.score} of ${run.questions.length} correct`}</p>
+    <h3>✍️ ${esc(question.prompt)}</h3><div class="written-rubric"><b>A strong answer:</b><ul>${question.rubric.map(point => `<li>${esc(point)}</li>`).join('')}</ul></div>
+    <textarea class="written-text" rows="${question.type === 'essay' ? 10 : 5}" maxlength="4000" aria-label="Your answer">${esc(run.writtenText || '')}</textarea>
+    <p class="muted written-count">${words} word${words === 1 ? '' : 's'}${words < need ? ` · at least ${need}` : ' ✓'}</p>
+    <p class="muted">${esc(who[0].toUpperCase() + who.slice(1))} will read this and check it against the list above. It doesn’t change your ${test ? 'test' : 'practice'} score.</p>
+    <div class="row"><button type="button" class="btn berry" data-written-send ${words < need ? 'disabled' : ''}>Send to ${who}</button>${test ? '' : '<button type="button" class="btn" data-written-skip>Skip for now</button>'}</div></div>`;
+  $('#libraryWrap .written-text').focus();
+}
+$('#libraryWrap').addEventListener('click', event => {
+  const run = englishRun; if (!run?.written) return;
+  if (event.target.closest('[data-written-skip]')) { run.writtenDone = true; finishEnglishRun(); return; }
+  if (!event.target.closest('[data-written-send]')) return;
+  const question = run.written, text = String(run.writtenText || '').trim();
+  if (wordCount(text) < (question.minWords || 1)) return;
+  S.writtenAnswers = [...S.writtenAnswers, {id:'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), qid:question.id, courseId:run.courseId, skillId:question.skillId,
+    type:question.type, prompt:question.prompt, rubric:question.rubric, model:question.model, text:text.slice(0, 4000), at:Date.now(), where:run.retryType === 'final' ? 'test' : 'practice'}].slice(-WRITTEN_MAX);
+  run.writtenDone = true; run.writtenSent = true; save(); toast('Sent! You’ll see the review under your written answers.');
+  finishEnglishRun();
+});
+/* the student's own list on the unit page */
+function writtenListHTML(courseId, prefix = ''){
+  const entries = S.writtenAnswers.filter(entry => entry.courseId === courseId && entry.skillId.startsWith(prefix)).sort((a, b) => b.at - a.at);
+  if (!entries.length) return '';
+  const rows = entries.map(entry => {
+    const review = writtenReviewOf(entry), state = writtenState(entry);
+    const result = review ? `<p><b>${reviewScore(review)} of ${entry.rubric.length}</b> · checked by ${review.by === 'teacher' ? 'your teacher' : 'a grown-up'}${review.comment ? ` · “${esc(review.comment)}”` : ''}</p><ul class="written-points">${entry.rubric.map((point, i) => `<li class="${review.points[i] ? 'ok' : 'no'}">${review.points[i] ? '✓' : '○'} ${esc(point)}</li>`).join('')}</ul>` : '';
+    return `<details class="written-entry"><summary><span>${esc(entry.prompt)}</span><small>${entry.where === 'test' ? 'Unit test · ' : ''}${WRITTEN_STATE_TEXT[state]}</small></summary><p class="written-mine">${esc(entry.text)}</p>${result}</details>`;
+  }).join('');
+  return `<section class="ela-final-assessment written-list"><div style="width:100%"><h3>✍️ My written answers</h3>${rows}</div></section>`;
+}
+/* the grown-up's check at home (progress report, behind the grown-up PIN). In a class the teacher's review wins. */
+function writtenParentHTML(){
+  const waiting = S.writtenAnswers.filter(entry => writtenState(entry) === 'waiting'), done = S.writtenAnswers.filter(entry => writtenState(entry) !== 'waiting').sort((a, b) => b.at - a.at).slice(0, 10);
+  if (!S.writtenAnswers.length) return '';
+  const head = `<h3>✍️ Written answers</h3><p class="muted">Short answers from practice and paragraphs from unit tests. Read each one, tick what the answer does well, and add a note.${Backend.me ? ' Your child’s teacher sees your check and can change it.' : ''}</p>`;
+  if (!parentReadingUnlocked) return `<section class="panel">${head}<p><b>${waiting.length}</b> waiting.</p><form id="writtenPinForm" class="row"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off"></label><button class="btn small primary" type="submit">${S.parentPin ? 'Unlock' : 'Save PIN and unlock'}</button></form></section>`;
+  const card = entry => {
+    const review = writtenReviewOf(entry), locked = review?.by === 'teacher';
+    return `<div class="reading-report-chapter written-review" data-written-entry="${esc(entry.id)}"><b>${esc(writtenPlace(entry))} · ${entry.where === 'test' ? 'Unit test paragraph' : 'Practice short answer'}</b> <span class="muted">${new Date(entry.at).toLocaleDateString()}</span>
+      <p>${esc(entry.prompt)}</p><blockquote>${esc(entry.text)}</blockquote><details><summary>Model answer</summary><p class="muted">${esc(entry.model)}</p></details>
+      ${locked ? `<p><b>Teacher’s check: ${reviewScore(review)} of ${entry.rubric.length}</b>${review.comment ? ` · “${esc(review.comment)}”` : ''}${review.redo ? ' · redo asked for' : ''}</p>`
+        : `<div class="written-ticks">${entry.rubric.map((point, i) => `<label><input type="checkbox" data-written-point="${i}" ${review?.points[i] ? 'checked' : ''}> ${esc(point)}</label>`).join('')}</div>
+      <label>Note for your child <input type="text" data-written-comment maxlength="300" value="${esc(review?.comment || '')}"></label>
+      <label><input type="checkbox" data-written-redo ${review?.redo ? 'checked' : ''}> Ask for a redo (the question comes back in practice)</label>
+      <div class="row"><button class="btn small primary" data-written-save="${esc(entry.id)}">Save check</button></div>`}</div>`;
+  };
+  return `<section class="panel">${head}${waiting.length ? waiting.map(card).join('') : '<p class="muted">Nothing is waiting right now.</p>'}${done.length ? `<details><summary>Already checked (${done.length})</summary>${done.map(card).join('')}</details>` : ''}</section>`;
+}
+$('#parentWrap').addEventListener('click', event => {
+  const b = event.target.closest('[data-written-save]'); if (!b || !parentReadingUnlocked) return;
+  const entry = S.writtenAnswers.find(item => item.id === b.dataset.writtenSave), box = b.closest('[data-written-entry]'); if (!entry || !box) return;
+  entry.parentReview = {points:entry.rubric.map((_, i) => box.querySelector(`[data-written-point="${i}"]`)?.checked ? 1 : 0), comment:String(box.querySelector('[data-written-comment]')?.value || '').trim().slice(0, 300),
+    redo:!!box.querySelector('[data-written-redo]')?.checked, at:Date.now()};
+  save(); toast('Check saved.'); renderParent();
+});
+
+/* ---------- math: Think it through (docs: QUESTION-TYPES.md) ----------
+   Each math station has a short set of the newer question types (select all, two-part, sort, put in order, type the
+   answer) and one "explain your thinking" answer that a grown-up reads. It runs like an English practice, inside the
+   shop. It doesn't gate anything: stations still open with orders and quizzes. */
+const mathStation = key => { const [shop, id] = String(key).split(':'); const st = SHOPS[shop]?.stations.find(x => x.id === +id); return st ? {shop, st} : null; };
+const writtenPlace = entry => entry.courseId === 'math' ? (() => { const m = mathStation(entry.skillId); return m ? `${SHOPS[m.shop].name}: ${m.st.name}` : 'Math'; })() : (englishCourse(entry.courseId)?.title || entry.courseId);
+function thinkButtonHTML(shop, stationId){
+  const key = `${shop}:${stationId}`; if (!TYPED_QUESTIONS.math?.[key]) return '';
+  const record = progressStore('math')[key], owed = !!pendingWritten('math', key);
+  return `<button class="btn think-btn" data-think="${key}">🧠 Think it through</button><p class="muted" style="margin:0">${record?.tries ? `Best ${record.best} of ${record.questionCount || 2}` : 'Select all, sort, two-part, and more'}${owed ? ' · ✍️ explain your thinking' : ''}</p>`;
+}
+function startThink(key){
+  const m = mathStation(key); if (!m) return;
+  const questions = practiceOrder(typedAutoQuestions(key, 'math'), 4); if (!questions.length) return;
+  show('library');
+  englishRun = {title:`${m.st.name}: Think it through`, shop:m.shop, progressKey:key, retryType:'think', retryId:key, courseId:'math', questions, index:0, score:0,
+    passMark:questions.length, answered:false, outcomes:[], written:pendingWritten('math', key)};
+  renderEnglishQuestion();
+}
+$('#libraryWrap').addEventListener('click', event => {
+  const back = event.target.closest('[data-back-shop]');
+  if (back) { englishRun = null; currentShop = back.dataset.backShop; show('cafe'); return; }
+  const again = event.target.closest('[data-think]'); if (again) startThink(again.dataset.think);
 });
 
 /* ---------- shop stations ---------- */
@@ -6430,10 +6639,11 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}</div>`;
-  }).join('');
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}</div>`;
+  }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
+  const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void startAssessment(unitTest.dataset.shop, null); return; }
   const review = e.target.closest('[data-review-key]');
@@ -7823,6 +8033,7 @@ function renderParent(){
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
     ${progressBySubjectHTML({detail:true, canReview:!Backend.me, title:'Progress by subject and unit', reading:readingReviewHTML()})}
+    ${writtenParentHTML()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="two"><div class="panel"><h3>Times tables</h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small ${heatView === 'facts' ? 'mint' : ''}" data-heat="facts">Multiplying</button><button class="btn small ${heatView === 'divFacts' ? 'mint' : ''}" data-heat="divFacts">Dividing</button></div>
