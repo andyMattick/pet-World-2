@@ -187,6 +187,10 @@ if (allSrc.includes('learning_events')) problems.push('Code writes to a "learnin
 if (allSrc.includes('window.prompt(')) problems.push('Code uses window.prompt(). The real teacher app uses forms. This is a sign of a placeholder rewrite.');
 for (const file of ['docs/AGENTS.md', 'docs/CLAUDE.md']) if (existsSync(file)) problems.push(`${file} is a stray copy of repository instructions and must not exist.`);
 
+// Khan links are well formed (offline; "npm run check-links" opens each one). Docs: KHAN.md
+try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); problems.push(...offlineProblems(await khanLinks())); }
+catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
+
 if (problems.length) {
   console.error('\n❌ Pet Town verify FAILED. Do not commit.\n');
   problems.forEach(p => console.error('  - ' + p));

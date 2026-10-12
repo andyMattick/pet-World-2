@@ -709,14 +709,14 @@ const BIO1_QUESTIONS = {
   plantSuccessA:[
     mc('A visitor notices no bees are visiting one field of plants. What do you predict will happen?','Fewer seeds may form','More seeds always form','Roots stop growing','Leaves become flowers'),
     mc('A kid sniffs a sweet flower full of nectar. Which structure-and-function idea do you explain?','Features attract animals that carry pollen','Nectar feeds the roots during dry weather','The smell keeps insects from eating leaves','Features protect the flower from cold nights'),
-    mc('A visitor asks how a hard seed coat helps a seed that has to survive winter. What do you say?','It can protect the embryo until conditions improve','It lets the seed grow quickly through the snow','It stores water that the roots use in winter','It helps the seed attract animals to carry it'),
+    mc('A visitor asks how a hard seed coat helps a seed that has to survive winter. What do you say?','It can protect the embryo until conditions improve','It lets the young seed grow quickly up through the snow','It stores water that the roots use in winter','It helps the seed attract animals to carry it'),
     mc('A grandparent asks what could hurt a plant’s chances of reproducing. Which change could lower its success?','Loss of pollinators','Healthy, rich soil','More bees nearby','Plenty of warm sunlight')
   ],
   asexualPlants:[
-    mc('A visitor asks how new plants made by asexual reproduction compare to the parent. Offspring are:','Genetically identical to the parent','A mix of traits from two parents','A new species unlike the parent','Grown from pollen and egg cells'),
+    mc('A visitor asks how new plants made by asexual reproduction compare to the parent. Offspring are:','Genetically identical to the parent','A mix of traits from two different parents','A new species unlike the parent','Grown from pollen and egg cells'),
     mc('A kid asks you for an example of asexual reproduction in plants. Which do you point to?','A strawberry plant sending out runners','A bee carrying pollen between flowers','A seed forming after pollination','A bright flower attracting a butterfly'),
     mc('A parent asks how many parents asexual reproduction needs. What do you say?','One','Two','Three','None'),
-    mc('You show the group a stem cutting that grew roots and became a new plant. What is this an example of?','Asexual reproduction','Sexual reproduction','Cross-pollination','Seed germination')
+    mc('You show the group a stem cutting that grew roots and became a new plant. What is this an example of?','Asexual reproduction','Sexual reproduction','Cross-pollination','Seed germination in the soil')
   ],
   sexualPlants:[
     mc('A visitor asks what sexual reproduction in flowering plants involves. What do you explain?','Pollen and egg cells combining','One parent making a copy of itself','A cutting growing new roots','Runners spreading across the soil'),
@@ -758,7 +758,7 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(1,'A visitor asks where new cells come from. What do you explain?','From cells that already exist','From nonliving dust and dirt','From food the body breaks down','From tiny pieces of other tissues'),
     mcLevel(1,'Your group stops at a model of a heart. What level of organization is the heart?','An organ','A single cell','An organism','An organ system'),
     mcLevel(2,'A visitor asks how a one-celled amoeba stays alive without organs. What do you explain?','Its one cell does every life job','It shares organs with other amoebas','It takes in energy without needing food','Its tissues do the jobs of organs'),
-    mcLevel(2,'The stomach, intestines, and liver work together. What is a group of organs working together called?','An organ system','A tissue group','An organism','A population'),
+    mcLevel(2,'The stomach, intestines, and liver work together. What is a group of organs working together called?','An organ system','A group of tissues','An organism','A population'),
     mcLevel(2,'A parent asks why a skin cell and a nerve cell look so different. What do you say?','Each cell’s shape fits its job','Nerve cells have more DNA than skin cells','Skin cells change shape as they get old','One of the two cells is not alive'),
     mcLevel(2,'A student looks at two samples under a microscope. Sample A is a single cell. Sample B has thousands of cells forming roots and leaves. Which statement is supported?','A is unicellular; B is multicellular','A is multicellular; B is unicellular','Both are unicellular','Neither is made of cells'),
     mcLevel(3,'Your group builds a model of a dog. Which level of organization comes right above “organ system”?','Organism','Tissue','Organ','Population'),
@@ -780,9 +780,9 @@ const BIO1_EXTRA_QUESTIONS = {
   cellPartsA:[
     mcLevel(1,'A student wants to turn a plant cell model into an animal cell model. Which part should be removed?','Cell wall','Nucleus','Mitochondria','Cell membrane'),
     mcLevel(2,'A cell’s membrane is damaged and harmful substances leak in. Which job has failed?','Controlling what enters and leaves','Making food from sunlight','Storing and copying the cell’s DNA','Giving the cell stiff support'),
-    mcLevel(2,'A plant droops after days without water. Which cell part has lost the most water?','The central vacuole','The cell nucleus','The cell membrane','The chloroplasts'),
+    mcLevel(2,'A plant droops after days without water. Which cell part has lost the most water?','The central vacuole','The cell nucleus','The cell membrane','The chloroplasts in its leaves'),
     mcLevel(2,'Which cell would likely have the most chloroplasts?','A cell from the top of a leaf','A cell from deep in a root','A cell from a human’s skin','A cell from the inside of a stem'),
-    mcLevel(2,'A visitor asks why animal cells can change shape but plant cells mostly cannot. What do you explain?','Animal cells lack a rigid cell wall','Animal cells lack a nucleus inside','Plant cells lack a cell membrane','Plant cells lack cytoplasm inside'),
+    mcLevel(2,'A visitor asks why animal cells can change shape but plant cells mostly cannot. What do you explain?','Animal cells lack a rigid cell wall','Animal cells lack a nucleus inside','Plant cells lack a flexible cell membrane','Plant cells lack cytoplasm inside'),
     mcLevel(2,'A kid’s scraped knee heals as new skin cells form. Where do the new cells come from?','Existing skin cells dividing','Blood cells turning into skin','Cells from the bandage material','Bone cells moving up to the skin'),
     mcLevel(3,'A poison stops a cell’s mitochondria from working. What is the most likely result?','The cell runs low on energy','The cell makes extra food','The cell wall grows thicker','The DNA copies faster'),
     mcLevel(3,'Scientists remove the nucleus from a cell. What will the cell most likely be unable to do?','Divide to make new cells','Keep its cytoplasm inside','Hold its shape with a membrane','Take up space in the tissue'),
@@ -797,7 +797,7 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(2,'A visitor asks why wind-pollinated grasses have small, plain flowers. What is the best explanation?','They do not need to attract animals','They bloom at night when it is dark','Their pollen is too heavy for wind','Small flowers make more nectar for bees'),
     mcLevel(2,'Which plant behavior helps reproductive success?','Flowers opening when bees are out','Leaves turning brown in the winter','Roots growing deeper to find water','Stems bending toward the sunlight'),
     mcLevel(2,'A hummingbird drinks nectar from a long red flower. How does this help the plant?','The bird carries pollen to other flowers','The bird eats seeds and drops the shells','The bird drinks extra water for the plant','The bird cleans old petals off the flower'),
-    mcLevel(2,'Students counted bee visits in one hour. Flower A (bright, scented): 42 visits. Flower B (pale, no scent): 6 visits. Which claim is best supported?','Bright, scented flowers attract more bees','Bees choose pale flowers when they can','Scent keeps most of the bees away','Bees visit flowers in a random order'),
+    mcLevel(2,'Students counted bee visits in one hour. Flower A (bright, scented): 42 visits. Flower B (pale, no scent): 6 visits. Which claim is best supported?','Bright, scented flowers attract more bees','Bees choose pale flowers whenever they can','Scent keeps most of the bees away','Bees visit flowers in a random order'),
     mcLevel(3,'One plant makes 1,000 tiny seeds. Another makes 5 large seeds full of stored food. Which statement is true?','Both are strategies for reproductive success','The tiny seeds are too small to grow into plants','The large seeds will grow into larger flowers','Small seeds are a sign the plant is unhealthy'),
     mcLevel(3,'A farm loses most of its bees. Which crop would be hurt the least?','Wind-pollinated wheat','Bee-pollinated apples','Bee-pollinated squash','Bee-pollinated melons')
   ],
@@ -819,7 +819,7 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(2,'A farmer has a strawberry plant with perfect, sweet berries. Why might she grow new plants from its runners instead of seeds?','Runners make copies with the same traits','Runners mix in traits from other plants','Seeds make copies that are exactly the same','Runners grow fruit faster than any seed'),
     mcLevel(2,'A visitor asks for one downside of asexual reproduction. What do you explain?','One disease can harm every copy','It needs two parents to work','It takes many years to make one plant','It can only happen in a greenhouse'),
     mcLevel(2,'A gardener sets a succulent leaf on soil, and it grows roots and a new plant. What does this show?','Some plants can grow from body parts','A leaf is really a kind of seed','Succulents need pollen to make leaves','The plant reproduced sexually'),
-    mcLevel(2,'Onions and tulips grow new bulbs underground from one parent bulb. What kind of reproduction is this?','Asexual reproduction','Sexual reproduction','Cross-pollination','Seed dispersal'),
+    mcLevel(2,'Onions and tulips grow new bulbs underground from one parent bulb. What kind of reproduction is this?','Asexual reproduction','Sexual reproduction','Cross-pollination','Seed dispersal by the wind'),
     mcLevel(2,'A kid asks if one plant can use both seeds and runners. What do you say?','Yes, strawberries do both','No, a plant picks just one way','Yes, but just trees can do both','No, runners stop it making seeds'),
     mcLevel(3,'In a field of identical banana plants, 90% got sick from one fungus. In a mixed field grown from seeds, 20% got sick. Which explanation fits best?','Identical plants share the same weakness','Plants grown from seeds cannot get sick','The fungus prefers fields with mixed plants','Banana plants in the mixed field were older'),
     mcLevel(3,'Why can asexual reproduction help a plant spread quickly in a good habitat?','It needs no partner or pollinator','It makes plants that are larger','It mixes traits from two parents','It makes seeds that travel farther'),
@@ -830,7 +830,7 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(1,'A visitor asks what grows inside most fruits. What do you say?','Seeds','Roots','Pollen','Leaves'),
     mcLevel(2,'After pollination, a sperm cell from the pollen joins an egg cell. What is this step called?','Fertilization','Germination','Dispersal','Photosynthesis'),
     mcLevel(2,'Which flower part grows into the fruit after fertilization?','The ovary','The petal','The stamen','The sepal'),
-    mcLevel(2,'A visitor asks what is inside a seed. Which answer is best?','A tiny plant and stored food','Pollen and sweet nectar','A small flower and fruit','Water, air, and a root'),
+    mcLevel(2,'A visitor asks what is inside a seed. Which answer is best?','A tiny plant and stored food','Pollen and sweet nectar for bees','A small flower and fruit','Water, air, and a root'),
     mcLevel(2,'Which step comes right before fertilization in flowering plants?','Pollination','Seed dispersal','Germination','Fruit ripening'),
     mcLevel(2,'A flower’s petals fall off and a pod starts to swell. What is most likely happening?','Seeds are forming inside','The plant is about to die','New roots are forming there','Pollen is being made inside'),
     mcLevel(3,'A visitor asks for one benefit of sexual reproduction. What is the best answer?','Variety helps some offspring survive','Offspring are copies of one parent','Plants can make seeds without pollen','Offspring grow faster than their parents'),
@@ -842,7 +842,7 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(1,'Dandelion seeds have fluffy parachutes. How are they dispersed?','By wind','By water','By animals eating them','By exploding pods'),
     mcLevel(2,'A bird eats berries and later drops the seeds far away in its waste. What does this show?','Animals can disperse seeds','Birds plant seeds on purpose','Seeds can’t survive digestion','Berries are not fruits'),
     mcLevel(2,'Some pea pods dry out and burst open, flinging seeds. How does this help the plant?','Seeds land away from the parent','Seeds stay right under the parent','It attracts pollinators','It keeps seeds from growing'),
-    mcLevel(2,'A seed has a hard, waterproof coat and floats. Where would it most likely spread?','Along rivers and coasts','On dry mountaintops','Stuck in animal fur','Right under its parent'),
+    mcLevel(2,'A seed has a hard, waterproof coat and floats. Where would it most likely spread?','Along rivers and coasts','On dry mountaintops','Stuck in the fur of passing animals','Right under its parent'),
     mcLevel(2,'A plant grows on a cliff above the ocean. Which seed type would most help it spread?','Seeds that float','Seeds with hooks','Heavy seeds that drop','Seeds that need burying'),
     mcLevel(3,'Students dropped seeds in front of a fan. Average distance: Seed A (wings) 3.1 m, Seed B (round, smooth) 0.4 m, Seed C (fluffy) 4.8 m. Which seed is best adapted for wind?','Seed C','Seed A','Seed B','All are equal'),
     mcLevel(3,'Students test how far different seeds travel in wind from a fan. What should stay the same for every seed?','Drop height and fan speed','The type of seed tested','The distance each seed goes','The shape of each seed'),
@@ -854,9 +854,9 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(1,'Which organ connects the mouth to the stomach?','Esophagus','Small intestine','Liver','Large intestine'),
     mcLevel(1,'A kid asks what the tongue does during digestion. What do you say?','Moves food and helps swallowing','Makes the acid used by the stomach','Absorbs water from food you chew','Makes bile that helps digest fat'),
     mcLevel(1,'Which teeth are best for biting off pieces of food?','Incisors','Molars','Premolars','Wisdom teeth'),
-    mcLevel(2,'Chewing is mechanical digestion. Which is an example of chemical digestion?','Saliva breaking down starch','Teeth grinding up food','The tongue moving food','Swallowing a large bite'),
+    mcLevel(2,'Chewing is mechanical digestion. Which is an example of chemical digestion?','Saliva breaking down starch','Teeth grinding food into small pieces','The tongue moving food','Swallowing a large bite'),
     mcLevel(2,'When the stomach churns and squeezes food, what kind of digestion is it?','Mechanical digestion','Chemical digestion','Absorption of nutrients','Blood circulation'),
-    mcLevel(3,'A kid notices a cracker starts to taste sweet after long chewing. What explains this?','Saliva breaks starch into sugar','Teeth add sugar to the food','The tongue makes extra sugar','Air turns the starch to sugar'),
+    mcLevel(3,'A kid notices a cracker starts to taste sweet after long chewing. What explains this?','Saliva breaks starch into sugar','Chewing releases sugar hidden in the cracker','The tongue makes extra sugar','Air turns the starch to sugar'),
     mcLevel(3,'A visitor asks how food moves down the esophagus, even when you lie down. What do you explain?','Muscles squeeze it along in waves','Gravity pulls it down to the stomach','Saliva pushes the food down the tube','The stomach sucks the food downward'),
     mcLevel(3,'A visitor asks why stomach acid doesn’t digest the stomach itself. What do you explain?','A mucus lining protects it','The acid is not very strong','The stomach is made of bone','Food blocks all the acid'),
     mcLevel(3,'A student mixes starch with saliva in one tube and with water in another. After 10 minutes, the saliva tube has little starch left; the water tube has lots. What does this show?','Saliva breaks down starch','Water breaks down starch','Starch cannot be broken down','Both tubes acted the same')
@@ -864,13 +864,13 @@ const BIO1_EXTRA_QUESTIONS = {
   digestionIntestines:[
     mcLevel(1,'A visitor asks where absorbed nutrients go from the small intestine. What do you say?','Into the blood','Into the lungs','Back to the stomach','Into the bones directly'),
     mcLevel(1,'Which is the longest part of the digestive tract?','Small intestine','Large intestine','Stomach','Esophagus'),
-    mcLevel(2,'What does the pancreas send to the small intestine?','Digestive enzymes','Saliva and mucus','Stomach acid','Red blood cells'),
+    mcLevel(2,'What does the pancreas send to the small intestine?','Digestive enzymes','Saliva and mucus','Extra stomach acid','Red blood cells'),
     mcLevel(2,'A kid asks what helpful bacteria in the large intestine do. What do you say?','Break down some leftover food','Make acid for the stomach','Grind food into smaller pieces','Carry oxygen to the body’s cells'),
     mcLevel(2,'A visitor asks what bile does in the small intestine. What do you explain?','Breaks fat into small drops','Absorbs water from the food','Kills bacteria in the food','Turns starch into simple sugar'),
     mcLevel(2,'After the large intestine absorbs water, where does the leftover waste go?','To the rectum to leave the body','Back up into the small intestine','Into the blood to be cleaned','Back to the stomach to be digested'),
     mcLevel(3,'A person has very watery waste. Which organ is most likely not doing its job well?','Large intestine','Esophagus','The stomach lining','Gallbladder'),
     mcLevel(3,'A student compares two tubes of the same length: one smooth inside, one with many folds. Which could absorb more?','The folded tube','The smooth tube','Both exactly the same','Neither tube'),
-    mcLevel(3,'An illness flattens the villi in the small intestine. What would most likely happen?','Fewer nutrients would be absorbed','More water would be absorbed','Food would be chewed more slowly','The stomach would make less acid'),
+    mcLevel(3,'An illness flattens the villi in the small intestine. What would most likely happen?','Fewer nutrients would be absorbed','More water would be absorbed','Food would be chewed more slowly','The stomach would make much less acid'),
     mcLevel(3,'Lab samples show protein is only partly broken down in the stomach, but protein, fat, and starch are fully broken down in the small intestine. Which conclusion fits?','Most digestion finishes in the small intestine','The stomach completes the digestion of these foods','The small intestine absorbs but does not digest','Protein digestion is finished before the stomach')
   ],
   humanDigestion:[
@@ -878,7 +878,7 @@ const BIO1_EXTRA_QUESTIONS = {
     mcLevel(2,'Which two organs make digestive juices but are not on food’s path?','Liver and pancreas','Stomach and esophagus','Mouth and tongue','Small and large intestine'),
     mcLevel(2,'Fiber is not digested. Why is it still useful?','It helps waste move through','It gives the body the most energy','It is turned into new muscle','It is absorbed into the blood'),
     mcLevel(2,'Average time food spends in each organ: mouth 1 minute, stomach 3 hours, small intestine 5 hours, large intestine 30 hours. Where does food stay longest?','Large intestine','Stomach','Small intestine','Mouth'),
-    mcLevel(2,'Which systems deliver the oxygen that digestive organs need?','Respiratory and circulatory','Skeletal and muscular','Nervous and skeletal','Digestive and immune'),
+    mcLevel(2,'Which systems deliver the oxygen that digestive organs need?','Respiratory and circulatory','Skeletal and muscular','Nervous and skeletal','Digestive and immune systems'),
     mcLevel(3,'A person’s pancreas stops making enzymes. Which problem is most likely?','Food is not fully broken down','Food cannot be swallowed','Teeth stop grinding food','The stomach stops making acid'),
     mcLevel(3,'A visitor asks how the nervous system helps digestion. What do you explain?','It signals muscles to move food','It absorbs the nutrients from food','It makes the bile that breaks down fat','It stores the waste until it leaves'),
     mcLevel(3,'Which pair shows mechanical digestion and then chemical digestion?','Teeth chewing, then enzymes acting','Enzymes acting, then teeth chewing','Absorption, then teeth chewing','Water absorbed, then enzymes acting'),

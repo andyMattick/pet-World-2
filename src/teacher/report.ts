@@ -112,7 +112,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     <div class="kpi"><b>${pctTxt(ip)}</b>idea steps right, first try</div>
     <div class="kpi"><b>${pctTxt(ap)}</b>arithmetic steps right, first try</div>
     <div class="kpi"><b>${readingStudents}</b>students with Reading Logs · ${englishStudents} practiced English</div></div>`;
-  h += writtenWaitingHTML(list);
+  h += waitingHTML(list);
 
   const groups: Record<string, { r: StudentReport; n: number; ex?: string }[]> = {};
   list.forEach(r => Object.entries(r.m || {}).forEach(([id, v]) => { if (!MIS[id]) return; (groups[id] = groups[id] || []).push({ r, n: v[0], ex: v[1] && v[1][0] }); }));
@@ -192,7 +192,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     reportShop = b.dataset.reportShop || null;
     renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
   }));
-  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => { if (b.dataset.written) detailSubject = 'written'; openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride); }));
+  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => { if (b.dataset.subject) detailSubject = b.dataset.subject; openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride); }));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
 }
@@ -408,12 +408,36 @@ const lessonName = (courseId: string, skillId: string) => {
 };
 const placeTitle = (courseId: string, skillId: string) => courseId === 'math' ? `${SHOPS[skillId.split(':')[0]]?.emoji || ''} ${SHOPS[skillId.split(':')[0]]?.name || 'Math'}` : courseTitle(courseId)?.title || courseId;
 const writtenWaiting = (r: StudentReport) => (r.writtenAnswers || []).filter(e => !writtenReview(e, r.qx || {}));
-/* the class dashboard: who has written answers nobody has read yet (a parent's check counts as read) */
-function writtenWaitingHTML(list: StudentReport[]) {
-  const waiting = list.map(r => ({ r, n: writtenWaiting(r).length })).filter(x => x.n);
-  if (!list.some(r => r.writtenAnswers?.length)) return '';
-  return `<div class="card"><h2>✍️ Written answers to read${waiting.length ? ` · ${waiting.reduce((s, x) => s + x.n, 0)} waiting` : ''}</h2><p class="muted" style="margin-top:0">Short answers from practice and paragraphs from unit tests. Open a student to tick the rubric, add a note, or ask for a redo. A parent's check at home counts as read; you can still change it.</p>
-    ${waiting.length ? `<div class="who">${waiting.map(x => `<button class="namebtn chip" data-id="${esc(x.r.id)}" data-written="1">${esc(x.r.n)} (${x.n})</button>`).join(' ')}</div>` : '<p class="muted">Everything has been read.</p>'}</div>`;
+/* "Waiting for a grown-up" on the class dashboard: everything a student sent that nobody has checked yet. A parent's
+   check at home (grown-up PIN) counts as checked, the same as on the student's page; the teacher can still change it. */
+function projectsWaiting(r: StudentReport) {
+  const overrides = r.qx || {};
+  return Object.keys(PROJECT_TITLES).filter(id => {
+    const p = (id.startsWith('bio') ? r.scienceProjects : r.historyProjects)?.[id], at = p?.submittedAt || 0;
+    if (p?.status !== 'submitted' || !at) return false;
+    const [verdict, stamp] = String(overrides[`project:${id}`] || '').split(':');
+    return !(+stamp === at && (verdict === 'verified' || verdict === 'revise')) && p.localReview !== 'verified' && p.localReview !== 'revise';
+  }).length;
+}
+function readingWaiting(r: StudentReport) {
+  const overrides = r.qx || {};
+  let chapters = 0, essays = 0;
+  (r.readingBooks || []).forEach(book => {
+    if (book.id) book.chapters.forEach(ch => { if (ch.id && readingVerdict(overrides, `reading:${book.id}:${ch.id}`, ch.submittedAt || 0, ch.localReview) === 'submitted') chapters++; });
+    (book.quizzes || []).forEach(qz => { if ((qz.essays || []).length && readingVerdict(overrides, `readingEssay:${qz.id}`, qz.submittedAt || 0, qz.localReview) === 'submitted') essays++; });
+  });
+  return { chapters, essays };
+}
+function waitingHTML(list: StudentReport[]) {
+  const rows = list.map(r => ({ r, projects: projectsWaiting(r), ...readingWaiting(r), written: writtenWaiting(r).length }))
+    .map(x => ({ ...x, total: x.projects + x.chapters + x.essays + x.written })).filter(x => x.total).sort((a, b) => b.total - a.total || a.r.n.localeCompare(b.r.n));
+  const total = rows.reduce((sum, x) => sum + x.total, 0);
+  const chip = (r: StudentReport, n: number, one: string, many: string, subject: string) => n ? `<button class="namebtn chip" data-id="${esc(r.id)}" data-subject="${subject}">${n} ${n === 1 ? one : many}</button>` : '';
+  return `<div class="card"><h2>🧑‍🏫 Waiting for a grown-up${total ? ` · ${total}` : ''}</h2><p class="muted" style="margin-top:0">Projects and labs, Reading Log chapters, reading-quiz essays, and written answers that nobody has checked yet. Tap one to open that student's page at the right tab. A parent's check at home counts as checked; you can still change it.</p>
+    ${rows.length ? `<table class="steptable"><thead><tr><th>Student</th><th>To check</th></tr></thead><tbody>${rows.map(x => `<tr><td><button class="namebtn" data-id="${esc(x.r.id)}" data-subject="${x.projects ? 'projects' : x.chapters || x.essays ? 'reading' : 'written'}">${esc(x.r.n)}</button></td><td>${[
+      chip(x.r, x.projects, 'project or lab', 'projects or labs', 'projects'), chip(x.r, x.chapters, 'reading chapter', 'reading chapters', 'reading'),
+      chip(x.r, x.essays, 'reading essay', 'reading essays', 'reading'), chip(x.r, x.written, 'written answer', 'written answers', 'written')].filter(Boolean).join(' ')}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="muted">Nothing is waiting. Everything students sent has been checked.</p>'}</div>`;
 }
 function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
   const entries = [...(r.writtenAnswers || [])].sort((a, b) => Number(!!writtenReview(a, overrides)) - Number(!!writtenReview(b, overrides)) || b.at - a.at);
@@ -431,8 +455,10 @@ function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
   }).join('');
   return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.”</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
 }
+/* projects and experiments a student can submit; shown on the Projects tab and counted on the dashboard's waiting card */
+const PROJECT_TITLES: Record<string, string> = { history: 'History Unit 1: Source Investigator Project', history2: 'History Unit 2: Forager or Farmer? Evidence Case', history3: 'History Unit 3: Compare Two Early Societies', history4: 'History Unit 4: Belief Systems and Empires Case Study', bio1: 'Biology Unit 1: Model Project', bio1lab: 'Biology Unit 1: Germination Lab (experiment)' };
 function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {
-  const projects: Record<string, string> = { history: 'History Unit 1: Source Investigator Project', history2: 'History Unit 2: Forager or Farmer? Evidence Case', history3: 'History Unit 3: Compare Two Early Societies', history4: 'History Unit 4: Belief Systems and Empires Case Study', bio1: 'Biology Unit 1: Model Project', bio1lab: 'Biology Unit 1: Germination Lab (experiment)' };
+  const projects = PROJECT_TITLES;
   const labels: Record<string, string> = { choice: 'Model choice', parts: 'Parts and functions', organization: 'Organization', limits: 'Model limits', question: 'Question and hypothesis', variables: 'Variables', procedure: 'Procedure', data: 'Data', conclusion: 'Conclusion', connection: 'Connection to plant reproduction', source: 'Source', perspective: 'Perspective', claim: 'Claim and evidence', frame: 'Frame or scale', subject: 'Subject', evidence: 'Evidence', tradeoffs: 'Advantages and disadvantages', sources: 'Sources used', environment: 'Environment and resources', compare: 'Comparison', spread: 'How it spread' };
   const rows = Object.entries(projects).map(([id, title]) => {
     const p = (id.startsWith('bio') ? r.scienceProjects : r.historyProjects)?.[id], at = p?.submittedAt || 0, submitted = p?.status === 'submitted' && at > 0;

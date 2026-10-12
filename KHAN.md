@@ -1,5 +1,7 @@
 # Khan Academy in Pet Town
 
+New to Pet Town? Start with [KHAN-SETUP.md](KHAN-SETUP.md), which covers accounts, which Khan unit goes with which building, and the Khan unit test check.
+
 Pet Town only **links** to Khan Academy. It never copies or embeds Khan's content, and it uses no Khan API or key. Khan is **on by default**. A class or a family that doesn't use Khan can turn it off, and everything else keeps working.
 
 ## Where Khan shows up
@@ -23,6 +25,11 @@ When Khan is off:
 - Lessons keep their own text, Pet Town's videos, and the teacher's own lesson links.
 - Nothing is deleted. Khan scores already logged stay in `classes.khan_results`, and turning Khan back on shows them again.
 - Unit tests, projects, practice and unlocking work the same. None of them depend on Khan.
+
+## Checking links
+
+- `npm run verify` checks that every Khan link is a well-formed khanacademy.org address. It runs offline.
+- `npm run check-links` opens every link (needs internet) and lists dead links and links that now redirect somewhere else. A link it can't reach is listed as not checked, never as dead.
 
 ## Code
 
