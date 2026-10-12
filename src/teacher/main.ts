@@ -4,6 +4,7 @@ import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
+import { renderVocabTab, type VocabRoster, type ClassVocab } from './vocab';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
@@ -28,7 +29,7 @@ document.addEventListener('click', event => {
 
 let classes: ClassRow[] = [];
 let current: ClassRow | null = null;
-let tab: 'dashboard' | 'roster' | 'settings' | 'lessons' = 'dashboard';
+let tab: 'dashboard' | 'roster' | 'settings' | 'lessons' | 'vocab' = 'dashboard';
 let channel: RealtimeChannel | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 const gameUrl = () => new URL('./', location.href).href;
@@ -96,10 +97,10 @@ function alertMain(msg: string) { const m = document.getElementById('main'); if 
 function renderMain() {
   const main = $('#main');
   if (!current) { stopLive(); main.innerHTML = '<div class="card empty">Add your first class on the left to get a class code.</div>'; return; }
-  main.innerHTML = `<div class="tabs">${(['dashboard', 'roster', 'settings', 'lessons'] as const).map(t => `<button class="tab ${tab === t ? 'on' : ''}" data-tab="${t}">${t === 'lessons' ? 'Lessons &amp; questions' : t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
+  main.innerHTML = `<div class="tabs">${(['dashboard', 'roster', 'settings', 'lessons', 'vocab'] as const).map(t => `<button class="tab ${tab === t ? 'on' : ''}" data-tab="${t}">${t === 'lessons' ? 'Lessons &amp; questions' : t === 'vocab' ? 'Vocabulary' : t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
     <span style="flex:1"></span><span class="muted">Class code <b>${esc(current.join_code)}</b></span></div><div id="pane"></div>`;
   main.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab as typeof tab; renderMain(); }));
-  if (tab === 'dashboard') void renderDashboard(); else { stopLive(); if (tab === 'roster') void renderRoster(); else if (tab === 'lessons') renderLessonsTab(); else renderSettings(); }
+  if (tab === 'dashboard') void renderDashboard(); else { stopLive(); if (tab === 'roster') void renderRoster(); else if (tab === 'lessons') renderLessonsTab(); else if (tab === 'vocab') renderVocabularyTab(); else renderSettings(); }
 }
 
 /* ---------- dashboard (live) ---------- */
@@ -276,21 +277,55 @@ async function loadLessonExtras(classId: string): Promise<LessonExtras> {
     const cached = lessonExtrasCache.get(classId); if (cached) cached.khan.results = next;
     return null;
   };
+  /* review marks go in the student's quiz_overrides (review:<course>:<lesson> = when the Khan result was logged), which the game already receives */
+  const saveReviews = async (studentId: string, courseId: string, reviews: Record<string, number>) => {
+    const { data, error } = await sb!.from('students').select('quiz_overrides').eq('id', studentId).single();
+    if (error) return error.message;
+    const current = ((data as { quiz_overrides?: Record<string, string> | null } | null)?.quiz_overrides) || {};
+    const next = Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`review:${courseId}:`)));
+    for (const [skill, at] of Object.entries(reviews)) next[`review:${courseId}:${skill}`] = String(at);
+    const { error: saveError } = await sb!.from('students').update({ quiz_overrides: Object.keys(next).length ? next : null }).eq('id', studentId);
+    return saveError ? saveError.message : null;
+  };
   const khanRow = await sb!.from('classes').select('khan_results').eq('id', classId).single();
   const results: KhanResults | null = khanRow.error ? null : ((khanRow.data as { khan_results?: KhanResults } | null)?.khan_results || {});
   const { data: kids, error } = await sb!.from('students').select('id,display_name').eq('class_id', classId).order('display_name');
-  if (error) return { stats: null, khan: { roster: null, results, save: saveKhan } };
+  if (error) return { stats: null, khan: { roster: null, results, save: saveKhan, saveReviews } };
   const list = (kids || []) as { id: string; display_name: string }[];
-  if (!list.length) return { stats: { students: 0, byId: {} }, khan: { roster: [], results, save: saveKhan } };
+  if (!list.length) return { stats: { students: 0, byId: {} }, khan: { roster: [], results, save: saveKhan, saveReviews } };
   const { data, error: saveError } = await sb!.from('saves')
     .select('student_id, qs:state->questionStats, ela:state->elaProgress, hist:state->historyProgress, sci:state->scienceProgress').in('student_id', list.map(k => k.id));
-  if (saveError) return { stats: null, khan: { roster: null, results, save: saveKhan } };
+  if (saveError) return { stats: null, khan: { roster: null, results, save: saveKhan, saveReviews } };
   type Row = { student_id: string; qs?: unknown; ela?: unknown; hist?: unknown; sci?: unknown };
   const rows = (data || []) as Row[], byStudent = new Map(rows.map(row => [row.student_id, row]));
   const obj = (v: unknown) => v && typeof v === 'object' ? v as RosterRow['progress'][string] : undefined;
   const roster: RosterRow[] = list.map(k => { const row = byStudent.get(k.id);
     return { id: k.id, name: k.display_name, progress: { elaProgress: obj(row?.ela), historyProgress: obj(row?.hist), scienceProgress: obj(row?.sci) } }; });
-  return { stats: sumQuestionStats(rows.map(row => row.qs)), khan: { roster, results, save: saveKhan } };
+  return { stats: sumQuestionStats(rows.map(row => row.qs)), khan: { roster, results, save: saveKhan, saveReviews } };
+}
+
+/* ---------- vocabulary (docs: VOCAB.md): the class list is saved in classes.game_settings.vocab ---------- */
+function renderVocabularyTab() {
+  const cls = current!;
+  const save = async (vocab: ClassVocab) => {
+    const game_settings = { ...(cls.game_settings || {}), vocab };
+    const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
+    if (!error) cls.game_settings = game_settings;
+    return error ? error.message : null;
+  };
+  let roster: VocabRoster;
+  const draw = () => { if (current?.id === cls.id && tab === 'vocab') renderVocabTab($('#pane'), cls, save, roster); };
+  draw();
+  void (async () => {
+    const { data: kids, error } = await sb!.from('students').select('id,display_name').eq('class_id', cls.id).order('display_name');
+    if (error) { roster = null; draw(); return; }
+    const list = (kids || []) as { id: string; display_name: string }[];
+    const { data, error: saveError } = list.length ? await sb!.from('saves').select('student_id, vocab:state->vocab').in('student_id', list.map(k => k.id)) : { data: [], error: null };
+    if (saveError) { roster = null; draw(); return; }
+    const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }> } }[]).map(row => [row.student_id, row.vocab?.stats || {}]));
+    roster = list.map(k => ({ name: k.display_name, stats: byStudent.get(k.id) || {} }));
+    draw();
+  })();
 }
 
 /* ---------- class settings ---------- */

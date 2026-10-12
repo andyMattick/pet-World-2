@@ -14,6 +14,10 @@ The code in this repo was built and tested over many sessions. It includes 14 pr
 - **If a task seems to need a rewrite, stop and ask the owner first.** Explain why.
 - **If something errors, fix that specific error.** Don't rewrite the file around it.
 
+## New learning content
+
+Any new lesson, question, unit, math station, vocab list, or reading follows **`CONTENT-RULES.md`**: every lesson needs its newer-type questions and a short answer, multiple-choice questions need fair wrong answers, everything gets a blind review and a review list with right answers in bold, and ids stay stable. Run `node scripts/check-content.mjs` before handing content over.
+
 ## What this project is
 
 Pet Town: 6th grade math practice games (Khan Academy order), with step-level diagnostics for teachers.

@@ -7,8 +7,9 @@ import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
 import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
-import { typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
+import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, normalizeVocabState } from '../shared/vocab';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -48,7 +49,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{},
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -105,6 +106,7 @@ function normalize(raw){
     .filter(([key, day]) => key.length <= 80 && typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)).slice(-300));
   s.questionStats = Object.fromEntries(Object.entries(s.questionStats && typeof s.questionStats === 'object' ? s.questionStats : {})   // bank question id → [answered, missed]
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
+  s.vocab = normalizeVocabState(s.vocab);   // Word Workshop: answer history per word, sprint best, the family's own words and focus
   s.mathThink = s.mathThink && typeof s.mathThink === 'object' ? s.mathThink : {};   // math Think it through sets, by station ("cafe:1")
   s.writtenAnswers = normalizeWrittenAnswers(s.writtenAnswers);   // short answers and paragraphs, with a parent's check (docs: QUESTION-TYPES.md)
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
@@ -4899,7 +4901,7 @@ $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
 let currentShop = 'cafe';
-const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','library','summary','shop','hall','parent','arcade'];
+const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','library','summary','shop','hall','parent','arcade','vocab'];
 function show(id){
   if (id !== 'room' && roomDrag) finishRoomDrag();
   if (id === 'arcade' && !arcadePolicy().enabled) { toast('Your teacher has not opened the Arcade.'); id = 'home'; }
@@ -4912,6 +4914,7 @@ function show(id){
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
   if (id === 'library') { renderEnglishLibrary(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-library').hidden && $('#libraryWrap .ela-layout')) renderEnglishLibrary(); }); }
   if (id === 'arcade') renderArcade();
+  if (id === 'vocab') renderVocab(); else if (vocabRun) { stopVocabTimer(); vocabRun = null; }
   syncRoom(id);
   window.scrollTo(0,0);
 }
@@ -5519,6 +5522,7 @@ function renderHome(){
     });
   }
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
+  h += `<button class="tile service" data-open="vocab"><span class="te">🔤</span><span class="tn">Word Workshop</span><span class="tu">Vocabulary practice and sprint</span></button>`;
   h += `<button class="tile service" data-open="reading"><span class="te">📖</span><span class="tn">Reading Log</span><span class="tu">${S.readingBooks.length} book${S.readingBooks.length === 1 ? '' : 's'} · Reading Quizzes</span></button>`;
   h += `<button class="tile service" data-open="room"><span class="te">🏠</span><span class="tn">My Pet Room</span><span class="tu">${S.room.initialized ? S.room.placements.length : S.displayed.filter(Boolean).length} decorations · Dress-up</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
@@ -5566,6 +5570,7 @@ $('#town').addEventListener('click', e => {
     show('cafe');
   }
   else if (id === 'sprint') openSprint();
+  else if (id === 'vocab') { void Backend.refreshSettings().then(() => { if (!$('#scr-vocab').hidden && !vocabRun) renderVocab(); }); show('vocab'); }
   else if (id === 'room') show('room');
   else if (id === 'reading') { activeEnglishCourse = 'nouns'; show('library'); }
   else if (id === 'elaNouns' || id === 'elaVerbs') { show('library'); renderEnglishUnit(id === 'elaVerbs' ? 'verbs' : 'nouns'); }
@@ -6195,9 +6200,20 @@ function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   }
   return shuffle(questions);
 }
-const englishFinalReady = course => course.noQuizzes
-  ? course.skills.every(skill => !!englishRecord(skill.id,course.id).passed)
-  : course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id),course.id).passed);
+/* A grown-up can open every quiz and test in a unit: the teacher in the dashboard (quiz_overrides "<building>:open" = "all"),
+   or a parent at home with "Unlock every station and shop". Practice still counts the same; it just stops gating. */
+const unitOpenedByGrownUp = building => (!Backend.me && S.unlockAll) || Backend.me?.quiz_overrides?.[`${building}:open`] === 'all';
+/* only lessons with a practice button count (History 1.2 is a reading inside 1.1, with no practice of its own) */
+const practiceSkills = course => [...new Set(course.groups.flatMap(group => group.skills))];
+/* Khan review: when the teacher logs a missed Khan topic, its lessons get review:<course>:<lesson> = <when> in quiz_overrides.
+   The lesson shows 🔁 Review until its practice is passed again after that time. Nothing locks again. */
+const reviewDue = (courseId, skillId) => {
+  const at = +(Backend.me?.quiz_overrides?.[`review:${courseId}:${skillId}`] || 0);
+  return at > 0 && !((englishRecord(skillId, courseId).lastPassAt || 0) > at);
+};
+const englishFinalReady = course => unitOpenedByGrownUp(course.building) || (course.noQuizzes
+  ? practiceSkills(course).every(skillId => !!englishRecord(skillId,course.id).passed)
+  : course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id),course.id).passed));
 /* hosted: the teacher's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"; local: a grown-up sets it */
 function historyProjectState(courseId){
   const p = projectStore(courseId)[courseId] || {answers:{},status:'draft',submittedAt:0,localReview:''};
@@ -6246,7 +6262,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
   const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
   syncRoom('library');
   const groups = course.groups.map((group, groupIndex) => {
-    const blockUnlocked = groupIndex === 0 || (course.noQuizzes ? course.groups[groupIndex-1].skills.every(skillId => !!englishRecord(skillId,course.id).passed) : !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id),course.id).passed);
+    const blockUnlocked = groupIndex === 0 || unitOpenedByGrownUp(course.building) || (course.noQuizzes ? course.groups[groupIndex-1].skills.every(skillId => !!englishRecord(skillId,course.id).passed) : !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id),course.id).passed);
     const exercises = group.skills.map((skillId, skillIndex) => {
       const skill = course.skills.find(item => item.id === skillId), record = englishRecord(skillId,course.id);
       const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1],course.id).passed);
@@ -6255,10 +6271,11 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
         : record.tries ? `Best ${record.best}/4 · ${record.tries} tries · Get 3 of 4 to level up`
           : 'Not started · Get 3 of 4 to level up';
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
-      return `<article class="ela-exercise${unlocked ? '' : ' locked'}"><div><strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked ? '' : 'disabled'}>${record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
+      const review = reviewDue(course.id, skillId);
+      return `<article class="ela-exercise${unlocked ? '' : ' locked'}${review ? ' review' : ''}"><div>${review ? '<span class="review-tag">🔁 Review: your teacher wants you to practice this again</span>' : ''}<strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked || review ? '' : 'disabled'}>${review ? 'Review' : record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
     const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key,course.id);
-    const canQuiz = blockUnlocked && group.skills.every(skillId => !!englishRecord(skillId,course.id).passed);
+    const canQuiz = blockUnlocked && (unitOpenedByGrownUp(course.building) || group.skills.every(skillId => !!englishRecord(skillId,course.id).passed));
     const quizStatus = quiz.passed ? `Passed · best ${quiz.best}/4 · ${quiz.tries} tries`
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
@@ -6270,7 +6287,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it. Sections marked “Learn” with no practice are reading only.</p>${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it. Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher checked your Khan test and wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -6316,12 +6333,13 @@ function renderEnglishQuestion(){
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
   if (!skill || pool.length < 4) return;
-  const questions = practiceOrder(pool, 4);
-  activeEnglishCourse=course.id;englishRun = {title:skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[],written:pendingWritten(course.id, skillId)}; renderEnglishQuestion();
+  const review = reviewDue(course.id, skillId);   // a Khan review leans toward the harder questions, still easiest first
+  const questions = review ? leanHard(pool).slice(0, 4).sort((a, b) => questionLevel(a) - questionLevel(b)) : practiceOrder(pool, 4);
+  activeEnglishCourse=course.id;englishRun = {title:review ? `Review: ${skill.name}` : skill.name,progressKey:skillId,retryType:'practice',retryId:skillId,courseId:course.id,questions,index:0,score:0,passMark:3,answered:false,outcomes:[],written:pendingWritten(course.id, skillId)}; renderEnglishQuestion();
 }
 function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
-  if (final ? !englishFinalReady(course) : !group || !group.skills.every(skillId => englishRecord(skillId,course.id).passed)) return;
+  if (final ? !englishFinalReady(course) : !group || !(unitOpenedByGrownUp(course.building) || group.skills.every(skillId => englishRecord(skillId,course.id).passed))) return;
   const questions = final
     ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
     : englishAssessmentQuestions(group.quizSkills || group.skills, 4,course.id);
@@ -6358,7 +6376,7 @@ function commitEnglishRun(run){
   store[run.progressKey] = {
     ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
     passed:!!previous.passed || passed, recentScores:[...(previous.recentScores || []),run.score].slice(-10),
-    lastScore:run.score, questionCount:run.questions.length
+    lastScore:run.score, questionCount:run.questions.length, ...(passed ? {lastPassAt:Date.now()} : {})   // lastPassAt clears a Khan review (reviewDue)
   };
   save();
 }
@@ -6598,6 +6616,176 @@ $('#libraryWrap').addEventListener('click', event => {
   const again = event.target.closest('[data-think]'); if (again) startThink(again.dataset.think);
 });
 
+/* ---------- Word Workshop: vocabulary (docs: VOCAB.md) ----------
+   Practice cards (meaning, use it in a sentence, spell it), a 60-second Sprint, Spell it, and a mastery chart like the
+   times-tables heat map. Words: Pet Town's list + the class's (teacher) + the family's (grown-up, behind the PIN). */
+let vocabRun = null, vocabTab = 'practice', vocabTimer = null;
+const vocabWords = () => vocabList({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
+const vocabStat = word => S.vocab.stats[wordKey(word)];
+function recordVocab(word, ok){
+  const key = wordKey(word), stat = S.vocab.stats[key] || {r:[]};
+  delete S.vocab.stats[key]; S.vocab.stats[key] = {r:[...stat.r, ok ? 1 : 0].slice(-8)};   // newest last, so old words drop off first
+  const keys = Object.keys(S.vocab.stats); for (let i = 0; i < keys.length - VOCAB_LIMITS.list; i++) delete S.vocab.stats[keys[i]];
+  const day = arcadeDateKey(); S.mathMinutes[day] = (S.mathMinutes[day] || 0) + 0.25;   // four answers earn one arcade minute
+  save();
+}
+/* a word to ask about, weaker words more often, never the same one twice in a row */
+function nextVocabWord(list, last){
+  const pool = list.length > 1 ? list.filter(v => wordKey(v.w) !== wordKey(last)) : list;
+  return weightedPick(pool, v => wordWeight(vocabStat(v.w)));
+}
+/* 3 wrong choices; for "use it in a sentence", from other sets first so only one word fits the sentence */
+function vocabDistractors(word, all, otherSetsFirst){
+  const others = all.filter(v => wordKey(v.w) !== wordKey(word.w));
+  const far = otherSetsFirst ? others.filter(v => v.set !== word.set) : [];
+  return shuffle(far.length >= 3 ? far : others).slice(0, 3);
+}
+function vocabCard(kind, word, all){
+  if (kind === 'use' && !word.s) kind = 'meaning';
+  if (kind === 'spell') return {kind, word, prompt:word.d};
+  const wrong = vocabDistractors(word, all, kind === 'use');
+  const options = shuffle([word, ...wrong]);
+  return {kind, word, options, answer:options.indexOf(word), prompt:kind === 'use' ? word.s : word.w};
+}
+function renderVocab(){
+  const {all, focus} = vocabWords();
+  const tabs = [['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
+  const solid = focus.filter(v => wordStatus(vocabStat(v.w)) === 'solid').length;
+  let body = '';
+  if (vocabTab === 'chart') {
+    const sets = [...new Set(focus.map(v => v.set))];
+    body = `<p class="muted">${solid} of ${focus.length} focus words are solid. Tap a word to see what it means.</p>${sets.map(set => `<h4 class="vocab-set">${esc(set)}</h4><div class="vocab-grid">${focus.filter(v => v.set === set).map(v => {
+      const st = wordStatus(vocabStat(v.w)); return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st])}">${esc(v.w)}</button>`; }).join('')}</div>`).join('')}
+      <p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
+  } else {
+    const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
+      sprint:`Read the meaning and tap the word. As many as you can in 60 seconds. Every 2 right earn 🪙 1. Your best: ${S.vocab.sprintBest}.`,
+      spell:'Hear the word and read its meaning, then type it. 8 words.'}[vocabTab];
+    body = `<p>${blurb}</p><button type="button" class="btn butter" data-vocab-start="${vocabTab}">Start</button>`;
+  }
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
+    <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}</div>${vocabGrownUpHTML(all)}`;
+}
+function startVocab(mode){
+  const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
+  stopVocabTimer();
+  vocabRun = {mode, all, focus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + 60000 : 0};
+  if (mode === 'sprint') vocabTimer = setInterval(() => { const left = Math.max(0, vocabRun.end - performance.now()); const t = $('#vocabTime'); if (t) t.textContent = Math.ceil(left / 1000); if (left <= 0) finishVocab(); }, 200);
+  nextVocabCard();
+}
+function stopVocabTimer(){ if (vocabTimer) { clearInterval(vocabTimer); vocabTimer = null; } }
+function nextVocabCard(){
+  const run = vocabRun; if (!run) return;
+  if (run.index >= run.total) { finishVocab(); return; }
+  const word = run.retry?.length && run.index >= run.total - run.retry.length ? run.retry.shift() : nextVocabWord(run.focus, run.last);
+  const kind = run.mode === 'sprint' ? 'define' : run.mode === 'spell' ? 'spell' : ['meaning', 'use', 'spell'][run.index % 3];
+  run.card = kind === 'define' ? (() => { const wrong = vocabDistractors(word, run.all, false), options = shuffle([word, ...wrong]); return {kind, word, options, answer:options.indexOf(word), prompt:word.d}; })() : vocabCard(kind, word, run.all);
+  run.last = word.w; run.answered = false;
+  const c = run.card, head = run.mode === 'sprint' ? `<p class="sprint-stats"><span>✅ ${run.correct} correct</span><span><span id="vocabTime">${Math.ceil(Math.max(0, run.end - performance.now()) / 1000)}</span> sec</span></p>` : `<p class="muted">Card ${run.index + 1} of ${run.total} · ${run.correct} right</p>`;
+  const ask = {meaning:'What does this word mean?', use:'Which word fits the sentence?', spell:'Spell the word that means:', define:'Which word means:'}[c.kind];
+  const options = c.options ? `<div class="ela-options">${c.options.map((v, k) => `<button type="button" class="ela-option" data-vocab-answer="${k}">${esc(c.kind === 'meaning' ? v.d : v.w)}</button>`).join('')}</div>`
+    : `<form class="typed-fill" data-vocab-spell><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form>`;
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-vocab-stop>Stop</button></div>
+    <div class="sprint-card vocab-card">${head}<p class="vocab-ask">${ask}</p><div class="fact vocab-prompt${c.kind === 'meaning' ? '' : ' long'}">${esc(c.prompt)}</div>
+    ${c.kind === 'spell' ? '<button type="button" class="btn small" data-vocab-hear>🔊 Hear the word</button>' : ''}${options}<p class="ela-feedback" aria-live="polite"></p></div>`;
+  if (c.kind === 'spell') { $('#vocabWrap .typed-input').focus(); speakWord(c.word.w); } else addCrossOuts($('#vocabWrap'), '.ela-option');
+}
+function speakWord(word){
+  if (typeof speechSynthesis === 'undefined') return;
+  const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function answerVocab(ok, shownAnswer){
+  const run = vocabRun, c = run.card; if (!run || run.answered) return;
+  run.answered = true; recordVocab(c.word.w, ok);
+  if (ok) run.correct++; else { run.missed.push(c.word); if (run.mode === 'practice' && run.total < 10 && !(run.retry || []).some(v => v.w === c.word.w)) { (run.retry = run.retry || []).push(c.word); run.total++; } }
+  sfx(ok ? 'good' : 'bad');
+  $('#vocabWrap .ela-feedback').textContent = ok ? 'That’s right!' : `Not quite. ${shownAnswer}`;
+  $$('#vocabWrap [data-vocab-answer]').forEach(b => { b.disabled = true; if (+b.dataset.vocabAnswer === c.answer) b.classList.add('correct'); });
+  $('#vocabWrap .typed-input')?.classList.add(ok ? 'correct' : 'incorrect'); const inp = $('#vocabWrap .typed-input'); if (inp) inp.disabled = true;
+  run.index++;
+  if (run.mode === 'sprint') setTimeout(() => { if (vocabRun === run) nextVocabCard(); }, ok ? 250 : 1200);
+  else $('#vocabWrap .vocab-card').insertAdjacentHTML('beforeend', '<button type="button" class="btn berry" data-vocab-next>Next</button>');
+}
+function finishVocab(){
+  stopVocabTimer(); const run = vocabRun; vocabRun = null; if (!run) return;
+  let extra = '';
+  if (run.mode === 'sprint') {
+    const coins = Math.floor(run.correct / 2); S.coins += coins; const best = run.correct > S.vocab.sprintBest; if (best) S.vocab.sprintBest = run.correct;
+    save(); updateHeader(); extra = `${best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.vocab.sprintBest}</p>`}${coins ? `<p>You earned <b>🪙 ${coins}</b>.</p>` : ''}`;
+  }
+  const missed = [...new Map(run.missed.map(v => [wordKey(v.w), v])).values()];
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="sprint-card vocab-card"><div class="big-emoji">${run.mode === 'sprint' ? '⚡' : '🃏'}</div><h2>${run.correct} right${run.mode === 'sprint' ? '' : ` of ${run.index}`}</h2>${extra}
+    ${missed.length ? `<p class="muted">Words to look at again</p><dl class="vocab-missed">${missed.map(v => `<dt>${esc(v.w)}</dt><dd>${esc(v.d)}</dd>`).join('')}</dl>` : '<p>No misses. Great job!</p>'}
+    <div class="row"><button class="btn berry" data-vocab-start="${run.mode}">Again</button><button class="btn" data-vocab-tab="chart">See my words</button></div></div>`;
+}
+/* grown-ups: add or import words and choose focus words, behind the grown-up PIN (the class's words come from the teacher) */
+function vocabGrownUpHTML(all){
+  const v = S.vocab.home, classWords = Backend.me?.game_settings?.vocab?.words?.length || 0;
+  if (!parentReadingUnlocked) return `<section class="panel vocab-grownup"><h3>For grown-ups: word list</h3><p class="muted">Add your own words (for example, this week’s Wordly Wise lesson), import a list, or choose which words to focus on.</p>
+    <form id="vocabPinForm" class="row"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required autocomplete="off"></label><button class="btn small primary" type="submit">${S.parentPin ? 'Unlock' : 'Save PIN and unlock'}</button></form></section>`;
+  const focus = new Set(v.focus.map(wordKey)), allFocus = !focus.size;
+  const sets = [...new Set(all.map(x => x.set))];
+  return `<section class="panel vocab-grownup"><h3>For grown-ups: word list</h3>
+    <p class="muted">${classWords ? `Your child’s teacher added ${classWords} word${classWords === 1 ? '' : 's'}. ` : ''}Words you add are saved with this town${Backend.me ? ' and the teacher can see progress on them' : ''}.</p>
+    <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
+    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> You can also paste two columns from a spreadsheet.</p>
+    <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
+    <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
+    ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
+    <h4>Focus words</h4><p class="muted" style="margin-top:0">${allFocus ? 'All words are in focus.' : `${focus.size} words picked.`} Untick to leave a word out of practice.</p>
+    <div class="row"><button class="btn small" type="button" data-vocab-focus-all>Focus on all</button><button class="btn small" type="button" data-vocab-focus-none>Clear all</button></div>
+    ${sets.map(set => `<details class="vocab-focus-set"><summary>${esc(set)}</summary><div class="vocab-focus">${all.filter(x => x.set === set).map(x => `<label title="${esc(x.d)}"><input type="checkbox" data-vocab-focus="${esc(x.w)}" ${allFocus || focus.has(wordKey(x.w)) ? 'checked' : ''}> ${esc(x.w)}</label>`).join('')}</div></details>`).join('')}
+    <div class="row"><button class="btn small primary" type="button" data-vocab-save-focus>Save focus words</button><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
+}
+$('#vocabWrap').addEventListener('submit', event => {
+  const pinForm = event.target.closest('#vocabPinForm');
+  if (pinForm) {
+    event.preventDefault(); const pin = String(new FormData(pinForm).get('pin') || '');
+    if (!/^\d{4}$/.test(pin)) { toast('Use 4 digits.'); return; }
+    if (!S.parentPin) { S.parentPin = pinHash(pin); save(); } else if (S.parentPin !== pinHash(pin)) { toast('That PIN does not match.'); return; }
+    parentReadingUnlocked = true; renderVocab(); return;
+  }
+  if (!event.target.closest('[data-vocab-spell]') || !vocabRun || vocabRun.answered) return;
+  event.preventDefault();
+  const typed = $('#vocabWrap .typed-input').value; if (!typed.trim()) return;
+  const c = vocabRun.card; answerVocab(normalizeTyped(typed) === normalizeTyped(c.word.w), `It’s spelled “${c.word.w}.”`);
+});
+$('#vocabWrap').addEventListener('click', event => {
+  const b = event.target.closest('button, [data-vocab-peek]'); if (!b) return;
+  if (b.dataset.vocabTab) { vocabTab = b.dataset.vocabTab; renderVocab(); return; }
+  if (b.dataset.vocabStart) { startVocab(b.dataset.vocabStart); return; }
+  if (b.hasAttribute('data-vocab-stop')) { stopVocabTimer(); vocabRun = null; renderVocab(); return; }
+  if (b.hasAttribute('data-vocab-next')) { nextVocabCard(); return; }
+  if (b.hasAttribute('data-vocab-hear') && vocabRun) { speakWord(vocabRun.card.word.w); return; }
+  if (b.dataset.vocabAnswer != null && vocabRun && !vocabRun.answered) { const c = vocabRun.card; answerVocab(+b.dataset.vocabAnswer === c.answer, c.kind === 'meaning' ? `“${c.word.w}” means ${c.word.d}.` : `The word is “${c.word.w}”: ${c.word.d}.`); if (+b.dataset.vocabAnswer !== c.answer) b.classList.add('incorrect'); return; }
+  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').textContent = v ? `${v.w}: ${v.d}${v.s ? ` (${v.s.replace('___', v.w)})` : ''}` : ''; return; }
+  if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
+  if (!parentReadingUnlocked) return;
+  if (b.hasAttribute('data-vocab-import')) {
+    const {words, errors} = parseVocabImport($('#vocabImport').value);
+    const have = new Set(S.vocab.home.words.map(x => wordKey(x.w)));
+    S.vocab.home.words = [...S.vocab.home.words.filter(x => !words.some(w => wordKey(w.w) === wordKey(x.w))), ...words].slice(0, VOCAB_LIMITS.list);
+    if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, ...words.map(w => wordKey(w.w))])];   // new words join the focus list
+    save(); renderVocab(); $('#vocabMsg').textContent = `${words.filter(w => !have.has(wordKey(w.w))).length} added.${errors.length ? ` ${errors.length} line${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 2).join(' ')}` : ''}`; return;
+  }
+  if (b.dataset.vocabRemove) { S.vocab.home.words = S.vocab.home.words.filter(x => x.w !== b.dataset.vocabRemove); save(); renderVocab(); return; }
+  if (b.hasAttribute('data-vocab-focus-all') || b.hasAttribute('data-vocab-focus-none')) { const on = b.hasAttribute('data-vocab-focus-all'); $$('#vocabWrap [data-vocab-focus]').forEach(x => { x.checked = on; }); return; }
+  if (b.hasAttribute('data-vocab-save-focus')) {
+    const boxes = $$('#vocabWrap [data-vocab-focus]'), picked = boxes.filter(x => x.checked).map(x => wordKey(x.dataset.vocabFocus));
+    if (!picked.length) { toast('Pick at least 4 words.'); return; }
+    S.vocab.home.focus = picked.length === boxes.length ? [] : picked; save(); toast('Focus words saved.'); renderVocab();
+  }
+});
+$('#vocabWrap').addEventListener('change', event => { if (event.target.id === 'vocabBuiltIn' && parentReadingUnlocked) { S.vocab.home.builtIn = event.target.checked; save(); renderVocab(); } });
+/* the grown-ups' progress report: a one-line summary that opens the chart */
+function vocabReportHTML(){
+  const {focus} = vocabWords(), count = st => focus.filter(v => wordStatus(vocabStat(v.w)) === st).length;
+  return `<div class="panel"><h3>🔤 Vocabulary</h3><p><b>${count('solid')}</b> solid · <b>${count('close')}</b> getting there · <b>${count('work')}</b> need practice · <b>${count('new')}</b> not seen yet (of ${focus.length} focus words). Sprint best: ${S.vocab.sprintBest}.</p><button class="btn small" data-go-vocab>Open Word Workshop</button></div>`;
+}
+document.addEventListener('click', event => { if (event.target.closest('[data-go-vocab]')) { vocabTab = 'chart'; show('vocab'); } });
+
 /* ---------- shop stations ---------- */
 function renderShopFloor(shop){
   const config = SHOPS[shop] || SHOPS.cafe, progress = shopProgress(config.id) || {st:{}};
@@ -6606,10 +6794,10 @@ function renderShopFloor(shop){
   $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
   $('#scr-cafe > p').textContent = settings.requireQuiz ? `${config.unitLabel}. Pass each station quiz to open the next station.` : `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
   const allStationsBuilt = config.stations.every(st => st.skills.length > 0);
-  const allStationQuizzesPassed = allStationsBuilt && config.stations.every(st => {
+  const allStationQuizzesPassed = allStationsBuilt && (unitOpenedByGrownUp(config.id) || config.stations.every(st => {
     const key = assessKey(config.id, st.id);
     return !!S.quizzes[key]?.passed || Backend.me?.quiz_overrides?.[key] === 'excused';
-  });
+  }));
   const testKey = assessKey(config.id, null), testReviewSkills = reviewSkillsNeeded(testKey), testPassed = unitTestPassed(config.id);
   const testReviewStation = config.stations.find(st => st.skills.some(skill => testReviewSkills.includes(skill)))?.id ?? 1;
   const unitTestCard = !allStationsBuilt ? '' : `<div class="station unit-test${allStationQuizzesPassed || testPassed ? '' : ' locked'}">
@@ -6635,7 +6823,7 @@ function renderShopFloor(shop){
     if (passed) quizCard = `<p class="muted" style="margin:0">✅ Quiz passed${quiz?.best ? ` (${quiz.best}%)` : ''}</p>`;
     else if (reviewSkills.length) quizCard = `<p class="muted" style="margin:0">🔁 Review: ${reviewSkills.length} skill${reviewSkills.length === 1 ? '' : 's'} to practice</p><button class="btn" data-review-key="${esc(quizKey)}" data-review-station="${st.id}" data-shop="${config.id}">Review practice</button>`;
     else if (quiz?.tries) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">Retake quiz</button>`;
-    else if (open && mastered) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">📝 Station Quiz</button>`;
+    else if (open && (mastered || unitOpenedByGrownUp(config.id))) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">📝 Station Quiz</button>`;
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
@@ -8032,6 +8220,7 @@ function renderParent(){
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
+    ${vocabReportHTML()}
     ${progressBySubjectHTML({detail:true, canReview:!Backend.me, title:'Progress by subject and unit', reading:readingReviewHTML()})}
     ${writtenParentHTML()}
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
@@ -8041,7 +8230,7 @@ function renderParent(){
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
     <div class="panel"><h3>Practice pop-ups</h3>${localDrillControls}${drillHistory}
       <h3>Settings</h3>
-      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station and shop</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
+      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {

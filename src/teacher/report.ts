@@ -268,8 +268,17 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       const active = rows.some(row => !row.includes('<td>—</td>'));
       return `<details class="unit-card"${active ? ' open' : ''}><summary><b>${shop.emoji} ${esc(shop.name)}</b><span class="unit-sum">${active ? 'has activity' : 'nothing yet'}</span></summary><table class="steptable"><tr><th>Quiz</th><th>Status</th><th></th></tr>${rows.join('')}</table></details>`;
     }).join('');
+    /* every unit, every subject: open all its quizzes and tests now, or count its unit test as passed (opens the next unit) */
+    const UNIT_BUILDINGS = [...Object.values(SHOPS).map(shop => shop.id), 'elaNouns', 'elaVerbs', 'histOrigins', 'histEarly', 'histAgrarian', 'histEmpires', 'bioChem'];
+    const unitRows = UNIT_BUILDINGS.flatMap(id => BUILDINGS.filter(b => b.id === id)).map(b => {
+      const open = overrides[`${b.id}:open`] === 'all', passed = overrides[`${b.id}:test`] === 'excused';
+      return `<tr><td>${b.emoji} ${esc(b.name)} <span class="muted">${esc(b.unit)}</span></td><td>${[open ? 'All quizzes and tests open' : '', passed ? 'Unit test counted as passed' : ''].filter(Boolean).join(' · ') || '<span class="muted">Following the app</span>'}</td>
+        <td style="white-space:nowrap">${open ? `<button class="btn small" data-quiz-undo="${b.id}:open">Close again</button>` : `<button class="btn small" data-unit-open="${b.id}">Open all tests</button>`} ${passed ? `<button class="btn small" data-quiz-undo="${b.id}:test">Undo pass</button>` : `<button class="btn small" data-quiz-excuse="${b.id}:test">Count unit test as passed</button>`}</td></tr>`;
+    }).join('');
     return `<h3>History</h3><table class="steptable"><tr><th>Date</th><th>Shop</th><th>Station</th><th>Score</th><th>Missed skills</th></tr>${historyRows || '<tr><td colspan="5" class="muted">No quizzes or tests yet.</td></tr>'}</table>
-      <h3>Overrides</h3>${controlRows}<p class="status" id="studentQuizMsg"></p>`;
+      <h3>Overrides</h3>${controlRows}
+      <h3>Override the app for a whole unit</h3><p class="muted" style="margin-top:0"><b>Open all tests</b> lets ${esc(r.n)} take every quiz and the unit test in that unit now, even if practice isn't finished. <b>Count unit test as passed</b> opens the next unit without the test. Both work for math, English, History and Biology.</p>
+      <table class="steptable"><tr><th>Unit</th><th>Status</th><th></th></tr>${unitRows}</table><p class="status" id="studentQuizMsg"></p>`;
   }
   async function saveOverride(key: string, value: string | null) {
     if (!onSaveQuizOverride) return;
@@ -285,6 +294,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-excuse]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizExcuse!, 'excused'); }));
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-clear]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizClear!, `cleared:${Date.now()}`); }));
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-undo]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizUndo!, null); }));
+    el2.querySelectorAll<HTMLButtonElement>('[data-unit-open]').forEach(b => b.addEventListener('click', () => { void saveOverride(`${b.dataset.unitOpen}:open`, 'all'); }));
     renderProjectCard();
   }
   function renderProjectCard() {

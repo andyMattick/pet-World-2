@@ -135,7 +135,7 @@ const pick = (list, i) => list[i % list.length];
 
 function buildScene(){
   scene = document.createElement('div');
-  scene.className = 'room-scene'; scene.setAttribute('aria-hidden', 'true'); scene.hidden = true;
+  scene.className = 'theme-room'; scene.setAttribute('aria-hidden', 'true'); scene.hidden = true;   // not 'room-scene': that class is the Pet Room's drag-and-drop scene
   scene.innerHTML = `<div class="room-wall"></div><div class="room-hero"></div><div class="room-floaties"></div><div class="room-floor"></div><div class="room-pets"></div><div class="room-props"><div class="room-props-l"></div><div class="room-props-r"></div></div>`;
   document.body.prepend(scene);
 }

@@ -159,6 +159,7 @@ body.arcade-open{overflow:hidden}
 .room-panel h3{margin:0 0 8px; font-size:1.12rem}.room-inventory,.wardrobe-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:7px}
 .room-inventory button,.wardrobe-item{min-width:0; min-height:74px; padding:5px; border:2px solid var(--edge); border-radius:9px; background:var(--surface); color:var(--ink); text-align:center}
 .room-inventory button{cursor:pointer}.room-inventory button span,.wardrobe-item .accessory-emoji{display:block; font-size:1.7rem; line-height:1.1}.room-inventory button .room-inventory-emoji{font-size:2.4rem}
+.room-inventory > p{grid-column:1/-1; margin:0}
 .room-subhead{margin:12px 0 6px; font-size:.9rem}.room-placed-list{display:flex; flex-wrap:wrap; gap:6px}.room-placed-item{position:relative; display:grid; place-items:center; width:48px; height:48px; border:1px solid var(--edge); border-radius:8px; background:var(--surface)}
 .room-placed-item .room-inventory-emoji{font-size:1.8rem}.room-remove{position:absolute; top:-7px; right:-7px; display:grid; place-items:center; width:24px; height:24px; padding:0; border:2px solid var(--edge); border-radius:50%; background:var(--surface); color:var(--ink); font-size:1rem; font-weight:800; line-height:1; cursor:pointer}
 .wardrobe-item{display:flex; flex-direction:column; align-items:center; gap:3px}.wardrobe-item small{font-size:.68rem; line-height:1.1}.wardrobe-item .btn{margin-top:auto}
@@ -743,7 +744,7 @@ table.xy-table th{font-size:.95rem}
 .role-line{display:block; margin:2px 0 4px; font-size:.9rem; font-weight:700; color:var(--ink-soft)}
 
 /* Themed rooms (src/game/rooms.js): wallpaper, floor, props, and drifting extras behind building screens */
-.room-scene{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden}
+.theme-room{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden}
 .room-wall{position:absolute; inset:0}
 .room-floor{position:absolute; left:0; right:0; bottom:0; height:clamp(70px,16vh,150px); border-top:8px solid rgba(0,0,0,.25); box-shadow:0 -6px 18px rgba(0,0,0,.12)}
 .room-hero{position:absolute; top:70px; right:-30px; font-size:clamp(9rem,22vw,17rem); line-height:1; opacity:.16; transform:rotate(-8deg)}
@@ -917,3 +918,27 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .written-points .no{color:var(--ink-soft)}
 .written-review blockquote{white-space:pre-wrap; margin:8px 0; padding:8px 12px; border-left:4px solid var(--berry)}
 .written-ticks{display:grid; gap:6px; margin:8px 0}
+
+/* Word Workshop (docs: VOCAB.md) */
+.vocab-card{max-width:640px; text-align:left}
+.vocab-tabs{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:8px}
+.vocab-tabs [aria-pressed="true"]{background:var(--berry); color:#fff}
+.vocab-ask{margin:6px 0 0; font-weight:700; color:var(--ink-soft); text-align:center}
+.vocab-prompt{text-align:center; overflow-wrap:anywhere}
+.vocab-prompt:not(.long){font-size:clamp(2rem,11vw,4.2rem)}
+.vocab-prompt.long{font-size:1.35rem; line-height:1.35}
+.vocab-card .typed-fill,.vocab-card [data-vocab-hear]{margin:8px 0}
+.vocab-set{margin:12px 0 6px}
+.vocab-grid{display:flex; flex-wrap:wrap; gap:6px}
+.vocab-chip{position:relative; padding:6px 10px; border:2px solid var(--edge); border-radius:999px; color:#4A2E2A; font:inherit; font-weight:700; cursor:pointer}
+.vocab-chip .room-remove{position:static; display:inline-grid; width:20px; height:20px; margin-left:4px; font-size:.85rem; vertical-align:middle}
+.vocab-missed dt{font-weight:800; margin-top:6px}
+.vocab-missed dd{margin:0 0 0 12px}
+.vocab-grownup{max-width:640px; margin:14px auto}
+.vocab-focus{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:4px; margin:6px 0}
+.vocab-focus-set summary{cursor:pointer; font-weight:700; margin:6px 0}
+
+/* Khan review (a teacher logged a missed Khan topic) */
+.ela-exercise.review{border-left:5px solid var(--butter); padding-left:10px}
+.review-tag{display:inline-block; margin-bottom:4px; padding:2px 8px; border-radius:999px; background:var(--butter); color:#4A2E2A; font-size:.85rem; font-weight:800}
+.review-banner{padding:10px 14px; border:2px dashed var(--edge); border-radius:10px; background:color-mix(in srgb,var(--butter) 35%,var(--surface)); font-weight:700}

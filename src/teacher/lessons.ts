@@ -45,12 +45,15 @@ export function sumQuestionStats(perStudent: unknown[]): QuestionStats {
 const statKey = (q: { id: string; source: string }) => q.source === 'edited' ? `${q.id}~e` : q.id;
 
 /* ---------- Khan unit test results (roadmap step 10; saved in classes.khan_results, teacher only) ---------- */
-interface KhanEntry { date: string; score: number | null; missed: string[]; cleared?: string[] }
+/* reviewAt: when the missed topics were logged; the game shows those lessons as 🔁 Review until each is passed again after it */
+interface KhanEntry { date: string; score: number | null; missed: string[]; cleared?: string[]; reviewAt?: number }
 export interface KhanResults { passScore?: number; students?: Record<string, Record<string, KhanEntry>> }
-interface UnitTestRecord { passed?: boolean; best?: number; tries?: number; questionCount?: number }
+interface UnitTestRecord { passed?: boolean; best?: number; tries?: number; questionCount?: number; lastPassAt?: number }
 export interface RosterRow { id: string; name: string; progress: Record<string, Record<string, UnitTestRecord> | undefined> }
 /* roster: null if it couldn't be loaded. results: null when the khan_results column doesn't exist yet (migration not run). */
-export interface KhanData { roster: RosterRow[] | null; results: KhanResults | null; save: (next: KhanResults) => Promise<string | null> }
+export interface KhanData { roster: RosterRow[] | null; results: KhanResults | null; save: (next: KhanResults) => Promise<string | null>;
+  /* writes the student's review:<course>:<lesson> marks (quiz_overrides), replacing that course's old ones; null when that worked */
+  saveReviews?: (studentId: string, courseId: string, reviews: Record<string, number>) => Promise<string | null> }
 const DEFAULT_KHAN_PASS = 80;
 /* where the game keeps each course's unit test result in a student's save */
 export const UNIT_TESTS: Record<string, [string, string]> = {
@@ -62,8 +65,9 @@ export const UNIT_TESTS: Record<string, [string, string]> = {
 /* the Khan topics for a course: one per block, keyed like lesson_links ("<courseId>:<groupId>") */
 const khanTopics = (courseId: string) => (lessonLinkSlots(courseId) as LinkSlot[]).filter(slot => slot.key.split(':').length === 2);
 const openTopics = (entry?: KhanEntry) => entry ? entry.missed.filter(key => !(entry.cleared || []).includes(key)) : [];
-export function khanStatus(unit: UnitTestRecord | undefined, entry: KhanEntry | undefined, passScore: number) {
-  const open = openTopics(entry), unitPassed = !!unit?.passed;
+/* a missed topic also clears itself once every lesson in it was passed again in Pet Town after the result was logged */
+export function khanStatus(unit: UnitTestRecord | undefined, entry: KhanEntry | undefined, passScore: number, reviewedAgain: (topicKey: string) => boolean = () => false) {
+  const open = openTopics(entry).filter(key => !reviewedAgain(key)), unitPassed = !!unit?.passed;
   const khanPassed = !!entry && entry.score != null && entry.score >= passScore;
   const badge = khanPassed && !open.length ? 'passed' : open.length ? 'reteach' : unitPassed ? 'ready' : 'notyet';
   return { open, unitPassed, khanPassed, badge };
@@ -202,7 +206,11 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   const topics = khanTopics(course.id), passScore = khan?.results?.passScore ?? DEFAULT_KHAN_PASS;
   const khanFor = (studentId: string) => khan?.results?.students?.[studentId]?.[course.id];
   const [store, finalKey] = UNIT_TESTS[course.id] || ['', ''];
-  const rows = (khan?.roster || []).map(st => ({ st, unit: st.progress[store]?.[finalKey], entry: khanFor(st.id) })).map(r => ({ ...r, status: khanStatus(r.unit, r.entry, passScore) }));
+  const reviewedAgain = (st: RosterRow, entry: KhanEntry | undefined) => (key: string) => {
+    const topic = topics.find(t => t.key === key);
+    return !!entry?.reviewAt && !!topic && topic.skills.every(skill => (st.progress[store]?.[skill]?.lastPassAt || 0) > entry.reviewAt!);
+  };
+  const rows = (khan?.roster || []).map(st => ({ st, unit: st.progress[store]?.[finalKey], entry: khanFor(st.id) })).map(r => ({ ...r, status: khanStatus(r.unit, r.entry, passScore, reviewedAgain(r.st, r.entry)) }));
   const khanTopicCounts: Record<string, number> = {};
   rows.forEach(r => r.status.open.forEach(key => { khanTopicCounts[key] = (khanTopicCounts[key] || 0) + 1; }));
   const lessonTopic = topics.find(t => t.skills.includes(pick.skill));
@@ -287,7 +295,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   }
 
   function khanCardHTML() {
-    const head = `<h2>Khan unit test check</h2><p class="muted" style="margin-top:0">After a student passes the Pet Town unit test for <b>${esc(course.title)}</b>, they take the matching Khan Academy unit test. Log their score and the Khan topics they missed (topic names only). <b>Khan-ready</b> means the Pet Town unit test is passed and no missed topics are still open.</p>`;
+    const head = `<h2>Khan unit test check</h2><p class="muted" style="margin-top:0">After a student passes the Pet Town unit test for <b>${esc(course.title)}</b>, they take the matching Khan Academy unit test. Log their score and the Khan topics they missed (topic names only). <b>Khan-ready</b> means the Pet Town unit test is passed and no missed topics are still open. Missed topics send the student back to those lessons as <b>🔁 Review</b>; a topic clears itself when every practice in it is passed again (or click Retaught).</p>`;
     if (khan === undefined) return `<div class="card">${head}<p class="muted">Loading students…</p></div>`;
     if (khan.results === null) return `<div class="card">${head}<p class="err">The database needs the Khan results column first. Run <code>supabase/migrations/20261010000000_khan_results.sql</code> in Supabase, then reload this page.</p></div>`;
     if (!khan.roster) return `<div class="card">${head}<p class="err">Students could not be loaded right now.</p></div>`;
@@ -481,10 +489,17 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   /* ---- Khan unit test results ---- */
   if (khan?.results && khan.roster) {
     const results = khan.results;
-    const saveKhan = async (next: KhanResults, done: string, msgEl: HTMLElement) => {
+    /* the student's lessons to review: every practice lesson in each still-open missed topic */
+    const reviewsFor = (entry: KhanEntry | null) => {
+      const out: Record<string, number> = {};
+      if (entry?.reviewAt) for (const key of openTopics(entry)) for (const skill of topics.find(t => t.key === key)?.skills || []) out[skill] = entry.reviewAt;
+      return out;
+    };
+    const saveKhan = async (next: KhanResults, done: string, msgEl: HTMLElement, studentId?: string) => {
       const error = await khan.save(next);
       if (error) { msgEl.textContent = error; msgEl.className = 'status err'; return; }
-      flash = done; await reload();
+      const reviewError = studentId && khan.saveReviews ? await khan.saveReviews(studentId, course.id, reviewsFor(next.students?.[studentId]?.[course.id] || null)) : null;
+      flash = reviewError ? `${done} The review marks could not be sent to the student: ${reviewError}` : done; await reload();
     };
     const withEntry = (studentId: string, entry: KhanEntry | null): KhanResults => {
       const next = clone<KhanResults>(results), students = next.students || (next.students = {});
@@ -501,7 +516,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
     pane.querySelectorAll<HTMLButtonElement>('[data-kh-clear]').forEach(b => b.addEventListener('click', () => {
       const entry = clone<KhanEntry>(khanFor(b.dataset.khClear!) as KhanEntry); if (!entry.missed) return;
       entry.cleared = [...new Set([...(entry.cleared || []), b.dataset.khTopic!])];
-      void saveKhan(withEntry(b.dataset.khClear!, entry), `${topicName(b.dataset.khTopic!)} marked as retaught.`, $('#khMsg'));
+      void saveKhan(withEntry(b.dataset.khClear!, entry), `${topicName(b.dataset.khTopic!)} marked as retaught.`, $('#khMsg'), b.dataset.khClear!);
     }));
     pane.querySelectorAll<HTMLButtonElement>('[data-kh-log]').forEach(b => b.addEventListener('click', () => {
       const id = b.dataset.khLog!, st = khan.roster!.find(x => x.id === id); if (!st) return;
@@ -515,7 +530,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
         <div class="row"><button class="btn primary" id="khSave">Save result</button><button class="btn" id="khCancel">Cancel</button>${entry ? '<button class="btn" id="khRemove">Remove result</button>' : ''}<span class="status err" id="khFormMsg"></span></div></div>`;
       row.hidden = false;
       host.querySelector('#khCancel')!.addEventListener('click', () => { host.innerHTML = ''; row.hidden = true; });
-      host.querySelector('#khRemove')?.addEventListener('click', () => void saveKhan(withEntry(id, null), `Khan result removed for ${st.name}.`, host.querySelector('#khFormMsg') as HTMLElement));
+      host.querySelector('#khRemove')?.addEventListener('click', () => void saveKhan(withEntry(id, null), `Khan result removed for ${st.name}.`, host.querySelector('#khFormMsg') as HTMLElement, id));
       host.querySelector('#khSave')!.addEventListener('click', () => {
         const msg = host.querySelector('#khFormMsg') as HTMLElement;
         const date = (host.querySelector('#khDate') as HTMLInputElement).value, scoreText = (host.querySelector('#khScore') as HTMLInputElement).value.trim();
@@ -524,7 +539,8 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
         if (score !== null && !(score >= 0 && score <= 100)) { msg.textContent = 'The score is a percent from 0 to 100.'; return; }
         const missed = [...host.querySelectorAll<HTMLInputElement>('[data-kh-topic-pick]')].filter(x => x.checked).map(x => x.dataset.khTopicPick!);
         if (score === null && !missed.length) { msg.textContent = 'Enter the score, the missed topics, or both.'; return; }
-        void saveKhan(withEntry(id, { date, score, missed }), `Khan result saved for ${st.name}.`, msg);
+        const reviewAt = missed.length ? Date.now() : undefined;
+        void saveKhan(withEntry(id, { date, score, missed, ...(reviewAt ? { reviewAt } : {}) }), `Khan result saved for ${st.name}.${missed.length ? ' The lessons in the missed topics show as 🔁 Review in Pet Town until the student passes each practice again.' : ''}`, msg, id);
       });
     }));
   }
