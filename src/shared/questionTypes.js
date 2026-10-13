@@ -147,13 +147,67 @@ export function typedProblems(question){
   return p;
 }
 
-/* One lesson's typed questions with ids, minus the ones this class hid (question_edits.hidden). */
-export function typedQuestions(courseId, skillId, list, edits, { includeHidden = false } = {}){
+/* One lesson's typed questions with ids, minus the ones this class hid (question_edits.hidden), plus the teacher's own
+   (question_edits.addedTyped["<course>:<lesson>"] = [{id, status:'draft'|'approved', q:{…a question in the shapes above}}]).
+   Students only get approved ones; the teacher app passes includeHidden and includeDrafts. */
+export function typedQuestions(courseId, skillId, list, edits, { includeHidden = false, includeDrafts = false } = {}){
   const hidden = new Set(Array.isArray(edits?.hidden) ? edits.hidden : []);
-  return (list || []).filter(question => !typedProblems(question).length).map(question => {
+  const builtIn = (list || []).filter(question => !typedProblems(question).length).map(question => {
     const id = typedQuestionId(courseId, skillId, question);
     return { ...question, id, source: 'built-in', hidden: hidden.has(id), skillId };
   }).filter(question => includeHidden || !question.hidden);
+  const mine = edits?.addedTyped && typeof edits.addedTyped === 'object' ? edits.addedTyped[`${courseId}:${skillId}`] : null;
+  const teacher = (Array.isArray(mine) ? mine : []).filter(entry => entry && typeof entry.id === 'string' && entry.q && typeof entry.q === 'object' && !typedProblems(entry.q).length
+    && typeOf(entry.q) !== 'mc' && typeOf(entry.q) !== 'essay' && (entry.status === 'approved' || includeDrafts))
+    .map(entry => ({ ...entry.q, id: entry.id, source: 'teacher', status: entry.status, hidden: false, skillId }));
+  return [...builtIn, ...teacher];
+}
+
+/* ---------- teacher Copy prompt and Import for these types (docs: QUESTION-TYPES.md) ---------- */
+export const TYPED_IMPORT_LIMIT = 12;
+/** @param {{course: string, lesson: string, existing?: string[], count?: number}} info */
+export function buildTypedPrompt({ course, lesson, existing = [], count = 6 }){
+  return [
+    `Write ${count} new questions for 4th to 6th grade students, using the question types below. Mix the types, and make one of them a short answer.`,
+    '', `Course: ${course}`, `Lesson: ${lesson}`, '',
+    'Rules:',
+    '- Every question tests this lesson. Give each a level: 1 (easier), 2 (medium) or 3 (harder). About 2 in 5 should be level 3.',
+    '- Wrong choices must be believable to a student who has not mastered the lesson, never silly. The right choice is not always the longest.',
+    '- Write for a 6th grade reader: prompts under 40 words, choices under 120 characters. Use curly apostrophes (’).',
+    '- Do not repeat or reword the existing questions listed below.',
+    '- Before you reply, answer every question yourself and fix any with a wrong key or two right answers.',
+    '',
+    'Question types (exact JSON shapes; "answers" and "answer" count from 0):',
+    '  Select all that apply: {"type": "multi", "prompt": "…", "options": ["…", "…", "…", "…"], "answers": [0, 2], "level": 2}   (4 to 6 options, at least 2 right, at least 1 wrong)',
+    '  Two-part (claim, then evidence): {"type": "two", "prompt": "…", "options": ["…", "…", "…"], "answer": 1, "partB": {"prompt": "Which evidence supports your answer?", "options": ["…", "…", "…"], "answer": 0}, "level": 3}',
+    '  Put in order: {"type": "order", "prompt": "Put these in order, first to last.", "items": ["first", "second", "third", "fourth"], "level": 2}   (3 to 6 items, listed in the right order)',
+    '  Type the answer: {"type": "fill", "prompt": "…", "accept": ["best answer", "another accepted spelling"], "level": 1}   (one or two words)',
+    '  Sort into groups: {"type": "sort", "prompt": "…", "groups": ["Group A", "Group B"], "items": [["item", 0], ["item", 1], ["item", 0], ["item", 1]], "level": 2}   (2 or 3 groups, 4 to 8 items)',
+    '  Tap the words: {"type": "pick", "prompt": "Tap every noun.", "sentence": "The dog chased a ball.", "answers": [1, 4], "level": 1}   (answers are word positions; punctuation stays on its word)',
+    '  Short answer, read by a grown-up: {"type": "short", "prompt": "…", "rubric": ["point a strong answer makes", "another point"], "model": "a model answer", "minWords": 15}',
+    '',
+    `Existing questions (${existing.length}):`, ...existing.map((q, i) => `${i + 1}. ${q}`), '',
+    'Reply with only a JSON array of the questions, and no other text.'
+  ].join('\n');
+}
+/* A pasted chatbot reply: a JSON array (extra text or a code fence around it is fine). Returns the questions that pass
+   typedProblems and why any were skipped. "level" becomes difficulty. Multiple choice and paragraphs aren't imported here. */
+export function parseTypedImport(text){
+  const raw = String(text || ''), start = raw.indexOf('['), end = raw.lastIndexOf(']'), items = [], errors = [];
+  if (start < 0 || end <= start) return { items, errors: ['No JSON list found. Paste the chatbot’s reply, starting with ['] };
+  let list; try { list = JSON.parse(raw.slice(start, end + 1)); } catch { return { items, errors: ['That reply couldn’t be read as JSON. Ask the chatbot to reply with only the JSON array.'] }; }
+  if (!Array.isArray(list)) return { items, errors: ['Expected a list of questions.'] };
+  list.forEach((item, i) => {
+    if (!item || typeof item !== 'object') { errors.push(`Question ${i + 1} skipped: not a question.`); return; }
+    const { level, ...rest } = item, q = { ...rest, ...(level != null && rest.difficulty == null ? { difficulty: Number(level) } : {}) };
+    const type = typeOf(q);
+    if (type === 'mc' || type === 'essay') { errors.push(`Question ${i + 1} skipped: use the multiple-choice Import for multiple choice; paragraphs are built in.`); return; }
+    if (String(q.prompt || '').length > 400) { errors.push(`Question ${i + 1} skipped: the prompt is too long.`); return; }
+    const problems = typedProblems(q);
+    if (problems.length) { errors.push(`Question ${i + 1} skipped: ${problems.join(', ')}.`); return; }
+    items.push(q);
+  });
+  return { items, errors };
 }
 
 /* ---------- written answers and their review ----------

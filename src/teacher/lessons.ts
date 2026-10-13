@@ -5,14 +5,17 @@
    Everything is saved on the class (classes.lesson_links, classes.question_edits); students get it through my_student(). */
 import { esc } from './report';
 import { lessonVideo, youtubeId } from '../shared/lessonVideos';
-import { typedQuestions, typeOf, isWritten, answerText, TYPE_LABELS } from '../shared/questionTypes';
+import { typedQuestions, typeOf, isWritten, answerText, TYPE_LABELS, buildTypedPrompt, parseTypedImport, TYPED_IMPORT_LIMIT } from '../shared/questionTypes';
+import { SHOPS } from '../shared/registry';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { LESSON_COURSES, builtInBank, lessonLinkSlots, khanSearchUrl, validLessonLink, validQuestion, applyQuestionEdits, QUESTION_LIMITS } from '../shared/questionBanks';
 
 export interface LessonLink { url: string; title?: string; note?: string; showKhan?: boolean }
 interface QuestionText { prompt: string; options: string[]; difficulty?: number }
 interface TeacherQuestion extends QuestionText { id: string; status: 'approved' | 'draft' }
-export interface QuestionEdits { hidden?: string[]; edited?: Record<string, QuestionText>; added?: Record<string, TeacherQuestion[]> }
+/* addedTyped: the teacher's own questions of the newer types, by "<course>:<lesson>" (math: "math:<shop>:<station>"), docs: QUESTION-TYPES.md */
+interface TeacherTyped { id: string; status: 'approved' | 'draft'; q: Record<string, unknown> }
+export interface QuestionEdits { hidden?: string[]; edited?: Record<string, QuestionText>; added?: Record<string, TeacherQuestion[]>; addedTyped?: Record<string, TeacherTyped[]> }
 export interface LessonClass { id: string; name: string; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; game_settings?: { khan?: unknown; [key: string]: unknown } | null }
 /* saves columns on one class and returns an error message, or null when it worked */
 type SaveClass = (classId: string, patch: { lesson_links?: Record<string, LessonLink>; question_edits?: QuestionEdits }) => Promise<string | null>;
@@ -76,7 +79,12 @@ const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 
 const COURSES = LESSON_COURSES as unknown as Course[];
 const MIN_QUESTIONS = 4;
-const pick = { course: COURSES[0].id, skill: COURSES[0].skills[0].id, slot: '' };
+const pick = { course: COURSES[0].id, skill: COURSES[0].skills[0].id, slot: '', math: '' };
+/* math Think it through stations that have questions, with their names ("cafe:1" → "🐾 Pet Café · Station 1: …") */
+const MATH_STATIONS = Object.keys((TYPED_QUESTIONS as Record<string, Record<string, unknown[]>>).math || {}).map(key => {
+  const [shopId, n] = key.split(':'), shop = (SHOPS as Record<string, { emoji: string; name: string; stations: { id: number; name: string }[] }>)[shopId];
+  return { key, name: shop ? `${shop.emoji} ${shop.name} · Station ${n}: ${shop.stations.find(st => st.id === +n)?.name || ''}` : key };
+});
 let flash = '';   // message shown once after a save reloads the page
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value ?? {})) as T;
@@ -275,24 +283,42 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
       }).join('')}
       </tbody></table>
     </div>
-    ${typedCardHTML()}
+    ${typedCardHTML(course.id, pick.skill, true)}
+    ${mathCardHTML()}
     ${khanCardHTML()}`;
 
   /* the built-in questions of the newer types for this lesson, and the unit test's paragraph (docs: QUESTION-TYPES.md) */
-  function typedCardHTML() {
-    type Typed = { id: string; type?: string; prompt: string; hidden: boolean; difficulty?: number; rubric?: string[]; partB?: { prompt: string }; sentence?: string };
-    const edits = cls.question_edits || {};
-    const lesson = typedQuestions(course.id, pick.skill, (TYPED_QUESTIONS as Record<string, Record<string, unknown[]>>)[course.id]?.[pick.skill], edits, { includeHidden: true }) as Typed[];
-    const essay = (UNIT_ESSAYS as Record<string, unknown>)[course.id] ? typedQuestions(course.id, 'unit-test', [(UNIT_ESSAYS as Record<string, unknown>)[course.id]], edits, { includeHidden: true }) as Typed[] : [];
+  function typedCardHTML(courseId: string, skillId: string, withEssay: boolean) {
+    type Typed = { id: string; type?: string; prompt: string; hidden: boolean; difficulty?: number; rubric?: string[]; partB?: { prompt: string }; sentence?: string; source?: string; status?: string };
+    const edits = cls.question_edits || {}, key = `${courseId}:${skillId}`;
+    const lesson = typedQuestions(courseId, skillId, (TYPED_QUESTIONS as Record<string, Record<string, unknown[]>>)[courseId]?.[skillId], edits, { includeHidden: true, includeDrafts: true }) as Typed[];
+    const essay = withEssay && (UNIT_ESSAYS as Record<string, unknown>)[courseId] ? typedQuestions(courseId, 'unit-test', [(UNIT_ESSAYS as Record<string, unknown>)[courseId]], edits, { includeHidden: true }) as Typed[] : [];
     const label = (q: Typed) => (TYPE_LABELS as Record<string, string>)[typeOf(q)] || 'Question';
     const row = (q: Typed, where: string) => {
       const [answered, missed] = stats?.byId[q.id] || [0, 0];
       const shown = isWritten(q) ? `<span class="muted">A grown-up checks: ${(q.rubric || []).map(esc).join(' · ')}</span>` : `<b>${esc(answerText(q))}</b>`;
-      return `<tr${q.hidden ? ' style="opacity:.5"' : ''}><td><span class="tag i">${esc(label(q))}</span> <span class="muted">${esc(where)}</span><br>${esc(q.prompt)}${q.sentence ? `<br><i>${esc(q.sentence)}</i>` : ''}${q.partB ? `<br><span class="muted">Part B: ${esc(q.partB.prompt)}</span>` : ''}<br>${shown}</td><td>${q.difficulty || '–'}</td><td style="white-space:nowrap">${isWritten(q) || !stats ? '–' : answered ? `${missed} of ${answered}` : '<span class="muted">no answers yet</span>'}</td><td style="text-align:right; white-space:nowrap">${q.hidden ? `<button class="btn small" data-q-restore="${esc(q.id)}">Restore</button>` : `<button class="btn small" data-tq-hide="${esc(q.id)}">Hide</button>`}</td></tr>`;
+      return `<tr${q.hidden ? ' style="opacity:.5"' : ''}><td><span class="tag i">${esc(label(q))}</span> <span class="muted">${esc(where)}</span><br>${esc(q.prompt)}${q.sentence ? `<br><i>${esc(q.sentence)}</i>` : ''}${q.partB ? `<br><span class="muted">Part B: ${esc(q.partB.prompt)}</span>` : ''}<br>${shown}</td><td>${q.difficulty || '–'}</td><td style="white-space:nowrap">${isWritten(q) || !stats ? '–' : answered ? `${missed} of ${answered}` : '<span class="muted">no answers yet</span>'}</td><td style="text-align:right; white-space:nowrap">${q.status === 'draft' ? `<button class="btn small primary" data-tq-approve="${esc(q.id)}" data-tq-key="${esc(key)}">Approve</button> <button class="btn small" data-tq-reject="${esc(q.id)}" data-tq-key="${esc(key)}">Reject</button>`
+        : q.source === 'teacher' ? `<button class="btn small" data-tq-reject="${esc(q.id)}" data-tq-key="${esc(key)}">Delete</button>`
+        : q.hidden ? `<button class="btn small" data-q-restore="${esc(q.id)}">Restore</button>` : `<button class="btn small" data-tq-hide="${esc(q.id)}">Hide</button>`}</td></tr>`;
     };
-    if (!lesson.length && !essay.length) return '';
-    return `<div class="card"><h2>More question types</h2><p class="muted" style="margin-top:0">Built-in select-all, two-part, put-in-order, type-the-answer, sort, and tap-the-words questions mix into practice, quizzes and the unit test. The short answer comes once at the end of this lesson's practice; the paragraph ends the unit test. A grown-up reads both (Dashboard → a student → ✍️ Written). Hide any you don't want.</p>
-      <table class="steptable"><thead><tr><th>Question</th><th>Level</th><th>Missed</th><th></th></tr></thead><tbody>${lesson.map(q => row(q, 'this lesson')).join('')}${essay.map(q => row(q, 'unit test, every student')).join('')}</tbody></table></div>`;
+    const tools = `<div class="row" style="margin-top:8px"><button class="btn small" data-tq-prompt="${esc(key)}">Copy prompt for these types</button><button class="btn small" data-tq-import-open="${esc(key)}">Import questions of these types</button><span class="status" data-tq-msg="${esc(key)}"></span></div>
+      <div data-tq-prompt-box="${esc(key)}" hidden><p class="muted">Paste this into Claude, ChatGPT or any chatbot, then bring the reply back with <b>Import</b>.</p><textarea readonly style="width:100%; min-height:140px; font-family:inherit; font-size:.85rem"></textarea></div>
+      <div data-tq-import="${esc(key)}" hidden><p class="muted" style="margin-top:0">Paste the chatbot's reply (a JSON list). Up to ${TYPED_IMPORT_LIMIT} at a time. They come in as <b>drafts</b>: students don't see one until you approve it.</p>
+        <textarea style="width:100%; min-height:110px; font-family:inherit; font-size:.85rem" placeholder='[{"type": "fill", "prompt": "…", "accept": ["…"], "level": 1}]'></textarea>
+        <div class="row"><button class="btn primary" data-tq-import-go="${esc(key)}">Import as drafts</button></div><p class="status err" data-tq-import-msg="${esc(key)}"></p></div>`;
+    const drafts = lesson.filter(q => q.status === 'draft').length;
+    if (courseId === 'math') return `<table class="steptable"><thead><tr><th>Question</th><th>Level</th><th>Missed</th><th></th></tr></thead><tbody>${lesson.map(q => row(q, q.source === 'teacher' ? (q.status === 'draft' ? 'draft' : 'yours') : 'this station')).join('')}</tbody></table>${drafts ? `<p><b>${drafts}</b> draft${drafts === 1 ? '' : 's'} waiting: Approve or Reject each one.</p>` : ''}${tools}`;
+    return `<div class="card"><h2>More question types</h2><p class="muted" style="margin-top:0">Built-in select-all, two-part, put-in-order, type-the-answer, sort, and tap-the-words questions mix into practice, quizzes and the unit test. The short answer comes once at the end of this lesson's practice; the paragraph ends the unit test. A grown-up reads both (Dashboard → a student → ✍️ Written). Hide any you don't want, or add your own with <b>Copy prompt for these types</b> and <b>Import</b>; yours come in as drafts until you approve them.</p>
+      <table class="steptable"><thead><tr><th>Question</th><th>Level</th><th>Missed</th><th></th></tr></thead><tbody>${lesson.map(q => row(q, q.source === 'teacher' ? (q.status === 'draft' ? 'draft' : 'yours') : 'this lesson')).join('')}${essay.map(q => row(q, 'unit test, every student')).join('')}</tbody></table>${drafts ? `<p><b>${drafts}</b> draft${drafts === 1 ? '' : 's'} waiting: Approve or Reject each one.</p>` : ''}${tools}</div>`;
+  }
+
+  /* math 🧠 Think it through, station by station: hide or restore built-in questions, add your own (docs: QUESTION-TYPES.md) */
+  function mathCardHTML() {
+    if (!MATH_STATIONS.length) return '';
+    if (!MATH_STATIONS.some(st => st.key === pick.math)) pick.math = MATH_STATIONS[0].key;
+    return `<div class="card"><h2>🧮 Math: Think it through</h2><p class="muted" style="margin-top:0">Each math station's 🧠 Think it through set: 2 scored questions of the newer types, then an explain-your-thinking answer a grown-up reads. Changes apply to <b>${esc(cls.name)}</b>.</p>
+      <label for="lqMathStation">Station</label><select id="lqMathStation">${MATH_STATIONS.map(st => `<option value="${esc(st.key)}" ${st.key === pick.math ? 'selected' : ''}>${esc(st.name)}</option>`).join('')}</select>
+      ${typedCardHTML('math', pick.math, false)}</div>`;
   }
 
   function khanCardHTML() {
@@ -406,6 +432,47 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   pane.querySelectorAll<HTMLButtonElement>('[data-tq-hide]').forEach(b => b.addEventListener('click', () => {
     const next = edits(); next.hidden = [...new Set([...(next.hidden || []), b.dataset.tqHide!])];
     void saveEdits(next, 'Question hidden. Restore brings it back.');
+  }));
+  /* the teacher's own questions of the newer types: Copy prompt, Import as drafts, Approve, Reject or Delete */
+  pane.querySelector('#lqMathStation')?.addEventListener('change', e => { pick.math = (e.target as HTMLSelectElement).value; renderLessons(pane, cls, others, save, reload, stats, khan); });
+  const tqBox = (attr: string, key: string) => pane.querySelector(`[${attr}="${CSS.escape(key)}"]`) as HTMLElement;
+  const tqSplit = (key: string) => { const i = key.indexOf(':'); return [key.slice(0, i), key.slice(i + 1)]; };
+  const tqList = (key: string) => { const [c, sk] = tqSplit(key); return typedQuestions(c, sk, (TYPED_QUESTIONS as Record<string, Record<string, unknown[]>>)[c]?.[sk], cls.question_edits || {}, { includeHidden: true, includeDrafts: true }) as { prompt: string }[]; };
+  pane.querySelectorAll<HTMLButtonElement>('[data-tq-prompt]').forEach(b => b.addEventListener('click', async () => {
+    const key = b.dataset.tqPrompt!, [c, sk] = tqSplit(key);
+    const where = c === 'math' ? { course: 'Math', lesson: MATH_STATIONS.find(st => st.key === sk)?.name || sk } : { course: COURSES.find(x => x.id === c)?.title || c, lesson: COURSES.find(x => x.id === c)?.skills.find(x => x.id === sk)?.name || sk };
+    const text = buildTypedPrompt({ ...where, existing: tqList(key).map(q => q.prompt) });
+    const box = tqBox('data-tq-prompt-box', key), area = box.querySelector('textarea') as HTMLTextAreaElement, msg = tqBox('data-tq-msg', key);
+    area.value = text; box.hidden = false;
+    try { await navigator.clipboard.writeText(text); msg.textContent = 'Prompt copied. Paste it into any chatbot.'; } catch { area.focus(); area.select(); msg.textContent = 'Select the prompt below and copy it.'; }
+  }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-tq-import-open]').forEach(b => b.addEventListener('click', () => { const box = tqBox('data-tq-import', b.dataset.tqImportOpen!); box.hidden = false; (box.querySelector('textarea') as HTMLTextAreaElement).focus(); }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-tq-import-go]').forEach(b => b.addEventListener('click', async () => {
+    const key = b.dataset.tqImportGo!, msg = tqBox('data-tq-import-msg', key);
+    const { items, errors } = parseTypedImport((tqBox('data-tq-import', key).querySelector('textarea') as HTMLTextAreaElement).value) as { items: Record<string, unknown>[]; errors: string[] };
+    if (!items.length) { msg.textContent = errors.join(' ') || 'No questions found.'; return; }
+    if (items.length > TYPED_IMPORT_LIMIT) { msg.textContent = `That is ${items.length} questions. Import up to ${TYPED_IMPORT_LIMIT} at a time.`; return; }
+    const known = new Set(tqList(key).map(q => norm(q.prompt))), skipped = [...errors], added: TeacherTyped[] = [];
+    items.forEach((q, i) => {
+      if (known.has(norm(String(q.prompt)))) { skipped.push(`Question ${i + 1} skipped: the lesson already has that question.`); return; }
+      known.add(norm(String(q.prompt)));
+      added.push({ id: `tt-${Date.now().toString(36)}${i.toString(36)}${Math.random().toString(36).slice(2, 6)}`, status: 'draft', q });
+    });
+    if (!added.length) { msg.textContent = skipped.join(' '); return; }
+    const next = edits(); next.addedTyped = { ...(next.addedTyped || {}), [key]: [...(next.addedTyped?.[key] || []), ...added] };
+    const error = await save(cls.id, { question_edits: next });
+    if (error) { msg.textContent = error; return; }
+    flash = `${added.length} question${added.length === 1 ? '' : 's'} imported as drafts.${skipped.length ? ` ${skipped.join(' ')}` : ''}`; await reload();
+  }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-tq-approve]').forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.tqKey!, next = edits();
+    next.addedTyped = { ...(next.addedTyped || {}), [key]: (next.addedTyped?.[key] || []).map(q => q.id === b.dataset.tqApprove ? { ...q, status: 'approved' as const } : q) };
+    void saveEdits(next, 'Question approved. Students see it now.');
+  }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-tq-reject]').forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.tqKey!, next = edits();
+    next.addedTyped = { ...(next.addedTyped || {}), [key]: (next.addedTyped?.[key] || []).filter(q => q.id !== b.dataset.tqReject) };
+    void saveEdits(next, 'Question removed.');
   }));
   pane.querySelectorAll<HTMLButtonElement>('[data-q-restore]').forEach(b => b.addEventListener('click', () => {
     const next = edits(); next.hidden = (next.hidden || []).filter(id => id !== b.dataset.qRestore);
@@ -585,5 +652,12 @@ export function mergeCourse(courseId: string, from: LessonClass, into: LessonCla
     list.forEach(q => byId.set(q.id, q));
     added[key] = [...byId.values()];
   });
-  return { lesson_links, question_edits: { ...dst, hidden, edited, added } };
+  const addedTyped = { ...(dst.addedTyped || {}) };   // the teacher's own questions of the newer types, the same way
+  Object.entries(src.addedTyped || {}).forEach(([key, list]) => {
+    if (!mine(key)) return;
+    const byId = new Map((addedTyped[key] || []).map(q => [q.id, q]));
+    list.forEach(q => byId.set(q.id, q));
+    addedTyped[key] = [...byId.values()];
+  });
+  return { lesson_links, question_edits: { ...dst, hidden, edited, added, addedTyped } };
 }

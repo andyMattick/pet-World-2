@@ -48,7 +48,7 @@ Add entries to `TYPED_QUESTIONS` in the shapes listed at the top of `questionTyp
 
 ## Math: Think it through
 
-Every math station that has skills (52 stations, grades 4 and 6) has a **🧠 Think it through** button under "Open for business" once the station is open. It runs a short set of 2 scored questions of the newer types (select all, two-part, sort, put in order, type the answer), then one "explain your thinking" short answer for a grown-up to read, the same way English practice does. It stays in the shop and doesn't gate anything; stations still open through orders and quizzes. Results are kept in the save as `mathThink["<shop>:<station>"]`. Written answers appear under "✍️ My written answers" on the shop page, in the teacher's ✍️ Written tab, and in the parent check. Math questions are keyed by station in `TYPED_QUESTIONS.math`, for example `"cafe:1"`. Teachers can't hide them from Lessons & questions yet, because that tab lists only the English, History and Biology courses.
+Every math station that has skills (52 stations, grades 4 and 6) has a **🧠 Think it through** button under "Open for business" once the station is open. It runs a short set of 2 scored questions of the newer types (select all, two-part, sort, put in order, type the answer), then one "explain your thinking" short answer for a grown-up to read, the same way English practice does. It stays in the shop and doesn't gate anything; stations still open through orders and quizzes. Results are kept in the save as `mathThink["<shop>:<station>"]`. Written answers appear under "✍️ My written answers" on the shop page, in the teacher's ✍️ Written tab, and in the parent check. Math questions are keyed by station in `TYPED_QUESTIONS.math`, for example `"cafe:1"`. In the teacher app, Lessons & questions → **🧮 Math: Think it through** lists every station's questions, where you can hide, restore or add your own.
 
 ## What's included now
 
@@ -56,7 +56,18 @@ Every math station that has skills (52 stations, grades 4 and 6) has a **🧠 Th
 - **All 7 units:** a unit-test paragraph.
 - **Math:** 52 stations, each with 2 scored questions and 1 explain-your-thinking answer (156 questions).
 
-Next units follow the same pattern. Teacher Copy prompt and Import still bring in multiple choice only.
+Next units follow the same pattern.
+
+## Teachers adding their own
+
+In Lessons & questions, the **More question types** card (each lesson) and the **🧮 Math: Think it through** card (each station) have two buttons:
+
+- **Copy prompt for these types:** copies a prompt for any chatbot. It asks for a mix of the types above plus one short answer, gives the exact JSON shapes, follows the content rules, and lists the questions the lesson already has.
+- **Import questions of these types:** paste the chatbot's reply, up to 12 questions at a time. Each one is checked with `typedProblems`. Broken ones are skipped with the reason, and so is any question the lesson already has.
+
+Imported questions are **drafts** until the teacher taps **Approve**. **Reject** or **Delete** removes one.
+
+They're saved per class in `question_edits.addedTyped["<course>:<lesson>"]` (math: `"math:<shop>:<station>"`), so there's no migration, and **Copy to my other classes** copies them too. The game mixes approved ones in with the built-in questions (`typedQuestions`). Multiple choice still goes through the regular Import, and the unit-test paragraph is built in.
 
 ## Read-the-picture questions (math)
 
