@@ -104,3 +104,16 @@ Commit: `Verify covers practice time`
 5. Offline play keeps the seconds and sends them later. The database accepts at most 90 seconds per report, so long offline stretches are only partly counted.
 6. Local mode shows practice time in the progress report.
 7. `npm run verify`, `npm run typecheck`, and `npm run build` pass, with no red Console errors.
+
+## Two devices
+
+A student's town is one saved record, so two devices could save over each other. Pet Town merges instead:
+
+- **When a town opens** (`enterAs`), it loads the newer save. Then `mergeWork` and `mergeProgress` bring in what the other copy has:
+  - **Work:** projects, Reading Log chapters, written answers, and flagged and looked-up words.
+  - **Practice time:** every session from both copies (the last 30).
+  - **Arcade minutes:** the larger amount for each day.
+  - **Progress:** lessons, quizzes and tests, math skills and stations, Word Workshop answers, question tallies, and videos watched. For each one it keeps the side that has done more, and a pass on either device counts.
+- **When a town left open comes back on screen,** or any screen refreshes the class settings, the game asks the server whether another device has saved since (`Backend.onRemoteSave`). If one has, it merges that save in before saving again, and shows "Brought in your work from your other device."
+- **Not merged:** coins, tickets and stickers, so nothing can be spent twice.
+- **Teacher reset:** a reset is never merged over. It's handled at the next sign-in, as before.

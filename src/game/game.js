@@ -8552,8 +8552,9 @@ function startTownTracker(){ localSession = null; townTracker.start(); }
    could be lost (a draft saved on a tablet that went to sleep before it reached the server, then the town opened on
    another computer). After picking the newer save, mergeWork() brings in the student's own work from the other one:
    projects and Reading Log chapters (the newer edit wins; with no edit times, the one with more written wins), books,
-   reading quizzes, written answers, and flagged words. Returns how many pieces it brought in. Practice counts aren't merged. */
+   reading quizzes, written answers, and flagged words. Then mergeProgress() brings in practice: time, arcade minutes, and progress. Returns how many pieces it brought in. */
 function mergeWork(base, other){
+  other = normalize(other);   // a brand-new device's town is a bare fresh() without the newer fields; the caller passes a normalized base
   let n = 0;
   const filled = obj => Object.values(obj || {}).filter(v => typeof v === 'string' && v.trim()).length;
   const newer = (a, b, text) => (a.updatedAt || 0) !== (b.updatedAt || 0) ? (a.updatedAt || 0) > (b.updatedAt || 0)
@@ -8581,8 +8582,59 @@ function mergeWork(base, other){
   base.writtenAnswers.sort((a, b) => a.at - b.at);
   for (const f of other.vocab?.flagged || []) if (!base.vocab.flagged.some(x => x.w === f.w)) { base.vocab.flagged = [...base.vocab.flagged, f].slice(-60); n++; }
   for (const f of other.vocab?.lookedUp || []) if (!base.vocab.lookedUp.some(x => x.w === f.w)) { base.vocab.lookedUp = [...base.vocab.lookedUp, f].slice(-60); n++; }
+  n += mergeProgress(base, other);
   return n;
 }
+/* Practice from the other device (docs: PRACTICE-TIME.md). Counts can't simply be added, because both saves share their
+   history, so for each lesson, skill, word or day it keeps the side that has done more, and never loses a pass:
+   - practice sessions (the progress report's Practice time): every session from both, the last 30
+   - arcade minutes earned per day: the larger
+   - English, History and Biology lessons, quizzes and tests: the record with more answers or tries; passed if either passed; the best score
+   - math skills (attempts, recent results, step stats) and station progress: the side with more attempts
+   - Word Workshop answers, question tallies, lesson videos watched: the longer history
+   Coins, tickets and stickers aren't merged, so nothing can be spent twice. */
+function mergeProgress(base, other){
+  let n = 0;
+  const done = r => (r?.answered || 0) + (r?.tries || 0);
+  const mergeRec = (a, b) => {
+    if (!a) return b; if (!b) return a;
+    const out = {...(done(b) > done(a) ? b : a)};
+    if (a.passed || b.passed) out.passed = true;
+    for (const k of ['best', 'lastPassAt', 'lastAt']) { const v = Math.max(Number.isFinite(a[k]) ? a[k] : -Infinity, Number.isFinite(b[k]) ? b[k] : -Infinity); if (Number.isFinite(v)) out[k] = v; }
+    return out;
+  };
+  const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  for (const store of ['elaProgress', 'historyProgress', 'scienceProgress', 'quizzes']) {
+    base[store] = base[store] || {};
+    for (const [key, rec] of Object.entries(other[store] || {})) { const merged = mergeRec(base[store][key], rec); if (!same(merged, base[store][key])) { base[store][key] = merged; n++; } }
+  }
+  const sessions = new Map(base.sessions.map(x => [Math.round(x.start / 1000), x]));
+  for (const x of other.sessions || []) {
+    const key = Math.round(x.start / 1000), mine = sessions.get(key);
+    if (!mine) { sessions.set(key, x); n++; } else if (x.active > mine.active) { sessions.set(key, {...mine, end:Math.max(mine.end || 0, x.end || 0), active:x.active}); n++; }
+  }
+  base.sessions = [...sessions.values()].sort((a, b) => a.start - b.start).slice(-30);
+  for (const [day, mins] of Object.entries(other.mathMinutes || {})) if ((Number(mins) || 0) > (Number(base.mathMinutes[day]) || 0)) { base.mathMinutes[day] = mins; n++; }
+  for (const [sk, count] of Object.entries(other.kn || {})) if (count > (base.kn[sk] || 0)) {
+    base.kn[sk] = count; if (other.kr?.[sk] != null) base.kr[sk] = other.kr[sk]; if (other.ks?.[sk]) base.ks[sk] = other.ks[sk]; n++;
+  }
+  Object.values(SHOPS).forEach(shop => {
+    const mine = base[shop.id]?.st, theirs = other[shop.id]?.st; if (!mine || !theirs) return;
+    for (const [st, count] of Object.entries(theirs)) if ((Number(count) || 0) > (Number(mine[st]) || 0)) { mine[st] = count; n++; }
+  });
+  for (const [w, stat] of Object.entries(other.vocab?.stats || {})) if ((stat?.r?.length || 0) > (base.vocab.stats[w]?.r?.length || 0)) { base.vocab.stats[w] = stat; n++; }
+  for (const [id, v] of Object.entries(other.questionStats || {})) if (Array.isArray(v) && v[0] > (base.questionStats[id]?.[0] || 0)) { base.questionStats[id] = v; n++; }
+  for (const [key, day] of Object.entries(other.videosWatched || {})) if (!base.videosWatched[key]) { base.videosWatched[key] = day; n++; }
+  return n;
+}
+/* a town left open on another device: when it comes back on screen (or any screen refreshes settings), a newer save from
+   another device is merged in before this one saves again, so neither device's work or practice time is lost */
+Backend.onRemoteSave = remote => {
+  if (!Backend.me || (Backend.me.reset_at && Backend.me.reset_at !== S.resetSeen)) return;   // a teacher reset is handled on the next sign-in, never merged over
+  const brought = mergeWork(S, normalize(remote));
+  if (brought) { save(); toast('Brought in your work from your other device.'); if (!$('#scr-home').hidden) renderHome(); }
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Backend.me) void Backend.refreshSettings(); });
 function enterAs(me){
   viewHood = null; viewSubject = null;
   storeKey = 'pettown:v1:' + me.student_id;
@@ -8592,7 +8644,7 @@ function enterAs(me){
   if (resetAt && Number.isFinite(resetMs) && (local.savedAt || 0) < resetMs) resetTown(resetAt);
   else {
     const remoteNewer = !!remote && (remote.savedAt || 0) > (local.savedAt || 0);
-    S = remoteNewer ? normalize(remote) : local;
+    S = remoteNewer ? normalize(remote) : normalize(local);   // normalized either way, so mergeWork always has every field
     if (remote) mergeWork(S, remoteNewer ? local : normalize(remote));   // keep work saved on either device (see mergeWork)
     S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
   }

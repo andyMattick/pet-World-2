@@ -87,6 +87,10 @@ class StudentBackend {
   private pendingState: Record<string, unknown> | null = null;
   private sessionId: number | null = null;
   private tracker: ActivityTracker | null = null;
+  /** saved_at of the newest save this device has loaded or written; a newer one on the server came from another device */
+  private lastSyncedAt = 0;
+  /** set by the game: merges a newer save from another device into the open town (docs: PRACTICE-TIME.md, "Two devices") */
+  onRemoteSave: ((state: Record<string, unknown>) => void) | null = null;
 
   get enabled() { return !!this.sb; }
 
@@ -106,6 +110,7 @@ class StudentBackend {
     const { data, error } = await this.sb.rpc('my_student');
     if (error || !data) return null;
     this.me = data as StudentInfo;
+    this.lastSyncedAt = this.me.saved_at ? Date.parse(this.me.saved_at) || 0 : 0;
     this.loadQueue();
     return this.me;
   }
@@ -144,6 +149,8 @@ class StudentBackend {
     this.me.question_edits = next.question_edits;
     this.me.min_station = next.min_station;
     this.me.reset_at = next.reset_at;
+    const remoteAt = next.saved_at ? Date.parse(next.saved_at) || 0 : 0;
+    if (next.state && remoteAt > this.lastSyncedAt) { this.lastSyncedAt = remoteAt; this.onRemoteSave?.(next.state); }   // another device saved since this one last loaded or saved
   }
 
   /**
@@ -211,6 +218,7 @@ class StudentBackend {
     const state = this.pendingState; this.pendingState = null;
     const savedAt = typeof state.savedAt === 'number' ? new Date(state.savedAt) : new Date();
     const { error } = await this.sb.from('saves').upsert({ student_id: this.me.student_id, state, saved_at: savedAt.toISOString() });
+    if (!error) this.lastSyncedAt = Math.max(this.lastSyncedAt, savedAt.getTime());
     this.saving = false;
     if (error && !this.pendingState) { this.pendingState = state; setTimeout(() => { void this.pushSave(); }, 8000); }
     else if (this.pendingState) void this.pushSave();
