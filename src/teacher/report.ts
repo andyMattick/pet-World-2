@@ -329,7 +329,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       const entry = (r.writtenAnswers || []).find(e => e.id === b.dataset.writtenSave), box = b.closest<HTMLElement>('[data-written-entry]');
       if (!entry || !box) return;
       const points = entry.rubric.map((_, i) => (box.querySelector<HTMLInputElement>(`[data-written-point="${i}"]`)?.checked ? 1 : 0));
-      const comment = box.querySelector<HTMLInputElement>('[data-written-comment]')?.value || '', redo = !!box.querySelector<HTMLInputElement>('[data-written-redo]')?.checked;
+      const comment = box.querySelector<HTMLInputElement>('[data-written-comment]')?.value || '', redo = b.dataset.redo === '1';
       void saveOverride(`written:${entry.id}`, encodeTeacherReview(entry.at, points, redo, comment));
     }));
   }
@@ -457,8 +457,8 @@ function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
       ${parent ? `<p class="muted">Parent’s check: ${reviewScore(parent)}/${e.rubric.length}${parent.comment ? ` · “${esc(parent.comment)}”` : ''}${parent.redo ? ' · redo asked for' : ''}</p>` : ''}
       <div style="display:grid; gap:4px; margin:6px 0">${e.rubric.map((point, i) => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-written-point="${i}" ${review?.points[i] ? 'checked' : ''}> ${esc(point)}</label>`).join('')}</div>
       <label>Note for the student <input type="text" data-written-comment maxlength="300" value="${esc(review?.comment || '')}"></label>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-written-redo ${review?.redo ? 'checked' : ''}> Ask for a redo (the question comes back in practice)</label>
-      <div class="row"><button class="btn small primary" data-written-save="${esc(e.id)}">${mine ? 'Update check' : 'Save check'}</button></div></div>`;
+      <div class="row"><button class="btn small primary" data-written-save="${esc(e.id)}" data-redo="0">${mine && !review?.redo ? '✅ Update: looks good' : '✅ Looks good'}</button> <button class="btn small" data-written-save="${esc(e.id)}" data-redo="1">${mine && review?.redo ? '🔁 Update: send back' : '🔁 Send back to redo'}</button></div>
+      <p class="muted" style="margin:4px 0 0">Send back puts the question back in the student's practice with your note at the top.</p></div>`;
   }).join('');
   return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.”</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
 }

@@ -50,7 +50,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], rewardsPaid:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], subjectTime:{}, readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], subjectTime:{}, sentBackSeen:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -139,6 +139,7 @@ function normalize(raw){
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
+  s.sentBackSeen = Array.isArray(s.sentBackSeen) ? s.sentBackSeen.filter(key => typeof key === 'string').slice(-60) : [];   // sent-back items already announced (renderSentBack)
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
@@ -5008,7 +5009,7 @@ function show(id){
   SCREENS.forEach(s => $('#scr-'+s).hidden = (s !== id));
   Music.setTempo(id === 'sprint' ? SPRINT_RATE : 1);
   updateHeader();
-  if (id === 'home') renderHome();
+  if (id === 'home') { renderHome(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-home').hidden) renderSentBack(); }); }
   if (id === 'room') renderPetRoom();
   if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
@@ -5645,7 +5646,59 @@ function renderHome(){
     ? `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcade.freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`
     : `<button class="tile service locked" data-open="arcade" aria-disabled="true"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">Closed by your teacher</span><span class="soon">🔒</span></button>`;
   $('#town').innerHTML = h;
+  renderSentBack();
 }
+/* ---------- sent back to fix (docs: QUESTION-TYPES.md, "Sent back") ----------
+   Everything a grown-up or the teacher sent back, in one banner at the top of the town: written answers with a redo,
+   projects and labs with a revision requested, Reading Log notes that need fixing, and reading-quiz essays to redo.
+   Each one opens right where it gets fixed. A new one also gets a toast the first time the town shows it. */
+function sentBackItems(){
+  const items = [], latest = new Set();
+  for (const entry of [...S.writtenAnswers].sort((a, b) => b.at - a.at)) {
+    if (latest.has(entry.qid)) continue;
+    latest.add(entry.qid);
+    const review = writtenReviewOf(entry);
+    if (review?.redo) items.push({key:`written:${entry.id}`, kind:'written', icon:'✍️', title:`${writtenPlace(entry)}: written answer`, note:review.comment, by:review.by, entry});
+  }
+  for (const id of Object.keys(HISTORY_PROJECTS)) {
+    if (historyProjectState(id).state === 'revise') items.push({key:`project:${id}:${projectStore(id)[id]?.submittedAt || 0}`, kind:'project', icon:'📁', title:HISTORY_PROJECTS[id].title, id});
+  }
+  for (const book of S.readingBooks) {
+    for (const ch of book.chapters) if (readingChapterState(book, ch) === 'revise') items.push({key:`chapter:${book.id}:${ch.id}:${ch.submittedAt}`, kind:'reading', icon:'📖', title:`${book.title}: ${ch.label || 'chapter'} notes`, bookId:book.id, chapterId:ch.id});
+    for (const qz of book.quizzes) if (readingEssayState(qz) === 'revise') items.push({key:`essay:${qz.id}`, kind:'reading', icon:'📝', title:`${book.title}: reading-quiz essay`, bookId:book.id});
+  }
+  return items;
+}
+let sentBackShown = [];
+function renderSentBack(){
+  const wrap = $('#sentBackWrap'); if (!wrap) return;
+  const items = sentBackShown = sentBackItems();
+  if (!items.length) { wrap.innerHTML = ''; return; }
+  const seen = Array.isArray(S.sentBackSeen) ? S.sentBackSeen : [], fresh = items.filter(item => !seen.includes(item.key));
+  wrap.innerHTML = `<section class="sent-back${fresh.length ? ' sent-back-new' : ''}" aria-labelledby="sentBackTitle"><h2 id="sentBackTitle">🔁 ${items.length === 1 ? 'One thing was' : `${items.length} things were`} sent back for you to fix</h2>
+    <p>Read the note, fix it, and send it again.</p><div class="sent-back-list">${items.map((item, i) => `<button type="button" class="sent-back-item" data-sent-back="${i}"><span class="sent-back-icon">${item.icon}</span><span class="sent-back-text"><b>${esc(item.title)}</b>${item.note ? `<small>“${esc(item.note)}”</small>` : ''}</span><span class="sent-back-go">Fix it →</span></button>`).join('')}</div></section>`;
+  if (fresh.length) {
+    toast(fresh.length === 1 ? '🔁 Something was sent back for you to fix. It’s at the top of your town.' : `🔁 ${fresh.length} things were sent back for you to fix. They’re at the top of your town.`);
+    S.sentBackSeen = [...seen, ...fresh.map(item => item.key)].slice(-60); save();
+  }
+}
+$('#sentBackWrap').addEventListener('click', event => {
+  const b = event.target.closest('[data-sent-back]'); if (!b) return;
+  const item = sentBackShown[+b.dataset.sentBack]; if (!item) return;
+  if (item.kind === 'project') { show('library'); renderHistoryProject(item.id); return; }
+  if (item.kind === 'reading') {
+    const book = S.readingBooks.find(x => x.id === item.bookId);
+    S.readingSelection = {bookId:item.bookId, chapterId:item.chapterId || book?.chapters[book.chapters.length - 1]?.id || null};
+    activeEnglishCourse = 'nouns'; save(); show('library'); return;
+  }
+  const entry = item.entry, m = entry.courseId === 'math' ? mathStation(entry.skillId) : null;
+  const question = entry.skillId === 'unit-test' ? unitEssay(entry.courseId)
+    : typedQuestions(entry.courseId, entry.skillId, TYPED_QUESTIONS[entry.courseId]?.[entry.skillId], Backend.me?.question_edits || {}).find(q => q.id === entry.qid);
+  if (!question) { if (m) { currentShop = m.shop; show('cafe'); } else { show('library'); renderEnglishUnit(entry.courseId); } return; }
+  show('library'); if (!m) activeEnglishCourse = entry.courseId;
+  englishRun = {title:'Fix your written answer', courseId:entry.courseId, shop:m?.shop, questions:[], index:0, score:0, passMark:0, outcomes:[], written:question, redoOnly:true, retryType:entry.where === 'test' ? 'final' : 'practice'};
+  renderWrittenStep();
+});
 let pickerMode = '', pickerSlot = -1;
 function openDisplayPicker(mode, slot){
   pickerMode = mode; pickerSlot = slot == null ? -1 : slot;
@@ -6673,23 +6726,24 @@ function renderWrittenStep(){
   const rubricHTML = redo ? `<div class="written-rubric"><b>A strong answer:</b><ul class="written-points">${question.rubric.map((point, i) => `<li class="${redo.points[i] ? 'ok' : 'no'}">${redo.points[i] ? '✓ you had this:' : '○ still needed:'} ${esc(point)}</li>`).join('')}</ul></div>`
     : `<div class="written-rubric"><b>A strong answer:</b><ul>${question.rubric.map(point => `<li>${esc(point)}</li>`).join('')}</ul></div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to the shop</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Exit</button>`}</div>
-    <div class="ela-question written-step"><p class="muted">${test ? `Last part · written answer · your score so far: ${run.score} of ${run.questions.length}` : `One more: a written answer · ${run.score} of ${run.questions.length} correct`}</p>
+    <div class="ela-question written-step"><p class="muted">${run.redoOnly ? 'Fix your answer and send it again' : test ? `Last part · written answer · your score so far: ${run.score} of ${run.questions.length}` : `One more: a written answer · ${run.score} of ${run.questions.length} correct`}</p>
     <h3>✍️ ${esc(question.prompt)}</h3>${redoHTML}${rubricHTML}
     <textarea class="written-text" rows="${question.type === 'essay' ? 10 : 5}" maxlength="4000" aria-label="Your answer">${esc(run.writtenText || '')}</textarea>
     <p class="muted written-count">${words} word${words === 1 ? '' : 's'}${words < need ? ` · at least ${need}` : ' ✓'}</p>
     <p class="muted">${esc(who[0].toUpperCase() + who.slice(1))} will read this and check it against the list above. It doesn’t change your ${test ? 'test' : 'practice'} score.</p>
-    <div class="row"><button type="button" class="btn berry" data-written-send ${words < need ? 'disabled' : ''}>Send to ${who}</button>${test ? '' : '<button type="button" class="btn" data-written-skip>Skip for now</button>'}</div></div>`;
+    <div class="row"><button type="button" class="btn berry" data-written-send ${words < need ? 'disabled' : ''}>Send to ${who}</button>${run.redoOnly ? '<button type="button" class="btn" data-written-skip>Not now</button>' : test ? '' : '<button type="button" class="btn" data-written-skip>Skip for now</button>'}</div></div>`;
   $('#libraryWrap .written-text').focus();
 }
 $('#libraryWrap').addEventListener('click', event => {
   const run = englishRun; if (!run?.written) return;
-  if (event.target.closest('[data-written-skip]')) { run.writtenDone = true; finishEnglishRun(); return; }
+  if (event.target.closest('[data-written-skip]')) { if (run.redoOnly) { englishRun = null; show('home'); return; } run.writtenDone = true; finishEnglishRun(); return; }
   if (!event.target.closest('[data-written-send]')) return;
   const question = run.written, text = String(run.writtenText || '').trim();
   if (wordCount(text) < (question.minWords || 1)) return;
   S.writtenAnswers = [...S.writtenAnswers, {id:'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), qid:question.id, courseId:run.courseId, skillId:question.skillId,
     type:question.type, prompt:question.prompt, rubric:question.rubric, model:question.model, text:text.slice(0, 4000), at:Date.now(), where:run.retryType === 'final' ? 'test' : 'practice'}].slice(-WRITTEN_MAX);
   run.writtenDone = true; run.writtenSent = true; save(); toast('Sent! You’ll see the review under your written answers.');
+  if (run.redoOnly) { englishRun = null; show('home'); return; }   // opened from the "sent back" banner
   finishEnglishRun();
 });
 /* the student's own list on the unit page */
@@ -6716,8 +6770,8 @@ function writtenParentHTML(){
       ${locked ? `<p><b>Teacher’s check: ${reviewScore(review)} of ${entry.rubric.length}</b>${review.comment ? ` · “${esc(review.comment)}”` : ''}${review.redo ? ' · redo asked for' : ''}</p>`
         : `<div class="written-ticks">${entry.rubric.map((point, i) => `<label><input type="checkbox" data-written-point="${i}" ${review?.points[i] ? 'checked' : ''}> ${esc(point)}</label>`).join('')}</div>
       <label>Note for your child <input type="text" data-written-comment maxlength="300" value="${esc(review?.comment || '')}"></label>
-      <label><input type="checkbox" data-written-redo ${review?.redo ? 'checked' : ''}> Ask for a redo (the question comes back in practice)</label>
-      <div class="row"><button class="btn small primary" data-written-save="${esc(entry.id)}">Save check</button></div>`}</div>`;
+      <div class="row"><button class="btn small primary" data-written-save="${esc(entry.id)}" data-redo="0">✅ Looks good</button><button class="btn small" data-written-save="${esc(entry.id)}" data-redo="1">🔁 Send back to redo</button></div>
+      <p class="muted" style="margin:4px 0 0">Send back puts it at the top of your child's town with your note, ready to fix.</p>`}</div>`;
   };
   return `<section class="panel">${head}${waiting.length ? waiting.map(card).join('') : '<p class="muted">Nothing is waiting right now.</p>'}${done.length ? `<details><summary>Already checked (${done.length})</summary>${done.map(card).join('')}</details>` : ''}</section>`;
 }
@@ -6725,8 +6779,8 @@ $('#parentWrap').addEventListener('click', event => {
   const b = event.target.closest('[data-written-save]'); if (!b || !parentReadingUnlocked) return;
   const entry = S.writtenAnswers.find(item => item.id === b.dataset.writtenSave), box = b.closest('[data-written-entry]'); if (!entry || !box) return;
   entry.parentReview = {points:entry.rubric.map((_, i) => box.querySelector(`[data-written-point="${i}"]`)?.checked ? 1 : 0), comment:String(box.querySelector('[data-written-comment]')?.value || '').trim().slice(0, 300),
-    redo:!!box.querySelector('[data-written-redo]')?.checked, at:Date.now()};
-  save(); toast('Check saved.'); renderParent();
+    redo:b.dataset.redo === '1', at:Date.now()};
+  save(); toast(entry.parentReview.redo ? 'Sent back to redo.' : 'Marked as good.'); renderParent();
 });
 
 /* ---------- math: Think it through (docs: QUESTION-TYPES.md) ----------

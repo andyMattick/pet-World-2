@@ -923,6 +923,19 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .written-redo{padding:10px 14px; border:2px solid var(--berry); border-radius:10px; margin:8px 0; background:var(--surface)}
 .written-redo p{margin:6px 0 0}
 .written-note{font-size:1.05rem; white-space:pre-wrap}
+.sent-back{margin:0 0 14px; padding:14px 16px; border:4px solid var(--berry); border-radius:18px; background:var(--butter); color:#4A2E2A; box-shadow:0 6px 0 var(--berry-deep)}
+.sent-back h2{margin:0; font-size:1.3rem; line-height:1.25}
+.sent-back p{margin:4px 0 10px}
+.sent-back-list{display:grid; gap:8px}
+.sent-back-item{display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px; border:3px solid #4A2E2A; border-radius:14px; background:#fff; color:#4A2E2A; font:inherit; cursor:pointer}
+.sent-back-item:hover, .sent-back-item:focus-visible{background:#FFF4F6; outline:3px solid var(--berry); outline-offset:2px}
+.sent-back-icon{font-size:1.6rem}
+.sent-back-text{flex:1; display:grid; gap:2px}
+.sent-back-text small{font-size:.95rem; color:#7A5A55; white-space:pre-wrap}
+.sent-back-go{font-weight:800; color:var(--berry-deep); white-space:nowrap}
+.sent-back-new{animation:sent-back-wiggle .6s ease-in-out 3}
+@keyframes sent-back-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-1.2deg)}75%{transform:rotate(1.2deg)}}
+@media (prefers-reduced-motion: reduce){.sent-back-new{animation:none}}
 .written-review blockquote{white-space:pre-wrap; margin:8px 0; padding:8px 12px; border-left:4px solid var(--berry)}
 .written-ticks{display:grid; gap:6px; margin:8px 0}
 
