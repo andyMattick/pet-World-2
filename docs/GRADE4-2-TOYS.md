@@ -27,7 +27,7 @@ Numbers grow with the level: up to 4 digits on level 1, 5 on level 2, and 6 (hun
 
 ## Stations 3 and 4: what students get
 
-- **New picture: the area model** (`areaHTML`), drawn with each step: one box per place-value part, the box being worked highlighted. Multiplying finds each part, then adds; dividing finds each part's length from its area, then adds.
+- **New picture: the area model** (`areaHTML`), drawn with each step: one box per place-value part, the box being worked highlighted. Multiplying finds each part, then adds; dividing finds each part's length from its area, then adds. Partial products (`partialProd2`) use it too: each partial product fills its box as it is found. Level 3 hides the empty model at the start, because its first step asks which parts to multiply.
 - **Multiplying:** × 10, 100, 1000 (and a missing factor on level 3); break-apart (distributive) with a choice first; estimating (round, then multiply); the standard algorithm with the Register's column boxes and optional carry boxes (one row for × 1-digit; rows, then add, for 2-digit × 2-digit, with rows optional on level 3); partial products in order.
 - **Dividing:** friendly numbers for estimating (a choice, then divide), remainders that must be interpreted, dividing with remainders step by step, place-value splits, area models, and long division by 1-digit numbers on the Register's bus stop (level 3 adds remainders and zeros in the quotient).
 - Answer-only quizzes ask for the final answer only.

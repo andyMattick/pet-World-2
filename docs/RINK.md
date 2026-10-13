@@ -24,6 +24,10 @@ A step with `neg:true` (the `negStep` helper) shows a **±** button beside the a
 - **Opposites:** the opposite of a number, then −(−7) and −(−(−3)) worked from the inside out.
 - **Comparing and ordering:** on a number line, without one (integers, decimals, fractions), putting four numbers in order, and writing the inequality for "colder" or "warmer". Wrong answers that follow "bigger digits is bigger" are named.
 - **Absolute value:** |−7|, |−3.5|, −|−4|, |−6| + |2|, comparing and ordering absolute values mixed with negatives, distance from sea level, and "a debt of more than $20."
+- **Number lines** (`distLineSVG`):
+  - **Comparing rational numbers** (`cmpRational`), level 1: both numbers as dots, so she reads which is farther right.
+  - **Comparing absolute values** (`cmpAbs`), level 1: a bar from 0 to each dot, showing each distance.
+  - Levels 2 and 3 have no picture, so she has to picture the line herself.
 
 ## Mix-ups
 

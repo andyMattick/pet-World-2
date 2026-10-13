@@ -2365,15 +2365,18 @@ const TOYS2_GEN = {
   partialProd2(lvl){
     const a = lvl === 1 ? rand(11, 39) : lvl === 2 ? rand(21, 99) : rand(5, 9) * 10 + rand(5, 9), b = lvl === 1 ? rand(11, 29) : lvl === 2 ? rand(12, 99) : rand(4, 9) * 10 + rand(4, 9), [at, ao] = [a - a % 10, a % 10], [bt, bo] = [b - b % 10, b % 10];
     const pairs = [[bo, ao], [bo, at], [bt, ao], [bt, at]].filter(([x, y]) => x && y), total = a * b;
-    const steps = pairs.map(([x, y]) => ({name:`${x} × ${y}`, type:'compute', kind:'num', prompt:`${x} × ${y} = ?`, answer:x * y, eq:v => v === x * y,
+    /* area model picture (docs: GRADE4-2-TOYS.md): columns are the parts of a, rows the parts of b; each partial product fills its box as it is found */
+    const A = [at, ao].filter(Boolean), B = [bt, bo].filter(Boolean);
+    const areaAt = k => areaHTML(A, B, B.map(r => A.map(c => { const i = pairs.findIndex(([x, y]) => x === r && y === c); return i < k ? r * c : i === k ? '?' : ''; })));
+    const steps = pairs.map(([x, y], k) => ({name:`${x} × ${y}`, type:'compute', kind:'num', prompt:`${x} × ${y} = ?`, answer:x * y, eq:v => v === x * y, work:areaAt(k),
       fact:{x:Number(String(x)[0]), y:Number(String(y)[0])}, mis:v => v !== x * y && (v * 10 === x * y || v === x * y * 10) ? 'shiftWrong' : null}));
-    steps.push({name:'Add the partial products', type:'compute', kind:'num', prompt:`${pairs.map(([x, y]) => commas(x * y)).join(' + ')} = ?`, answer:total, eq:v => v === total,
+    steps.push({name:'Add the partial products', type:'compute', kind:'num', prompt:`${pairs.map(([x, y]) => commas(x * y)).join(' + ')} = ?`, answer:total, eq:v => v === total, work:areaAt(pairs.length),
       mis:v => v !== total && v === at * bt + ao * bo ? 'partialMissing' : null});
     if (lvl === 3) steps.unshift({name:'Which parts?', type:'concept', kind:'choice', prompt:`Which shows ${a} × ${b} broken into partial products?`,
       options:choiceOf({text:`${bo} × ${ao} + ${bo} × ${at} + ${bt} × ${ao} + ${bt} × ${at}`}, [{text:`${bt} × ${at} + ${bo} × ${ao}`, mis:'partialMissing'}, {text:`${bo} × ${a} + ${bt}`, mis:'partialMissing'}, {text:`${at / 10} × ${bt / 10} + ${ao} × ${bo}`, mis:'shiftWrong'}]),
       hint:() => 'Every part of one number times every part of the other: four products.'});
-    return {title:'Toy Crates', ctx:`${a} × ${b} partial products`, bubble:`Find ${a} × ${b} with partial products: multiply every part of one number by every part of the other.`, helper:'Ones × ones, ones × tens, tens × ones, tens × tens. Then add them all.',
-      visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
+    return {title:'Toy Crates', ctx:`${a} × ${b} partial products`, bubble:`Find ${a} × ${b} with partial products: multiply every part of one number by every part of the other.`, helper:'Ones × ones, ones × tens, tens × ones, tens × tens. Each one is a box in the area model. Then add them all.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>${lvl < 3 ? areaAt(-1) : ''}`, steps, answerSteps:[steps.length - 1]};
   },
   mult2digit(lvl){
     let a, b; do { a = rand(lvl === 1 ? 11 : 21, lvl === 3 ? 99 : 59); b = rand(12, lvl === 1 ? 29 : 99); } while (b % 10 === 0 || Math.floor(b / 10) === 0 || String(b).includes('0'));
@@ -2536,6 +2539,16 @@ function numberLineSVG(d, n, {top = 1, w = 280, labels = 'ends'} = {}){
   if (n != null) g += `<circle cx="${L + n * step}" cy="${y}" r="7" class="nl-dot"/>`;
   return `<svg class="num-line" viewBox="0 0 ${w} 62" width="${w}" role="img" aria-label="number line from 0 to ${top} in ${d}ths">${g}</svg>`;
 }
+/* fraction bars of the same width, each with its label under it; an empty bar (n = null) is for the student to imagine shading */
+const barsHTML = list => `<div class="frac-pics">${list.map(([n, d, label]) => `${fracBarSVG(n ?? 0, d)}<div style="text-align:center">${label ?? (n == null ? `?/${d}` : `${n}/${d}`)}</div>`).join('')}</div>`;
+/* a 0 to 1 number line with 1/2 marked and a labeled dot for each fraction (used after the benchmark steps, so it doesn't give them away) */
+function benchLineSVG(fracs, {w = 300} = {}){
+  const L = 18, R = w - 18, y = 40, X = v => L + v * (R - L);
+  let g = `<line x1="${L}" y1="${y}" x2="${R}" y2="${y}" class="nl-line"/>`;
+  [[0, '0'], [0.5, '1/2'], [1, '1']].forEach(([v, t]) => { g += `<line x1="${X(v)}" y1="${y - 10}" x2="${X(v)}" y2="${y + 10}" class="nl-line"/><text x="${X(v)}" y="${y + 28}" class="nl-text">${t}</text>`; });
+  fracs.forEach(([n, d], i) => { const x = X(n / d); g += `<circle cx="${x}" cy="${y}" r="7" class="nl-dot"/><text x="${x}" y="${y - 14 - (i % 2) * 14}" class="nl-text nl-name">${n}/${d}</text>`; });
+  return `<svg class="num-line" viewBox="0 0 ${w} 76" width="${w}" role="img" aria-label="number line from 0 to 1 showing ${fracs.map(f => f.join('/')).join(' and ')}">${g}</svg>`;
+}
 const fracTxt = (n, d) => `${n}/${d}`;
 const mixedTxt = (w, n, d) => n ? `${w ? w + ' ' : ''}${n}/${d}` : String(w);
 const PIZZA_KIDS = [['🧒', 'Mia'], ['👦', 'Leo'], ['👧', 'Ava'], ['🧑', 'Sam'], ['👩', 'Rosa'], ['👨', 'Ben']];
@@ -2568,12 +2581,12 @@ const PIZZA_GEN = {
     if (lvl === 3) {
       const wrongs = [{text:fracTxt(a + k, b + k), mis:'additiveEquiv'}, {text:fracTxt(top, b), mis:'onlyOneScaled'}, {text:fracTxt(a * k, b * (k + 1)), mis:'onlyOneScaled'}];
       return {title:'Slices', ctx:`equivalent to ${top}/${big}`, bubble:`Which fraction is the same amount as ${top}/${big}?`, helper:'Multiply or divide the top and bottom by the same number.',
-        visual:`<div style="text-align:center; font-size:1.8rem">${top}/${big}</div>`,
+        visual:`<div style="text-align:center; font-size:1.8rem">${top}/${big}</div>${big <= 24 ? barsHTML([[top, big]]) : ''}`,
         steps:[{name:'Pick the equal fraction', type:'concept', kind:'choice', prompt:`Which fraction equals ${top}/${big}?`, options:choiceOf({text:fracTxt(a, b)}, wrongs), drill:{type:'simplify', key:String(k)}, hint:() => `Divide the top and bottom of ${top}/${big} by the same number.`}]};
     }
     const missTop = lvl === 1 || Math.random() < 0.5;
     return {title:'Slices', ctx:missTop ? `${a}/${b} = ?/${big}` : `${a}/${b} = ${top}/?`, bubble:`Find the missing number so the fractions are equal.`, helper:'Whatever you multiply the bottom by, multiply the top by the same.',
-      visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} = ${missTop ? '?' : top}/${missTop ? big : '?'}</div>`,
+      visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} = ${missTop ? '?' : top}/${missTop ? big : '?'}</div>${missTop && big <= 24 ? barsHTML([[a, b], [null, big, `?/${big}: shade the same amount`]]) : ''}`,   // the second bar stays empty so it doesn't give the answer away
       steps:[{name:'Missing number', type:'compute', kind:'num', prompt:missTop ? `${a}/${b} = ?/${big}` : `${a}/${b} = ${top}/?`, answer:missTop ? top : big, eq:v => v === (missTop ? top : big),
         fact:{x:missTop ? a : b, y:k}, mis:v => v !== (missTop ? top : big) && v === (missTop ? a + big - b : b + top - a) ? 'additiveEquiv' : null, hint:() => `${missTop ? b : a} × ${k} = ${missTop ? big : top}, so multiply the ${missTop ? 'top' : 'bottom'} by ${k} too.`}]};
   },
@@ -2594,10 +2607,10 @@ const PIZZA_GEN = {
     let b1, b2; do { b1 = rand(2, lvl === 1 ? 6 : 10); b2 = rand(2, lvl === 1 ? 6 : 12); } while (b1 === b2 || b1 * b2 / gcd(b1, b2) > (lvl === 3 ? 60 : 36) || (lvl === 1 && b2 % b1 !== 0 && b1 % b2 !== 0 && Math.random() < 0.6));
     const L = b1 * b2 / gcd(b1, b2), a1 = rand(1, b1 - 1), a2 = rand(1, b2 - 1);
     return {title:'Slices', ctx:`${a1}/${b1} and ${a2}/${b2}`, bubble:`Rewrite ${a1}/${b1} and ${a2}/${b2} so they have the same denominator.`, helper:'Find a number both denominators go into.',
-      visual:`<div style="text-align:center; font-size:1.8rem">${a1}/${b1} · ${a2}/${b2}</div>`,
+      visual:barsHTML([[a1, b1], [a2, b2]]),
       steps:[{name:'Common denominator', type:'concept', kind:'num', prompt:`What is the smallest number that both ${b1} and ${b2} go into?`, answer:L, eq:v => v === L, mis:v => v !== L && v === b1 + b2 ? 'additiveEquiv' : null, hint:() => `List multiples of ${Math.max(b1, b2)} until ${Math.min(b1, b2)} goes in too.`},
-        {name:`Rewrite ${a1}/${b1}`, type:'compute', kind:'num', prompt:`${a1}/${b1} = ?/${L}`, answer:a1 * L / b1, eq:v => v === a1 * L / b1, fact:{x:a1, y:L / b1}, mis:v => v !== a1 * L / b1 && v === a1 + L - b1 ? 'additiveEquiv' : null},
-        {name:`Rewrite ${a2}/${b2}`, type:'compute', kind:'num', prompt:`${a2}/${b2} = ?/${L}`, answer:a2 * L / b2, eq:v => v === a2 * L / b2, fact:{x:a2, y:L / b2}, mis:v => v !== a2 * L / b2 && v === a2 + L - b2 ? 'additiveEquiv' : null}]};
+        {name:`Rewrite ${a1}/${b1}`, type:'compute', kind:'num', prompt:`${a1}/${b1} = ?/${L}`, answer:a1 * L / b1, eq:v => v === a1 * L / b1, fact:{x:a1, y:L / b1}, work:L <= 24 ? barsHTML([[a1, b1], [null, L]]) : '', mis:v => v !== a1 * L / b1 && v === a1 + L - b1 ? 'additiveEquiv' : null},
+        {name:`Rewrite ${a2}/${b2}`, type:'compute', kind:'num', prompt:`${a2}/${b2} = ?/${L}`, answer:a2 * L / b2, eq:v => v === a2 * L / b2, fact:{x:a2, y:L / b2}, work:L <= 24 ? barsHTML([[a1 * L / b1, L, `${a1}/${b1} = ${a1 * L / b1}/${L}`], [a2, b2], [null, L]]) : '', mis:v => v !== a2 * L / b2 && v === a2 + L - b2 ? 'additiveEquiv' : null}]};
   },
   cmpVisual(lvl){
     if (lvl === 3) {   // level 3: three fractions, which is the biggest?
@@ -2620,7 +2633,7 @@ const PIZZA_GEN = {
       return {title:'Which Is Bigger?', ctx:`${a}/${b} ? ${c}/${d} benchmark 1`, bubble:`Compare ${a}/${b} and ${c}/${d}. Each one is just one piece short of 1 whole.`, helper:'The one with the smaller missing piece is closer to 1, so it is bigger.',
         visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`,
         steps:[{name:'Missing piece', type:'concept', kind:'choice', prompt:`Which missing piece is smaller: 1/${b} or 1/${d}?`, options:choiceOf({text:smallGap}, [{text:smallGap === `1/${b}` ? `1/${d}` : `1/${b}`, mis:'biggerDenBigger'}]), hint:() => 'More pieces in a whole means each piece is smaller.'},
-          compareStep(a, b, c, d, right)], answerSteps:[1]};
+          {...compareStep(a, b, c, d, right), work:barsHTML([[a, b], [c, d]])}], answerSteps:[1]};
     }
     let a, b, c, d;
     do { [a, b] = properFrac(2, 12); [c, d] = properFrac(2, 12); } while (2 * a === b || 2 * c === d || (2 * a < b) === (2 * c < d));   // one below 1/2, one above
@@ -2628,7 +2641,7 @@ const PIZZA_GEN = {
     const bench = (x, y) => ({name:`${x}/${y} and 1/2`, type:'concept', kind:'choice', prompt:`Is ${x}/${y} more or less than 1/2?`,
       options:choiceOf({text:side(x, y)}, [{text:side(x, y) === 'Less than 1/2' ? 'More than 1/2' : 'Less than 1/2', mis:'benchmarkWrong'}]), hint:() => `Half of ${y} is ${y / 2}. Is ${x} more or less than that?`});
     return {title:'Which Is Bigger?', ctx:`${a}/${b} ? ${c}/${d} benchmark`, bubble:`Compare ${a}/${b} and ${c}/${d}. Use 1/2 to help.`, helper:'If one is less than 1/2 and the other is more, you know which is bigger.',
-      visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`, steps:[bench(a, b), bench(c, d), compareStep(a, b, c, d, right)]};
+      visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`, steps:[bench(a, b), bench(c, d), {...compareStep(a, b, c, d, right), work:benchLineSVG([[a, b], [c, d]])}]};
   },
   cmpFrac(lvl){
     let a, b, c, d; do { [a, b] = properFrac(2, lvl === 1 ? 6 : lvl === 2 ? 10 : 12); [c, d] = properFrac(2, lvl === 1 ? 6 : lvl === 2 ? 10 : 12); } while (b === d || a * d === b * c || (lvl === 3 && (gcd(b, d) === 1 || Math.abs(a * (b * d / gcd(b, d)) / b - c * (b * d / gcd(b, d)) / d) !== 1)));   // level 3: very close fractions
@@ -2637,7 +2650,7 @@ const PIZZA_GEN = {
       visual:`<div style="text-align:center; font-size:1.8rem">${a}/${b} ◯ ${c}/${d}</div>`,
       steps:[{name:`Rewrite ${a}/${b}`, type:'compute', kind:'num', prompt:`${a}/${b} = ?/${L}`, answer:n1, eq:v => v === n1, fact:{x:a, y:L / b}},
         {name:`Rewrite ${c}/${d}`, type:'compute', kind:'num', prompt:`${c}/${d} = ?/${L}`, answer:n2, eq:v => v === n2, fact:{x:c, y:L / d}},
-        compareStep(a, b, c, d, right)]};
+        {...compareStep(a, b, c, d, right), work:L <= 30 ? barsHTML([[n1, L, `${a}/${b} = ${n1}/${L}`], [n2, L, `${c}/${d} = ${n2}/${L}`]]) : ''}]};
   },
   cmpFracWord(lvl){
     const [[e1, n1], [e2, n2]] = shuffle(PIZZA_KIDS).slice(0, 2);
@@ -3346,17 +3359,17 @@ const MARKET_GEN = {
   findingPct(lvl){
     if (lvl === 1) {
       const P = rand(1, 9) * 10, W = rand(2, 30) * 10, ten = W / 10, part = ten * P / 10;
-      return {title:'Discount Bin', ctx:`${P}% of ${W}`, bubble:`What is ${P}% of ${W}?`, helper:'Find 10% first, then build up.', visual:`<div style="text-align:center; font-size:1.8rem">${P}% of ${W}</div>`,
-        steps:[numStep('10%', 'compute', `10% of ${W} = ?`, ten, {mis:v => v === W * 10 ? 'percentShift' : null}), numStep(`${P}%`, 'compute', `${P / 10} × ${ten} = ?`, part, {fact:ten <= 12 ? fx(P / 10, ten) : undefined, mis:v => v === P * W ? 'percentAsNumber' : v === W - part ? 'percentComplement' : null})], answerSteps:[1]};
+      return {title:'Discount Bin', ctx:`${P}% of ${W}`, bubble:`What is ${P}% of ${W}?`, helper:'Find 10% first, then build up.', visual:`<div style="text-align:center; font-size:1.8rem">${P}% of ${W}</div>${pctBarSVG(P / 10, {0:0, 10:W})}`,
+        steps:[numStep('10%', 'compute', `10% of ${W} = ?`, ten, {work:pctBarSVG(1, {0:0, 1:'?', 10:W}), mis:v => v === W * 10 ? 'percentShift' : null}), numStep(`${P}%`, 'compute', `${P / 10} × ${ten} = ?`, part, {work:pctBarSVG(P / 10, {0:0, 1:ten, [P / 10]:'?', 10:W}), fact:ten <= 12 ? fx(P / 10, ten) : undefined, mis:v => v === P * W ? 'percentAsNumber' : v === W - part ? 'percentComplement' : null})], answerSteps:[1]};
     }
     if (lvl === 2) {
       const W = pick([20, 25, 50, 200, 300, 400, 500]), A = W < 100 ? rand(1, W - 1) : rand(1, W / 10 - 1) * 10, P = A * 100 / W;
       if (!Number.isInteger(P)) return MARKET_GEN.findingPct(lvl);
-      return {title:'Discount Bin', ctx:`${A} of ${W} = ?%`, bubble:`${A} is what percent of ${W}?`, helper:'Write it as a fraction, then make the bottom 100.', visual:`<div style="text-align:center; font-size:1.8rem">${A} out of ${W}</div>`,
+      return {title:'Discount Bin', ctx:`${A} of ${W} = ?%`, bubble:`${A} is what percent of ${W}?`, helper:'Write it as a fraction, then make the bottom 100.', visual:`<div style="text-align:center; font-size:1.8rem">${A} out of ${W}</div>${barModelSVG([{label:A, w:A, on:true}, {label:'', w:W - A}], {total:`${W} = 100%`})}`,
         steps:[numStep('Out of 100', 'compute', `${A}/${W} = ?/100`, P, {mis:v => v === A ? 'percentNot100' : near(v, W * 100 / A) ? 'partWholeSwap' : null, hint:() => W < 100 ? `${W} × ${100 / W} = 100.` : `${W} ÷ ${W / 100} = 100.`})]};
     }
     const [u, k] = pick([[10, rand(2, 9)], [5, rand(2, 9)], [20, rand(2, 4)], [25, rand(2, 3)]]), P = u * k, one = rand(2, 15), A = one * k, W = one * 100 / u;
-    return {title:'Discount Bin', ctx:`${A} is ${P}% of ?`, bubble:`${A} is ${P}% of what number?`, helper:`${P}% is ${k} groups of ${u}%. Find ${u}%, then 100%.`, visual:`<div style="text-align:center; font-size:1.8rem">${A} = ${P}% of ?</div>`,
+    return {title:'Discount Bin', ctx:`${A} is ${P}% of ?`, bubble:`${A} is ${P}% of what number?`, helper:`${P}% is ${k} groups of ${u}%. Find ${u}%, then 100%.`, visual:`<div style="text-align:center; font-size:1.8rem">${A} = ${P}% of ?</div>${barModelSVG([...Array.from({length:k}, (_, i) => ({label:i === 0 ? `${u}%` : '', on:true})), ...Array.from({length:100 / u - k}, () => ({label:''}))], {total:'? = 100%'})}<div style="text-align:center">The ${k} shaded parts are ${P}%, which is ${A}.</div>`,
       steps:[numStep(`${u}%`, 'compute', `${A} ÷ ${k} = ?`, one, {fact:fx(k, one, true)}), numStep('100%', 'compute', `${one} × ${100 / u} = ?`, W, {fact:one <= 12 ? fx(one, 100 / u) : undefined, mis:v => near(v, A * P / 100) ? 'partWholeSwap' : v === A * P ? 'percentAsNumber' : null})],
       answerSteps:[1]};
   },
@@ -3717,7 +3730,7 @@ const RINK_GEN = {
     const txt = x => lvl === 3 && Math.round(x * 4) === x * 4 && Math.round(x * 10) !== x * 10 ? sgnF(Math.round(x * 4), 4) : sgnD(x);
     const r = a > b ? '>' : '<', trap = Math.abs(a) > Math.abs(b) ? '>' : '<';
     const opts = choiceOf({text:r}, ['>', '<', '='].map(t => ({text:t, mis:t === trap && t !== r ? 'negCompare' : null}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
-    return {title:'Race Board', ctx:`${txt(a)} ? ${txt(b)}`, bubble:`Which is greater: ${txt(a)} or ${txt(b)}?`, helper:'For negatives, the one closer to 0 is greater.', visual:'',
+    return {title:'Race Board', ctx:`${txt(a)} ? ${txt(b)}`, bubble:`Which is greater: ${txt(a)} or ${txt(b)}?`, helper:'For negatives, the one closer to 0 is greater.', visual:lvl === 1 ? distLineSVG([a, b]) : '',   // level 1 reads the number line; levels 2 and 3 picture it
       steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${txt(a)} ◯ ${txt(b)}`, options:opts, hint:() => 'Picture them on a number line: farther right is greater.'}]};
   },
   orderNeg(lvl){
@@ -3774,7 +3787,7 @@ const RINK_GEN = {
       const steps = [];
       if (lvl === 1) steps.push(negStep(`|${sgn(a)}|`, 'concept', `|${sgn(a)}| = ?`, A, {mis:v => v === a && a < 0 ? 'absNegative' : null}), negStep(`|${sgn(b)}|`, 'concept', `|${sgn(b)}| = ?`, B, {mis:v => v === b && b < 0 ? 'absNegative' : null}));
       steps.push({name:'Compare', type:'concept', kind:'choice', prompt:`|${sgn(a)}| ◯ |${sgn(b)}|`, options:opts, hint:() => `Compare the distances ${A} and ${B}.`});
-      return {title:'Ice Depth', ctx:`|${sgn(a)}| ? |${sgn(b)}|`, bubble:`Compare |${sgn(a)}| and |${sgn(b)}|.`, helper:'Compare the distances from 0.', visual:'', steps, ...(lvl === 1 ? {answerSteps:[2]} : {})};
+      return {title:'Ice Depth', ctx:`|${sgn(a)}| ? |${sgn(b)}|`, bubble:`Compare |${sgn(a)}| and |${sgn(b)}|.`, helper:'Compare the distances from 0.', visual:lvl === 1 ? distLineSVG([a, b], {distances:true}) : '', steps, ...(lvl === 1 ? {answerSteps:[2]} : {})};
     }
     const c = a + (a > 0 ? 1 : -1);        /* [text, value, the number inside without the bars] */
     const items = [[`|${sgn(a)}|`, Math.abs(a), a], [sgn(b), b, b], [`${MINUS}|${sgn(c)}|`, -Math.abs(c), c], [`|${sgn(b)}|`, Math.abs(b), b]];
@@ -4069,6 +4082,47 @@ Object.assign(GEN, POTION_GEN);
 
 /* ===== 6th grade, Potion Lab part 2 (Khan unit 7): equations and inequalities ===== */
 const balanceHTML = (left, right) => `<div class="balance"><span class="pan-l">${esc(left)}</span><span class="beam">⚖️</span><span class="pan-r">${esc(right)}</span></div>`;
+/* ===== grade 6 pictures (docs: MARKET.md, POTION.md, RINK.md): bar models for equations and percents, and distance number lines ===== */
+/* a bar model: parts [{label, w, on}] side by side (w = relative width, on = shaded), with an optional label over the whole bar */
+function barModelSVG(parts, {total = '', w = 300, h = 34} = {}){
+  const raw = parts.reduce((t, p) => t + (p.w || 1), 0), wt = p => Math.max(p.w || 1, raw * 0.14), sum = parts.reduce((t, p) => t + wt(p), 0), top = total ? 34 : 4, L = 2;   // no part thinner than its label
+  let x = L, g = '';
+  for (const p of parts) {
+    const pw = (w - 4) * wt(p) / sum;
+    g += `<rect x="${x}" y="${top}" width="${pw}" height="${h}" class="${p.on ? 'fb-on' : 'fb-off'}"/><text x="${x + pw / 2}" y="${top + h / 2 + 5}" class="bm-text">${esc(String(p.label ?? ''))}</text>`;
+    x += pw;
+  }
+  if (total) g += `<path d="M${L} ${top - 6} v-8 h${w - 4} v8" class="bm-brace"/><text x="${w / 2}" y="${top - 19}" class="bm-text">${esc(String(total))}</text>`;
+  return `<svg class="frac-bar bar-model" viewBox="0 0 ${w} ${top + h + 4}" width="${w}" role="img" aria-label="bar model${total ? ', total ' + esc(String(total)) : ''}">${g}</svg>`;
+}
+/* a percent bar: 10% steps on top, the amounts underneath (labels: {index: text}), the first `shaded` tenths shaded */
+function pctBarSVG(shaded, below = {}, {w = 300, segs = 10, step = 10} = {}){
+  const L = 14, R = w - 14, top = 22, h = 30, pw = (R - L) / segs;
+  let g = '';
+  for (let i = 0; i < segs; i++) g += `<rect x="${L + i * pw}" y="${top}" width="${pw}" height="${h}" class="${i < shaded ? 'fb-on' : 'fb-off'}"/>`;
+  for (let i = 0; i <= segs; i++) {
+    const x = L + i * pw;
+    if (i === 0 || i === segs || (i === shaded && shaded < segs - 1)) g += `<text x="${x}" y="${top - 7}" class="bm-text bm-small">${i * step}%</text>`;
+    if (below[i] != null) g += `<line x1="${x}" y1="${top + h}" x2="${x}" y2="${top + h + 6}" class="nl-line"/><text x="${x}" y="${top + h + 21}" class="bm-text bm-small">${esc(String(below[i]))}</text>`;
+  }
+  return `<svg class="frac-bar bar-model" viewBox="0 0 ${w} ${top + h + 28}" width="${w}" role="img" aria-label="percent bar">${g}</svg>`;
+}
+/* a number line from lo to hi with a dot at each value; with distances, a bar from 0 to each dot shows how far it is from 0 */
+function distLineSVG(vals, {distances = false, names = null, w = 320} = {}){
+  const m = Math.max(5, ...vals.map(Math.abs)), span = m <= 10 ? 10 : m <= 20 ? 20 : Math.ceil(m / 10) * 10, lo = vals.some(v => v < 0) ? -span : 0, hi = vals.some(v => v > 0) || lo === 0 ? span : 5;
+  const L = 16, R = w - 16, y = 54, X = t => L + (t - lo) * (R - L) / (hi - lo), tick = span <= 10 ? 1 : span <= 20 ? 2 : 5, lab = span <= 10 ? 5 : span <= 20 ? 10 : 10;
+  let g = `<line x1="${L - 8}" y1="${y}" x2="${R + 8}" y2="${y}" class="nl-line"/><path d="M${L - 8} ${y} l7 -5 v10 z M${R + 8} ${y} l-7 -5 v10 z" class="nl-arrow"/>`;
+  for (let t = Math.ceil(lo / tick) * tick; t <= hi; t += tick) {
+    const big = t % lab === 0;
+    g += `<line x1="${X(t)}" y1="${y - (big ? 8 : 4)}" x2="${X(t)}" y2="${y + (big ? 8 : 4)}" class="nl-line"/>`;
+    if (big) g += `<text x="${X(t)}" y="${y + 24}" class="nl-text nl-small">${sgn(t)}</text>`;
+  }
+  vals.forEach((v, i) => {
+    if (distances) g += `<line x1="${X(0)}" y1="${y - 12 - i * 8}" x2="${X(v)}" y2="${y - 12 - i * 8}" class="nl-ray" opacity=".7"/>`;
+    g += `<circle cx="${X(v)}" cy="${y}" r="6" class="nl-dot"/><text x="${X(v)}" y="${y - (distances ? 30 + i * 14 : 16 + (i % 2) * 14)}" class="nl-text nl-name">${names ? names[i] : sgnD(v)}</text>`;
+  });
+  return `<svg class="num-line" viewBox="0 0 ${w} 86" width="${w}" role="img" aria-label="number line showing ${vals.map(sgnD).join(' and ')}">${g}</svg>`;
+}
 /* an inequality on a number line: circle at c (filled for ≤ ≥, open for < >) and a ray in its direction */
 function ineqSVG(op, c, {lo = c - 5, hi = c + 5, w = 280} = {}){
   const L = 16, R = w - 16, y = 26, step = (R - L) / (hi - lo), X = t => L + (t - lo) * step, right = op === '>' || op === '≥', closed = op === '≥' || op === '≤';
@@ -4123,7 +4177,8 @@ const POTION2_GEN = {
     const [text, right, wrong, wrongX] = EQ_FORMS[form](a, x), rhs = text.split(' = ')[1];
     return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:'Keep the scale balanced: whatever you do to one side, do to the other.', visual:balanceHTML(text.split(' = ')[0], rhs),
       steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:right}, [{text:wrong, mis:'inverseWrong'}]), hint:() => form === 'sub' ? `x had ${a} taken away. Add it back.` : `${a} was added to x. Take it away.`},
-        numStep('Solve', 'compute', `x = ${rhs} ${form === 'sub' ? '+' : MINUS} ${a} = ?`, x, {mis:v => v === wrongX ? 'inverseWrong' : null})], answerSteps:[1]};
+        numStep('Solve', 'compute', `x = ${rhs} ${form === 'sub' ? '+' : MINUS} ${a} = ?`, x, {mis:v => v === wrongX ? 'inverseWrong' : null,
+          work:form === 'sub' ? barModelSVG([{label:rhs, w:Math.max(1, x - a), on:true}, {label:a, w:Math.max(1, a)}], {total:'x'}) : barModelSVG([{label:'x', w:Math.max(1, x), on:true}, {label:a, w:Math.max(1, a)}], {total:rhs})})], answerSteps:[1]};   // bar model: the parts and the whole
   },
   oneStepMult(lvl){
     if (lvl === 3 && Math.random() < 0.6) {
@@ -4137,7 +4192,8 @@ const POTION2_GEN = {
     const [text, right, wrong, wrongX] = EQ_FORMS[form](a, x), rhs = text.split(' = ')[1];
     return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:form === 'mul' ? `${a}x means ${a} times x. Divide both sides by ${a}.` : `x was divided by ${a}. Multiply both sides by ${a}.`, visual:balanceHTML(text.split(' = ')[0], rhs),
       steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:right}, [{text:wrong, mis:'inverseWrong'}, {text:form === 'mul' ? `Subtract ${a} from both sides` : `Add ${a} to both sides`, mis:'inverseWrong'}]), hint:() => 'Do the opposite operation.'},
-        numStep('Solve', 'compute', `x = ${rhs} ${form === 'mul' ? '÷' : '×'} ${a} = ?`, x, {fact:form === 'mul' ? fx(a, x, true) : fx(a, x / a), mis:v => v === wrongX ? 'inverseWrong' : form === 'mul' && v === Number(rhs) - a ? 'inverseWrong' : null})], answerSteps:[1]};
+        numStep('Solve', 'compute', `x = ${rhs} ${form === 'mul' ? '÷' : '×'} ${a} = ?`, x, {work:barModelSVG(Array.from({length:a}, (_, i) => ({label:form === 'mul' ? 'x' : rhs, on:form === 'mul' ? true : i === 0})), {total:form === 'mul' ? rhs : 'x'}),
+          fact:form === 'mul' ? fx(a, x, true) : fx(a, x / a), mis:v => v === wrongX ? 'inverseWrong' : form === 'mul' && v === Number(rhs) - a ? 'inverseWrong' : null})], answerSteps:[1]};
   },
   eqModel(lvl){
     const [e, n] = pick(LEMON_KIDS), g = pick(POTION_WORDS), a = rand(2, 9), x = rand(2, 12);

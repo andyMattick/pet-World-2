@@ -17,6 +17,12 @@ The Pizza Parlor opens after the Toy Shop Unit Test (or with the teacher's "Open
 ## What students get
 
 - **New pictures:** fraction bars (`fracBarSVG`, extra bars for amounts over 1) and number lines (`numberLineSVG`). On the equivalent-fractions number line, the top line is labeled and the bottom line is counted.
+- **Pictures on the symbol skills too** (`barsHTML`, `benchLineSVG`):
+  - **Equivalent fractions** (`eqFrac`): the first fraction's bar and an empty bar with the new number of parts, to shade in her head. On level 3, the bar of the fraction to match.
+  - **Common denominators** (`commonDen`): both fractions as bars, then an empty bar in the common denominator at each rewrite step.
+  - **Comparing with 1/2** (`cmpBench`): a 0 to 1 number line with 1/2 marked, shown only on the final compare step so it doesn't answer the benchmark questions.
+  - **Comparing fractions** (`cmpFrac`): both fractions as bars in the common denominator on the compare step.
+  - Bars are skipped when the denominator is over 24, or over 30 for `cmpFrac`, because the parts would be too thin to see.
 - **Fraction answers** use the Bakery's fraction boxes. 4th grade doesn't require simplest form, so any equal fraction is accepted, except that mixed-number answers must have a fraction part less than 1.
 - **Equivalent fractions:** from pictures, number lines, and missing numbers; level 3 picks the equal fraction from real mistakes (adding the same number to top and bottom, scaling only one). Common denominators find the smallest shared denominator, then rewrite both.
 - **Comparing:** pictures, benchmarks (each fraction against 1/2, then compare), common denominators, and word problems. Wrong answers that follow "bigger denominator is bigger" are named.

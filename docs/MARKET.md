@@ -20,6 +20,10 @@ The Market Stall opens after the Bakery Unit Test (or with the teacher's "Open t
 - **Equivalent forms:** percent ↔ decimal (the moving-the-decimal pop-up), percent → fraction in simplest form (the Bakery's simplest-form step), fraction → percent, benchmark percents (50%, 10%, 25%, 20%, 5%, 1%) and building others from them (60% = 3 × 20%), and "which is the same as 30% of 80?" with real wrong answers.
 - **Percent problems:** double number lines in 20% or 25% jumps (find the part, the whole, or the percent), finding the part with 10%, the percent with "out of 100", the whole by building up to 100%, and word problems that first ask which one matches the story.
 - **Double number lines** use `dnlFit` (the Café's `dnlHTML` shrunk to fit a phone without scrolling).
+- **Percent pictures** (`pctBarSVG`, `barModelSVG`, in `findingPct`):
+  - Level 1: a percent bar in 10% steps. It shows the 10% box while she finds 10%, then the shaded part.
+  - Level 2: a bar of the whole with the part shaded.
+  - Level 3: the whole split into equal percent parts, with the shaded parts labeled.
 
 ## Mix-ups
 

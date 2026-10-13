@@ -24,6 +24,11 @@ The Potion Lab opens after the Ice Rink Unit Test (or with the teacher's "Open t
 - **Equations (station 5):** a balance picture (`balanceHTML`), "what do you do to both sides?" before solving, decimals on level 3 of + and −, fraction coefficients like (2/3)x = 8 on level 3 of × and ÷ (with the reciprocal pop-up), and stories that pick the equation first.
 - **Inequalities (station 6):** testing values (is 5 a solution of x > 5?), picking the graph (`ineqSVG`: open circle for < and >, filled for ≤ and ≥, and an arrow), temperature stories with "at least" and "at most", and dependent vs. independent variables with an x–y table (fill in a missing value, then pick the rule).
 - **Distributive property:** 24 + 36 = 12(2 + 3), 3(x + 4) = 3x + 12, 6x + 9 = 3(2x + 3), and combining like terms. Every wrong choice is tested at several values of x (`exprChoice`, `sameFn`) so it is never secretly equivalent to the right one.
+- **Bar models on the Solve step** (`barModelSVG`):
+  - **One-step addition and subtraction** (`oneStepAdd`, levels 1 and 2): x and the number side by side under the total.
+  - **One-step multiplication** (`oneStepMult`): a boxes of x make the total.
+  - **One-step division:** a boxes make x.
+  - The bar shows up after she picks the inverse operation, so it doesn't answer the "Undo it" question.
 
 ## Mix-ups
 
