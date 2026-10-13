@@ -1743,6 +1743,8 @@ Object.assign(GEN, BULK_GEN);
 /* ===== 4th grade, Lemonade Stand (Sadlier lessons 1 to 5): comparing, word problems, factors, patterns ===== */
 const choiceOf = (right, wrongs) => shuffle([{html:right.text, text:right.text, ok:true, mis:null}, ...wrongs.filter(w => w.text !== right.text)
   .filter((w, i, arr) => arr.findIndex(x => x.text === w.text) === i).map(w => ({html:w.text, text:w.text, ok:false, mis:w.mis || null}))]);
+/* "read the picture" choices (docs: QUESTION-TYPES.md): every option is a picture; text is what the reports show. Duplicates by text are dropped. */
+const picChoice = (right, wrongs, max = 4) => shuffle([{...right, ok:true, mis:null}, ...wrongs.filter(w => w.text !== right.text).filter((w, i, arr) => arr.findIndex(x => x.text === w.text) === i).slice(0, max - 1).map(w => ({...w, ok:false, mis:w.mis || null}))]);
 const numStep = (name, type, prompt, answer, extra = {}) => ({name, type, kind:'num', prompt, answer, eq:v => v === answer, ...extra,
   ...(extra.mis ? {mis:v => v === answer ? null : extra.mis(v)} : {})});   // a mix-up never fires on the right answer (2 + 2 = 2 × 2)
 const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
@@ -2363,6 +2365,15 @@ const TOYS2_GEN = {
       visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps, answerSteps:[steps.length - 1]};
   },
   partialProd2(lvl){
+    if (lvl === 2 && Math.random() < 0.25) {   // read the picture: which area model shows this product?
+      const a = rand(2, 9) * 10 + rand(2, 9), b = rand(1, 9) * 10 + rand(2, 9), A = [a - a % 10, a % 10], B = [b - b % 10, b % 10], cells = (cols, rows) => rows.map(r => cols.map(c => r * c));
+      const pic = (cols, rows, cs, text, mis) => ({html:areaHTML(cols, rows, cs), text, mis});
+      const opts = picChoice(pic(A, B, cells(A, B), `${A.join('+')} by ${B.join('+')}`),
+        [pic([A[0] / 10, A[1]], [B[0] / 10, B[1]], cells([A[0] / 10, A[1]], [B[0] / 10, B[1]]), 'tens written as ones', 'shiftWrong'),
+         pic(A, B, B.map((r, i) => A.map((c, j) => i === j ? r * c : '')), 'only two parts', 'partialMissing')]);
+      return {title:'Toy Crates', ctx:`area model for ${a} × ${b}`, bubble:`Which area model shows ${a} × ${b}?`, helper:'Split each number into tens and ones. Every part of one number meets every part of the other.',
+        visual:`<div style="text-align:center; font-size:1.6rem">${a} × ${b}</div>`, steps:[{name:'Read the picture', type:'concept', kind:'choice', prompt:`Which area model shows ${a} × ${b}?`, options:opts, hint:() => `${a} is ${A[0]} + ${A[1]}. ${b} is ${B[0]} + ${B[1]}. Look for four boxes.`}]};
+    }
     const a = lvl === 1 ? rand(11, 39) : lvl === 2 ? rand(21, 99) : rand(5, 9) * 10 + rand(5, 9), b = lvl === 1 ? rand(11, 29) : lvl === 2 ? rand(12, 99) : rand(4, 9) * 10 + rand(4, 9), [at, ao] = [a - a % 10, a % 10], [bt, bo] = [b - b % 10, b % 10];
     const pairs = [[bo, ao], [bo, at], [bt, ao], [bt, at]].filter(([x, y]) => x && y), total = a * b;
     /* area model picture (docs: GRADE4-2-TOYS.md): columns are the parts of a, rows the parts of b; each partial product fills its box as it is found */
@@ -2556,6 +2567,13 @@ const PIZZA_KIDS = [['🧒', 'Mia'], ['👦', 'Leo'], ['👧', 'Ava'], ['🧑', 
 const fracStep = (name, prompt, p, q, extra = {}) => ({name, type:'compute', kind:'frac', prompt, answer:FRAC.simplest(p, q), eq:v => FRAC.same(v, p, q) && (!extra.mixedOnly || v[1] < v[2]), ...extra});
 const PIZZA_GEN = {
   eqFracModel(lvl){
+    if (lvl >= 2 && Math.random() < 0.3) {   // read the picture: which bar shows the same amount?
+      const [a, b] = properFrac(2, 5), k = rand(2, 3), bar = (n, d) => ({html:fracBarSVG(n, d, {w:220}), text:`${n}/${d} bar`});
+      return {title:'Slices', ctx:`picture equal to ${a}/${b}`, bubble:`This pizza has ${a}/${b} left. Which picture shows the same amount of pizza, cut into ${b * k} slices?`, helper:'Same amount, more slices: every slice is cut into the same number of pieces.',
+        visual:`<div class="frac-pics">${fracBarSVG(a, b)}<div style="text-align:center">${a}/${b}</div></div>`,
+        steps:[{name:'Read the picture', type:'concept', kind:'choice', prompt:`Which shows the same amount as ${a}/${b}?`,
+          options:picChoice(bar(a * k, b * k), [{...bar(a + k, b * k), mis:'additiveEquiv'}, {...bar(a, b * k), mis:'onlyOneScaled'}, {...bar(b * k - a * k, b * k)}, {...bar(a * k + 1, b * k)}]), hint:() => `Each 1/${b} becomes ${k} slices. How many slices are shaded?`}]};
+    }
     const [a, b] = lvl === 1 ? [1, pick([2, 3, 4])] : properFrac(2, 6), k = rand(2, lvl === 3 ? 4 : 3), big = b * k, top = a * k;
     const down = lvl >= 2 && Math.random() < 0.5;          // from the many small parts back to the few big parts
     return {title:'Slices', ctx:down ? `${top}/${big} = ?/${b}` : `${a}/${b} = ?/${big}`, bubble:down ? `This pizza is cut into ${big} slices and ${top} are left. How many ${FRAC.part(b, true)} is that?` : `This pizza is cut into ${FRAC.part(b, true)}, and ${a} ${a === 1 ? 'is' : 'are'} left. If I cut every slice into ${k}, how many of the ${big} slices are left?`,
@@ -3357,6 +3375,12 @@ const MARKET_GEN = {
       steps:[numStep('One jump', 'concept', `100% ÷ ${seg} = ?%`, stepP, {}), numStep('Percent', 'compute', `${j} × ${stepP}% = ?%`, j * stepP, {mis:v => v === j * u ? 'percentNot100' : v === 100 - j * stepP ? 'percentComplement' : null})], answerSteps:[1]};
   },
   findingPct(lvl){
+    if (lvl === 1 && Math.random() < 0.25) {   // read the picture: which bar shows the percent?
+      const t = rand(1, 9), P = t * 10, bar = (on, parts, text, mis) => ({html:barModelSVG(Array.from({length:parts}, (_, i) => ({label:'', on:i < on})), {w:240}), text, mis});
+      const opts = picChoice(bar(t, 10, `${t} of 10 shaded`), [bar(10 - t, 10, `${10 - t} of 10 shaded`, 'percentComplement'), ...(t < 5 ? [bar(t, 5, `${t} of 5 shaded`, 'percentNot100')] : [bar(t - 1, 10, `${t - 1} of 10 shaded`)]), bar(t === 9 ? 7 : t + 1, 10, `${t === 9 ? 7 : t + 1} of 10 shaded`)], 3);
+      return {title:'Discount Bin', ctx:`picture of ${P}%`, bubble:`Which bar is ${P}% shaded?`, helper:'Percent means out of 100. A bar cut into 10 equal parts has 10% in each part.',
+        visual:`<div style="text-align:center; font-size:1.8rem">${P}%</div>`, steps:[{name:'Read the picture', type:'concept', kind:'choice', prompt:`Which bar shows ${P}%?`, options:opts, hint:() => `${P}% is ${t} tens out of 100, so ${t} out of 10 equal parts.`}]};
+    }
     if (lvl === 1) {
       const P = rand(1, 9) * 10, W = rand(2, 30) * 10, ten = W / 10, part = ten * P / 10;
       return {title:'Discount Bin', ctx:`${P}% of ${W}`, bubble:`What is ${P}% of ${W}?`, helper:'Find 10% first, then build up.', visual:`<div style="text-align:center; font-size:1.8rem">${P}% of ${W}</div>${pctBarSVG(P / 10, {0:0, 10:W})}`,
@@ -3725,6 +3749,13 @@ const RINK_GEN = {
       steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${sgn(a)} ◯ ${sgn(b)}`, options:opts, hint:() => `Which one is farther right?`}]};
   },
   cmpRational(lvl){
+    if (lvl === 2 && Math.random() < 0.3) {   // read the picture: which number line puts both numbers in the right place?
+      let a, b; do { a = rand(-15, 15); b = rand(-15, 15); } while (a === b || a === 0 || b === 0 || Math.abs(a) === Math.abs(b) || (a > 0 && b > 0));
+      const names = [sgn(a), sgn(b)], line = (vals, text, mis) => ({html:distLineSVG(vals, {names, w:260}), text, mis});
+      const opts = picChoice(line([a, b], 'right places'), [line([-a, -b], 'signs flipped', 'signWrong'), line([b, a], 'points swapped', 'negCompare')]);
+      return {title:'Race Board', ctx:`number line for ${sgn(a)} and ${sgn(b)}`, bubble:`Which number line shows ${sgn(a)} and ${sgn(b)} in the right places?`, helper:'Negative numbers are left of 0. The farther from 0, the bigger the number after the minus sign.',
+        visual:'', steps:[{name:'Read the picture', type:'concept', kind:'choice', prompt:`Which number line is right?`, options:opts, hint:() => `${sgn(Math.min(a, b))} should be farther left than ${sgn(Math.max(a, b))}.`}]};
+    }
     const make = () => lvl === 1 ? rand(-30, 30) : lvl === 2 ? rand(-50, 50) / 10 : pick([rand(-40, 40) / 4, rand(-30, 30) / 10]);
     let a, b; do { a = make(); b = make(); } while (a === b || (a > 0 && b > 0) || Math.random() < 0.3 && !(a < 0 && b < 0));
     const txt = x => lvl === 3 && Math.round(x * 4) === x * 4 && Math.round(x * 10) !== x * 10 ? sgnF(Math.round(x * 4), 4) : sgnD(x);
@@ -4181,6 +4212,13 @@ const POTION2_GEN = {
           work:form === 'sub' ? barModelSVG([{label:rhs, w:Math.max(1, x - a), on:true}, {label:a, w:Math.max(1, a)}], {total:'x'}) : barModelSVG([{label:'x', w:Math.max(1, x), on:true}, {label:a, w:Math.max(1, a)}], {total:rhs})})], answerSteps:[1]};   // bar model: the parts and the whole
   },
   oneStepMult(lvl){
+    if (lvl < 3 && Math.random() < 0.25) {   // read the picture: which bar model matches the equation?
+      const a = rand(3, 6), x = rand(2, 9), rhs = a * x, boxes = (n, lbl, total) => barModelSVG(Array.from({length:n}, () => ({label:lbl, on:true})), {total, w:240});
+      const opts = picChoice({html:boxes(a, 'x', rhs), text:`${a} boxes of x make ${rhs}`},
+        [{html:barModelSVG([{label:'x', w:rhs - a, on:true}, {label:a, w:a}], {total:rhs, w:240}), text:`x and ${a} make ${rhs}`, mis:'inverseWrong'}, {html:boxes(a, rhs, 'x'), text:`${a} boxes of ${rhs} make x`, mis:'inverseWrong'}]);
+      return {title:'Balance Scale', ctx:`bar model for ${a}x = ${rhs}`, bubble:`Which bar model shows ${a}x = ${rhs}?`, helper:`${a}x means ${a} groups of x.`, visual:balanceHTML(`${a}x`, String(rhs)),
+        steps:[{name:'Read the picture', type:'concept', kind:'choice', prompt:`Which bar model shows ${a}x = ${rhs}?`, options:opts, hint:() => `Look for ${a} equal boxes that add up to ${rhs}.`}]};
+    }
     if (lvl === 3 && Math.random() < 0.6) {
       const [p, q] = pick([[1, 2], [2, 3], [3, 4], [1, 3], [3, 5], [2, 5]]), k = rand(2, 9), x = q * k, rhs = p * k;
       const text = `(${p}/${q})x = ${rhs}`;

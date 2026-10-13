@@ -57,3 +57,17 @@ Every math station that has skills (52 stations, grades 4 and 6) has a **🧠 Th
 - **Math:** 52 stations, each with 2 scored questions and 1 explain-your-thinking answer (156 questions).
 
 Next units follow the same pattern. Teacher Copy prompt and Import still bring in multiple choice only.
+
+## Read-the-picture questions (math)
+
+Some math problems ask the student to pick a **picture** instead of a number. Each answer choice is a diagram (`picChoice` in `src/game/game.js`). They show up as a variant of an existing skill, so they count toward that skill's practice, and each wrong picture is tied to the mix-up it shows.
+
+| Building | Skill | How often | The question | Wrong pictures |
+|---|---|---|---|---|
+| Pizza Parlor | `eqFracModel` | levels 2 and 3, about 3 in 10 | Which bar shows the same amount as a/b, cut into more slices? | adds instead of multiplies (`additiveEquiv`), only the bottom scaled (`onlyOneScaled`), the unshaded part, one slice off |
+| Toy Shop | `partialProd2` | level 2, about 1 in 4 | Which area model shows a × b? | tens written as ones (`shiftWrong`), only two of the four parts (`partialMissing`) |
+| Market Stall | `findingPct` | level 1, about 1 in 4 | Which bar is P% shaded? | the other part shaded (`percentComplement`), shaded out of 5 instead of 10 (`percentNot100`), one part off |
+| Potion Lab | `oneStepMult` | levels 1 and 2, about 1 in 4 | Which bar model shows ax = b? | x plus a (`inverseWrong`), a boxes of b making x (`inverseWrong`) |
+| Ice Rink | `cmpRational` | level 2, about 3 in 10 | Which number line shows both numbers in the right places? | signs flipped (`signWrong`), points swapped (`negCompare`) |
+
+Each question has 3 or 4 choices, exactly one right picture, and no repeats (checked on 1,000 generated problems per skill).

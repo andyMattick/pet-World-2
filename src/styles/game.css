@@ -964,3 +964,5 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .bar-model .bm-small{font-size:11px; font-weight:600}
 .bar-model .bm-brace{fill:none; stroke:currentColor; stroke-width:2}
 .bar-model .fb-on + .bm-text{fill:#4A2E2A}
+.opt .frac-bar, .opt .num-line, .opt .bar-model{display:block; max-width:100%; height:auto}
+.opt .area-model{margin:2px auto; font-size:.95rem}
