@@ -105,6 +105,20 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 - [x] 3q. Reading Quiz with grown-up verification (`READING-QUIZ.md`). Still to check on the live site: a teacher verdict round trip
 - [ ] 3p. Next: finish the My Pet Room and Dress-up MVP (`PET-ROOM.md`), then complete Arcade prize handling and browser review before scheduling more post-6th-grade work
 - [ ] 4. 7th grade: plan from Khan 7th grade, then build before next school year
+- [ ] 3r. Math 🧠 Think it through with fresh numbers: turn each station's fixed set into number templates (`QUESTION-TYPES.md`). Details below
+
+### 3r. Think it through with fresh numbers
+
+**Why:** each math station's 🧠 Think it through set is 2 hand-written questions with fixed numbers, so a retry repeats the answers the student just saw. Since a set now has to be passed before the next station opens, and a missed set comes back as "Practice again", a retry should be new questions.
+
+**Plan:**
+
+- Each station gets 4 to 6 **templates** that make new numbers and contexts every try (for example "7 kittens and 3 puppies…", then "5 muffins and 9 juices…"), in different types (select all, two-part, sort, put in order, type the answer). Each try draws 3.
+- Wrong choices are built from the station's real mix-ups (reversed order, part vs. total, adding instead of multiplying), following `CONTENT-RULES.md`: fair wrong answers, the right answer not always the longest.
+- Each template has a stable id, so the "Missed" stats and the parent and teacher reports keep working. The "explain your thinking" answer and teacher-added questions stay as they are.
+- Each batch comes with a review list of sample questions (right answers in bold) for the owner to read before applying.
+
+**Order:** a pilot in the ☕ Pet Café (4 stations), then the rest of 6th grade shop by shop, then 4th grade. 52 stations in all.
 
 ## Database files, in the order they were run
 
