@@ -32,7 +32,8 @@ export class ActivityTracker {
   private readonly onInput = () => { this.lastInput = Date.now(); };
   private readonly onVisibility = () => { if (document.hidden) void this.report(); };
 
-  constructor(private readonly onReport: (seconds: number) => Promise<boolean> | boolean) {}
+  /** onActive (optional) hears about each 15 active seconds as they're counted, e.g. to credit them to a subject. */
+  constructor(private readonly onReport: (seconds: number) => Promise<boolean> | boolean, private readonly onActive?: (seconds: number) => void) {}
 
   start() {
     this.stop();
@@ -40,7 +41,7 @@ export class ActivityTracker {
     for (const type of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(type, this.onInput, { passive: true });
     document.addEventListener('visibilitychange', this.onVisibility);
     this.tickTimer = setInterval(() => {
-      if (!document.hidden && Date.now() - this.lastInput < 60000) this.pending += 15;
+      if (!document.hidden && Date.now() - this.lastInput < 60000) { this.pending += 15; try { this.onActive?.(15); } catch { /* never stop the clock */ } }
     }, 15000);
     this.reportTimer = setInterval(() => { void this.report(); }, 60000);
   }

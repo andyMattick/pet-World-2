@@ -31,6 +31,8 @@ The student sees the rubric ("A strong answer:") while writing, and Send unlocks
 - **Teacher:** On the Dashboard, the "✍️ Written answers to read" card lists students with answers waiting. Open a student and go to the ✍️ Written tab. Tick each rubric point the answer shows, add a note, or ask for a redo. The review is saved in the student's `quiz_overrides` as `written:<id>`, so there is no new database column or migration.
 - **Parent at home:** Progress report → ✍️ Written answers, behind the grown-up PIN. The parent's ticks and note are saved with the answer in the student's save. In a class, the teacher sees the parent's check and can change it; the teacher's check wins.
 - **Student:** The unit page has a "✍️ My written answers" list showing each answer, its status, the ticks and the note.
+- **A redo:** when the question comes back in practice, the student sees who asked, the note, which rubric points the last answer already had (✓) and which are still needed (○), and the last answer already in the box to revise.
+- **Teacher checks show right away:** after saving a check on a student's page, closing the page redraws the dashboard, so the "Waiting for a grown-up" card no longer lists it.
 
 ## Where things live
 

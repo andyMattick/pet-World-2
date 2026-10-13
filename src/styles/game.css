@@ -589,6 +589,10 @@ textarea.code{width:100%; min-height:110px; font-family:ui-monospace,Menlo,Conso
   .helper{margin-top:10px}
 }
 .pt-bars{display:flex; align-items:flex-end; gap:4px; height:96px; margin-top:8px}
+.subject-time-wrap{overflow-x:auto}
+.subject-time{width:100%; border-collapse:collapse; font-size:.9rem}
+.subject-time th, .subject-time td{padding:4px 6px; border-bottom:1px solid var(--edge); text-align:left; white-space:nowrap}
+.subject-time-sum td{border-top:2px solid var(--edge)}
 .pt-day{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; gap:2px}
 .pt-bar{display:block; width:100%; min-height:2px; background:var(--mint); border-radius:4px 4px 0 0}
 .pt-day small{font-size:.7rem; color:var(--ink-soft)}
@@ -916,6 +920,9 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .written-mine{white-space:pre-wrap; padding:8px 12px; border-left:4px solid var(--berry); margin:8px 0}
 .written-points{list-style:none; padding:0; margin:4px 0}
 .written-points .no{color:var(--ink-soft)}
+.written-redo{padding:10px 14px; border:2px solid var(--berry); border-radius:10px; margin:8px 0; background:var(--surface)}
+.written-redo p{margin:6px 0 0}
+.written-note{font-size:1.05rem; white-space:pre-wrap}
 .written-review blockquote{white-space:pre-wrap; margin:8px 0; padding:8px 12px; border-left:4px solid var(--berry)}
 .written-ticks{display:grid; gap:6px; margin:8px 0}
 

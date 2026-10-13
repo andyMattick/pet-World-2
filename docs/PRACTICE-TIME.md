@@ -22,6 +22,26 @@
   - a **recent sessions** list with date, start time, end time, active minutes, and device
 - "Today" and daily totals use the **teacher's time zone**.
 
+## Time by subject
+
+Each 15 seconds of active time is credited to whatever is on screen:
+
+| On screen | Subject |
+|---|---|
+| A shop, a shift, the Sprint Track, a shift summary, or a math "Think it through" | Math |
+| An English lesson, quiz or test (and its unit page) | English |
+| The Reading Log or a reading quiz | Reading Log |
+| Word Workshop | Word Workshop |
+| A History lesson, quiz, test or project | History |
+| A Biology lesson, quiz, test, project or lab | Science |
+| The Arcade (clicks inside a game don't reach Pet Town, so most game time isn't counted) | Arcade |
+| The town map, the pet room, the sticker book, menus, the progress report | Around town |
+
+- Saved in the town as `S.subjectTime = {'YYYY-MM-DD': {math: seconds, ...}}`, the student's own dates, the last 60 days. Two devices merge by keeping the larger total for each day and subject.
+- **Grown-ups:** the progress report's Practice time panel has a **Time by subject** table for the last 7 days.
+- **Teacher:** the student page's Practice time section has the same table, read from the student's save. The minutes above it come from the database, so the two can differ by a minute or two.
+- Code: `src/shared/subjectTime.ts` (storing, merging, the table), `subjectOnScreen()` in `src/game/game.js`, and the `onActive` callback of `ActivityTracker` in `src/lib/studentBackend.ts`.
+
 ## What the database file does (tested on real PostgreSQL 16)
 
 - Adds `practice_sessions`. Students can't read or write it directly; they only go through `session_start()` and `session_ping()`, which only touch their own session. Teachers can read their own classes' sessions.

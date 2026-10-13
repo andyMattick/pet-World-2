@@ -5,6 +5,7 @@ import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKI
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
+import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML } from '../shared/subjectTime';
 import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
@@ -49,7 +50,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], rewardsPaid:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], subjectTime:{}, readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -138,6 +139,7 @@ function normalize(raw){
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
+  s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
@@ -6660,11 +6662,19 @@ function answerTyped(){
 }
 /* the written step at the end of a practice (short answer) or a unit test (paragraph) */
 function renderWrittenStep(){
-  const run = englishRun, question = run.written, test = run.retryType === 'final', need = question.minWords || 1, words = wordCount(run.writtenText || '');
+  const run = englishRun, question = run.written, test = run.retryType === 'final', need = question.minWords || 1;
   const who = Backend.me ? 'your teacher' : 'a grown-up';
+  /* a redo: show who asked, their note, which points the last answer already had, and that answer to start from */
+  const last = latestWritten(question.id), review = last && last.qid === question.id ? writtenReviewOf(last) : null, redo = review?.redo ? review : null;
+  if (redo && run.writtenText === undefined) run.writtenText = last.text;
+  const words = wordCount(run.writtenText || '');
+  const redoHTML = !redo ? '' : `<div class="written-redo"><b>🔁 ${redo.by === 'teacher' ? 'Your teacher' : 'A grown-up'} asked for a redo.</b>${redo.comment ? `<p class="written-note">“${esc(redo.comment)}”</p>` : ''}
+    <p class="muted">Your last answer is below. Change it to add what’s missing, then send it again.</p></div>`;
+  const rubricHTML = redo ? `<div class="written-rubric"><b>A strong answer:</b><ul class="written-points">${question.rubric.map((point, i) => `<li class="${redo.points[i] ? 'ok' : 'no'}">${redo.points[i] ? '✓ you had this:' : '○ still needed:'} ${esc(point)}</li>`).join('')}</ul></div>`
+    : `<div class="written-rubric"><b>A strong answer:</b><ul>${question.rubric.map(point => `<li>${esc(point)}</li>`).join('')}</ul></div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to the shop</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Exit</button>`}</div>
     <div class="ela-question written-step"><p class="muted">${test ? `Last part · written answer · your score so far: ${run.score} of ${run.questions.length}` : `One more: a written answer · ${run.score} of ${run.questions.length} correct`}</p>
-    <h3>✍️ ${esc(question.prompt)}</h3><div class="written-rubric"><b>A strong answer:</b><ul>${question.rubric.map(point => `<li>${esc(point)}</li>`).join('')}</ul></div>
+    <h3>✍️ ${esc(question.prompt)}</h3>${redoHTML}${rubricHTML}
     <textarea class="written-text" rows="${question.type === 'essay' ? 10 : 5}" maxlength="4000" aria-label="Your answer">${esc(run.writtenText || '')}</textarea>
     <p class="muted written-count">${words} word${words === 1 ? '' : 's'}${words < need ? ` · at least ${need}` : ' ✓'}</p>
     <p class="muted">${esc(who[0].toUpperCase() + who.slice(1))} will read this and check it against the list above. It doesn’t change your ${test ? 'test' : 'practice'} score.</p>
@@ -8421,6 +8431,7 @@ function practiceTimePanel(){
       <div class="stat"><b>${week} min</b>in the last 7 days</div></div>
     <p>Last played: <b>${esc(lastTxt)}</b>. Only active time counts: the game has to be on screen, with a tap or key press in the last minute.</p>
     <div class="pt-bars" aria-label="Minutes practiced each day for the last 14 days">${bars}</div>
+    <h4>Time by subject</h4>${subjectTimeTableHTML(S.subjectTime, 7)}
     ${Backend.me ? '<p class="muted">Your teacher sees the full practice history.</p>' : ''}</div>`;
 }
 function renderParent(){
@@ -8569,7 +8580,19 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-});
+}, seconds => addSubjectTime(S.subjectTime, subjectOnScreen(), seconds));
+/* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
+function subjectOnScreen(){
+  const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
+  if (on('cafe') || on('shift') || on('sprint') || on('summary')) return 'math';
+  if (on('vocab')) return 'words';
+  if (on('arcade')) return 'arcade';
+  if (!on('library')) return 'town';
+  const wrap = $('#libraryWrap');
+  if (readingRun || wrap.querySelector('.ela-layout')) return 'reading';
+  const courseId = englishRun && wrap.querySelector('.ela-question') ? englishRun.courseId : activeEnglishCourse;
+  return courseId === 'math' ? 'math' : isHistoryCourse(courseId) ? 'history' : isScienceCourse(courseId) ? 'science' : 'english';
+}
 function startTownTracker(){ localSession = null; townTracker.start(); }
 /* Two devices, one student: the save is one record and the newer one is loaded, so work done on the other device
    could be lost (a draft saved on a tablet that went to sleep before it reached the server, then the town opened on
@@ -8637,6 +8660,7 @@ function mergeProgress(base, other){
     if (!mine) { sessions.set(key, x); n++; } else if (x.active > mine.active) { sessions.set(key, {...mine, end:Math.max(mine.end || 0, x.end || 0), active:x.active}); n++; }
   }
   base.sessions = [...sessions.values()].sort((a, b) => a.start - b.start).slice(-30);
+  n += mergeSubjectTime(base.subjectTime, other.subjectTime);
   for (const [day, mins] of Object.entries(other.mathMinutes || {})) if ((Number(mins) || 0) > (Number(base.mathMinutes[day]) || 0)) { base.mathMinutes[day] = mins; n++; }
   for (const [sk, count] of Object.entries(other.kn || {})) if (count > (base.kn[sk] || 0)) {
     base.kn[sk] = count; if (other.kr?.[sk] != null) base.kr[sk] = other.kr[sk]; if (other.ks?.[sk]) base.ks[sk] = other.ks[sk]; n++;

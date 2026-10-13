@@ -1,6 +1,7 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
 import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '../shared/questionTypes';
 import { LESSON_COURSES } from '../shared/questionBanks';
+import { subjectTimeTableHTML } from '../shared/subjectTime';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
@@ -26,6 +27,7 @@ export interface StudentReport {
   scienceProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   writtenAnswers?: WrittenEntry[];
+  subjectTime?: Record<string, Record<string, number>>;   // active seconds per day and subject, from the student's save
 }
 /* a short answer or paragraph from the student's save (docs: QUESTION-TYPES.md) */
 interface WrittenEntry { id: string; courseId: string; skillId: string; type: string; prompt: string; rubric: string[]; model: string; text: string; at: number; where: string; parentReview?: { points: number[]; comment: string; redo: boolean } }
@@ -88,7 +90,12 @@ function assessmentCell(r: StudentReport, shop: string, station: number | null, 
   return `${inReview ? '🔁 ' : ''}${best.score}/${best.total}`;
 }
 
+/* A check saved on a student's page (written answers, projects, reading, quiz marks) changes that student's overrides.
+   They are copied back into the report (r.qx), and closing the page redraws the dashboard, so "Waiting for a grown-up"
+   and the student's page show the new check right away instead of after the next reload. */
+let redrawReport: (() => void) | null = null, reportChanged = false;
 export function renderClassReport(el: HTMLElement, list: StudentReport[], onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent, onSaveQuizOverride?: SaveQuizOverride) {
+  redrawReport = () => renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
   if (!list.length) { el.innerHTML = '<div class="card empty">No students yet. Add your roster on the Roster tab.</div>'; return; }
   const shop = (reportShop && SHOPS[reportShop]) || shopsIn(reportHome)[0] || SHOPS.cafe;
   const shopStations = shop.stations.map(st => ({
@@ -285,7 +292,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     if (!onSaveQuizOverride) return;
     const next = { ...overrides };
     if (value) next[key] = value; else delete next[key];
-    try { await onSaveQuizOverride(r.id, Object.keys(next).length ? next : null); overrides = next; renderQuizCard(); }
+    try { await onSaveQuizOverride(r.id, Object.keys(next).length ? next : null); overrides = next; r.qx = Object.keys(next).length ? { ...next } : null; reportChanged = true; renderQuizCard(); }
     catch (err) { const msg = $('#studentQuizMsg'); if (msg) msg.textContent = String(err); }
   }
   function renderQuizCard() {
@@ -529,7 +536,7 @@ function readingReviewHTML(r: StudentReport, overrides: Record<string, string>) 
   }).join('');
   return `<div class="card"><h2>Reading Log and Reading Quizzes${waiting ? ` · ${waiting} waiting` : ''}</h2><p class="muted">Students write these notes themselves. Check each chapter against the book: only verified chapters can be quizzed. Quiz questions are built from the verified notes; essays wait for you to read.</p>${books || '<p class="muted">No books added yet.</p>'}</div>`;
 }
-export function closeDetail() { $('#detail').hidden = true; }
+export function closeDetail() { $('#detail').hidden = true; if (reportChanged && redrawReport) { reportChanged = false; redrawReport(); } }
 $('#detail').addEventListener('click', e => { if ((e.target as HTMLElement).id === 'detail') closeDetail(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#detail').hidden) closeDetail(); });
 
@@ -543,6 +550,7 @@ function practiceHTML(r: StudentReport) {
     return `<tr><td>${esc(s.toLocaleDateString())}</td><td>${esc(s.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td><td>${esc(e.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td><td>${Math.round(secs / 60)} min</td><td>${esc(device || '–')}</td></tr>`; }).join('');
   return `<h2>Practice time</h2><div class="summary"><div class="kpi"><b>${minTxt(ss?.today ?? 0)}</b>today</div><div class="kpi"><b>${minTxt(ss?.week ?? 0)}</b>in the last 7 days</div><div class="kpi"><b>${esc(signedInTxt(ss?.last))}</b>last signed in</div></div>
     <p class="muted" style="margin:10px 0 4px">Active minutes per day, last 4 weeks</p><div class="pt-bars" aria-label="Active minutes per day for the last 4 weeks">${bars}</div>
+    <h3>Time by subject</h3>${subjectTimeTableHTML(r.subjectTime, 7)}
     <h3>Recent sessions</h3>${recent ? `<table class="steptable"><tr><th>Date</th><th>Started</th><th>Last active</th><th>Active</th><th>Device</th></tr>${recent}</table>` : '<p class="muted">No sessions yet.</p>'}`;
 }
 

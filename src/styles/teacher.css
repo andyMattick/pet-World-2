@@ -59,6 +59,8 @@ td.cell{text-align:center; min-width:28px; font-weight:700; color:#3B2724}
 .two{display:grid; grid-template-columns:1fr 1fr; gap:14px}
 @media (max-width:760px){.two{grid-template-columns:1fr}}
 .steptable{width:100%; border-collapse:collapse; font-size:.85rem}
+.subject-time-wrap{overflow-x:auto}
+.subject-time td, .subject-time th{white-space:nowrap}
 .steptable td, .steptable th{padding:4px 6px; border-bottom:1px solid var(--line); text-align:left}
 .tag{font-size:.72rem; font-weight:700; border-radius:6px; padding:0 6px}
 .tag.i{background:#DCEBFF; color:#1F3F73} .tag.a{background:#FFF0C2; color:#6B4B00}
