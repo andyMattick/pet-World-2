@@ -5867,14 +5867,16 @@ const khanOn = () => Backend.me ? Backend.me.game_settings?.khan !== false : !S.
 /* key ("<courseId>:<groupId>", or ":<n>" after it for an extra reading): if the class's teacher saved their own
    https:// link for this lesson, it comes first, with a smaller Khan link under it unless the teacher turned that off */
 function khanLinkHTML(url, name, key){
-  const href = url || `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`;
+  const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
+  /* a fixed link can break if Khan moves a page, so it always comes with a search for the lesson as a backup (docs: KHAN.md) */
+  const backup = url ? `<a class="ela-khan-also" href="${esc(search)}" target="_blank" rel="noopener noreferrer">Link not working? Search Khan Academy</a>` : '';
   const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, video = key ? lessonVideo(key) : null;
   const khanAlso = `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>`;
   if (mine && youtubeId(mine.url)) return `${lessonVideoButtonHTML(studentVideo(key))}${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${mine.showKhan && khanOn() ? khanAlso : ''}`;   // the teacher's YouTube video plays in Pet Town
   if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${video ? lessonVideoButtonHTML(video, 'also') : mine.showKhan && khanOn() ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
   if (video) return lessonVideoButtonHTML(video);   // our own video replaces the Khan link (docs: LESSON-VIDEOS.md)
   if (!khanOn()) return '';   // Khan is off: the lesson text above is the lesson
-  return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>`;
+  return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>${backup}`;
 }
 const REPORT_COURSES = ['nouns','verbs','history','history2','history3','history4','bio1'];
 function englishProgressReportHTML(canReview = false){

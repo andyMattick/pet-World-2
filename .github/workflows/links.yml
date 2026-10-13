@@ -1,0 +1,16 @@
+# Opens every Khan Academy link Pet Town shows, every Monday (docs: KHAN.md, "Checking links").
+# If a link is dead, this run fails and GitHub emails you. Run it any time from the Actions tab → Khan links → Run workflow.
+name: Khan links
+on:
+  schedule:
+    - cron: '17 12 * * 1'   # Mondays, 12:17 UTC (early morning in the US)
+  workflow_dispatch:
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/check-links.mjs --online
