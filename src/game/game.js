@@ -47,7 +47,7 @@ const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const QUESTION_STATS_MAX = 400;   // bank questions with a saved answered/missed tally (questionStats)
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
-  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}},
+  mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], rewardsPaid:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
   review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
@@ -166,7 +166,7 @@ function normalize(raw){
   s.bestStreak = Math.max(0, Math.floor(+s.bestStreak || 0));
   s.coins = Math.max(0, Math.floor(+s.coins || 0));
   s.mathMinutes = s.mathMinutes && typeof s.mathMinutes === 'object' ? s.mathMinutes : {};
-  s.arcade = Object.assign({tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], gameSaves:{}}, s.arcade || {});
+  s.arcade = Object.assign({tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], rewardsPaid:[], gameSaves:{}}, s.arcade || {});
   if (raw?.arcade?.timerVersion !== 3) s.arcade.playedSeconds = 0;
   s.arcade.timerVersion = 3;
   s.arcade.tickets = Math.max(0, Math.floor(+s.arcade.tickets || 0));
@@ -176,6 +176,8 @@ function normalize(raw){
   s.arcade.ticketDay = typeof s.arcade.ticketDay === 'string' ? s.arcade.ticketDay : '';
   s.arcade.ticketsEarnedToday = Math.max(0, Math.floor(+s.arcade.ticketsEarnedToday || 0));
   s.arcade.completedRounds = Array.isArray(s.arcade.completedRounds) ? [...new Set(s.arcade.completedRounds.filter(id => typeof id === 'string'))].slice(-200) : [];
+  // in-game rewards already paid in tickets, as 'gameId:rewardId', so a reward pays once ever (Mine Walker)
+  s.arcade.rewardsPaid = Array.isArray(s.arcade.rewardsPaid) ? [...new Set(s.arcade.rewardsPaid.filter(id => typeof id === 'string'))].slice(-500) : [];
   s.arcade.gameSaves = Object.fromEntries(Object.entries(s.arcade.gameSaves && typeof s.arcade.gameSaves === 'object' ? s.arcade.gameSaves : {})
     .filter(([id, state]) => ARCADE_GAMES.some(game => game.id === id) && typeof state === 'string' && state.length <= 100000));
   return s;
@@ -5129,7 +5131,19 @@ function arcadeModuleMessage(event){
     run.highestScore = Math.max(run.highestScore, score);
     earned = Math.floor(run.highestScore / policy.corsairPointsPerTicket) - oldMilestones;
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
-  if (run.gameOfDay) earned += policy.gameOfDayBonusTickets;
+  else if (run.gameId === 'mine-walker' && data.mode === 'endless') earned = Math.floor(score / policy.mineRowsPerTicket);
+  else if (run.gameId === 'mine-walker') {
+    // Each reward (a level clear or a medal, e.g. 'L3-flawless_run') pays once, ever. Rewards that don't fit under
+    // today's cap aren't marked paid, so earning them again another day still pays (docs/ARCADE-MINE-WALKER.md).
+    const fresh = [...new Set(Array.isArray(data.rewards) ? data.rewards : [])]
+      .filter(id => typeof id === 'string' && /^L\d{1,2}-[a-z_]{1,30}$/.test(id) && !S.arcade.rewardsPaid.includes(`mine-walker:${id}`)).slice(0, 10);
+    const room = Math.max(0, policy.maxTicketsPerDay - S.arcade.ticketsEarnedToday);
+    const paying = policy.mineTicketsPerReward > 0 ? fresh.slice(0, Math.floor(room / policy.mineTicketsPerReward)) : [];
+    S.arcade.rewardsPaid = [...S.arcade.rewardsPaid, ...paying.map(id => `mine-walker:${id}`)].slice(-500);
+    earned = paying.length * policy.mineTicketsPerReward;
+  }
+  // Mine Walker's bonus needs a paying run, so replaying a level for rewards already paid earns nothing
+  if (run.gameOfDay && (run.gameId !== 'mine-walker' || earned > 0)) earned += policy.gameOfDayBonusTickets;
   const cap = Math.max(0, policy.maxTicketsPerDay - S.arcade.ticketsEarnedToday);
   const tickets = Math.min(cap, earned);
   if (tickets > 0) {

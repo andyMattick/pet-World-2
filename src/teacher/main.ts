@@ -360,6 +360,8 @@ function renderSettings() {
       <h4>Ticket rewards (paid-entry mode)</h4>
       <label for="arcadeCorsairRate">Corsair's Cove points per ticket</label><input type="number" id="arcadeCorsairRate" min="1000" max="100000" step="1000" value="${arcade.corsairPointsPerTicket}">
       <label for="arcadeWhackTickets">Tickets per completed Whack-a-Mole round</label><input type="number" id="arcadeWhackTickets" min="0" max="5" step="1" value="${arcade.whackTicketsPerRound}">
+      <label for="arcadeMineReward">Tickets per Mine Walker reward (each level clear or medal pays once, ever)</label><input type="number" id="arcadeMineReward" min="0" max="5" step="1" value="${arcade.mineTicketsPerReward}">
+      <label for="arcadeMineRows">Mine Walker Endless rows per ticket</label><input type="number" id="arcadeMineRows" min="5" max="200" step="5" value="${arcade.mineRowsPerTicket}">
       <label for="arcadeTicketCap">Maximum Arcade tickets per student each day</label><input type="number" id="arcadeTicketCap" min="0" max="100" step="1" value="${arcade.maxTicketsPerDay}">
       <label for="arcadeGameOfDayBonus">Bonus tickets for completing the Game of the Day</label><input type="number" id="arcadeGameOfDayBonus" min="0" max="5" step="1" value="${arcade.gameOfDayBonusTickets}">
       <p class="muted" style="margin-top:0">The bonus is deterministic, counts toward the daily ticket cap, and is disabled in Free Play.</p>
@@ -409,6 +411,8 @@ function renderSettings() {
       games: arcadeGames,
       corsairPointsPerTicket: +($('#arcadeCorsairRate') as HTMLInputElement).value,
       whackTicketsPerRound: +($('#arcadeWhackTickets') as HTMLInputElement).value,
+      mineTicketsPerReward: +($('#arcadeMineReward') as HTMLInputElement).value,
+      mineRowsPerTicket: +($('#arcadeMineRows') as HTMLInputElement).value,
       maxTicketsPerDay: +($('#arcadeTicketCap') as HTMLInputElement).value,
       gameOfDayBonusTickets: +($('#arcadeGameOfDayBonus') as HTMLInputElement).value
     });

@@ -310,7 +310,8 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'state-conquest', name: 'State Conquest', emoji: '🗺️', description: 'Learn all 50 states, capitals, and neighboring geography in a saveable strategy campaign.', src: '/arcade/state-conquest/', available: true },
   { id: 'fly-fly-butterfly', name: 'Fly, Fly Butterfly', emoji: '🦋', description: 'Learn butterfly life stages and ecology in a strategic card game with a persistent campaign.', src: '/arcade/fly-fly-butterfly/', available: true },
   { id: 'museum-caper', name: 'Museum Caper', emoji: '🖼️', description: 'Sneak through a museum as the art thief or catch the thief as the detectives, and learn about famous paintings.', src: '/arcade/museum-caper/', available: true },
-  { id: 'triad-arcade', name: 'Triad Arcade', emoji: '🃏', description: 'Five card and memory games: Bingo War, Battleship, Bingo Duel, Casino War and Memory Matrix.', src: '/arcade/triad-arcade/', available: true }
+  { id: 'triad-arcade', name: 'Triad Arcade', emoji: '🃏', description: 'Five card and memory games: Bingo War, Battleship, Bingo Duel, Casino War and Memory Matrix.', src: '/arcade/triad-arcade/', available: true },
+  { id: 'mine-walker', name: 'Mine Walker', emoji: '💣', description: 'Use the number clues to walk a scout safely across a minefield, or see how many rows you can cross in Endless mode.', src: '/arcade/mine-walker/', available: true }
 ];
 
 export interface ArcadeSettings {
@@ -319,6 +320,8 @@ export interface ArcadeSettings {
   games: Record<string, boolean>;
   corsairPointsPerTicket: number;
   whackTicketsPerRound: number;
+  mineTicketsPerReward: number;
+  mineRowsPerTicket: number;
   maxTicketsPerDay: number;
   gameOfDayBonusTickets: number;
 }
@@ -331,6 +334,8 @@ export function arcadeSettings(raw: Partial<ArcadeSettings> | null | undefined):
     games,
     corsairPointsPerTicket: Math.round(clampNum(raw?.corsairPointsPerTicket, 1000, 100000, 10000)),
     whackTicketsPerRound: Math.round(clampNum(raw?.whackTicketsPerRound, 0, 5, 1)),
+    mineTicketsPerReward: Math.round(clampNum(raw?.mineTicketsPerReward, 0, 5, 1)),
+    mineRowsPerTicket: Math.round(clampNum(raw?.mineRowsPerTicket, 5, 200, 25)),
     maxTicketsPerDay: Math.round(clampNum(raw?.maxTicketsPerDay, 0, 100, 10)),
     gameOfDayBonusTickets: Math.round(clampNum(raw?.gameOfDayBonusTickets, 0, 5, 1))
   };

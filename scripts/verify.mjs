@@ -187,6 +187,11 @@ if (allSrc.includes('learning_events')) problems.push('Code writes to a "learnin
 if (allSrc.includes('window.prompt(')) problems.push('Code uses window.prompt(). The real teacher app uses forms. This is a sign of a placeholder rewrite.');
 for (const file of ['docs/AGENTS.md', 'docs/CLAUDE.md']) if (existsSync(file)) problems.push(`${file} is a stray copy of repository instructions and must not exist.`);
 
+// Every available Arcade game has its built copy in public/ (a game's source is in src/arcade/<id>/; see its README)
+for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', available: true/g)) {
+  if (!existsSync(`public${src}index.html`)) problems.push(`The Arcade game at ${src} isn't built: public${src}index.html is missing. Build it from src${src} (see its README.md).`);
+}
+
 // Khan links are well formed (offline; "npm run check-links" opens each one). Docs: KHAN.md
 try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); problems.push(...offlineProblems(await khanLinks())); }
 catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
