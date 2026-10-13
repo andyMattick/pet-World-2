@@ -351,6 +351,7 @@ function renderSettings() {
       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${cls.game_settings?.khan === false ? '' : 'checked'}> Use Khan Academy</label><p class="muted" style="margin-top:0">When it's off, students and families never see Khan links or mentions, and the Khan unit test check is hidden. Lessons keep their own text, Pet Town videos, and your own lesson links. Nothing is deleted, so you can turn it back on any time.</p>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${cls.game_settings?.youtube === false ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup (and the only video link when Khan is off). Pet Town doesn't check what YouTube shows, so turn this off if your school blocks YouTube or you'd rather students stay off it.</p>
       <h3>Arcade</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade for paid-entry mode</label>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: banked math time only, no admission or tickets</label>
@@ -399,7 +400,7 @@ function renderSettings() {
   $('#saveCls').addEventListener('click', async () => {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
     const openUnits = [...pane.querySelectorAll<HTMLInputElement>('[data-open-unit]')].filter(input => input.checked).map(input => input.dataset.openUnit!);
-    const allowMusic = ($('#allowMusic') as HTMLInputElement).checked, khan = ($('#useKhan') as HTMLInputElement).checked;
+    const allowMusic = ($('#allowMusic') as HTMLInputElement).checked, khan = ($('#useKhan') as HTMLInputElement).checked, youtube = ($('#useYouTube') as HTMLInputElement).checked;
     const arcadeGames: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { arcadeGames[input.dataset.arcadeGame!] = input.checked; });
     const arcadeSettingsForClass = arcadeSettings({
@@ -414,7 +415,7 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, minStations, arcade: arcadeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, minStations, arcade: arcadeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);

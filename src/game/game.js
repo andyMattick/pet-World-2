@@ -5863,19 +5863,25 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape' && vi
    Class settings (game_settings.khan = false); a family at home turns it off in the progress report (S.noKhan).
    Off hides every Khan link and mention for students; Pet Town's own and the teacher's videos still show. */
 const khanOn = () => Backend.me ? Backend.me.game_settings?.khan !== false : !S.noKhan;
+/* YouTube video search as a second backup for a lesson (like the chiropractor app's video pages): on unless the class
+   (game_settings.youtube = false) or the family at home (S.noYouTube) turned it off (docs: KHAN.md) */
+const youtubeOn = () => Backend.me ? Backend.me.game_settings?.youtube !== false : !S.noYouTube;
+const LESSON_SUBJECT = key => /^history/.test(key) ? 'history' : /^bio/.test(key) ? 'science' : 'grammar';
+const youtubeSearch = (name, key) => `https://www.youtube.com/results?search_query=${encodeURIComponent(`${String(name).replace(/\s*[|\u00b7].*$/, '')} ${LESSON_SUBJECT(String(key || ''))} lesson for kids`)}`;
+const youtubeLink = (name, key, text = 'Find videos on YouTube') => youtubeOn() ? `<a class="ela-khan-also" href="${esc(youtubeSearch(name, key))}" target="_blank" rel="noopener noreferrer">🎬 ${text}</a>` : '';
 /* exact lesson URLs are used where known; otherwise a Khan Academy search for the lesson name */
 /* key ("<courseId>:<groupId>", or ":<n>" after it for an extra reading): if the class's teacher saved their own
    https:// link for this lesson, it comes first, with a smaller Khan link under it unless the teacher turned that off */
 function khanLinkHTML(url, name, key){
   const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
   /* a fixed link can break if Khan moves a page, so it always comes with a search for the lesson as a backup (docs: KHAN.md) */
-  const backup = url ? `<a class="ela-khan-also" href="${esc(search)}" target="_blank" rel="noopener noreferrer">Link not working? Search Khan Academy</a>` : '';
+  const backup = (url ? `<a class="ela-khan-also" href="${esc(search)}" target="_blank" rel="noopener noreferrer">Link not working? Search Khan Academy</a>` : '') + youtubeLink(name, key);
   const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, video = key ? lessonVideo(key) : null;
   const khanAlso = `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>`;
   if (mine && youtubeId(mine.url)) return `${lessonVideoButtonHTML(studentVideo(key))}${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${mine.showKhan && khanOn() ? khanAlso : ''}`;   // the teacher's YouTube video plays in Pet Town
   if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${video ? lessonVideoButtonHTML(video, 'also') : mine.showKhan && khanOn() ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
   if (video) return lessonVideoButtonHTML(video);   // our own video replaces the Khan link (docs: LESSON-VIDEOS.md)
-  if (!khanOn()) return '';   // Khan is off: the lesson text above is the lesson
+  if (!khanOn()) return youtubeLink(name, key, 'Find a video for this lesson on YouTube');   // Khan is off: the lesson text above is the lesson, with a video search if allowed
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>${backup}`;
 }
 const REPORT_COURSES = ['nouns','verbs','history','history2','history3','history4','bio1'];
@@ -8444,7 +8450,7 @@ function renderParent(){
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
     <div class="panel"><h3>Practice pop-ups</h3>${localDrillControls}${drillHistory}
       <h3>Settings</h3>
-      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${S.noKhan ? '' : 'checked'}> Show Khan Academy links</label><p class="muted" style="margin-top:0">Turn this off if you don't use Khan Academy. Lessons keep their own text and any Pet Town videos.</p>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
+      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${S.noKhan ? '' : 'checked'}> Show Khan Academy links</label><p class="muted" style="margin-top:0">Turn this off if you don't use Khan Academy. Lessons keep their own text and any Pet Town videos.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${S.noYouTube ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup. YouTube results aren't checked by Pet Town, so turn this off if you'd rather your child stay off YouTube.</p>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {
@@ -8453,6 +8459,7 @@ function renderParent(){
   }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
   if ($('#useKhan')) $('#useKhan').addEventListener('change', e => { S.noKhan = !e.target.checked; save(); renderParent(); });
+  if ($('#useYouTube')) $('#useYouTube').addEventListener('change', e => { S.noYouTube = !e.target.checked; save(); renderParent(); });
   if ($('#saveParentDrills')) $('#saveParentDrills').addEventListener('click', () => {
     const types = {}; $$('[data-parent-drill-type]').forEach(input => { types[input.dataset.parentDrillType] = input.checked; });
     S.drillSettings = mergeDrillSettings({

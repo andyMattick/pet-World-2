@@ -32,6 +32,7 @@ When Khan is off:
 - `npm run check-links` opens every link (needs internet) and lists dead links and links that now redirect somewhere else. A link it can't reach is listed as not checked, never as dead.
 - **Every Monday,** GitHub runs the same check (`.github/workflows/links.yml`). If a link is dead, the run fails and GitHub emails you. To run it now: GitHub → Actions → Khan links → Run workflow.
 - **Students are never stuck.** Every fixed Khan link has a smaller **Link not working? Search Khan Academy** under it, which searches for the lesson's name. Lessons without a fixed link already show a search.
+- **A second backup: YouTube.** Every lesson also gets **🎬 Find videos on YouTube**, which searches YouTube for the lesson name plus the subject (for example "Comparing Portable Belief Systems history lesson for kids"). When Khan is off, that's the lesson's only video link. Pet Town doesn't check YouTube's results, so it can be turned off: in the teacher app, Class settings → **Show YouTube video searches** (`game_settings.youtube`); at home with no class, Progress report → Settings (`S.noYouTube`).
 - **Fixing a dead link:** math is in `src/shared/registry.ts`; English, History and Biology are in `KHAN_LINKS` (and an extra reading's `url`) in `src/shared/questionBanks.js`. A teacher can also give their own link for a lesson in Lessons & questions.
 
 ## Code
