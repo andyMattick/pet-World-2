@@ -52,7 +52,14 @@ Add entries to `TYPED_QUESTIONS` in the shapes listed at the top of `questionTyp
 
 ## Math: Think it through
 
-Every math station that has skills (52 stations, grades 4 and 6) has a **🧠 Think it through** button under "Open for business" once the station is open. It runs a short set of 2 scored questions of the newer types (select all, two-part, sort, put in order, type the answer), then one "explain your thinking" short answer for a grown-up to read, the same way English practice does. It stays in the shop and doesn't gate anything; stations still open through orders and quizzes. Results are kept in the save as `mathThink["<shop>:<station>"]`. Written answers appear under "✍️ My written answers" on the shop page, in the teacher's ✍️ Written tab, and in the parent check. Math questions are keyed by station in `TYPED_QUESTIONS.math`, for example `"cafe:1"`. In the teacher app, Lessons & questions → **🧮 Math: Think it through** lists every station's questions, where you can hide, restore or add your own.
+Every math station that has skills (52 stations, grades 4 and 6) has a **🧠 Think it through** button under "Open for business" once the station is open. It runs a short set of 2 scored questions of the newer types (select all, two-part, sort, put in order, type the answer), then one "explain your thinking" short answer for a grown-up to read, the same way English practice does. It stays in the shop. Results are kept in the save as `mathThink["<shop>:<station>"]`. Written answers appear under "✍️ My written answers" on the shop page, in the teacher's ✍️ Written tab, and in the parent check. Math questions are keyed by station in `TYPED_QUESTIONS.math`, for example `"cafe:1"`. In the teacher app, Lessons & questions → **🧮 Math: Think it through** lists every station's questions, where you can hide, restore or add your own.
+
+### After a miss
+
+- **Passing** a set means every scored question right. The student sees each right answer as they go, then gets **Try again**. The last try's missed questions are saved (`lastMissed` in `S.mathThink`).
+- **Practice again:** a set tried but not passed is listed in a green **🧠 Practice again** banner at the top of the town (under any "sent back" items), and its shop button turns into **🔁 Practice again**. It drops off once passed.
+- **Required:** the next station stays locked until the set is passed ("Pass 🧠 Think it through at … to open this station"). This adds to the usual rule (orders or the station quiz). It doesn't lock a station the student already served orders at, or one the teacher opened. Turn it off in the teacher app (Class settings → **Require 🧠 Think it through**, `game_settings.requireThink`) or, at home, in the progress report's Settings (`S.noThinkRequired`).
+- **Shown:** the parent progress report and the teacher's student page (Math tab) have a **🧠 Think it through** table: each set tried, tries, last and best score, passed or not, and what was missed last time. Code: `src/shared/thinkReport.ts`, `thinkBlocks()` in `src/game/game.js`.
 
 ## What's included now
 

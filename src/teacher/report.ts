@@ -2,6 +2,7 @@
 import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '../shared/questionTypes';
 import { LESSON_COURSES } from '../shared/questionBanks';
 import { subjectTimeTableHTML } from '../shared/subjectTime';
+import { thinkReportHTML } from '../shared/thinkReport';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
@@ -27,7 +28,8 @@ export interface StudentReport {
   scienceProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   writtenAnswers?: WrittenEntry[];
-  subjectTime?: Record<string, Record<string, number>>;   // active seconds per day and subject, from the student's save
+  subjectTime?: Record<string, Record<string, number>>;
+  mathThink?: Record<string, { best?: number; tries?: number; passed?: boolean; lastScore?: number; questionCount?: number; lastMissed?: string[] }>;   // 🧠 Think it through sets, from the save   // active seconds per day and subject, from the student's save
 }
 /* a short answer or paragraph from the student's save (docs: QUESTION-TYPES.md) */
 interface WrittenEntry { id: string; courseId: string; skillId: string; type: string; prompt: string; rubric: string[]; model: string; text: string; at: number; where: string; parentReview?: { points: number[]; comment: string; redo: boolean } }
@@ -40,9 +42,10 @@ interface PracticeSummary { last: number | null; today: number; week: number; da
 const $ = (s: string) => document.querySelector(s) as HTMLElement;
 export const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 let reportShop: string | null = null;   // null: the first shop of the class's home grade
-let reportHome = DEFAULT_HOME, reportClass = '', reportKhan = true;
+let reportHome = DEFAULT_HOME, reportClass = '', reportKhan = true, reportThinkRequired = true;
 /* the dashboard opens on the class's home grade; picking another class starts over there */
-export function setReportClass(classId: string, home: unknown, khan: unknown = true) {
+export function setReportClass(classId: string, home: unknown, khan: unknown = true, requireThink: unknown = true) {
+  reportThinkRequired = requireThink !== false;
   if (classId !== reportClass) { reportClass = classId; reportShop = null; }
   reportKhan = khan !== false;   // Class settings → Use Khan Academy (docs: KHAN.md)
   reportHome = validHood(home) ? home as string : DEFAULT_HOME;
@@ -220,7 +223,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
   const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
   h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
-  h += panel('math', mathUnitsHTML(r)) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
+  h += panel('math', mathUnitsHTML(r) + `<h3>🧠 Think it through</h3>${thinkReportHTML(r.mathThink, reportThinkRequired)}`) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
   h += panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>');
   const loose = st.mis.filter(([id]) => !misShops(r, id).length);
   h += '<div class="two" style="margin-top:14px"><div><h2>Mix-ups across units</h2><p class="muted" style="margin-top:0">Mix-ups tied to a unit are listed inside that unit on the Math tab.</p>';

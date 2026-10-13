@@ -5,6 +5,7 @@ import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKI
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
+import { thinkReportHTML, thinkStationName } from '../shared/thinkReport';
 import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML } from '../shared/subjectTime';
 import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
@@ -406,12 +407,23 @@ function stationOpen(shop, n){
   const stations = SHOPS[shop]?.stations || [], station = stations.find(s => s.id === n), progress = shopProgress(shop);
   if (!station || !station.skills.length) return false;
   if (n === 1) return true;
+  if (thinkBlocks(shop, n)) return false;
   const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   if (settings.requireQuiz) {
     const previousKey = assessKey(shop, n - 1);
     return (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n)) || !!S.quizzes[previousKey]?.passed || Backend.me?.quiz_overrides?.[previousKey] === 'excused' || n <= minStationFor(shop) || (!Backend.me && S.unlockAll);
   }
   return (!Backend.me && S.unlockAll) || n <= minStationFor(shop) || (progress?.st?.[n-1] || 0) >= UNLOCK_AT;
+}
+/* 🧠 Think it through as a requirement (docs: QUESTION-TYPES.md): station n waits until station n-1's set is passed, when
+   that station has a set. On unless the teacher (game_settings.requireThink) or a parent at home (S.noThinkRequired) turns
+   it off. A station the student already served orders at stays open, and so do stations the teacher opened. */
+const thinkRequired = () => Backend.me ? Backend.me.game_settings?.requireThink !== false : !S.noThinkRequired;
+function thinkBlocks(shop, n){
+  const key = `${shop}:${n - 1}`;
+  if (n <= 1 || !thinkRequired() || !TYPED_QUESTIONS.math?.[key] || S.mathThink?.[key]?.passed) return false;
+  if ((!Backend.me && S.unlockAll) || n <= minStationFor(shop) || (shopProgress(shop)?.st?.[n] || 0) > 0 || (Array.isArray(S.stationsOpenedBefore?.[shop]) && S.stationsOpenedBefore[shop].includes(n))) return false;
+  return typedAutoQuestions(key, 'math').length > 0;
 }
 let appliedDrillReset = '';
 function drillSettings(){
@@ -5673,16 +5685,22 @@ let sentBackShown = [];
 function renderSentBack(){
   const wrap = $('#sentBackWrap'); if (!wrap) return;
   const items = sentBackShown = sentBackItems();
-  if (!items.length) { wrap.innerHTML = ''; return; }
+  /* math 🧠 Think it through sets tried but not passed yet come back here too, as "Practice again" */
+  const again = Object.entries(S.mathThink || {}).filter(([key, r]) => r?.tries && !r.passed && TYPED_QUESTIONS.math?.[key] && (() => { const m = mathStation(key); return !!m && unitOpen(m.shop) && stationOpen(m.shop, m.st.id); })()).map(([key]) => key);
+  const againHTML = again.length ? `<section class="sent-back practice-again" aria-labelledby="practiceAgainTitle"><h2 id="practiceAgainTitle">🧠 Practice again</h2><p>Try these Think it through sets again. Get them all right to pass${thinkRequired() ? ' and open the next station' : ''}.</p>
+    <div class="sent-back-list">${again.map(key => { const r = S.mathThink[key]; return `<button type="button" class="sent-back-item" data-think-again="${esc(key)}"><span class="sent-back-icon">🧠</span><span class="sent-back-text"><b>${esc(thinkStationName(key))}</b><small>Best so far: ${r.best || 0} of ${r.questionCount || 2}</small></span><span class="sent-back-go">Try it →</span></button>`; }).join('')}</div></section>` : '';
+  if (!items.length) { wrap.innerHTML = againHTML; return; }
   const seen = Array.isArray(S.sentBackSeen) ? S.sentBackSeen : [], fresh = items.filter(item => !seen.includes(item.key));
   wrap.innerHTML = `<section class="sent-back${fresh.length ? ' sent-back-new' : ''}" aria-labelledby="sentBackTitle"><h2 id="sentBackTitle">🔁 ${items.length === 1 ? 'One thing was' : `${items.length} things were`} sent back for you to fix</h2>
-    <p>Read the note, fix it, and send it again.</p><div class="sent-back-list">${items.map((item, i) => `<button type="button" class="sent-back-item" data-sent-back="${i}"><span class="sent-back-icon">${item.icon}</span><span class="sent-back-text"><b>${esc(item.title)}</b>${item.note ? `<small>“${esc(item.note)}”</small>` : ''}</span><span class="sent-back-go">Fix it →</span></button>`).join('')}</div></section>`;
+    <p>Read the note, fix it, and send it again.</p><div class="sent-back-list">${items.map((item, i) => `<button type="button" class="sent-back-item" data-sent-back="${i}"><span class="sent-back-icon">${item.icon}</span><span class="sent-back-text"><b>${esc(item.title)}</b>${item.note ? `<small>“${esc(item.note)}”</small>` : ''}</span><span class="sent-back-go">Fix it →</span></button>`).join('')}</div></section>${againHTML}`;
   if (fresh.length) {
     toast(fresh.length === 1 ? '🔁 Something was sent back for you to fix. It’s at the top of your town.' : `🔁 ${fresh.length} things were sent back for you to fix. They’re at the top of your town.`);
     S.sentBackSeen = [...seen, ...fresh.map(item => item.key)].slice(-60); save();
   }
 }
 $('#sentBackWrap').addEventListener('click', event => {
+  const thinkAgain = event.target.closest('[data-think-again]');
+  if (thinkAgain) { currentShop = thinkAgain.dataset.thinkAgain.split(':')[0]; startThink(thinkAgain.dataset.thinkAgain); return; }
   const b = event.target.closest('[data-sent-back]'); if (!b) return;
   const item = sentBackShown[+b.dataset.sentBack]; if (!item) return;
   if (item.kind === 'project') { show('library'); renderHistoryProject(item.id); return; }
@@ -6559,7 +6577,8 @@ function commitEnglishRun(run){
   store[run.progressKey] = {
     ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
     passed:!!previous.passed || passed, recentScores:[...(previous.recentScores || []),run.score].slice(-10),
-    lastScore:run.score, questionCount:run.questions.length, ...(passed ? {lastPassAt:Date.now()} : {})   // lastPassAt clears a Khan review (reviewDue)
+    lastScore:run.score, questionCount:run.questions.length, ...(passed ? {lastPassAt:Date.now()} : {}),
+    ...(run.retryType === 'think' ? {lastMissed:run.questions.filter((q, i) => !run.outcomes[i]).map(q => String(q.prompt || q.sentence || '').slice(0, 160)).slice(0, 6)} : {})   // lastPassAt clears a Khan review (reviewDue)
   };
   save();
 }
@@ -6568,6 +6587,7 @@ function finishEnglishRun(){
   const store = progressStore(run.courseId);   // the result screen reads best and tries from it
   const passed = run.score >= run.passMark;
   englishRun = null;
+  if (run.retryType === 'think' && passed && run.nextClosed) { const m = mathStation(run.progressKey), next = m && m.st.id + 1; if (m && stationOpen(m.shop, next)) setTimeout(() => toast(`New station open: ${SHOPS[m.shop].stations.find(x => x.id === next).name}!`), 600); }
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
   const retry = run.retryType === 'think' ? `<button class="btn berry" type="button" data-think="${run.retryId}">Try again</button>`
     : run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
@@ -6786,20 +6806,23 @@ $('#parentWrap').addEventListener('click', event => {
 /* ---------- math: Think it through (docs: QUESTION-TYPES.md) ----------
    Each math station has a short set of the newer question types (select all, two-part, sort, put in order, type the
    answer) and one "explain your thinking" answer that a grown-up reads. It runs like an English practice, inside the
-   shop. It doesn't gate anything: stations still open with orders and quizzes. */
+   shop. A set is passed when every question is right. Unless it's turned off, the next station waits for it (thinkBlocks), and
+   a set tried but not passed comes back at the top of the town as "Practice again" (renderSentBack). */
 const mathStation = key => { const [shop, id] = String(key).split(':'); const st = SHOPS[shop]?.stations.find(x => x.id === +id); return st ? {shop, st} : null; };
 const writtenPlace = entry => entry.courseId === 'math' ? (() => { const m = mathStation(entry.skillId); return m ? `${SHOPS[m.shop].name}: ${m.st.name}` : 'Math'; })() : (englishCourse(entry.courseId)?.title || entry.courseId);
 function thinkButtonHTML(shop, stationId){
   const key = `${shop}:${stationId}`; if (!TYPED_QUESTIONS.math?.[key]) return '';
   const record = progressStore('math')[key], owed = !!pendingWritten('math', key);
-  return `<button class="btn think-btn" data-think="${key}">🧠 Think it through</button><p class="muted" style="margin:0">${record?.tries ? `Best ${record.best} of ${record.questionCount || 2}` : 'Select all, sort, two-part, and more'}${owed ? ' · ✍️ explain your thinking' : ''}</p>`;
+  const again = record?.tries && !record.passed, next = SHOPS[shop]?.stations.find(x => x.id === +stationId + 1);
+  const needed = !record?.passed && next?.skills.length && thinkBlocks(shop, +stationId + 1);
+  return `<button class="btn think-btn${again ? ' berry' : ''}" data-think="${key}">${again ? '🔁 Practice again: ' : record?.passed ? '✅ ' : '🧠 '}Think it through</button><p class="muted" style="margin:0">${record?.tries ? `${record.passed ? 'Passed · ' : ''}Best ${record.best} of ${record.questionCount || 2}` : 'Select all, sort, two-part, and more'}${needed ? ' · needed to open the next station' : ''}${owed ? ' · ✍️ explain your thinking' : ''}</p>`;
 }
 function startThink(key){
   const m = mathStation(key); if (!m) return;
   const questions = practiceOrder(typedAutoQuestions(key, 'math'), 4); if (!questions.length) return;
   show('library');
   englishRun = {title:`${m.st.name}: Think it through`, shop:m.shop, progressKey:key, retryType:'think', retryId:key, courseId:'math', questions, index:0, score:0,
-    passMark:questions.length, answered:false, outcomes:[], written:pendingWritten('math', key)};
+    passMark:questions.length, answered:false, outcomes:[], written:pendingWritten('math', key), nextClosed:!stationOpen(m.shop, m.st.id + 1)};
   renderEnglishQuestion();
 }
 $('#libraryWrap').addEventListener('click', event => {
@@ -7113,7 +7136,9 @@ function renderShopFloor(shop){
     const prevName = config.stations[st.id-2]?.name || 'previous station';
     const lock = !st.skills.length
       ? '<p class="muted" style="margin:0">Coming soon</p>'
-      : open ? '' : settings.requireQuiz
+      : open ? '' : thinkBlocks(config.id, st.id)
+        ? `<p class="muted" style="margin:0">Pass 🧠 Think it through at ${esc(prevName)} to open this station.</p>`
+      : settings.requireQuiz
         ? `<p class="muted" style="margin:0">Pass ${prevName.startsWith('The ') ? '' : 'the '}${esc(prevName)} quiz to open this station.</p>`
         : `<p class="muted" style="margin:0">Opens after ${UNLOCK_AT} orders at ${config.stations[st.id-2].name} (${Math.min(prev, UNLOCK_AT)} of ${UNLOCK_AT}).</p>`;
     const skills = st.skills.map(sk => { const s = skillStatus(sk), skillVideo = lessonVideo(`math:${sk}`); return `<li><span class="pill p-${s}">${s === 'new' ? 'new' : s}</span>${esc(SKILLS[sk].name)}${skillVideo ? ` <button type="button" class="lesson-video-mini" data-lesson-video="${esc(skillVideo.key)}" aria-label="Watch: ${esc(skillVideo.title)}" title="Watch: ${esc(skillVideo.title)}">▶</button>` : ''}</li>`; }).join('');
@@ -8522,6 +8547,7 @@ function renderParent(){
     ${vocabReportHTML()}
     ${progressBySubjectHTML({detail:true, canReview:parentReadingUnlocked, title:'Progress by subject and unit', reading:readingReviewHTML()})}
     ${writtenParentHTML()}
+    <div class="panel"><h3>🧠 Math: Think it through</h3>${thinkReportHTML(S.mathThink, thinkRequired())}</div>
     <div class="panel"><h3>Rewards</h3><div class="collection-list">${collections}</div><p><b>Legendary items:</b> ${legendary.length ? legendary.map(r => `${r.emoji} ${esc(r.name)}`).join(', ') : 'None yet.'}</p><p><b>Longest perfect streak:</b> ${S.bestStreak}</p></div>
     <div class="two"><div class="panel"><h3>Times tables</h3>
       <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn small ${heatView === 'facts' ? 'mint' : ''}" data-heat="facts">Multiplying</button><button class="btn small ${heatView === 'divFacts' ? 'mint' : ''}" data-heat="divFacts">Dividing</button></div>
@@ -8529,7 +8555,7 @@ function renderParent(){
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
     <div class="panel"><h3>Practice pop-ups</h3>${localDrillControls}${drillHistory}
       <h3>Settings</h3>
-      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${S.noKhan ? '' : 'checked'}> Show Khan Academy links</label><p class="muted" style="margin-top:0">Turn this off if you don't use Khan Academy. Lessons keep their own text and any Pet Town videos.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${S.noYouTube ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup. YouTube results aren't checked by Pet Town, so turn this off if you'd rather your child stay off YouTube.</p>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
+      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${S.noKhan ? '' : 'checked'}> Show Khan Academy links</label><p class="muted" style="margin-top:0">Turn this off if you don't use Khan Academy. Lessons keep their own text and any Pet Town videos.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${S.noThinkRequired ? '' : 'checked'}> Require 🧠 Think it through</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set has to be passed before the next station opens.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${S.noYouTube ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup. YouTube results aren't checked by Pet Town, so turn this off if you'd rather your child stay off YouTube.</p>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {
@@ -8538,6 +8564,7 @@ function renderParent(){
   }));
   if ($('#unlockAll')) $('#unlockAll').addEventListener('change', e => { S.unlockAll = e.target.checked; save(); });
   if ($('#useKhan')) $('#useKhan').addEventListener('change', e => { S.noKhan = !e.target.checked; save(); renderParent(); });
+  if ($('#requireThink')) $('#requireThink').addEventListener('change', e => { S.noThinkRequired = !e.target.checked; save(); renderParent(); });
   if ($('#useYouTube')) $('#useYouTube').addEventListener('change', e => { S.noYouTube = !e.target.checked; save(); renderParent(); });
   if ($('#saveParentDrills')) $('#saveParentDrills').addEventListener('click', () => {
     const types = {}; $$('[data-parent-drill-type]').forEach(input => { types[input.dataset.parentDrillType] = input.checked; });

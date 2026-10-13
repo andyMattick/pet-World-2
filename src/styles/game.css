@@ -933,6 +933,7 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .sent-back-text{flex:1; display:grid; gap:2px}
 .sent-back-text small{font-size:.95rem; color:#7A5A55; white-space:pre-wrap}
 .sent-back-go{font-weight:800; color:var(--berry-deep); white-space:nowrap}
+.practice-again{background:var(--mint); border-color:var(--mint-ink); box-shadow:0 6px 0 var(--mint-ink)}
 .sent-back-new{animation:sent-back-wiggle .6s ease-in-out 3}
 @keyframes sent-back-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-1.2deg)}75%{transform:rotate(1.2deg)}}
 @media (prefers-reduced-motion: reduce){.sent-back-new{animation:none}}
