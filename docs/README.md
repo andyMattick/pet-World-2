@@ -58,7 +58,7 @@ npm run dev
 
 ### 3. Deploy
 
-Push to GitHub, then import the repo in Vercel or Netlify. Both detect Vite automatically. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables. The teacher app lives at `/teacher.html`.
+Push to GitHub, then import the repo in Vercel or Netlify. Both detect Vite automatically. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables. The teacher app lives at `/teacher.html`; on Vercel, `vercel.json` also serves it at `/teacher`, `/dashboard` and `/teacherdashboard`. On another host, use `/teacher.html` or add the same rewrites there.
 
 CI (`.github/workflows/ci.yml`) runs a type check and a build on every push.
 

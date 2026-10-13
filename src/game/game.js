@@ -6859,9 +6859,10 @@ flagBtn.addEventListener('click', () => {
   else {
     const key = wordKey(w);
     if (!S.vocab.flagged.some(f => f.w === key)) { S.vocab.flagged = [...S.vocab.flagged, {w:key, ctx, at:Date.now()}].slice(-60); save(); }
-    html = `📌 <b>${esc(w)}</b> is saved. A grown-up will add what it means, and then it shows up in your 🔤 Word Workshop.`;
+    html = `📌 <b>${esc(w)}</b> is saved. A grown-up will add what it means, and then it shows up in your 🔤 Word Workshop. You can look it up in the dictionary now too.`;
   }
-  flagPop.innerHTML = `${html}<button type="button" class="btn small" data-flag-close>Got it</button>`;
+  const dictWord = found ? found.w : w;   // a dictionary link too, for either kind of word (the word is still saved as above)
+  flagPop.innerHTML = `${html}<div class="row"><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(dictWord)}" target="_blank" rel="noopener noreferrer">📖 Look it up in the dictionary ↗</a><button type="button" class="btn small" data-flag-close>Got it</button></div>`;
   flagPop.hidden = false; flagPop.style.left = flagBtn.style.left; flagPop.style.top = flagBtn.style.top;
   flagBtn.hidden = true; window.getSelection()?.removeAllRanges(); sfx('tick');
   flagPop.querySelector('[data-flag-close]').focus();
@@ -8388,7 +8389,8 @@ function openJoin(){
     <div class="row"><button class="btn berry" id="codeGo">Next</button></div>
     <div class="row"><button class="btn small" type="button" data-games-only>I'm just here for the games</button></div>
     <form class="games-only-form" data-games-only-form hidden><label>Secret word<input class="textin" type="password" name="secretWord" autocomplete="off" required></label><div class="row"><button class="btn berry" type="submit">Open games</button></div><p class="muted" data-games-only-error aria-live="polite"></p></form>
-    <p class="muted" id="joinMsg" aria-live="polite"></p></div>`;
+    <p class="muted" id="joinMsg" aria-live="polite"></p>
+    <p class="muted join-teacher-link"><a href="teacher.html">Teacher or parent? Open the dashboard</a></p></div>`;
   show('join');
   const go = async () => {
     const code = $('#codeInput').value.trim().toUpperCase();

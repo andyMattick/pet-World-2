@@ -9,7 +9,7 @@ There are two ways to set up Pet Town. Both use the same website and the same te
 
 In both, the student signs in with a **class code, their name and a PIN**. Their work saves to the server, so they can switch between a tablet and a computer.
 
-You'll need two addresses: the **game** (your Pet Town site) and the **teacher app** (the same site with `/teacher.html` at the end).
+You'll need two addresses: the **game** (your Pet Town site) and the **teacher app** (the same site with `/teacher` at the end, for example `pet-world-2.vercel.app/teacher`). The game's sign-in screen also has a **Teacher or parent? Open the dashboard** link.
 
 ---
 

@@ -952,6 +952,8 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .word-flag-btn{position:fixed; z-index:60; padding:8px 12px; border:2px solid var(--edge); border-radius:999px; background:var(--butter); color:#4A2E2A; font:inherit; font-weight:800; box-shadow:0 4px 12px rgba(0,0,0,.2); cursor:pointer}
 .word-flag-pop{position:fixed; z-index:61; max-width:min(340px,calc(100vw - 16px)); padding:12px 14px; border:2px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink); box-shadow:0 6px 18px rgba(0,0,0,.22); line-height:1.4}
 .word-flag-pop .btn{display:block; margin-top:8px}
+.word-flag-pop .row{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.word-flag-pop .row .btn{display:inline-block; margin-top:0; text-decoration:none}
 .vocab-flagged{padding:8px 12px; border:2px dashed var(--edge); border-radius:10px; background:color-mix(in srgb,var(--butter) 35%,var(--surface))}
 .vocab-flag-row{display:grid; gap:6px; padding:8px 0; border-top:1px solid var(--edge)}
 .vocab-flag-row input{min-height:38px; padding:6px 10px; border:2px solid var(--edge); border-radius:8px; font:inherit; background:var(--surface); color:var(--ink)}
