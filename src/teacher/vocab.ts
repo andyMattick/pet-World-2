@@ -1,7 +1,7 @@
 /* Teacher app: Vocabulary tab (docs: VOCAB.md). The class word list lives in classes.game_settings.vocab
    ({builtIn, words, focus}), which students already receive, so no new database column is needed. */
 import { esc } from './report';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, parseVocabImport, missingLines, validWord, findWord, blankSentence } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence } from '../shared/vocab';
 
 interface VocabWord { w: string; d: string; s?: string; set?: string }
 export interface ClassVocab { builtIn?: boolean; words?: VocabWord[]; focus?: string[]; dismissed?: string[] }   // dismissed: flagged words the teacher said no to
@@ -35,7 +35,27 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
   const flaggedCard = flaggedMap.size ? `<div class="card"><h2>📌 Words students flagged (${flaggedMap.size})</h2><p class="muted" style="margin-top:0">Students highlight a word they don’t know anywhere in Pet Town and tap 📌. Add a meaning, check the example sentence (taken from where they found the word, with ___ in its place), and it joins the class list. <b>Dismiss</b> a word you don’t want; it drops off the students’ flagged lists too.</p>
   <table class="steptable"><tr><th>Word</th><th>Flagged by · where</th><th>Meaning and example sentence</th><th></th></tr>${[...flaggedMap.entries()].map(([w, f]) => `<tr data-vb-flag-row="${esc(w)}"><td><b>${esc(w)}</b></td><td>${esc(f.names.join(', '))}${f.ctx ? `<br><span class="muted">“${esc(f.ctx)}”</span>` : ''}</td>
   <td><input type="text" data-vb-flag-def maxlength="200" placeholder="Kid-friendly meaning" style="width:100%"><input type="text" data-vb-flag-sentence maxlength="200" placeholder="Example sentence with ___ for the word (optional)" style="width:100%; margin-top:4px" value="${esc(blankSentence(f.ctx, w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, w) : '')}"></td><td style="white-space:nowrap"><button class="btn small primary" data-vb-flag-add="${esc(w)}">Add to class list</button> <button class="btn small" data-vb-flag-dismiss="${esc(w)}">Dismiss</button></td></tr>`).join('')}</table></div>` : '';
-  pane.innerHTML = `${message ? `<p class="status">${esc(message)}</p>` : ''}
+  /* word by word, like the times tables: right / tried over each student's last 8 tries of a word (ROADMAP F5) */
+    const tally = new Map<string, { right: number; tried: number; who: Set<string> }>();
+    const triesOf = (st: NonNullable<VocabRoster>[number], w: string) => st.stats[wordKey(w)]?.r || [];
+    const rightOf = (r: number[]) => r.filter(Boolean).length;
+    for (const st of roster || []) for (const v of all) {
+      const r = triesOf(st, v.w); if (!r.length) continue;
+      const t = tally.get(v.w) || { right: 0, tried: 0, who: new Set<string>() };
+      t.right += rightOf(r); t.tried += r.length; if (rightOf(r) < r.length) t.who.add(st.name); tally.set(v.w, t);
+    }
+    const hardest = [...tally.entries()].filter(([, t]) => t.right < t.tried)
+      .sort((a, b) => (b[1].tried - b[1].right) - (a[1].tried - a[1].right) || a[1].right / a[1].tried - b[1].right / b[1].tried).slice(0, 12);
+    const mark: Record<string, string> = { solid: '✅', close: '🟡', work: '🔴', new: '' };
+    const perStudent = (roster || []).map(st => {
+      const seen = all.map(v => ({ v, r: triesOf(st, v.w) })).filter(x => x.r.length).sort((a, b) => rightOf(a.r) / a.r.length - rightOf(b.r) / b.r.length);
+      const weak = seen.filter(x => wordStatus({ r: x.r }) === 'work').length;
+      return `<details><summary><b>${esc(st.name)}</b> <span class="muted">${seen.length} word${seen.length === 1 ? '' : 's'} practiced${weak ? ` · ${weak} need${weak === 1 ? 's' : ''} practice` : ''}</span></summary><p style="margin:6px 0">${seen.length ? seen.map(x => { const s = wordStatus({ r: x.r }); return `<span class="chip" title="${esc((STATUS_TEXT as Record<string, string>)[s])}">${mark[s]} ${esc(x.v.w)}: ${rightOf(x.r)}/${x.r.length}</span>`; }).join(' ') : '<span class="muted">No words practiced yet.</span>'}</p></details>`;
+    }).join('');
+    const wordsCard = roster && roster.length ? `<div class="card"><h2>Word by word</h2><p class="muted" style="margin-top:0">Like the times tables: right / tried over each student’s last 8 tries of a word, weakest first. ✅ solid · 🟡 getting there · 🔴 needs practice.</p>
+  <h3>Hardest words for the class</h3>${hardest.length ? `<table class="steptable"><tr><th>Word</th><th>Right / tried</th><th>Students who missed it</th></tr>${hardest.map(([w, t]) => `<tr><td><b>${esc(w)}</b></td><td>${t.right}/${t.tried}</td><td>${esc([...t.who].join(', '))}</td></tr>`).join('')}</table>` : '<p class="muted">No missed words yet.</p>'}
+  <h3>Each student</h3>${perStudent}</div>` : '';
+    pane.innerHTML = `${message ? `<p class="status">${esc(message)}</p>` : ''}
     <div class="card"><h2>Vocabulary (Word Workshop)</h2>
       <p class="muted" style="margin-top:0">Students practice these words with cards, a 60-second sprint and spelling in the 🔤 Word Workshop. Changes apply to <b>${esc(cls.name)}</b>. Parents can also add words at home behind the grown-up PIN.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="vbBuiltIn" ${builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 academic words, written for Pet Town)</label>
@@ -50,7 +70,7 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
       <div class="row"><button class="btn primary" id="vbSaveFocus">Save focus words</button></div>
     </div>
     ${flaggedCard}
-    <div class="card"><h2>Class progress on focus words</h2>${progress}</div>`;
+    <div class="card"><h2>Class progress on focus words</h2>${progress}</div>${wordsCard}`;
 
   const commit = async (next: ClassVocab, done: string) => {
     const error = await save(next);
