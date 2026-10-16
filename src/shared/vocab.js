@@ -123,27 +123,66 @@ export function validWord(entry){
 
 /* Paste in a list: one word per line as "word - definition", "word: definition", "word<TAB>definition" or "word, definition"
    (a third part after another separator is an example sentence with ___), or a JSON array of {word, definition, set}.
-   A heading line "Set: Lesson 4" (or "# Lesson 4") puts the words under it in that set; before any heading they go in
-   "My words". To add the word "set" itself, write it with a dash: "set - a group of things that go together". */
-const SET_HEADING = /^(?:set\s*:|#+)\s*(.+)$/i;
+   Headings put the words under them in a set: "Set: Lesson 4", "# Lesson 4", "Set 11:", "Lesson 4", "Unit 3: Ancient Egypt",
+   or any short line ending in a colon. A heading can carry its words on the same line: "Set 11: abundant, scarce, fragile".
+   Before any heading words go in "My words". Bullets and numbers at the start of a line ("1.", "•", "-", "[i]") are ignored.
+   A word with no meaning yet ("abundant", "abundant -", or a list like "abundant, scarce, fragile") takes Pet Town's meaning
+   if the built-in list has the word; otherwise it comes back in `missing` so the screen can ask for its meaning.
+   To add the word "set" itself, write it with a dash: "set - a group of things that go together". */
+const BULLET = /^(?:[-*•▪◦·]+\s*|\d{1,3}[.)]\s*|\[[^\]\s]{0,3}\]\s*|\([a-z0-9]{1,3}\)\s+)/i;
+const NAMED_SET = /^((?:set|lesson|unit|week|list|chapter)(?:\s+|\s*#\s*|(?=\d))[\w.]{1,12})\s*(?::\s*(.*))?$/i;
+const SINGLE = /^[\p{L}][\p{L}'’-]{0,39}$/u;
+function readHeading(t){
+  const m = t.match(/^#+\s*(.+)$/) || t.match(/^set\s*:\s*(.+)$/i);
+  if (m) return { set: m[1], rest: '' };
+  const named = t.match(NAMED_SET);
+  if (named) return { set: named[1], rest: (named[2] || '').trim() };
+  const colon = t.match(/^([^:,\t]{1,40}):$/);
+  return colon ? { set: colon[1], rest: '' } : null;
+}
 export function parseVocabImport(text){
-  const raw = String(text || '').trim(), words = [], errors = [];
+  const raw = String(text || '').trim(), words = [], errors = [], missing = [];
   let set = '';
-  if (!raw) return { words, errors };
-  if (raw.startsWith('[')) {
-    try { for (const item of JSON.parse(raw)) { const v = validWord(item); if (v) words.push(v); else errors.push(`Skipped: ${JSON.stringify(item).slice(0, 60)}`); } return { words, errors }; }
-    catch { errors.push('That looked like JSON but couldn’t be read.'); return { words, errors }; }
+  if (!raw) return { words, errors, missing };
+  if (/^\[\s*[{\]]/.test(raw)) {   // a JSON list (not a line that starts with a bullet like "[i]")
+    try { for (const item of JSON.parse(raw)) { const v = validWord(item); if (v) words.push(v); else errors.push(`Skipped: ${JSON.stringify(item).slice(0, 60)}`); } return { words, errors, missing }; }
+    catch { errors.push('That looked like JSON but couldn’t be read.'); return { words, errors, missing }; }
   }
-  for (const line of raw.split(/\r?\n/)) {
-    const t = line.trim(); if (!t || /^word\s*[,\t]\s*definition/i.test(t)) continue;
-    const heading = t.match(SET_HEADING);
-    if (heading) { set = clean(heading[1], 40); continue; }
+  const builtIn = new Map(VOCAB_WORDS.map(v => [wordKey(v.w), v]));
+  const bareWord = w => {
+    const known = builtIn.get(wordKey(w)), entry = known ? validWord({ ...known, set: set || known.set }) : null;
+    if (entry) words.push(entry);
+    else if (!missing.some(m => wordKey(m.w) === wordKey(w))) missing.push({ w: clean(w, VOCAB_LIMITS.word), ...(set ? { set } : {}) });
+  };
+  /* one entry line; `listOf` is how many single words separated by commas count as a list of words with no meanings */
+  const readLine = (t, listOf) => {
+    const bare = t.replace(/\s*[-–—:,]\s*$/, '');
+    if (SINGLE.test(bare)) { bareWord(bare); return; }
+    const list = t.split(/\s*[,;]\s*/).filter(Boolean);
+    if (!t.includes('\t') && !/ [-–—] /.test(t) && !t.includes(':') && list.length >= listOf && list.every(x => SINGLE.test(x))) { list.forEach(bareWord); return; }
     const parts = t.includes('\t') ? t.split('\t') : / [-–—] /.test(t) ? t.split(/ [-–—] /) : t.includes(':') ? t.split(/:(.*)/s).filter(x => x !== undefined && x !== '') : t.split(/,(.*)/s).filter(x => x !== undefined && x !== '');
     const [w, d, ...rest] = parts.map(p => p.trim().replace(/^"|"$/g, ''));
     const v = validWord({ w, d, s: rest.join(' '), set });
     if (v) words.push(v); else errors.push(`Skipped: “${t.slice(0, 60)}” (use word - definition)`);
+  };
+  for (const line of raw.split(/\r?\n/)) {
+    const t = line.trim().replace(BULLET, '').trim(); if (!t || /^word\s*[,\t]\s*definition/i.test(t)) continue;
+    const heading = readHeading(t);
+    if (!heading) { readLine(t, 3); continue; }
+    if (heading.rest && !/[,;\t]| [-–—] /.test(heading.rest) && !SINGLE.test(heading.rest)) { set = clean(`${heading.set}: ${heading.rest}`, 40); continue; }
+    set = clean(heading.set, 40);
+    if (heading.rest) readLine(heading.rest, 2);
   }
-  return { words, errors };
+  return { words, errors, missing };
+}
+/* words still waiting for a meaning, written back as "word - " lines (under their set headings) for the import box */
+export function missingLines(missing){
+  const out = []; let set;
+  for (const m of missing) {
+    if ((m.set || '') !== set) { set = m.set || ''; if (set) out.push(`Set: ${set}`); }
+    out.push(`${m.w} - `);
+  }
+  return out.join('\n');
 }
 
 /* The words a student practices: built-in (unless turned off), then the class's, then the family's; the same word

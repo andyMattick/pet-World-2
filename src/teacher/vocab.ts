@@ -1,7 +1,7 @@
 /* Teacher app: Vocabulary tab (docs: VOCAB.md). The class word list lives in classes.game_settings.vocab
    ({builtIn, words, focus}), which students already receive, so no new database column is needed. */
 import { esc } from './report';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, parseVocabImport, validWord, findWord, blankSentence } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, parseVocabImport, missingLines, validWord, findWord, blankSentence } from '../shared/vocab';
 
 interface VocabWord { w: string; d: string; s?: string; set?: string }
 export interface ClassVocab { builtIn?: boolean; words?: VocabWord[]; focus?: string[] }
@@ -11,6 +11,7 @@ type SaveVocab = (vocab: ClassVocab) => Promise<string | null>;
 export type VocabRoster = { name: string; stats: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[] }[] | null | undefined;
 
 let flash = '';
+let leftover = '';   /* words that still need a meaning, put back in the import box after a save */
 export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVocab, roster: VocabRoster) {
   const vocab: ClassVocab = cls.game_settings?.vocab || {};
   const builtIn = vocab.builtIn !== false, words = (vocab.words || []).map(validWord).filter(Boolean) as VocabWord[];
@@ -18,6 +19,7 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
   const focusSet = new Set((vocab.focus || []).map(wordKey)), allFocus = !focusSet.size;
   const sets = [...new Set(all.map(v => v.set || 'My words'))];
   const message = flash; flash = '';
+  const refill = leftover; leftover = '';
   const progress = roster === undefined ? '<p class="muted">Loading students…</p>' : roster === null ? '<p class="err">Students’ progress could not be loaded right now.</p>'
     : !roster.length ? '<p class="muted">No students yet.</p>'
     : `<table class="steptable"><tr><th>Student</th><th>Solid</th><th>Getting there</th><th>Needs practice</th><th>Not seen</th><th>Words to reteach</th></tr>${roster.map(st => {
@@ -37,8 +39,8 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     <div class="card"><h2>Vocabulary (Word Workshop)</h2>
       <p class="muted" style="margin-top:0">Students practice these words with cards, a 60-second sprint and spelling in the 🔤 Word Workshop. Changes apply to <b>${esc(cls.name)}</b>. Parents can also add words at home behind the grown-up PIN.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="vbBuiltIn" ${builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 academic words, written for Pet Town)</label>
-      <h3>Add or import words</h3><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>, with an optional example sentence that uses ___ for the word: <code>word - meaning - The ___ was here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them; use an existing name such as <code>Set: Set 3</code> to add to one of Pet Town’s sets (otherwise they go in “My words”). You can paste two or three columns from a spreadsheet, or a JSON list with a <code>"set"</code> field. Use your own wording or your curriculum’s word list; Pet Town doesn’t include published programs’ definitions.</p>
-      <textarea id="vbImport" rows="6" style="width:100%; font-family:inherit"></textarea>
+      <h3>Add or import words</h3><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>, with an optional example sentence that uses ___ for the word: <code>word - meaning - The ___ was here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them; use an existing name such as <code>Set: Set 3</code> to add to one of Pet Town’s sets (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet Town fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can paste two or three columns from a spreadsheet, or a JSON list with a <code>"set"</code> field. Use your own wording or your curriculum’s word list; Pet Town doesn’t include published programs’ definitions.</p>
+      <textarea id="vbImport" rows="6" style="width:100%; font-family:inherit">${esc(refill)}</textarea>
       <div class="row"><button class="btn primary" id="vbAdd">Add these words</button><span class="status" id="vbMsg"></span></div>
       ${words.length ? `<h3>Class words (${words.length})</h3><table class="steptable"><tr><th>Word</th><th>Meaning</th><th>Sentence</th><th></th></tr>${words.map(v => `<tr><td><b>${esc(v.w)}</b></td><td>${esc(v.d)}</td><td class="muted">${esc(v.s || '')}</td><td><button class="btn small" data-vb-remove="${esc(v.w)}">Remove</button></td></tr>`).join('')}</table>` : ''}
     </div>
@@ -52,18 +54,25 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
 
   const commit = async (next: ClassVocab, done: string) => {
     const error = await save(next);
-    if (error) { const m = pane.querySelector('#vbMsg'); if (m) { m.textContent = error; m.className = 'status err'; } return; }
+    if (error) { leftover = ''; const m = pane.querySelector('#vbMsg'); if (m) { m.textContent = error; m.className = 'status err'; } return; }
     flash = done;
     cls.game_settings = { ...(cls.game_settings || {}), vocab: next };
     renderVocabTab(pane, cls, save, roster);
   };
   pane.querySelector('#vbBuiltIn')!.addEventListener('change', e => { void commit({ ...vocab, builtIn: (e.target as HTMLInputElement).checked }, 'Saved.'); });
   pane.querySelector('#vbAdd')!.addEventListener('click', () => {
-    const { words: added, errors } = parseVocabImport((pane.querySelector('#vbImport') as HTMLTextAreaElement).value) as { words: VocabWord[]; errors: string[] };
-    if (!added.length) { const m = pane.querySelector('#vbMsg')!; m.textContent = errors[0] || 'Nothing to add yet.'; m.className = 'status err'; return; }
+    const box = pane.querySelector('#vbImport') as HTMLTextAreaElement, m = pane.querySelector('#vbMsg')!;
+    const { words: added, errors, missing } = parseVocabImport(box.value) as { words: VocabWord[]; errors: string[]; missing: { w: string; set?: string }[] };
+    /* words with no meaning yet go back in the box as "word - " lines, under their set heading */
+    const needs = missing.length ? ` ${missing.length} word${missing.length === 1 ? ' still needs' : 's still need'} a meaning: type it after the dash in the box, then add again.` : '';
+    if (!added.length) {
+      if (missing.length) { box.value = missingLines(missing); m.textContent = needs.trim(); m.className = 'status'; return; }
+      m.textContent = errors[0] || 'Nothing to add yet.'; m.className = 'status err'; return;
+    }
     const merged = [...words.filter(v => !added.some(a => wordKey(a.w) === wordKey(v.w))), ...added].slice(0, VOCAB_LIMITS.list);
     const nextFocus = focusSet.size ? [...new Set([...focusSet, ...added.map(a => wordKey(a.w))])] : [];
-    void commit({ ...vocab, words: merged, focus: nextFocus }, `${added.length} word${added.length === 1 ? '' : 's'} added${errors.length ? `; ${errors.length} line(s) skipped` : ''}.`);
+    leftover = missing.length ? missingLines(missing) : '';
+    void commit({ ...vocab, words: merged, focus: nextFocus }, `${added.length} word${added.length === 1 ? '' : 's'} added${errors.length ? `; ${errors.length} line(s) skipped` : ''}.${needs}`);
   });
   pane.querySelectorAll<HTMLButtonElement>('[data-vb-remove]').forEach(b => b.addEventListener('click', () => {
     void commit({ ...vocab, words: words.filter(v => v.w !== b.dataset.vbRemove), focus: (vocab.focus || []).filter(f => f !== wordKey(b.dataset.vbRemove)) }, 'Word removed.');

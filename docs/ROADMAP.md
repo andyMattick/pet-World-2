@@ -120,6 +120,22 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 
 **Order:** a pilot in the ☕ Pet Café (4 stations), then the rest of 6th grade shop by shop, then 4th grade. 52 stations in all.
 
+### Family features (owner list, October 15, 2026)
+
+Quickest first. Each gets its own plan file before it's built. **Still open:** where this list goes relative to 3p (owner decision).
+
+- [ ] F1. Vocab import: headings like `Set 11:` and `Lesson 4`, bullets and numbers ignored, and words pasted with no meaning yet (Pet Town fills in its own meaning when it has the word; the rest go back in the box as `word - `)
+- [ ] F2. Archive turned-in work once it's accepted, with a Show archived switch. Work that's sent back stays until it's turned in again
+- [ ] F3. Suggested vocab words: delete a suggestion, and an editable example sentence offered when a word is accepted
+- [ ] F4. Parent sign-in: an "Awaiting approval" screen when a signed-in parent isn't approved yet (the database gate is already in place). An admin approval screen comes later
+- [ ] F5. Vocabulary analysis like the math-facts view: accuracy, attempts, last practiced, and status for each word
+- [ ] F6. History unit 1: a cave painting made in the app (drawing canvas, cave colors, hand stencil, undo), turned in like other work
+- [ ] F7. Parents assign extras: times-table sets and vocab lists, shown in the student's daily plan
+- [ ] F8. Daily minutes per subject: a default for each subject that a parent can change on any day, including 0 (new migration file)
+- [ ] F9. The Ledger in Pet Town: journal and transcript saved in Supabase, real students and the parent role, backups, and a JSON import that keeps what it can read and skips the rest (with a count)
+- [ ] F10. Student daily plan: assigned work linked to the real activities, marked ✓ done, ⏳ waiting for feedback, or to do; time per subject from Practice time; a "finished" summary of time and specific work to confirm before it goes to the Ledger
+- [ ] F11. Year transcript built from the Ledger
+
 ## Database files, in the order they were run
 
 1. `20260923000000_pet_town.sql` ✅

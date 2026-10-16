@@ -11,7 +11,7 @@ import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -6963,7 +6963,7 @@ function vocabGrownUpHTML(all){
       <label>Example sentence, with ___ where the word goes (optional)<input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, f.w) : '')}" placeholder="The volcano ___ with a loud boom."></label>
       <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
     <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
-    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). You can also paste two columns from a spreadsheet.</p>
+    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet Town fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
     ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
@@ -6997,11 +6997,13 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
   if (!parentReadingUnlocked) return;
   if (b.hasAttribute('data-vocab-import')) {
-    const {words, errors} = parseVocabImport($('#vocabImport').value);
+    const {words, errors, missing} = parseVocabImport($('#vocabImport').value);
     const have = new Set(S.vocab.home.words.map(x => wordKey(x.w)));
     S.vocab.home.words = [...S.vocab.home.words.filter(x => !words.some(w => wordKey(w.w) === wordKey(x.w))), ...words].slice(0, VOCAB_LIMITS.list);
     if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, ...words.map(w => wordKey(w.w))])];   // new words join the focus list
-    save(); renderVocab(); $('#vocabMsg').textContent = `${words.filter(w => !have.has(wordKey(w.w))).length} added.${errors.length ? ` ${errors.length} line${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 2).join(' ')}` : ''}`; return;
+    const needs = missing.length ? ` ${missing.length} word${missing.length === 1 ? ' still needs' : 's still need'} a meaning: type it after the dash in the box, then add again.` : '';
+    save(); renderVocab(); if (missing.length) $('#vocabImport').value = missingLines(missing);   // words with no meaning yet go back in the box as "word - "
+    $('#vocabMsg').textContent = `${words.filter(w => !have.has(wordKey(w.w))).length} added.${needs}${errors.length ? ` ${errors.length} line${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 2).join(' ')}` : ''}`; return;
   }
   if (b.dataset.flagDismiss) { S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagDismiss); save(); renderVocab(); return; }
   if (b.dataset.flagAdd) {
