@@ -13,6 +13,42 @@ interface LedgerEntry {
 }
 interface DayRow { day: string; entry: LedgerEntry; sent_at: string; edited_by_teacher: boolean }
 interface OutsideRow { id: number; day: string; course: string; title: string; minutes: number; grade: string; notes: string; source: string }
+/* an old Ledger backup (the separate Ledger app): {caleb:{name, entries:[{subject, assignment, minutes, grade, date, id}], subjects}, abi:{...}} */
+interface ImportKid { key: string; name: string; entries: unknown[] }
+interface ImportRow { day: string; course: string; title: string; minutes: number; grade: string }
+interface ImportState { error?: string; file: string; kids: ImportKid[]; pick: string; existing: Set<string> }
+const dupKey = (day: string, course: string, title: string) => `${day}|${course.trim().toLowerCase()}|${title.trim().toLowerCase()}`;
+function validDay(v: unknown): v is string {
+  if (typeof v !== 'string' || !DAY.test(v)) return false;
+  const d = new Date(`${v}T12:00:00`);
+  return !isNaN(d.getTime()) && subjectDayKey(d) === v;
+}
+/* which entries come in: readable ones not already in the record (or twice in the file) */
+function prepareImport(kid: ImportKid | undefined, existing: Set<string>) {
+  const rows: ImportRow[] = [], seen = new Set(existing);
+  let bad = 0, dup = 0;
+  for (const raw of kid?.entries || []) {
+    const e = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const course = typeof e.subject === 'string' ? e.subject.trim().slice(0, 80) : '';
+    if (!validDay(e.date) || !course) { bad++; continue; }
+    const title = (typeof e.assignment === 'string' ? e.assignment.trim() : '').slice(0, 300);
+    const key = dupKey(e.date, course, title);
+    if (seen.has(key)) { dup++; continue; }
+    seen.add(key);
+    const m = Math.round(+String(e.minutes ?? 0));
+    rows.push({ day: e.date, course, title, minutes: Number.isFinite(m) ? Math.max(0, Math.min(1440, m)) : 0, grade: e.grade == null ? '' : String(e.grade).trim().slice(0, 20) });
+  }
+  return { rows, bad, dup };
+}
+function parseBackup(text: string): ImportKid[] | string {
+  let data: unknown;
+  try { data = JSON.parse(text); } catch { return 'That file isn’t a Ledger backup (it isn’t JSON).'; }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return 'That file isn’t a Ledger backup.';
+  const kids = Object.entries(data as Record<string, unknown>).filter(([, v]) => v && typeof v === 'object' && Array.isArray((v as { entries?: unknown }).entries))
+    .map(([key, v]) => { const o = v as { name?: unknown; entries: unknown[] }; return { key, name: typeof o.name === 'string' && o.name.trim() ? o.name.trim() : key, entries: o.entries }; });
+  return kids.length ? kids : 'No children with entries were found in that file.';
+}
+
 export interface LedgerStudent { id: string; n: string; subjectTime?: Record<string, Record<string, number>> }
 
 let client: SupabaseClient | null = null, ledgerClass = '';
@@ -45,7 +81,7 @@ function entryHTML(e: LedgerEntry) {
 
 export function renderLedger(el: HTMLElement, r: LedgerStudent) {
   const today = subjectDayKey();
-  const st = { from: addDays(today, -29), to: today, days: [] as DayRow[], outside: [] as OutsideRow[], open: new Set<string>([today]), edit: '', editOut: 0, msg: '' };
+  const st = { from: addDays(today, -29), to: today, days: [] as DayRow[], outside: [] as OutsideRow[], open: new Set<string>([today]), edit: '', editOut: 0, msg: '', imp: null as ImportState | null, importing: false };
   let deleteArmed = 0, deleteTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function load() {
@@ -102,6 +138,48 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     return `<details class="unit-card" data-ledger-day="${esc(day)}"${st.open.has(day) ? ' open' : ''}><summary><b>${esc(dayName(day))}</b><span class="unit-sum">Pet Town ${mins(ptSecs)} min${outs.length ? ` · outside ${outMin} min` : ''}</span> ${tags}</summary>${body}</details>`;
   }
 
+  function importHTML() {
+    const imp = st.imp;
+    if (!imp) return '';
+    if (imp.error) return `<p class="status">${esc(imp.error)}</p>`;
+    const kid = imp.kids.find(k => k.key === imp.pick), { rows, bad, dup } = prepareImport(kid, imp.existing);
+    const dates = rows.map(x => x.day).sort(), byCourse: Record<string, number> = {};
+    rows.forEach(x => { byCourse[x.course] = (byCourse[x.course] || 0) + 1; });
+    return `<p><b>${esc(imp.file)}</b></p><label>Whose entries go to ${esc(r.n)}? <select id="ledgerKid"><option value="">Pick one</option>${imp.kids.map(k => `<option value="${esc(k.key)}"${k.key === imp.pick ? ' selected' : ''}>${esc(k.name)} (${k.entries.length} entries)</option>`).join('')}</select></label>
+      ${kid ? `<p><b>${rows.length}</b> to import${rows.length ? `, ${esc(dayName(dates[0]))} to ${esc(dayName(dates[dates.length - 1]))}` : ''} · <b>${dup}</b> already in the record (skipped) · <b>${bad}</b> couldn’t be read (skipped)</p>
+      ${rows.length ? `<p class="muted">${Object.entries(byCourse).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${esc(c)}: ${n}`).join(' · ')}</p><div class="row"><button class="btn small primary" id="ledgerImportGo"${st.importing ? ' disabled' : ''}>${st.importing ? 'Importing…' : `Import ${rows.length} entries`}</button> <button class="btn small" id="ledgerImportCancel">Cancel</button></div>` : '<div class="row"><button class="btn small" id="ledgerImportCancel">Close</button></div>'}` : ''}`;
+  }
+  /* every outside entry this student has, for the duplicate check (the list on screen covers only the dates shown) */
+  async function existingKeys(sb: SupabaseClient) {
+    const keys = new Set<string>();
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await sb.from('ledger_outside').select('day,course,title').eq('student_id', r.id).order('id').range(from, from + 999);
+      if (error) throw new Error(error.message);
+      (data || []).forEach((o: { day: string; course: string; title: string }) => keys.add(dupKey(o.day, o.course, o.title)));
+      if (!data || data.length < 1000) return keys;
+    }
+  }
+  async function runImport(sb: SupabaseClient) {
+    const imp = st.imp;
+    if (!imp || st.importing) return;
+    const kid = imp.kids.find(k => k.key === imp.pick), { rows, bad, dup } = prepareImport(kid, imp.existing);
+    if (!kid || !rows.length) return;
+    st.importing = true; draw();
+    let done = 0, failed = '';
+    for (let i = 0; i < rows.length; i += 100) {
+      const { error } = await sb.from('ledger_outside').insert(rows.slice(i, i + 100).map(x => ({ ...x, student_id: r.id, class_id: ledgerClass, notes: '', source: 'import' })));
+      if (error) { failed = error.message; break; }
+      done += Math.min(100, rows.length - i);
+    }
+    st.importing = false;
+    const first = rows.map(x => x.day).sort()[0];
+    if (first < st.from) st.from = first;
+    st.msg = failed ? `Imported ${done} of ${rows.length} entries, then stopped: ${failed}. Import the same file again to bring in the rest (the ones already in are skipped).`
+      : `Imported ${done} entries from ${kid.name}’s old Ledger. Skipped ${dup} already in the record and ${bad} that couldn’t be read.`;
+    st.imp = null;
+    await load();
+  }
+
   function draw() {
     const days = new Set<string>([...st.days.map(d => d.day), ...st.outside.map(o => o.day)]);
     Object.entries(r.subjectTime || {}).forEach(([day, row]) => { if (day >= st.from && day <= st.to && sum(row) >= 60) days.add(day); });
@@ -117,6 +195,9 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
         <label>Assignment <input id="outTitle" maxlength="300" placeholder="e.g. Chapter 3 worksheet, field trip to the museum" style="width:100%"></label>
         <label>Notes <input id="outNotes" maxlength="1000" placeholder="optional" style="width:100%"></label>
         <div class="row"><button class="btn small primary" id="outAdd">Add</button></div></details>
+      <details class="card noprint" id="ledgerImport"${st.imp ? ' open' : ''}><summary><b>📥 Import an old Ledger backup</b></summary>
+        <p class="muted" style="margin-top:0">Pick a backup file from the old Ledger app (<code>ledger-backup-….json</code>). Its entries come in as outside work for ${esc(r.n)}. Entries already in the record (same date, course and assignment) are skipped, and so are entries without a date or course.</p>
+        <input type="file" id="ledgerFile" accept=".json,application/json"><div id="ledgerImportPreview">${importHTML()}</div></details>
       <datalist id="ledgerCourses">${courses.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist>
       <p class="status" id="ledgerMsg">${esc(st.msg)}</p>
       ${list.length ? list.map(dayHTML).join('') : '<p class="muted">Nothing recorded in these dates.</p>'}`;
@@ -128,6 +209,23 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
   const minutesOf = (v: string) => Math.max(0, Math.min(1440, Math.round(+v) || 0));
   const say = (msg: string) => { const m = el.querySelector('#ledgerMsg'); if (m) m.textContent = msg; };
 
+  el.onchange = event => {
+    const t = event.target as HTMLElement;
+    if (t.id === 'ledgerKid' && st.imp) { st.imp.pick = (t as HTMLSelectElement).value; draw(); return; }
+    if (t.id !== 'ledgerFile' || !client) return;
+    const sb = client, file = (t as HTMLInputElement).files?.[0];
+    if (!file) return;
+    void (async () => {
+      const kids = parseBackup(await file.text());
+      if (typeof kids === 'string') { st.imp = { error: kids, file: file.name, kids: [], pick: '', existing: new Set() }; draw(); return; }
+      let existing: Set<string>;
+      try { existing = await existingKeys(sb); } catch (err) { st.imp = { error: `Couldn’t check the record: ${(err as Error).message}`, file: file.name, kids: [], pick: '', existing: new Set() }; draw(); return; }
+      const name = r.n.trim().toLowerCase(), first = name.split(/\s+/)[0];
+      const match = kids.find(k => k.name.toLowerCase() === name || k.key.toLowerCase() === name) || kids.find(k => k.name.toLowerCase().split(/\s+/)[0] === first);
+      st.imp = { file: file.name, kids, pick: match?.key || (kids.length === 1 ? kids[0].key : ''), existing };
+      draw();
+    })();
+  };
   el.onclick = event => {
     const t = (event.target as HTMLElement).closest<HTMLElement>('button');
     if (!t || !client) return;
@@ -137,6 +235,8 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
       if (!DAY.test(from) || !DAY.test(to) || from > to) { say('Pick a From date on or before the To date.'); return; }
       st.from = from; st.to = to; void load();
     } else if (t.id === 'ledgerEarlier') { st.from = addDays(st.from, -30); void load(); }
+    else if (t.id === 'ledgerImportGo') void runImport(sb);
+    else if (t.id === 'ledgerImportCancel') { st.imp = null; draw(); }
     else if (t.id === 'outAdd') {
       const day = val('#outDay'), course = val('#outCourse');
       if (!DAY.test(day)) { say('Pick a date.'); return; }
