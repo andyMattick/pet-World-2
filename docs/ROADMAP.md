@@ -129,12 +129,13 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F3. Suggested vocab words: the teacher app's 📌 flagged words get a Dismiss button (it drops off the students' flagged lists too) and an editable example sentence, prefilled from where the word was found; a sentence typed with the word itself gets ___ in its place (also on the grown-up PIN screen)
 - [x] F4. Parent sign-in: a "Waiting for approval" screen (with Check again and Sign out) when a signed-in account isn't approved yet, using `is_approved_parent()`, the Supabase function behind every classes policy. Still to do: an admin approval screen, and saving the approval setup as a migration file so it lives in the repo
 - [x] F5. Vocabulary analysis like the math-facts view (teacher app, Vocabulary tab, "Word by word"): the class's hardest words with right / tried and who missed them, and each student's words as chips (✅ 🟡 🔴, right / tried), weakest first. Saves keep only each word's last 8 tries and no dates, so "last practiced" isn't shown
-- [ ] F6. History unit 1: a cave painting made in the app (drawing canvas, cave colors, hand stencil, undo), turned in like other work
+- [x] F6. History unit 1: 🎨 Cave Painting Studio, a project next to the Source Investigator (open from the start): paint on a cave wall in earth colors with a finger or mouse, hand stencils, undo, then two short questions; turned in, checked and archived like other projects. The picture is a small JPEG saved in the project's answers (no new database setup)
 - [ ] F7. Parents assign extras: times-table sets and vocab lists, shown in the student's daily plan
 - [ ] F8. Daily minutes per subject: a default for each subject that a parent can change on any day, including 0 (new migration file)
 - [ ] F9. The Ledger in Pet Town: journal and transcript saved in Supabase, real students and the parent role, backups, and a JSON import that keeps what it can read and skips the rest (with a count)
 - [ ] F10. Student daily plan: assigned work linked to the real activities, marked ✓ done, ⏳ waiting for feedback, or to do; time per subject from Practice time; a "finished" summary of time and specific work to confirm before it goes to the Ledger
 - [ ] F11. Year transcript built from the Ledger
+- [ ] F12. More make-it-in-the-app History activities like the cave painting, using the same drawing step (`kind:'draw'`). Ideas to think about: Unit 2, sketch a farm plan or a tool and say what it changed; Unit 3, write your name in cuneiform on a clay tablet or design a cylinder seal; Unit 4, design a coin for an empire or draw a Silk Road trade map
 
 ## Database files, in the order they were run
 

@@ -59,7 +59,7 @@ const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop =
 function normalizeProjectStore(raw, ids){
   return Object.fromEntries(ids.map(id => {
     const p = raw?.[id] || {}, answers = p.answers && typeof p.answers === 'object' ? p.answers : {};
-    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, v.slice(0,1500)]).slice(0,12)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : '', updatedAt:Number.isFinite(+p.updatedAt) ? +p.updatedAt : 0}];
+    return [id, {answers:Object.fromEntries(Object.entries(answers).filter(([,v]) => typeof v === 'string').map(([k,v]) => [k, /^data:image\/(jpeg|png);base64,/.test(v) ? (v.length <= 150000 ? v : '') : v.slice(0,1500)]).slice(0,12)), status:p.status === 'submitted' ? 'submitted' : 'draft', submittedAt:Number.isFinite(+p.submittedAt) ? +p.submittedAt : 0, localReview:p.localReview === 'verified' || p.localReview === 'revise' ? p.localReview : '', updatedAt:Number.isFinite(+p.updatedAt) ? +p.updatedAt : 0}];   // a drawing (data URL) keeps up to 150,000 characters
   }));
 }
 /* reading quizzes saved on each book: objective score, essay answers, and the essay review (see docs/READING-QUIZ.md) */
@@ -115,7 +115,7 @@ function normalize(raw){
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
-  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','history2','history3','history4']);
+  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4']);
   s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
@@ -5829,6 +5829,11 @@ function leanHard(pool){
     .sort((a, b) => b.key - a.key).map(item => item.question);
 }
 const HISTORY_PROJECTS = {
+  /* "historylab" shows up next to the Unit 1 project (projectKeys adds "<course>lab"); it is open from the start */
+  historylab:{title:'Cave Painting Studio',summary:'Paint on a cave wall the way artists did more than 17,000 years ago, then explain what your painting says about your life. Paint with a finger or the mouse, pick earth colors, and try a hand stencil.',steps:[
+    {key:'painting',kind:'draw',label:'1. You are an artist in the Lascaux cave in France, about 17,000 years ago. Paint the animals you hunt and see (horses, bison, deer), hand stencils, or patterns, using the earth colors you have.'},
+    {key:'about',label:'2. What did you paint, and why? What would you want people thousands of years from now to learn about your life from it?'},
+    {key:'cantTell',label:'3. Historians use cave paintings as evidence. What is one thing a painting can NOT tell a historian about the people who made it?'}]},
   bio1:{title:'Model Project: Structure and Function',summary:'Build a model of a cell or of the digestive system and explain how its parts work together.',steps:[
     {key:'choice',label:'1. Choose a cell (plant or animal) or the human digestive system. Describe the model you will build and your materials.'},
     {key:'parts',label:'2. List at least six parts. For each, explain its function and what it represents in your model.'},
@@ -6429,25 +6434,91 @@ function historyProjectCardOne(courseId){
 }
 function historyProjectReportHTML(courseId, canReview){
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
-  const answers = project.steps.filter(step => info.answers[step.key]).map(step => `<dt>${esc(step.label)}</dt><dd>${esc(info.answers[step.key])}</dd>`).join('');
+  const answers = project.steps.filter(step => info.answers[step.key]).map(step => `<dt>${esc(step.label)}</dt><dd>${step.kind === 'draw' ? `<img src="${esc(info.answers[step.key])}" alt="Painting" style="max-width:100%;border-radius:8px">` : esc(info.answers[step.key])}</dd>`).join('');
   const buttons = canReview && info.state !== 'draft' ? `<div class="row"><button class="btn small" data-project-local-review="verified" data-project-course="${courseId}">Mark verified</button><button class="btn small" data-project-local-review="revise" data-project-course="${courseId}">Request revision</button></div>` : '';
   return `<div class="ela-parent-row"><strong>${esc(project.title)}</strong><span>${PROJECT_STATE_TEXT[info.state]}</span></div>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl>${buttons}</div>` : ''}`;
+}
+/* drawing steps (kind:'draw'), first used by the Cave Painting Studio in History Unit 1: a canvas whose picture is saved
+   in the project's answers as a small JPEG data URL (no new database setup). ROADMAP F6 */
+const CAVE_COLORS = [['#2b2321','charcoal'],['#9c3b22','red ochre'],['#c99a2e','yellow ochre'],['#5a3a22','umber'],['#efe6d4','chalk']];
+function drawStepHTML(step, value, locked){
+  if (locked) return `<div class="draw-step"><p>${esc(step.label)}</p>${value ? `<img src="${esc(value)}" alt="Your painting" style="max-width:100%;border-radius:8px">` : '<p class="muted">No painting yet.</p>'}</div>`;
+  return `<div class="draw-step" data-draw="${step.key}"><p>${esc(step.label)}</p>
+<canvas width="480" height="320" style="width:100%;max-width:480px;aspect-ratio:3/2;border-radius:8px;touch-action:none;cursor:crosshair;display:block" aria-label="Cave wall to paint on"></canvas>
+<div class="row" role="group" aria-label="Paint colors">${CAVE_COLORS.map(([c, n], i) => `<button type="button" class="btn small${i ? '' : ' mint'}" data-draw-color="${c}" aria-pressed="${!i}"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};vertical-align:-2px;border:1px solid #0003"></span> ${n}</button>`).join('')}</div>
+<div class="row"><button type="button" class="btn small" data-draw-size="3">Thin</button><button type="button" class="btn small mint" data-draw-size="7">Medium</button><button type="button" class="btn small" data-draw-size="14">Thick</button><button type="button" class="btn small" data-draw-tool="hand" aria-pressed="false">✋ Hand stencil</button><button type="button" class="btn small" data-draw-undo>↶ Undo</button><button type="button" class="btn small" data-draw-clear>Start over</button></div>
+<input type="hidden" name="${step.key}" value="${esc(value || '')}"></div>`;
+}
+function caveWall(ctx, w, h){
+  const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#d9bf96'); g.addColorStop(0.5, '#c8a77a'); g.addColorStop(1, '#b38c5d');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 900; i++) { ctx.fillStyle = `rgba(${Math.random() < 0.5 ? '90,60,30' : '245,230,205'},${(Math.random() * 0.12).toFixed(3)})`; ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, 1 + Math.random() * 5, 0, 7); ctx.fill(); }
+}
+/* a hand shape (palm and five fingers) for the stencil: paint is sprayed around it, the way cave artists blew pigment */
+function handPath(x, y){
+  const p = new Path2D(); p.ellipse(x, y + 12, 20, 24, 0, 0, 7);
+  [[-17, -8, -0.5, 26], [-8, -24, -0.15, 34], [3, -27, 0, 37], [13, -22, 0.15, 33], [24, -2, 0.7, 24]].forEach(([dx, dy, a, len]) => {
+    const f = new Path2D(); if (f.roundRect) f.roundRect(-5, -len / 2, 10, len, 5); else f.rect(-5, -len / 2, 10, len);
+    p.addPath(f, new DOMMatrix().translate(x + dx, y + dy).rotate(a * 57.3));
+  });
+  return p;
+}
+function setupDrawSteps(){
+  $$('#historyProjectForm [data-draw]').forEach(box => {
+    const canvas = box.querySelector('canvas'), ctx = canvas.getContext('2d'), input = box.querySelector('input[type=hidden]'), undo = [];
+    let color = CAVE_COLORS[0][0], size = 7, tool = 'brush', last = null;
+    const keep = () => { input.value = canvas.toDataURL('image/jpeg', 0.7); };
+    const snap = () => { undo.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); if (undo.length > 20) undo.shift(); };
+    if (input.value) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); img.src = input.value; } else caveWall(ctx, canvas.width, canvas.height);
+    const at = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height]; };
+    const pick = (attr, btn) => box.querySelectorAll(`[${attr}]`).forEach(b => { b.classList.toggle('mint', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
+    const handBtn = box.querySelector('[data-draw-tool]');
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault(); snap(); const [x, y] = at(e);
+      if (tool === 'hand') {
+        const hand = handPath(x, y); ctx.fillStyle = color;
+        for (let i = 0; i < 2600; i++) {
+          const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * 62, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
+          if (!ctx.isPointInPath(hand, px, py)) { ctx.globalAlpha = 0.25 + Math.random() * 0.5; ctx.fillRect(px, py, 2, 2); }
+        }
+        ctx.globalAlpha = 1; keep(); return;
+      }
+      canvas.setPointerCapture(e.pointerId); last = [x, y];
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, size / 2, 0, 7); ctx.fill();
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!last) return; const [x, y] = at(e);
+      ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1; last = [x, y];
+    });
+    const end = () => { if (last) { last = null; keep(); } };
+    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+    box.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.drawColor) { color = b.dataset.drawColor; pick('data-draw-color', b); }
+      else if (b.dataset.drawSize) { size = +b.dataset.drawSize; tool = 'brush'; pick('data-draw-size', b); handBtn.classList.remove('mint'); handBtn.setAttribute('aria-pressed', 'false'); }
+      else if (b.dataset.drawTool) { tool = tool === 'hand' ? 'brush' : 'hand'; b.classList.toggle('mint', tool === 'hand'); b.setAttribute('aria-pressed', String(tool === 'hand')); }
+      else if (b.hasAttribute('data-draw-undo')) { const prev = undo.pop(); if (prev) { ctx.putImageData(prev, 0, 0); keep(); } }
+      else if (b.hasAttribute('data-draw-clear')) { snap(); caveWall(ctx, canvas.width, canvas.height); input.value = ''; }
+    });
+  });
 }
 function renderHistoryProject(courseId){
   void Backend.refreshSettings();
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId), locked = info.state === 'submitted' || info.state === 'verified';
-  const fields = project.steps.map(step => `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');
+  const fields = project.steps.map(step => step.kind === 'draw' ? drawStepHTML(step, info.answers[step.key], locked) : `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');
   const actions = (locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
     : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`)
     + (info.state === 'draft' ? '' : grownUpCheckHTML('project', courseId, info.state));   // a parent can check it right here, behind the grown-up PIN
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId.replace(/lab$/, '')}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
+    setupDrawSteps();
 }
 $('#libraryWrap').addEventListener('submit', event => {
   const form = event.target.closest('#historyProjectForm'); if (!form) return;
   event.stopImmediatePropagation(); event.preventDefault();
   const courseId = form.dataset.course, p = projectStore(courseId)[courseId], data = new FormData(form);
   p.updatedAt = Date.now();
-  HISTORY_PROJECTS[courseId].steps.forEach(step => { p.answers[step.key] = String(data.get(step.key) || '').trim().slice(0,1500); });
+  HISTORY_PROJECTS[courseId].steps.forEach(step => { const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
     if (!HISTORY_PROJECTS[courseId].steps.every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
     p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; toast('Project submitted for review.');
