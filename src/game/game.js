@@ -5829,11 +5829,13 @@ function leanHard(pool){
     .sort((a, b) => b.key - a.key).map(item => item.question);
 }
 const HISTORY_PROJECTS = {
-  /* "historylab" shows up next to the Unit 1 project (projectKeys adds "<course>lab"); it is open from the start */
-  historylab:{title:'Cave Painting Studio',summary:'Paint on a cave wall the way artists did more than 17,000 years ago, then explain what your painting says about your life. Paint with a finger or the mouse, pick earth colors, and try a hand stencil.',steps:[
-    {key:'painting',kind:'draw',label:'1. You are an artist in the Lascaux cave in France, about 17,000 years ago. Paint the animals you hunt and see (horses, bison, deer), hand stencils, or patterns, using the earth colors you have.'},
-    {key:'about',label:'2. What did you paint, and why? What would you want people thousands of years from now to learn about your life from it?'},
-    {key:'cantTell',label:'3. Historians use cave paintings as evidence. What is one thing a painting can NOT tell a historian about the people who made it?'}]},
+  /* "historylab" shows up next to the Unit 1 project (projectKeys adds "<course>lab"); it is open from the start.
+     Two rounds: the student sends the painting alone, the teacher writes what they think it shows (like a historian
+     with no one to ask), and then steps 2 and 3 (after:'guess') open. */
+  historylab:{title:'Cave Painting Studio',summary:'Paint on a cave wall the way artists did more than 17,000 years ago. Send it without any words, your teacher will say what they think it shows, and then you compare. Paint with a finger or the mouse, pick earth colors, and try a hand stencil.',steps:[
+    {key:'painting',kind:'draw',label:'1. You are an artist in the Lascaux cave in France, about 17,000 years ago. Paint the animals you hunt and see (horses, bison, deer), hand stencils, or patterns, using the earth colors you have. No words! A historian thousands of years from now will have to figure out what it means. When you finish, submit it: your teacher will write what they think it shows.'},
+    {key:'guessCompare',after:'guess',label:'2. Read what your teacher thinks your painting shows. Was it what you meant? What was different, and why do you think they saw it that way? What could you have painted differently to make it clearer?'},
+    {key:'cantShow',after:'guess',label:'3. Think about your own life. What is one thing you could NOT show a historian in a cave painting, no matter how well you painted? Why not?'}]},
   bio1:{title:'Model Project: Structure and Function',summary:'Build a model of a cell or of the digestive system and explain how its parts work together.',steps:[
     {key:'choice',label:'1. Choose a cell (plant or animal) or the human digestive system. Describe the model you will build and your materials.'},
     {key:'parts',label:'2. List at least six parts. For each, explain its function and what it represents in your model.'},
@@ -6419,6 +6421,8 @@ const englishFinalReady = course => unitOpenedByGrownUp(course.building) || (cou
   ? practiceSkills(course).every(skillId => !!englishRecord(skillId,course.id).passed)
   : course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id),course.id).passed));
 /* hosted: the teacher's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"; local: a grown-up sets it */
+/* a teacher's guess at what a drawing shows (quiz_overrides "project-guess:<id>" = "<submittedAt>:<text>"); steps marked after:'guess' open once it arrives */
+function projectGuess(courseId){ return String(Backend.me?.quiz_overrides?.[`project-guess:${courseId}`] || '').replace(/^\d+:/, '').trim(); }
 function historyProjectState(courseId){
   const p = projectStore(courseId)[courseId] || {answers:{},status:'draft',submittedAt:0,localReview:''};
   if (p.status !== 'submitted') return {...p, state:'draft'};
@@ -6506,7 +6510,7 @@ function setupDrawSteps(){
 function renderHistoryProject(courseId){
   void Backend.refreshSettings();
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId), locked = info.state === 'submitted' || info.state === 'verified';
-  const fields = project.steps.map(step => step.kind === 'draw' ? drawStepHTML(step, info.answers[step.key], locked) : `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');
+  const guess = projectGuess(courseId), fields = (guess ? `<div class="reading-report-chapter"><b>🧑‍🏫 Your teacher thinks your painting shows:</b><p>${esc(guess)}</p></div>` : '') + project.steps.filter(step => !step.after || guess).map(step => step.kind === 'draw' ? drawStepHTML(step, info.answers[step.key], locked || !!guess) : `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');   // the painting stays as sent once the guess is in
   const actions = (locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
     : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`)
     + (info.state === 'draft' ? '' : grownUpCheckHTML('project', courseId, info.state));   // a parent can check it right here, behind the grown-up PIN
@@ -6518,10 +6522,11 @@ $('#libraryWrap').addEventListener('submit', event => {
   event.stopImmediatePropagation(); event.preventDefault();
   const courseId = form.dataset.course, p = projectStore(courseId)[courseId], data = new FormData(form);
   p.updatedAt = Date.now();
-  HISTORY_PROJECTS[courseId].steps.forEach(step => { const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
+  HISTORY_PROJECTS[courseId].steps.forEach(step => { if (!form.elements.namedItem(step.key)) return;   // a step not on the page (locked painting, questions not open yet) keeps its answer
+    const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
-    if (!HISTORY_PROJECTS[courseId].steps.every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
-    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; toast('Project submitted for review.');
+    if (!HISTORY_PROJECTS[courseId].steps.filter(step => !step.after || projectGuess(courseId)).every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
+    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; toast(HISTORY_PROJECTS[courseId].steps.some(step => step.after) && !projectGuess(courseId) ? 'Painting sent! Your teacher will write what they think it shows.' : 'Project submitted for review.');
   } else toast('Draft saved.');
   save(); renderHistoryProject(courseId);
 }, true);

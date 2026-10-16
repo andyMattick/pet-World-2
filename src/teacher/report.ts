@@ -312,6 +312,12 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     const card = $('#projectCard');
     if (!card) return;
     card.innerHTML = historyProjectsHTML(r, overrides);
+    card.querySelectorAll<HTMLButtonElement>('[data-project-guess-send]').forEach(b => b.addEventListener('click', async () => {
+      const id = b.dataset.projectGuessSend!, box = b.closest('[data-guess-row]')?.querySelector<HTMLInputElement>('[data-project-guess]'), text = box?.value.trim() || '';
+      if (!text) { box?.focus(); return; }
+      await saveOverride(`project-guess:${id}`, `${b.dataset.projectAt}:${text}`);
+      await saveOverride(`project:${id}`, `revise:${b.dataset.projectAt}`);   // opens the project again for questions 2 and 3
+    }));
     card.querySelectorAll<HTMLButtonElement>('[data-project-verdict]').forEach(b => b.addEventListener('click', () => {
       void saveOverride(`project:${b.dataset.projectCourse}`, `${b.dataset.projectVerdict}:${b.dataset.projectAt}`);
     }));
@@ -474,17 +480,21 @@ function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
   return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.”</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
 }
 /* projects and experiments a student can submit; shown on the Projects tab and counted on the dashboard's waiting card */
+const GUESS_PROJECTS = new Set(['historylab']);   // projects where the teacher guesses what a drawing shows before the last questions open
 const PROJECT_TITLES: Record<string, string> = { history: 'History Unit 1: Source Investigator Project', historylab: 'History Unit 1: Cave Painting Studio', history2: 'History Unit 2: Forager or Farmer? Evidence Case', history3: 'History Unit 3: Compare Two Early Societies', history4: 'History Unit 4: Belief Systems and Empires Case Study', bio1: 'Biology Unit 1: Model Project', bio1lab: 'Biology Unit 1: Germination Lab (experiment)' };
 function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {
   const projects = PROJECT_TITLES;
-  const labels: Record<string, string> = { choice: 'Model choice', parts: 'Parts and functions', organization: 'Organization', limits: 'Model limits', question: 'Question and hypothesis', variables: 'Variables', procedure: 'Procedure', data: 'Data', conclusion: 'Conclusion', connection: 'Connection to plant reproduction', source: 'Source', perspective: 'Perspective', claim: 'Claim and evidence', frame: 'Frame or scale', subject: 'Subject', evidence: 'Evidence', tradeoffs: 'Advantages and disadvantages', sources: 'Sources used', environment: 'Environment and resources', compare: 'Comparison', spread: 'How it spread', painting: 'Cave painting', about: 'What I painted and why', cantTell: 'What a painting can’t tell a historian' };
+  const labels: Record<string, string> = { choice: 'Model choice', parts: 'Parts and functions', organization: 'Organization', limits: 'Model limits', question: 'Question and hypothesis', variables: 'Variables', procedure: 'Procedure', data: 'Data', conclusion: 'Conclusion', connection: 'Connection to plant reproduction', source: 'Source', perspective: 'Perspective', claim: 'Claim and evidence', frame: 'Frame or scale', subject: 'Subject', evidence: 'Evidence', tradeoffs: 'Advantages and disadvantages', sources: 'Sources used', environment: 'Environment and resources', compare: 'Comparison', spread: 'How it spread', painting: 'Cave painting', guessCompare: 'Your guess vs. what I meant', cantShow: 'What I couldn’t show a historian' };
   const items = Object.entries(projects).map(([id, title]) => {
     const p = (id.startsWith('bio') ? r.scienceProjects : r.historyProjects)?.[id], at = p?.submittedAt || 0, submitted = p?.status === 'submitted' && at > 0;
     const [verdict, stamp] = String(overrides[`project:${id}`] || '').split(':'), current = +stamp === at && (verdict === 'verified' || verdict === 'revise') ? verdict : '';
     const parent = !current && (p?.localReview === 'verified' || p?.localReview === 'revise') ? p.localReview : '';   // a parent's check at home (grown-up PIN)
     const status = !submitted ? 'Not submitted' : current === 'verified' ? 'Verified' : current === 'revise' ? 'Revision requested' : parent === 'verified' ? 'Verified by a parent' : parent === 'revise' ? 'Revision requested by a parent' : 'Waiting for review';
     const answers = Object.entries(p?.answers || {}).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(labels[k] || k)}</dt><dd>${/^data:image\//.test(v) ? `<img src="${esc(v)}" alt="${esc(labels[k] || 'Drawing')}" style="width:100%;max-width:360px;border-radius:8px">` : esc(v)}</dd>`).join('');
-    return { done: submitted && (current === 'verified' || (!current && parent === 'verified')), html: `<h3>${esc(title)} · ${status}</h3>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl></div>` : '<p class="muted">No work yet.</p>'}${submitted ? `<div class="row"><button class="btn small primary" data-project-verdict="verified" data-project-course="${id}" data-project-at="${at}">Verify</button> <button class="btn small" data-project-verdict="revise" data-project-course="${id}" data-project-at="${at}">Request revision</button></div>` : ''}` };
+    /* the Cave Painting Studio: first the teacher writes what they think the painting shows, which opens the student's last two questions */
+    const guess = String(overrides[`project-guess:${id}`] || '').replace(/^\d+:/, ''), needsGuess = GUESS_PROJECTS.has(id) && submitted && !p?.answers?.guessCompare;
+    const guessBox = GUESS_PROJECTS.has(id) && submitted ? (needsGuess ? `<div class="row" data-guess-row="${id}"><label style="flex:1">What do you think this painting shows? Write it like a historian who can’t ask the artist.<input type="text" data-project-guess maxlength="300" value="${esc(guess)}" style="width:100%"></label><button class="btn small primary" data-project-guess-send="${id}" data-project-at="${at}">Send my guess</button></div><p class="muted" style="margin:4px 0 0">Sending your guess opens questions 2 and 3 for the student.</p>` : guess ? `<p class="muted">Your guess: “${esc(guess)}”</p>` : '') : '';
+    return { done: submitted && (current === 'verified' || (!current && parent === 'verified')), html: `<h3>${esc(title)} · ${status}</h3>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl></div>` : '<p class="muted">No work yet.</p>'}${guessBox}${submitted && !needsGuess ? `<div class="row"><button class="btn small primary" data-project-verdict="verified" data-project-course="${id}" data-project-at="${at}">Verify</button> <button class="btn small" data-project-verdict="revise" data-project-course="${id}" data-project-at="${at}">Request revision</button></div>` : ''}` };
     });
     const doneItems = items.filter(x => x.done);
     const rows = items.filter(x => !x.done).map(x => x.html).join('') + archiveHTML(doneItems.map(x => x.html).join(''), doneItems.length);
