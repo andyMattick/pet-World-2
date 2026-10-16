@@ -125,7 +125,7 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 Quickest first. Each gets its own plan file before it's built. **Still open:** where this list goes relative to 3p (owner decision).
 
 - [ ] F1. Vocab import: headings like `Set 11:` and `Lesson 4`, bullets and numbers ignored, and words pasted with no meaning yet (Pet Town fills in its own meaning when it has the word; the rest go back in the box as `word - `)
-- [ ] F2. Archive turned-in work once it's accepted, with a Show archived switch. Work that's sent back stays until it's turned in again
+- [x] F2. Archive accepted work (teacher app, student page): accepted written answers, verified projects and reading chapters, and accepted reading-quiz essays fold into a closed ✅ Accepted section at the bottom of their tab. Sent-back work stays until it's turned in again
 - [ ] F3. Suggested vocab words: delete a suggestion, and an editable example sentence offered when a word is accepted
 - [ ] F4. Parent sign-in: an "Awaiting approval" screen when a signed-in parent isn't approved yet (the database gate is already in place). An admin approval screen comes later
 - [ ] F5. Vocabulary analysis like the math-facts view: accuracy, attempts, last practiced, and status for each word

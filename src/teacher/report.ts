@@ -449,9 +449,14 @@ function waitingHTML(list: StudentReport[]) {
       chip(x.r, x.essays, 'reading essay', 'reading essays', 'reading'), chip(x.r, x.written, 'written answer', 'written answers', 'written')].filter(Boolean).join(' ')}</td></tr>`).join('')}</tbody></table>`
       : '<p class="muted">Nothing is waiting. Everything students sent has been checked.</p>'}</div>`;
 }
+/* accepted work folds into a closed "✅ Accepted" section at the bottom of its tab, so the page shows only what still
+   needs a look. Sent-back work stays out in the open until the student turns it in again. (ROADMAP F2) */
+function archiveHTML(inner: string, n: number) {
+  return n ? `<details class="archive" style="margin-top:10px"><summary class="muted">✅ Accepted · ${n} (tap to look back)</summary>${inner}</details>` : '';
+}
 function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
   const entries = [...(r.writtenAnswers || [])].sort((a, b) => Number(!!writtenReview(a, overrides)) - Number(!!writtenReview(b, overrides)) || b.at - a.at);
-  const rows = entries.map(e => {
+  const card = (e: WrittenEntry) => {
     const review = writtenReview(e, overrides), mine = review?.by === 'teacher', parent = e.parentReview && !mine ? writtenReview({ ...e }, {}) : null;
     const status = !review ? '<span class="tag a">Waiting</span>' : `<span class="tag i">${review.redo ? 'Redo asked for' : 'Read'} · ${reviewScore(review)}/${e.rubric.length}${review.by === 'parent' ? ' (parent)' : ''}</span>`;
     return `<div class="reading-report-chapter" data-written-entry="${esc(e.id)}"><b>${esc(placeTitle(e.courseId, e.skillId))} · ${esc(lessonName(e.courseId, e.skillId))}</b> · <span class="muted">${esc((TYPE_LABELS as Record<string, string>)[e.type] || e.type)}${e.where === 'test' ? ' on the unit test' : ' in practice'} · ${esc(new Date(e.at).toLocaleDateString())}</span> ${status}
@@ -462,7 +467,10 @@ function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
       <label>Note for the student <input type="text" data-written-comment maxlength="300" value="${esc(review?.comment || '')}"></label>
       <div class="row"><button class="btn small primary" data-written-save="${esc(e.id)}" data-redo="0">${mine && !review?.redo ? '✅ Update: looks good' : '✅ Looks good'}</button> <button class="btn small" data-written-save="${esc(e.id)}" data-redo="1">${mine && review?.redo ? '🔁 Update: send back' : '🔁 Send back to redo'}</button></div>
       <p class="muted" style="margin:4px 0 0">Send back puts the question back in the student's practice with your note at the top.</p></div>`;
-  }).join('');
+      };
+      const accepted = (e: WrittenEntry) => { const rv = writtenReview(e, overrides); return !!rv && !rv.redo; };
+      const doneList = entries.filter(accepted);
+      const rows = entries.filter(e => !accepted(e)).map(card).join('') + archiveHTML(doneList.map(card).join(''), doneList.length);
   return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.”</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
 }
 /* projects and experiments a student can submit; shown on the Projects tab and counted on the dashboard's waiting card */
@@ -470,14 +478,16 @@ const PROJECT_TITLES: Record<string, string> = { history: 'History Unit 1: Sourc
 function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>) {
   const projects = PROJECT_TITLES;
   const labels: Record<string, string> = { choice: 'Model choice', parts: 'Parts and functions', organization: 'Organization', limits: 'Model limits', question: 'Question and hypothesis', variables: 'Variables', procedure: 'Procedure', data: 'Data', conclusion: 'Conclusion', connection: 'Connection to plant reproduction', source: 'Source', perspective: 'Perspective', claim: 'Claim and evidence', frame: 'Frame or scale', subject: 'Subject', evidence: 'Evidence', tradeoffs: 'Advantages and disadvantages', sources: 'Sources used', environment: 'Environment and resources', compare: 'Comparison', spread: 'How it spread' };
-  const rows = Object.entries(projects).map(([id, title]) => {
+  const items = Object.entries(projects).map(([id, title]) => {
     const p = (id.startsWith('bio') ? r.scienceProjects : r.historyProjects)?.[id], at = p?.submittedAt || 0, submitted = p?.status === 'submitted' && at > 0;
     const [verdict, stamp] = String(overrides[`project:${id}`] || '').split(':'), current = +stamp === at && (verdict === 'verified' || verdict === 'revise') ? verdict : '';
     const parent = !current && (p?.localReview === 'verified' || p?.localReview === 'revise') ? p.localReview : '';   // a parent's check at home (grown-up PIN)
     const status = !submitted ? 'Not submitted' : current === 'verified' ? 'Verified' : current === 'revise' ? 'Revision requested' : parent === 'verified' ? 'Verified by a parent' : parent === 'revise' ? 'Revision requested by a parent' : 'Waiting for review';
     const answers = Object.entries(p?.answers || {}).filter(([, v]) => v).map(([k, v]) => `<dt>${esc(labels[k] || k)}</dt><dd>${esc(v)}</dd>`).join('');
-    return `<h3>${esc(title)} · ${status}</h3>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl></div>` : '<p class="muted">No work yet.</p>'}${submitted ? `<div class="row"><button class="btn small primary" data-project-verdict="verified" data-project-course="${id}" data-project-at="${at}">Verify</button> <button class="btn small" data-project-verdict="revise" data-project-course="${id}" data-project-at="${at}">Request revision</button></div>` : ''}`;
-  }).join('');
+    return { done: submitted && (current === 'verified' || (!current && parent === 'verified')), html: `<h3>${esc(title)} · ${status}</h3>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl></div>` : '<p class="muted">No work yet.</p>'}${submitted ? `<div class="row"><button class="btn small primary" data-project-verdict="verified" data-project-course="${id}" data-project-at="${at}">Verify</button> <button class="btn small" data-project-verdict="revise" data-project-course="${id}" data-project-at="${at}">Request revision</button></div>` : ''}` };
+    });
+    const doneItems = items.filter(x => x.done);
+    const rows = items.filter(x => !x.done).map(x => x.html).join('') + archiveHTML(doneItems.map(x => x.html).join(''), doneItems.length);
   return `<div class="card"><h2>Projects and experiments</h2><p class="muted">Student-built research projects and lab reports. Verify when the work meets your standard, or request a revision.</p>${rows}<p class="status" id="studentQuizMsg2"></p></div>`;
 }
 function englishReadingHTML(r: StudentReport, subject = '') {
@@ -523,19 +533,20 @@ function readingReviewHTML(r: StudentReport, overrides: Record<string, string>) 
   let waiting = 0;
   const buttons = (key: string, at: number, yes: string, no: string) => `<div class="row"><button class="btn small primary" data-reading-verdict="verified" data-reading-key="${esc(key)}" data-reading-at="${at}">${yes}</button> <button class="btn small" data-reading-verdict="revise" data-reading-key="${esc(key)}" data-reading-at="${at}">${no}</button></div>`;
   const books = (r.readingBooks || []).map(book => {
-    const chapters = book.chapters.length ? book.chapters.map(chapter => {
+    const chapterItems = book.chapters.map(chapter => {
       const at = chapter.submittedAt || 0, key = `reading:${book.id}:${chapter.id}`, state = book.id && chapter.id ? readingVerdict(overrides, key, at, chapter.localReview) : 'draft';
       if (state === 'submitted') waiting++;
       const notes = READING_LABELS.filter(([k]) => chapter[k]).map(([k, label]) => `<dt>${label}</dt><dd>${esc(chapter[k])}</dd>`).join('');
-      return `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b> · <span class="muted">${READING_STATUS[state]}</span>${notes ? `<dl>${notes}</dl>` : '<p class="muted">No notes yet.</p>'}${at ? buttons(key, at, state === 'verified' ? 'Verified ✓' : 'Notes match the book', 'Needs fixing') : ''}</div>`;
-    }).join('') : '<p class="muted">No chapters yet.</p>';
-    const quizzes = (book.quizzes || []).slice().reverse().map(qz => {
+      return { done: state === 'verified' || state === 'parentVerified', html: `<div class="reading-report-chapter"><b>${esc(chapter.label || 'Untitled chapter')}</b> · <span class="muted">${READING_STATUS[state]}</span>${notes ? `<dl>${notes}</dl>` : '<p class="muted">No notes yet.</p>'}${at ? buttons(key, at, state === 'verified' ? 'Verified ✓' : 'Notes match the book', 'Needs fixing') : ''}</div>` };
+      });
+    const quizItems = (book.quizzes || []).slice().reverse().map(qz => {
       const at = qz.submittedAt || 0, key = `readingEssay:${qz.id}`, state = (qz.essays || []).length ? readingVerdict(overrides, key, at, qz.localReview) : 'draft';
       if (state === 'submitted') waiting++;
       const essays = (qz.essays || []).map(e => `<dt>${esc(e.prompt)}</dt><dd>${esc(e.answer)}</dd>`).join('');
-      return `<div class="reading-report-chapter"><b>Reading quiz ${qz.at ? esc(new Date(qz.at).toLocaleDateString()) : ''} · ${esc((qz.chapterLabels || []).join(', '))}</b> · ${qz.score ?? 0}/${qz.total ?? 0} right${essays ? ` · essay: ${state === 'verified' ? 'Accepted' : state === 'revise' ? 'Redo requested' : state === 'parentVerified' ? 'Accepted by a parent' : state === 'parentRevise' ? 'A parent asked for a redo' : 'Waiting for your check'}` : ''}${(qz.missed || []).length ? `<p class="muted">Missed: ${(qz.missed || []).map(esc).join(' · ')}</p>` : ''}${essays ? `<dl>${essays}</dl>${buttons(key, at, 'Accept essay', 'Ask for a redo')}` : ''}</div>`;
-    }).join('');
-    return `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${chapters}${quizzes}</section>`;
+      return { done: !essays || state === 'verified' || state === 'parentVerified', html: `<div class="reading-report-chapter"><b>Reading quiz ${qz.at ? esc(new Date(qz.at).toLocaleDateString()) : ''} · ${esc((qz.chapterLabels || []).join(', '))}</b> · ${qz.score ?? 0}/${qz.total ?? 0} right${essays ? ` · essay: ${state === 'verified' ? 'Accepted' : state === 'revise' ? 'Redo requested' : state === 'parentVerified' ? 'Accepted by a parent' : state === 'parentRevise' ? 'A parent asked for a redo' : 'Waiting for your check'}` : ''}${(qz.missed || []).length ? `<p class="muted">Missed: ${(qz.missed || []).map(esc).join(' · ')}</p>` : ''}${essays ? `<dl>${essays}</dl>${buttons(key, at, 'Accept essay', 'Ask for a redo')}` : ''}</div>` };   // a quiz with no essay has nothing to check
+      });
+      const items = [...chapterItems, ...quizItems], doneItems = items.filter(x => x.done);
+      return `<section class="reading-report"><h4>${esc(book.title)}${book.author ? ` · ${esc(book.author)}` : ''}</h4>${book.chapters.length ? '' : '<p class="muted">No chapters yet.</p>'}${items.filter(x => !x.done).map(x => x.html).join('')}${archiveHTML(doneItems.map(x => x.html).join(''), doneItems.length)}</section>`;
   }).join('');
   return `<div class="card"><h2>Reading Log and Reading Quizzes${waiting ? ` · ${waiting} waiting` : ''}</h2><p class="muted">Students write these notes themselves. Check each chapter against the book: only verified chapters can be quizzed. Quiz questions are built from the verified notes; essays wait for you to read.</p>${books || '<p class="muted">No books added yet.</p>'}</div>`;
 }
