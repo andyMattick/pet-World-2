@@ -6,7 +6,7 @@ import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { applyRoom } from './rooms';
 import { thinkReportHTML, thinkStationName } from '../shared/thinkReport';
-import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML } from '../shared/subjectTime';
+import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML, subjectDayKey as logDayKey } from '../shared/subjectTime';
 import { stageHTML, stageReact } from './stage';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
@@ -138,6 +138,7 @@ function normalize(raw){
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.sprintPick)) s.sprintPick = ['times'];
+    s.dayLog = normalizeDayLog(s.dayLog);   // the day log (docs: LEDGER.md)
     if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
@@ -5666,7 +5667,7 @@ function renderHome(){
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = extrasCardHTML() + goalsCardHTML() + hoodSwitchHTML();
+  let h = extrasCardHTML() + goalsCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">✅ I’m done for today</button>` + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {
@@ -6218,7 +6219,7 @@ $('#libraryWrap').addEventListener('submit', event => {
     if (changed || event.submitter?.dataset.saveMode === 'submit') active.chapter.updatedAt = Date.now();
     if (event.submitter?.dataset.saveMode === 'submit') {
       if (!readingReadyToSend(active.chapter)) { save(); renderEnglishLibrary(); toast('Add the main characters and at least two more answers before sending.'); return; }
-      active.chapter.submittedAt = Date.now(); active.chapter.localReview = ''; save(); renderEnglishLibrary(); toast('Sent! A grown-up will check these notes.'); return;
+      active.chapter.submittedAt = Date.now(); active.chapter.localReview = ''; logEvent({k:'reading', title:active.chapter.label || 'a chapter'}); save(); renderEnglishLibrary(); toast('Sent! A grown-up will check these notes.'); return;
     }
     save(); renderEnglishLibrary(); toast(changed && wasChecked ? 'Notes saved. Send them again so a grown-up can re-check.' : 'Chapter notes saved.');
   }
@@ -6568,7 +6569,7 @@ $('#libraryWrap').addEventListener('submit', event => {
     const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
     if (!HISTORY_PROJECTS[courseId].steps.filter(step => !step.after || projectGuess(courseId)).every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
-    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; toast(HISTORY_PROJECTS[courseId].steps.some(step => step.after) && !projectGuess(courseId) ? 'Painting sent! Your teacher will write what they think it shows.' : 'Project submitted for review.');
+    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; logEvent({k:'project', title:HISTORY_PROJECTS[courseId].title}); toast(HISTORY_PROJECTS[courseId].steps.some(step => step.after) && !projectGuess(courseId) ? 'Painting sent! Your teacher will write what they think it shows.' : 'Project submitted for review.');
   } else toast('Draft saved.');
   save(); renderHistoryProject(courseId);
 }, true);
@@ -6704,6 +6705,7 @@ function finishEnglishRun(){
   const run = englishRun; commitEnglishRun(run);
   const store = progressStore(run.courseId);   // the result screen reads best and tries from it
   const passed = run.score >= run.passMark;
+    logEvent({k:'course', course:run.courseId, title:run.title, kind:run.retryType, s:run.score, n:run.questions.length, passed});   // day log
   englishRun = null;
   if (run.retryType === 'think' && passed && run.nextClosed) { const m = mathStation(run.progressKey), next = m && m.st.id + 1; if (m && stationOpen(m.shop, next)) setTimeout(() => toast(`New station open: ${SHOPS[m.shop].stations.find(x => x.id === next).name}!`), 600); }
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
@@ -7057,6 +7059,7 @@ function answerVocab(ok, shownAnswer){
 function finishVocab(){
   stopVocabTimer(); const run = vocabRun; vocabRun = null; if (!run) return;
     assignedExtras().filter(x => x.kind === 'vocab' && (VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice') === run.mode).forEach(x => addExtraTime(x.id, (performance.now() - run.started) / 1000));   // time on an assigned Word Workshop extra
+      logEvent({k:'vocab', mode:run.mode, s:run.correct, ...(run.mode === 'sprint' ? {} : {n:run.index})});   // day log
   let extra = '';
   if (run.mode === 'sprint') {
     const coins = Math.floor(run.correct / 2); S.coins += coins; const best = run.correct > S.vocab.sprintBest; if (best) S.vocab.sprintBest = run.correct;
@@ -7611,6 +7614,7 @@ function finishAssessment(){
   if (result.passed) delete S.review[key];
   else startReview(S, key, result.review, finished.settings);
   Backend.log('assessments', {shop, station, kind:finished.mode, score:result.score, total:result.total, passed:result.passed, missed_skills:result.missed});
+    logEvent({k:'assess', shop, station, mode:finished.mode, s:result.score, n:result.total, passed:result.passed});   // day log
   const payout = result.passed ? (finished.mode === 'test' ? 150 : 50) : 10;
   if (finished.mode === 'test' && result.passed) checkUnlocks({announce:true});
   if (finished.mode === 'test' && result.passed) {
@@ -7793,6 +7797,7 @@ function completeOrder(){
   S.coins += tip; S.orders++; shift.earned += tip; shift.missed.push(...order.missed);
   checkUnlocks({announce:true});
   if (shift.mode === 'practice') Backend.log('problems', {shop:shift.shop, station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
+    if (shift.mode === 'practice') logCount(`shop:${shift.shop}:${shift.station}`, perfect);   // day log
   save(); updateHeader();
   const n = $('#chalkNote'); n.className = 'chalk-note good';
   n.textContent = perfect ? 'Perfect order!' + (S.streak > 1 ? ` ${S.streak} in a row!` : '') : 'Order up!';
@@ -8423,6 +8428,7 @@ $('#spCheck').addEventListener('click', () => {
 function endSprint(){
   stopSprintTimer(); if (!sp) return;
   const run = sp; sp = null;
+  logEvent({k:'sprint', s:run.correct, skills:run.types});   // day log
   if (run.extraId) addExtraTime(run.extraId, (performance.now() - run.started) / 1000);   // a sprint started from the extras card
   const pw = Math.round((1 + Math.min(run.correct, 20)*0.05)*100)/100;
   S.power = Math.max(S.power, pw);
@@ -8788,8 +8794,95 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => addSubjectTime(S.subjectTime, subjectOnScreen(), seconds));
+}, seconds => { addSubjectTime(S.subjectTime, subjectOnScreen(), seconds); logPlaceTime(placeOnScreen(), seconds); });
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
+/* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
+   S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, ...}], sent}
+   Each 15-second active-time credit also goes to the lesson on screen; scores are added as events. Last 14 days kept. */
+const DAYLOG_DAYS = 14;
+function normalizeDayLog(raw){
+  const out = {}, num = v => (Number.isFinite(+v) && +v > 0 ? Math.round(+v) : 0);
+  if (!raw || typeof raw !== 'object') return out;
+  for (const day of Object.keys(raw).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort().slice(-DAYLOG_DAYS)) {
+    const d = raw[day] || {}, places = {}, counts = {};
+    for (const [k, v] of Object.entries(d.places || {})) if (typeof k === 'string' && k.length <= 80 && num(v)) places[k] = Math.min(num(v), 86400);
+    for (const [k, v] of Object.entries(d.counts || {})) if (typeof k === 'string' && k.length <= 80 && v && num(v.n)) counts[k] = {n:num(v.n), ok:Math.min(num(v.ok), num(v.n))};
+    const events = (Array.isArray(d.events) ? d.events : []).filter(e => e && typeof e.k === 'string' && Number.isFinite(+e.t)).slice(-200)
+      .map(e => Object.fromEntries(Object.entries(e).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v) || Array.isArray(v)).map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 160) : Array.isArray(v) ? v.slice(0, 12).map(String) : v])));
+    out[day] = {places, counts, events, sent:num(d.sent)};
+  }
+  return out;
+}
+function dayLogToday(){
+  const day = logDayKey();
+  if (!S.dayLog[day]) { S.dayLog[day] = {places:{}, counts:{}, events:[], sent:0}; const days = Object.keys(S.dayLog).sort(); for (const old of days.slice(0, Math.max(0, days.length - DAYLOG_DAYS))) delete S.dayLog[old]; }
+  return S.dayLog[day];
+}
+function logPlaceTime(place, seconds){ if (!(seconds > 0) || !place) return; const d = dayLogToday(); d.places[place] = Math.min(86400, (d.places[place] || 0) + seconds); }
+function logCount(key, ok){ const d = dayLogToday(), c = d.counts[key] || (d.counts[key] = {n:0, ok:0}); c.n++; if (ok) c.ok++; }
+function logEvent(e){ const d = dayLogToday(); d.events = [...d.events, {t:Date.now(), ...e}].slice(-200); }
+/* the lesson on screen, for time per lesson */
+function placeOnScreen(){
+  const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
+  if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
+  if (on('sprint') || on('summary')) return 'sprint';
+  if (on('vocab')) return `vocab:${vocabRun?.mode || vocabTab}`;
+  if (on('arcade')) return 'arcade';
+  if (!on('library')) return 'town';
+  const form = $('#historyProjectForm'); if (form) return `project:${form.dataset.course}`;
+  if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
+  if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
+  return `course:${activeEnglishCourse}`;
+}
+const stationLabel = (shop, station, mode = '') => {
+  const s = SHOPS[shop], st = s?.stations.find(x => x.id === +station);
+  return `${s?.emoji || ''} ${s?.name || shop}${mode === 'test' ? ' · Unit Test' : st ? ` · ${st.name}${mode === 'quiz' ? ' quiz' : ''}` : ''}`;
+};
+function placeLabel(key){
+  const [kind, a, b, c] = key.split(':');
+  if (kind === 'shop') return stationLabel(a, b, c);
+  if (kind === 'vocab') return `🔤 Word Workshop · ${VOCAB_MODE_NAME[a] || 'Practice cards'}`;
+  if (kind === 'project') return `📁 ${HISTORY_PROJECTS[a]?.title || a}`;
+  if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
+  return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
+}
+function eventText(e){
+  const score = e.n ? ` · ${e.s} of ${e.n}` : e.s != null ? ` · ${e.s} right` : '';
+  if (e.k === 'assess') return `${stationLabel(e.shop, e.station, e.mode)}${score}${e.passed ? ' ✅ passed' : ''}`;
+  if (e.k === 'sprint') return `⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
+  if (e.k === 'vocab') return `🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
+  if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
+  if (e.k === 'project') return `📁 Sent: ${e.title}`;
+  if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
+  return e.title || e.k;
+}
+function daySummaryHTML(day = logDayKey()){
+  const d = S.dayLog[day] || {places:{}, counts:{}, events:[]}, subj = S.subjectTime?.[day] || {}, mins = s => (s < 60 ? '<1' : String(Math.round(s / 60)));
+  const subjects = [...GOAL_SUBJECTS, ['arcade', '🕹️ Arcade']].filter(([id]) => subj[id] >= 30);
+  const total = Object.values(subj).reduce((a, b) => a + b, 0);
+  const places = Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]);
+  const counts = Object.entries(d.counts).map(([k, c]) => { const [, shop, station] = k.split(':'); return `<li>${esc(stationLabel(shop, station))}: <b>${c.n}</b> order${c.n === 1 ? '' : 's'}, ${c.ok} perfect</li>`; });
+  const time = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  const extras = assignedExtras().map(x => `<li>${Math.floor(extraSecs(x.id) / 60) >= +x.minutes ? '✅' : '⬜'} ${esc(extraLabel(x))}: ${Math.floor(extraSecs(x.id) / 60)} of ${Math.round(+x.minutes)} min</li>`);
+  const goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => `<li>${Math.floor((subj[id] || 0) / 60) >= goals[id] ? '✅' : '⬜'} ${esc(name)}: ${Math.floor((subj[id] || 0) / 60)} of ${goals[id]} min</li>`);
+  return `<p><b>${mins(total)} minutes</b> of active time today.</p>
+${subjects.length ? `<h3>Time by subject</h3><ul>${subjects.map(([id, name]) => `<li>${esc(name)}: <b>${mins(subj[id])} min</b></li>`).join('')}</ul>` : ''}
+${places.length ? `<h3>Time by lesson</h3><ul>${places.map(([k, s]) => `<li>${esc(placeLabel(k))}: <b>${mins(s)} min</b></li>`).join('')}</ul>` : ''}
+${counts.length ? `<h3>Practice orders</h3><ul>${counts.join('')}</ul>` : ''}
+${d.events.length ? `<h3>What I finished</h3><ul>${d.events.map(e => `<li><span class="muted">${time(e.t)}</span> ${esc(eventText(e))}</li>`).join('')}</ul>` : ''}
+${extras.length ? `<h3>📋 Extras</h3><ul>${extras.join('')}</ul>` : ''}${goalRows.length ? `<h3>🎯 Time goals</h3><ul>${goalRows.join('')}</ul>` : ''}
+${!total && !d.events.length ? '<p class="muted">Nothing yet today. Time starts counting as soon as you practice.</p>' : ''}`;
+}
+function renderDayDone(){
+  const d = dayLogToday();
+  $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small" data-day-back>Back to town</button></div>${daySummaryHTML()}
+<div class="row"><button type="button" class="btn berry" data-day-send>${d.sent ? '✅ Saved to my record (save again)' : 'Send to my record'}</button></div>${d.sent ? `<p class="muted">Saved at ${new Date(d.sent).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}. A grown-up can still change it.</p>` : ''}</div>`;
+}
+document.addEventListener('click', event => {
+  if (event.target.closest('[data-day-done]')) { renderDayDone(); return; }
+  if (event.target.closest('[data-day-back]')) { renderHome(); return; }
+  if (event.target.closest('[data-day-send]')) { dayLogToday().sent = Date.now(); save(); toast('Saved to your record!'); renderDayDone(); }
+});
 function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (on('cafe') || on('shift') || on('sprint') || on('summary')) return 'math';
