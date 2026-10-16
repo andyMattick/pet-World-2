@@ -8809,7 +8809,7 @@ function normalizeDayLog(raw){
     for (const [k, v] of Object.entries(d.counts || {})) if (typeof k === 'string' && k.length <= 80 && v && num(v.n)) counts[k] = {n:num(v.n), ok:Math.min(num(v.ok), num(v.n))};
     const events = (Array.isArray(d.events) ? d.events : []).filter(e => e && typeof e.k === 'string' && Number.isFinite(+e.t)).slice(-200)
       .map(e => Object.fromEntries(Object.entries(e).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v) || Array.isArray(v)).map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 160) : Array.isArray(v) ? v.slice(0, 12).map(String) : v])));
-    out[day] = {places, counts, events, sent:num(d.sent)};
+    out[day] = {places, counts, events, sent:num(d.sent), synced:!!d.synced};
   }
   return out;
 }
@@ -8873,6 +8873,25 @@ ${d.events.length ? `<h3>What I finished</h3><ul>${d.events.map(e => `<li><span 
 ${extras.length ? `<h3>📋 Extras</h3><ul>${extras.join('')}</ul>` : ''}${goalRows.length ? `<h3>🎯 Time goals</h3><ul>${goalRows.join('')}</ul>` : ''}
 ${!total && !d.events.length ? '<p class="muted">Nothing yet today. Time starts counting as soon as you practice.</p>' : ''}`;
 }
+/* the day as it goes into the record (ledger_days.entry): labels are written out so the teacher app can show it as is */
+function dayEntry(day = logDayKey()){
+  const d = S.dayLog[day] || {places:{}, counts:{}, events:[]}, subj = normalizeSubjectTime(S.subjectTime)[day] || {};
+  const goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day);
+  return {v:1, day, totalSecs:Object.values(subj).reduce((a, b) => a + b, 0), subjects:subj,
+    lessons:Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]).map(([key, secs]) => ({key, label:placeLabel(key), secs})),
+    orders:Object.entries(d.counts).map(([key, c]) => { const [, shop, station] = key.split(':'); return {key, label:stationLabel(shop, station), n:c.n, ok:c.ok}; }),
+    events:d.events.map(e => ({...e, text:eventText(e)})),
+    extras:assignedExtras().map(x => ({label:extraLabel(x), done:Math.floor(extraSecs(x.id) / 60), goal:Math.round(+x.minutes)})),
+    goals:GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => ({subject:id, label:name, done:Math.floor((subj[id] || 0) / 60), goal:goals[id]}))};
+}
+async function sendDay(){
+  const day = logDayKey(), d = dayLogToday(); d.sent = Date.now(); save();
+  const result = await Backend.sendLedgerDay(day, dayEntry(day));
+  d.synced = result === 'saved' || result === 'kept'; save();
+  toast(result === 'saved' ? 'Saved to your record!' : result === 'kept' ? 'Saved. A grown-up already changed today in your record, so their version stays.'
+    : Backend.me ? 'Saved on this device. Tap Send again when you’re back online.' : 'Saved on this device.');
+  renderDayDone();
+}
 function renderDayDone(){
   const d = dayLogToday();
   $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small" data-day-back>Back to town</button></div>${daySummaryHTML()}
@@ -8881,7 +8900,7 @@ function renderDayDone(){
 document.addEventListener('click', event => {
   if (event.target.closest('[data-day-done]')) { renderDayDone(); return; }
   if (event.target.closest('[data-day-back]')) { renderHome(); return; }
-  if (event.target.closest('[data-day-send]')) { dayLogToday().sent = Date.now(); save(); toast('Saved to your record!'); renderDayDone(); }
+  if (event.target.closest('[data-day-send]')) void sendDay();
 });
 function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };

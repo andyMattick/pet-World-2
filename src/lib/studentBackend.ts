@@ -205,6 +205,13 @@ class StudentBackend {
     if (this.sb) await this.sb.auth.signOut();
   }
 
+  /** Ledger (docs: LEDGER.md step 3): send one day's summary. Returns 'saved', 'kept' (a grown-up edited that day), or null in local mode, offline, or before the migration is run. */
+  async sendLedgerDay(day: string, entry: Record<string, unknown>): Promise<string | null> {
+    if (!this.sb || !this.me) return null;
+    const { data, error } = await this.sb.rpc('send_ledger_day', { p_day: day, p_entry: entry });
+    return error ? null : String(data);
+  }
+
   /** Called on every game save; writes to the server after a short pause. */
   saveSoon(state: Record<string, unknown>) {
     if (!this.me) return;

@@ -136,6 +136,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [ ] F10. Student daily plan: assigned work linked to the real activities, marked ✓ done, ⏳ waiting for feedback, or to do; time per subject from Practice time; a "finished" summary of time and specific work to confirm before it goes to the Ledger
 - [ ] F11. Year transcript built from the Ledger
 - [ ] F12. More make-it-in-the-app History activities like the cave painting, using the same drawing step (`kind:'draw'`). Ideas to think about: Unit 2, sketch a farm plan or a tool and say what it changed; Unit 3, write your name in cuneiform on a clay tablet or design a cylinder seal; Unit 4, design a coin for an empire or draw a Silk Road trade map
+- [ ] F13. 🎨 Art Studio and gallery: paint any time on the cave-wall canvas (separate from the History project); save paintings to a gallery (about 8 to 10, kept in the save), reopen or delete them; frame one for the Pet Room for Pet Town coins (about 50) as a placeable decoration. More colors and stencils to buy with coins as they become available (for example, opened by later History units). The project painting gets "Save to my gallery" next to Send to teacher
 
 ## Database files, in the order they were run
 
@@ -146,6 +147,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 5. `20260928000000_quizzes.sql` ✅
 6. `20260929000000_practice_time.sql` ✅
 7. `20260930000000_report_null_keys.sql` ✅
+8. `20261017000000_ledger.sql` ⏳ run this one in Supabase (Ledger step 3)
 
 All seven are run in Supabase. Never edit one of these files. Any change goes in a **new** migration file.
 
