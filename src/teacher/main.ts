@@ -57,12 +57,29 @@ function renderAuth(msg = '') {
     const c = creds();
     if (c.password.length < 8) { $('#authMsg').textContent = 'Use a password with at least 8 characters.'; return; }
     const { data, error } = await sb!.auth.signUp(c);
-    $('#authMsg').textContent = error ? error.message : data.session ? '' : 'Check your email to confirm your account, then sign in.';
+    $('#authMsg').textContent = error ? error.message : data.session ? '' : 'Check your email to confirm your account, then sign in. New accounts are approved by hand before they can make a class.';
   });
+}
+
+/* ---------- waiting for approval ---------- */
+async function renderWaiting() {
+  stopLive();
+  const email = (await sb!.auth.getUser()).data.user?.email || 'Your account';
+  app.innerHTML = `<div class="card authcard"><h2>Waiting for approval</h2>
+    <p>Thanks for signing up! <b>${esc(email)}</b> is waiting to be approved before it can make a class.</p>
+    <p class="muted">You'll get in as soon as it's approved. Check back later, or tap Check again.</p>
+    <div class="row"><button class="btn primary" id="checkAgain">Check again</button><button class="btn" id="signOut">Sign out</button></div>
+    <p class="status muted" id="authMsg"></p></div>`;
+  $('#checkAgain').addEventListener('click', () => { $('#authMsg').textContent = 'Checking…'; void loadClasses(); });
+  $('#signOut').addEventListener('click', () => { void sb!.auth.signOut(); });
 }
 
 /* ---------- classes ---------- */
 async function loadClasses(selectId?: string) {
+  /* a new parent account waits for the owner's approval: is_approved_parent() in Supabase gates every classes policy.
+     If the function can't be called (older database), carry on as before. (ROADMAP F4) */
+  const approved = await sb!.rpc('is_approved_parent');
+  if (!approved.error && approved.data !== true) { void renderWaiting(); return; }
   /* lesson_links and question_edits come from the lesson-content migration; until it is run, load the classes without them */
   const withLessons: string = 'id,name,join_code,min_station,drill_settings,quiz_settings,game_settings,lesson_links,question_edits,created_at';
   const full = await sb!.from('classes').select(withLessons).order('created_at');
