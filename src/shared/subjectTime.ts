@@ -52,6 +52,30 @@ export function mergeSubjectTime(base: SubjectTime, other: unknown): number {
   return n;
 }
 
+/* daily minute goals per subject (ROADMAP F8), set by a grown-up for one student and saved in quiz_overrides as
+   "subjectGoals" = JSON {base:{math:20, ...}, days:{"2026-10-17":{math:0}}}. A day's value (0 too) replaces the every-day value. */
+export const GOAL_SUBJECTS = SUBJECT_TIME.filter(([id]) => id !== 'arcade' && id !== 'town');
+export interface SubjectGoals { base: Record<string, number>; days: Record<string, Record<string, number>> }
+const GOAL_IDS = new Set(GOAL_SUBJECTS.map(([id]) => id));
+function cleanGoals(row: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (row && typeof row === 'object') for (const [id, v] of Object.entries(row as Record<string, unknown>)) {
+    const n = Math.round(Number(v)); if (GOAL_IDS.has(id) && v !== '' && v !== null && Number.isFinite(n) && n >= 0) out[id] = Math.min(n, 240);
+  }
+  return out;
+}
+export function parseSubjectGoals(raw: unknown): SubjectGoals {
+  let v: unknown = raw;
+  if (typeof raw === 'string') { try { v = JSON.parse(raw); } catch { v = null; } }
+  const o = (v && typeof v === 'object' ? v : {}) as { base?: unknown; days?: unknown }, days: Record<string, Record<string, number>> = {};
+  if (o.days && typeof o.days === 'object') for (const [d, row] of Object.entries(o.days as Record<string, unknown>)) {
+    if (!DAY.test(d)) continue; const c = cleanGoals(row); if (Object.keys(c).length) days[d] = c;
+  }
+  return { base: cleanGoals(o.base), days };
+}
+/** The goals for one day: the every-day minutes with that day's changes on top. */
+export const goalsFor = (goals: SubjectGoals, day = subjectDayKey()): Record<string, number> => ({ ...goals.base, ...(goals.days[day] || {}) });
+
 const escHTML = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const minutes = (secs: number) => !secs ? '–' : secs < 60 ? '<1' : String(Math.round(secs / 60));
 

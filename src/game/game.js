@@ -12,6 +12,7 @@ import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
+import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -5645,6 +5646,15 @@ document.addEventListener('click', event => {
   if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
   else { pendingExtra = x; openSprint(); }
 });
+/* today's minutes for each subject a grown-up set a goal for (ROADMAP F8); time is the same active time the reports count */
+function goalsCardHTML(){
+  const day = goalDayKey(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
+  const rows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0); if (!rows.length) return '';
+  return `<div class="card goals-card" style="grid-column:1/-1"><h2>🎯 Today’s time goals</h2>${rows.map(([id, name]) => {
+    const done = Math.floor((today[id] || 0) / 60), goal = goals[id];
+    return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)}</span><b>${Math.min(done, goal)} of ${goal} min</b></div>`;
+  }).join('')}</div>`;
+}
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
   const ownedDecor = S.decor.map(id => REWARDS.find(reward => reward.id === id)).filter(Boolean);
@@ -5656,7 +5666,7 @@ function renderHome(){
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = extrasCardHTML() + hoodSwitchHTML();
+  let h = extrasCardHTML() + goalsCardHTML() + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {

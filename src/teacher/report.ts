@@ -1,7 +1,7 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
 import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '../shared/questionTypes';
 import { LESSON_COURSES } from '../shared/questionBanks';
-import { subjectTimeTableHTML } from '../shared/subjectTime';
+import { subjectTimeTableHTML, GOAL_SUBJECTS, parseSubjectGoals, subjectDayKey } from '../shared/subjectTime';
 import { thinkReportHTML } from '../shared/thinkReport';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, DRILLS, type DrillSettings } from '../shared/registry';
 /* extras a grown-up assigns one student (ROADMAP F7) */
@@ -245,6 +245,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   h += `<div class="card"><h2>Practice pop-ups for ${esc(r.n)}</h2><label for="studentDrillMode">Mode</label><select id="studentDrillMode"><option value="class" ${mode === 'class' ? 'selected' : ''}>Use class settings</option><option value="1.5" ${mode === '1.5' ? 'selected' : ''}>Extra time ×1.5</option><option value="2" ${mode === '2' ? 'selected' : ''}>Extra time ×2</option><option value="off" ${mode === 'off' ? 'selected' : ''}>Pop-ups off</option><option value="advanced" ${mode === 'advanced' ? 'selected' : ''}>Custom override</option></select><details open><summary>Advanced</summary><p class="muted">Individual drill settings are stored with this student's override.</p><label for="studentReadSeconds">Reading time before the tip timer starts</label><input id="studentReadSeconds" type="number" min="0" max="20" step="1" value="${r.ds?.readSeconds ?? ''}"></details><table class="steptable"><tr><th>Drill</th><th>Pop-ups</th><th>Misses after</th><th>Status</th><th></th></tr>${historyRows || '<tr><td colspan="5" class="muted">No drill history yet.</td></tr>'}</table><p class="status" id="studentDrillMsg"></p></div>`;
   h += `<div class="card"><h2>Quizzes and tests for ${esc(r.n)}</h2><div id="quizCard"></div></div>`;
   h += `<div class="card"><h2>📋 Extras for ${esc(r.n)}</h2><div id="extrasCard"></div></div>`;
+  h += `<div class="card"><h2>🎯 Time goals for ${esc(r.n)}</h2><div id="goalsCard"></div></div>`;
   const quizTargets = Object.values(SHOPS).flatMap(shop => [
     ...shop.stations.filter(st => st.skills.length).map(st => ({ key: `${shop.id}:${st.id}`, label: `${shop.emoji} ${st.name} quiz` })),
     ...(shop.stations.every(st => st.skills.length) ? [{ key: `${shop.id}:test`, label: `${shop.emoji} ${shop.name} unit test` }] : [])
@@ -334,6 +335,27 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       void saveOverride('extras', next.length ? JSON.stringify(next) : null);
     }));
   }
+  /* minutes a day per subject (ROADMAP F8): an every-day value, and changes for single days (0 too); saved in quiz_overrides as "subjectGoals" */
+  let goalDay = subjectDayKey();
+  function renderGoalsCard() {
+    const el = $('#goalsCard'); if (!el) return;
+    const g = parseSubjectGoals(overrides.subjectGoals), dayRow = g.days[goalDay] || {}, changed = Object.keys(g.days).sort();
+    el.innerHTML = `<p class="muted" style="margin-top:0">Minutes a day for each subject. ${esc(r.n)} sees them on the town page with the active time done so far. Leave a box empty for no goal. A day’s number (0 too) replaces the every-day number on that day only.</p>
+  <label>Day to change <input type="date" id="goalDay" value="${esc(goalDay)}"></label>
+  <table class="steptable"><tr><th>Subject</th><th>Every day</th><th>On ${esc(goalDay)}</th></tr>${GOAL_SUBJECTS.map(([id, name]) => `<tr><td>${esc(name)}</td><td><input type="number" min="0" max="240" data-goal-base="${id}" value="${g.base[id] ?? ''}" style="width:70px"></td><td><input type="number" min="0" max="240" data-goal-day="${id}" value="${dayRow[id] ?? ''}" placeholder="${g.base[id] ?? ''}" style="width:70px"></td></tr>`).join('')}</table>
+  ${changed.length ? `<p class="muted">Days with changes: ${changed.map(d => `<button class="btn small" data-goal-pick="${esc(d)}">${esc(d)}</button>`).join(' ')}</p>` : ''}
+  <div class="row"><button class="btn small primary" id="goalSave">Save goals</button></div>`;
+    el.querySelector<HTMLInputElement>('#goalDay')!.addEventListener('change', e => { const v = (e.target as HTMLInputElement).value; if (v) { goalDay = v; renderGoalsCard(); } });
+    el.querySelectorAll<HTMLButtonElement>('[data-goal-pick]').forEach(b => b.addEventListener('click', () => { goalDay = b.dataset.goalPick!; renderGoalsCard(); }));
+    el.querySelector('#goalSave')!.addEventListener('click', () => {
+      const read = (attr: string) => Object.fromEntries([...el.querySelectorAll<HTMLInputElement>(`[${attr}]`)].filter(i => i.value.trim() !== '').map(i => [i.getAttribute(attr)!, Math.max(0, Math.min(240, Math.round(+i.value) || 0))]));
+      const base = read('data-goal-base'), day = read('data-goal-day'), today = subjectDayKey();
+      const days = Object.fromEntries(Object.entries(g.days).filter(([d]) => d >= today && d !== goalDay));   // past days drop off
+      if (Object.keys(day).length) days[goalDay] = day;
+      const next = { base, days };
+      void saveOverride('subjectGoals', Object.keys(base).length || Object.keys(days).length ? JSON.stringify(next) : null);
+    });
+  }
   function renderQuizCard() {
     const el2 = $('#quizCard');
     if (!el2) return;
@@ -344,6 +366,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     el2.querySelectorAll<HTMLButtonElement>('[data-unit-open]').forEach(b => b.addEventListener('click', () => { void saveOverride(`${b.dataset.unitOpen}:open`, 'all'); }));
     renderProjectCard();
     renderExtrasCard();
+    renderGoalsCard();
   }
   function renderProjectCard() {
     const card = $('#projectCard');
