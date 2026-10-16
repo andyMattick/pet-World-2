@@ -137,6 +137,7 @@ function normalize(raw){
   if (!Array.isArray(s.unlocked)) s.unlocked = [];
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.sprintPick)) s.sprintPick = ['times'];
+    if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
@@ -5613,6 +5614,37 @@ $('#roomWrap').addEventListener('click', event => {
 });
 
 /* ---------- town ---------- */
+/* extras a grown-up assigns one student in the teacher app (quiz_overrides "extras" = a JSON list): a Fact Sprint with
+   chosen skills (and times tables), or a Word Workshop exercise, for a number of minutes a day. Sprint time counts when
+   the sprint is started from the extras card; Word Workshop time counts for that exercise. (ROADMAP F7) */
+const localDay = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function assignedExtras(){
+  try { const list = JSON.parse(Backend.me?.quiz_overrides?.extras || '[]'); return Array.isArray(list) ? list.filter(x => x && typeof x.id === 'string' && (x.kind === 'sprint' || x.kind === 'vocab') && +x.minutes > 0) : []; }
+  catch { return []; }
+}
+function extraSecs(id){ if (S.extrasLog.day !== localDay()) S.extrasLog = {day:localDay(), secs:{}}; return S.extrasLog.secs[id] || 0; }
+function addExtraTime(id, secs){ extraSecs(id); S.extrasLog.secs[id] = Math.round((S.extrasLog.secs[id] || 0) + Math.max(0, Math.min(secs, 900))); save(); }
+const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it'};
+function extraTypes(x){ const t = (x.skills || []).filter(type => DRILL_IMPL[type]?.sprintItem); return t.length ? t : ['times']; }
+function extraLabel(x){
+  if (x.kind === 'vocab') return `🔤 Word Workshop: ${VOCAB_MODE_NAME[x.mode] || 'Practice cards'}`;
+  const tables = (x.tables || []).length ? ` (${x.tables.join(', ')}s)` : '';
+  return `⚡ Fact Sprint: ${extraTypes(x).map(type => DRILLS[type]?.name || type).join(' + ')}${tables}`;
+}
+function extrasCardHTML(){
+  const list = assignedExtras(); if (!list.length) return '';
+  return `<div class="card extras-card" style="grid-column:1/-1"><h2>📋 Today’s extras</h2>${list.map(x => {
+    const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+  }).join('')}</div>`;
+}
+let pendingExtra = null, activeExtra = null;   // the extra the next sprint was started from
+document.addEventListener('click', event => {
+  const b = event.target.closest('[data-extra-start]'); if (!b) return;
+  const x = assignedExtras().find(e => e.id === b.dataset.extraStart); if (!x) return;
+  if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
+  else { pendingExtra = x; openSprint(); }
+});
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
   const ownedDecor = S.decor.map(id => REWARDS.find(reward => reward.id === id)).filter(Boolean);
@@ -5624,7 +5656,7 @@ function renderHome(){
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = hoodSwitchHTML();
+  let h = extrasCardHTML() + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {
@@ -6975,7 +7007,7 @@ function renderVocab(){
 function startVocab(mode){
   const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
   stopVocabTimer();
-  vocabRun = {mode, all, focus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + 60000 : 0};
+  vocabRun = {mode, all, focus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + 60000 : 0, started:performance.now()};
   if (mode === 'sprint') vocabTimer = setInterval(() => { const left = Math.max(0, vocabRun.end - performance.now()); const t = $('#vocabTime'); if (t) t.textContent = Math.ceil(left / 1000); if (left <= 0) finishVocab(); }, 200);
   nextVocabCard();
 }
@@ -7014,6 +7046,7 @@ function answerVocab(ok, shownAnswer){
 }
 function finishVocab(){
   stopVocabTimer(); const run = vocabRun; vocabRun = null; if (!run) return;
+    assignedExtras().filter(x => x.kind === 'vocab' && (VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice') === run.mode).forEach(x => addExtraTime(x.id, (performance.now() - run.started) / 1000));   // time on an assigned Word Workshop extra
   let extra = '';
   if (run.mode === 'sprint') {
     const coins = Math.floor(run.correct / 2); S.coins += coins; const best = run.correct > S.vocab.sprintBest; if (best) S.vocab.sprintBest = run.correct;
@@ -7795,7 +7828,8 @@ const DRILL_IMPL = {
     sprintItem(key){
       let pair;
       if (sp.queue.length && Math.random() < 0.5) pair = sp.queue.shift();
-      else for (let t=0;t<5;t++) { pair = weightedPick(ALLPAIRS, p => factWeight(p[0], p[1])); if (!sp.item?.fact || fkey(...pair) !== fkey(sp.item.fact.x, sp.item.fact.y)) break; }
+      else { const only = sp.tables?.length ? ALLPAIRS.filter(p => sp.tables.includes(p[0]) || sp.tables.includes(p[1])) : [], pool = only.length ? only : ALLPAIRS;   // an extra can pick the tables
+        for (let t=0;t<5;t++) { pair = weightedPick(pool, p => factWeight(p[0], p[1])); if (!sp.item?.fact || fkey(...pair) !== fkey(sp.item.fact.x, sp.item.fact.y)) break; } }
       if (Math.random() < 0.5) pair = [pair[1], pair[0]];
       return {prompt:`${pair[0]} × ${pair[1]}`, answer:String(pair[0] * pair[1]), drillId:`times:${Math.max(pair[0], pair[1])}`, fact:{x:pair[0], y:pair[1]}};
     },
@@ -8252,7 +8286,7 @@ document.addEventListener('click', event => {
 /* ---------- fact sprint ---------- */
 let sp = null, spTimer = null;
 function openSprint(){
-  stopSprintTimer(); sp = null;
+  stopSprintTimer(); sp = null; activeExtra = pendingExtra; pendingExtra = null;   // opened from the extras card, or not
   $('#factText').textContent = 'Ready?'; $('#factText').classList.remove('oops');
   $('#spInput').hidden = true; $('#spCheck').hidden = true; $('#spStartWrap').hidden = false;
   const pad = numberPad($('#spInput'), () => {
@@ -8274,6 +8308,7 @@ function sprintPicked(){
 }
 function renderSprintPick(){
   const types = sprintDrillTypes(), picked = sprintPicked(), wrap = $('#spPick');
+    if (activeExtra) { wrap.innerHTML = `<p class="sp-pick-q">📋 Today’s extra: <b>${esc(extraLabel(activeExtra))}</b> · ${Math.floor(extraSecs(activeExtra.id) / 60)} of ${Math.round(+activeExtra.minutes)} min</p>`; return; }
   const n = picked.length;
   wrap.innerHTML = `${types.length > 1 ? `<p class="sp-pick-q">Which skills do you want in this sprint?</p>
     <div class="sp-chips">${types.map(t => `<button type="button" class="sp-chip" data-type="${t}" aria-pressed="${picked.includes(t)}">${picked.includes(t) ? '✓ ' : ''}${esc(DRILLS[t].name)}</button>`).join('')}</div>` : ''}
@@ -8288,7 +8323,7 @@ function renderSprintPick(){
 function sprintPad(){ const pad = $('#spInput').nextElementSibling; return pad?.classList.contains('number-pad') ? pad : null; }
 function stopSprintTimer(){ if (spTimer) { clearInterval(spTimer); spTimer = null; } }
 $('#spStart').addEventListener('click', () => {
-  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:'', types:sprintPicked()};
+  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:'', types:activeExtra ? extraTypes(activeExtra) : sprintPicked(), tables:activeExtra?.tables || [], extraId:activeExtra?.id || null, started:performance.now()};
   $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spCheck').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
   const pad = $('#spInput').nextElementSibling; if (pad?.classList.contains('number-pad')) pad.hidden = false;
   nextFact(); spTimer = setInterval(sprintTick, 100);
@@ -8378,6 +8413,7 @@ $('#spCheck').addEventListener('click', () => {
 function endSprint(){
   stopSprintTimer(); if (!sp) return;
   const run = sp; sp = null;
+  if (run.extraId) addExtraTime(run.extraId, (performance.now() - run.started) / 1000);   // a sprint started from the extras card
   const pw = Math.round((1 + Math.min(run.correct, 20)*0.05)*100)/100;
   S.power = Math.max(S.power, pw);
   const skills = run.types.length, coins = sprintCoinsFor(run.correct, skills); S.coins += coins;

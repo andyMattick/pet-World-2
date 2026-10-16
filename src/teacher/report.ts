@@ -3,7 +3,11 @@ import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '..
 import { LESSON_COURSES } from '../shared/questionBanks';
 import { subjectTimeTableHTML } from '../shared/subjectTime';
 import { thinkReportHTML } from '../shared/thinkReport';
-import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, type DrillSettings } from '../shared/registry';
+import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, DRILLS, type DrillSettings } from '../shared/registry';
+/* extras a grown-up assigns one student (ROADMAP F7) */
+interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string }
+const DRILL_NAMES = DRILLS as unknown as Record<string, { name?: string }>;
+const VOCAB_MODES: Record<string, string> = { practice: '🃏 Practice cards', sprint: '⚡ Word sprint', spell: '🔤 Spell it' };
 
 type DrillHistory = Record<string, { miss?: number; slow?: number; sprint?: number; popups?: number; missesAfter?: number; reteach?: boolean }>;
 interface AssessmentHistory { shop: string; station: number | null; kind: 'quiz' | 'test'; score: number; total: number; passed: boolean; missed: string[]; t: number }
@@ -240,6 +244,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   h += `</div><div><h2>Times tables</h2><p><b>Multiplying</b><br>${f || '<span class="muted">No trouble</span>'}</p><p><b>Finding the multiplier (dividing)</b><br>${df || '<span class="muted">No trouble</span>'}</p><p><b>Practice pop-ups</b><br>${pl || '<span class="muted">None</span>'}</p></div></div>`;
   h += `<div class="card"><h2>Practice pop-ups for ${esc(r.n)}</h2><label for="studentDrillMode">Mode</label><select id="studentDrillMode"><option value="class" ${mode === 'class' ? 'selected' : ''}>Use class settings</option><option value="1.5" ${mode === '1.5' ? 'selected' : ''}>Extra time ×1.5</option><option value="2" ${mode === '2' ? 'selected' : ''}>Extra time ×2</option><option value="off" ${mode === 'off' ? 'selected' : ''}>Pop-ups off</option><option value="advanced" ${mode === 'advanced' ? 'selected' : ''}>Custom override</option></select><details open><summary>Advanced</summary><p class="muted">Individual drill settings are stored with this student's override.</p><label for="studentReadSeconds">Reading time before the tip timer starts</label><input id="studentReadSeconds" type="number" min="0" max="20" step="1" value="${r.ds?.readSeconds ?? ''}"></details><table class="steptable"><tr><th>Drill</th><th>Pop-ups</th><th>Misses after</th><th>Status</th><th></th></tr>${historyRows || '<tr><td colspan="5" class="muted">No drill history yet.</td></tr>'}</table><p class="status" id="studentDrillMsg"></p></div>`;
   h += `<div class="card"><h2>Quizzes and tests for ${esc(r.n)}</h2><div id="quizCard"></div></div>`;
+  h += `<div class="card"><h2>📋 Extras for ${esc(r.n)}</h2><div id="extrasCard"></div></div>`;
   const quizTargets = Object.values(SHOPS).flatMap(shop => [
     ...shop.stations.filter(st => st.skills.length).map(st => ({ key: `${shop.id}:${st.id}`, label: `${shop.emoji} ${st.name} quiz` })),
     ...(shop.stations.every(st => st.skills.length) ? [{ key: `${shop.id}:test`, label: `${shop.emoji} ${shop.name} unit test` }] : [])
@@ -298,6 +303,37 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     try { await onSaveQuizOverride(r.id, Object.keys(next).length ? next : null); overrides = next; r.qx = Object.keys(next).length ? { ...next } : null; reportChanged = true; renderQuizCard(); }
     catch (err) { const msg = $('#studentQuizMsg'); if (msg) msg.textContent = String(err); }
   }
+  /* extras for this student (ROADMAP F7): saved in quiz_overrides as "extras", a JSON list the game reads */
+  function extrasList(): Extra[] { try { const l = JSON.parse(overrides.extras || '[]'); return Array.isArray(l) ? l as Extra[] : []; } catch { return []; } }
+  function renderExtrasCard() {
+    const el = $('#extrasCard'); if (!el) return;
+    const list = extrasList(), drillIds = Object.keys(DRILL_NAMES).filter(id => !id.startsWith('story'));
+    const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}`
+      : `⚡ Fact Sprint: ${(x.skills || ['times']).map(t => DRILL_NAMES[t]?.name || t).join(' + ')}${x.tables?.length ? ` (${x.tables.join(', ')}s)` : ''}`;
+    el.innerHTML = `<p class="muted" style="margin-top:0">Extras show on ${esc(r.n)}’s town page every day as a checklist. Fact Sprint minutes count when the sprint is started from that list; Word Workshop minutes count for that exercise. Remove an extra when it’s no longer needed.</p>
+  ${list.length ? `<table class="steptable"><tr><th>Extra</th><th>Minutes a day</th><th></th></tr>${list.map(x => `<tr><td>${esc(label(x))}</td><td>${esc(x.minutes)}</td><td><button class="btn small" data-extra-remove="${esc(x.id)}">Remove</button></td></tr>`).join('')}</table>` : '<p class="muted">No extras yet.</p>'}
+  <h3>Add an extra</h3>
+  <div class="row"><label>Activity <select id="exKind"><option value="sprint">⚡ Fact Sprint</option><option value="vocab">🔤 Word Workshop</option></select></label><label>Minutes a day <input id="exMin" type="number" min="1" max="60" value="5" style="width:70px"></label></div>
+  <div id="exSprint"><p style="margin:6px 0 2px"><b>Skills</b></p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px">${drillIds.map(id => `<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-ex-skill="${esc(id)}" ${id === 'times' ? 'checked' : ''}> ${esc(DRILL_NAMES[id]?.name || id)}</label>`).join('')}</div>
+  <p style="margin:8px 0 2px"><b>Times tables</b> <span class="muted">(tick the ones to practice, or leave them all unticked for a mix of every table)</span></p><div class="row">${[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => `<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-ex-table="${n}"> ${n}s</label>`).join('')}</div></div>
+  <div id="exVocab" hidden><label>Exercise <select id="exMode">${Object.entries(VOCAB_MODES).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}</select></label> <span class="muted">Uses ${esc(r.n)}’s focus words.</span></div>
+  <div class="row"><button class="btn small primary" id="exAdd">Add extra</button></div>`;
+    const kind = el.querySelector<HTMLSelectElement>('#exKind')!;
+    kind.addEventListener('change', () => { el.querySelector<HTMLElement>('#exSprint')!.hidden = kind.value !== 'sprint'; el.querySelector<HTMLElement>('#exVocab')!.hidden = kind.value !== 'vocab'; });
+    el.querySelector('#exAdd')!.addEventListener('click', () => {
+      const minutes = Math.max(1, Math.min(60, Math.round(+el.querySelector<HTMLInputElement>('#exMin')!.value || 0)));
+      const ticked = [...el.querySelectorAll<HTMLInputElement>('[data-ex-skill]:checked')].map(b => b.dataset.exSkill!), skills = ticked.length ? ticked : ['times'];
+      const tables = [...el.querySelectorAll<HTMLInputElement>('[data-ex-table]:checked')].map(b => +b.dataset.exTable!);
+      const id = `x${Date.now().toString(36)}`;
+      const extra: Extra = kind.value === 'vocab' ? { id, kind: 'vocab', minutes, mode: el.querySelector<HTMLSelectElement>('#exMode')!.value }
+        : { id, kind: 'sprint', minutes, skills, tables: skills.includes('times') ? tables : [] };
+      void saveOverride('extras', JSON.stringify([...extrasList(), extra].slice(-10)));
+    });
+    el.querySelectorAll<HTMLButtonElement>('[data-extra-remove]').forEach(b => b.addEventListener('click', () => {
+      const next = extrasList().filter(x => x.id !== b.dataset.extraRemove);
+      void saveOverride('extras', next.length ? JSON.stringify(next) : null);
+    }));
+  }
   function renderQuizCard() {
     const el2 = $('#quizCard');
     if (!el2) return;
@@ -307,6 +343,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     el2.querySelectorAll<HTMLButtonElement>('[data-quiz-undo]').forEach(b => b.addEventListener('click', () => { void saveOverride(b.dataset.quizUndo!, null); }));
     el2.querySelectorAll<HTMLButtonElement>('[data-unit-open]').forEach(b => b.addEventListener('click', () => { void saveOverride(`${b.dataset.unitOpen}:open`, 'all'); }));
     renderProjectCard();
+    renderExtrasCard();
   }
   function renderProjectCard() {
     const card = $('#projectCard');
