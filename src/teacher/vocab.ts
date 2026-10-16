@@ -4,7 +4,7 @@ import { esc } from './report';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, parseVocabImport, missingLines, validWord, findWord, blankSentence } from '../shared/vocab';
 
 interface VocabWord { w: string; d: string; s?: string; set?: string }
-export interface ClassVocab { builtIn?: boolean; words?: VocabWord[]; focus?: string[] }
+export interface ClassVocab { builtIn?: boolean; words?: VocabWord[]; focus?: string[]; dismissed?: string[] }   // dismissed: flagged words the teacher said no to
 interface VocabClass { id: string; name: string; game_settings: { vocab?: ClassVocab; [key: string]: unknown } | null }
 type SaveVocab = (vocab: ClassVocab) => Promise<string | null>;
 /* each student's answer history per word (state.vocab.stats), or null if it couldn't be loaded */
@@ -27,14 +27,14 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
         const weak = focus.filter(v => wordStatus(st.stats[wordKey(v.w)]) === 'work').slice(0, 6).map(v => esc(v.w)).join(', ');
         return `<tr><td>${esc(st.name)}</td><td>${count('solid')}</td><td>${count('close')}</td><td>${count('work')}</td><td>${count('new')}</td><td>${weak || '<span class="muted">–</span>'}</td></tr>`; }).join('')}</table>`;
   /* words students flagged (📌) that no list has yet: one row per word, with who flagged it and where */
-  const flaggedMap = new Map<string, { names: string[]; ctx: string }>();
+  const flaggedMap = new Map<string, { names: string[]; ctx: string }>(), dismissedSet = new Set((vocab.dismissed || []).map(wordKey));
   for (const st of roster || []) for (const f of st.flagged || []) {
-    if (findWord(all, f.w)) continue;
+    if (findWord(all, f.w) || dismissedSet.has(wordKey(f.w))) continue;
     const entry = flaggedMap.get(f.w) || { names: [], ctx: f.ctx || '' }; entry.names.push(st.name); flaggedMap.set(f.w, entry);
   }
-  const flaggedCard = flaggedMap.size ? `<div class="card"><h2>📌 Words students flagged (${flaggedMap.size})</h2><p class="muted" style="margin-top:0">Students highlight a word they don’t know anywhere in Pet Town and tap 📌. Add a meaning and it joins the class list (and drops off their flagged list).</p>
-    <table class="steptable"><tr><th>Word</th><th>Flagged by · where</th><th>Meaning</th><th></th></tr>${[...flaggedMap.entries()].map(([w, f]) => `<tr data-vb-flag-row="${esc(w)}"><td><b>${esc(w)}</b></td><td>${esc(f.names.join(', '))}${f.ctx ? `<br><span class="muted">“${esc(f.ctx)}”</span>` : ''}</td>
-      <td><input type="text" data-vb-flag-def maxlength="200" placeholder="Kid-friendly meaning" style="width:100%"><input type="hidden" data-vb-flag-sentence value="${esc(blankSentence(f.ctx, w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, w) : '')}"></td><td><button class="btn small primary" data-vb-flag-add="${esc(w)}">Add to class list</button></td></tr>`).join('')}</table></div>` : '';
+  const flaggedCard = flaggedMap.size ? `<div class="card"><h2>📌 Words students flagged (${flaggedMap.size})</h2><p class="muted" style="margin-top:0">Students highlight a word they don’t know anywhere in Pet Town and tap 📌. Add a meaning, check the example sentence (taken from where they found the word, with ___ in its place), and it joins the class list. <b>Dismiss</b> a word you don’t want; it drops off the students’ flagged lists too.</p>
+  <table class="steptable"><tr><th>Word</th><th>Flagged by · where</th><th>Meaning and example sentence</th><th></th></tr>${[...flaggedMap.entries()].map(([w, f]) => `<tr data-vb-flag-row="${esc(w)}"><td><b>${esc(w)}</b></td><td>${esc(f.names.join(', '))}${f.ctx ? `<br><span class="muted">“${esc(f.ctx)}”</span>` : ''}</td>
+  <td><input type="text" data-vb-flag-def maxlength="200" placeholder="Kid-friendly meaning" style="width:100%"><input type="text" data-vb-flag-sentence maxlength="200" placeholder="Example sentence with ___ for the word (optional)" style="width:100%; margin-top:4px" value="${esc(blankSentence(f.ctx, w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, w) : '')}"></td><td style="white-space:nowrap"><button class="btn small primary" data-vb-flag-add="${esc(w)}">Add to class list</button> <button class="btn small" data-vb-flag-dismiss="${esc(w)}">Dismiss</button></td></tr>`).join('')}</table></div>` : '';
   pane.innerHTML = `${message ? `<p class="status">${esc(message)}</p>` : ''}
     <div class="card"><h2>Vocabulary (Word Workshop)</h2>
       <p class="muted" style="margin-top:0">Students practice these words with cards, a 60-second sprint and spelling in the 🔤 Word Workshop. Changes apply to <b>${esc(cls.name)}</b>. Parents can also add words at home behind the grown-up PIN.</p>
@@ -78,12 +78,18 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     void commit({ ...vocab, words: words.filter(v => v.w !== b.dataset.vbRemove), focus: (vocab.focus || []).filter(f => f !== wordKey(b.dataset.vbRemove)) }, 'Word removed.');
   }));
   pane.querySelectorAll<HTMLButtonElement>('[data-vb-flag-add]').forEach(b => b.addEventListener('click', () => {
-    const row = b.closest('tr')!, entry = validWord({ w: b.dataset.vbFlagAdd, d: (row.querySelector('[data-vb-flag-def]') as HTMLInputElement).value, s: (row.querySelector('[data-vb-flag-sentence]') as HTMLInputElement).value }) as VocabWord | null;
+    const row = b.closest('tr')!, typed = (row.querySelector('[data-vb-flag-sentence]') as HTMLInputElement).value;
+        /* a sentence typed with the word itself gets ___ put in its place */
+        const entry = validWord({ w: b.dataset.vbFlagAdd, d: (row.querySelector('[data-vb-flag-def]') as HTMLInputElement).value, s: typed.includes('___') ? typed : blankSentence(typed, b.dataset.vbFlagAdd) }) as VocabWord | null;
     if (!entry) { (row.querySelector('[data-vb-flag-def]') as HTMLInputElement).focus(); return; }
     const merged = [...words.filter(v => wordKey(v.w) !== wordKey(entry.w)), entry].slice(0, VOCAB_LIMITS.list);
     void commit({ ...vocab, words: merged, focus: focusSet.size ? [...new Set([...focusSet, wordKey(entry.w)])] : [] }, `${entry.w} added to the class list.`);
   }));
-  const boxes = () => [...pane.querySelectorAll<HTMLInputElement>('[data-vb-focus]')];
+  pane.querySelectorAll<HTMLButtonElement>('[data-vb-flag-dismiss]').forEach(b => b.addEventListener('click', () => {
+      const dismissed = [...new Set([...(vocab.dismissed || []), wordKey(b.dataset.vbFlagDismiss)])].slice(-300);
+      void commit({ ...vocab, dismissed }, `${b.dataset.vbFlagDismiss} dismissed.`);
+    }));
+    const boxes = () => [...pane.querySelectorAll<HTMLInputElement>('[data-vb-focus]')];
   pane.querySelector('#vbAll')!.addEventListener('click', () => boxes().forEach(x => { x.checked = true; }));
   pane.querySelector('#vbNone')!.addEventListener('click', () => boxes().forEach(x => { x.checked = false; }));
   pane.querySelector('#vbSaveFocus')!.addEventListener('click', () => {

@@ -126,7 +126,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 
 - [ ] F1. Vocab import: headings like `Set 11:` and `Lesson 4`, bullets and numbers ignored, and words pasted with no meaning yet (Pet Town fills in its own meaning when it has the word; the rest go back in the box as `word - `)
 - [x] F2. Archive accepted work (teacher app, student page): accepted written answers, verified projects and reading chapters, and accepted reading-quiz essays fold into a closed ✅ Accepted section at the bottom of their tab. Sent-back work stays until it's turned in again
-- [ ] F3. Suggested vocab words: delete a suggestion, and an editable example sentence offered when a word is accepted
+- [x] F3. Suggested vocab words: the teacher app's 📌 flagged words get a Dismiss button (it drops off the students' flagged lists too) and an editable example sentence, prefilled from where the word was found; a sentence typed with the word itself gets ___ in its place (also on the grown-up PIN screen)
 - [ ] F4. Parent sign-in: an "Awaiting approval" screen when a signed-in parent isn't approved yet (the database gate is already in place). An admin approval screen comes later
 - [ ] F5. Vocabulary analysis like the math-facts view: accuracy, attempts, last practiced, and status for each word
 - [ ] F6. History unit 1: a cave painting made in the app (drawing canvas, cave colors, hand stencil, undo), turned in like other work

@@ -7007,7 +7007,7 @@ $('#vocabWrap').addEventListener('click', event => {
   }
   if (b.dataset.flagDismiss) { S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagDismiss); save(); renderVocab(); return; }
   if (b.dataset.flagAdd) {
-    const row = b.closest('[data-flag-row]'), entry = validWord({w:b.dataset.flagAdd, d:row.querySelector('[data-flag-def]').value, s:row.querySelector('[data-flag-sentence]').value});
+    const row = b.closest('[data-flag-row]'), typed = row.querySelector('[data-flag-sentence]').value, entry = validWord({w:b.dataset.flagAdd, d:row.querySelector('[data-flag-def]').value, s:typed.includes('___') ? typed : blankSentence(typed, b.dataset.flagAdd)});   // the word itself becomes ___
     if (!entry) { toast('Type what the word means first.'); row.querySelector('[data-flag-def]').focus(); return; }
     S.vocab.home.words = [...S.vocab.home.words.filter(x => wordKey(x.w) !== wordKey(entry.w)), entry].slice(0, VOCAB_LIMITS.list);
     if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, wordKey(entry.w)])];
@@ -7075,7 +7075,10 @@ flagBtn.addEventListener('click', () => {
 flagPop.addEventListener('click', event => { if (event.target.closest('[data-flag-close]')) flagPop.hidden = true; });
 document.addEventListener('pointerdown', event => { if (!flagPop.hidden && !event.target.closest('.word-flag-pop')) flagPop.hidden = true; });
 /* flagged words still waiting for a meaning (a word that now has one on any list drops off by itself) */
-const flaggedWaiting = () => { const all = vocabWords().all; return S.vocab.flagged.filter(f => !findWord(all, f.w)); };
+const flaggedWaiting = () => {   // a word the teacher dismissed drops off too
+  const all = vocabWords().all, dismissed = new Set((Backend.me?.game_settings?.vocab?.dismissed || []).map(wordKey));
+  return S.vocab.flagged.filter(f => !findWord(all, f.w) && !dismissed.has(wordKey(f.w)));
+};
 
 /* ---------- grown-up check on the spot (projects, labs, reading notes) ----------
    A parent unlocks with the grown-up PIN right where the work is, then marks it checked or asks for a fix. Saved with the
