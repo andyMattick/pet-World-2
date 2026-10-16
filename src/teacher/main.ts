@@ -4,6 +4,7 @@ import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
+import { setLedgerClass } from './ledger';
 import { renderVocabTab, type VocabRoster, type ClassVocab } from './vocab';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
@@ -147,6 +148,7 @@ async function renderDashboard() {
   });
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
   setReportClass(cls.id, cls.game_settings?.home, cls.game_settings?.khan, cls.game_settings?.requireThink);
+  setLedgerClass(sb, cls.id);
   renderClassReport($('#report'), reports, saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = reports.find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
   startLive(cls.id);
 }
