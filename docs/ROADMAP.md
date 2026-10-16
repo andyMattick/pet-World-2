@@ -137,6 +137,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [ ] F11. Year transcript built from the Ledger
 - [ ] F12. More make-it-in-the-app History activities like the cave painting, using the same drawing step (`kind:'draw'`). Ideas to think about: Unit 2, sketch a farm plan or a tool and say what it changed; Unit 3, write your name in cuneiform on a clay tablet or design a cylinder seal; Unit 4, design a coin for an empire or draw a Silk Road trade map
 - [ ] F13. 🎨 Art Studio and gallery: paint any time on the cave-wall canvas (separate from the History project); save paintings to a gallery (about 8 to 10, kept in the save), reopen or delete them; frame one for the Pet Room for Pet Town coins (about 50) as a placeable decoration. More colors and stencils to buy with coins as they become available (for example, opened by later History units). The project painting gets "Save to my gallery" next to Send to teacher
+- [ ] F14. 📋 More detail in "I'm done for today": list the skills she mastered that day and the tests and quizzes she passed (with scores), on her day screen and in her saved Ledger day, so the teacher Ledger and transcript (F9 to F11) can use them.
+- [ ] F15. 🧠 Brain Games: a new section in Pet Town that opens brain games built outside Pet Town (by link or embedded), with time counted like any other place so it shows in the day log and Ledger.
 
 ## Database files, in the order they were run
 
