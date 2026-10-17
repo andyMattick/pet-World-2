@@ -67,8 +67,8 @@ const DEFAULT_STATS: PlayerStats = {
   highScores: {}
 };
 
-// Pet Town Arcade: inside the Arcade frame (?arcadeRun=...), upgrades and stats are saved in the student's
-// Pet Town save instead of this browser, and rewards and endless rows are reported for tickets (README.md).
+// Pet World Arcade: inside the Arcade frame (?arcadeRun=...), upgrades and stats are saved in the student's
+// Pet World save instead of this browser, and rewards and endless rows are reported for tickets (README.md).
 const ARCADE_RUN = new URLSearchParams(window.location.search).get('arcadeRun');
 const EMBEDDED = !!ARCADE_RUN && window.parent !== window;
 const ENDLESS_START_ROW = 18;
@@ -165,7 +165,7 @@ export default function App() {
   const [showSandbox, setShowSandbox] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
-  // Pet Town Arcade: load upgrades and stats from the student's Pet Town save
+  // Pet World Arcade: load upgrades and stats from the student's Pet World save
   useEffect(() => {
     if (!EMBEDDED) return;
     let done = false;
@@ -193,7 +193,7 @@ export default function App() {
     return () => { done = true; window.removeEventListener('message', onMessage); clearTimeout(fallback); };
   }, []);
 
-  // Save upgrades and stats: to Pet Town inside the Arcade, otherwise to this browser
+  // Save upgrades and stats: to Pet World inside the Arcade, otherwise to this browser
   useEffect(() => {
     if (!EMBEDDED) {
       try {
@@ -386,7 +386,7 @@ export default function App() {
     }
   }, [playerPos, gameMode]);
 
-  // Endless: report the rows walked to Pet Town when the run ends
+  // Endless: report the rows walked to Pet World when the run ends
   useEffect(() => {
     if (gameMode === 'endless' && gameStatus === 'lost') finishEndlessRun();
   }, [gameStatus, gameMode]);
@@ -677,7 +677,7 @@ export default function App() {
 
     const earnedAccolades = calculatedAccolades.filter((a) => a.earned);
 
-    // Pet Town: report the rewards earned on a campaign level (custom games pay nothing). Pet Town pays
+    // Pet World: report the rewards earned on a campaign level (custom games pay nothing). Pet World pays
     // each reward id only once, ever, so replaying a level only pays for medals not earned before.
     if (CAMPAIGN_LEVELS.some((level) => level.id === activeLevelConfig.id)) {
       const levelId = activeLevelConfig.id;

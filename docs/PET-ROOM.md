@@ -10,8 +10,8 @@ Give owned decorations a place to live and let students personalize their helper
 - Show the selected helper pet in the room at a larger scale, using a full-body emoji variant where available (for example, a rabbit rather than a rabbit head). Tapping it triggers a small trick or speech bubble. Wandering can be a light ambient animation, not saved simulation state.
 - Preserve the Sticker Book display case. Add separate saved room placements so old `displayed` values and existing saves remain compatible. If a student has no room layout yet, seed it from their currently displayed decorations.
 - Keep wearables in an accessory catalog separate from pets and decorations. Save owned accessory IDs, the active accessory, and each wearable's movable position in the student's existing state object. Dragging and keyboard nudging should both work.
-- Spread acquisition across sources: some wearables cost Pet Town coins, at least one is earned through math progress, and a small set costs Arcade tickets. Add a ticket-priced Pet Room furniture catalog to the Arcade. Arcade-ticket wearables and furniture remain unavailable until round-result ticket awards are secured.
-- Arcade tickets are never convertible to Pet Town coins and arcade accessories do not affect math, scores, hints, or diagnostics. Free Play awards no Arcade tickets; ticket furniture and wearables are purchasable only in paid mode.
+- Spread acquisition across sources: some wearables cost Pet World coins, at least one is earned through math progress, and a small set costs Arcade tickets. Add a ticket-priced Pet Room furniture catalog to the Arcade. Arcade-ticket wearables and furniture remain unavailable until round-result ticket awards are secured.
+- Arcade tickets are never convertible to Pet World coins and arcade accessories do not affect math, scores, hints, or diagnostics. Free Play awards no Arcade tickets; ticket furniture and wearables are purchasable only in paid mode.
 
 ## Build steps
 
@@ -30,5 +30,5 @@ Give owned decorations a place to live and let students personalize their helper
 - Decoration art has no visible item-name labels; accessible labels remain available.
 - The selected helper, full-body variant where available, accessory selection, and accessory positions persist and render together.
 - Arcade furniture stickers appear in the Arcade catalog and can be placed in the room after ownership.
-- Coin purchases use only Pet Town coins; math-earned accessories grant deterministically; Arcade-ticket accessories cannot be acquired before secure ticket rewards are enabled.
+- Coin purchases use only Pet World coins; math-earned accessories grant deterministically; Arcade-ticket accessories cannot be acquired before secure ticket rewards are enabled.
 - Room and dress-up controls are hidden during quizzes and tests.

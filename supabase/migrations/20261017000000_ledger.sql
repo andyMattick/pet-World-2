@@ -1,6 +1,6 @@
 -- Ledger, step 3 (docs/LEDGER.md): the student's record in Supabase.
 --   ledger_days: one row per student per day with the day's summary (what "I'm done for today" shows), sent by the student.
---   ledger_outside: work done outside Pet Town (and old Ledger entries imported later), added by a grown-up.
+--   ledger_outside: work done outside Pet World (and old Ledger entries imported later), added by a grown-up.
 -- Students write their own day only through send_ledger_day(); teachers read and edit rows for their own classes,
 -- the same pattern as sprints and saves. Run once in the Supabase SQL editor. Never edit this file after it is run.
 

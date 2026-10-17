@@ -1,4 +1,4 @@
-// Every Pet Town lesson in Khan order, with where its video stands (docs: LESSON-VIDEOS.md).
+// Every Pet World lesson in Khan order, with where its video stands (docs: LESSON-VIDEOS.md).
 //
 //   node scripts/video-status.mjs            everything
 //   node scripts/video-status.mjs bio1       one course (nouns, verbs, history…history4, bio1) or "math"

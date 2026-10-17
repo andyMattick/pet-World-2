@@ -1,6 +1,6 @@
-/* The Ledger tab on a student's page (docs/LEDGER.md step 4): the Pet Town days the student sent with
-   "I'm done for today", days not sent yet (from time by subject in the save), and work outside Pet Town that a
-   grown-up adds. A grown-up can edit any day; an edited Pet Town day keeps the student's version so it can go back. */
+/* The Ledger tab on a student's page (docs/LEDGER.md step 4): the Pet World days the student sent with
+   "I'm done for today", days not sent yet (from time by subject in the save), and work outside Pet World that a
+   grown-up adds. A grown-up can edit any day; an edited Pet World day keeps the student's version so it can go back. */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUBJECT_TIME, subjectDayKey } from '../shared/subjectTime';
 
@@ -132,16 +132,16 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     const saveRow = r.subjectTime?.[day] || {}, saveSecs = sum(saveRow);
     const ptSecs = row ? (row.entry.totalSecs ?? sum(row.entry.subjects)) : saveSecs, outMin = outs.reduce((a, o) => a + (o.minutes || 0), 0);
     const tags = [row?.edited_by_teacher ? '<span class="tag a">edited by a grown-up</span>' : '', !row && saveSecs ? '<span class="tag stale-tag">not sent yet</span>' : ''].filter(Boolean).join(' ');
-    let body = '<h3 style="margin:8px 0 4px">🏡 Pet Town</h3>';
+    let body = '<h3 style="margin:8px 0 4px">🏡 Pet World</h3>';
     if (row && st.edit === day) body += editDayHTML(row);
     else if (row) body += entryHTML(row.entry) + `<p class="muted">${row.entry.fromSave ? 'Saved by a grown-up' : `Sent ${new Date(row.sent_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`}.</p>
       <div class="row"><button class="btn small" data-day-edit-open="${esc(day)}">Edit this day</button>${row.entry.original ? ` <button class="btn small" data-day-revert="${esc(day)}">Go back to ${esc(r.n)}’s version</button>` : ''}</div>`;
     else if (saveSecs) body += `<p class="muted" style="margin:0">${esc(r.n)} didn’t press “I’m done for today”. Time by subject from the save:</p><ul style="margin:4px 0">${Object.entries(saveRow).filter(([, s]) => s >= 30).map(([id, s]) => `<li>${esc(SUBJECT_NAMES[id] || id)}: <b>${mins(s)} min</b></li>`).join('')}</ul>
       <div class="row"><button class="btn small" data-day-fromsave="${esc(day)}">Save this day to the record</button></div>`;
-    else body += '<p class="muted" style="margin:0">No Pet Town time this day.</p>';
-    body += `<h3 style="margin:12px 0 4px">📚 Outside Pet Town</h3>${outs.length ? `<table class="steptable"><tr><th>Course</th><th>Assignment</th><th>Time</th><th>Grade</th><th>Notes</th><th></th></tr>${outs.map(outsideRowHTML).join('')}</table>` : '<p class="muted" style="margin:0">Nothing added.</p>'}
+    else body += '<p class="muted" style="margin:0">No Pet World time this day.</p>';
+    body += `<h3 style="margin:12px 0 4px">📚 Outside Pet World</h3>${outs.length ? `<table class="steptable"><tr><th>Course</th><th>Assignment</th><th>Time</th><th>Grade</th><th>Notes</th><th></th></tr>${outs.map(outsideRowHTML).join('')}</table>` : '<p class="muted" style="margin:0">Nothing added.</p>'}
       <div class="row"><button class="btn small" data-out-add-day="${esc(day)}">➕ Add outside work on this day</button></div>`;
-    return `<details class="unit-card" data-ledger-day="${esc(day)}"${st.open.has(day) ? ' open' : ''}><summary><b>${esc(dayName(day))}</b><span class="unit-sum">Pet Town ${mins(ptSecs)} min${outs.length ? ` · outside ${outMin} min` : ''}</span> ${tags}</summary>${body}</details>`;
+    return `<details class="unit-card" data-ledger-day="${esc(day)}"${st.open.has(day) ? ' open' : ''}><summary><b>${esc(dayName(day))}</b><span class="unit-sum">Pet World ${mins(ptSecs)} min${outs.length ? ` · outside ${outMin} min` : ''}</span> ${tags}</summary>${body}</details>`;
   }
 
   function importHTML() {
@@ -193,9 +193,9 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     const ptMin = Math.round(list.reduce((a, day) => { const row = st.days.find(d => d.day === day); return a + (row ? (row.entry.totalSecs ?? sum(row.entry.subjects)) : sum(r.subjectTime?.[day])); }, 0) / 60);
     const outMin = st.outside.reduce((a, o) => a + (o.minutes || 0), 0);
     const courses = [...new Set([...st.outside.map(o => o.course), ...COURSES])];
-    el.innerHTML = `<p class="muted" style="margin-top:0">${esc(r.n)}’s record, one day at a time: what ${esc(r.n)} sent with “I’m done for today”, days not sent (from practice time in the save), and work outside Pet Town. Open a day to edit it.</p>
+    el.innerHTML = `<p class="muted" style="margin-top:0">${esc(r.n)}’s record, one day at a time: what ${esc(r.n)} sent with “I’m done for today”, days not sent (from practice time in the save), and work outside Pet World. Open a day to edit it.</p>
       <div class="row noprint"><label>From <input type="date" id="ledgerFrom" value="${esc(st.from)}"></label><label>To <input type="date" id="ledgerTo" value="${esc(st.to)}"></label><button class="btn small" id="ledgerShow">Show</button> <button class="btn small" id="ledgerEarlier">30 days earlier</button></div>
-      <div class="summary"><div class="kpi"><b>${list.length}</b>days with work</div><div class="kpi"><b>${ptMin} min</b>in Pet Town</div><div class="kpi"><b>${outMin} min</b>outside Pet Town</div></div>
+      <div class="summary"><div class="kpi"><b>${list.length}</b>days with work</div><div class="kpi"><b>${ptMin} min</b>in Pet World</div><div class="kpi"><b>${outMin} min</b>outside Pet World</div></div>
       <details class="card noprint" id="ledgerAdd"${st.editOut === -1 ? ' open' : ''}><summary><b>➕ Add outside work</b></summary>
         <div class="row"><label>Date <input type="date" id="outDay" value="${esc(today)}"></label><label>Course <input id="outCourse" list="ledgerCourses" maxlength="80" placeholder="e.g. Science"></label><label>Minutes <input id="outMin" type="number" min="0" max="1440" value="30" style="width:80px"></label><label>Grade <input id="outGrade" maxlength="20" placeholder="optional" style="width:90px"></label></div>
         <label>Assignment <input id="outTitle" maxlength="300" placeholder="e.g. Chapter 3 worksheet, field trip to the museum" style="width:100%"></label>

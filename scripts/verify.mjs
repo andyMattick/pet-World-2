@@ -1,4 +1,4 @@
-// Safety check: fails if the real Pet Town code has been replaced or gutted.
+// Safety check: fails if the real Pet World code has been replaced or gutted.
 // Run with: npm run verify
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
@@ -207,9 +207,9 @@ try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); 
 catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
 
 if (problems.length) {
-  console.error('\n❌ Pet Town verify FAILED. Do not commit.\n');
+  console.error('\n❌ Pet World verify FAILED. Do not commit.\n');
   problems.forEach(p => console.error('  - ' + p));
   console.error('\nIf an AI assistant made recent changes, undo them (git checkout -- <file>) and see AGENTS.md.\n');
   process.exit(1);
 }
-console.log('✅ Pet Town verify passed: game, teacher app, shared registry, and database schema are intact.');
+console.log('✅ Pet World verify passed: game, teacher app, shared registry, and database schema are intact.');

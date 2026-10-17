@@ -13,22 +13,22 @@ Every 4 answers earn one arcade minute, the same as English practice.
 
 ## Where the words come from
 
-1. **Pet Town's list:** 100 grade 4–6 academic words in 10 sets (thinking words, describing words, character traits, math and science words, history words, and more). The definitions and sentences are written for Pet Town and reviewed under `CONTENT-RULES.md`. Published programs' lists, such as Wordly Wise 3000, are copyrighted, so they aren't built in. A teacher or parent can type in their own lesson's words instead.
+1. **Pet World's list:** 100 grade 4–6 academic words in 10 sets (thinking words, describing words, character traits, math and science words, history words, and more). The definitions and sentences are written for Pet World and reviewed under `CONTENT-RULES.md`. Published programs' lists, such as Wordly Wise 3000, are copyrighted, so they aren't built in. A teacher or parent can type in their own lesson's words instead.
 2. **The class's list:** the teacher uses the **Vocabulary** tab in the teacher app. It's saved in `classes.game_settings.vocab` as `{builtIn, words, focus}`, which students already receive, so there's no migration.
 3. **The family's list:** at home, Word Workshop → "For grown-ups: word list", behind the grown-up PIN. It's saved in the student's save as `vocab.home`.
 
 **Adding words:** paste one per line as `word - meaning`, or `word - meaning - sentence with ___`. You can also paste two or three columns from a spreadsheet, or a JSON list. Lines that can't be read are skipped and listed.
 
-**Sets:** a heading line like `Set: Wordly Wise Lesson 4` (or `# Wordly Wise Lesson 4`) puts every word below it in that set, until the next heading. Use an existing name such as `Set: Set 3` to add words to one of Pet Town's sets. Words before any heading go in **My words**. In a JSON list, give each word a `"set"`. To add the word "set" itself, write it with a dash (`set - a group of things that go together`), because `set:` starts a heading.
+**Sets:** a heading line like `Set: Wordly Wise Lesson 4` (or `# Wordly Wise Lesson 4`) puts every word below it in that set, until the next heading. Use an existing name such as `Set: Set 3` to add words to one of Pet World's sets. Words before any heading go in **My words**. In a JSON list, give each word a `"set"`. To add the word "set" itself, write it with a dash (`set - a group of things that go together`), because `set:` starts a heading.
 
-**Changing a built-in word:** add the same word with your own meaning (and `Set:` heading if you want it to stay in its set). The added version replaces Pet Town's for that class or student. To skip a word, untick it in the focus words.
+**Changing a built-in word:** add the same word with your own meaning (and `Set:` heading if you want it to stay in its set). The added version replaces Pet World's for that class or student. To skip a word, untick it in the focus words.
 
-**Focus words:** every word is in focus by default. The teacher can pick the class's focus words, and a parent's choice wins on that student's device. **Turning off Pet Town's list** (either place) leaves only the added words.
+**Focus words:** every word is in focus by default. The teacher can pick the class's focus words, and a parent's choice wins on that student's device. **Turning off Pet World's list** (either place) leaves only the added words.
 
 ## 📌 Flag a word while reading
 
-Anywhere in Pet Town (questions, stories, reading notes, math problems), the student can highlight one word, or press and hold it on a tablet, and tap **📌 What does it mean?**
-- **A word on her lists** (Pet Town's, the class's or the family's) shows its meaning and example sentence right away. Simple endings are matched too: "observed" finds *observe*, "cities" finds *city*.
+Anywhere in Pet World (questions, stories, reading notes, math problems), the student can highlight one word, or press and hold it on a tablet, and tap **📌 What does it mean?**
+- **A word on her lists** (Pet World's, the class's or the family's) shows its meaning and example sentence right away. Simple endings are matched too: "observed" finds *observe*, "cities" finds *city*.
   - The word also joins her practice: it's added to her focus words, even if a grown-up picked other focus words. It comes up twice as often until it's **Solid**, and the 📊 My words chart lists it under **📌 Words you looked up**. These are saved in the student's save as `vocab.lookedUp`.
   - A flagged word works the same way once a grown-up adds its meaning.
 - **Any other word** is saved as flagged, along with the sentence it came from. There is no dictionary service and no AI.

@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: './',   // served from /arcade/museum-caper/ inside Pet Town
+    base: './',   // served from /arcade/museum-caper/ inside Pet World
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

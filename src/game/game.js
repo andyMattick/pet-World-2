@@ -1,4 +1,4 @@
-/* Pet Town game (Unit 1: Ratios). Runs in two modes:
+/* Pet World game (Unit 1: Ratios). Runs in two modes:
    - hosted: students join a class (code + name + PIN) and everything saves to Supabase
    - local: no backend configured, the town saves in the browser (the single-file build) */
 import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, SUBJECTS, DEFAULT_HOME, buildingsIn, buildingsInClass, subjectsIn, prevBuilding, nextBuilding, builtHoods, townHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
@@ -5028,7 +5028,7 @@ const SEA_PETS = ['🐳','🐋','🐬','🐟','🐠','🐡','🦈','🐙','🦑'
 const WELCOME_PETS = (list => list.filter((_, i) => i % Math.max(1, Math.floor(list.length / 8)) === 0).slice(0, 8))(REWARDS.filter(r => r.kind === 'pet' && !r.legendary && !SEA_PETS.includes(r.emoji))).map(r => ({emoji:r.emoji, name:r.name.split(' ')[0]}));
 function dayPets(){ const mine = ownedPets().filter(r => !SEA_PETS.includes(r.emoji)).map(r => ({emoji:r.emoji, name:r.name.split(' ')[0]})); return [...mine, ...WELCOME_PETS.filter(p => !mine.some(m => m.emoji === p.emoji))].slice(0, 8); }
 const fmtPow = p => p.toFixed(2).replace(/0$/,'').replace(/\.0$/,'');
-const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
+const townName = () => S.name ? S.name + "'s Pet World" : 'Pet World';
 $('#unlockHelper').addEventListener('click', () => closeUnlock('helper'));
 $('#unlockDisplay').addEventListener('click', () => closeUnlock('display'));
 $('#unlockShop').addEventListener('click', () => closeUnlock('shop'));
@@ -5200,7 +5200,7 @@ function arcadeCard(game, daily, policy){
 function renderArcade(){
   const policy = arcadePolicy(), games = arcadeGamesForClass(), daily = arcadeGameOfTheDay(new Date(), games);
   const minutes = gamesOnlyMode ? 0 : arcadeMathMinutes(), remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds();
-  const arcadeStats = gamesOnlyMode ? `<div><b>Games only</b><span>No Pet Town coins or tickets</span></div>` : policy.freePlay
+  const arcadeStats = gamesOnlyMode ? `<div><b>Games only</b><span>No Pet World coins or tickets</span></div>` : policy.freePlay
     ? `<div><b>Free Play</b><span>no coins or rewards</span></div>`
     : `<div><b>🎟️ ${S.arcade.tickets}</b><span>arcade tickets</span></div>`;
   const timeStats = gamesOnlyMode
@@ -5209,7 +5209,7 @@ function renderArcade(){
   const prizeShop = policy.freePlay ? '' : `<section class="arcade-prizes"><div class="backrow"><h3>Furniture stickers for My Pet Room</h3><span>🎟️ ${S.arcade.tickets}</span></div><div class="wardrobe-grid">${ARCADE_ROOM_FURNITURE.map(arcadeFurnitureCard).join('')}</div><p class="wardrobe-note">Earn tickets in Arcade games. Ticket purchases use Arcade tickets only.</p></section>`;
   $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2>${gamesOnlyMode ? '<button class="btn small" data-games-only-exit>Exit games</button>' : '<button class="btn small" data-go="home">Back to town</button>'}</div>
     <div class="arcade-summary">${timeStats}${arcadeStats}</div>
-    <p class="muted">${gamesOnlyMode ? 'Games-only session: no practice timer, Pet Town coins, Arcade tickets, or prize shop.' : policy.freePlay ? 'Free Play is on: no Pet Town coins or Arcade tickets. Learning practice unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your practice time remains. Ticket prizes are separate from Pet Town coins.`}</p>
+    <p class="muted">${gamesOnlyMode ? 'Games-only session: no practice timer, Pet World coins, Arcade tickets, or prize shop.' : policy.freePlay ? 'Free Play is on: no Pet World coins or Arcade tickets. Learning practice unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your practice time remains. Ticket prizes are separate from Pet World coins.`}</p>
     <div class="arcade-grid">${games.map(game => arcadeCard(game, daily?.id === game.id, policy)).join('') || '<p class="muted">Your teacher has not enabled any Arcade games.</p>'}</div>
     ${prizeShop}
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
@@ -5443,7 +5443,7 @@ function openName(){
   $('#homeSelect').innerHTML = hoods.map(n => `<option value="${n.id}" ${n.id === S.home ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('');
   show('name'); setTimeout(() => $('#nameInput').focus(), 50);
 }
-function updatePreview(){ const v = $('#nameInput').value.trim(); $('#namePreview').textContent = v ? v + "'s Pet Town" : 'Your Pet Town'; }
+function updatePreview(){ const v = $('#nameInput').value.trim(); $('#namePreview').textContent = v ? v + "'s Pet World" : 'Your Pet World'; }
 $('#nameInput').addEventListener('input', updatePreview);
 $('#nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('#nameSave').click(); });
 $('#nameSave').addEventListener('click', () => {
@@ -6335,7 +6335,7 @@ const ROLE_CARDS = {
   historyScale:{emoji:'🧭',who:'Ibn Battuta, the traveling scholar',where:'Morocco and beyond, about 1350 CE',intro:'You have traveled from North Africa to China. Sometimes you study one family, sometimes whole regions.'},
   historyFrames:{emoji:'🖌️',who:'Sima Qian, court historian of the Han dynasty',where:'Chang’an, China, about 100 BCE',intro:'You are writing a giant history of China. To keep it organized, you choose a frame for each question.'},
   historyMemory:{emoji:'🥁',who:'a griot, a keeper of history in the Mali Empire',where:'West Africa, about 1350 CE',intro:'You remember your people’s history in songs and stories and pass it down out loud.'},
-  earliestHumans:{emoji:'🔥',who:'an elder in a foraging band',where:'East Africa, long before farming',intro:'A time-traveling reporter from Pet Town has found your campfire and wants to know about human life across the ages.'},
+  earliestHumans:{emoji:'🔥',who:'an elder in a foraging band',where:'East Africa, long before farming',intro:'A time-traveling reporter from Pet World has found your campfire and wants to know about human life across the ages.'},
   migrationArt:{emoji:'🎨',who:'a cave painter',where:'Chauvet Cave, France, about 30,000 years ago',intro:'You paint horses and lions on the cave walls by torchlight. Your ancestors’ ancestors walked here from far away.'},
   foragingSocieties:{emoji:'🏹',who:'a forager who guides your band through the seasons',where:'the Ice Age',intro:'Your band moves with the seasons, finding food wherever the land offers it.'},
   agriculturalRevolution:{emoji:'🌾',who:'one of the first wheat farmers',where:'the Fertile Crescent, about 9000 BCE',intro:'Your family has started planting seeds and keeping goats instead of following the herds.'},
@@ -6361,17 +6361,17 @@ const ROLE_CARDS = {
   rome:{emoji:'🛡️',who:'a Roman legionary',where:'the Roman Empire, about 100 CE',intro:'You march, build roads, and guard the frontier of the empire.'},
   romeHan:{emoji:'📚',who:'a Han government official',where:'Luoyang, China, about 100 CE',intro:'You passed tests on the classics to earn your job. Merchants bring rumors of a great empire far to the west: Rome.'},
   womenAncient:{emoji:'✍️',who:'Ban Zhao, Han historian and writer',where:'Luoyang, China, about 100 CE',intro:'You finished your brother’s history of the Han and wrote a famous book of advice for women.'},
-  cellsOrganisms:{emoji:'🔬',who:'a tour guide at the Nature Center’s Microscope Corner',where:'Pet Town Nature Center',intro:'Your tour group is peeking through microscopes at pond water and onion skin.'},
-  cellPartsU:{emoji:'🧫',who:'a tour guide at the Giant Cell Model',where:'Pet Town Nature Center',intro:'Your group walks right inside a model cell as big as a room.'},
-  cellPartsA:{emoji:'🧩',who:'a tour guide running the Cell Detective game',where:'Pet Town Nature Center',intro:'Visitors describe a cell problem, and you figure out which part is involved.'},
-  plantSuccessU:{emoji:'🌸',who:'a tour guide in the Pollinator Garden',where:'Pet Town Nature Center',intro:'Bees and butterflies buzz around your tour group in the flower beds.'},
-  plantSuccessA:{emoji:'🐝',who:'a tour guide in the Pollinator Garden',where:'Pet Town Nature Center',intro:'Your group is solving garden puzzles about how plants make the next generation.'},
-  asexualPlants:{emoji:'🍓',who:'a tour guide in the Greenhouse',where:'Pet Town Nature Center',intro:'Your tour stops at the strawberry beds and the plant-cuttings table.'},
-  sexualPlants:{emoji:'🌼',who:'a tour guide in the Greenhouse',where:'Pet Town Nature Center',intro:'Your group is looking closely at flowers, pollen, and the seeds inside fruit.'},
-  seedDispersal:{emoji:'🍁',who:'a tour guide on the Seed Trail',where:'Pet Town Nature Center',intro:'Your group walks the trail collecting seeds that traveled in different ways.'},
-  digestionHumans:{emoji:'🍎',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet Town Nature Center',intro:'Your group walks through a giant model of the digestive system, starting at the mouth.'},
-  digestionIntestines:{emoji:'🌀',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet Town Nature Center',intro:'Your group has reached the long, twisty intestine section of the tunnel.'},
-  humanDigestion:{emoji:'🗺️',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet Town Nature Center',intro:'You are wrapping up the tour with a map of the whole trip food takes.'}
+  cellsOrganisms:{emoji:'🔬',who:'a tour guide at the Nature Center’s Microscope Corner',where:'Pet World Nature Center',intro:'Your tour group is peeking through microscopes at pond water and onion skin.'},
+  cellPartsU:{emoji:'🧫',who:'a tour guide at the Giant Cell Model',where:'Pet World Nature Center',intro:'Your group walks right inside a model cell as big as a room.'},
+  cellPartsA:{emoji:'🧩',who:'a tour guide running the Cell Detective game',where:'Pet World Nature Center',intro:'Visitors describe a cell problem, and you figure out which part is involved.'},
+  plantSuccessU:{emoji:'🌸',who:'a tour guide in the Pollinator Garden',where:'Pet World Nature Center',intro:'Bees and butterflies buzz around your tour group in the flower beds.'},
+  plantSuccessA:{emoji:'🐝',who:'a tour guide in the Pollinator Garden',where:'Pet World Nature Center',intro:'Your group is solving garden puzzles about how plants make the next generation.'},
+  asexualPlants:{emoji:'🍓',who:'a tour guide in the Greenhouse',where:'Pet World Nature Center',intro:'Your tour stops at the strawberry beds and the plant-cuttings table.'},
+  sexualPlants:{emoji:'🌼',who:'a tour guide in the Greenhouse',where:'Pet World Nature Center',intro:'Your group is looking closely at flowers, pollen, and the seeds inside fruit.'},
+  seedDispersal:{emoji:'🍁',who:'a tour guide on the Seed Trail',where:'Pet World Nature Center',intro:'Your group walks the trail collecting seeds that traveled in different ways.'},
+  digestionHumans:{emoji:'🍎',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'Your group walks through a giant model of the digestive system, starting at the mouth.'},
+  digestionIntestines:{emoji:'🌀',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'Your group has reached the long, twisty intestine section of the tunnel.'},
+  humanDigestion:{emoji:'🗺️',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'You are wrapping up the tour with a map of the whole trip food takes.'}
 };
 /* Difficulty-aware picking. Untagged questions count as level 1, so untagged banks still pick at random. */
 const questionLevel = question => question.difficulty || 1;
@@ -6445,11 +6445,11 @@ const englishCourse = course => course === 'verbs'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
 const testSize = course => course.skills.length * (course.testPer || 1);
-/* ---------- Pet Town lesson videos (docs: LESSON-VIDEOS.md) ----------
-   YouTube (unlisted), played in a Pet Town window. Watching 80% of a video marks it watched in the save. */
+/* ---------- Pet World lesson videos (docs: LESSON-VIDEOS.md) ----------
+   YouTube (unlisted), played in a Pet World window. Watching 80% of a video marks it watched in the save. */
 const WATCHED_SHARE = 0.8;
 /* The video a student gets for a lesson: the class teacher's own YouTube link first (Lessons & questions tab), then
-   Pet Town's own video (src/shared/lessonVideos.js), else null, and the lesson keeps its Khan link. */
+   Pet World's own video (src/shared/lessonVideos.js), else null, and the lesson keeps its Khan link. */
 function studentVideo(key){
   const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, id = mine ? youtubeId(mine.url) : null;
   if (id) return {key, title:mine.title || 'Watch your teacher\u2019s lesson', youtube:id, kind:'teacher', minutes:null, note:mine.note};
@@ -6458,7 +6458,7 @@ function studentVideo(key){
 /* style: 'main' (a lesson's own button), 'station' (a math station card), 'also' (under a teacher's own link) */
 function lessonVideoButtonHTML(video, style = 'main'){
   const watched = S.videosWatched?.[video.key];
-  const label = style === 'also' ? 'Also: watch the Pet Town lesson' : style === 'station' ? 'Watch the lesson' : `Watch the lesson: ${esc(video.title)}`;
+  const label = style === 'also' ? 'Also: watch the Pet World lesson' : style === 'station' ? 'Watch the lesson' : `Watch the lesson: ${esc(video.title)}`;
   return `<button type="button" class="btn ${style === 'main' ? 'berry' : 'small'} lesson-video-btn" data-lesson-video="${esc(video.key)}" data-video-style="${style}"${style === 'main' ? '' : ` title="${esc(video.title)}"`}>▶ ${label}${video.minutes ? ` <span class="lesson-video-min">· ${video.minutes} min</span>` : ''}${watched ? ' <span class="lesson-video-done">✓ watched</span>' : ''}</button>`;
 }
 let videoSession = null;
@@ -6512,7 +6512,7 @@ document.addEventListener('click', event => { const button = event.target.closes
 document.addEventListener('keydown', event => { if (event.key === 'Escape' && videoSession) closeLessonVideo(); });
 /* Khan Academy on or off (docs: KHAN.md): a class turns it off in the teacher app's
    Class settings (game_settings.khan = false); a family at home turns it off in the progress report (S.noKhan).
-   Off hides every Khan link and mention for students; Pet Town's own and the teacher's videos still show. */
+   Off hides every Khan link and mention for students; Pet World's own and the teacher's videos still show. */
 const khanOn = () => Backend.me ? Backend.me.game_settings?.khan !== false : !S.noKhan;
 /* YouTube video search as a second backup for a lesson (like the chiropractor app's video pages): on unless the class
    (game_settings.youtube = false) or the family at home (S.noYouTube) turned it off (docs: KHAN.md) */
@@ -6529,7 +6529,7 @@ function khanLinkHTML(url, name, key){
   const backup = (url ? `<a class="ela-khan-also" href="${esc(search)}" target="_blank" rel="noopener noreferrer">Link not working? Search Khan Academy</a>` : '') + youtubeLink(name, key);
   const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, video = key ? lessonVideo(key) : null;
   const khanAlso = `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>`;
-  if (mine && youtubeId(mine.url)) return `${lessonVideoButtonHTML(studentVideo(key))}${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${mine.showKhan && khanOn() ? khanAlso : ''}`;   // the teacher's YouTube video plays in Pet Town
+  if (mine && youtubeId(mine.url)) return `${lessonVideoButtonHTML(studentVideo(key))}${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${mine.showKhan && khanOn() ? khanAlso : ''}`;   // the teacher's YouTube video plays in Pet World
   if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${video ? lessonVideoButtonHTML(video, 'also') : mine.showKhan && khanOn() ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
   if (video) return lessonVideoButtonHTML(video);   // our own video replaces the Khan link (docs: LESSON-VIDEOS.md)
   if (!khanOn()) return youtubeLink(name, key, 'Find a video for this lesson on YouTube');   // Khan is off: the lesson text above is the lesson, with a video search if allowed
@@ -6763,7 +6763,7 @@ $('#libraryWrap').addEventListener('click', event => {
    Chapter notes are written by the student, so a grown-up checks them first.
    hosted: the class grown-up's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"
    under reading:<bookId>:<chapterId> (notes) and readingEssay:<quizId> (essays); local: a grown-up unlocks the review with a parent PIN.
-   Questions are built from verified notes only, with templates (no AI). Reading quizzes never award Pet Town coins. */
+   Questions are built from verified notes only, with templates (no AI). Reading quizzes never award Pet World coins. */
 const READING_STATE_TEXT = {draft:'✏️ Not sent yet', submitted:'⏳ Waiting for a grown-up', verified:'✅ Checked by a grown-up', revise:'🔁 Needs fixing'};
 const READING_FIELDS = [['characters','Main characters'],['notableAction','Notable character action'],['interaction','Character interactions'],['conflict','Conflict'],['joy','Joy or success'],['setting','Environment and setting'],['themes','Theme or big idea'],['detail','Standout detail'],['vocabulary','Vocabulary']];
 /* a grown-up's check: the teacher's (quiz_overrides, for this submission) wins; otherwise a parent's, made behind the grown-up PIN
@@ -7480,7 +7480,7 @@ $('#libraryWrap').addEventListener('click', event => {
 
 /* ---------- Word Workshop: vocabulary (docs: VOCAB.md) ----------
    Practice cards (meaning, use it in a sentence, spell it), a 60-second Sprint, Spell it, and a mastery chart like the
-   times-tables heat map. Words: Pet Town's list + the class's (teacher) + the family's (grown-up, behind the PIN). */
+   times-tables heat map. Words: Pet World's list + the class's (teacher) + the family's (grown-up, behind the PIN). */
 let vocabRun = null, vocabTab = 'practice', vocabTimer = null;
 /* the student's words: the lists (vocabList), plus every word they looked up with 📌 (a known word, or a flagged word
    a grown-up has since defined) added to the focus words even if a grown-up picked other focus words */
@@ -7541,7 +7541,7 @@ function renderVocab(){
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
     <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}
-    ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: <b>${flaggedWaiting().map(f => esc(f.w)).join(', ')}</b> · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet Town, highlight it (or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
+    ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: <b>${flaggedWaiting().map(f => esc(f.w)).join(', ')}</b> · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, highlight it (or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
 }
 function startVocab(mode){
   const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
@@ -7611,8 +7611,8 @@ function vocabGrownUpHTML(all){
       <label>Meaning (kid-friendly)<input type="text" data-flag-def maxlength="200" placeholder="What it means"></label>
       <label>Example sentence, with ___ where the word goes (optional)<input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, f.w) : '')}" placeholder="The volcano ___ with a loud boom."></label>
       <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
-    <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet Town’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
-    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet Town fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet.</p>
+    <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet World’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
+    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
     ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
@@ -9215,7 +9215,7 @@ function renderParent(){
       <div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div></div>
     <div class="panel"><h3>Practice pop-ups</h3>${localDrillControls}${drillHistory}
       <h3>Settings</h3>
-      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${S.noKhan ? '' : 'checked'}> Show Khan Academy links</label><p class="muted" style="margin-top:0">Turn this off if you don't use Khan Academy. Lessons keep their own text and any Pet Town videos.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${S.noThinkRequired ? '' : 'checked'}> Require 🧠 Think it through</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set has to be passed before the next station opens.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${S.noYouTube ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup. YouTube results aren't checked by Pet Town, so turn this off if you'd rather your child stay off YouTube.</p>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
+      ${!Backend.me ? `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="unlockAll" ${S.unlockAll ? 'checked' : ''}> Unlock every station, shop, quiz and test</label><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${S.noKhan ? '' : 'checked'}> Show Khan Academy links</label><p class="muted" style="margin-top:0">Turn this off if you don't use Khan Academy. Lessons keep their own text and any Pet World videos.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${S.noThinkRequired ? '' : 'checked'}> Require 🧠 Think it through</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set has to be passed before the next station opens.</p><label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${S.noYouTube ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup. YouTube results aren't checked by Pet World, so turn this off if you'd rather your child stay off YouTube.</p>` : `<p class="muted">Your teacher has unlocked ${S.minStation === 1 ? 'station 1' : 'stations 1 to ' + S.minStation}.</p>`}
       <button class="btn small" id="resetBtn">Reset all progress</button></div></div>`;
   $$('[data-heat]').forEach(b => b.addEventListener('click', () => { heatView = b.dataset.heat; renderParent(); }));
   $$('#parentWrap [data-project-local-review]').forEach(b => b.addEventListener('click', () => {
@@ -9252,7 +9252,7 @@ function openJoin(){
   viewHood = null; viewSubject = null;
   join.code = ''; join.roster = []; join.pick = null;
   let last = ''; try { last = localStorage.getItem('pettown:lastCode') || ''; } catch(e){}
-  $('#joinWrap').innerHTML = `<div class="card"><div class="big-emoji">🐾</div><h2>Welcome to Pet Town!</h2>
+  $('#joinWrap').innerHTML = `<div class="card"><div class="big-emoji">🐾</div><h2>Welcome to Pet World!</h2>
     <label for="codeInput">Type your class code</label>
     <input id="codeInput" class="textin" maxlength="8" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase; letter-spacing:.2em" value="${esc(last)}">
     <div class="row"><button class="btn berry" id="codeGo">Next</button></div>

@@ -75,10 +75,10 @@ Run `supabase/migrations/20261010000000_khan_results.sql` first. It adds one jso
 {"passScore": 80, "students": {"<student id>": {"bio1": {"date": "2026-10-10", "score": 85, "missed": ["bio1:cells"], "cleared": []}}}}
 ```
 
-- **Where:** a "Khan unit test check" card at the bottom of the Lessons & questions tab, for the selected course. One row per student: their Pet Town unit test result (from `state.elaProgress` / `historyProgress` / `scienceProgress`, the course's `final-test` key, see `UNIT_TESTS` in `lessons.ts`), their logged Khan result, and a badge.
+- **Where:** a "Khan unit test check" card at the bottom of the Lessons & questions tab, for the selected course. One row per student: their Pet World unit test result (from `state.elaProgress` / `historyProgress` / `scienceProgress`, the course's `final-test` key, see `UNIT_TESTS` in `lessons.ts`), their logged Khan result, and a badge.
 - **Logging:** Log result opens a short form: date, score (%) and a tick box per Khan topic (one per block, the same keys as `lesson_links`). Topic names only, never Khan's questions. Update replaces the entry; Remove result deletes it.
 - **Retaught:** each open missed topic has a Retaught button, which moves it to `cleared`.
-- **Badges:** ✅ Passed Khan (score at or above the class's pass mark, no open topics) · Khan-ready (Pet Town unit test passed, no open topics) · Reteach first (open missed topics) · Not yet. The pass mark is set per class in the card (default 80%).
+- **Badges:** ✅ Passed Khan (score at or above the class's pass mark, no open topics) · Khan-ready (Pet World unit test passed, no open topics) · Reteach first (open missed topics) · Not yet. The pass mark is set per class in the card (default 80%).
 - **Copy prompt:** when students have this lesson's Khan topic open, the prompt says how many missed it and asks for questions aimed at it.
 - **Not copied** by Copy to my other classes, because results belong to students.
 

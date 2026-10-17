@@ -25,7 +25,7 @@ const SCENES = {
   travel:   {sky:['#9CCFEF','#E2F3FC'], ground:['#B9A27C','#9F8A66']},
   village:  {sky:['#F9C784','#FCE6BC'], ground:['#C99A6E','#A97E55']},
   oldcity:  {sky:['#F3D9A6','#FBEFD6'], ground:['#D9C7A3','#C2AF8A']},
-  // Science: Pet Town Nature Center
+  // Science: Pet World Nature Center
   lab:      {sky:['#E3F1FA','#F7FBFE'], ground:['#BFD3E0','#A7BFCF'], indoor:true},
   cell:     {sky:['#E8F7EE','#FFFFFF'], ground:['#BFE3C9','#A4D3B1'], indoor:true},
   garden:   {sky:['#A9DCF5','#E6F6FC'], ground:['#8CCB6E','#74B758']},

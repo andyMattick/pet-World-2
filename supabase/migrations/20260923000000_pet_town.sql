@@ -1,4 +1,4 @@
--- Pet Town: schema, row-level security, and functions
+-- Pet World: schema, row-level security, and functions
 -- Teachers sign in with email. Students join with class code + name + 4-digit PIN
 -- on top of Supabase anonymous auth (no student emails are ever collected).
 

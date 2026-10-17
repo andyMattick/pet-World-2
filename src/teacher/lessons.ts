@@ -68,7 +68,7 @@ export const UNIT_TESTS: Record<string, [string, string]> = {
 /* the Khan topics for a course: one per block, keyed like lesson_links ("<courseId>:<groupId>") */
 const khanTopics = (courseId: string) => (lessonLinkSlots(courseId) as LinkSlot[]).filter(slot => slot.key.split(':').length === 2);
 const openTopics = (entry?: KhanEntry) => entry ? entry.missed.filter(key => !(entry.cleared || []).includes(key)) : [];
-/* a missed topic also clears itself once every lesson in it was passed again in Pet Town after the result was logged */
+/* a missed topic also clears itself once every lesson in it was passed again in Pet World after the result was logged */
 export function khanStatus(unit: UnitTestRecord | undefined, entry: KhanEntry | undefined, passScore: number, reviewedAgain: (topicKey: string) => boolean = () => false) {
   const open = openTopics(entry).filter(key => !reviewedAgain(key)), unitPassed = !!unit?.passed;
   const khanPassed = !!entry && entry.score != null && entry.score >= passScore;
@@ -234,14 +234,14 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
     <div class="two">
       <div class="card"><h2>Lesson video or link</h2>
         ${slots.length > 1 ? `<label for="lqSlot">Link shown for</label><select id="lqSlot">${slots.map(s => `<option value="${esc(s.key)}" ${s.key === pick.slot ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : slot ? `<p class="muted" style="margin-top:0">Shown at the top of <b>${esc(slot.name)}</b>${slot.skills.length > 1 ? ', for all of its lessons' : ''}.</p>` : ''}
-        ${slot ? `${slotVideo ? `<p>Pet Town video: <a href="https://www.youtube.com/watch?v=${esc(slotVideo.youtube)}" target="_blank" rel="noopener noreferrer">${esc(slotVideo.title)}</a> <span class="tag ${slotVideo.kind === 'recorded' ? 'i' : 'a'}">${slotVideo.kind === 'recorded' ? 'Recorded' : 'Placeholder'}</span>${slotVideo.minutes ? ` <span class="muted">${slotVideo.minutes} min</span>` : ''}<br><span class="muted">Students watch it in Pet Town instead of going to Khan${mine ? '; your link comes first, with the video under it' : ''}.</span></p>` : ''}
+        ${slot ? `${slotVideo ? `<p>Pet World video: <a href="https://www.youtube.com/watch?v=${esc(slotVideo.youtube)}" target="_blank" rel="noopener noreferrer">${esc(slotVideo.title)}</a> <span class="tag ${slotVideo.kind === 'recorded' ? 'i' : 'a'}">${slotVideo.kind === 'recorded' ? 'Recorded' : 'Placeholder'}</span>${slotVideo.minutes ? ` <span class="muted">${slotVideo.minutes} min</span>` : ''}<br><span class="muted">Students watch it in Pet World instead of going to Khan${mine ? '; your link comes first, with the video under it' : ''}.</span></p>` : ''}
         <p>${slotVideo ? 'Khan lesson (for your reference only)' : 'Khan default'}: <a href="${esc(slot.khan || khanSearchUrl(slot.name))}" target="_blank" rel="noopener noreferrer">${slot.khan ? 'Khan Academy lesson' : 'Khan Academy search'}</a>${mine ? ' <span class="tag i">Students see your link first</span>' : ''}</p>
-        <p class="muted" style="margin:6px 0 0">Replace the Khan video with your own: paste a <b>YouTube link</b> (Unlisted is fine) and students watch it right inside Pet Town, with a ✓ when they finish it. Any other https:// link (Google Drive, your site) opens in a new tab.</p>
-        ${mine && youtubeId(mine.url) ? '<p><span class="tag i">▶ Your YouTube video plays in Pet Town</span></p>' : ''}
+        <p class="muted" style="margin:6px 0 0">Replace the Khan video with your own: paste a <b>YouTube link</b> (Unlisted is fine) and students watch it right inside Pet World, with a ✓ when they finish it. Any other https:// link (Google Drive, your site) opens in a new tab.</p>
+        ${mine && youtubeId(mine.url) ? '<p><span class="tag i">▶ Your YouTube video plays in Pet World</span></p>' : ''}
         <label for="lqUrl">My video or link (https://)</label><input type="url" id="lqUrl" maxlength="500" placeholder="https://youtu.be/…" value="${esc(mine?.url || '')}">
         <label for="lqTitle">Title</label><input type="text" id="lqTitle" maxlength="100" placeholder="Watch your teacher’s lesson" value="${esc(mine?.title || '')}">
         <label for="lqNote">Note (up to 200 characters)</label><input type="text" id="lqNote" maxlength="200" placeholder="Watch this before you practice." value="${esc(mine?.note || '')}">
-        <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="lqShowKhan" ${mine && !mine.showKhan ? '' : 'checked'}> ${slotVideo ? 'Also show the Pet Town video' : 'Also show the Khan link'}</label>
+        <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="lqShowKhan" ${mine && !mine.showKhan ? '' : 'checked'}> ${slotVideo ? 'Also show the Pet World video' : 'Also show the Khan link'}</label>
         <div class="row"><button class="btn primary" id="lqSaveLink">Save</button>${links[slot.key] ? '<button class="btn" id="lqBackToKhan">Back to Khan</button>' : ''}<span class="status" id="lqLinkMsg"></span></div>`
         : '<p class="muted">This lesson has no Khan link to replace.</p>'}
       </div>
@@ -323,7 +323,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
 
   function khanCardHTML() {
     if (!khanUsed) return `<div class="card"><h2>Khan unit test check</h2><p class="muted" style="margin-top:0">Khan Academy is turned off for <b>${esc(cls.name)}</b>, so students don't see Khan links and there are no Khan scores to log. Turn it back on in Class settings → Use Khan Academy.</p></div>`;
-    const head = `<h2>Khan unit test check</h2><p class="muted" style="margin-top:0">After a student passes the Pet Town unit test for <b>${esc(course.title)}</b>, they take the matching Khan Academy unit test. Log their score and the Khan topics they missed (topic names only). <b>Khan-ready</b> means the Pet Town unit test is passed and no missed topics are still open. Missed topics send the student back to those lessons as <b>🔁 Review</b>; a topic clears itself when every practice in it is passed again (or click Retaught).</p>`;
+    const head = `<h2>Khan unit test check</h2><p class="muted" style="margin-top:0">After a student passes the Pet World unit test for <b>${esc(course.title)}</b>, they take the matching Khan Academy unit test. Log their score and the Khan topics they missed (topic names only). <b>Khan-ready</b> means the Pet World unit test is passed and no missed topics are still open. Missed topics send the student back to those lessons as <b>🔁 Review</b>; a topic clears itself when every practice in it is passed again (or click Retaught).</p>`;
     if (khan === undefined) return `<div class="card">${head}<p class="muted">Loading students…</p></div>`;
     if (khan.results === null) return `<div class="card">${head}<p class="err">The database needs the Khan results column first. Run <code>supabase/migrations/20261010000000_khan_results.sql</code> in Supabase, then reload this page.</p></div>`;
     if (!khan.roster) return `<div class="card">${head}<p class="err">Students could not be loaded right now.</p></div>`;
@@ -335,7 +335,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
       <div class="row" style="margin-top:0"><label for="khPass" style="margin:0">A Khan unit test counts as passed at</label><input type="number" id="khPass" min="50" max="100" step="5" value="${passScore}" style="width:5em"> %<button class="btn small" id="khPassSave">Save</button><span class="status" id="khMsg"></span></div>
       <p><b>${counts.ready}</b> Khan-ready · <b>${counts.passed}</b> passed Khan · ${rows.length} student${rows.length === 1 ? '' : 's'}</p>
       ${missedSummary ? `<p>Open missed topics: ${missedSummary}<br><span class="muted">Copy prompt adds a lesson's missed topic, so imported questions aim at it.</span></p>` : ''}
-      <table class="steptable"><thead><tr><th>Student</th><th>Pet Town unit test</th><th>Khan unit test</th><th></th><th></th></tr></thead><tbody>
+      <table class="steptable"><thead><tr><th>Student</th><th>Pet World unit test</th><th>Khan unit test</th><th></th><th></th></tr></thead><tbody>
       ${rows.map(({ st, unit, entry, status }) => `<tr><td>${esc(st.name)}</td>
         <td>${status.unitPassed ? `Passed${unit?.best != null && unit?.questionCount ? ` (${unit.best} of ${unit.questionCount})` : ''}` : unit?.tries ? '<span class="muted">Not passed yet</span>' : '<span class="muted">Not taken</span>'}</td>
         <td>${entry ? `${entry.score != null ? `${entry.score}%` : 'No score'} · <span class="muted">${esc(entry.date)}</span>${status.open.map(key => `<br><span class="tag a">${esc(topicName(key))}</span> <button class="btn small" data-kh-clear="${esc(st.id)}" data-kh-topic="${esc(key)}" title="Mark as retaught">Retaught</button>`).join('')}` : '<span class="muted">Not logged</span>'}</td>
@@ -609,7 +609,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
         const missed = [...host.querySelectorAll<HTMLInputElement>('[data-kh-topic-pick]')].filter(x => x.checked).map(x => x.dataset.khTopicPick!);
         if (score === null && !missed.length) { msg.textContent = 'Enter the score, the missed topics, or both.'; return; }
         const reviewAt = missed.length ? Date.now() : undefined;
-        void saveKhan(withEntry(id, { date, score, missed, ...(reviewAt ? { reviewAt } : {}) }), `Khan result saved for ${st.name}.${missed.length ? ' The lessons in the missed topics show as 🔁 Review in Pet Town until the student passes each practice again.' : ''}`, msg, id);
+        void saveKhan(withEntry(id, { date, score, missed, ...(reviewAt ? { reviewAt } : {}) }), `Khan result saved for ${st.name}.${missed.length ? ' The lessons in the missed topics show as 🔁 Review in Pet World until the student passes each practice again.' : ''}`, msg, id);
       });
     }));
   }

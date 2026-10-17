@@ -5,10 +5,10 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: './',   // served from /arcade/mine-walker/ inside Pet Town
+    base: './',   // served from /arcade/mine-walker/ inside Pet World
     plugins: [react(), tailwindcss()],
     build: {
-      // `npm run build` writes straight into Pet Town's public folder
+      // `npm run build` writes straight into Pet World's public folder
       outDir: path.resolve(__dirname, '../../../public/arcade/mine-walker'),
       emptyOutDir: true,
     },

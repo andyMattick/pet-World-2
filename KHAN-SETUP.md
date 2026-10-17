@@ -1,11 +1,11 @@
-# Setting up Pet Town with Khan Academy
+# Setting up Pet World with Khan Academy
 
-A one-page guide for a new teacher or family. How Khan works inside Pet Town, and how to turn it off, is in [KHAN.md](KHAN.md).
+A one-page guide for a new teacher or family. How Khan works inside Pet World, and how to turn it off, is in [KHAN.md](KHAN.md).
 
-**Khan is optional.** Pet Town's practice, quizzes, unit tests and projects work without it. Khan adds two things:
+**Khan is optional.** Pet World's practice, quizzes, unit tests and projects work without it. Khan adds two things:
 
 - **Lessons:** the videos and articles behind each English, History and Biology block, and the math skills.
-- **An outside check:** a Khan unit test after the Pet Town unit test.
+- **An outside check:** a Khan unit test after the Pet World unit test.
 
 If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 
@@ -14,11 +14,11 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 1. Make a free Khan Academy account.
    - **Teacher:** create a Khan class, and have students join it with its class code.
    - **Family:** add your child to your parent account.
-2. Add the Khan courses that match the Pet Town buildings you'll use, from the table below. You only need the ones you'll use. Khan sometimes renames courses, so use the unit links if a name doesn't match.
+2. Add the Khan courses that match the Pet World buildings you'll use, from the table below. You only need the ones you'll use. Khan sometimes renames courses, so use the unit links if a name doesn't match.
 
 ## 2. Which Khan unit goes with which building
 
-| Pet Town building | Khan course | Khan unit(s) |
+| Pet World building | Khan course | Khan unit(s) |
 |---|---|---|
 | Pet Café | [6th grade math](https://www.khanacademy.org/math/cc-sixth-grade-math) | [Ratios](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-ratios-prop-topic) (unit 1) |
 | Bakery | 6th grade math | [Arithmetic operations](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-arithmetic-operations) (unit 2) |
@@ -37,15 +37,15 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 | Rome Museum | World history | [Empires and belief systems](https://www.khanacademy.org/humanities/world-history/x66f79d8a:empires-and-belief-systems). Comparing portable belief systems and The rise and fall of empires link straight to Khan; the other lessons show a Khan search. |
 | Nature Center (Biology) | Grade 6 science | [Life sciences](https://www.khanacademy.org/science/grade-6-science/x88f5990a7622d8f5:life-sciences) |
 
-A few math stations borrow one exercise from another Khan course, such as 7th grade math or Algebra basics. Pet Town links straight to that exercise, so you don't need to add those courses.
+A few math stations borrow one exercise from another Khan course, such as 7th grade math or Algebra basics. Pet World links straight to that exercise, so you don't need to add those courses.
 
 ## 3. How a student uses both
 
-1. Open a building. Each lesson in English, History or Biology has a **Watch or read this lesson on Khan Academy** link. The student watches or reads it, then does the Pet Town practice under it.
-2. Practice and quizzes happen in Pet Town, where the teacher sees step-by-step results.
-3. After passing the **Pet Town unit test**, the student takes the matching **Khan unit test**.
+1. Open a building. Each lesson in English, History or Biology has a **Watch or read this lesson on Khan Academy** link. The student watches or reads it, then does the Pet World practice under it.
+2. Practice and quizzes happen in Pet World, where the teacher sees step-by-step results.
+3. After passing the **Pet World unit test**, the student takes the matching **Khan unit test**.
 4. **Teacher:** log the Khan score and the topics missed in Lessons & questions → **Khan unit test check**. A score counts as passed at 80% unless you change it.
-   - Each missed topic sends its lessons back to the student as **🔁 Review** in Pet Town.
+   - Each missed topic sends its lessons back to the student as **🔁 Review** in Pet World.
    - A topic clears itself when the student passes those practices again.
    - Families without a class can skip the logging and just use the links.
 

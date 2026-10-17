@@ -1,6 +1,6 @@
 # Content rules
 
-Every new piece of learning content in Pet Town follows these rules: a new lesson, unit, question bank, math station, vocab list, or reading. Claude, other tools and people all follow them. `node scripts/check-content.mjs` checks the parts a script can check. A blind review and a review list cover the rest.
+Every new piece of learning content in Pet World follows these rules: a new lesson, unit, question bank, math station, vocab list, or reading. Claude, other tools and people all follow them. `node scripts/check-content.mjs` checks the parts a script can check. A blind review and a review list cover the rest.
 
 ## 1. What every lesson gets
 

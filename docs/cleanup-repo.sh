@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pet Town repo cleanup. Run from the repo root:  bash docs/cleanup-repo.sh
+# Pet World repo cleanup. Run from the repo root:  bash docs/cleanup-repo.sh
 # Only removes or moves files nothing uses. Everything stays in git history (git log -- <file> finds it).
 # It stages the changes; review with "git status", then commit.
 set -e
@@ -29,10 +29,10 @@ for game in public/arcade/*/; do
   done
 done
 
-# 5. Question Bank Roadmap: four copies; keep the newest, (16), as docs/Pet Town Question Bank Roadmap.docx
-if [ -e "docs/Pet Town Question Bank Roadmap (16).docx" ]; then
-  git rm -q --ignore-unmatch "Pet Town Question Bank Roadmap.docx" "docs/Pet Town Question Bank Roadmap.docx" "docs/Pet Town Question Bank Roadmap (15).docx"
-  git mv "docs/Pet Town Question Bank Roadmap (16).docx" "docs/Pet Town Question Bank Roadmap.docx"
+# 5. Question Bank Roadmap: four copies; keep the newest, (16), as docs/Pet World Question Bank Roadmap.docx
+if [ -e "docs/Pet World Question Bank Roadmap (16).docx" ]; then
+  git rm -q --ignore-unmatch "Pet World Question Bank Roadmap.docx" "docs/Pet World Question Bank Roadmap.docx" "docs/Pet World Question Bank Roadmap (15).docx"
+  git mv "docs/Pet World Question Bank Roadmap (16).docx" "docs/Pet World Question Bank Roadmap.docx"
 fi
 
 # 6. One-time question scripts (already applied) and their review lists: kept, but out of the way

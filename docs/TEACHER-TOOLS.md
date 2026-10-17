@@ -6,7 +6,7 @@
 
 1. **See and copy PINs.** The Roster tab shows each student's PIN, and has a **Copy class list** button that copies everything needed to hand out logins:
    ```
-   Pet Town — Period 3
+   Pet World — Period 3
    Go to: https://pet-world-2.vercel.app/
    Class code: K7MX2Q
 

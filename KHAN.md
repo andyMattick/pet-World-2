@@ -1,8 +1,8 @@
-# Khan Academy in Pet Town
+# Khan Academy in Pet World
 
-New to Pet Town? Start with [KHAN-SETUP.md](KHAN-SETUP.md), which covers accounts, which Khan unit goes with which building, and the Khan unit test check.
+New to Pet World? Start with [KHAN-SETUP.md](KHAN-SETUP.md), which covers accounts, which Khan unit goes with which building, and the Khan unit test check.
 
-Pet Town only **links** to Khan Academy. It never copies or embeds Khan's content, and it uses no Khan API or key. Khan is **on by default**. A class or a family that doesn't use Khan can turn it off, and everything else keeps working.
+Pet World only **links** to Khan Academy. It never copies or embeds Khan's content, and it uses no Khan API or key. Khan is **on by default**. A class or a family that doesn't use Khan can turn it off, and everything else keeps working.
 
 ## Where Khan shows up
 
@@ -22,7 +22,7 @@ Pet Town only **links** to Khan Academy. It never copies or embeds Khan's conten
 When Khan is off:
 
 - Every Khan link and mention in the table above is hidden.
-- Lessons keep their own text, Pet Town's videos, and the teacher's own lesson links.
+- Lessons keep their own text, Pet World's videos, and the teacher's own lesson links.
 - Nothing is deleted. Khan scores already logged stay in `classes.khan_results`, and turning Khan back on shows them again.
 - Unit tests, projects, practice and unlocking work the same. None of them depend on Khan.
 
@@ -32,7 +32,7 @@ When Khan is off:
 - `npm run check-links` opens every link (needs internet) and lists dead links and links that now redirect somewhere else. A link it can't reach is listed as not checked, never as dead.
 - **Every Monday,** GitHub runs the same check (`.github/workflows/links.yml`). If a link is dead, the run fails and GitHub emails you. To run it now: GitHub → Actions → Khan links → Run workflow.
 - **Students are never stuck.** Every fixed Khan link has a smaller **Link not working? Search Khan Academy** under it, which searches for the lesson's name. Lessons without a fixed link already show a search.
-- **A second backup: YouTube.** Every lesson also gets **🎬 Find videos on YouTube**, which searches YouTube for the lesson name plus the subject (for example "Comparing Portable Belief Systems history lesson for kids"). When Khan is off, that's the lesson's only video link. Pet Town doesn't check YouTube's results, so it can be turned off: in the teacher app, Class settings → **Show YouTube video searches** (`game_settings.youtube`); at home with no class, Progress report → Settings (`S.noYouTube`).
+- **A second backup: YouTube.** Every lesson also gets **🎬 Find videos on YouTube**, which searches YouTube for the lesson name plus the subject (for example "Comparing Portable Belief Systems history lesson for kids"). When Khan is off, that's the lesson's only video link. Pet World doesn't check YouTube's results, so it can be turned off: in the teacher app, Class settings → **Show YouTube video searches** (`game_settings.youtube`); at home with no class, Progress report → Settings (`S.noYouTube`).
 - **Fixing a dead link:** math is in `src/shared/registry.ts`; English, History and Biology are in `KHAN_LINKS` (and an extra reading's `url`) in `src/shared/questionBanks.js`. A teacher can also give their own link for a lesson in Lessons & questions.
 
 ## Code

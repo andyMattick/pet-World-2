@@ -4,7 +4,7 @@
 
 ## The decision
 
-Pet Town is **one town per student**, with **one neighborhood per grade**. Each neighborhood contains classes (subjects such as Math, History, Biology, and English), and each class contains its own ordered units. A student never starts over: moving up a grade adds a neighborhood next to the ones she already has.
+Pet World is **one town per student**, with **one neighborhood per grade**. Each neighborhood contains classes (subjects such as Math, History, Biology, and English), and each class contains its own ordered units. A student never starts over: moving up a grade adds a neighborhood next to the ones she already has.
 
 - **One save** per student: one coin purse, one Sticker Book, one Fact Sprint record.
 - **Each class** has its own buildings, stations, quizzes, unit tests, and reward sets (pets and decorations), like the Café and Bakery today. Unit unlocking proceeds within that grade and class only.

@@ -159,7 +159,7 @@ export default function App() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // Pet Town Arcade: when this runs inside the Arcade frame (?arcadeRun=...), the game is saved and
+  // Pet World Arcade: when this runs inside the Arcade frame (?arcadeRun=...), the game is saved and
   // resumed through the host page, and a finished game is reported (score = paintings stolen).
   const arcadeRunId = useMemo(() => new URLSearchParams(window.location.search).get('arcadeRun'), []);
   const embedded = !!arcadeRunId && window.parent !== window;

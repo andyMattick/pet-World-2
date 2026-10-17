@@ -1,11 +1,11 @@
 # Daily plan (ROADMAP F10)
 
-**Goal:** the student opens Pet Town and sees exactly what to do today, each item linked to the place where it's done, checked off by what she actually does. Unfinished work carries over, and the day's plan goes into the Ledger.
+**Goal:** the student opens Pet World and sees exactly what to do today, each item linked to the place where it's done, checked off by what she actually does. Unfinished work carries over, and the day's plan goes into the Ledger.
 
 ## Owner decisions
 
 - A **weekly plan** (a list for each weekday) plus **changes for single days**.
-- Items: **time in a subject** (Pet Town picks the next unit), **practice in a unit**, **a quiz or the unit test in a unit**, **a project**. Extras (F7) and time goals (F8) show in the same list.
+- Items: **time in a subject** (Pet World picks the next unit), **practice in a unit**, **a quiz or the unit test in a unit**, **a project**. Extras (F7) and time goals (F8) show in the same list.
 - When she taps "I'm done for today", the summary shows each item as done, waiting or not done, and **not-done items move to the next day**.
 
 ## How it works

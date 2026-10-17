@@ -1,6 +1,6 @@
-# Pet Town lesson videos (the video engine)
+# Pet World lesson videos (the video engine)
 
-Goal: every Pet Town lesson teaches with **our own video** instead of sending students to Khan Academy. Khan stays in two places only: the **order** of units and lessons (Pet Town already follows it), and the **Khan unit test check** (step 10), which stays as the outside benchmark.
+Goal: every Pet World lesson teaches with **our own video** instead of sending students to Khan Academy. Khan stays in two places only: the **order** of units and lessons (Pet World already follows it), and the **Khan unit test check** (step 10), which stays as the outside benchmark.
 
 Videos come in two waves for each lesson:
 
@@ -63,7 +63,7 @@ Scene types:
 
 - `title`, `bullets`, `steps`: plain text slides.
 - `image`: public-domain or our own images only, with a credit line.
-- `visual`: a picture drawn by Pet Town's own code, so math videos show exactly what students practice. Examples are `numberLineSVG`, `areaHTML` and `pvTableHTML`, with fixed numbers given in the scene.
+- `visual`: a picture drawn by Pet World's own code, so math videos show exactly what students practice. Examples are `numberLineSVG`, `areaHTML` and `pvTableHTML`, with fixed numbers given in the scene.
 - `worked`: a worked example that reveals one step at a time.
 - `check`: shows a bank question by its id (from the Lessons & questions tab) and pauses for 5 seconds before the answer.
 
@@ -71,7 +71,7 @@ Script rules, which go into the prompt Claude uses:
 
 - **Original wording only.** Never copy or paraphrase a Khan video's transcript; Khan sets the topic and order, not the words.
 - **Length:** 3 to 6 minutes, 6th grade reading level, one idea per scene.
-- **Vocabulary:** use the same words Pet Town's questions use.
+- **Vocabulary:** use the same words Pet World's questions use.
 - **Practice:** end with one `check` scene that uses a level 2 question from the lesson's bank.
 
 ### 3. Placeholder builder: `scripts/build-video.mjs`
@@ -83,10 +83,10 @@ node scripts/build-video.mjs content/lessons/bio1/cells.json      →  videos/ou
 node scripts/build-video.mjs --course bio1                         →  every script in the course
 ```
 
-1. **Slides:** each scene is rendered as a 1280×720 slide in headless Chromium (Playwright). `visual` scenes call Pet Town's own drawing functions, so math pictures match practice exactly.
+1. **Slides:** each scene is rendered as a 1280×720 slide in headless Chromium (Playwright). `visual` scenes call Pet World's own drawing functions, so math pictures match practice exactly.
 2. **Voice:** narration comes from **Piper**, a free, offline text-to-speech program (one voice file, about 60 MB, downloaded once; `espeak-ng` is the fallback). Each scene's audio sets how long its slide stays on screen.
 3. **Video:** `ffmpeg` joins the slides and audio into an MP4, and the `say` text becomes a captions file with the right timings.
-4. **Label:** every slide says "Pet Town lesson · computer voice" in the corner, so students and teachers can tell it's a placeholder.
+4. **Label:** every slide says "Pet World lesson · computer voice" in the corner, so students and teachers can tell it's a placeholder.
 
 `videos/` is git-ignored; videos live on YouTube, not in the repo.
 
@@ -111,7 +111,7 @@ When `PIPER_MODEL` is set, the builder uses Piper. Otherwise it uses espeak-ng. 
 
 #### How the builder works
 
-- **Pet Town:** it starts Pet Town with Vite and opens `index.html?videoSlides=1`. That address exposes Pet Town's drawing helpers as `window.PetTownDraw` (tape, doubleNumberLine, numberLine, fractionBar, area, placeValueTable, rectangle, dotPlot, boxPlot and more), so a `visual` scene draws exactly what students practice with, on the same chalkboard.
+- **Pet World:** it starts Pet World with Vite and opens `index.html?videoSlides=1`. That address exposes Pet World's drawing helpers as `window.PetTownDraw` (tape, doubleNumberLine, numberLine, fractionBar, area, placeValueTable, rectangle, dotPlot, boxPlot and more), so a `visual` scene draws exactly what students practice with, on the same chalkboard.
 - **Frames:** each scene becomes one or more frames. When `say` is a list, a bullets, steps or worked scene reveals one item per line. A first extra line is an opening sentence before the first item. A `check` scene makes two frames: the question with a 5-second pause, then the answer, which is the scene's `answer` text.
 - **Checking scripts:** `node scripts/build-video.mjs --check <script>` checks a script without building it.
 - **Reading symbols aloud:** the voice reads ÷ as "divided by", × as "times", → as "to", and 3 : 2 as "3 to 2".
@@ -119,11 +119,11 @@ When `PIPER_MODEL` is set, the builder uses Piper. Otherwise it uses espeak-ng. 
 
 ### 4. Publishing and the student player
 
-- **Upload:** each MP4 goes to YouTube as **unlisted** in a "Pet Town lessons" playlist, with the `.vtt` captions file added.
+- **Upload:** each MP4 goes to YouTube as **unlisted** in a "Pet World lessons" playlist, with the `.vtt` captions file added.
   - Version 1 is a manual upload.
   - Later, a YouTube Data API upload script could be added. It would need Andy's Google OAuth sign-in in the Codespace only, never in the app.
 - **Record the video id:** `node scripts/set-video.mjs bio1:cells <youtubeId> --kind placeholder --minutes 4.5` writes it into `lessonVideos.js`.
-- **Player:** the student sees a **▶ Watch the lesson** button. It opens the video in Pet Town, using the `youtube-nocookie.com` embed with captions on and related videos limited, instead of sending the student to Khan.
+- **Player:** the student sees a **▶ Watch the lesson** button. It opens the video in Pet World, using the `youtube-nocookie.com` embed with captions on and related videos limited, instead of sending the student to Khan.
 - **Khan link:** when a lesson has a video, the Khan link is not shown to students. Only the teacher can see it, in the Lessons & questions tab, as a reference.
 - **Watched:** after 80% of the video has played (YouTube player events), the lesson is marked watched in the student's save, as `state.videosWatched[key] = date`. Later, the teacher report can show "watched before practicing."
 - **YouTube blocked at school:** the player says so and offers the teacher's link if the class has one. A school-hosted MP4 copy is a later option (Phase 5 idea).
@@ -144,15 +144,15 @@ This is the to-do list for recording: record the lessons with the most practice 
 
 ## Replacing a Khan video from the teacher app (no commands)
 
-Until a lesson has a video Andy is happy with, it keeps its Khan link. To swap in a video from inside Pet Town:
+Until a lesson has a video Andy is happy with, it keeps its Khan link. To swap in a video from inside Pet World:
 
 1. Upload the video to YouTube as **Unlisted**.
 2. In the teacher app, open **Lessons & questions** and pick the course and lesson.
 3. In **Lesson video or link**, paste the YouTube link, add a title and an optional note, and press **Save**.
 
-Students in that class then get **▶ Watch the lesson: <title>**, played inside Pet Town with the same watched tracking (`studentVideo()` in `game.js`). **Also show the Khan link** keeps a small Khan link under it; **Back to Khan** undoes it. Copy to my other classes copies it to Andy's other classes. A non-YouTube link (Google Drive, a website) still opens in a new tab.
+Students in that class then get **▶ Watch the lesson: <title>**, played inside Pet World with the same watched tracking (`studentVideo()` in `game.js`). **Also show the Khan link** keeps a small Khan link under it; **Back to Khan** undoes it. Copy to my other classes copies it to Andy's other classes. A non-YouTube link (Google Drive, a website) still opens in a new tab.
 
-A class's teacher video comes first. Next is a Pet Town-wide video from `src/shared/lessonVideos.js` (`set-video.mjs`), then Khan. The Pet Town-wide list is empty for now: the computer-voice placeholders were not good enough (October 10, 2026).
+A class's teacher video comes first. Next is a Pet World-wide video from `src/shared/lessonVideos.js` (`set-video.mjs`), then Khan. The Pet World-wide list is empty for now: the computer-voice placeholders were not good enough (October 10, 2026).
 
 
 **Step 13 is built.** It adds `src/shared/lessonVideos.js` (empty until the first video), `scripts/set-video.mjs`, the in-Pet-Town player (`openLessonVideo` in `game.js`), `state.videosWatched` and the video line in the teacher's Lesson link card. To add a video:
@@ -178,7 +178,7 @@ node scripts/set-video.mjs --list
 **Settled:**
 
 - **Videos are made two ways:** auto-built placeholders first, then recorded by Andy.
-- **Hosting:** YouTube, unlisted, embedded in Pet Town.
+- **Hosting:** YouTube, unlisted, embedded in Pet World.
 - **Khan's role:** the Khan unit test check stays as the outside benchmark. Khan's order stays; Khan's videos go.
 
 **Still open:**

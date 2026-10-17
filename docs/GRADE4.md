@@ -1,10 +1,10 @@
-# 4th grade Pet Town
+# 4th grade Pet World
 
 **Status: draft plan.** No code yet. Read `AGENTS.md` first. **Edit in place, never rewrite a file.**
 
 ## Goal
 
-A 4th grade version of Pet Town, first for a student at home (joining with a class code, below), with the same class features (class code and PIN, teacher dashboard, quizzes, practice time, music). It follows the **Sadlier *Progress Mathematics* Grade 4** workbook in chapter order, with a Khan Academy 4th grade practice link for every skill.
+A 4th grade version of Pet World, first for a student at home (joining with a class code, below), with the same class features (class code and PIN, teacher dashboard, quizzes, practice time, music). It follows the **Sadlier *Progress Mathematics* Grade 4** workbook in chapter order, with a Khan Academy 4th grade practice link for every skill.
 
 It uses the **same game engine** as the 6th grade town: shops, stations, step-by-step orders, mix-ups, drills, quizzes, and rewards. Only the content is new.
 

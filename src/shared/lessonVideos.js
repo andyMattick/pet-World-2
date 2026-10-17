@@ -1,10 +1,10 @@
-/* Pet Town lesson videos (docs: LESSON-VIDEOS.md).
+/* Pet World lesson videos (docs: LESSON-VIDEOS.md).
    Every lesson that has our own video, keyed like lesson_links:
      "<courseId>:<groupId>"                 an English, History or Biology block (the Khan link at the top of the block)
      "<courseId>:<groupId>:<n>"             an extra reading in that block
      "math:<shopId>:<stationId>"            a math station, for example "math:cafe:2"
      "math:<skillId>"                       one math skill that needs its own example
-   A lesson listed here shows "Watch the lesson" (played inside Pet Town) instead of its Khan link.
+   A lesson listed here shows "Watch the lesson" (played inside Pet World) instead of its Khan link.
    A lesson not listed here keeps its Khan link. A teacher's own link (lesson_links) still wins for that class.
 
    Edit this list with scripts/set-video.mjs, not by hand:

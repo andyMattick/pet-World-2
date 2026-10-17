@@ -16,7 +16,7 @@ The code in this repo was built and tested over many sessions. It includes 14 pr
 
 ## What this project is
 
-Pet Town: 6th grade math practice games (Khan Academy order), with step-level diagnostics for teachers.
+Pet World: 6th grade math practice games (Khan Academy order), with step-level diagnostics for teachers.
 
 - **Game:** `index.html` + `src/game/game.js`. Students join with class code + name + PIN.
 - **Teacher app:** `teacher.html` + `src/teacher/main.ts` + `src/teacher/report.ts`.
@@ -67,7 +67,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 
 ## Reading Quiz
 
-Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet Town coins. See `docs/READING-QUIZ.md`.
+Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet World coins. See `docs/READING-QUIZ.md`.
 
 ## Rewards display
 

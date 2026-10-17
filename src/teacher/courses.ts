@@ -1,4 +1,4 @@
-/* Courses and grades on a student's page (docs/LEDGER.md step 6). Pet Town courses get a suggested grade from
+/* Courses and grades on a student's page (docs/LEDGER.md step 6). Pet World courses get a suggested grade from
    unit tests, quizzes and daily work (weights the grown-up sets; daily work is a completion grade, 100% for any
    practice); outside courses (Ledger tab work, imported or added) suggest the average of their graded entries.
    The grown-up can rename a course, override its grade, leave it off the transcript, and add courses of their own.
@@ -28,7 +28,7 @@ export interface LedgerTotals { days: { day: string; subjects: Record<string, nu
 
 const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 export const DEFAULT_WEIGHTS = { test: 50, quiz: 40, daily: 10 };
-/* each Pet Town course: its time-by-subject ids and where its quizzes and tests live */
+/* each Pet World course: its time-by-subject ids and where its quizzes and tests live */
 const PET_TOWN: { id: string; name: string; time: string[]; store: 'math' | 'elaProgress' | 'historyProgress' | 'scienceProgress' }[] = [
   { id: 'pt:math', name: 'Math', time: ['math'], store: 'math' },
   { id: 'pt:english', name: 'English', time: ['english', 'reading', 'words'], store: 'elaProgress' },
@@ -86,7 +86,7 @@ function petTownScores(r: CourseStudent, store: string, inRange: (day: string) =
   return { test: avg(tests), quiz: avg(quizzes), units };
 }
 
-/** Every course for the student: Pet Town, outside (from the Ledger) and added, with hours and grades. */
+/** Every course for the student: Pet World, outside (from the Ledger) and added, with hours and grades. */
 export function computeCourses(r: CourseStudent, settingsRaw: unknown, data: LedgerTotals, range?: { from: string; to: string }): CourseRow[] {
   const s = parseCourseSettings(settingsRaw), w = { ...DEFAULT_WEIGHTS, ...(s.w || {}) }, c = s.c || {};
   const inRange = (day: string) => !range || (day >= range.from && day <= range.to);
@@ -115,7 +115,7 @@ export function computeCourses(r: CourseStudent, settingsRaw: unknown, data: Led
   (s.add || []).forEach(a => { const row = finish({ id: a.id, kind: 'added', defaultName: a.name, hours: +(a.hours || 0), finished: '', test: null, quiz: null, daily: null, suggested: null }); row.grade = (a.grade || '').trim(); row.overridden = !!row.grade; rows.push(row); });
   return combine(rows);
 }
-/* "Combine with": a course's hours and work go into another course (e.g. Pet Town Math into 6th Grade Math). The
+/* "Combine with": a course's hours and work go into another course (e.g. Pet World Math into 6th Grade Math). The
    combined suggestion is the parts' suggestions weighted by hours; the target keeps its own name, grade and tick. */
 function combine(rows: CourseRow[]): CourseRow[] {
   const byId = new Map(rows.map(x => [x.id, x]));
@@ -166,7 +166,7 @@ export function renderCourses(el: HTMLElement, r: CourseStudent, getSettings: ()
     if (!data) return;
     const s = parseCourseSettings(getSettings()), w = { ...DEFAULT_WEIGHTS, ...(s.w || {}) }, rows = computeCourses(r, s, data);
     const row = (x: CourseRow) => `<tr data-course="${esc(x.id)}"${x.off ? ' style="opacity:.55"' : ''}>
-      <td><input data-c-name value="${esc(x.name)}" maxlength="80" style="width:150px" aria-label="Course name">${x.kind === 'pettown' ? ' <span class="tag i">Pet Town</span>' : x.kind === 'added' ? ' <span class="tag a">added</span>' : ''}
+      <td><input data-c-name value="${esc(x.name)}" maxlength="80" style="width:150px" aria-label="Course name">${x.kind === 'pettown' ? ' <span class="tag i">Pet World</span>' : x.kind === 'added' ? ' <span class="tag a">added</span>' : ''}
         ${x.parts.length ? `<div class="muted" style="font-size:.85em">Includes ${x.parts.map(p => `${esc(p.name)} <button class="btn small" data-c-split="${esc(p.id)}">Separate</button>`).join(' ')}</div>` : `<div><label class="muted" style="font-size:.85em">Combine with <select data-c-into><option value="">—</option>${rows.filter(o => o.id !== x.id).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label></div>`}</td>
       <td>${x.kind === 'added' ? `<input type="number" data-c-hours min="0" max="2000" step="0.5" value="${x.hours || ''}" style="width:70px" aria-label="Hours">` : hoursText(x.hours)}</td>
       <td>${esc(x.finished)}</td>
@@ -175,8 +175,8 @@ export function renderCourses(el: HTMLElement, r: CourseStudent, getSettings: ()
       <td><input data-c-grade value="${esc(x.grade)}" maxlength="20" placeholder="${x.suggested == null ? 'e.g. 92 or A' : 'use suggested'}" style="width:90px" aria-label="Grade"></td>
       <td><b>${esc(shownGrade(x))}</b></td>
       <td style="white-space:nowrap"><label><input type="checkbox" data-c-on ${x.off ? '' : 'checked'}> On transcript</label>${x.kind === 'added' ? ` <button class="btn small" data-c-remove="${esc(x.id)}">Remove</button>` : ''}</td></tr>`;
-    el.innerHTML = `<p class="muted" style="margin-top:0">Every course for ${esc(r.n)}: Pet Town subjects, courses from the Ledger tab (outside work and the old Ledger), and courses you add. Change a name, type a grade to override the suggestion (leave it empty to use the suggestion), untick a course to leave it off the transcript, or combine two courses into one (for example Pet Town Math with 6th Grade Math from the Ledger: hours add up and the suggestion is weighted by hours), then <b>Save courses</b>.</p>
-      <h3>How Pet Town grades are suggested</h3>
+    el.innerHTML = `<p class="muted" style="margin-top:0">Every course for ${esc(r.n)}: Pet World subjects, courses from the Ledger tab (outside work and the old Ledger), and courses you add. Change a name, type a grade to override the suggestion (leave it empty to use the suggestion), untick a course to leave it off the transcript, or combine two courses into one (for example Pet World Math with 6th Grade Math from the Ledger: hours add up and the suggestion is weighted by hours), then <b>Save courses</b>.</p>
+      <h3>How Pet World grades are suggested</h3>
       <div class="row"><label>Unit tests <input type="number" id="cwTest" min="0" max="100" value="${w.test}" style="width:65px">%</label><label>Quizzes <input type="number" id="cwQuiz" min="0" max="100" value="${w.quiz}" style="width:65px">%</label><label>Daily work <input type="number" id="cwDaily" min="0" max="100" value="${w.daily}" style="width:65px">%</label></div>
       <p class="muted" style="margin:0">Each test and quiz counts its best score. Daily work is a completion grade: 100% once there is practice time in the subject. If a course has no tests (or no quizzes) yet, the other parts share its weight. Outside courses suggest the average of their graded entries.</p>
       <div class="tablewrap"><table class="steptable" style="margin-top:10px"><tr><th>Course</th><th>Hours</th><th>Finished</th><th>Tests · quizzes · daily</th><th>Suggested</th><th>Your grade</th><th>Grade</th><th></th></tr>${rows.map(row).join('')}</table></div>

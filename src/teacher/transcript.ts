@@ -1,5 +1,5 @@
 /* The transcript on a student's page (docs/LEDGER.md step 7, ROADMAP F11). The grown-up sets each school year's
-   start and end dates; each year lists its courses (Pet Town and outside) with hours, what was finished and the
+   start and end dates; each year lists its courses (Pet World and outside) with hours, what was finished and the
    grade, plus totals. Grades start from the Grades tab (its names, overrides and "on transcript" ticks) and can be
    changed for one year only. Prints one year or the full transcript. Saved in quiz_overrides as "transcript". */
 import { computeCourses, loadLedgerTotals, parseCourseSettings, gradeNumber, gradeText, shownGrade, type CourseRow, type CourseStudent, type LedgerTotals } from './courses';
@@ -91,7 +91,7 @@ export function renderTranscript(el: HTMLElement, r: CourseStudent, getCourses: 
         <td><input data-ty-grade value="${esc(x.yearGrade)}" maxlength="20" placeholder="${x.kind === 'year' ? 'e.g. 95' : 'same as Grades'}" style="width:90px" aria-label="Grade this year"></td>
         <td style="white-space:nowrap"><input type="checkbox" data-ty-on ${x.off ? '' : 'checked'} aria-label="On transcript">${x.kind === 'year' ? ` <button class="btn small" data-ty-remove="${esc(x.id)}">Remove</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No work in these dates yet.</td></tr>'}</table></div>
       <p><b>${t.courses}</b> courses on the transcript · <b>${hoursText(t.hours)}</b> hours${t.avg == null ? '' : ` · average <b>${esc(gradeText(t.avg))}</b>`}</p>
-      <p class="muted" style="margin:0">Math scores count the quizzes and tests taken in these dates. English, History and Biology scores have no dates in Pet Town, so they count every quiz and test so far.</p>
+      <p class="muted" style="margin:0">Math scores count the quizzes and tests taken in these dates. English, History and Biology scores have no dates in Pet World, so they count every quiz and test so far.</p>
       <div class="row"><label>Add a course to this year <input id="tyAddName" maxlength="80" placeholder="e.g. Piano"></label><label>Hours <input id="tyAddHours" type="number" min="0" max="2000" step="0.5" style="width:80px"></label><label>Grade <input id="tyAddGrade" maxlength="20" style="width:80px"></label><button class="btn small" id="tyAddCourse">Add</button></div>
       <div class="row"><button class="btn small primary" id="tySave">Save this year</button> <button class="btn small" id="tPrintYear">🖨️ Print this year</button> <button class="btn small" id="tPrintAll">🖨️ Print full transcript</button></div>` : ''}
       <p class="status" id="tMsg">${esc(msg)}</p>`;

@@ -1,4 +1,4 @@
-// Checks every Khan Academy link Pet Town shows (docs: KHAN.md).
+// Checks every Khan Academy link Pet World shows (docs: KHAN.md).
 //   node scripts/check-links.mjs            offline: every link is a well-formed khanacademy.org address (npm run verify runs this)
 //   node scripts/check-links.mjs --online   also opens each link and lists the ones that are gone (npm run check-links)
 // Online needs internet. A link that can't be reached (no network, a timeout) is listed as "not checked", never as dead.
@@ -39,7 +39,7 @@ async function checkOnline(links){
     while (next < unique.length) {
       const link = unique[next++];
       try {
-        const res = await fetch(link.url, { redirect: 'follow', signal: AbortSignal.timeout(20000), headers: { 'user-agent': 'Mozilla/5.0 (Pet Town link check)' } });
+        const res = await fetch(link.url, { redirect: 'follow', signal: AbortSignal.timeout(20000), headers: { 'user-agent': 'Mozilla/5.0 (Pet World link check)' } });
         if (res.status === 404 || res.status === 410) dead.push(`${link.where}: ${res.status} ${link.url}`);
         else if (!res.ok) unchecked.push(`${link.where}: HTTP ${res.status} ${link.url}`);
         else if (new URL(res.url).pathname.replace(/\/$/, '') !== new URL(link.url).pathname.replace(/\/$/, '')) moved.push(`${link.where}: now goes to ${res.url} (was ${link.url})`);

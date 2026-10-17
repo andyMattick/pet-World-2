@@ -24,7 +24,7 @@ const coreTranslations: Record<string, string> = {
   'Excuse quiz': 'Eximir de la prueba', 'Clear review': 'Completar repaso', 'Undo': 'Deshacer', 'History': 'Historial',
   'Overrides': 'Excepciones', 'Advanced': 'Avanzado', 'Mode': 'Modo', 'Use class settings': 'Usar configuración de la clase',
   'Reset everything': 'Restablecer todo', 'Reset town': 'Restablecer el pueblo', 'Reset everything also erases learning history.': 'Restablecer todo también borra el historial de aprendizaje.',
-  'Welcome to Pet Town!': '¡Te damos la bienvenida a Pet Town!', 'Your first name': 'Tu nombre', 'Move in': 'Entrar al pueblo',
+  'Welcome to Pet World!': '¡Te damos la bienvenida a Pet World!', 'Your first name': 'Tu nombre', 'Move in': 'Entrar al pueblo',
   'My grade': 'Mi grado', 'Close the café early': 'Cerrar la cafetería temprano',
   'Next customer': 'Siguiente cliente', 'Close up for the day': 'Cerrar por hoy', 'Keep going': 'Continuar',
   'Stop and go back': 'Detener y volver', 'Start the sprint': 'Empezar la carrera', 'Check': 'Comprobar',
@@ -35,7 +35,7 @@ const coreTranslations: Record<string, string> = {
   'Volume': 'Volumen', 'Track': 'Pista', 'Unlock the café through': 'Desbloquear la cafetería hasta',
   'Enable Arcade games for this class': 'Activar los juegos del salón recreativo para esta clase',
   'Free Play: no 100-coin admission and no Arcade tickets': 'Juego gratis: sin entrada de 100 monedas ni boletos',
-  'Students still need math practice to unlock Arcade minutes. Free Play disables Pet Town coin admission and ticket prizes.': 'Los estudiantes necesitan practicar matemáticas para desbloquear minutos de juego. El modo gratis no cobra monedas ni entrega boletos.',
+  'Students still need math practice to unlock Arcade minutes. Free Play disables Pet World coin admission and ticket prizes.': 'Los estudiantes necesitan practicar matemáticas para desbloquear minutos de juego. El modo gratis no cobra monedas ni entrega boletos.',
   'Enable Arcade games': 'Activar juegos recreativos', 'Available games': 'Juegos disponibles',
   'Ticket rewards (paid-entry mode)': 'Premios en boletos (modo de pago)',
   'Delete class': 'Eliminar clase', 'Delete this class': 'Eliminar esta clase', 'Quizzes and tests for': 'Pruebas y exámenes de',
@@ -57,7 +57,7 @@ const coreTranslations: Record<string, string> = {
 };
 
 const extendedTranslations: Record<string, string> = {
-  'Pet Town for Teachers': 'Pet Town para docentes', 'Unit 1: Ratios. Step-level diagnostics, mix-ups, and times tables, live as your class plays.': 'Unidad 1: razones. Diagnóstico por pasos, confusiones y tablas de multiplicar mientras la clase juega.',
+  'Pet World for Teachers': 'Pet World para docentes', 'Unit 1: Ratios. Step-level diagnostics, mix-ups, and times tables, live as your class plays.': 'Unidad 1: razones. Diagnóstico por pasos, confusiones y tablas de multiplicar mientras la clase juega.',
   'This build has no Supabase settings. Copy .env.example to .env, fill in your project URL and anon key, and rebuild. See the README.': 'Esta versión no tiene la configuración de Supabase. Copia .env.example a .env, agrega la URL del proyecto y la clave anónima, y vuelve a compilar. Consulta el README.',
   'Create an account': 'Crear una cuenta', 'No classes yet.': 'Aún no hay clases.', 'New class name, e.g. Period 3': 'Nombre de la clase, por ejemplo, Grupo 3',
   'Add your first class on the left to get a class code.': 'Añade tu primera clase a la izquierda para obtener un código de clase.',
@@ -75,7 +75,7 @@ const extendedTranslations: Record<string, string> = {
   'Open the Arcade': 'Abrir el salón recreativo', 'Open Arcade': 'Abrir salón recreativo', 'Arcade admission costs': 'La entrada cuesta',
   'Do math to unlock play': 'Practica matemáticas para desbloquear tiempo de juego', 'Do math to unlock play time': 'Practica matemáticas para desbloquear tiempo de juego',
   'math time unlocked today': 'minutos de práctica de hoy', 'arcade time left': 'tiempo de juego restante', 'no coins or rewards': 'sin monedas ni premios',
-  'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.': 'El modo de juego gratis está activado: no se usan monedas ni se ganan boletos. La práctica de matemáticas desbloquea tiempo de juego.',
+  'Free Play is on: no Pet World coins or Arcade tickets. Math practice still unlocks play time.': 'El modo de juego gratis está activado: no se usan monedas ni se ganan boletos. La práctica de matemáticas desbloquea tiempo de juego.',
   'Today\'s arcade time is used up.': 'Ya se usó todo el tiempo de juego de hoy.', 'Leave game': 'Salir del juego', 'min left': 'min restantes',
   'No arcade time left today': 'No queda tiempo de juego hoy',
   'Choose a pet': 'Elige una mascota', 'Empty display slot': 'Espacio de exhibición vacío', 'Earn more in the café!': '¡Gana más en la cafetería!',
@@ -166,7 +166,7 @@ const moreTranslations: Record<string, string> = {
 };
 
 const studentScreenTranslations: Record<string, string> = {
-  'Pet Town': 'Pet Town', 'Opening Pet Town…': 'Abriendo Pet Town…', 'tips': 'propinas', 'tips powered up': 'propinas potenciadas',
+  'Pet World': 'Pet World', 'Opening Pet World…': 'Abriendo Pet World…', 'tips': 'propinas', 'tips powered up': 'propinas potenciadas',
   'Customers served': 'Clientes atendidos', 'Speedy service earns a bigger tip': 'Atender rápido da una propina mayor',
   'No speed bonus, but take your time!': 'No hay bono por rapidez, ¡pero tómate tu tiempo!', 'Speed bonus running': 'Bono por rapidez activo',
   'Close the café early': 'Cerrar la cafetería temprano', 'Back to town': 'Volver al pueblo', 'Leave the game': 'Salir del juego',
@@ -174,12 +174,12 @@ const studentScreenTranslations: Record<string, string> = {
   'Put it on display': 'Poner en exhibición', 'Go to the shop': 'Ir a la tienda', 'Keep playing': 'Seguir jugando',
   'The café is closed for the day': 'La cafetería cerró por hoy', 'Another shift': 'Otro turno', 'Perfect orders:': 'Pedidos perfectos:',
   'No mistakes today. Amazing!': '¡Hoy no hubo errores! ¡Increíble!', 'Keep practicing': 'Sigue practicando',
-  'Open the progress report': 'Abrir el informe de progreso', 'Pet Town coins': 'Monedas de Pet Town',
+  'Open the progress report': 'Abrir el informe de progreso', 'Pet World coins': 'Monedas de Pet World',
   'Unlock every station and shop': 'Desbloquear todas las estaciones y tiendas', 'Progress reset': 'Progreso restablecido',
   'Station quiz passed': 'Prueba de estación aprobada', 'Unit Test passed': 'Examen de unidad aprobado',
   'Answer saved': 'Respuesta guardada', 'Your teacher has not opened the Arcade.': 'Tu docente no ha abierto el salón recreativo.',
   'Do math to unlock play time': 'Practica matemáticas para desbloquear tiempo de juego', 'Your teacher has not enabled any Arcade games.': 'Tu docente no ha activado juegos recreativos.',
-  'Free Play is on: no Pet Town coins or Arcade tickets. Math practice still unlocks play time.': 'El juego gratis está activado: no se usan monedas ni se ganan boletos. La práctica de matemáticas desbloquea tiempo de juego.',
+  'Free Play is on: no Pet World coins or Arcade tickets. Math practice still unlocks play time.': 'El juego gratis está activado: no se usan monedas ni se ganan boletos. La práctica de matemáticas desbloquea tiempo de juego.',
   'Coins': 'Monedas', 'seconds': 'segundos', 'orders': 'pedidos', 'customers': 'clientes',
   'Easy': 'Fácil', 'Medium': 'Medio', 'Hard': 'Difícil', 'Done': 'Listo', 'Yes!': '¡Sí!', 'Nice!': '¡Bien!', 'You got it!': '¡Lo lograste!',
   'Choose a pet': 'Elige una mascota', 'Close': 'Cerrar', 'Switch player': 'Cambiar de estudiante', 'Not you? Switch player': '¿No eres tú? Cambiar de estudiante',
@@ -215,7 +215,7 @@ const translations = {...coreTranslations, ...extendedTranslations, ...moreTrans
 const dynamicTranslations: [RegExp, (match: RegExpMatchArray) => string][] = [
   [/^Day (\d+)$/, match => `Día ${match[1]}`],
   [/^(\d+) orders served$/, match => `${match[1]} pedidos atendidos`],
-  [/^(.+)'s Pet Town$/, match => `Pet Town de ${match[1]}`],
+  [/^(.+)'s Pet World$/, match => `Pet World de ${match[1]}`],
   [/^Your (.+)$/, match => `Tu ${match[1]}`],
   [/^Progress report: (.+)$/, match => `Informe de progreso: ${match[1]}`],
   [/^Quizzes and tests for (.+)$/, match => `Pruebas y exámenes de ${match[1]}`],

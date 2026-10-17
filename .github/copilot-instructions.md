@@ -16,7 +16,7 @@ The code in this repo was built and tested over many sessions. It includes 14 pr
 
 ## What this project is
 
-Pet Town: 6th grade math practice games (Khan Academy order), with step-level diagnostics for teachers.
+Pet World: 6th grade math practice games (Khan Academy order), with step-level diagnostics for teachers.
 
 - **Game:** `index.html` + `src/game/game.js`. Students join with class code + name + PIN.
 - **Teacher app:** `teacher.html` + `src/teacher/main.ts` + `src/teacher/report.ts`.

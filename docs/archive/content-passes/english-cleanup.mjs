@@ -1,4 +1,4 @@
-// English (Nouns, Verbs): fixes from the blind answer-key check (docs: Pet Town Question Bank Roadmap, quality pass, October 2026).
+// English (Nouns, Verbs): fixes from the blind answer-key check (docs: Pet World Question Bank Roadmap, quality pass, October 2026).
 // Run from the repo root:  node docs/english-cleanup.mjs
 // A reviewer answered all 294 English questions without the key and matched it on every one. This fixes the 7 it flagged:
 //   3 sets of wrong answers (same ids), and 4 prompts made exact (new ids for those 4: team, flock of geese, the cat, "is").

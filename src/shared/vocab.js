@@ -1,6 +1,6 @@
-/* Pet Town Word Workshop (docs: VOCAB.md): the built-in word list, importing a list, and word mastery. No DOM here.
+/* Pet World Word Workshop (docs: VOCAB.md): the built-in word list, importing a list, and word mastery. No DOM here.
    Word entry: {w:'word', d:'kid-friendly definition', s:'example sentence with ___ where the word goes', set:'Set 1'}.
-   The built-in list is Pet Town's own: grade 4–6 academic words with our own definitions and sentences (never copied
+   The built-in list is Pet World's own: grade 4–6 academic words with our own definitions and sentences (never copied
    from a published program). Teachers (class game_settings.vocab) and parents (the save's vocab.home) add their own
    words, for example from a Wordly Wise lesson, and choose focus words; all words are in focus by default. */
 
@@ -126,7 +126,7 @@ export function validWord(entry){
    Headings put the words under them in a set: "Set: Lesson 4", "# Lesson 4", "Set 11:", "Lesson 4", "Unit 3: Ancient Egypt",
    or any short line ending in a colon. A heading can carry its words on the same line: "Set 11: abundant, scarce, fragile".
    Before any heading words go in "My words". Bullets and numbers at the start of a line ("1.", "•", "-", "[i]") are ignored.
-   A word with no meaning yet ("abundant", "abundant -", or a list like "abundant, scarce, fragile") takes Pet Town's meaning
+   A word with no meaning yet ("abundant", "abundant -", or a list like "abundant, scarce, fragile") takes Pet World's meaning
    if the built-in list has the word; otherwise it comes back in `missing` so the screen can ask for its meaning.
    To add the word "set" itself, write it with a dash: "set - a group of things that go together". */
 const BULLET = /^(?:[-*•▪◦·]+\s*|\d{1,3}[.)]\s*|\[[^\]\s]{0,3}\]\s*|\([a-z0-9]{1,3}\)\s+)/i;

@@ -9,7 +9,7 @@
 //   ffmpeg, a voice (Piper, or espeak-ng as a fallback), and Playwright's Chromium.
 // Options:
 //   --voice piper|espeak|silent   default: Piper if PIPER_MODEL is set, else espeak-ng; silent makes timed slides with no voice
-//   --url http://host:port        use a Pet Town that is already running instead of starting Vite here
+//   --url http://host:port        use a Pet World that is already running instead of starting Vite here
 //   --keep                        keep the slide pictures and sound files in videos/work/<key>
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, rmSync } from 'node:fs';
 import { join, extname, dirname, resolve } from 'node:path';
@@ -47,7 +47,7 @@ export function checkScript(script, file = 'script') {
       const n = (show.items || show.steps || []).length;
       if (scene.say.length !== n && scene.say.length !== n + 1) problems.push(`${where}: with a list of "say", give one per item (${n}), or one more for an opening line`);
     }
-    if (show.type === 'visual' && (typeof show.draw !== 'string' || !Array.isArray(show.args))) problems.push(`${where}: a visual needs "draw" (a Pet Town drawing) and "args"`);
+    if (show.type === 'visual' && (typeof show.draw !== 'string' || !Array.isArray(show.args))) problems.push(`${where}: a visual needs "draw" (a Pet World drawing) and "args"`);
     if (show.type === 'image' && (typeof show.src !== 'string' || !existsSync(show.src))) problems.push(`${where}: image "src" must be a file in the repo`);
     if (show.type === 'image' && !show.credit) problems.push(`${where}: images need a "credit" (public domain or our own)`);
     if (show.type === 'check') {
@@ -92,7 +92,7 @@ function speak(text, wav) {
   return duration(wav);
 }
 
-/* ---------- slides (rendered by Pet Town itself, so math pictures match practice) ---------- */
+/* ---------- slides (rendered by Pet World itself, so math pictures match practice) ---------- */
 const SLIDE_CSS = `
 #pt-slide{position:fixed; inset:0; z-index:2147483647; width:${W}px; height:${H}px; box-sizing:border-box; padding:56px 72px 64px; background:#FFF8EE; color:#3B2724;
   font-family:'Grandstander','Patrick Hand',system-ui,sans-serif; display:flex; flex-direction:column; overflow:hidden}
@@ -126,7 +126,7 @@ body > *:not(#pt-slide){visibility:hidden !important}
 #pt-slide .pt-opt.pt-fade{opacity:.35}
 #pt-slide .pt-pause{font-size:26px; margin-top:20px; color:#8A6F66}`;
 
-/* Runs inside the Pet Town page and draws one frame as #pt-slide. */
+/* Runs inside the Pet World page and draws one frame as #pt-slide. */
 function drawSlide({ frame, meta }) {
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let style = document.getElementById('pt-slide-css');
@@ -144,14 +144,14 @@ function drawSlide({ frame, meta }) {
   else if (s.type === 'image') body = h2(s.heading) + `<div class="pt-img"><img src="${meta.image}" alt=""></div><p class="pt-credit">${esc(s.credit)}</p>`;
   else if (s.type === 'visual') {
     const draw = window.PetTownDraw && window.PetTownDraw[s.draw];
-    if (!draw) throw new Error(`Pet Town has no drawing called "${s.draw}". Use one of: ${Object.keys(window.PetTownDraw || {}).join(', ')}`);
+    if (!draw) throw new Error(`Pet World has no drawing called "${s.draw}". Use one of: ${Object.keys(window.PetTownDraw || {}).join(', ')}`);
     body = h2(s.heading) + `<div class="pt-visual"><div class="pt-scale"><div class="board pt-board">${draw(...s.args)}</div></div></div>` + (s.caption ? `<p class="pt-caption">${esc(s.caption)}</p>` : '');
   } else if (s.type === 'check') {
     const q = meta.question, letters = ['A', 'B', 'C', 'D'];
     body = `<h2 class="pt-h2">Your turn</h2><p class="pt-q">${esc(q.prompt)}</p><div class="pt-opts">${q.options.map((o, i) =>
       `<div class="pt-opt ${n >= 1 ? (i === q.answer ? 'pt-right' : 'pt-fade') : ''}"><b>${letters[i]}</b>${esc(o)}</div>`).join('')}</div>${n >= 1 ? '' : '<p class="pt-pause">⏸ Pause the video and choose.</p>'}`;
   }
-  el.innerHTML = body + `<div class="pt-tag">Pet Town lesson${meta.voice === 'recorded' ? '' : ' · computer voice'}</div><div class="pt-brand">${esc(meta.title)}</div>`;
+  el.innerHTML = body + `<div class="pt-tag">Pet World lesson${meta.voice === 'recorded' ? '' : ' · computer voice'}</div><div class="pt-brand">${esc(meta.title)}</div>`;
   /* grow a drawing to fill the space it has */
   const box = el.querySelector('.pt-visual'), inner = el.querySelector('.pt-visual > .pt-scale');
   if (box && inner) { const r = inner.getBoundingClientRect(), k = Math.min(2.6, (box.clientWidth - 20) / r.width, (box.clientHeight - 10) / r.height); inner.style.transform = `scale(${Math.max(1, k)})`; }
@@ -203,7 +203,7 @@ if (!base) {
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 await page.goto(`${base.replace(/\/$/, '')}/index.html?videoSlides=1`);
-await page.waitForFunction(() => window.PetTownDraw, null, { timeout: 30000 }).catch(() => fail('Pet Town did not load in the browser (no PetTownDraw). Is the dev server running?'));
+await page.waitForFunction(() => window.PetTownDraw, null, { timeout: 30000 }).catch(() => fail('Pet World did not load in the browser (no PetTownDraw). Is the dev server running?'));
 await page.evaluate(() => document.fonts.ready);
 
 mkdirSync('videos/out', { recursive: true });

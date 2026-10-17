@@ -1,7 +1,7 @@
-/* Pet Town question types beyond plain multiple choice (docs: QUESTION-TYPES.md).
+/* Pet World question types beyond plain multiple choice (docs: QUESTION-TYPES.md).
    No DOM here: the game draws the questions, this file checks answers, describes them, and gives them stable ids.
 
-   Scored by Pet Town, mixed into practice, block quizzes and unit tests like any other question:
+   Scored by Pet World, mixed into practice, block quizzes and unit tests like any other question:
      multi  Select all that apply     {type:'multi', prompt, options:[…], answers:[i, …]}
      two    Part A, then Part B       {type:'two', prompt, options:[…], answer:i, partB:{prompt, options:[…], answer:i}}
      order  Put in order              {type:'order', prompt, items:[first, …, last]}           (shown shuffled)

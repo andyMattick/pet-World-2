@@ -4,7 +4,7 @@
   "course": "Biology Unit 1: Life Sciences",
   "goal": "Students can say what a cell is, put the levels from cell to organism in order, and name what four cell parts do.",
   "scenes": [
-    { "say": "Welcome to Pet Town. In this lesson you will find out what cells are, how they team up to build a whole living thing, and what a few important cell parts do.",
+    { "say": "Welcome to Pet World. In this lesson you will find out what cells are, how they team up to build a whole living thing, and what a few important cell parts do.",
       "show": { "type": "title", "text": "Cells: the building blocks of life", "sub": "Biology Unit 1 · Cellular organization and cell parts" } },
     { "say": [
         "Here is the big idea. Every living thing is made of cells. A cell is the smallest unit that is alive.",
@@ -64,7 +64,7 @@
     { "say": [
         "Let's sum up. Every living thing is made of one or more cells.",
         "Cells build tissues, tissues build organs, organs build organ systems, and systems build the organism.",
-        "Each cell part has a job, from the membrane on the outside to the nucleus in the middle. Now go practice in Pet Town!"
+        "Each cell part has a job, from the membrane on the outside to the nucleus in the middle. Now go practice in Pet World!"
       ],
       "show": { "type": "bullets", "heading": "What to remember", "items": [
         "All living things are made of cells",

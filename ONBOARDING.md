@@ -1,6 +1,6 @@
-# Getting started with Pet Town
+# Getting started with Pet World
 
-There are two ways to set up Pet Town. Both use the same website and the same teacher app.
+There are two ways to set up Pet World. Both use the same website and the same teacher app.
 
 | You are… | Use | Who checks the work |
 |---|---|---|
@@ -9,7 +9,7 @@ There are two ways to set up Pet Town. Both use the same website and the same te
 
 In both, the student signs in with a **class code, their name and a PIN**. Their work saves to the server, so they can switch between a tablet and a computer.
 
-You'll need two addresses: the **game** (your Pet Town site) and the **teacher app** (the same site with `/teacher` at the end, for example `pet-world-2.vercel.app/teacher`). The game's sign-in screen also has a **Teacher or parent? Open the dashboard** link.
+You'll need two addresses: the **game** (your Pet World site) and the **teacher app** (the same site with `/teacher` at the end, for example `pet-world-2.vercel.app/teacher`). The game's sign-in screen also has a **Teacher or parent? Open the dashboard** link.
 
 ---
 
@@ -63,7 +63,7 @@ Do Part A, steps 1 to 4, with these changes:
 On each device, open the game site and enter the class code, their name and the PIN.
 
 ### 3. Make your grown-up PIN (in the game)
-The first time you open a grown-up area, Pet Town asks you to **make a 4-digit grown-up PIN**. The grown-up areas are Town Hall → **Open the progress report**, and Word Workshop → **For grown-ups**. The grown-up PIN is separate from your child's sign-in PIN, so don't share it.
+The first time you open a grown-up area, Pet World asks you to **make a 4-digit grown-up PIN**. The grown-up areas are Town Hall → **Open the progress report**, and Word Workshop → **For grown-ups**. The grown-up PIN is separate from your child's sign-in PIN, so don't share it.
 
 ### 4. Check work right where your child is
 You don't have to go to the teacher app:
@@ -82,18 +82,18 @@ The teacher app's Dashboard and your child's page show practice time, skills, mi
 
 ## Good habits (everyone)
 
-- **Use one device at a time.** Before switching devices, let Pet Town sit for a few seconds after the last answer so it can save. Pet Town merges projects, reading notes and written answers from two devices. Practice counts still use the most recent save.
-- **Don't keep Pet Town open in two tabs** on the same student.
+- **Use one device at a time.** Before switching devices, let Pet World sit for a few seconds after the last answer so it can save. Pet World merges projects, reading notes and written answers from two devices. Practice counts still use the most recent save.
+- **Don't keep Pet World open in two tabs** on the same student.
 - **The grown-up PIN is for grown-ups.** Anything checked with it counts as checked.
 
 ## Without a server (rare)
 
-A copy of Pet Town running without Supabase (no `.env`) works in **local mode**:
+A copy of Pet World running without Supabase (no `.env`) works in **local mode**:
 - There's a name screen instead of a class code, and no teacher app.
 - Progress is saved only in that one browser.
 - The progress report then has **Unlock every station** and **Show Khan Academy links** switches.
 
-Use this only for trying Pet Town out. A class of one (Part B) is better for real use.
+Use this only for trying Pet World out. A class of one (Part B) is better for real use.
 
 ## More help
 

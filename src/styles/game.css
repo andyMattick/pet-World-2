@@ -848,7 +848,7 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 }
 @media (prefers-reduced-motion: reduce){.role-stage *,.role-stage{animation:none !important}.stage-portal{display:none}}
 
-/* Pet Town lesson videos (docs: LESSON-VIDEOS.md) */
+/* Pet World lesson videos (docs: LESSON-VIDEOS.md) */
 .lesson-video-btn{display:inline-block; margin:6px 0; text-align:left}
 .lesson-video-btn.small{display:block; margin:4px 0 6px}
 .lesson-video-min{font-weight:600; opacity:.8}

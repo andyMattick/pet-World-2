@@ -165,7 +165,7 @@ export function saveLeaderboardEntry(entry: Omit<LeaderboardEntry, 'id' | 'times
   // Update profile lifetime stats
   updateProfileStats(entry.mode, entry.score);
 
-  // Pet Town Arcade: when this runs inside the Arcade frame (?arcadeRun=...), report each finished game
+  // Pet World Arcade: when this runs inside the Arcade frame (?arcadeRun=...), report each finished game
   const arcadeRunId = new URLSearchParams(window.location.search).get('arcadeRun');
   if (arcadeRunId && window.parent !== window) {
     window.parent.postMessage({ type: 'arcade:round-complete', gameId: 'triad-arcade', runId: arcadeRunId, roundId: newEntry.id, score: Math.max(0, Math.floor(entry.score) || 0) }, window.location.origin);

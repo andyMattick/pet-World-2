@@ -1,4 +1,4 @@
-# Pet Town
+# Pet World
 
 6th grade math practice games with step-level diagnostics for teachers. The Pet Café covers Khan Academy's 6th grade Unit 1 (Ratios), with 14 skills across 4 stations. Every problem is split into **idea** steps and **arithmetic** steps, 15 common mix-ups are detected, and missed times-table facts trigger a practice pop-up.
 
@@ -81,7 +81,7 @@ Events are queued in localStorage and sent in batches, so a dropped connection l
 
 ## Moving an existing town in
 
-The claude.ai version of Pet Town has a **Make a backup code** button at Town Hall. Sign in to the new game, go to **Town Hall → Restore from a backup code**, and paste the code. The name and class come from the roster, and everything else comes from the code.
+The claude.ai version of Pet World has a **Make a backup code** button at Town Hall. Sign in to the new game, go to **Town Hall → Restore from a backup code**, and paste the code. The name and class come from the roster, and everything else comes from the code.
 
 ## Adding a shop
 

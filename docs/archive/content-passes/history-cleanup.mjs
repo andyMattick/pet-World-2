@@ -1,4 +1,4 @@
-// History Units 1-4: clean up the answer choices (docs: Pet Town Question Bank Roadmap, quality pass, October 2026).
+// History Units 1-4: clean up the answer choices (docs: Pet World Question Bank Roadmap, quality pass, October 2026).
 // Run from the repo root:  node docs/history-cleanup.mjs
 // What changes: mostly the WRONG answer choices of 124 questions, so the right answer is no longer the longest choice and
 // wrong answers no longer give themselves away with words like "only", "always", "never" or "every". Prompts, right

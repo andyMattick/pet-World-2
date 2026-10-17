@@ -5,7 +5,7 @@
 ## Owner decisions
 
 - Paintings are kept in a **database table** (`art_paintings`, migration 9), up to 20 per student. Without a class sign-in (local mode) the save keeps 4.
-- New **colors and stencils come into the shop as she passes unit tests** (any subject), and she buys them with Pet Town coins.
+- New **colors and stencils come into the shop as she passes unit tests** (any subject), and she buys them with Pet World coins.
 - Prices: **frames 50**, **color packs 30**, **stencils 40**.
 
 ## How it works

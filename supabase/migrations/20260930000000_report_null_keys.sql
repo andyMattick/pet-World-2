@@ -1,4 +1,4 @@
--- Pet Town: fix "field name must not be null" on the teacher dashboard.
+-- Pet World: fix "field name must not be null" on the teacher dashboard.
 -- Run AFTER 20260929000000_practice_time.sql. It replaces class_report() only; no tables change.
 --
 -- The report groups practice pop-ups by times table. Pop-ups that aren't times tables (place value,

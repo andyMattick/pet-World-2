@@ -1,4 +1,4 @@
-# Opens every Khan Academy link Pet Town shows, every Monday (docs: KHAN.md, "Checking links").
+# Opens every Khan Academy link Pet World shows, every Monday (docs: KHAN.md, "Checking links").
 # If a link is dead, this run fails and GitHub emails you. Run it any time from the Actions tab → Khan links → Run workflow.
 name: Khan links
 on:

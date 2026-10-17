@@ -34,7 +34,7 @@ Each 15 seconds of active time is credited to whatever is on screen:
 | Word Workshop | Word Workshop |
 | A History lesson, quiz, test or project | History |
 | A Biology lesson, quiz, test, project or lab | Science |
-| The Arcade (clicks inside a game don't reach Pet Town, so most game time isn't counted) | Arcade |
+| The Arcade (clicks inside a game don't reach Pet World, so most game time isn't counted) | Arcade |
 | The town map, the pet room, the sticker book, menus, the progress report | Around town |
 
 - Saved in the town as `S.subjectTime = {'YYYY-MM-DD': {math: seconds, ...}}`, the student's own dates, the last 60 days. Two devices merge by keeping the larger total for each day and subject.
@@ -127,7 +127,7 @@ Commit: `Verify covers practice time`
 
 ## Two devices
 
-A student's town is one saved record, so two devices could save over each other. Pet Town merges instead:
+A student's town is one saved record, so two devices could save over each other. Pet World merges instead:
 
 - **When a town opens** (`enterAs`), it loads the newer save. Then `mergeWork` and `mergeProgress` bring in what the other copy has:
   - **Work:** projects, Reading Log chapters, written answers, and flagged and looked-up words.

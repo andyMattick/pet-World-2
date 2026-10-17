@@ -1,4 +1,4 @@
-# Pet Town roadmap
+# Pet World roadmap
 
 Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 
@@ -124,7 +124,7 @@ Each shop's plan file has the stations, skills, steps, mix-ups, and the stress-t
 
 Quickest first. Each gets its own plan file before it's built. **Still open:** where this list goes relative to 3p (owner decision).
 
-- [ ] F1. Vocab import: headings like `Set 11:` and `Lesson 4`, bullets and numbers ignored, and words pasted with no meaning yet (Pet Town fills in its own meaning when it has the word; the rest go back in the box as `word - `)
+- [ ] F1. Vocab import: headings like `Set 11:` and `Lesson 4`, bullets and numbers ignored, and words pasted with no meaning yet (Pet World fills in its own meaning when it has the word; the rest go back in the box as `word - `)
 - [x] F2. Archive accepted work (teacher app, student page): accepted written answers, verified projects and reading chapters, and accepted reading-quiz essays fold into a closed ✅ Accepted section at the bottom of their tab. Sent-back work stays until it's turned in again
 - [x] F3. Suggested vocab words: the teacher app's 📌 flagged words get a Dismiss button (it drops off the students' flagged lists too) and an editable example sentence, prefilled from where the word was found; a sentence typed with the word itself gets ___ in its place (also on the grown-up PIN screen)
 - [x] F4. Parent sign-in: a "Waiting for approval" screen (with Check again and Sign out) when a signed-in account isn't approved yet, using `is_approved_parent()`, the Supabase function behind every classes policy. Still to do: an admin approval screen, and saving the approval setup as a migration file so it lives in the repo
@@ -132,7 +132,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F6. History unit 1: 🎨 Cave Painting Studio, a project next to the Source Investigator (open from the start). Round 1: paint on a cave wall in earth colors with a finger or mouse, hand stencils, undo, and send it with no words. The teacher writes what they think it shows (teacher app, Projects tab: Send my guess). Round 2: the student compares the guess with what they meant and what would make it clearer, and names something a cave painting could never show a historian; then the teacher verifies. The picture is a small JPEG saved in the project's answers (no new database setup). The guess needs the hosted teacher app; in local mode a grown-up can only verify the painting
 - [x] F7. Extras for one student (teacher app, student page, 📋 Extras): a Fact Sprint with chosen skills and times tables (specific tables or a mix), or a Word Workshop exercise (practice cards, word sprint, spell it), for a set number of minutes a day. They show on the student's town page as "📋 Today's extras" with minutes done and a ✅, and reset each day. Saved in quiz_overrides as `extras` (no migration). The daily plan (F10) will pick these up
 - [x] F8. Daily minutes per subject (teacher app, student page, 🎯 Time goals): an every-day number for each subject and changes for single days (0 too). The student sees "🎯 Today's time goals" on the town page with active minutes done and a ✅. Saved in quiz_overrides as `subjectGoals` (no migration needed after all)
-- [x] F9. The Ledger in Pet Town, automated from what she does in the app (`LEDGER.md`, 8 steps): a day log with time per lesson and every score, "I'm done for today" with the day's summary, a record in Supabase, outside work, importing the old Ledger files, and courses with suggested grades the grown-up can override or add to. Feeds F10 and F11
+- [x] F9. The Ledger in Pet World, automated from what she does in the app (`LEDGER.md`, 8 steps): a day log with time per lesson and every score, "I'm done for today" with the day's summary, a record in Supabase, outside work, importing the old Ledger files, and courses with suggested grades the grown-up can override or add to. Feeds F10 and F11
 - [x] F10. Student daily plan: assigned work linked to the real activities, marked ✓ done, ⏳ waiting for feedback, or to do; time per subject from Practice time; a "finished" summary of time and specific work to confirm before it goes to the Ledger
 - [x] F11. Year transcript built from the Ledger (LEDGER.md step 7: the 📜 Transcript tab)
 - [ ] F12. More make-it-in-the-app History activities like the cave painting (plan: `HISTORY-ACTIVITIES.md`). Build order:
@@ -140,9 +140,9 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
   - [x] F12b. ✍️ Scribe School (Units 3–4): cuneiform on clay, hieroglyphs on papyrus, Shang oracle bones and Greek letters, saved to the Art Studio gallery.
   - [ ] F12c. 🗺️ The Lost Treasures Chase (Units 4–5): an original detective chase (not Carmen Sandiego), with Silk Road trading in Unit 5. The owner may build it outside this repo.
   - [ ] Ideas for later, by unit (details in `HISTORY-ACTIVITIES.md`): museum curator (Unit 1); forager or farmer for a day (Unit 2, may be built outside this repo); build a river city (Unit 3); coin designer and road builder (Unit 4); Silk Road trading (Unit 5); plan a voyage (Unit 6); timeline sort and primary source detective (any unit).
-- [x] F13. 🎨 Art Studio and gallery: paint any time on the cave-wall canvas (separate from the History project); save paintings to a gallery (about 8 to 10, kept in the save), reopen or delete them; frame one for the Pet Room for Pet Town coins (about 50) as a placeable decoration. More colors and stencils to buy with coins as they become available (for example, opened by later History units). The project painting gets "Save to my gallery" next to Send to teacher
+- [x] F13. 🎨 Art Studio and gallery: paint any time on the cave-wall canvas (separate from the History project); save paintings to a gallery (about 8 to 10, kept in the save), reopen or delete them; frame one for the Pet Room for Pet World coins (about 50) as a placeable decoration. More colors and stencils to buy with coins as they become available (for example, opened by later History units). The project painting gets "Save to my gallery" next to Send to teacher
 - [x] F14. 📋 More detail in "I'm done for today": list the skills she mastered that day and the tests and quizzes she passed (with scores), on her day screen and in her saved Ledger day, so the teacher Ledger and transcript (F9 to F11) can use them.
-- [ ] F15. 🧠 Brain Games: a new section in Pet Town that opens brain games built outside Pet Town (by link or embedded), with time counted like any other place so it shows in the day log and Ledger.
+- [ ] F15. 🧠 Brain Games: a new section in Pet World that opens brain games built outside Pet World (by link or embedded), with time counted like any other place so it shows in the day log and Ledger.
 
 ## Database files, in the order they were run
 
@@ -201,7 +201,7 @@ The owner's preferred order remains **My Pet Room and Dress-up first**, then the
 🏡 House tours. A class gallery where kids visit each other's rooms and leave a ❤️ or a stamp like "cute fountain!" Stamps are picked from a set list, with no typing, so nothing needs moderating. Being seen is a strong reason to keep decorating.
 2. The Arcade: games that spend coins and award arcade-only prizes
 
-Pet Town coins stay the reward for math. Arcade admission costs 100 coins once per day; after admission, the student can play for one minute per completed math practice order that day. No additional coins are charged between games. Arcade tickets are a separate currency for arcade-only prizes and never convert to Pet Town coins.
+Pet World coins stay the reward for math. Arcade admission costs 100 coins once per day; after admission, the student can play for one minute per completed math practice order that day. No additional coins are charged between games. Arcade tickets are a separate currency for arcade-only prizes and never convert to Pet World coins.
 
 🏴‍☠️ Corsair's Cove: a maze chase where math refills the ship's ammo.
 🔨 Whack-a-Mole Stats Lab: a timed round with score statistics.
@@ -218,7 +218,7 @@ Pet Town coins stay the reward for math. Arcade admission costs 100 coins once p
 - 🕵️ Squad Sneak: guide a stick-figure squad past patrols; solve math to open routes or use gadgets.
 - ⚓ Another original maze-chase game in the Corsair's Cove spirit.
 
-Games can award arcade tickets or trophies, never Pet Town coins, so arcade play cannot replace math as a way to earn coins or play time.
+Games can award arcade tickets or trophies, never Pet World coins, so arcade play cannot replace math as a way to earn coins or play time.
 
 3. Reasons to come back tomorrow
 ✈️ Pet Trips. Send a pet on a trip, like the beach or the mountains. It comes back after a real day with a postcard for a travel scrapbook. The postcards are fixed, not a random prize draw.
@@ -226,8 +226,8 @@ Games can award arcade tickets or trophies, never Pet Town coins, so arcade play
 🎉 Class Party Jar. Everyone can drop coins in a shared jar. When it's full, the whole class unlocks something, like confetti in the town or a party hat for every pet. You could pair it with a real classroom reward.
 A few guardrails I'd build in
 No random paid prizes, so nothing like loot boxes for kids.
-Math practice is the only way to earn Pet Town coins and unlock arcade minutes.
-Arcade tickets cannot pay admission or be converted to Pet Town coins.
+Math practice is the only way to earn Pet World coins and unlock arcade minutes.
+Arcade tickets cannot pay admission or be converted to Pet World coins.
 Short play sessions, with teacher controls for the arcade and its daily limit.
 Everything stays out of the way during quizzes.
 
@@ -235,7 +235,7 @@ Everything stays out of the way during quizzes.
 
 Build steps 1 to 4 in `PET-ROOM.md` are done. What is left, in order:
 
-1. **Owner decision first: how secure do tickets need to be?** Today tickets, like Pet Town coins, live in the student's saved state, which the student's own browser writes. Two options:
+1. **Owner decision first: how secure do tickets need to be?** Today tickets, like Pet World coins, live in the student's saved state, which the student's own browser writes. Two options:
    - **A. Keep tickets client-side (small).** Same trust level as coins. Add only sanity limits in `normalize` (tickets can't exceed a ceiling, `ticketsEarnedToday` can't exceed the class cap). Turn on the ticket wearables and furniture.
    - **B. Server-side tickets (medium).** New migration with an `arcade_rounds` table (student, game, run id, score, tickets, day) and an `arcade_award(run_id, game, score)` function that checks the run id is new, recomputes tickets from the class settings, and enforces the daily cap; the game shows the server's ticket balance. Ticket purchases go through a second function. This is `PET-ROOM.md` step 5 as written.
 2. **Browser review** (`PET-ROOM.md` step 6) at iPhone SE size and on a laptop: room dragging and keyboard nudging, stickers in and out of the room, dress-up positions, Free Play vs paid mode, admission once a day, minutes per completed order, ticket cap, prize shop, and both games inside the Arcade frame.

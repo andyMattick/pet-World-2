@@ -40,7 +40,7 @@ const skillsStart = registry.indexOf('export const SKILLS'), skillsBlock = regis
 const skillIds = new Set([...skillsBlock.matchAll(/^\s{2}(\w+):\s*\{/gm)].map(m => m[1]));
 const lesson = key.match(/^(\w+):([\w-]+)(?::(\d{1,2}))?$/), math = key.match(/^math:(\w+)(?::(\d{1,2}))?$/);
 const known = math ? (math[2] ? shopIds.has(math[1]) : skillIds.has(math[1])) : !!lesson && courseIds.has(lesson[1]) && groupIds.has(lesson[2]);
-if (!known && !remove) fail(`"${key}" is not a lesson Pet Town knows. Use a key like bio1:cells, history2:tools:1, math:cafe:2 or math:<skillId>.`);
+if (!known && !remove) fail(`"${key}" is not a lesson Pet World knows. Use a key like bio1:cells, history2:tools:1, math:cafe:2 or math:<skillId>.`);
 
 if (remove) {
   if (!list[key]) fail(`${key} has no video to remove.`);

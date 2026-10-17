@@ -1,4 +1,4 @@
-// Biology Unit 1: clean up the answer choices (docs: Pet Town Question Bank Roadmap, quality pass, October 2026).
+// Biology Unit 1: clean up the answer choices (docs: Pet World Question Bank Roadmap, quality pass, October 2026).
 // Run from the repo root:  node docs/bio1-cleanup.mjs
 // What changes: only the WRONG answer choices of 88 questions, so the right answer is no longer the longest choice
 // and wrong answers no longer give themselves away with words like "only", "always" or "never". Prompts, the right

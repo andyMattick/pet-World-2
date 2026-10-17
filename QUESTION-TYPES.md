@@ -1,6 +1,6 @@
 # Question types and written answers
 
-Pet Town lessons used to ask only multiple-choice questions. This adds six question types that Pet Town scores on the spot, and two kinds of written answers that a grown-up reads. Roadmap Phase 5: "More question types."
+Pet World lessons used to ask only multiple-choice questions. This adds six question types that Pet World scores on the spot, and two kinds of written answers that a grown-up reads. Roadmap Phase 5: "More question types."
 
 ## Scored right away
 

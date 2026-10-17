@@ -10,7 +10,7 @@ Because the notes are written by the student, **a grown-up checks every chapter'
 
 - Questions are built by templates in the game (no AI). Nothing the student writes leaves the app, and it works in local mode.
 - Verification: hosted classes use the teacher app (whoever runs the class: the teacher, or a parent who made an at-home class). Local mode uses a 4-digit grown-up PIN in the progress report.
-- Reading quizzes never award Pet Town coins (math stays the only way to earn coins).
+- Reading quizzes never award Pet World coins (math stays the only way to earn coins).
 
 ## How it works
 
