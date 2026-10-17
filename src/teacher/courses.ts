@@ -57,16 +57,17 @@ export function shownGrade(row: CourseRow) {
   const n = gradeNumber(row.grade);
   return n != null && /^\d/.test(row.grade.trim()) ? gradeText(n) : row.grade;
 }
+const dayOf = (t: number) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 
 /* best score on each quiz and unit test, as percents */
-function petTownScores(r: CourseStudent, store: string) {
+function petTownScores(r: CourseStudent, store: string, inRange: (day: string) => boolean = () => true) {
   const tests: number[] = [], quizzes: number[] = [];
   let units = 0;
   if (store === 'math') {
     const best: Record<string, { pct: number; kind: string; passed: boolean }> = {};
     for (const a of r.qz || []) {
-      if (!a.total) continue;
+      if (!a.total || !inRange(dayOf(a.t))) continue;   // math quizzes and tests have dates; the other subjects' don't
       const key = `${a.shop}:${a.kind === 'test' ? 'test' : a.station}`, pct = a.score * 100 / a.total;
       if (!best[key] || pct > best[key].pct) best[key] = { pct, kind: a.kind, passed: a.passed || !!best[key]?.passed };
       else if (a.passed) best[key].passed = true;
@@ -97,7 +98,7 @@ export function computeCourses(r: CourseStudent, settingsRaw: unknown, data: Led
     return { ...row, name: o.name?.trim() || row.defaultName, grade: (o.grade || '').trim(), overridden: !!(o.grade || '').trim(), off: !!o.off };
   };
   const rows: CourseRow[] = PET_TOWN.map(p => {
-    const t = p.time.reduce((a, id) => a + (secs[id] || 0), 0), sc = petTownScores(r, p.store), daily = t >= 60 ? 100 : null;
+    const t = p.time.reduce((a, id) => a + (secs[id] || 0), 0), sc = petTownScores(r, p.store, inRange), daily = t >= 60 ? 100 : null;
     const parts = ([['test', sc.test], ['quiz', sc.quiz], ['daily', daily]] as [keyof typeof w, number | null][]).filter(([k, v]) => v != null && (+w[k] || 0) > 0);
     const total = parts.reduce((a, [k]) => a + (+w[k] || 0), 0);
     const suggested = total ? parts.reduce((a, [k, v]) => a + (v as number) * (+w[k] || 0), 0) / total : null;
