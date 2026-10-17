@@ -212,6 +212,26 @@ class StudentBackend {
     return error ? null : String(data);
   }
 
+  /** Art Studio gallery (ROADMAP F13, docs: ART-STUDIO.md): the student's paintings, newest first. */
+  async listPaintings(): Promise<{ id: string; title: string; image: string; at: number }[]> {
+    if (!this.sb || !this.me) return [];
+    const { data, error } = await this.sb.from('art_paintings').select('id,title,image,created_at').order('created_at', { ascending: false }).limit(20);
+    if (error || !data) return [];
+    return (data as { id: number; title: string; image: string; created_at: string }[]).map(p => ({ id: String(p.id), title: p.title, image: p.image, at: Date.parse(p.created_at) }));
+  }
+  /** Saves a painting; returns its id, 'full' when the gallery has 20 already, or null on error (offline, or before migration 9). */
+  async savePainting(title: string, image: string): Promise<string | null> {
+    if (!this.sb || !this.me) return null;
+    const { data, error } = await this.sb.rpc('save_painting', { p_title: title, p_image: image });
+    if (error) return /gallery full/i.test(error.message) ? 'full' : null;
+    return String(data);
+  }
+  async deletePainting(id: string): Promise<boolean> {
+    if (!this.sb || !this.me) return false;
+    const { error } = await this.sb.from('art_paintings').delete().eq('id', Number(id));
+    return !error;
+  }
+
   /** Called on every game save; writes to the server after a short pause. */
   saveSoon(state: Record<string, unknown>) {
     if (!this.me) return;

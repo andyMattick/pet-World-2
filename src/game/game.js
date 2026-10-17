@@ -139,6 +139,12 @@ function normalize(raw){
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.sprintPick)) s.sprintPick = ['times'];
     s.dayLog = normalizeDayLog(s.dayLog);   // the day log (docs: LEDGER.md)
+    s.art = Object.assign({colors:[], stencils:[], frames:0, hung:[]}, s.art && typeof s.art === 'object' ? s.art : {});   // Art Studio (F13)
+    s.art.colors = Array.isArray(s.art.colors) ? [...new Set(s.art.colors.filter(id => typeof id === 'string'))] : [];
+    s.art.stencils = Array.isArray(s.art.stencils) ? [...new Set(s.art.stencils.filter(id => typeof id === 'string'))] : [];
+    s.art.frames = Math.max(0, Math.min(50, Math.floor(+s.art.frames) || 0));
+    s.art.hung = (Array.isArray(s.art.hung) ? s.art.hung : []).filter(f => f && typeof f.id === 'string' && typeof f.painting === 'string' && Number.isFinite(+f.x) && Number.isFinite(+f.y)).slice(0, s.art.frames).map(f => ({id:f.id, painting:f.painting, x:Math.max(4, Math.min(96, +f.x)), y:Math.max(8, Math.min(88, +f.y))}));
+    s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
     s.planCarry.items = s.planCarry.items.filter(x => x && typeof x === 'object' && typeof x.id === 'string').slice(0, 30);
     if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
@@ -5022,7 +5028,7 @@ $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
 let currentShop = 'cafe';
-const SCREENS = ['loading','join','name','home','room','cafe','shift','sprint','book','library','summary','shop','hall','parent','arcade','vocab'];
+const SCREENS = ['loading','join','name','home','room','artstudio','cafe','shift','sprint','book','library','summary','shop','hall','parent','arcade','vocab'];
 function show(id){
   if (id !== 'room' && roomDrag) finishRoomDrag();
   if (id === 'arcade' && !arcadePolicy().enabled) { toast('Your teacher has not opened the Arcade.'); id = 'home'; }
@@ -5031,6 +5037,7 @@ function show(id){
   updateHeader();
   if (id === 'home') { renderHome(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-home').hidden) renderSentBack(); }); }
   if (id === 'room') renderPetRoom();
+  if (id === 'artstudio') renderArtStudio();
   if (id === 'cafe') renderShopFloor(currentShop);
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
   if (id === 'library') { renderEnglishLibrary(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-library').hidden && $('#libraryWrap .ela-layout')) renderEnglishLibrary(); }); }
@@ -5532,8 +5539,8 @@ function renderPetRoom(){
   };
   $('#roomWrap').innerHTML = `<div class="backrow"><h2>🏠 My Pet Room</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="room-layout"><div><div id="roomScene" class="room-scene" aria-label="Your room. Drag decorations or focus one and use the arrow keys to move it."><div id="roomBubble" class="room-bubble" role="status">${esc(petName())}: My room!</div><div class="room-rug" aria-hidden="true"></div>
-      <div class="room-pet" data-room-pet role="button" tabindex="0" aria-label="Tap ${esc(petName())}, your helper pet"><span id="roomPetArt" class="room-pet-art"><span class="room-pet-emoji" aria-hidden="true">${roomPetArt()}</span>${wear('hat')}${wear('eyes')}${wear('neck')}</span></div>${positions}</div>
-      <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div><h4 class="room-subhead">In the room</h4><div class="room-placed-list">${roomInventory || '<span class="muted">No stickers placed yet.</span>'}</div></div></div>
+      ${roomFramesHTML()}<div class="room-pet" data-room-pet role="button" tabindex="0" aria-label="Tap ${esc(petName())}, your helper pet"><span id="roomPetArt" class="room-pet-art"><span class="room-pet-emoji" aria-hidden="true">${roomPetArt()}</span>${wear('hat')}${wear('eyes')}${wear('neck')}</span></div>${positions}</div>
+      <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div><h4 class="room-subhead">In the room</h4><div class="room-placed-list">${roomInventory || '<span class="muted">No stickers placed yet.</span>'}</div>${roomFramesPanelHTML()}</div></div>
       <aside class="room-side"><section class="room-panel"><h3>Dress-up</h3><div class="wardrobe-grid">${ACCESSORIES.map(roomAccessoryCard).join('')}</div><p class="wardrobe-note">Coin items can be bought here. Practice rewards are earned by math. Arcade-ticket items unlock with the secure Arcade prize shop.</p></section></aside></div>`;
 }
 let roomDrag = null;
@@ -5544,10 +5551,11 @@ $('#roomWrap').addEventListener('pointerdown', event => {
     roomDrag = {kind:'accessory', id:accessory.dataset.roomAccessory, pointerId:event.pointerId, rect:petArt.getBoundingClientRect()};
     accessory.classList.add('dragging'); accessory.setPointerCapture(event.pointerId); return;
   }
-  const item = event.target.closest('[data-room-decor]'), scene = $('#roomScene');
+  const frame = event.target.closest('[data-room-frame]');
+  const item = frame || event.target.closest('[data-room-decor]'), scene = $('#roomScene');
   if (!item || !scene || event.button !== 0) return;
   event.preventDefault();
-  roomDrag = {kind:'decor', id:item.dataset.roomDecor, pointerId:event.pointerId, rect:scene.getBoundingClientRect()};
+  roomDrag = {kind:frame ? 'frame' : 'decor', id:frame ? frame.dataset.roomFrame : item.dataset.roomDecor, pointerId:event.pointerId, rect:scene.getBoundingClientRect()};
   item.classList.add('dragging'); item.setPointerCapture(event.pointerId);
 });
 $('#roomWrap').addEventListener('pointermove', event => {
@@ -5556,15 +5564,16 @@ $('#roomWrap').addEventListener('pointermove', event => {
   const x = Math.max(min, Math.min(max, 100 * (event.clientX - roomDrag.rect.left) / roomDrag.rect.width));
   const y = Math.max(min, Math.min(roomDrag.kind === 'accessory' ? 95 : 88, 100 * (event.clientY - roomDrag.rect.top) / roomDrag.rect.height));
   roomDrag.x = x; roomDrag.y = y;
-  const selector = roomDrag.kind === 'accessory' ? '[data-room-accessory]' : '[data-room-decor]';
+  const selector = roomDrag.kind === 'accessory' ? '[data-room-accessory]' : roomDrag.kind === 'frame' ? '[data-room-frame]' : '[data-room-decor]';
   const root = roomDrag.kind === 'accessory' ? $('#roomPetArt') : $('#roomScene');
-  const item = [...(root?.querySelectorAll(selector) || [])].find(button => button.dataset.roomAccessory === roomDrag.id || button.dataset.roomDecor === roomDrag.id);
+  const item = [...(root?.querySelectorAll(selector) || [])].find(button => button.dataset.roomAccessory === roomDrag.id || button.dataset.roomDecor === roomDrag.id || button.dataset.roomFrame === roomDrag.id);
   if (item) { item.style.left = `${x}%`; item.style.top = `${y}%`; roomDrag.x = x; roomDrag.y = y; }
 });
 function finishRoomDrag(event){
   if (!roomDrag || (event?.pointerId != null && roomDrag.pointerId !== event.pointerId)) return;
   if (Number.isFinite(roomDrag.x) && Number.isFinite(roomDrag.y)) {
     if (roomDrag.kind === 'accessory') S.accessoryPositions[roomDrag.id] = {x:roomDrag.x, y:roomDrag.y};
+    else if (roomDrag.kind === 'frame') { const f = S.art.hung.find(x => x.id === roomDrag.id); if (f) { f.x = roomDrag.x; f.y = roomDrag.y; } }
     else {
       const item = S.room.placements.find(place => place.id === roomDrag.id);
       if (item) { item.x = roomDrag.x; item.y = roomDrag.y; }
@@ -5572,8 +5581,8 @@ function finishRoomDrag(event){
     save();
   }
   const root = roomDrag.kind === 'accessory' ? $('#roomPetArt') : $('#roomScene');
-  const selector = roomDrag.kind === 'accessory' ? '[data-room-accessory]' : '[data-room-decor]';
-  [...(root?.querySelectorAll(selector) || [])].find(node => node.dataset.roomAccessory === roomDrag.id || node.dataset.roomDecor === roomDrag.id)?.classList.remove('dragging');
+  const selector = roomDrag.kind === 'accessory' ? '[data-room-accessory]' : roomDrag.kind === 'frame' ? '[data-room-frame]' : '[data-room-decor]';
+  [...(root?.querySelectorAll(selector) || [])].find(node => node.dataset.roomAccessory === roomDrag.id || node.dataset.roomDecor === roomDrag.id || node.dataset.roomFrame === roomDrag.id)?.classList.remove('dragging');
   roomDrag = null;
 }
 $('#roomWrap').addEventListener('pointerup', finishRoomDrag);
@@ -5618,6 +5627,154 @@ $('#roomWrap').addEventListener('click', event => {
   if (button.dataset.roomBuy) { roomObtainAccessory(button.dataset.roomBuy); return; }
   if (button.dataset.roomClaim) { roomObtainAccessory(button.dataset.roomClaim); return; }
   if (button.dataset.roomWear) roomWear(button.dataset.roomWear);
+});
+
+/* ---------- 🎨 Art Studio (ROADMAP F13, docs/ART-STUDIO.md) ----------
+   Paint any time on a cave wall or on paper, save paintings to a gallery (up to 20, kept in the art_paintings table;
+   4 in the save when there's no class sign-in), buy frames (50 coins) and hang paintings in the Pet Room. New colors
+   (30 coins) and stencils (40 coins) come into the shop as she passes unit tests. The History project's painting can be
+   saved to the gallery too. */
+const ART_FRAME_PRICE = 50, ART_COLOR_PRICE = 30, ART_STENCIL_PRICE = 40, ART_MAX = 20, ART_LOCAL_MAX = 4;
+const ART_COLOR_PACKS = [
+  {id:'earth', name:'More earth colors', need:0, colors:[['#6b4f2a', 'burnt sienna'], ['#7d7f4a', 'green earth']]},
+  {id:'sky', name:'Sky and sea', need:1, colors:[['#3b6fb6', 'blue'], ['#7cc3e8', 'sky blue']]},
+  {id:'garden', name:'Garden', need:2, colors:[['#3f8f3f', 'green'], ['#f2c94c', 'sunflower']]},
+  {id:'bright', name:'Bright', need:3, colors:[['#e0457b', 'pink'], ['#8e5bd8', 'purple'], ['#ff8c2b', 'orange']]},
+  {id:'night', name:'Night sky', need:4, colors:[['#1d2b53', 'midnight'], ['#ffffff', 'white'], ['#b8bcc4', 'silver']]}
+];
+const ART_STENCILS = [
+  {id:'star', name:'⭐ Star', need:1}, {id:'paw', name:'🐾 Paw', need:2}, {id:'leaf', name:'🍃 Leaf', need:3},
+  {id:'heart', name:'❤️ Heart', need:4}, {id:'sun', name:'☀️ Sun', need:5}
+];
+/* stencil shapes: paint is sprayed around them, like the hand stencil */
+function starPath(x, y){ const p = new Path2D(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 14 : 34, a = -Math.PI / 2 + i * Math.PI / 5; p[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r, y + Math.sin(a) * r); } p.closePath(); return p; }
+function pawPath(x, y){ const p = new Path2D(); p.ellipse(x, y + 10, 20, 17, 0, 0, 7); [[-22, -12], [-8, -24], [8, -24], [22, -12]].forEach(([dx, dy]) => { const t = new Path2D(); t.ellipse(x + dx, y + dy, 8, 10, 0, 0, 7); p.addPath(t); }); return p; }
+function leafPath(x, y){ const p = new Path2D(); p.moveTo(x, y - 36); p.quadraticCurveTo(x + 30, y, x, y + 36); p.quadraticCurveTo(x - 30, y, x, y - 36); p.closePath(); return p; }
+function heartPath(x, y){ const p = new Path2D(); p.moveTo(x, y + 30); p.bezierCurveTo(x - 44, y, x - 26, y - 34, x, y - 14); p.bezierCurveTo(x + 26, y - 34, x + 44, y, x, y + 30); p.closePath(); return p; }
+function sunPath(x, y){ const p = new Path2D(); p.arc(x, y, 18, 0, 7); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, r = new Path2D(); r.moveTo(x + Math.cos(a - 0.18) * 22, y + Math.sin(a - 0.18) * 22); r.lineTo(x + Math.cos(a) * 38, y + Math.sin(a) * 38); r.lineTo(x + Math.cos(a + 0.18) * 22, y + Math.sin(a + 0.18) * 22); r.closePath(); p.addPath(r); } return p; }
+const STENCIL_PATHS = {hand:handPath, star:starPath, paw:pawPath, leaf:leafPath, heart:heartPath, sun:sunPath};
+const artUnitsPassed = () => BUILDINGS.filter(b => b.open && unitTestPassed(b.id)).length;
+const artColors = () => [...CAVE_COLORS, ...ART_COLOR_PACKS.filter(p => S.art.colors.includes(p.id)).flatMap(p => p.colors)];
+const artStencils = () => ['hand', ...ART_STENCILS.filter(s => S.art.stencils.includes(s.id)).map(s => s.id)];
+function paperWall(ctx, w, h){ ctx.fillStyle = '#fbf6ea'; ctx.fillRect(0, 0, w, h); }
+
+/* the gallery: the art_paintings table when signed in to a class, otherwise a few in the save */
+let artGallery = null, artGalleryLoading = null;
+async function artLoad(force = false){
+  if (artGallery && !force) return artGallery;
+  if (!Backend.me) { artGallery = S.artLocal.map(p => ({...p})); return artGallery; }
+  if (!artGalleryLoading) artGalleryLoading = Backend.listPaintings().then(list => { artGallery = list; artGalleryLoading = null; return list; });
+  return artGalleryLoading;
+}
+async function artSave(title, image){
+  if (!/^data:image\/jpeg;base64,/.test(image) || image.length > 190000) { toast('That painting is too big to save.'); return false; }
+  if (!Backend.me) {
+    if (S.artLocal.length >= ART_LOCAL_MAX) { toast(`Your gallery holds ${ART_LOCAL_MAX} paintings here. Delete one to save another.`); return false; }
+    S.artLocal = [{id:`L${Date.now().toString(36)}`, title, image, at:Date.now()}, ...S.artLocal]; save(); artGallery = null; return true;
+  }
+  const result = await Backend.savePainting(title, image);
+  if (result === 'full') { toast(`Your gallery is full (${ART_MAX} paintings). Delete one to save another.`); return false; }
+  if (!result) { toast('Couldn’t save the painting. Check the internet and try again.'); return false; }
+  artGallery = null; return true;
+}
+async function artDelete(id){
+  if (!Backend.me) S.artLocal = S.artLocal.filter(p => p.id !== id);
+  else if (!(await Backend.deletePainting(id))) { toast('Couldn’t delete it. Try again.'); return; }
+  S.art.hung = S.art.hung.filter(f => f.painting !== String(id)); save(); artGallery = null;
+}
+const artBox = () => $('#artWrap [data-draw]');
+
+function renderArtStudio({fresh = false} = {}){
+  const old = artBox(), prev = fresh ? '' : old?.querySelector('input[type=hidden]')?.value || '', bg = old?.dataset.bg || 'cave', title = fresh ? '' : $('#artTitle')?.value || '';
+  const passed = artUnitsPassed(), colors = artColors(), stencils = artStencils(), free = S.art.frames - S.art.hung.length;
+  const shopRow = (item, owned, price, kind) => {
+    const open = passed >= item.need;
+    return `<div class="row extras-row"><span style="flex:1">${esc(item.name)}${item.colors ? ` ${item.colors.map(([c]) => `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c};border:1px solid #0003;vertical-align:-1px"></span>`).join('')}` : ''}</span>${owned ? '<b>✅ Yours</b>'
+      : open ? `<button type="button" class="btn small butter" data-art-buy="${kind}:${item.id}" ${S.coins < price ? 'disabled' : ''}>🪙 ${price}</button>`
+      : `<span class="muted">🔒 Pass ${item.need - passed} more unit test${item.need - passed === 1 ? '' : 's'}</span>`}</div>`;
+  };
+  $('#artWrap').innerHTML = `<div class="backrow"><h2>🎨 Art Studio</h2><button class="btn small" data-go="home">Back to town</button></div>
+  <div class="art-layout" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <section class="card"><h3>Paint</h3>
+      <div class="row" role="group" aria-label="Background"><button type="button" class="btn small mint" data-art-bg="cave" aria-pressed="true">🪨 Cave wall</button><button type="button" class="btn small" data-art-bg="paper" aria-pressed="false">📄 Paper</button></div>
+      ${drawBoxHTML('studio', colors, stencils)}
+      <div class="row"><label style="flex:1">Name it <input id="artTitle" maxlength="60" placeholder="e.g. Horses at night" style="width:100%"></label><button type="button" class="btn berry" data-art-save>💾 Save to my gallery</button></div>
+    </section>
+    <section class="card"><h3>🖼️ My gallery</h3><div id="artGallery"><p class="muted">Loading your paintings…</p></div>
+      <p class="muted" style="margin-bottom:0">Frames: ${S.art.frames} · ${S.art.hung.length} hanging in your Pet Room${free > 0 ? ` · ${free} empty` : ''}.</p></section>
+    <section class="card"><h3>🛍️ Art shop <span class="muted" style="font-weight:400">🪙 ${S.coins}</span></h3>
+      <div class="row extras-row"><span style="flex:1">🖼️ A frame for your Pet Room</span><button type="button" class="btn small butter" data-art-buy="frame:1" ${S.coins < ART_FRAME_PRICE ? 'disabled' : ''}>🪙 ${ART_FRAME_PRICE}</button></div>
+      <h4 class="room-subhead">Colors</h4>${ART_COLOR_PACKS.map(p => shopRow(p, S.art.colors.includes(p.id), ART_COLOR_PRICE, 'color')).join('')}
+      <h4 class="room-subhead">Stencils</h4>${ART_STENCILS.map(s => shopRow(s, S.art.stencils.includes(s.id), ART_STENCIL_PRICE, 'stencil')).join('')}
+      <p class="muted" style="margin-bottom:0">New colors and stencils come to the shop each time you pass a unit test (${passed} passed so far).</p></section>
+  </div>`;
+  const box = artBox(); box.dataset.bg = bg; box.querySelector('input[type=hidden]').value = prev; $('#artTitle').value = title;
+  $$('#artWrap [data-art-bg]').forEach(x => { x.classList.toggle('mint', x.dataset.artBg === bg); x.setAttribute('aria-pressed', String(x.dataset.artBg === bg)); });
+  setupDrawBox(box);
+  void artLoad().then(drawArtGallery);
+}
+function drawArtGallery(list){
+  const el = $('#artGallery'); if (!el) return;
+  const free = S.art.frames - S.art.hung.length;
+  el.innerHTML = list.length ? `<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">${list.map(p => {
+    const hung = S.art.hung.some(f => f.painting === String(p.id));
+    return `<figure style="margin:0"><img src="${esc(p.image)}" alt="${esc(p.title || 'Painting')}" style="width:100%;border-radius:8px;display:block"><figcaption class="muted" style="font-size:.85em">${esc(p.title || 'Untitled')}</figcaption>
+      <div class="row" style="gap:4px">${hung ? '<span class="muted">🖼️ Hanging</span>' : `<button type="button" class="btn small" data-art-hang="${esc(p.id)}" ${free > 0 ? '' : 'disabled title="Buy a frame first"'}>Hang in my room</button>`}<button type="button" class="btn small" data-art-delete="${esc(p.id)}">Delete</button></div></figure>`;
+  }).join('')}</div><p class="muted">${list.length} of ${Backend.me ? ART_MAX : ART_LOCAL_MAX} paintings.${free > 0 ? '' : ' Buy a frame to hang one in your Pet Room.'}</p>` : '<p class="muted">No paintings yet. Paint one and tap Save to my gallery.</p>';
+}
+document.addEventListener('click', async event => {
+  const b = event.target.closest('#artWrap button, [data-art-save-project]'); if (!b) return;
+  if (b.dataset.artBg) {
+    const box = artBox(); if (!box) return;
+    $$('#artWrap [data-art-bg]').forEach(x => { x.classList.toggle('mint', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+    box.dataset.bg = b.dataset.artBg; box.querySelector('[data-draw-clear]')?.click(); return;
+  }
+  if (b.hasAttribute('data-art-save')) {
+    const image = artBox()?.querySelector('input[type=hidden]')?.value || '';
+    if (!image) { toast('Paint something first!'); return; }
+    b.disabled = true;
+    if (await artSave(($('#artTitle')?.value || '').trim().slice(0, 60), image)) { toast('Saved to your gallery! 🖼️'); sfx('good'); renderArtStudio({fresh:true}); } else b.disabled = false;
+    return;
+  }
+  if (b.dataset.artSaveProject != null) {
+    const box = b.closest('.draw-step'), image = box?.querySelector('input[type=hidden]')?.value || box?.querySelector('img')?.getAttribute('src') || '';
+    if (!image) { toast('Paint something first!'); return; }
+    b.disabled = true; if (await artSave('Cave painting', image)) toast('Saved to your Art Studio gallery! 🖼️'); b.disabled = false; return;
+  }
+  if (b.dataset.artBuy) {
+    const [kind, id] = b.dataset.artBuy.split(':'), price = kind === 'frame' ? ART_FRAME_PRICE : kind === 'color' ? ART_COLOR_PRICE : ART_STENCIL_PRICE;
+    const item = kind === 'color' ? ART_COLOR_PACKS.find(p => p.id === id) : kind === 'stencil' ? ART_STENCILS.find(s => s.id === id) : {need:0};
+    const list = kind === 'color' ? S.art.colors : kind === 'stencil' ? S.art.stencils : null;
+    if (!item || S.coins < price || artUnitsPassed() < item.need || list?.includes(id)) return;
+    S.coins -= price; if (list) list.push(id); else S.art.frames++;
+    save(); updateHeader(); sfx('good'); toast(kind === 'frame' ? 'New frame! Hang a painting in your Pet Room.' : 'Added to your art supplies!'); renderArtStudio(); return;
+  }
+  if (b.dataset.artHang) {
+    if (S.art.hung.length >= S.art.frames || S.art.hung.some(f => f.painting === b.dataset.artHang)) return;
+    const i = S.art.hung.length; S.art.hung.push({id:`f${Date.now().toString(36)}`, painting:b.dataset.artHang, x:20 + (i % 4) * 20, y:22 + Math.floor(i / 4) * 18});
+    save(); toast('Hung in your Pet Room! 🖼️'); void artLoad().then(drawArtGallery); renderArtStudio(); return;
+  }
+  if (b.dataset.artDelete) {
+    if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Tap again to delete'; setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Delete'; } }, 4000); return; }
+    await artDelete(b.dataset.artDelete); renderArtStudio();
+  }
+});
+/* framed paintings in the Pet Room: drawn on the wall, dragged like decorations, taken down from the room panel */
+function roomFramesHTML(){
+  if (!S.art.hung.length) return '';
+  if (!artGallery) { void artLoad().then(() => { if (!$('#scr-room').hidden) renderPetRoom(); }); }
+  return S.art.hung.map(f => { const p = artGallery?.find(x => String(x.id) === f.painting);
+    return `<button type="button" class="room-decor-item room-frame" data-room-frame="${esc(f.id)}" style="left:${f.x}%;top:${f.y}%;width:96px;min-height:72px;padding:5px;background:#8a5a2b;border:4px solid #c8964f;border-radius:4px;box-shadow:0 3px 6px #0004" aria-label="Move your painting${p?.title ? ` ${esc(p.title)}` : ''}">${p ? `<img src="${esc(p.image)}" alt="" style="width:100%;display:block;pointer-events:none">` : '<span aria-hidden="true">🖼️</span>'}</button>`;
+  }).join('');
+}
+function roomFramesPanelHTML(){
+  const list = S.art.hung.map(f => { const p = artGallery?.find(x => String(x.id) === f.painting);
+    return `<div class="room-placed-item"><span>🖼️ ${esc(p?.title || 'Painting')}</span><button type="button" class="room-remove" data-room-unhang="${esc(f.id)}" aria-label="Take the painting down" title="Take down">×</button></div>`; }).join('');
+  return `<h4 class="room-subhead">🖼️ Paintings</h4><div class="room-placed-list">${list || `<span class="muted">${S.art.frames ? 'Hang a painting from the Art Studio.' : 'Buy a frame in the Art Studio to hang a painting.'}</span>`}</div><button type="button" class="btn small" data-go="artstudio">🎨 Art Studio</button>`;
+}
+document.addEventListener('click', event => {
+  const b = event.target.closest('[data-room-unhang]'); if (!b) return;
+  S.art.hung = S.art.hung.filter(f => f.id !== b.dataset.roomUnhang); save(); renderPetRoom();
 });
 
 /* ---------- town ---------- */
@@ -5765,6 +5922,7 @@ function renderHome(){
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   h += `<button class="tile service" data-open="vocab"><span class="te">🔤</span><span class="tn">Word Workshop</span><span class="tu">Vocabulary practice and sprint</span></button>`;
   h += `<button class="tile service" data-open="reading"><span class="te">📖</span><span class="tn">Reading Log</span><span class="tu">${S.readingBooks.length} book${S.readingBooks.length === 1 ? '' : 's'} · Reading Quizzes</span></button>`;
+  h += `<button class="tile service" data-open="artstudio"><span class="te">🎨</span><span class="tn">Art Studio</span><span class="tu">Paint, frame and hang your art</span></button>`;
   h += `<button class="tile service" data-open="room"><span class="te">🏠</span><span class="tn">My Pet Room</span><span class="tu">${S.room.initialized ? S.room.placements.length : S.displayed.filter(Boolean).length} decorations · Dress-up</span></button>`;
   const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
@@ -5871,6 +6029,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'sprint') openSprint();
   else if (id === 'vocab') { void Backend.refreshSettings().then(() => { if (!$('#scr-vocab').hidden && !vocabRun) renderVocab(); }); show('vocab'); }
   else if (id === 'room') show('room');
+  else if (id === 'artstudio') show('artstudio');
   else if (id === 'reading') { activeEnglishCourse = 'nouns'; show('library'); }
   else if (id === 'elaNouns' || id === 'elaVerbs') { show('library'); renderEnglishUnit(id === 'elaVerbs' ? 'verbs' : 'nouns'); }
   else if (HISTORY_BUILDING_COURSE[id]) { show('library'); renderEnglishUnit(HISTORY_BUILDING_COURSE[id]); }
@@ -6562,12 +6721,19 @@ function historyProjectReportHTML(courseId, canReview){
    in the project's answers as a small JPEG data URL (no new database setup). ROADMAP F6 */
 const CAVE_COLORS = [['#2b2321','charcoal'],['#9c3b22','red ochre'],['#c99a2e','yellow ochre'],['#5a3a22','umber'],['#efe6d4','chalk']];
 function drawStepHTML(step, value, locked){
-  if (locked) return `<div class="draw-step"><p>${esc(step.label)}</p>${value ? `<img src="${esc(value)}" alt="Your painting" style="max-width:100%;border-radius:8px">` : '<p class="muted">No painting yet.</p>'}</div>`;
-  return `<div class="draw-step" data-draw="${step.key}"><p>${esc(step.label)}</p>
-<canvas width="480" height="320" style="width:100%;max-width:480px;aspect-ratio:3/2;border-radius:8px;touch-action:none;cursor:crosshair;display:block" aria-label="Cave wall to paint on"></canvas>
-<div class="row" role="group" aria-label="Paint colors">${CAVE_COLORS.map(([c, n], i) => `<button type="button" class="btn small${i ? '' : ' mint'}" data-draw-color="${c}" aria-pressed="${!i}"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};vertical-align:-2px;border:1px solid #0003"></span> ${n}</button>`).join('')}</div>
-<div class="row"><button type="button" class="btn small" data-draw-size="3">Thin</button><button type="button" class="btn small mint" data-draw-size="7">Medium</button><button type="button" class="btn small" data-draw-size="14">Thick</button><button type="button" class="btn small" data-draw-tool="hand" aria-pressed="false">✋ Hand stencil</button><button type="button" class="btn small" data-draw-undo>↶ Undo</button><button type="button" class="btn small" data-draw-clear>Start over</button></div>
-<input type="hidden" name="${step.key}" value="${esc(value || '')}"></div>`;
+  const keep = `<button type="button" class="btn small" data-art-save-project>🖼️ Save a copy to my Art Studio gallery</button>`;
+  if (locked) return `<div class="draw-step"><p>${esc(step.label)}</p>${value ? `<img src="${esc(value)}" alt="Your painting" style="max-width:100%;border-radius:8px"><div class="row">${keep}</div>` : '<p class="muted">No painting yet.</p>'}</div>`;
+  return `<div class="draw-step"><p>${esc(step.label)}</p>${drawBoxHTML(step.key, CAVE_COLORS, ['hand'], value)}<div class="row">${keep}</div></div>`;
+}
+/* a painting canvas: colors, brush sizes, stencils (paint sprayed around a shape), undo and start over; the picture is kept
+   in a hidden input as a JPEG. Used by the History project's drawing steps and by the Art Studio (F13). */
+const STENCIL_NAMES = {hand:'✋ Hand stencil', star:'⭐ Star', paw:'🐾 Paw', leaf:'🍃 Leaf', heart:'❤️ Heart', sun:'☀️ Sun'};
+function drawBoxHTML(key, colors, stencils, value = ''){
+  return `<div data-draw="${esc(key)}">
+<canvas width="480" height="320" style="width:100%;max-width:480px;aspect-ratio:3/2;border-radius:8px;touch-action:none;cursor:crosshair;display:block" aria-label="Wall to paint on"></canvas>
+<div class="row" role="group" aria-label="Paint colors">${colors.map(([c, n], i) => `<button type="button" class="btn small${i ? '' : ' mint'}" data-draw-color="${c}" aria-pressed="${!i}"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};vertical-align:-2px;border:1px solid #0003"></span> ${n}</button>`).join('')}</div>
+<div class="row"><button type="button" class="btn small" data-draw-size="3">Thin</button><button type="button" class="btn small mint" data-draw-size="7">Medium</button><button type="button" class="btn small" data-draw-size="14">Thick</button>${stencils.map(s => `<button type="button" class="btn small" data-draw-tool="${s}" aria-pressed="false">${STENCIL_NAMES[s] || s}</button>`).join('')}<button type="button" class="btn small" data-draw-undo>↶ Undo</button><button type="button" class="btn small" data-draw-clear>Start over</button></div>
+<input type="hidden" name="${esc(key)}" value="${esc(value || '')}"></div>`;
 }
 function caveWall(ctx, w, h){
   const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#d9bf96'); g.addColorStop(0.5, '#c8a77a'); g.addColorStop(1, '#b38c5d');
@@ -6583,44 +6749,44 @@ function handPath(x, y){
   });
   return p;
 }
-function setupDrawSteps(){
-  $$('#historyProjectForm [data-draw]').forEach(box => {
-    const canvas = box.querySelector('canvas'), ctx = canvas.getContext('2d'), input = box.querySelector('input[type=hidden]'), undo = [];
-    let color = CAVE_COLORS[0][0], size = 7, tool = 'brush', last = null;
-    const keep = () => { input.value = canvas.toDataURL('image/jpeg', 0.7); };
-    const snap = () => { undo.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); if (undo.length > 20) undo.shift(); };
-    if (input.value) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); img.src = input.value; } else caveWall(ctx, canvas.width, canvas.height);
-    const at = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height]; };
-    const pick = (attr, btn) => box.querySelectorAll(`[${attr}]`).forEach(b => { b.classList.toggle('mint', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
-    const handBtn = box.querySelector('[data-draw-tool]');
-    canvas.addEventListener('pointerdown', e => {
-      e.preventDefault(); snap(); const [x, y] = at(e);
-      if (tool === 'hand') {
-        const hand = handPath(x, y); ctx.fillStyle = color;
-        for (let i = 0; i < 2600; i++) {
-          const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * 62, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
-          if (!ctx.isPointInPath(hand, px, py)) { ctx.globalAlpha = 0.25 + Math.random() * 0.5; ctx.fillRect(px, py, 2, 2); }
-        }
-        ctx.globalAlpha = 1; keep(); return;
+function setupDrawSteps(){ $$('#historyProjectForm [data-draw]').forEach(box => setupDrawBox(box)); }
+function setupDrawBox(box){
+  if (!box) return;
+  const canvas = box.querySelector('canvas'), ctx = canvas.getContext('2d'), input = box.querySelector('input[type=hidden]'), undo = [];
+  const wall = () => (box.dataset.bg === 'paper' ? paperWall : caveWall)(ctx, canvas.width, canvas.height);
+  let color = box.querySelector('[data-draw-color]')?.dataset.drawColor || CAVE_COLORS[0][0], size = 7, tool = 'brush', last = null;
+  const keep = () => { input.value = canvas.toDataURL('image/jpeg', 0.7); };
+  const snap = () => { undo.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); if (undo.length > 20) undo.shift(); };
+  if (input.value) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); img.src = input.value; } else wall();
+  const at = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height]; };
+  const pick = (attr, btn) => box.querySelectorAll(`[${attr}]`).forEach(b => { b.classList.toggle('mint', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault(); snap(); const [x, y] = at(e);
+    if (tool !== 'brush') {
+      const shape = (STENCIL_PATHS[tool] || handPath)(x, y); ctx.fillStyle = color;
+      for (let i = 0; i < 2600; i++) {
+        const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * 62, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
+        if (!ctx.isPointInPath(shape, px, py)) { ctx.globalAlpha = 0.25 + Math.random() * 0.5; ctx.fillRect(px, py, 2, 2); }
       }
-      canvas.setPointerCapture(e.pointerId); last = [x, y];
-      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, size / 2, 0, 7); ctx.fill();
-    });
-    canvas.addEventListener('pointermove', e => {
-      if (!last) return; const [x, y] = at(e);
-      ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.85;
-      ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1; last = [x, y];
-    });
-    const end = () => { if (last) { last = null; keep(); } };
-    canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
-    box.addEventListener('click', e => {
-      const b = e.target.closest('button'); if (!b) return;
-      if (b.dataset.drawColor) { color = b.dataset.drawColor; pick('data-draw-color', b); }
-      else if (b.dataset.drawSize) { size = +b.dataset.drawSize; tool = 'brush'; pick('data-draw-size', b); handBtn.classList.remove('mint'); handBtn.setAttribute('aria-pressed', 'false'); }
-      else if (b.dataset.drawTool) { tool = tool === 'hand' ? 'brush' : 'hand'; b.classList.toggle('mint', tool === 'hand'); b.setAttribute('aria-pressed', String(tool === 'hand')); }
-      else if (b.hasAttribute('data-draw-undo')) { const prev = undo.pop(); if (prev) { ctx.putImageData(prev, 0, 0); keep(); } }
-      else if (b.hasAttribute('data-draw-clear')) { snap(); caveWall(ctx, canvas.width, canvas.height); input.value = ''; }
-    });
+      ctx.globalAlpha = 1; keep(); return;
+    }
+    canvas.setPointerCapture(e.pointerId); last = [x, y];
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, size / 2, 0, 7); ctx.fill();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!last) return; const [x, y] = at(e);
+    ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.85;
+    ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1; last = [x, y];
+  });
+  const end = () => { if (last) { last = null; keep(); } };
+  canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.drawColor) { color = b.dataset.drawColor; pick('data-draw-color', b); }
+    else if (b.dataset.drawSize) { size = +b.dataset.drawSize; tool = 'brush'; pick('data-draw-size', b); pick('data-draw-tool', null); }
+    else if (b.dataset.drawTool) { tool = tool === b.dataset.drawTool ? 'brush' : b.dataset.drawTool; pick('data-draw-tool', tool === 'brush' ? null : b); }
+    else if (b.hasAttribute('data-draw-undo')) { const prev = undo.pop(); if (prev) { ctx.putImageData(prev, 0, 0); keep(); } }
+    else if (b.hasAttribute('data-draw-clear')) { snap(); wall(); input.value = ''; }
   });
 }
 function renderHistoryProject(courseId){
