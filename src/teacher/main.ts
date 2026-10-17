@@ -5,6 +5,7 @@ import { installLanguage, type Language } from '../shared/language';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 import { setLedgerClass } from './ledger';
+import { renderApprovals, waitingCount } from './approvals';
 import { renderVocabTab, type VocabRoster, type ClassVocab } from './vocab';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
@@ -31,6 +32,7 @@ document.addEventListener('click', event => {
 let classes: ClassRow[] = [];
 let current: ClassRow | null = null;
 let tab: 'dashboard' | 'roster' | 'settings' | 'lessons' | 'vocab' = 'dashboard';
+let isAdmin = false, adminView = false, waitingN = 0;   // the Approvals page, for accounts in app_admins (ROADMAP F4)
 let channel: RealtimeChannel | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 const gameUrl = () => new URL('./', location.href).href;
@@ -81,6 +83,8 @@ async function loadClasses(selectId?: string) {
      If the function can't be called (older database), carry on as before. (ROADMAP F4) */
   const approved = await sb!.rpc('is_approved_parent');
   if (!approved.error && approved.data !== true) { void renderWaiting(); return; }
+  const admin = await sb!.rpc('is_app_admin');   // before the approvals migration this errors, and the page stays hidden
+  isAdmin = !admin.error && admin.data === true; waitingN = isAdmin ? await waitingCount(sb!) : 0;
   /* lesson_links and question_edits come from the lesson-content migration; until it is run, load the classes without them */
   const withLessons: string = 'id,name,join_code,min_station,drill_settings,quiz_settings,game_settings,lesson_links,question_edits,created_at';
   const full = await sb!.from('classes').select(withLessons).order('created_at');
@@ -93,12 +97,14 @@ async function loadClasses(selectId?: string) {
 function renderShell() {
   app.innerHTML = `<div class="shell">
     <aside class="side"><h2>Classes</h2>
-      ${classes.map(c => `<button class="classbtn ${current && c.id === current.id ? 'on' : ''}" data-id="${c.id}">${esc(c.name)}</button>`).join('') || '<p class="muted" style="margin:4px">No classes yet.</p>'}
+      ${classes.map(c => `<button class="classbtn ${!adminView && current && c.id === current.id ? 'on' : ''}" data-id="${c.id}">${esc(c.name)}</button>`).join('') || '<p class="muted" style="margin:4px">No classes yet.</p>'}
+      ${isAdmin ? `<button class="classbtn ${adminView ? 'on' : ''}" id="approvalsBtn">${approvalsLabel()}</button>` : ''}
       <div class="row"><input type="text" id="newClass" placeholder="New class name, e.g. Period 3" maxlength="60"></div>
       <div class="row"><button class="btn small primary" id="addClass">Add class</button><button class="btn small" id="signOut">Sign out</button></div>
     </aside>
     <section id="main"></section></div>`;
-  app.querySelectorAll<HTMLButtonElement>('.classbtn').forEach(b => b.addEventListener('click', () => { current = classes.find(c => c.id === b.dataset.id) || null; renderShell(); }));
+  app.querySelectorAll<HTMLButtonElement>('.classbtn[data-id]').forEach(b => b.addEventListener('click', () => { adminView = false; current = classes.find(c => c.id === b.dataset.id) || null; renderShell(); }));
+  document.getElementById('approvalsBtn')?.addEventListener('click', () => { adminView = true; renderShell(); });
   $('#addClass').addEventListener('click', addClass);
   ($('#newClass') as HTMLInputElement).addEventListener('keydown', e => { if (e.key === 'Enter') void addClass(); });
   $('#signOut').addEventListener('click', () => { void sb!.auth.signOut(); });
@@ -112,8 +118,14 @@ async function addClass() {
 }
 function alertMain(msg: string) { const m = document.getElementById('main'); if (m) m.insertAdjacentHTML('afterbegin', `<p class="err">${esc(msg)}</p>`); }
 
+const approvalsLabel = () => `🔑 Approvals${waitingN ? ` <span class="tag a">${waitingN} waiting</span>` : ''}`;
 function renderMain() {
   const main = $('#main');
+  if (adminView && isAdmin) {
+    stopLive(); main.innerHTML = '<div id="pane"></div>';
+    void renderApprovals($('#pane'), sb!, async () => { waitingN = await waitingCount(sb!); const b = document.getElementById('approvalsBtn'); if (b) b.innerHTML = approvalsLabel(); });
+    return;
+  }
   if (!current) { stopLive(); main.innerHTML = '<div class="card empty">Add your first class on the left to get a class code.</div>'; return; }
   main.innerHTML = `<div class="tabs">${(['dashboard', 'roster', 'settings', 'lessons', 'vocab'] as const).map(t => `<button class="tab ${tab === t ? 'on' : ''}" data-tab="${t}">${t === 'lessons' ? 'Lessons &amp; questions' : t === 'vocab' ? 'Vocabulary' : t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
     <span style="flex:1"></span><span class="muted">Class code <b>${esc(current.join_code)}</b></span></div><div id="pane"></div>`;
