@@ -139,6 +139,8 @@ function normalize(raw){
   if (!Array.isArray(s.seenUnlocks)) s.seenUnlocks = [];
   if (!Array.isArray(s.sprintPick)) s.sprintPick = ['times'];
     s.dayLog = normalizeDayLog(s.dayLog);   // the day log (docs: LEDGER.md)
+    if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
+    s.planCarry.items = s.planCarry.items.filter(x => x && typeof x === 'object' && typeof x.id === 'string').slice(0, 30);
     if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
@@ -5656,6 +5658,74 @@ function goalsCardHTML(){
     return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)}</span><b>${Math.min(done, goal)} of ${goal} min</b></div>`;
   }).join('')}</div>`;
 }
+/* ---------- daily plan (ROADMAP F10, docs/DAILY-PLAN.md) ----------
+   A grown-up sets each weekday's plan and can change single days, in quiz_overrides "plan" (JSON):
+   {week:{mon:[item], ...}, days:{"YYYY-MM-DD":[item]}}. Items: {id, kind:'subject', subject, minutes} (keep going in the next
+   unit of a subject), {id, kind:'unit', unit, what:'practice'|'quiz'|'test', minutes} and {id, kind:'project', project}.
+   Extras and time goals show in the same card. Items still to do when she taps "I'm done for today" move to the next day. */
+const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science'};
+const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology'};
+const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
+const unitCourse = id => (id === 'elaNouns' ? 'nouns' : id === 'elaVerbs' ? 'verbs' : HISTORY_BUILDING_COURSE[id] || '');
+function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
+function validPlanItem(x){
+  return !!x && typeof x.id === 'string' && ((x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]));
+}
+/* the day's items: that date's own list, or its weekday's, plus what was left from an earlier day */
+function planItems(day = logDayKey()){
+  const s = planSettings(), dow = PLAN_DAYS[new Date(`${day}T12:00:00`).getDay()];
+  const base = (Array.isArray(s.days?.[day]) ? s.days[day] : Array.isArray(s.week?.[dow]) ? s.week[dow] : []).filter(validPlanItem);
+  const carry = S.planCarry.after && S.planCarry.after < day ? S.planCarry.items.filter(validPlanItem).filter(x => !base.some(b => b.id === x.id)).map(x => ({...x, carried:true})) : [];
+  return [...base, ...carry];
+}
+/* the unit to keep going in: the first open one in the subject whose unit test isn't passed yet (this grade first) */
+function nextUnit(subject){
+  const built = BUILDINGS.filter(b => b.subject === subject && b.open && (SHOPS[b.id] || unitCourse(b.id))), here = built.filter(b => b.hood === currentHood()), list = here.length ? here : built;
+  return list.find(b => unitOpen(b.id) && !unitTestPassed(b.id)) || list.filter(b => unitOpen(b.id)).pop() || null;
+}
+function unitSecs(unit, day){
+  const d = S.dayLog[day], c = unitCourse(unit); if (!d) return 0;
+  return Object.entries(d.places).filter(([k]) => (SHOPS[unit] ? k.startsWith(`shop:${unit}:`) : !!c && (k === `course:${c}` || k.startsWith(`course:${c}:`)))).reduce((a, [, s]) => a + s, 0);
+}
+function unitPassedOn(unit, what, day){
+  const d = S.dayLog[day], c = unitCourse(unit); if (!d) return false;
+  return d.events.some(e => e.passed && ((e.k === 'assess' && e.shop === unit && e.mode === what) || (e.k === 'course' && !!c && e.course === c && e.kind === (what === 'test' ? 'final' : 'quiz'))));
+}
+const projectBuilding = id => { const c = id.replace(/lab$/, ''); return Object.keys(HISTORY_BUILDING_COURSE).find(b => HISTORY_BUILDING_COURSE[b] === c) || ''; };
+/* each item's label, the unit its Go button opens, and how it stands on that day: done, waiting for a grown-up, or to do */
+function planItemInfo(x, day = logDayKey()){
+  const unitName = id => { const b = BUILDINGS.find(u => u.id === id); return b ? `${b.emoji} ${b.name}` : id; };
+  const minutes = () => Math.max(1, Math.min(240, Math.round(+x.minutes || 15)));
+  if (x.kind === 'subject') {
+    const unit = nextUnit(x.subject), mins = minutes(), secs = (S.subjectTime?.[day] || {})[PLAN_SUBJECT_TIME[x.subject]] || 0;
+    return {label:`${PLAN_SUBJECT_NAME[x.subject]}: ${mins} min${unit ? ` in the ${unit.name}` : ''}`, open:unit?.id || '', status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`};
+  }
+  if (x.kind === 'unit') {
+    if (x.what !== 'quiz' && x.what !== 'test') { const mins = minutes(), secs = unitSecs(x.unit, day); return {label:`Practice in the ${unitName(x.unit)}: ${mins} min`, open:x.unit, status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`}; }
+    const test = x.what === 'test', done = unitPassedOn(x.unit, x.what, day) || (test && unitTestPassed(x.unit));
+    return {label:`${test ? 'Pass the unit test' : 'Pass a quiz'} in the ${unitName(x.unit)}`, open:x.unit, status:done ? 'done' : 'todo', progress:''};
+  }
+  const state = historyProjectState(x.project).state;
+  return {label:`📁 ${HISTORY_PROJECTS[x.project].title}`, open:projectBuilding(x.project), status:state === 'verified' ? 'done' : state === 'submitted' ? 'waiting' : 'todo', progress:state === 'revise' ? 'fix it and send it again' : state === 'submitted' ? 'sent · waiting for a grown-up' : ''};
+}
+/* the town page card: plan items, then extras, then time goals */
+function planCardHTML(){
+  const items = planItems(), extras = assignedExtras(), day = goalDayKey(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
+  const goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0);
+  if (!items.length && !extras.length && !goalRows.length) return '';
+  const rows = items.map(x => {
+    const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small berry" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+  }).concat(extras.map(x => {
+    const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+  }), goalRows.map(([id, name]) => {
+    const done = Math.floor((today[id] || 0) / 60), goal = goals[id];
+    return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} 🎯 ${esc(name)}</span><b>${Math.min(done, goal)} of ${goal} min</b></div>`;
+  }));
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${rows.join('')}</div>`;
+}
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
   const ownedDecor = S.decor.map(id => REWARDS.find(reward => reward.id === id)).filter(Boolean);
@@ -5667,7 +5737,7 @@ function renderHome(){
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = extrasCardHTML() + goalsCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">✅ I’m done for today</button>` + hoodSwitchHTML();
+  let h = planCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">✅ I’m done for today</button>` + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {
@@ -8863,6 +8933,7 @@ function daySummaryHTML(day = logDayKey()){
   const places = Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]);
   const counts = Object.entries(d.counts).map(([k, c]) => { const [, shop, station] = k.split(':'); return `<li>${esc(stationLabel(shop, station))}: <b>${c.n}</b> order${c.n === 1 ? '' : 's'}, ${c.ok} perfect</li>`; });
   const time = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  const plan = planItems(day).map(x => ({x, i:planItemInfo(x, day)}));
   const extras = assignedExtras().map(x => `<li>${Math.floor(extraSecs(x.id) / 60) >= +x.minutes ? '✅' : '⬜'} ${esc(extraLabel(x))}: ${Math.floor(extraSecs(x.id) / 60)} of ${Math.round(+x.minutes)} min</li>`);
   const goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => `<li>${Math.floor((subj[id] || 0) / 60) >= goals[id] ? '✅' : '⬜'} ${esc(name)}: ${Math.floor((subj[id] || 0) / 60)} of ${goals[id]} min</li>`);
   return `<p><b>${mins(total)} minutes</b> of active time today.</p>
@@ -8870,6 +8941,7 @@ ${subjects.length ? `<h3>Time by subject</h3><ul>${subjects.map(([id, name]) => 
 ${places.length ? `<h3>Time by lesson</h3><ul>${places.map(([k, s]) => `<li>${esc(placeLabel(k))}: <b>${mins(s)} min</b></li>`).join('')}</ul>` : ''}
 ${counts.length ? `<h3>Practice orders</h3><ul>${counts.join('')}</ul>` : ''}
 ${d.events.length ? `<h3>What I finished</h3><ul>${d.events.map(e => `<li><span class="muted">${time(e.t)}</span> ${esc(eventText(e))}</li>`).join('')}</ul>` : ''}
+${plan.length ? `<h3>📋 Plan</h3><ul>${plan.map(({x, i}) => `<li>${PLAN_MARK[i.status]} ${esc(i.label)}${i.progress ? ` · ${esc(i.progress)}` : ''}${i.status === 'todo' ? ' <span class="muted">(moves to tomorrow)</span>' : ''}${x.carried ? ' <span class="muted">(from before)</span>' : ''}</li>`).join('')}</ul>` : ''}
 ${extras.length ? `<h3>📋 Extras</h3><ul>${extras.join('')}</ul>` : ''}${goalRows.length ? `<h3>🎯 Time goals</h3><ul>${goalRows.join('')}</ul>` : ''}
 ${!total && !d.events.length ? '<p class="muted">Nothing yet today. Time starts counting as soon as you practice.</p>' : ''}`;
 }
@@ -8881,11 +8953,14 @@ function dayEntry(day = logDayKey()){
     lessons:Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]).map(([key, secs]) => ({key, label:placeLabel(key), secs})),
     orders:Object.entries(d.counts).map(([key, c]) => { const [, shop, station] = key.split(':'); return {key, label:stationLabel(shop, station), n:c.n, ok:c.ok}; }),
     events:d.events.map(e => ({...e, text:eventText(e)})),
+    plan:planItems(day).map(x => { const i = planItemInfo(x, day); return {label:i.label, status:i.status, ...(x.carried ? {carried:true} : {})}; }),
     extras:assignedExtras().map(x => ({label:extraLabel(x), done:Math.floor(extraSecs(x.id) / 60), goal:Math.round(+x.minutes)})),
     goals:GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => ({subject:id, label:name, done:Math.floor((subj[id] || 0) / 60), goal:goals[id]}))};
 }
 async function sendDay(){
-  const day = logDayKey(), d = dayLogToday(); d.sent = Date.now(); save();
+  const day = logDayKey(), d = dayLogToday(); d.sent = Date.now();
+  S.planCarry = {after:day, items:planItems(day).filter(x => planItemInfo(x, day).status === 'todo').map(({carried, ...x}) => x)};   // what's left moves to the next day
+  save();
   const result = await Backend.sendLedgerDay(day, dayEntry(day));
   d.synced = result === 'saved' || result === 'kept'; save();
   toast(result === 'saved' ? 'Saved to your record!' : result === 'kept' ? 'Saved. A grown-up already changed today in your record, so their version stays.'

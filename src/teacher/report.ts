@@ -6,6 +6,7 @@ import { thinkReportHTML } from '../shared/thinkReport';
 import { renderLedger } from './ledger';
 import { renderCourses } from './courses';
 import { renderTranscript } from './transcript';
+import { renderPlanCard } from './plan';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, DRILLS, type DrillSettings } from '../shared/registry';
 /* extras a grown-up assigns one student (ROADMAP F7) */
 interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string }
@@ -259,6 +260,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   h += `<div class="card"><h2>Quizzes and tests for ${esc(r.n)}</h2><div id="quizCard"></div></div>`;
   h += `<div class="card"><h2>📋 Extras for ${esc(r.n)}</h2><div id="extrasCard"></div></div>`;
   h += `<div class="card"><h2>🎯 Time goals for ${esc(r.n)}</h2><div id="goalsCard"></div></div>`;
+  h += `<div class="card"><h2>🗓️ Daily plan for ${esc(r.n)}</h2><div id="planCard"></div></div>`;
   const quizTargets = Object.values(SHOPS).flatMap(shop => [
     ...shop.stations.filter(st => st.skills.length).map(st => ({ key: `${shop.id}:${st.id}`, label: `${shop.emoji} ${st.name} quiz` })),
     ...(shop.stations.every(st => st.skills.length) ? [{ key: `${shop.id}:test`, label: `${shop.emoji} ${shop.name} unit test` }] : [])
@@ -380,6 +382,8 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     renderProjectCard();
     renderExtrasCard();
     renderGoalsCard();
+    const plan = $('#planCard');   // the daily plan (ROADMAP F10)
+    if (plan) renderPlanCard(plan, r.n, PROJECT_TITLES, () => overrides.plan, value => saveOverride('plan', value));
   }
   function renderProjectCard() {
     const card = $('#projectCard');
