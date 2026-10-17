@@ -54,6 +54,8 @@ export interface LedgerStudent { id: string; n: string; subjectTime?: Record<str
 let client: SupabaseClient | null = null, ledgerClass = '';
 /** main.ts calls this when a class opens, so the Ledger reads and writes that class's rows. */
 export function setLedgerClass(sb: SupabaseClient | null, classId: string) { client = sb; ledgerClass = classId; }
+/** The database client the Ledger uses (the Grades tab reads the Ledger with it too). */
+export const ledgerClient = () => client;
 
 const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 const SUBJECT_NAMES: Record<string, string> = Object.fromEntries(SUBJECT_TIME);

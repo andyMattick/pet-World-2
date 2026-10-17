@@ -46,6 +46,7 @@ need('src/game/game.js', "from '../shared/questionTypes'", 'the newer question t
 need('src/game/game.js', 'function renderWrittenStep(', 'the written answer step');
 need('src/teacher/report.ts', 'function writtenCardHTML(', 'the teacher\'s written answer review');
 need('src/teacher/ledger.ts', 'export function renderLedger(', 'the teacher Ledger tab (docs/LEDGER.md step 4)');
+need('src/teacher/courses.ts', 'export function computeCourses(', 'courses and grades (docs/LEDGER.md step 6)');
 need('src/shared/typedQuestions.js', 'export const UNIT_ESSAYS', 'the unit test paragraphs');
 need('src/game/game.js', 'function assessmentPlan(', 'the quiz/test question planner');
 need('src/game/game.js', 'function gradeAssessment(', 'the quiz/test grader');
