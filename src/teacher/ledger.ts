@@ -10,6 +10,7 @@ interface LedgerEntry {
   lessons?: { key: string; label: string; secs: number }[]; orders?: { key: string; label: string; n: number; ok: number }[];
   events?: LedgerEvent[]; extras?: { label: string; done: number; goal: number }[]; goals?: { subject: string; label: string; done: number; goal: number }[];
   note?: string; fromSave?: boolean; original?: LedgerEntry | null; plan?: { label: string; status: string; carried?: boolean }[];
+  passed?: { text: string; s?: number; n?: number; test?: boolean }[]; mastered?: string[];
 }
 interface DayRow { day: string; entry: LedgerEntry; sent_at: string; edited_by_teacher: boolean }
 interface OutsideRow { id: number; day: string; course: string; title: string; minutes: number; grade: string; notes: string; source: string }
@@ -74,6 +75,8 @@ function entryHTML(e: LedgerEntry) {
     + list('Time by lesson', (e.lessons || []).map(l => `<li>${esc(l.label)}: <b>${mins(l.secs)} min</b></li>`))
     + list('Practice orders', (e.orders || []).map(o => `<li>${esc(o.label)}: <b>${o.n}</b> order${o.n === 1 ? '' : 's'}, ${o.ok} perfect</li>`))
     + list('Finished', (e.events || []).map(ev => `<li>${time(ev.t)}${esc(ev.text || ev.k || '')}</li>`))
+    + list('🏅 Passed', (e.passed || []).map(p => `<li>${p.test ? '🏆' : '📝'} ${esc(p.text)}${p.n ? ` · <b>${p.s} of ${p.n}</b>` : ''}</li>`))
+    + list('⭐ Mastered', (e.mastered || []).map(m => `<li>${esc(m)}</li>`))
     + list('🗓️ Plan', (e.plan || []).map(p => `<li>${p.status === 'done' ? '✅' : p.status === 'waiting' ? '⏳' : '⬜'} ${esc(p.label)}${p.carried ? ' <span class="muted">(from an earlier day)</span>' : ''}${p.status === 'todo' ? ' <span class="muted">(not done)</span>' : ''}</li>`))
     + list('📋 Extras', (e.extras || []).map(x => `<li>${x.done >= x.goal ? '✅' : '⬜'} ${esc(x.label)}: ${x.done} of ${x.goal} min</li>`))
     + list('🎯 Time goals', (e.goals || []).map(g => `<li>${g.done >= g.goal ? '✅' : '⬜'} ${esc(g.label)}: ${g.done} of ${g.goal} min</li>`))

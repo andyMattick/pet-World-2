@@ -246,8 +246,11 @@ function recordMis(id, ex){
   m.n++; if (ex) { m.ex.unshift(ex); m.ex = m.ex.slice(0,3); }
 }
 function recordProblem(skill, perfect){
+  const before = statusFromRecent(S.kr[skill] || '');
   S.kn[skill] = (S.kn[skill]||0) + 1;
   S.kr[skill] = ((S.kr[skill]||'') + (perfect ? '1' : '0')).slice(-10);
+  /* day log (ROADMAP F14): a math skill that becomes mastered goes into the day's "Mastered today", once a day */
+  if (before !== 'mastered' && statusFromRecent(S.kr[skill]) === 'mastered' && !dayLogToday().events.some(e => e.k === 'mastered' && e.skill === skill)) logEvent({k:'mastered', skill, title:SKILLS[skill]?.name || skill});
 }
 function statusFromRecent(r){
   if (!r) return 'new';
@@ -6763,6 +6766,7 @@ function commitEnglishRun(run){
   run.committed = true;
   const store = progressStore(run.courseId);
   const previous = englishRecord(run.progressKey,run.courseId), passed = run.score >= run.passMark;
+  run.firstPass = passed && !previous.passed;   // the day log's "Mastered today" (F14)
   store[run.progressKey] = {
     ...previous, best:Math.max(previous.best || 0,run.score), tries:(previous.tries || 0) + 1,
     passed:!!previous.passed || passed, recentScores:[...(previous.recentScores || []),run.score].slice(-10),
@@ -6775,7 +6779,7 @@ function finishEnglishRun(){
   const run = englishRun; commitEnglishRun(run);
   const store = progressStore(run.courseId);   // the result screen reads best and tries from it
   const passed = run.score >= run.passMark;
-    logEvent({k:'course', course:run.courseId, title:run.title, kind:run.retryType, s:run.score, n:run.questions.length, passed});   // day log
+    logEvent({k:'course', course:run.courseId, title:run.title, kind:run.retryType, s:run.score, n:run.questions.length, passed, ...(run.firstPass ? {first:true} : {})});   // day log
   englishRun = null;
   if (run.retryType === 'think' && passed && run.nextClosed) { const m = mathStation(run.progressKey), next = m && m.st.id + 1; if (m && stationOpen(m.shop, next)) setTimeout(() => toast(`New station open: ${SHOPS[m.shop].stations.find(x => x.id === next).name}!`), 600); }
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
@@ -8924,7 +8928,17 @@ function eventText(e){
   if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
+  if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
   return e.title || e.k;
+}
+/* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,
+   and English, History and Biology practice sets passed for the first time */
+function dayWins(d){
+  const passed = d.events.filter(e => e.passed && ((e.k === 'assess' && (e.mode === 'quiz' || e.mode === 'test')) || (e.k === 'course' && (e.kind === 'quiz' || e.kind === 'final'))))
+    .map(e => ({text:e.k === 'assess' ? stationLabel(e.shop, e.station, e.mode) : `${englishCourse(e.course)?.title || e.course}: ${e.title || (e.kind === 'final' ? 'Unit test' : 'Quiz')}`, s:e.s, n:e.n, test:e.k === 'assess' ? e.mode === 'test' : e.kind === 'final'}));
+  const mastered = d.events.filter(e => e.k === 'mastered' || (e.k === 'course' && e.kind === 'practice' && e.first))
+    .map(e => (e.k === 'mastered' ? `➗ ${e.title || e.skill}` : `${englishCourse(e.course)?.title || e.course}: ${e.title || ''}`));
+  return {passed, mastered:[...new Set(mastered)]};
 }
 function daySummaryHTML(day = logDayKey()){
   const d = S.dayLog[day] || {places:{}, counts:{}, events:[]}, subj = S.subjectTime?.[day] || {}, mins = s => (s < 60 ? '<1' : String(Math.round(s / 60)));
@@ -8933,10 +8947,12 @@ function daySummaryHTML(day = logDayKey()){
   const places = Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]);
   const counts = Object.entries(d.counts).map(([k, c]) => { const [, shop, station] = k.split(':'); return `<li>${esc(stationLabel(shop, station))}: <b>${c.n}</b> order${c.n === 1 ? '' : 's'}, ${c.ok} perfect</li>`; });
   const time = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-  const plan = planItems(day).map(x => ({x, i:planItemInfo(x, day)}));
+  const plan = planItems(day).map(x => ({x, i:planItemInfo(x, day)})), wins = dayWins(d);
   const extras = assignedExtras().map(x => `<li>${Math.floor(extraSecs(x.id) / 60) >= +x.minutes ? '✅' : '⬜'} ${esc(extraLabel(x))}: ${Math.floor(extraSecs(x.id) / 60)} of ${Math.round(+x.minutes)} min</li>`);
   const goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => `<li>${Math.floor((subj[id] || 0) / 60) >= goals[id] ? '✅' : '⬜'} ${esc(name)}: ${Math.floor((subj[id] || 0) / 60)} of ${goals[id]} min</li>`);
   return `<p><b>${mins(total)} minutes</b> of active time today.</p>
+${wins.passed.length ? `<h3>🏅 Passed today</h3><ul>${wins.passed.map(w => `<li>${w.test ? '🏆' : '📝'} ${esc(w.text)}${w.n ? ` · <b>${w.s} of ${w.n}</b>` : ''}</li>`).join('')}</ul>` : ''}
+${wins.mastered.length ? `<h3>⭐ Mastered today</h3><ul>${wins.mastered.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
 ${subjects.length ? `<h3>Time by subject</h3><ul>${subjects.map(([id, name]) => `<li>${esc(name)}: <b>${mins(subj[id])} min</b></li>`).join('')}</ul>` : ''}
 ${places.length ? `<h3>Time by lesson</h3><ul>${places.map(([k, s]) => `<li>${esc(placeLabel(k))}: <b>${mins(s)} min</b></li>`).join('')}</ul>` : ''}
 ${counts.length ? `<h3>Practice orders</h3><ul>${counts.join('')}</ul>` : ''}
@@ -8953,6 +8969,7 @@ function dayEntry(day = logDayKey()){
     lessons:Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]).map(([key, secs]) => ({key, label:placeLabel(key), secs})),
     orders:Object.entries(d.counts).map(([key, c]) => { const [, shop, station] = key.split(':'); return {key, label:stationLabel(shop, station), n:c.n, ok:c.ok}; }),
     events:d.events.map(e => ({...e, text:eventText(e)})),
+    ...(() => { const w = dayWins(d); return {passed:w.passed, mastered:w.mastered}; })(),
     plan:planItems(day).map(x => { const i = planItemInfo(x, day); return {label:i.label, status:i.status, ...(x.carried ? {carried:true} : {})}; }),
     extras:assignedExtras().map(x => ({label:extraLabel(x), done:Math.floor(extraSecs(x.id) / 60), goal:Math.round(+x.minutes)})),
     goals:GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => ({subject:id, label:name, done:Math.floor((subj[id] || 0) / 60), goal:goals[id]}))};
