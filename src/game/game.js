@@ -8,6 +8,7 @@ import { applyRoom } from './rooms';
 import { thinkReportHTML, thinkStationName } from '../shared/thinkReport';
 import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML, subjectDayKey as logDayKey } from '../shared/subjectTime';
 import { stageHTML, stageReact } from './stage';
+import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITIC, HIEROGLYPHS, HIEROGLYPH_NAMES, GREEK, GREEK_NAMES, ORACLE_SIGNS } from './historyData';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
@@ -20,6 +21,7 @@ const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const gcd = (a,b) => b ? gcd(b, a % b) : a;
 const shuffle = arr => { const a = arr.slice(); for (let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; };
+const DIG_COLS = 6, DIG_ROWS = 5, DIG_DEPTH = 2, DIG_CAP = 'cap';   // Dig Sites (F12): read when a save is loaded, so defined early
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function weightedPick(list, wf){
   const ws = list.map(wf); let r = Math.random() * ws.reduce((s,w)=>s+w,0);
@@ -145,6 +147,8 @@ function normalize(raw){
     s.art.frames = Math.max(0, Math.min(50, Math.floor(+s.art.frames) || 0));
     s.art.hung = (Array.isArray(s.art.hung) ? s.art.hung : []).filter(f => f && typeof f.id === 'string' && typeof f.painting === 'string' && Number.isFinite(+f.x) && Number.isFinite(+f.y)).slice(0, s.art.frames).map(f => ({id:f.id, painting:f.painting, x:Math.max(4, Math.min(96, +f.x)), y:Math.max(8, Math.min(88, +f.y))}));
     s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
+    s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
+    s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
     s.planCarry.items = s.planCarry.items.filter(x => x && typeof x === 'object' && typeof x.id === 'string').slice(0, 30);
     if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
@@ -209,9 +213,9 @@ function loadState(key){
       return normalize(s);
     }
   } catch(e){}
-  return fresh();
+  return normalize(fresh());   // normalized, so a brand-new town has the newer fields (plan carry-over, art, digs)
 }
-let S = fresh();
+let S = normalize(fresh());
 const refreshLanguage = installLanguage(document.body, () => S.practiceLanguage);
 function syncLanguageControls(){
   refreshLanguage();
@@ -5019,6 +5023,10 @@ const petName = () => petReward().name.split(' ')[0];
 /** Every pet the student has unlocked, as reward objects (current pet first). */
 const ownedPets = () => REWARDS.filter(r => r.kind === 'pet' && S.owned.includes(r.id)).sort((a, b) => (b.id === S.pet) - (a.id === S.pet));
 const ownedPetEmoji = () => ownedPets().map(r => r.emoji);
+const SEA_PETS = ['🐳','🐋','🐬','🐟','🐠','🐡','🦈','🐙','🦑','🦀','🦞','🐚','🪼','🦭','🐢'];   // they stay off the grass
+/* pets for the sign-in screens: a few from across the town; the "What I did today" page shows hers, topped up with these */
+const WELCOME_PETS = (list => list.filter((_, i) => i % Math.max(1, Math.floor(list.length / 8)) === 0).slice(0, 8))(REWARDS.filter(r => r.kind === 'pet' && !r.legendary && !SEA_PETS.includes(r.emoji))).map(r => ({emoji:r.emoji, name:r.name.split(' ')[0]}));
+function dayPets(){ const mine = ownedPets().filter(r => !SEA_PETS.includes(r.emoji)).map(r => ({emoji:r.emoji, name:r.name.split(' ')[0]})); return [...mine, ...WELCOME_PETS.filter(p => !mine.some(m => m.emoji === p.emoji))].slice(0, 8); }
 const fmtPow = p => p.toFixed(2).replace(/0$/,'').replace(/\.0$/,'');
 const townName = () => S.name ? S.name + "'s Pet Town" : 'Pet Town';
 $('#unlockHelper').addEventListener('click', () => closeUnlock('helper'));
@@ -5049,6 +5057,7 @@ function show(id){
 /* Themed room behind building screens (src/game/rooms.js). Summary keeps the room it came from. */
 function syncRoom(id){
   if (id === 'summary') return;
+  if (id === 'join' || id === 'name') { applyRoom('welcome', null, [], WELCOME_PETS); return; }   // pets stroll past the sign-in screens
   const building = id === 'cafe' ? currentShop : id === 'shift' ? (shift?.shop || currentShop)
     : id === 'library' ? (englishRun?.shop || englishCourse(activeEnglishCourse).building) : null;   // a math Think it through set stays in its shop
   const b = building && BUILDINGS.find(x => x.id === building);
@@ -5695,9 +5704,9 @@ function renderArtStudio({fresh = false} = {}){
   };
   $('#artWrap').innerHTML = `<div class="backrow"><h2>🎨 Art Studio</h2><button class="btn small" data-go="home">Back to town</button></div>
   <div class="art-layout" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
-    <section class="card"><h3>Paint</h3>
+    <section class="card" style="grid-column:1/-1;max-width:none;width:100%;box-sizing:border-box"><h3>Paint</h3>
       <div class="row" role="group" aria-label="Background"><button type="button" class="btn small mint" data-art-bg="cave" aria-pressed="true">🪨 Cave wall</button><button type="button" class="btn small" data-art-bg="paper" aria-pressed="false">📄 Paper</button></div>
-      ${drawBoxHTML('studio', colors, stencils)}
+      ${drawBoxHTML('studio', colors, stencils, '', true)}
       <div class="row"><label style="flex:1">Name it <input id="artTitle" maxlength="60" placeholder="e.g. Horses at night" style="width:100%"></label><button type="button" class="btn berry" data-art-save>💾 Save to my gallery</button></div>
     </section>
     <section class="card"><h3>🖼️ My gallery</h3><div id="artGallery"><p class="muted">Loading your paintings…</p></div>
@@ -5775,6 +5784,279 @@ function roomFramesPanelHTML(){
 document.addEventListener('click', event => {
   const b = event.target.closest('[data-room-unhang]'); if (!b) return;
   S.art.hung = S.art.hung.filter(f => f.id !== b.dataset.roomUnhang); save(); renderPetRoom();
+});
+
+/* ---------- ⛏️ Dig Sites and ✍️ Scribe School (ROADMAP F12, docs/HISTORY-ACTIVITIES.md) ----------
+   Dig Sites: one per History unit (and a dinosaur bonus in Unit 1). Brush the dirt off a 6 × 5 grid to uncover six
+   famous finds, then tap the map to say where each one came from (a second try after a hint, then the answer is shown).
+   Kept in the save as S.digs[site] = {layout, depth, found:{find:tries}, cap, done, best}. Coins only the first time
+   through a site: 5 for a first-try answer, 3 for a second, 1 when shown, and 20 for finishing.
+   Scribe School: write in cuneiform, hieroglyphs, oracle bone signs or Greek on a clay tablet, papyrus, bone or a
+   pottery shard, and save it to the Art Studio gallery (10 coins the first time for each kind of writing). */
+const digSiteById = id => DIG_SITES.find(s => s.id === id);
+let digRun = null;   // {site, pending, choice, wrong:[], msg, shown}
+function digState(siteId){
+  const site = digSiteById(siteId); let st = S.digs[siteId];
+  if (!st || !Array.isArray(st.layout) || st.layout.length !== DIG_COLS * DIG_ROWS) {
+    const layout = Array(DIG_COLS * DIG_ROWS).fill(''), spots = shuffle([...layout.keys()]);
+    site.finds.forEach((f, i) => { layout[spots[i]] = f.id; }); layout[spots[site.finds.length]] = DIG_CAP;
+    st = S.digs[siteId] = {layout, depth:String(DIG_DEPTH).repeat(layout.length), found:{}, cap:false, done:!!st?.done, best:st?.best || 0};
+  }
+  return st;
+}
+function normalizeDigs(raw){
+  const out = {};
+  for (const site of DIG_SITES) {
+    const d = raw?.[site.id]; if (!d || typeof d !== 'object') continue;
+    const ids = site.finds.map(f => f.id), layout = Array.isArray(d.layout) && d.layout.length === DIG_COLS * DIG_ROWS && d.layout.every(x => x === '' || x === DIG_CAP || ids.includes(x)) ? d.layout : null;
+    out[site.id] = {layout, depth:layout && /^[0-9]+$/.test(d.depth) && d.depth.length === layout.length ? d.depth : String(DIG_DEPTH).repeat(DIG_COLS * DIG_ROWS),
+      found:Object.fromEntries(Object.entries(d.found || {}).filter(([k, v]) => ids.includes(k) && [1, 2, 3].includes(v))), cap:!!d.cap, done:!!d.done, best:Math.max(0, Math.min(6, Math.floor(+d.best) || 0))};
+    out[site.id].finished = !!d.finished;
+    if (!layout) out[site.id] = {done:out[site.id].done, best:out[site.id].best};
+  }
+  return out;
+}
+function digMapHTML(site, find){
+  const ids = [...new Set([...site.finds.map(f => f.place), ...site.extra])], pts = ids.map(id => DIG_PLACES[id]);
+  const est = (Math.max(...pts.map(p => p[0])) - Math.min(...pts.map(p => p[0])) + 32) * 0.012;   // about how wide a label letter is
+  let x0 = Math.min(...pts.map(p => p[0] - (p[3] === 'l' ? p[2].length * est : 0))) - 10, x1 = Math.max(...pts.map(p => p[0] + (p[3] === 'r' ? p[2].length * est : 0))) + 10;
+  let y0 = -Math.max(...pts.map(p => p[1])) - 10, y1 = -Math.min(...pts.map(p => p[1])) + 10;
+  const grow = (a, b, size, lo, hi) => { const more = Math.max(0, size - (b - a)) / 2; a -= more; b += more; if (a < lo) { b += lo - a; a = lo; } if (b > hi) { a -= b - hi; b = hi; } return [Math.max(lo, a), Math.min(hi, b)]; };
+  [y0, y1] = grow(y0, y1, (x1 - x0) / 2.2, -78, 58); [x0, x1] = grow(x0, x1, (y1 - y0) * 1.5, -170, 180);
+  const w = x1 - x0, h = y1 - y0, poly = p => p.split(' ').map(q => { const [x, y] = q.split(','); return `${x},${-y}`; }).join(' ');
+  const answered = digRun?.shown, pins = ids.map(id => {
+    const [lon, lat, name, side] = DIG_PLACES[id];
+    const cls = answered && id === find.place ? 'right' : digRun?.wrong.includes(id) ? 'wrong' : digRun?.choice === id ? 'chosen' : '';
+    return `<button type="button" class="dig-pin ${cls}" data-dig-place="${id}" style="left:${((lon - x0) / w * 100).toFixed(2)}%;top:${((-lat - y0) / h * 100).toFixed(2)}%" aria-label="${esc(name)}" ${answered ? 'disabled' : ''}><span class="dig-label ${side}">${esc(name)}</span></button>`;
+  }).join('');
+  return `<div class="dig-map-wrap"><svg class="dig-map" viewBox="${x0.toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}" aria-hidden="true"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" class="dig-sea"/>${WORLD_LAND.map(p => `<polygon points="${poly(p)}" class="dig-land"/>`).join('')}${WORLD_WATER.map(p => `<polygon points="${poly(p)}" class="dig-sea"/>`).join('')}</svg>${pins}</div>`;
+}
+function digCellHTML(st, i){
+  const d = +st.depth[i], item = st.layout[i], find = d ? null : item === DIG_CAP ? {emoji:'🥫', name:'A modern tin can'} : digRun && digSiteById(digRun.site).finds.find(f => f.id === item);
+  return `<button type="button" class="dig-cell d${d}${find ? (item === DIG_CAP ? ' has-trash' : ' has-find') : ''}" data-dig-cell="${i}" aria-label="${d ? `Dirt, square ${i + 1}` : find ? esc(find.name) : `Empty, square ${i + 1}`}">${find ? `<span aria-hidden="true">${find.emoji}</span>` : ''}</button>`;
+}
+function digPanelHTML(site, st){
+  const find = digRun.pending && site.finds.find(f => f.id === digRun.pending);
+  if (find) {
+    const choice = digRun.choice && DIG_PLACES[digRun.choice];
+    return `<div class="dig-card"><div class="dig-find-emoji" aria-hidden="true">${find.emoji}</div><h3>${esc(find.name)}</h3><p class="muted" style="margin:0">${esc(find.made)}</p><p>${esc(find.clue)}</p>
+      ${digRun.shown ? `<p class="dig-fact">${digRun.msg ? `${esc(digRun.msg)} ` : ''}${esc(find.fact)}</p><button type="button" class="btn berry" data-dig-next>${Object.keys(st.found).length >= site.finds.length ? '🏁 Finish the dig' : 'Keep digging'}</button>`
+      : `<p><b>Where did it come from? Tap a place on the map.</b></p>${digRun.msg ? `<p class="dig-hint">${esc(digRun.msg)}</p>` : ''}`}
+      ${digMapHTML(site, find)}
+      ${!digRun.shown && choice ? `<div class="row dig-choice"><span style="flex:1">You picked <b>${esc(choice[2])}</b>.</span><button type="button" class="btn berry" data-dig-confirm>That’s my answer</button></div>` : ''}</div>`;
+  }
+  const left = site.finds.length - Object.keys(st.found).length;
+  return left ? `<div class="dig-card"><h3>🖌️ Brush carefully</h3><p>Tap or drag across the dirt to brush it away, one layer at a time. ${left} find${left === 1 ? ' is' : 's are'} still hidden here.</p><p class="muted">Archaeologists record where every find was, because where a thing lies is evidence too.</p></div>`
+    : `<div class="dig-card"><h3>🏁 Dig complete!</h3><p>You found all ${site.finds.length} and placed ${st.best} on the map on the first try.</p><button type="button" class="btn" data-dig-reset>⛏️ Dig this site again</button></div>`;
+}
+function renderDig(siteId){
+  const site = digSiteById(siteId); if (!site) return;
+  if (digRun?.site !== siteId) digRun = {site:siteId, pending:null, choice:null, wrong:[], msg:'', shown:false};
+  const st = digState(siteId), n = Object.keys(st.found).length;
+  if (!digRun.pending) { const waiting = site.finds.find(f => !st.found[f.id] && +st.depth[st.layout.indexOf(f.id)] === 0); if (waiting) digRun.pending = waiting.id; }   // a find uncovered before leaving
+  activeEnglishCourse = site.course;
+  const shelf = site.finds.filter(f => st.found[f.id]).map(f => `<details class="dig-shelf-item"><summary>${f.emoji} <b>${esc(f.name)}</b> · ${esc(DIG_PLACES[f.place][2])}${st.found[f.id] === 1 ? ' ⭐' : ''}</summary><p>${esc(f.fact)}</p></details>`).join('');
+  $('#libraryWrap').innerHTML = `<div id="digWrap" class="dig"><div class="backrow"><h2>${site.emoji} ${esc(site.name)}</h2><button class="btn small" data-dig-back="${site.course}">Back to unit</button></div>
+    ${site.bonus ? '<p class="review-banner">🦖 Bonus: before history! These are fossils, not artifacts.</p>' : ''}<p class="muted">${esc(site.intro)}</p>
+    <p><b>Found ${n} of ${site.finds.length}</b>${st.done ? ' · ✅ You’ve finished this dig before' : ''}</p>
+    <div class="dig-layout"><div class="dig-grid${digRun.pending ? ' paused' : ''}" style="grid-template-columns:repeat(${DIG_COLS},1fr)">${st.layout.map((_, i) => digCellHTML(st, i)).join('')}</div><div id="digPanel">${digPanelHTML(site, st)}</div></div>
+    ${shelf ? `<h3>🏛️ My museum shelf</h3>${shelf}` : ''}</div>`;
+}
+function digBrush(i){
+  if (!digRun || digRun.pending) return;
+  const st = digState(digRun.site), d = +st.depth[i]; if (!d) return;
+  st.depth = st.depth.slice(0, i) + (d - 1) + st.depth.slice(i + 1);
+  const cell = $(`#digWrap [data-dig-cell="${i}"]`); if (cell) cell.outerHTML = digCellHTML(st, i);
+  if (d - 1 > 0) { save(); return; }
+  const item = st.layout[i];
+  if (item === DIG_CAP && !st.cap) { st.cap = true; toast('A modern tin can! It is trash from today, not from this site. Archaeologists write it down but know it doesn’t belong.'); }
+  if (item && item !== DIG_CAP && !st.found[item]) { digRun = {...digRun, pending:item, choice:null, wrong:[], msg:'', shown:false}; sfx('good'); save(); renderDig(digRun.site); return; }
+  save();
+}
+function digAnswer(){
+  const site = digSiteById(digRun.site), st = digState(site.id), find = site.finds.find(f => f.id === digRun.pending); if (!find || !digRun.choice || digRun.shown) return;
+  const tries = digRun.wrong.length + 1, pay = !st.done;
+  if (digRun.choice === find.place) {
+    st.found[find.id] = tries; digRun.shown = true; digRun.msg = tries === 1 ? '⭐ Right on the first try!' : '✅ Right!';
+    if (pay) { S.coins += tries === 1 ? 5 : 3; updateHeader(); } sfx('good');
+  } else {
+    digRun.wrong.push(digRun.choice); digRun.choice = null;
+    if (tries >= 2) { st.found[find.id] = 3; digRun.shown = true; digRun.msg = `Not quite. It’s ${DIG_PLACES[find.place][2]}.`; if (pay) { S.coins += 1; updateHeader(); } }
+    else digRun.msg = `Not quite. Read the clue again. Hint: it is in ${digRegion(find.place)}. One more try!`;
+  }
+  save(); renderDig(site.id);
+}
+function digRegion(place){ const [lon, lat] = DIG_PLACES[place]; return lon < -30 ? 'the Americas' : lat < 30 && lon > -20 && lon < 52 ? 'Africa' : lon < 46 ? 'Europe or Southwest Asia' : 'Asia'; }
+function digNext(){
+  const site = digSiteById(digRun.site), st = digState(site.id);
+  digRun = {...digRun, pending:null, choice:null, wrong:[], msg:'', shown:false};
+  if (Object.keys(st.found).length >= site.finds.length && !st.finished) {
+    const first = site.finds.filter(f => st.found[f.id] === 1).length;
+    st.best = Math.max(st.best || 0, first); st.finished = true;
+    if (!st.done) { S.coins += 20; updateHeader(); toast(`🏁 Dig complete! +20 🪙`); } else toast('🏁 Dig complete!');
+    st.done = true; logEvent({k:'dig', title:site.name, s:first, n:site.finds.length}); sfx('good');
+  }
+  save(); renderDig(site.id);
+}
+/* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
+function historyActivityCardsHTML(courseId){
+  const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
+    return `<section class="ela-final-assessment"><div><h3>⛏️ ${esc(s.name)}${s.bonus ? ' <small>(bonus)</small>' : ''}</h3><p class="muted">Uncover ${s.finds.length} famous finds and tap where each came from on the map · ${st?.done ? '✅ Finished' : n ? `${n} of ${s.finds.length} found` : 'Not started'}</p></div><button type="button" class="btn small berry" data-dig-open="${s.id}">${n && !st?.done ? 'Keep digging' : 'Open the dig'}</button></section>`; }).join('');
+  const scribe = courseId === 'history3' || courseId === 'history4' ? `<section class="ela-final-assessment"><div><h3>✍️ Scribe School</h3><p class="muted">Write your name in cuneiform, hieroglyphs or Greek letters, or ask the ancestors a question on an oracle bone · ${S.scribe.done.length} of ${SCRIBE_SYSTEMS.length} tried</p></div><button type="button" class="btn small berry" data-scribe-open="${courseId}">Open Scribe School</button></section>` : '';
+  return sites + scribe;
+}
+let digBrushing = false, digLastCell = -1;
+$('#libraryWrap').addEventListener('pointerdown', e => { const cell = e.target.closest('#digWrap [data-dig-cell]'); if (!cell) return; e.preventDefault(); digBrushing = true; digLastCell = +cell.dataset.digCell; digBrush(digLastCell); });
+$('#libraryWrap').addEventListener('pointermove', e => {
+  if (!digBrushing) return; const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('#digWrap [data-dig-cell]');
+  if (cell && +cell.dataset.digCell !== digLastCell) { digLastCell = +cell.dataset.digCell; digBrush(digLastCell); }
+});
+document.addEventListener('pointerup', () => { digBrushing = false; digLastCell = -1; }); document.addEventListener('pointercancel', () => { digBrushing = false; });
+$('#libraryWrap').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.digOpen) { digRun = null; renderDig(b.dataset.digOpen); return; }
+  if (b.dataset.digBack) { renderEnglishUnit(b.dataset.digBack); return; }
+  if (b.dataset.digPlace && digRun && !digRun.shown && !digRun.wrong.includes(b.dataset.digPlace)) { digRun.choice = b.dataset.digPlace; renderDig(digRun.site); return; }
+  if (b.hasAttribute('data-dig-confirm')) { digAnswer(); return; }
+  if (b.hasAttribute('data-dig-next')) { digNext(); return; }
+  if (b.hasAttribute('data-dig-reset') && digRun) { const id = digRun.site, st = S.digs[id]; S.digs[id] = {done:!!st?.done, best:st?.best || 0}; digRun = null; save(); renderDig(id); }
+});
+
+/* ✍️ Scribe School */
+let scribeRun = {sys:'cuneiform', back:'history3', name:'', signs:[]};
+let scribeFontsAsked = false;
+function scribeFonts(){
+  if (scribeFontsAsked) return; scribeFontsAsked = true;
+  const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&family=Noto+Sans+Ugaritic&display=swap'; document.head.appendChild(link);
+}
+/* a name spelled in signs: [{letters, sign, label}] */
+function scribeSpell(sys, name){
+  const map = sys === 'cuneiform' ? UGARITIC : sys === 'hieroglyphs' ? HIEROGLYPHS : GREEK, up = String(name || '').toUpperCase().replace(/[^A-Z]/g, ''), out = [];
+  for (let i = 0; i < up.length && out.length < 14; i++) {
+    const two = up.slice(i, i + 2);
+    if (map[two]) { out.push({letters:two, sign:map[two]}); i++; continue; }
+    if (up[i] === up[i - 1] && sys !== 'greek') continue;   // Egyptian and Ugaritic scribes wrote a doubled sound once
+    if (map[up[i]]) out.push({letters:up[i], sign:map[up[i]]});
+  }
+  return out.map(x => ({...x, label:sys === 'hieroglyphs' ? [...x.sign].map(c => HIEROGLYPH_NAMES[c] || '').join(' + ') : sys === 'greek' ? [...x.sign].map(c => GREEK_NAMES[c] || '').join(' + ') : ''}));
+}
+const oracleSVG = (sign, size = 40) => `<svg viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true"><path d="${sign.d}" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function renderScribe(){
+  scribeFonts();
+  const old = $('#scribeCanvas'), keep = old && old.dataset.sys === scribeRun.sys ? old.toDataURL('image/png') : '';   // keep the writing when the sign list changes
+  const sys = SCRIBE_SYSTEMS.find(s => s.id === scribeRun.sys) || SCRIBE_SYSTEMS[0], name = scribeRun.name || S.name || '';
+  const fontCss = sys.font ? `font-family:'${sys.font}','Segoe UI Historic',serif` : '';
+  const key = sys.id === 'oracle'
+    ? `<p><b>Pick up to 6 signs for your question</b> (tap again to remove).</p><div class="scribe-signs">${ORACLE_SIGNS.map(s => `<button type="button" class="btn small scribe-sign${scribeRun.signs.includes(s.id) ? ' mint' : ''}" data-scribe-sign="${s.id}" aria-pressed="${scribeRun.signs.includes(s.id)}">${oracleSVG(s, 30)}<small>${esc(s.word)} · ${s.today}</small></button>`).join('')}</div>
+       ${scribeRun.signs.length ? `<p>Your question: <b>${scribeRun.signs.map(id => ORACLE_SIGNS.find(s => s.id === id).word.split(',')[0]).join(' · ')}?</b></p><div class="scribe-key">${scribeRun.signs.map(id => { const s = ORACLE_SIGNS.find(x => x.id === id); return `<span class="scribe-glyph">${oracleSVG(s, 46)}<small>${esc(s.word.split(',')[0])}</small></span>`; }).join('')}</div>` : ''}`
+    : `<label>Your name <input id="scribeName" maxlength="20" value="${esc(name)}" autocomplete="off" style="width:12em"></label>
+       <div class="scribe-key">${scribeSpell(sys.id, name).map(x => `<span class="scribe-glyph"><b style="${fontCss}">${x.sign}</b><small>${esc(x.letters)}${x.label ? ` · ${esc(x.label)}` : ''}</small></span>`).join('') || '<span class="muted">Type your name to see its signs.</span>'}</div>`;
+  const tools = sys.surface === 'clay'
+    ? `<div class="row" role="group" aria-label="Wedge">${[['0', '▶ Wedge →'], ['90', '▼ Wedge ↓'], ['45', '◢ Wedge ↘'], ['corner', '◀ Corner wedge']].map(([v, t], i) => `<button type="button" class="btn small${i ? '' : ' mint'}" data-scribe-wedge="${v}" aria-pressed="${!i}">${t}</button>`).join('')}</div>`
+    : sys.surface === 'papyrus' ? `<div class="row" role="group" aria-label="Ink"><button type="button" class="btn small mint" data-scribe-ink="#1d1a17" aria-pressed="true">⚫ Black ink</button><button type="button" class="btn small" data-scribe-ink="#a3271c" aria-pressed="false">🔴 Red ink</button></div>`
+    : sys.surface === 'bone' ? `<div class="row"><button type="button" class="btn small butter" data-scribe-heat>🔥 Heat the bone</button></div>` : '';
+  $('#libraryWrap').innerHTML = `<div id="scribeWrap"><div class="backrow"><h2>✍️ Scribe School</h2><button class="btn small" data-dig-back="${scribeRun.back}">Back to unit</button></div>
+    <div class="row subject-tabs" role="tablist">${SCRIBE_SYSTEMS.map(s => `<button type="button" role="tab" class="btn small subject-tab" data-scribe-sys="${s.id}" aria-selected="${s.id === sys.id}" aria-pressed="${s.id === sys.id}">${s.emoji} ${esc(s.name)}${S.scribe.done.includes(s.id) ? ' ✅' : ''}</button>`).join('')}</div>
+    <div class="art-layout" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <section class="card"><h3>${sys.emoji} ${esc(sys.name)} <small class="muted">${esc(sys.place)}</small></h3><p>${esc(sys.intro)}</p>${key}</section>
+      <section class="card"><h3>Write it</h3><p class="muted" style="margin-top:0">${esc(sys.how)}</p>
+        <canvas id="scribeCanvas" data-sys="${sys.id}" width="480" height="320" style="width:100%;max-width:480px;aspect-ratio:3/2;border-radius:8px;touch-action:none;cursor:crosshair;display:block" aria-label="Writing surface"></canvas>
+        ${tools}<div class="row"><button type="button" class="btn small" data-scribe-guide>✏️ Show a tracing guide</button><button type="button" class="btn small" data-scribe-undo>↶ Undo</button><button type="button" class="btn small" data-scribe-clear>Start over</button></div>
+        <div class="row"><button type="button" class="btn berry" data-scribe-save>💾 Save to my Art Studio gallery</button></div></section></div></div>`;
+  setupScribeCanvas(sys, keep);
+}
+/* the writing surfaces */
+function scribeSurface(ctx, kind, w, h){
+  const speckle = (n, a, colors) => { for (let i = 0; i < n; i++) { ctx.fillStyle = `rgba(${colors[i % colors.length]},${(Math.random() * a).toFixed(3)})`; ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 0, 7); ctx.fill(); } };
+  if (kind === 'papyrus') {
+    ctx.fillStyle = '#e8d6a4'; ctx.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 3) { ctx.strokeStyle = `rgba(150,115,50,${(0.05 + Math.random() * 0.12).toFixed(2)})`; ctx.lineWidth = 1 + Math.random() * 1.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y + Math.random() * 2 - 1); ctx.stroke(); }
+    for (let x = 0; x < w; x += 5) { ctx.strokeStyle = `rgba(150,115,50,${(Math.random() * 0.06).toFixed(2)})`; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    return;
+  }
+  ctx.fillStyle = kind === 'bone' ? '#3b2f28' : kind === 'shard' ? '#e9e1cf' : '#5b4331'; ctx.fillRect(0, 0, w, h);
+  const shape = new Path2D();
+  if (kind === 'clay') { if (shape.roundRect) shape.roundRect(30, 18, w - 60, h - 36, 26); else shape.rect(30, 18, w - 60, h - 36); }
+  else if (kind === 'bone') { shape.moveTo(70, 40); shape.quadraticCurveTo(240, 6, 420, 36); shape.quadraticCurveTo(462, 160, 400, 292); shape.quadraticCurveTo(250, 314, 96, 286); shape.quadraticCurveTo(28, 170, 70, 40); }
+  else { [[40, 60], [150, 22], [300, 30], [440, 70], [452, 190], [380, 296], [210, 304], [70, 270], [26, 160]].forEach(([x, y], i) => shape[i ? 'lineTo' : 'moveTo'](x, y)); shape.closePath(); }
+  ctx.save(); ctx.fillStyle = kind === 'clay' ? '#c9a074' : kind === 'bone' ? '#efe4cc' : '#c4693c'; ctx.shadowColor = '#0006'; ctx.shadowBlur = 10; ctx.fill(shape); ctx.restore();
+  ctx.save(); ctx.clip(shape); speckle(700, kind === 'bone' ? 0.08 : 0.14, kind === 'shard' ? ['120,50,20', '240,170,120'] : ['110,80,50', '250,235,210']); ctx.restore();
+  if (kind === 'shard') { ctx.strokeStyle = '#8e4524'; ctx.lineWidth = 4; ctx.stroke(shape); }
+}
+function setupScribeCanvas(sys, keep = ''){
+  const canvas = $('#scribeCanvas'), ctx = canvas.getContext('2d'), undo = [];
+  let ink = sys.surface === 'bone' ? '#5a3a22' : '#1d1a17', wedge = '0', last = null;
+  const size = sys.surface === 'bone' ? 3 : sys.surface === 'shard' ? 6 : 5;
+  scribeSurface(ctx, sys.surface, canvas.width, canvas.height);
+  if (keep) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0); img.src = keep; }
+  const at = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height]; };
+  const snap = () => { undo.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); if (undo.length > 30) undo.shift(); };
+  const stamp = (x, y) => {   // a wedge pressed into clay: a triangular head and a thin tail, shaded like a dent
+    ctx.save(); ctx.translate(x, y); ctx.rotate(wedge === 'corner' ? Math.PI : +wedge * Math.PI / 180);
+    ctx.fillStyle = '#7d5835'; ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(0, 8); ctx.lineTo(14, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#5e3f23'; ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(14, 0); ctx.lineTo(3, 0); ctx.closePath(); ctx.fill();
+    if (wedge !== 'corner') { ctx.strokeStyle = '#6b4a2b'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(34, 0); ctx.stroke(); }
+    ctx.restore();
+  };
+  canvas.addEventListener('pointerdown', e => {
+    e.preventDefault(); snap(); const [x, y] = at(e);
+    if (sys.surface === 'clay') { stamp(x, y); return; }
+    canvas.setPointerCapture(e.pointerId); last = [x, y]; ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(x, y, size / 2, 0, 7); ctx.fill();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!last) return; const [x, y] = at(e);
+    ctx.strokeStyle = ink; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(x, y); ctx.stroke(); last = [x, y];
+  });
+  const end = () => { last = null; }; canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+  const wrap = $('#scribeWrap');
+  wrap.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const pick = attr => wrap.querySelectorAll(`[${attr}]`).forEach(x => { x.classList.toggle('mint', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+    if (b.dataset.scribeWedge) { wedge = b.dataset.scribeWedge; pick('data-scribe-wedge'); }
+    else if (b.dataset.scribeInk) { ink = b.dataset.scribeInk; pick('data-scribe-ink'); }
+    else if (b.hasAttribute('data-scribe-undo')) { const prev = undo.pop(); if (prev) ctx.putImageData(prev, 0, 0); }
+    else if (b.hasAttribute('data-scribe-clear')) { snap(); scribeSurface(ctx, sys.surface, canvas.width, canvas.height); }
+    else if (b.hasAttribute('data-scribe-guide')) {
+      snap(); ctx.save(); ctx.globalAlpha = 0.22; ctx.fillStyle = '#000'; ctx.strokeStyle = '#000';
+      if (sys.id === 'oracle') {
+        const list = scribeRun.signs.map(id => ORACLE_SIGNS.find(s => s.id === id)); if (!list.length) { ctx.restore(); undo.pop(); toast('Pick some signs first.'); return; }
+        list.forEach((s, i) => { ctx.save(); ctx.translate(268 - Math.floor(i / 3) * 84, 40 + (i % 3) * 84); ctx.scale(1.6, 1.6); ctx.lineWidth = 2.6; ctx.lineCap = 'round'; ctx.stroke(new Path2D(s.d)); ctx.restore(); });   // top to bottom in columns, right to left, like the bones
+      } else {
+        const text = scribeSpell(sys.id, scribeRun.name || S.name).map(x => x.sign).join(''); if (!text) { ctx.restore(); undo.pop(); toast('Type your name first.'); return; }
+        const font = sys.font ? `'${sys.font}'` : 'serif'; try { await document.fonts.load(`60px ${font}`, text); } catch {}
+        let px = 72; ctx.font = `${px}px ${font}, 'Segoe UI Historic', serif`; while (ctx.measureText(text).width > 380 && px > 24) { px -= 4; ctx.font = `${px}px ${font}, 'Segoe UI Historic', serif`; }
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+      }
+      ctx.restore();
+    }
+    else if (b.hasAttribute('data-scribe-heat')) {
+      snap(); const x = 120 + Math.random() * 240, y = 70 + Math.random() * 150;
+      ctx.strokeStyle = '#2a1a10'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 40); ctx.lineTo(x + 3, y + 40); ctx.moveTo(x + 1, y); ctx.lineTo(x + 28, y + 12 - Math.random() * 30); ctx.stroke();   // the 卜 crack the diviner read
+      ctx.fillStyle = 'rgba(40,20,10,.35)'; ctx.beginPath(); ctx.ellipse(x, y, 7, 10, 0, 0, 7); ctx.fill();
+      toast(['The cracks say: yes!', 'The cracks say: no.', 'The cracks say: ask again in ten days.', 'The cracks say: good luck is coming.'][Math.floor(Math.random() * 4)] + ' Shang diviners carved the answer on the bone too.');
+    }
+    else if (b.hasAttribute('data-scribe-save')) {
+      b.disabled = true; const title = sys.id === 'oracle' ? 'My oracle bone question' : `${scribeRun.name || S.name || 'My name'} in ${sys.id === 'cuneiform' ? 'cuneiform' : sys.id === 'hieroglyphs' ? 'hieroglyphs' : 'Greek letters'}`;
+      if (await artSave(title.slice(0, 60), canvas.toDataURL('image/jpeg', 0.7))) {
+        const first = !S.scribe.done.includes(sys.id); if (first) { S.scribe.done.push(sys.id); S.coins += 10; updateHeader(); }
+        logEvent({k:'scribe', title:`${sys.name}: ${title}`}); save(); sfx('good'); toast(`Saved to your Art Studio gallery! 🖼️${first ? ' +10 🪙' : ''}`);
+        renderScribe(); return;
+      }
+      b.disabled = false;
+    }
+  });
+}
+$('#libraryWrap').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.scribeOpen) { scribeRun = {...scribeRun, back:b.dataset.scribeOpen}; renderScribe(); return; }
+  if (b.dataset.scribeSys) { scribeRun.sys = b.dataset.scribeSys; renderScribe(); return; }
+  if (b.dataset.scribeSign) { const id = b.dataset.scribeSign, list = scribeRun.signs; scribeRun.signs = list.includes(id) ? list.filter(x => x !== id) : [...list, id].slice(0, 6); renderScribe(); }
+});
+$('#libraryWrap').addEventListener('input', e => {
+  if (e.target.id !== 'scribeName') return; scribeRun.name = e.target.value.slice(0, 20);
+  const sys = SCRIBE_SYSTEMS.find(s => s.id === scribeRun.sys), key = $('#scribeWrap .scribe-key'); if (!key || !sys) return;
+  const fontCss = sys.font ? `font-family:'${sys.font}','Segoe UI Historic',serif` : '';
+  key.innerHTML = scribeSpell(sys.id, scribeRun.name).map(x => `<span class="scribe-glyph"><b style="${fontCss}">${x.sign}</b><small>${esc(x.letters)}${x.label ? ` · ${esc(x.label)}` : ''}</small></span>`).join('') || '<span class="muted">Type your name to see its signs.</span>';
 });
 
 /* ---------- town ---------- */
@@ -6728,17 +7010,17 @@ function drawStepHTML(step, value, locked){
 /* a painting canvas: colors, brush sizes, stencils (paint sprayed around a shape), undo and start over; the picture is kept
    in a hidden input as a JPEG. Used by the History project's drawing steps and by the Art Studio (F13). */
 const STENCIL_NAMES = {hand:'✋ Hand stencil', star:'⭐ Star', paw:'🐾 Paw', leaf:'🍃 Leaf', heart:'❤️ Heart', sun:'☀️ Sun'};
-function drawBoxHTML(key, colors, stencils, value = ''){
+function drawBoxHTML(key, colors, stencils, value = '', big = false){   // big: the Art Studio's larger canvas; the saved picture is still 480 × 320
   return `<div data-draw="${esc(key)}">
-<canvas width="480" height="320" style="width:100%;max-width:480px;aspect-ratio:3/2;border-radius:8px;touch-action:none;cursor:crosshair;display:block" aria-label="Wall to paint on"></canvas>
+<canvas width="${big ? 960 : 480}" height="${big ? 640 : 320}" style="width:100%;max-width:${big ? 960 : 480}px;aspect-ratio:3/2;border-radius:8px;touch-action:none;cursor:crosshair;display:block" aria-label="Wall to paint on"></canvas>
 <div class="row" role="group" aria-label="Paint colors">${colors.map(([c, n], i) => `<button type="button" class="btn small${i ? '' : ' mint'}" data-draw-color="${c}" aria-pressed="${!i}"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${c};vertical-align:-2px;border:1px solid #0003"></span> ${n}</button>`).join('')}</div>
 <div class="row"><button type="button" class="btn small" data-draw-size="3">Thin</button><button type="button" class="btn small mint" data-draw-size="7">Medium</button><button type="button" class="btn small" data-draw-size="14">Thick</button>${stencils.map(s => `<button type="button" class="btn small" data-draw-tool="${s}" aria-pressed="false">${STENCIL_NAMES[s] || s}</button>`).join('')}<button type="button" class="btn small" data-draw-undo>↶ Undo</button><button type="button" class="btn small" data-draw-clear>Start over</button></div>
 <input type="hidden" name="${esc(key)}" value="${esc(value || '')}"></div>`;
 }
 function caveWall(ctx, w, h){
-  const g = ctx.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#d9bf96'); g.addColorStop(0.5, '#c8a77a'); g.addColorStop(1, '#b38c5d');
+  const g = ctx.createLinearGradient(0, 0, w, h), k = w / 480; g.addColorStop(0, '#d9bf96'); g.addColorStop(0.5, '#c8a77a'); g.addColorStop(1, '#b38c5d');
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 900; i++) { ctx.fillStyle = `rgba(${Math.random() < 0.5 ? '90,60,30' : '245,230,205'},${(Math.random() * 0.12).toFixed(3)})`; ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, 1 + Math.random() * 5, 0, 7); ctx.fill(); }
+  for (let i = 0; i < 900 * k * k; i++) { ctx.fillStyle = `rgba(${Math.random() < 0.5 ? '90,60,30' : '245,230,205'},${(Math.random() * 0.12).toFixed(3)})`; ctx.beginPath(); ctx.arc(Math.random() * w, Math.random() * h, (1 + Math.random() * 5) * k, 0, 7); ctx.fill(); }
 }
 /* a hand shape (palm and five fingers) for the stencil: paint is sprayed around it, the way cave artists blew pigment */
 function handPath(x, y){
@@ -6755,7 +7037,12 @@ function setupDrawBox(box){
   const canvas = box.querySelector('canvas'), ctx = canvas.getContext('2d'), input = box.querySelector('input[type=hidden]'), undo = [];
   const wall = () => (box.dataset.bg === 'paper' ? paperWall : caveWall)(ctx, canvas.width, canvas.height);
   let color = box.querySelector('[data-draw-color]')?.dataset.drawColor || CAVE_COLORS[0][0], size = 7, tool = 'brush', last = null;
-  const keep = () => { input.value = canvas.toDataURL('image/jpeg', 0.7); };
+  const k = canvas.width / 480;   // the Art Studio canvas is twice as big; brushes and stencils grow with it
+  const keep = () => {   // the picture is kept (and saved) at 480 × 320, the size it hangs at in the Pet Room
+    if (k === 1) { input.value = canvas.toDataURL('image/jpeg', 0.7); return; }
+    const small = document.createElement('canvas'); small.width = 480; small.height = 320;
+    const sctx = small.getContext('2d'); sctx.imageSmoothingQuality = 'high'; sctx.drawImage(canvas, 0, 0, 480, 320); input.value = small.toDataURL('image/jpeg', 0.75);
+  };
   const snap = () => { undo.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); if (undo.length > 20) undo.shift(); };
   if (input.value) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height); img.src = input.value; } else wall();
   const at = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height]; };
@@ -6763,19 +7050,19 @@ function setupDrawBox(box){
   canvas.addEventListener('pointerdown', e => {
     e.preventDefault(); snap(); const [x, y] = at(e);
     if (tool !== 'brush') {
-      const shape = (STENCIL_PATHS[tool] || handPath)(x, y); ctx.fillStyle = color;
-      for (let i = 0; i < 2600; i++) {
-        const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * 62, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
-        if (!ctx.isPointInPath(shape, px, py)) { ctx.globalAlpha = 0.25 + Math.random() * 0.5; ctx.fillRect(px, py, 2, 2); }
+      const shape = new Path2D(); shape.addPath((STENCIL_PATHS[tool] || handPath)(0, 0), new DOMMatrix().translate(x, y).scale(k)); ctx.fillStyle = color;
+      for (let i = 0; i < 2600 * k * k; i++) {
+        const a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * 62 * k, px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
+        if (!ctx.isPointInPath(shape, px, py)) { ctx.globalAlpha = 0.25 + Math.random() * 0.5; ctx.fillRect(px, py, 2 * k, 2 * k); }
       }
       ctx.globalAlpha = 1; keep(); return;
     }
     canvas.setPointerCapture(e.pointerId); last = [x, y];
-    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, size / 2, 0, 7); ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, size * k / 2, 0, 7); ctx.fill();
   });
   canvas.addEventListener('pointermove', e => {
     if (!last) return; const [x, y] = at(e);
-    ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = color; ctx.lineWidth = size * k; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.85;
     ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1; last = [x, y];
   });
   const end = () => { if (last) { last = null; keep(); } };
@@ -6846,7 +7133,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -7537,7 +7824,7 @@ let shift = null, order = null;
 let patienceTimer = null;
 function resetTown(resetAt){
   const me = Backend.me;
-  S = Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, practiceLanguage:S.practiceLanguage, resetSeen:resetAt});
+  S = normalize(Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, practiceLanguage:S.practiceLanguage, resetSeen:resetAt}));
   syncLanguageControls();
 }
 async function startShift(shop, station, reviewKey = null){
@@ -8832,7 +9119,7 @@ function renderHall(){
     </div>
     ${progressBySubjectHTML()}
     <div class="panel"><h3>For grown-ups</h3><p>See which skills are strong, which step gets stuck, and which times tables need work.</p><button class="btn small" id="toParent">Open the progress report</button></div>`;
-  if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = fresh(); syncLanguageControls(); openJoin(); });
+  if ($('#switchPlayer')) $('#switchPlayer').addEventListener('click', async () => { await townTracker.report(); townTracker.stop(); await Backend.signOut(); storeKey = LOCAL_KEY; S = normalize(fresh()); syncLanguageControls(); openJoin(); });
   if ($('#rename')) $('#rename').addEventListener('click', openName);
   $('#makeBackup').addEventListener('click', async () => { const code = await backupCode(); $('#backupWrap').hidden = false; $('#backupBox').value = code; $('#backupBox').select(); });
   $$('#hallWrap [data-copy]').forEach(b => b.addEventListener('click', async () => {
@@ -8955,7 +9242,7 @@ function renderParent(){
   $('#resetBtn').addEventListener('click', e => {
     if (!armed) { armed = true; e.target.textContent = 'Click again to erase everything'; armT = setTimeout(() => { armed = false; e.target.textContent = 'Reset all progress'; }, 4000); return; }
     clearTimeout(armT); const keep = {muted:S.muted, music:S.music, musicTrack:S.musicTrack, musicVolume:S.musicVolume, practiceLanguage:S.practiceLanguage, minStation:S.minStation, name:Backend.me ? S.name : ''};
-    S = Object.assign(fresh(), keep); save(); toast('Progress reset'); if (Backend.me) show('home'); else openName();
+    S = normalize(Object.assign(fresh(), keep)); save(); toast('Progress reset'); if (Backend.me) show('home'); else openName();
   });
 }
 
@@ -9070,6 +9357,8 @@ function placeOnScreen(){
   if (on('arcade')) return 'arcade';
   if (!on('library')) return 'town';
   const form = $('#historyProjectForm'); if (form) return `project:${form.dataset.course}`;
+  if ($('#digWrap') && digRun) return `dig:${digRun.site}`;
+  if ($('#scribeWrap')) return 'scribe';
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
   return `course:${activeEnglishCourse}`;
@@ -9083,6 +9372,8 @@ function placeLabel(key){
   if (kind === 'shop') return stationLabel(a, b, c);
   if (kind === 'vocab') return `🔤 Word Workshop · ${VOCAB_MODE_NAME[a] || 'Practice cards'}`;
   if (kind === 'project') return `📁 ${HISTORY_PROJECTS[a]?.title || a}`;
+  if (kind === 'dig') return `⛏️ ${digSiteById(a)?.name || 'Dig Site'}`;
+  if (kind === 'scribe') return '✍️ Scribe School';
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -9093,6 +9384,8 @@ function eventText(e){
   if (e.k === 'vocab') return `🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
   if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
+  if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;
+  if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
   return e.title || e.k;
@@ -9151,13 +9444,14 @@ async function sendDay(){
   renderDayDone();
 }
 function renderDayDone(){
+  applyRoom('welcome', null, [], dayPets());   // her pets walk around while she looks back at the day
   const d = dayLogToday();
   $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small" data-day-back>Back to town</button></div>${daySummaryHTML()}
 <div class="row"><button type="button" class="btn berry" data-day-send>${d.sent ? '✅ Saved to my record (save again)' : 'Send to my record'}</button></div>${d.sent ? `<p class="muted">Saved at ${new Date(d.sent).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}. A grown-up can still change it.</p>` : ''}</div>`;
 }
 document.addEventListener('click', event => {
   if (event.target.closest('[data-day-done]')) { renderDayDone(); return; }
-  if (event.target.closest('[data-day-back]')) { renderHome(); return; }
+  if (event.target.closest('[data-day-back]')) { applyRoom(null); renderHome(); return; }
   if (event.target.closest('[data-day-send]')) void sendDay();
 });
 function subjectOnScreen(){
@@ -9250,6 +9544,12 @@ function mergeProgress(base, other){
   for (const [w, stat] of Object.entries(other.vocab?.stats || {})) if ((stat?.r?.length || 0) > (base.vocab.stats[w]?.r?.length || 0)) { base.vocab.stats[w] = stat; n++; }
   for (const [id, v] of Object.entries(other.questionStats || {})) if (Array.isArray(v) && v[0] > (base.questionStats[id]?.[0] || 0)) { base.questionStats[id] = v; n++; }
   for (const [key, day] of Object.entries(other.videosWatched || {})) if (!base.videosWatched[key]) { base.videosWatched[key] = day; n++; }
+  for (const [id, dig] of Object.entries(other.digs || {})) {   // the dig with more finds placed wins; a finished dig stays finished
+    const mine = base.digs[id], count = d => Object.keys(d?.found || {}).length;
+    if (!mine || count(dig) > count(mine)) { base.digs[id] = {...dig, done:!!(dig.done || mine?.done), best:Math.max(dig.best || 0, mine?.best || 0)}; n++; }
+    else if (dig.done && !mine.done) { mine.done = true; mine.best = Math.max(mine.best || 0, dig.best || 0); n++; }
+  }
+  for (const id of other.scribe?.done || []) if (!base.scribe.done.includes(id)) { base.scribe.done.push(id); n++; }
   return n;
 }
 /* a town left open on another device: when it comes back on screen (or any screen refreshes settings), a newer save from

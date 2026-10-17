@@ -987,3 +987,41 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .bar-model .fb-on + .bm-text{fill:#4A2E2A}
 .opt .frac-bar, .opt .num-line, .opt .bar-model{display:block; max-width:100%; height:auto}
 .opt .area-model{margin:2px auto; font-size:.95rem}
+
+/* ⛏️ Dig Sites and ✍️ Scribe School (ROADMAP F12, docs/HISTORY-ACTIVITIES.md) */
+.dig-layout{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); align-items:start}
+.dig-grid{display:grid; gap:3px; padding:8px; background:#5b4331; border-radius:14px; touch-action:none; user-select:none; -webkit-user-select:none; max-width:480px}
+.dig-grid.paused{opacity:.8}
+.dig-cell{aspect-ratio:1; border:0; border-radius:6px; padding:0; font-size:1.7rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:none; color:inherit}
+.dig-cell.d2{background:#8a6238; box-shadow:inset 0 -4px 0 #0002}
+.dig-cell.d1{background:#b88b58; box-shadow:inset 0 -3px 0 #0001}
+.dig-cell.d0{background:#e3cfa3; cursor:default}
+.dig-cell.has-find{background:#f6e7bd; box-shadow:inset 0 0 0 3px #f2c94c}
+.dig-cell.has-trash{background:#e3cfa3; opacity:.8}
+.dig-card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:12px}
+.dig-card h3{margin:.2em 0}
+.dig-find-emoji{font-size:3rem; line-height:1}
+.dig-map-wrap{position:relative; margin:8px 0}
+.dig-map{width:100%; display:block; border-radius:12px; border:3px solid #6b4f2a}
+.dig-sea{fill:#cfe8f5}
+.dig-land{fill:#e8ddb5; stroke:#b9a878; stroke-width:.25; stroke-linejoin:round}
+.dig-pin{position:absolute; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%; border:3px solid #fff; background:#9c3b22; padding:0; cursor:pointer; box-shadow:0 1px 3px #0006}
+.dig-pin.chosen{background:#f2c94c; width:26px; height:26px; z-index:2}
+.dig-pin.right{background:#3f8f3f; width:26px; height:26px; z-index:2}
+.dig-pin.wrong{background:#999; opacity:.6; cursor:default}
+.dig-pin:disabled{cursor:default}
+.dig-label{position:absolute; white-space:nowrap; font-size:.78rem; font-weight:700; color:#3a2b22; background:#fffbe8d9; border-radius:6px; padding:0 4px; pointer-events:none}
+.dig-label.r{left:100%; top:50%; transform:translate(4px,-50%)}
+.dig-label.l{right:100%; top:50%; transform:translate(-4px,-50%)}
+.dig-label.t{bottom:100%; left:50%; transform:translate(-50%,-3px)}
+.dig-label.b{top:100%; left:50%; transform:translate(-50%,3px)}
+@media (max-width:560px){ .dig-label{display:none} .dig-pin.chosen .dig-label, .dig-pin.right .dig-label{display:block} }
+.dig-hint{color:#a3271c; font-weight:700}
+.dig-fact{background:#eaf6e4; color:#23401f; border-radius:10px; padding:8px}
+.dig-shelf-item{margin:4px 0}
+.scribe-key{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0}
+.scribe-glyph{display:flex; flex-direction:column; align-items:center; min-width:54px; padding:6px; border:2px solid var(--edge); border-radius:10px; background:var(--surface)}
+.scribe-glyph b{font-size:2.2rem; line-height:1.2; font-weight:400}
+.scribe-glyph small{font-size:.7rem; text-align:center; max-width:9em}
+.scribe-signs{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:6px}
+.scribe-sign{display:flex; flex-direction:column; align-items:center; gap:2px}

@@ -35,6 +35,9 @@ const ROOMS = {
            props:['🌵','🌷','🥕','🪴','🌻','🌹'], hero:'🌻', float:['🦋','🐝'], motion:'drift'},
   art:    {wall:'#FFFDF6', wall2:'#FFD76A', pattern:'splatter', floor:'#C99A6E', floor2:'#B5865B', floorKind:'planks', frame:'#5D5D9E', awning:['#7B61FF','#FFD76A'],
            props:['🖼️','🎨','🖌️','✏️','🖍️','🖼️'], hero:'🎨', float:['🖍️'], motion:'drift'},
+  // the sign-in screens and the "What I did today" page: a sunny town park full of pets
+  welcome: {wall:'#D8F0FB', wall2:'#FFFFFF', pattern:'sky', floor:'#8CCB6E', floor2:'#74B758', floorKind:'grass', frame:'#A0522D', awning:['#E4577A','#FFFFFF'],
+            props:['🌳','🏡','🌷','🌻','🏪','🌳'], hero:'🐾', float:['☁️','🦋'], motion:'drift', pets:8},
   // History museums
   histOrigins: {wall:'#EFE6D6', wall2:'#DCCDB4', pattern:'gallery', floor:'#A68A64', floor2:'#8F7552', floorKind:'stone', frame:'#7A5A3A', awning:['#8C6A43','#EFE6D6'],
                 props:['🗿','🏺','📜','🪨','🦣','🏺'], hero:'🏺', float:['✨'], motion:'drift'},
@@ -183,8 +186,9 @@ export function applyRoom(id, subject, extras = [], pets = []){
   }).join('') : '';
 
   // unlocked pets stroll back and forth along the floor, each with its own pace and patch of floor
-  scene.querySelector('.room-pets').innerHTML = pets.slice(0, 5).map((p, i) => {
-    const start = i % 2 ? 66 + ((i * 13) % 14) : 1 + ((i * 11) % 14), range = 8 + ((i * 5) % 7), dur = 9 + ((i * 7) % 8);  // left and right lanes stay visible beside the content
+  scene.querySelector('.room-pets').innerHTML = pets.slice(0, theme.pets || 5).map((p, i) => {
+    const n = Math.min(pets.length, theme.pets || 5), spread = !!theme.pets;   // a park full of pets: spaced evenly across the grass
+    const start = spread ? 1 + i * (88 / n) : i % 2 ? 66 + ((i * 13) % 14) : 1 + ((i * 11) % 14), range = spread ? 5 + (i % 3) : 8 + ((i * 5) % 7), dur = 9 + ((i * 7) % 8);  // left and right lanes stay visible beside the content
     return `<span class="walker" style="left:${start}%;--range:${range}vw;--dur:${dur}s;--delay:-${(i * 3.1).toFixed(1)}s"><span class="hop">${p.emoji}</span><small>${p.name}</small></span>`;
   }).join('');
 

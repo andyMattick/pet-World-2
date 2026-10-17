@@ -11,7 +11,7 @@
 ## How it works
 
 - **Town page:** an "🎨 Art Studio" tile (screen `artstudio`; the Grade 4 math building with id `art` is a different thing).
-- **Paint:** the same canvas as the History project (now `drawBoxHTML` and `setupDrawBox`), on a cave wall or paper. It starts with the five cave colors and the hand stencil, plus whatever she has bought. Name the painting and tap "Save to my gallery".
+- **Paint:** the same canvas as the History project (now `drawBoxHTML` and `setupDrawBox`), on a cave wall or paper. It starts with the five cave colors and the hand stencil, plus whatever she has bought. Name the painting and tap "Save to my gallery". The Art Studio canvas is twice the size (960 × 640, full width) so there is room to paint; the saved picture is shrunk to 480 × 320, the size it hangs at in the Pet Room.
 - **Gallery:** her paintings, newest first; "Hang in my room" (needs an empty frame) and "Delete" (tap twice).
 - **Shop:** frames, color packs (`ART_COLOR_PACKS`, needing 0 to 4 unit tests passed) and stencils (`ART_STENCILS`: star, paw, leaf, heart, sun, needing 1 to 5). Locked items say how many more unit tests open them.
 - **Pet Room:** hung paintings show in wooden frames on the wall; drag to move; the room panel lists them with × to take one down. The save keeps `S.art = {colors, stencils, frames, hung:[{id, painting, x, y}]}`.

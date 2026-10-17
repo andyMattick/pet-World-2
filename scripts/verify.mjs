@@ -51,6 +51,9 @@ need('src/teacher/plan.ts', 'export function renderPlanCard(', 'the daily plan e
 need('src/game/game.js', 'function planCardHTML(', 'the daily plan on the town page (ROADMAP F10)');
 need('src/game/game.js', 'function renderArtStudio(', 'the Art Studio (ROADMAP F13)');
 need('index.html', 'scr-artstudio', 'the Art Studio screen');
+need('src/game/game.js', 'function renderDig(', 'the History Dig Sites (ROADMAP F12)');
+need('src/game/game.js', 'function renderScribe(', 'Scribe School (ROADMAP F12)');
+need('src/game/historyData.js', 'export const DIG_SITES', 'the Dig Site finds (ROADMAP F12)');
 need('src/teacher/transcript.ts', 'export function renderTranscript(', 'the printable transcript (docs/LEDGER.md step 7)');
 need('src/shared/typedQuestions.js', 'export const UNIT_ESSAYS', 'the unit test paragraphs');
 need('src/game/game.js', 'function assessmentPlan(', 'the quiz/test question planner');

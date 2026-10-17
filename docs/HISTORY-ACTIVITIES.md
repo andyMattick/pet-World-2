@@ -30,26 +30,25 @@
   - 📅 *Timeline sort.* Drag events into order. Quick, and good for review.
   - 🔍 *Primary source detective.* A short source with questions like "Who made this? Why? What's missing?"
 
-## ⛏️ Archaeology Dig: plan
+## ⛏️ Dig Sites: how it works (built)
 
-**Where:** History Unit 2 (Early Humans), as a project next to "Forager or Farmer? Evidence Case", open from the start. (It also fits the end of Unit 1, which is about evidence; Unit 2 gives it real sites.)
+- **Where:** a "⛏️ Dig" card on each History unit page (Units 1–4), plus the **🦖 Before History: Fossil Dig** bonus on Unit 1. Content lives in `src/game/historyData.js` (`DIG_SITES`, `DIG_PLACES`, the world map outline).
+- **The dig:** a 6 × 5 grid of dirt. Tap or drag to brush; each square takes two layers. Six famous finds are hidden at random, plus one modern tin can (trash from today, which teaches that not everything in the ground belongs to the site).
+- **Identify it:** each find shows a card with when it was made and a clue. She taps a place on a world map (the site's six places plus two others), then "That's my answer." A wrong answer gets a hint (which part of the world), then a second try; after that the answer is shown. Then a fact explains the find.
+- **Museum shelf:** finds she has placed are listed under the dig, with ⭐ for first-try answers.
+- **Coins (first time through each site only):** 5 for a first-try answer, 3 for a second try, 1 when shown, and 20 for finishing. She can dig a site again for practice.
+- **Record:** finishing a site logs "Finished the … Dig: N of 6 placed on the first try" to the day log and Ledger. Time counts as History.
+- **Sites:** Unit 1 Clues to the Past (Rosetta Stone, Lascaux, Blombos ochre, Ishango bone, Inca khipu, Sutton Hoo helmet); Before History (Sue the T. rex, the Fighting Dinosaurs, Archaeopteryx, Argentinosaurus, Mary Anning's ichthyosaur, Lucy); Unit 2 Early Humans (Olduvai hand axe, Clovis point, Göbekli Tepe, Jiahu flute, Jōmon pot, Ötzi's axe); Unit 3 River Valleys (Hammurabi's laws, Tutankhamun's mask, the unicorn seal, an oracle bone, an Olmec head, a Kerma beaker); Unit 4 Empires (Terracotta soldier, gold daric, Ashoka's lions, Pompeii bread, Antikythera mechanism, Dead Sea Scrolls).
+- **To add a site** for a new unit: add an entry to `DIG_SITES` with its `course` and six finds; add any new places to `DIG_PLACES`.
 
-**Round 1, the dig (about 10 minutes):**
-- A dig site drawn as a 6 × 6 grid of soil squares over a hidden layout. Tap a square with the brush tool to clear it a little at a time (2 to 3 taps per square), so it feels like careful work, not a race.
-- Hidden in the site: 6 to 8 artifacts from one real kind of place, for example a forager camp (hand axe, scraper, burned bones by a hearth, shell beads, a bone needle) or an early farming village (grinding stone, sickle blade, pottery shard, seeds, a mud-brick corner).
-- Each find opens a short card: what it is, what it's made of, and a drawing. She records it in a field notebook: the square (like C4) and a guess at what it was used for.
-- Two "trap" finds teach care: a modern bottle cap near the surface (it doesn't belong to the site) and a find that needs its layer noted (deeper is older).
+## ✍️ Scribe School: how it works (built)
 
-**Round 2, the report (sent to a grown-up):**
-1. Which finds were near each other, and what might people have done there? (Pick a cluster on the map.)
-2. Forager camp or farming village? Give three pieces of evidence.
-3. One thing these finds **can't** tell us about these people (beliefs, names, language, feelings), and why.
-4. Why do archaeologists record exactly where each thing was found, instead of just collecting the objects?
+- **Where:** a card on the Unit 3 and Unit 4 pages. Four tabs: 🧱 cuneiform on a clay tablet (wedge stamps, spelled with the Ugaritic cuneiform alphabet), 📜 hieroglyphs on papyrus (black and red ink, one-sound signs), 🐢 oracle bone writing (pick picture signs to make a question, carve them, then "heat the bone" for cracks), 🏺 Greek letters on an ostrakon.
+- Her name (or the signs she picked) shows as a key; "Show a tracing guide" draws the signs faintly on the surface.
+- **Saving:** goes to the Art Studio gallery, so it can be framed and hung in the Pet Room; 10 coins the first time for each kind of writing, and it's logged to the day log.
+- Hieroglyph and Ugaritic signs use the Noto fonts from Google Fonts (Windows also has them in Segoe UI Historic).
 
-**Checking:** sent to the teacher app like other projects; the grown-up verifies it or sends it back. Written answers use the existing project review.
+## Still to do
 
-**Built from what exists:** the project framework (`HISTORY_PROJECTS`, steps, review states); a new step kind `kind:'dig'` for the grid (the same pattern as `kind:'draw'`); the notebook is stored in the project's answers. No database change.
-
-**Size:** about the cave painting's size: one new step kind, one site layout per variant (start with the forager camp), and the four report questions.
-
-**Questions before building:** which site first (forager camp or farming village); whether finishing the dig gives a sticker or coins; and whether Caleb's grade needs an easier version (fewer squares, picture choices instead of writing).
+- Museum curator and timeline sort to pair with each dig site.
+- Dig sites for Units 5–9 as they open.
