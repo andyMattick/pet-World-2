@@ -2,15 +2,33 @@
 
 **Goal:** hands-on History activities like the 🎨 Cave Painting Studio, where the student makes or investigates something and then explains it like a historian. Each one sits next to its unit's project, is open from the start, and is checked by a grown-up the same way projects are (sent, then verified or sent back).
 
-**Owner decisions so far:** no dinosaurs in the History course (they are millions of years before people); an archaeology dig instead. The detective chase is an original game with its own thief and name, not Carmen Sandiego.
+**Owner decisions so far:**
+- The dig is about **famous ancient finds**: she uncovers them, then works out where each came from by **tapping the place on a map**. One dig site per unit, so it repeats with each unit, and it pairs with the museum curator and the timeline sort.
+- A **🦖 dinosaur fossil dig** is a bonus level in History Unit 1, clearly labeled "Before History" (fossils, not artifacts).
+- **Scribe School** covers four kinds of writing: cuneiform on clay, hieroglyphs on papyrus, Shang oracle bones, and Greek letters.
+- The **forager game** (gather enough to settle, farm and trade) and the **chase game** (original, not Carmen Sandiego) may be built outside this repo by the owner.
 
 ## Build order
 
-1. **⛏️ Archaeology Dig (Units 1–2)**, below.
-2. **𒀭 Write like a scribe (Unit 3):** a clay tablet (cuneiform wedges) or papyrus (hieroglyphs) background for the drawing step, with a key of signs to copy; write your name, then answer why writing mattered to early cities.
-3. **🗺️ The Lost Treasures Chase (Units 4–5, then each later unit):** a treasure is stolen; clues about goods, landmarks and beliefs point to the next city on a map; three wrong guesses and the trail goes cold; catch the thief to finish the case. One case per unit, built from that unit's places and facts.
+1. **⛏️ Archaeology Dig (Units 1–2, then every unit).** Find ancient items, use the clues to work out where they came from, and tap it on the map. Repeatable by unit; pair it with the museum curator and the timeline sort. Reuses the cave painting's canvas and practices evidence skills.
+2. **✍️ Write like a scribe (Unit 3).** Reuses the drawing tool, so it's quick to build. A natural sequel to the cave painting.
+3. **🗺️ The Lost Treasures Chase.** The biggest and most replayable of the three; build it once she reaches Units 4–5. A treasure is stolen; clues about goods, landmarks and beliefs point to the next city on a map; three wrong guesses and the trail goes cold.
 
-Later ideas: museum curator (Unit 1), forager or farmer for a day (Unit 2), build a river city (Unit 3), coin designer and road builder (Unit 4), Silk Road trader (Unit 5), plan a voyage (Unit 6), timeline sort and primary source detective (any unit).
+## All the ideas, by unit
+
+- **Unit 1, Origins:** 🏛️ *Museum curator.* She arranges 5 artifacts into an exhibit and writes the label for each one. Practices sourcing and explaining.
+- **Unit 2, Early Humans:** 🏹 *Forager or farmer for a day.* She makes choices (hunt, gather, plant, store food, move camp) and sees the tradeoffs over "seasons." Ties into the existing Unit 2 project question.
+- **Unit 3, Early Agrarian Societies:**
+  - 🌊 *Build a river city.* Place the river, fields, granary, temple and walls on a map, and explain why each goes where it does.
+  - ✍️ *Write in cuneiform or hieroglyphs* with the drawing tool (Scribe School, build order 2).
+- **Unit 4, Empires and Belief Systems:**
+  - 🪙 *Coin designer.* Draw a coin for an emperor and explain the symbols.
+  - 🛣️ *Road builder.* Connect an empire's cities and see how roads help trade, armies and the spread of beliefs.
+- **Unit 5, Regional Webs:** the 🗺️ chase game fits best here, with 🐫 *Silk Road trading*: buy low, sell high, and watch ideas and diseases travel along with the goods.
+- **Unit 6, The First Global Age:** ⛵ *Plan a voyage.* Choose supplies, route and season, and see what happens.
+- **Any unit:**
+  - 📅 *Timeline sort.* Drag events into order. Quick, and good for review.
+  - 🔍 *Primary source detective.* A short source with questions like "Who made this? Why? What's missing?"
 
 ## ⛏️ Archaeology Dig: plan
 
