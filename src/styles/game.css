@@ -1033,3 +1033,6 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .scribe-glyph small{font-size:.7rem; text-align:center; max-width:9em}
 .scribe-signs{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:6px}
 .scribe-sign{display:flex; flex-direction:column; align-items:center; gap:2px}
+
+/* the join screen's teacher link is a link styled as a button */
+a.btn{display:inline-block; text-decoration:none}

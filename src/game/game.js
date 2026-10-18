@@ -9376,6 +9376,8 @@ function openJoin(){
   viewHood = null; viewSubject = null;
   join.code = ''; join.roster = []; join.pick = null;
   let last = ''; try { last = localStorage.getItem('pettown:lastCode') || ''; } catch(e){}
+  const linked = (new URLSearchParams(location.search).get('code') || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);   // the teacher app's Student view link
+  if (linked) last = linked;
   $('#joinWrap').innerHTML = `<div class="card"><div class="big-emoji">🐾</div><h2>Welcome to Pet World!</h2>
     <label for="codeInput">Type your class code</label>
     <input id="codeInput" class="textin" maxlength="8" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase; letter-spacing:.2em" value="${esc(last)}">
@@ -9383,7 +9385,7 @@ function openJoin(){
     <div class="row"><button class="btn small" type="button" data-games-only>I'm just here for the games</button></div>
     <form class="games-only-form" data-games-only-form hidden><label>Secret word<input class="textin" type="password" name="secretWord" autocomplete="off" required></label><div class="row"><button class="btn berry" type="submit">Open games</button></div><p class="muted" data-games-only-error aria-live="polite"></p></form>
     <p class="muted" id="joinMsg" aria-live="polite"></p>
-    <p class="muted join-teacher-link"><a href="teacher.html">Teacher or parent? Open the dashboard</a></p></div>`;
+    <div class="row join-teacher-link"><a class="btn small" href="teacher.html">👩‍🏫 Teacher or parent? Open the dashboard</a></div></div>`;
   show('join');
   const go = async () => {
     const code = $('#codeInput').value.trim().toUpperCase();

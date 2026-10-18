@@ -32,11 +32,15 @@ document.addEventListener('click', event => {
 
 let classes: ClassRow[] = [];
 let current: ClassRow | null = null;
-let tab: 'dashboard' | 'roster' | 'settings' | 'lessons' | 'vocab' = 'dashboard';
+let tab: 'dashboard' | 'roster' | 'settings' | 'lessons' | 'vocab' | 'setup' = 'dashboard';
 let isAdmin = false, adminView = false, waitingN = 0;   // the Approvals page, for accounts in app_admins (ROADMAP F4)
 let channel: RealtimeChannel | null = null;
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 const gameUrl = () => new URL('./', location.href).href;
+/* the student side with a class code filled in (the game reads ?code=) */
+const studentViewUrl = (code: string) => `${gameUrl()}?code=${encodeURIComponent(code)}`;
+/* a class made from now on starts with these (existing classes keep what they have) */
+const NEW_CLASS_SETTINGS = { brain: { enabled: true } };
 
 if (!sb) {
   app.innerHTML = `<div class="card authcard"><h2>Almost there</h2><p>This build has no Supabase settings. Copy <code>.env.example</code> to <code>.env</code>, fill in your project URL and anon key, and rebuild. See the README.</p></div>`;
@@ -113,9 +117,9 @@ function renderShell() {
 }
 async function addClass() {
   const name = ($('#newClass') as HTMLInputElement).value.trim(); if (!name) return;
-  const { data, error } = await sb!.from('classes').insert({ name }).select('id').single();
+  const { data, error } = await sb!.from('classes').insert({ name, game_settings: NEW_CLASS_SETTINGS }).select('id').single();
   if (error) { alertMain(error.message); return; }
-  tab = 'roster'; await loadClasses((data as { id: string }).id);
+  tab = 'setup'; await loadClasses((data as { id: string }).id);   // a new class starts on the setup menu
 }
 function alertMain(msg: string) { const m = document.getElementById('main'); if (m) m.insertAdjacentHTML('afterbegin', `<p class="err">${esc(msg)}</p>`); }
 
@@ -129,9 +133,9 @@ function renderMain() {
   }
   if (!current) { stopLive(); main.innerHTML = '<div class="card empty">Add your first class on the left to get a class code.</div>'; return; }
   main.innerHTML = `<div class="tabs">${(['dashboard', 'roster', 'settings', 'lessons', 'vocab'] as const).map(t => `<button class="tab ${tab === t ? 'on' : ''}" data-tab="${t}">${t === 'lessons' ? 'Lessons &amp; questions' : t === 'vocab' ? 'Vocabulary' : t[0].toUpperCase() + t.slice(1)}</button>`).join('')}
-    <span style="flex:1"></span><span class="muted">Class code <b>${esc(current.join_code)}</b></span></div><div id="pane"></div>`;
+    <span style="flex:1"></span><a class="btn small" href="${esc(studentViewUrl(current.join_code))}" target="_blank" rel="noopener" title="Opens Pet World with this class code filled in">🐾 Student view</a><span class="muted">Class code <b>${esc(current.join_code)}</b></span></div><div id="pane"></div>`;
   main.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab as typeof tab; renderMain(); }));
-  if (tab === 'dashboard') void renderDashboard(); else { stopLive(); if (tab === 'roster') void renderRoster(); else if (tab === 'lessons') renderLessonsTab(); else if (tab === 'vocab') renderVocabularyTab(); else renderSettings(); }
+  if (tab === 'dashboard') void renderDashboard(); else { stopLive(); if (tab === 'roster') void renderRoster(); else if (tab === 'lessons') renderLessonsTab(); else if (tab === 'vocab') renderVocabularyTab(); else if (tab === 'setup') renderSetup(); else renderSettings(); }
 }
 
 /* ---------- dashboard (live) ---------- */
@@ -364,6 +368,43 @@ function renderVocabularyTab() {
   })();
 }
 
+/* ---------- quick setup (shown after a class is made, and from Settings) ----------
+   Every on/off choice for the class on one page, with what each one does. It saves into the same game_settings
+   that Settings uses, so the two always agree; the finer controls (units, stations, ticket rules) stay in Settings. */
+interface SetupChoice { id: string; emoji: string; name: string; what: string; on: (g: ClassRow['game_settings']) => boolean }
+const SETUP_CHOICES: SetupChoice[] = [
+  { id: 'brain', emoji: '🧠', name: 'Brain stretches', what: '3 short brain games each morning and after each subject on the daily plan. Results go to each student’s 🧠 Brain tab.', on: g => brainSettings(g?.brain as Partial<BrainSettings> | undefined).enabled },
+  { id: 'arcade', emoji: '🕹️', name: 'Arcade', what: 'Games students play with the practice time they earn. Pick which games in Settings.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).enabled },
+  { id: 'freePlay', emoji: '🎟️', name: 'Arcade Free Play', what: 'No coin admission or tickets: practice time alone opens the Arcade.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).freePlay },
+  { id: 'allowMusic', emoji: '🎵', name: 'Background music', what: 'Students can turn music on. Sound effects stay up to each student.', on: g => g?.allowMusic !== false },
+  { id: 'requireThink', emoji: '💭', name: 'Require Think it through', what: 'Each math station’s reasoning set must be passed before the next station opens.', on: g => g?.requireThink !== false },
+  { id: 'khan', emoji: '🎓', name: 'Khan Academy links', what: 'Khan videos and the Khan unit test check. Off keeps students inside Pet World.', on: g => g?.khan !== false },
+  { id: 'youtube', emoji: '▶️', name: 'YouTube video searches', what: 'A backup "Find videos on YouTube" link on each lesson.', on: g => g?.youtube !== false }
+];
+function renderSetup() {
+  const pane = $('#pane'), cls = current!, g = cls.game_settings;
+  pane.innerHTML = `<div class="card setup-menu"><h2>🧭 Set up ${esc(cls.name)}</h2>
+    <p class="muted" style="margin-top:0">Choose what this class uses. You can change any of these later here or in Settings.</p>
+    <div class="setup-list">${SETUP_CHOICES.map(c => `<label class="setup-item"><input type="checkbox" data-setup="${c.id}" ${c.on(g) ? 'checked' : ''}><span class="setup-emoji" aria-hidden="true">${c.emoji}</span><span><b>${esc(c.name)}</b><br><span class="muted">${esc(c.what)}</span></span></label>`).join('')}</div>
+    <div class="row"><button class="btn primary" id="setupSave">Save and add students →</button><button class="btn" id="setupSaveStay">Save</button><button class="btn" id="setupMore">More settings</button></div>
+    <p class="status muted" id="setupMsg"></p></div>`;
+  const val = (id: string) => (pane.querySelector(`[data-setup="${id}"]`) as HTMLInputElement).checked;
+  const save = async (next: typeof tab | null) => {
+    const old = cls.game_settings || {};
+    const game_settings = { ...old, allowMusic: val('allowMusic'), requireThink: val('requireThink'), khan: val('khan'), youtube: val('youtube'),
+      brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
+      arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') } };
+    $('#setupMsg').textContent = 'Saving…';
+    const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
+    if (error) { $('#setupMsg').textContent = error.message; return; }
+    cls.game_settings = game_settings;
+    if (next) { tab = next; renderMain(); } else $('#setupMsg').textContent = 'Saved.';
+  };
+  $('#setupSave').addEventListener('click', () => { void save('roster'); });
+  $('#setupSaveStay').addEventListener('click', () => { void save(null); });
+  $('#setupMore').addEventListener('click', () => { tab = 'settings'; renderMain(); });
+}
+
 /* ---------- class settings ---------- */
 function renderSettings() {
   const pane = $('#pane'), cls = current!;
@@ -373,7 +414,7 @@ function renderSettings() {
   const brain = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
-  pane.innerHTML = `<div class="two">
+  pane.innerHTML = `<div class="card setup-callout"><div class="row" style="margin:0; align-items:center"><span style="flex:1"><b>🧭 Quick setup</b> <span class="muted">· everything you can turn on or off, on one page</span></span><button type="button" class="btn small primary" id="openSetup">Open quick setup</button></div></div><div class="two">
     <div class="card"><h2>How students join</h2>
       <p>1. Go to <a href="${esc(gameUrl())}" target="_blank" rel="noopener">${esc(gameUrl())}</a></p>
       <p>2. Type the class code:</p><p class="joincode">${esc(cls.join_code)}</p>
@@ -473,6 +514,7 @@ function renderSettings() {
   });
   pane.querySelectorAll<HTMLButtonElement>('[data-brain-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-brain-game]').forEach(input => { input.checked = button.dataset.brainAll === '1'; }); }));
   pane.querySelectorAll<HTMLButtonElement>('[data-arcade-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { input.checked = button.dataset.arcadeAll === '1'; }); }));
+  $('#openSetup').addEventListener('click', () => { tab = 'setup'; renderMain(); });
   $('#copyJoin').addEventListener('click', () => { void copyText(`Go to: ${gameUrl()}\nClass code: ${cls.join_code}`, $('#copyJoin') as HTMLButtonElement, $('#joinFallback') as HTMLTextAreaElement); });
   $('#saveDrills').addEventListener('click', async () => {
     const types: Record<string, boolean> = {};
