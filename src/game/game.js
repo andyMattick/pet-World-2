@@ -14,6 +14,7 @@ import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkT
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
+import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult } from '../shared/brainGames';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -157,6 +158,7 @@ function normalize(raw){
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
   s.sentBackSeen = Array.isArray(s.sentBackSeen) ? s.sentBackSeen.filter(key => typeof key === 'string').slice(-60) : [];   // sent-back items already announced (renderSentBack)
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
+  s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
@@ -5053,6 +5055,8 @@ function show(id){
   if (id === 'vocab') renderVocab(); else if (vocabRun) { stopVocabTimer(); vocabRun = null; }
   syncRoom(id);
   window.scrollTo(0,0);
+  if (brainRun && (id === 'join' || id === 'name' || id === 'loading')) closeBrainStretch(false);   // signed out: the stretch waits in the save
+  brainCheck();
 }
 /* Themed room behind building screens (src/game/rooms.js). Summary keeps the room it came from. */
 function syncRoom(id){
@@ -5267,6 +5271,118 @@ $('#arcadeWrap').addEventListener('click', event => {
   const furniture = event.target.closest('[data-arcade-furniture]');
   if (furniture) buyArcadeFurniture(furniture.dataset.arcadeFurniture);
 });
+/* ---------- brain stretches (docs/BRAIN-GAMES.md) ----------
+   3 brain games in a row from the games the teacher left in the cycle (class setting game_settings.brain): one the first
+   time the town opens each day, and one each time a core subject item on the daily plan (time in a subject, or a unit's
+   practice, quiz or test) turns ✅. There is no skip button. A stretch waits for a break (never in the middle of an order,
+   a question, a sprint or a game) and comes back after a reload. Results, levels and stretches are kept in S.brain
+   (src/shared/brainGames.ts); the time goes to its own 🧠 Brain stretch row, never to a subject or the Arcade. */
+const BRAIN_STUCK_MS = 8 * 60000;   // a game that never reports (stuck or didn't load) gets a Next button after this long
+let brainRun = null;   // {id, got, el, timer, stuck}
+const brainPolicy = () => (gamesOnlyMode || !Backend.me) ? brainSettings(null) : brainSettings(Backend.me.game_settings?.brain);
+const brainAllowed = () => { const policy = brainPolicy(); return policy.enabled ? BRAIN_GAMES.filter(game => policy.games[game.id]).map(game => game.id) : []; };
+const brainStretch = () => S.brain.stretches.find(x => x.id === S.brain.active) || null;
+function brainItemName(x){
+  if (x.kind === 'subject') return PLAN_SUBJECT_NAME[x.subject] || x.subject;
+  const b = BUILDINGS.find(u => u.id === x.unit); return b ? `${b.emoji} ${b.name}` : x.unit;
+}
+/* a good moment to stop: in town, on a shop floor, after an order, or between lessons */
+function brainBreakNow(){
+  const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
+  if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
+  if (on('vocab') && vocabRun) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap'))) return false;
+  return true;
+}
+function newBrainStretch(kind, label, item){
+  const recent = S.brain.stretches.slice(-2).flatMap(x => x.games);
+  const games = pickStretchGames(brainAllowed(), recent); if (!games.length) return;
+  const stretch = {id:`b${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`, day:logDayKey(), kind, label, ...(item ? {item} : {}), games, done:0, at:Date.now()};
+  S.brain.stretches = [...S.brain.stretches, stretch].slice(-90); S.brain.active = stretch.id; save();
+}
+function brainCheck(){
+  if (brainRun || !S?.brain || !brainAllowed().length) return;
+  const day = logDayKey(), stretched = S.brain.stretched[day] || (S.brain.stretched[day] = []);
+  if (S.brain.active && brainStretch()?.day !== day) S.brain.active = '';   // left unfinished on an earlier day
+  if (!S.brain.active) {
+    const core = planItems(day).filter(x => x.kind === 'subject' || x.kind === 'unit');
+    if (S.brain.morning !== day) {
+      if (!brainBreakNow()) return;
+      S.brain.morning = day;
+      core.filter(x => planItemInfo(x, day).status === 'done').forEach(x => { if (!stretched.includes(x.id)) stretched.push(x.id); });   // done before today's first stretch: no catch-up stretches
+      newBrainStretch('morning', 'Morning brain stretch');
+    } else {
+      const next = core.find(x => !stretched.includes(x.id) && planItemInfo(x, day).status === 'done');
+      if (next) { stretched.push(next.id); newBrainStretch('subject', `Brain stretch after ${brainItemName(next)}`, next.id); }
+    }
+  }
+  if (S.brain.active && brainBreakNow()) openBrainStretch();
+}
+function openBrainStretch(){
+  const stretch = brainStretch(); if (!stretch || brainRun) return;
+  Music.stop();
+  const el = document.createElement('div');
+  el.className = 'brain-stretch'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', stretch.label);
+  document.body.appendChild(el); document.body.classList.add('brain-open');
+  brainRun = {id:stretch.id, got:false, el, timer:setInterval(brainTick, 15000), stuck:null};
+  renderBrainGame();
+}
+function renderBrainGame(){
+  const stretch = brainStretch(); if (!stretch || !brainRun) { closeBrainStretch(false); return; }
+  const id = stretch.games[stretch.done], game = brainGame(id), level = game.levels[S.brain.levels[id] || 0];
+  brainRun.got = false; clearTimeout(brainRun.stuck);
+  brainRun.stuck = setTimeout(() => showBrainNext(null, ''), BRAIN_STUCK_MS);
+  brainRun.el.innerHTML = `<div class="brain-head"><strong>🧠 ${esc(stretch.label)}</strong><span>Game ${stretch.done + 1} of ${stretch.games.length} · ${game.emoji} ${esc(game.name)} · ${esc(level[1])}</span></div>
+    <p class="brain-tip">${esc(game.skill)}. Read the directions, then press start.</p>
+    <iframe id="brainFrame" title="${esc(game.name)}" src="/brain-games/?embed=true&game=${encodeURIComponent(id)}&difficulty=${encodeURIComponent(level[0])}&stretch=${encodeURIComponent(stretch.id)}"></iframe>
+    <div class="brain-foot" id="brainFoot" hidden></div>`;
+}
+function brainTick(){
+  if (!brainRun || document.hidden) return;
+  addSubjectTime(S.subjectTime, 'brain', 15); logPlaceTime('brain', 15); save();
+}
+function brainMessage(event){
+  if (!brainRun || event.origin !== location.origin || event.data?.type !== 'brain:result') return;
+  const frame = $('#brainFrame'), stretch = brainStretch(), r = event.data.result || {};
+  if (!frame || !stretch || event.source !== frame.contentWindow || event.data.stretch !== stretch.id || brainRun.got || r.gameId !== stretch.games[stretch.done]) return;
+  const result = {t:Date.now(), g:r.gameId, lv:String(r.difficulty || '').slice(0, 30), acc:Math.max(0, Math.min(100, Math.round(+r.accuracy || 0))),
+    rt:Math.max(0, Math.round(+r.avgReactionTimeMs || 0)), sc:Math.round(+r.score || 0), dur:Math.max(0, Math.round(+r.durationSeconds || 0)), s:stretch.id};
+  showBrainNext(result, recordBrainResult(S.brain, result));
+}
+/* after a game: count it and show the Next (or Done) button. result is null when a game never reported (BRAIN_STUCK_MS). */
+function showBrainNext(result, levelUp){
+  const stretch = brainStretch(), foot = $('#brainFoot'); if (!brainRun || brainRun.got || !stretch || !foot) return;
+  brainRun.got = true; clearTimeout(brainRun.stuck);
+  stretch.done = Math.min(stretch.games.length, stretch.done + 1);
+  const last = stretch.done >= stretch.games.length;
+  if (last) {
+    stretch.finishedAt = Date.now(); S.brain.active = '';
+    const played = S.brain.results.filter(x => x.s === stretch.id);
+    logEvent({k:'brain', title:stretch.label, detail:played.map(x => `${brainGame(x.g)?.name || x.g} ${x.acc}%`).join(', ')});
+  }
+  save();
+  foot.innerHTML = `<span>${result ? `<b>${result.acc}% right</b>${levelUp ? ` · ⬆️ Level up! Next time: ${esc(levelUp)}` : ''}` : 'This game didn’t finish. Let’s go on.'}</span>
+    <button type="button" class="btn berry" id="brainNext">${last ? 'Done! Back to Pet World' : 'Next game →'}</button>`;
+  foot.hidden = false;
+  $('#brainNext').addEventListener('click', () => { if (last) { closeBrainStretch(true); toast('Brain stretch done! 🧠'); } else renderBrainGame(); });
+}
+function closeBrainStretch(finished){
+  if (!brainRun) return;
+  clearInterval(brainRun.timer); clearTimeout(brainRun.stuck);
+  brainRun.el.remove(); document.body.classList.remove('brain-open');
+  brainRun = null;
+  if (!finished) return;
+  kickMusic();
+  if (!$('#scr-home').hidden) renderHome();   // the plan card shows the ✅
+  setTimeout(brainCheck, 500);   // another stretch may be waiting
+}
+function brainPlanRows(){
+  if (!brainAllowed().length) return [];
+  const day = logDayKey();
+  return S.brain.stretches.filter(x => x.day === day).map(x => `<div class="row extras-row"><span style="flex:1">${x.done >= x.games.length ? '✅' : '⬜'} 🧠 ${esc(x.label)} · <b>${x.done} of ${x.games.length} games</b></span></div>`);
+}
+window.addEventListener('message', brainMessage);
+setInterval(() => { if (Backend.me) brainCheck(); }, 15000);   // notices a plan item turning ✅ while she stays on one screen
 function coinBurst(el, n){
   if (reduceMotion() || !el) return;
   const r = el.getBoundingClientRect();
@@ -6162,8 +6278,8 @@ function planItemInfo(x, day = logDayKey()){
 /* the town page card: plan items, then extras, then time goals */
 function planCardHTML(){
   const items = planItems(), extras = assignedExtras(), day = goalDayKey(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
-  const goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0);
-  if (!items.length && !extras.length && !goalRows.length) return '';
+  const goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0), brainRows = brainPlanRows();
+  if (!items.length && !extras.length && !goalRows.length && !brainRows.length) return '';
   const rows = items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small berry" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
@@ -6173,7 +6289,7 @@ function planCardHTML(){
   }), goalRows.map(([id, name]) => {
     const done = Math.floor((today[id] || 0) / 60), goal = goals[id];
     return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} 🎯 ${esc(name)}</span><b>${Math.min(done, goal)} of ${goal} min</b></div>`;
-  }));
+  }), brainRows);
   return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${rows.join('')}</div>`;
 }
 function renderHome(){
@@ -9329,7 +9445,7 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => { addSubjectTime(S.subjectTime, subjectOnScreen(), seconds); logPlaceTime(placeOnScreen(), seconds); });
+}, seconds => { if (brainRun) return; addSubjectTime(S.subjectTime, subjectOnScreen(), seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick)
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
    S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, ...}], sent}
@@ -9383,7 +9499,7 @@ function placeLabel(key){
   if (kind === 'dig') return `⛏️ ${digSiteById(a)?.name || 'Dig Site'}`;
   if (kind === 'scribe') return '✍️ Scribe School';
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
-  return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
+  return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
 function eventText(e){
   const score = e.n ? ` · ${e.s} of ${e.n}` : e.s != null ? ` · ${e.s} right` : '';
@@ -9396,6 +9512,7 @@ function eventText(e){
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
+  if (e.k === 'brain') return `🧠 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,
@@ -9409,7 +9526,7 @@ function dayWins(d){
 }
 function daySummaryHTML(day = logDayKey()){
   const d = S.dayLog[day] || {places:{}, counts:{}, events:[]}, subj = S.subjectTime?.[day] || {}, mins = s => (s < 60 ? '<1' : String(Math.round(s / 60)));
-  const subjects = [...GOAL_SUBJECTS, ['arcade', '🕹️ Arcade']].filter(([id]) => subj[id] >= 30);
+  const subjects = [...GOAL_SUBJECTS, ['brain', '🧠 Brain stretch'], ['arcade', '🕹️ Arcade']].filter(([id]) => subj[id] >= 30);
   const total = Object.values(subj).reduce((a, b) => a + b, 0);
   const places = Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]);
   const counts = Object.entries(d.counts).map(([k, c]) => { const [, shop, station] = k.split(':'); return `<li>${esc(stationLabel(shop, station))}: <b>${c.n}</b> order${c.n === 1 ? '' : 's'}, ${c.ok} perfect</li>`; });
@@ -9541,6 +9658,7 @@ function mergeProgress(base, other){
   }
   base.sessions = [...sessions.values()].sort((a, b) => a.start - b.start).slice(-30);
   n += mergeSubjectTime(base.subjectTime, other.subjectTime);
+  n += mergeBrainState(base.brain, other.brain);   // brain stretch results and levels from both devices
   for (const [day, mins] of Object.entries(other.mathMinutes || {})) if ((Number(mins) || 0) > (Number(base.mathMinutes[day]) || 0)) { base.mathMinutes[day] = mins; n++; }
   for (const [sk, count] of Object.entries(other.kn || {})) if (count > (base.kn[sk] || 0)) {
     base.kn[sk] = count; if (other.kr?.[sk] != null) base.kr[sk] = other.kr[sk]; if (other.ks?.[sk]) base.ks[sk] = other.ks[sk]; n++;

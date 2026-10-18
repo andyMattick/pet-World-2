@@ -136,6 +136,14 @@ main{max-width:1080px; margin:0 auto; padding:8px 18px 40px}
 .arcade-play.arcade-full iframe{flex:1; height:auto; min-height:0}
 .arcade-play-buttons{display:flex; gap:8px}
 body.arcade-open{overflow:hidden}
+/* A brain stretch (docs/BRAIN-GAMES.md) covers the whole window until its 3 games are done: no close button */
+.brain-stretch{position:fixed; inset:0; z-index:70; display:flex; flex-direction:column; gap:6px; background:var(--board); color:var(--chalk); padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}
+.brain-head{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+.brain-tip{margin:0; color:var(--chalk-dim); font-size:15px}
+.brain-stretch iframe{flex:1; min-height:0; width:100%; border:0; border-radius:10px; background:#0c0f17}
+.brain-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:8px 4px 0}
+.brain-foot[hidden]{display:none}
+body.brain-open{overflow:hidden}
 
 /* Pet Room and Dress-up */
 .room-layout{display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start}
