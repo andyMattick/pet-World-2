@@ -5098,13 +5098,13 @@ let activeArcadeRun = null, arcadeTimer = null;
 const arcadePolicy = () => gamesOnlyMode ? arcadeSettings({enabled:true, freePlay:true}) : Backend.me ? arcadeSettings(Backend.me.game_settings?.arcade) : arcadeSettings({enabled:true, freePlay:true});
 const arcadeGamesForClass = () => {
   const policy = arcadePolicy();
-  return ARCADE_GAMES.filter(game => game.available && (policy.freePlay || policy.games[game.id]));
+  return ARCADE_GAMES.filter(game => game.available && policy.games[game.id]);
 };
 const arcadeTicketPrizesEnabled = () => { const policy = arcadePolicy(); return policy.enabled && !policy.freePlay; };
 async function openArcade(){
   if (Backend.me) await Backend.refreshSettings();
   const policy = arcadePolicy();
-  if (!policy.freePlay && !policy.enabled) { toast('Your teacher has not opened the Arcade.'); return; }
+  if (!policy.enabled) { toast('Your teacher has not opened the Arcade.'); return; }
   show('arcade');
 }
 function enterGamesOnly(form){
@@ -5228,7 +5228,7 @@ function exitArcadeFullscreen(){
 }
 function startArcadeGame(id){
   const policy = arcadePolicy(), game = arcadeGamesForClass().find(item => item.id === id), remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds();
-  if (!game || (!gamesOnlyMode && remaining <= 0) || (!gamesOnlyMode && !policy.freePlay && (!policy.enabled || !policy.games[id] || !arcadeAdmitted() && S.coins < arcadeEntryCost))) return;
+  if (!game || (!gamesOnlyMode && remaining <= 0) || (!gamesOnlyMode && (!policy.enabled || !policy.games[id] || !policy.freePlay && !arcadeAdmitted() && S.coins < arcadeEntryCost))) return;
   if (!policy.freePlay && !arcadeAdmitted()) { S.coins -= arcadeEntryCost; S.arcade.admittedDay = arcadeToday(); save(); updateHeader(); }
   if (arcadeTimer) clearInterval(arcadeTimer);
   const runId = `${S.sid}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
@@ -5241,8 +5241,16 @@ function startArcadeGame(id){
   $('#arcadeClose').addEventListener('click', () => { if (arcadeTimer) clearInterval(arcadeTimer); activeArcadeRun = null; exitArcadeFullscreen(); play.hidden = true; play.innerHTML = ''; renderArcade(); });
   if (gamesOnlyMode) return;
   const started = performance.now();
-  let elapsedPreviously = 0;
+  let elapsedPreviously = 0, ticks = 0;
   arcadeTimer = setInterval(() => {
+    // Once a minute, pick up the teacher's switches: closing the Arcade or this game ends the run.
+    if (++ticks % 60 === 0 && Backend.me) void Backend.refreshSettings().then(() => {
+      const now = arcadePolicy();
+      if (activeArcadeRun?.id !== runId || (now.enabled && now.games[game.id])) return;
+      clearInterval(arcadeTimer); arcadeTimer = null; activeArcadeRun = null; exitArcadeFullscreen(); play.hidden = true; play.innerHTML = '';
+      if (now.enabled) renderArcade(); else show('home');
+      toast(now.enabled ? `Your teacher closed ${game.name}.` : 'Your teacher closed the Arcade.');
+    });
     const used = Math.floor((performance.now() - started) / 1000);
     const elapsed = Math.max(0, used - elapsedPreviously);
     elapsedPreviously = used;
@@ -6210,7 +6218,7 @@ function renderHome(){
   h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
   h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
   const arcade = arcadePolicy();
-  h += arcade.enabled || arcade.freePlay
+  h += arcade.enabled
     ? `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcade.freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`
     : `<button class="tile service locked" data-open="arcade" aria-disabled="true"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">Closed by your teacher</span><span class="soon">🔒</span></button>`;
   $('#town').innerHTML = h;

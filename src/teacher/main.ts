@@ -387,10 +387,12 @@ function renderSettings() {
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${cls.game_settings?.requireThink === false ? '' : 'checked'}> Require 🧠 Think it through</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set (select all, sort, two-part and more) has to be passed, every question right, before the next station opens. Stations a student already worked at, and stations you opened, stay open.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${cls.game_settings?.youtube === false ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup (and the only video link when Khan is off). Pet World doesn't check what YouTube shows, so turn this off if your school blocks YouTube or you'd rather students stay off it.</p>
       <h3>Arcade</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Enable Arcade for paid-entry mode</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Open the Arcade</label>
+      <p class="muted" style="margin-top:0">When it's off, the Arcade is closed and students see a lock on its town tile. Students already playing are sent back within a minute.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: banked math time only, no admission or tickets</label>
-      <p class="muted" style="margin-top:0">Free Play opens every available game and requires only practice time banked today. Arcade and game switches apply to paid-entry mode.</p>
-      <h4>Available games (paid-entry mode)</h4>${ARCADE_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-arcade-game="${game.id}" ${arcade.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)}</label>`).join('')}
+      <p class="muted" style="margin-top:0">Free Play needs only practice time banked today. Without it, students pay 🪙 100 once a day and earn tickets.</p>
+      <h4>Games students can play</h4><div class="row"><button type="button" class="btn small" data-arcade-all="1">Open all</button><button type="button" class="btn small" data-arcade-all="0">Close all</button></div>${ARCADE_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-arcade-game="${game.id}" ${arcade.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)}</label>`).join('')}
+      <p class="muted" style="margin-top:0">These switches apply in Free Play and paid entry. A game you close mid-play ends for that student within a minute.</p>
       <h4>Ticket rewards (paid-entry mode)</h4>
       <label for="arcadeCorsairRate">Corsair's Cove points per ticket</label><input type="number" id="arcadeCorsairRate" min="1000" max="100000" step="1000" value="${arcade.corsairPointsPerTicket}">
       <label for="arcadeWhackTickets">Tickets per completed Whack-a-Mole round</label><input type="number" id="arcadeWhackTickets" min="0" max="5" step="1" value="${arcade.whackTicketsPerRound}">
@@ -458,6 +460,7 @@ function renderSettings() {
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
+  pane.querySelectorAll<HTMLButtonElement>('[data-arcade-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { input.checked = button.dataset.arcadeAll === '1'; }); }));
   $('#copyJoin').addEventListener('click', () => { void copyText(`Go to: ${gameUrl()}\nClass code: ${cls.join_code}`, $('#copyJoin') as HTMLButtonElement, $('#joinFallback') as HTMLTextAreaElement); });
   $('#saveDrills').addEventListener('click', async () => {
     const types: Record<string, boolean> = {};
