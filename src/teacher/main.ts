@@ -2,6 +2,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
+import { BRAIN_GAMES, brainSettings, type BrainSettings } from '../shared/brainGames';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 import { setLedgerClass } from './ledger';
@@ -157,6 +158,8 @@ async function renderDashboard() {
     student.writtenAnswers = Array.isArray(state?.writtenAnswers) ? state.writtenAnswers as NonNullable<StudentReport['writtenAnswers']> : [];
     student.mathThink = state?.mathThink && typeof state.mathThink === 'object' ? state.mathThink as NonNullable<StudentReport['mathThink']> : {};
     student.subjectTime = state?.subjectTime && typeof state.subjectTime === 'object' ? state.subjectTime as NonNullable<StudentReport['subjectTime']> : {};
+    student.brain = state?.brain ?? null;   // brain stretches (the 🧠 Brain tab)
+    student.brainOn = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   });
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
   setReportClass(cls.id, cls.game_settings?.home, cls.game_settings?.khan, cls.game_settings?.requireThink);
@@ -367,6 +370,7 @@ function renderSettings() {
   const settings = mergeDrillSettings(cls.drill_settings);
   const quizzes = quizSettings(cls.quiz_settings || QUIZ_DEFAULTS);
   const arcade = arcadeSettings(cls.game_settings?.arcade as Partial<ArcadeSettings> | undefined);
+  const brain = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="two">
@@ -386,6 +390,10 @@ function renderSettings() {
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${cls.game_settings?.khan === false ? '' : 'checked'}> Use Khan Academy</label><p class="muted" style="margin-top:0">When it's off, students and families never see Khan links or mentions, and the Khan unit test check is hidden. Lessons keep their own text, Pet World videos, and your own lesson links. Nothing is deleted, so you can turn it back on any time.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${cls.game_settings?.requireThink === false ? '' : 'checked'}> Require 🧠 Think it through</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set (select all, sort, two-part and more) has to be passed, every question right, before the next station opens. Stations a student already worked at, and stations you opened, stay open.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${cls.game_settings?.youtube === false ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup (and the only video link when Khan is off). Pet World doesn't check what YouTube shows, so turn this off if your school blocks YouTube or you'd rather students stay off it.</p>
+      <h3>🧠 Brain stretches</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> Brain stretches</label>
+      <p class="muted" style="margin-top:0">3 short brain games in a row: one when a student opens Pet World each day, and one each time a subject or unit on their daily plan is done. There's no skip button. Each game starts at its easiest level and moves up after 3 scores in a row of 85% or better. Results are on each student's 🧠 Brain tab.</p>
+      <h4>Games in the cycle</h4><div class="row"><button type="button" class="btn small" data-brain-all="1">Use all</button><button type="button" class="btn small" data-brain-all="0">Block all</button></div>${BRAIN_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-brain-game="${game.id}" ${brain.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)} <span class="muted">· ${esc(game.skill)}</span></label>`).join('')}
       <h3>Arcade</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Open the Arcade</label>
       <p class="muted" style="margin-top:0">When it's off, the Arcade is closed and students see a lock on its town tile. Students already playing are sent back within a minute.</p>
@@ -439,6 +447,9 @@ function renderSettings() {
     const name = ($('#cName') as HTMLInputElement).value.trim(), min_station = +($('#cStation') as HTMLSelectElement).value;
     const openUnits = [...pane.querySelectorAll<HTMLInputElement>('[data-open-unit]')].filter(input => input.checked).map(input => input.dataset.openUnit!);
     const allowMusic = ($('#allowMusic') as HTMLInputElement).checked, khan = ($('#useKhan') as HTMLInputElement).checked, youtube = ($('#useYouTube') as HTMLInputElement).checked, requireThink = ($('#requireThink') as HTMLInputElement).checked;
+    const brainGames: Record<string, boolean> = {};
+    pane.querySelectorAll<HTMLInputElement>('[data-brain-game]').forEach(input => { brainGames[input.dataset.brainGame!] = input.checked; });
+    const brainSettingsForClass = brainSettings({ enabled: ($('#brainEnabled') as HTMLInputElement).checked, games: brainGames });
     const arcadeGames: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { arcadeGames[input.dataset.arcadeGame!] = input.checked; });
     const arcadeSettingsForClass = arcadeSettings({
@@ -455,11 +466,12 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
+  pane.querySelectorAll<HTMLButtonElement>('[data-brain-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-brain-game]').forEach(input => { input.checked = button.dataset.brainAll === '1'; }); }));
   pane.querySelectorAll<HTMLButtonElement>('[data-arcade-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { input.checked = button.dataset.arcadeAll === '1'; }); }));
   $('#copyJoin').addEventListener('click', () => { void copyText(`Go to: ${gameUrl()}\nClass code: ${cls.join_code}`, $('#copyJoin') as HTMLButtonElement, $('#joinFallback') as HTMLTextAreaElement); });
   $('#saveDrills').addEventListener('click', async () => {

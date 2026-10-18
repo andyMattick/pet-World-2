@@ -3,6 +3,7 @@ import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '..
 import { LESSON_COURSES } from '../shared/questionBanks';
 import { subjectTimeTableHTML, GOAL_SUBJECTS, parseSubjectGoals, subjectDayKey } from '../shared/subjectTime';
 import { thinkReportHTML } from '../shared/thinkReport';
+import { brainReportHTML, type BrainSettings } from '../shared/brainGames';
 import { renderLedger } from './ledger';
 import { renderCourses } from './courses';
 import { renderTranscript } from './transcript';
@@ -37,6 +38,7 @@ export interface StudentReport {
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   writtenAnswers?: WrittenEntry[];
   subjectTime?: Record<string, Record<string, number>>;
+  brain?: unknown; brainOn?: BrainSettings;   // brain stretches: S.brain from the save, and the class setting
   mathThink?: Record<string, { best?: number; tries?: number; passed?: boolean; lastScore?: number; questionCount?: number; lastMissed?: string[] }>;   // 🧠 Think it through sets, from the save   // active seconds per day and subject, from the student's save
 }
 /* a short answer or paragraph from the student's save (docs: QUESTION-TYPES.md) */
@@ -227,12 +229,12 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
-  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
+  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['brain', '🧠 Brain'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
   if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
   const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
   h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
   h += panel('math', mathUnitsHTML(r) + `<h3>🧠 Think it through</h3>${thinkReportHTML(r.mathThink, reportThinkRequired)}`) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
-  h += panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>') + panel('ledger', '<div id="ledgerCard"></div>') + panel('courses', '<div id="coursesCard"></div>') + panel('transcript', '<div id="transcriptCard"></div>');
+  h += panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>') + panel('brain', `<h3>🧠 Brain stretches</h3>${brainReportHTML(r.brain, r.brainOn)}`) + panel('ledger', '<div id="ledgerCard"></div>') + panel('courses', '<div id="coursesCard"></div>') + panel('transcript', '<div id="transcriptCard"></div>');
   /* the Ledger (docs/LEDGER.md step 4) reads the database, so it loads the first time its tab opens;
      Grades (step 6) adds up again each time its tab opens, so Ledger changes show */
   let ledgerShown = false;
