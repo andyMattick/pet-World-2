@@ -143,9 +143,13 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F13. 🎨 Art Studio and gallery: paint any time on the cave-wall canvas (separate from the History project); save paintings to a gallery (about 8 to 10, kept in the save), reopen or delete them; frame one for the Pet Room for Pet World coins (about 50) as a placeable decoration. More colors and stencils to buy with coins as they become available (for example, opened by later History units). The project painting gets "Save to my gallery" next to Send to teacher
 - [x] F14. 📋 More detail in "I'm done for today": list the skills she mastered that day and the tests and quizzes she passed (with scores), on her day screen and in her saved Ledger day, so the teacher Ledger and transcript (F9 to F11) can use them.
 - [x] F15. 🧠 Brain stretches (`BRAIN-GAMES.md`): 12 brain games (source `src/brain-games`, built to `public/brain-games`), not in the Arcade. 3 random games each morning and after each core subject on the daily plan, with no skipping; the teacher blocks games from the cycle in class settings. Each game starts easy and moves up after 3 results in a row at 85%+. Results go to the teacher's 🧠 Brain tab and the Ledger, and the time to its own 🧠 Brain stretch row
-  - [ ] Still to do: plainer, kid-friendly wording inside the games (their screens still say things like "Right Inferior Frontal Gyrus")
+  - [ ] Still to do: plainer, kid-friendly wording inside the games (their screens still say things like "Right Inferior Frontal Gyrus"). Word Builder and Pattern Matrix are done
+  - [x] Fresh puzzles every round (Pattern Matrix from rules, Word Builder's bigger word list), levels that go down as well as up, extra time at the easiest level, and "Your best yet!" (`BRAIN-GAMES.md`, "Never crushing")
 - [x] F16. 🕹️ Arcade open and close: "Open the Arcade" is the one main switch and Free Play only sets how students get in; each game's switch works in Free Play too (Open all / Close all); a student playing a game the teacher closes is sent back within a minute
 - [ ] F17. 🖼️ Fix Museum Caper (source `src/arcade/museum-caper`, built to `public/arcade/museum-caper`): the owner will describe what's broken
+- [x] F18. 🧭 Teacher Quick setup: a new class starts with brain stretches on and opens on one page of every on/off choice; Settings links back to it
+- [x] F19. 🐾 Teacher ⇄ student: Open Pet World and Student view (class code filled in) in the teacher app; a clearer teacher button on the join screen
+- [x] F20. 📦 `npm run import-game` for Arcade and Brain Games built outside Pet World (`IMPORT-GAMES.md`)
 
 ## Database files, in the order they were run
 
