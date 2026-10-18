@@ -15,16 +15,85 @@ interface WordPuzzle {
   scrambled: string[];
 }
 
-const PUZZLE_BANK: Array<{ word: string; clue: string }> = [
-  { word: 'NEURON', clue: 'Electrically excitable cell that transmits nerve impulses' },
-  { word: 'SYNAPSE', clue: 'Microscopic junction across which nerve signals bridge' },
-  { word: 'CORTEX', clue: 'Outer furrowed grey-matter layer of the cerebrum' },
-  { word: 'MYELIN', clue: 'Protective lipid sheath insulating axon fibers' },
-  { word: 'AXON', clue: 'Slender nerve fiber conducting impulses away from cell body' },
-  { word: 'DENDRITE', clue: 'Branching tree-like structure receiving incoming synaptic input' },
-  { word: 'MEMORY', clue: 'Neurochemical process of encoding and retrieving experiences' },
-  { word: 'SIGNAL', clue: 'Electrochemical action potential transmitting biological data' },
+/* Everyday words with kid-friendly clues. '4-letter' plays the short words (4–5 letters), '6-letter' the long ones
+   (6–7 letters). Each round draws 5 at random, so rounds rarely repeat. */
+const SHORT_WORDS: Array<{ word: string; clue: string }> = [
+  { word: 'FROG', clue: 'A green animal that hops and says ribbit' },
+  { word: 'CAKE', clue: 'A sweet treat with candles on your birthday' },
+  { word: 'MOON', clue: 'It glows in the sky at night' },
+  { word: 'SHIP', clue: 'A big boat that crosses the ocean' },
+  { word: 'BIRD', clue: 'It has feathers and can fly' },
+  { word: 'RAIN', clue: 'Water falling from the clouds' },
+  { word: 'DRUM', clue: 'You tap it to keep the beat' },
+  { word: 'NEST', clue: 'A home a bird builds from twigs' },
+  { word: 'KITE', clue: 'You fly it on a windy day' },
+  { word: 'CORN', clue: 'Yellow kernels on a cob' },
+  { word: 'LAMP', clue: 'It lights up a room' },
+  { word: 'SNOW', clue: 'Cold white flakes in winter' },
+  { word: 'TREE', clue: 'It has a trunk, branches and leaves' },
+  { word: 'FISH', clue: 'It swims and breathes with gills' },
+  { word: 'BOOK', clue: 'Pages full of stories to read' },
+  { word: 'STAR', clue: 'A tiny twinkling light in the night sky' },
+  { word: 'MILK', clue: 'A white drink that comes from cows' },
+  { word: 'GOAT', clue: 'A farm animal with horns and a beard' },
+  { word: 'SOAP', clue: 'It makes bubbles when you wash your hands' },
+  { word: 'WOLF', clue: 'A wild animal that howls at the moon' },
+  { word: 'APPLE', clue: 'A red or green fruit that keeps the doctor away' },
+  { word: 'BEACH', clue: 'Sand and waves by the sea' },
+  { word: 'CLOUD', clue: 'A fluffy white puff in the sky' },
+  { word: 'HORSE', clue: 'An animal you can ride that gallops' },
+  { word: 'PIZZA', clue: 'Cheesy slices with toppings' },
+  { word: 'TIGER', clue: 'A big striped cat' },
+  { word: 'PLANT', clue: 'It grows from a seed in soil' },
+  { word: 'CHAIR', clue: 'Something you sit on' },
+  { word: 'TRAIN', clue: 'It rides on tracks and goes choo-choo' },
+  { word: 'SMILE', clue: 'What your face does when you are happy' },
+  { word: 'GRAPE', clue: 'A small round fruit that grows in bunches' },
+  { word: 'BREAD', clue: 'You use two slices to make a sandwich' },
+  { word: 'OCEAN', clue: 'A huge body of salty water' },
+  { word: 'ROBOT', clue: 'A machine that can move and follow commands' },
+  { word: 'HONEY', clue: 'Sweet and sticky, made by bees' },
+  { word: 'PIANO', clue: 'An instrument with black and white keys' },
 ];
+const LONG_WORDS: Array<{ word: string; clue: string }> = [
+  { word: 'RABBIT', clue: 'A fluffy animal with long ears that hops' },
+  { word: 'GARDEN', clue: 'A place where flowers and vegetables grow' },
+  { word: 'PLANET', clue: 'Earth and Mars are each one of these' },
+  { word: 'CASTLE', clue: 'A big stone home for a king or queen' },
+  { word: 'BRIDGE', clue: 'It lets you cross over a river' },
+  { word: 'SUMMER', clue: 'The hottest season of the year' },
+  { word: 'TURTLE', clue: 'A slow animal that carries its shell' },
+  { word: 'PENCIL', clue: 'You write with it and can erase it' },
+  { word: 'ORANGE', clue: 'A fruit and a color' },
+  { word: 'JUNGLE', clue: 'A thick, hot forest full of animals' },
+  { word: 'ROCKET', clue: 'It blasts off into space' },
+  { word: 'MONKEY', clue: 'It swings from trees and loves bananas' },
+  { word: 'WINTER', clue: 'The cold season with snow' },
+  { word: 'CANDLE', clue: 'It has a wick and a little flame' },
+  { word: 'PUZZLE', clue: 'Pieces you fit together to make a picture' },
+  { word: 'FLOWER', clue: 'A colorful bloom that bees visit' },
+  { word: 'DRAGON', clue: 'A fire-breathing creature from stories' },
+  { word: 'SCHOOL', clue: 'Where you go to learn with a teacher' },
+  { word: 'BASKET', clue: 'You carry things in it, or shoot a ball into it' },
+  { word: 'PIRATE', clue: 'A sailor who hunts for treasure' },
+  { word: 'PENGUIN', clue: 'A bird that cannot fly but swims well' },
+  { word: 'DOLPHIN', clue: 'A smart sea animal that clicks and jumps' },
+  { word: 'RAINBOW', clue: 'Colors in the sky after the rain' },
+  { word: 'BLANKET', clue: 'It keeps you warm in bed' },
+  { word: 'KITCHEN', clue: 'The room where food is cooked' },
+  { word: 'TEACHER', clue: 'The person who helps a class learn' },
+  { word: 'PICNIC', clue: 'A meal eaten outside on a blanket' },
+  { word: 'VOLCANO', clue: 'A mountain that can erupt with lava' },
+  { word: 'GIRAFFE', clue: 'The animal with the longest neck' },
+  { word: 'LIBRARY', clue: 'A place full of books to borrow' },
+  { word: 'PUMPKIN', clue: 'A big orange squash carved at Halloween' },
+  { word: 'BALLOON', clue: 'Fill it with air and it floats at parties' },
+  { word: 'COOKIES', clue: 'Sweet baked treats, maybe with chocolate chips' },
+  { word: 'TRUMPET', clue: 'A brass instrument you blow into' },
+  { word: 'HAMSTER', clue: 'A small pet that runs on a wheel' },
+  { word: 'MONSTER', clue: 'A make-believe creature that might be scary' },
+];
+const WORDS_PER_ROUND = 5;
 
 export const WordFluencyGame: React.FC<WordGameProps> = ({
   difficulty = '6-letter',
@@ -41,15 +110,20 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
   const [correctCount, setCorrectCount] = useState<number>(0);
   const startTimeRef = useRef<number>(0);
 
+  const [hintsUsed, setHintsUsed] = useState<number>(0);   // letters shown on this word
+  const [wrongTries, setWrongTries] = useState<number>(0); // full wrong spellings on this word (Skip shows after one)
+
   const preparePuzzles = useCallback(() => {
-    // Pick 5 random words
-    const shuffled = [...PUZZLE_BANK].sort(() => Math.random() - 0.5).slice(0, 5);
+    // Pick 5 random words of this level's length (Fisher-Yates, so every word is equally likely)
+    const bank = [...(difficulty === '4-letter' ? SHORT_WORDS : LONG_WORDS)];
+    for (let i = bank.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [bank[i], bank[j]] = [bank[j], bank[i]]; }
+    const shuffled = bank.slice(0, WORDS_PER_ROUND);
     const prepared = shuffled.map(p => {
       const letters = p.word.split('');
       // Scramble ensuring it's not already in target order
-      let scrambled = [...letters].sort(() => Math.random() - 0.5);
-      if (scrambled.join('') === p.word && letters.length > 2) {
-        scrambled.reverse();
+      let scrambled = [...letters];
+      for (let tries = 0; tries < 10 && scrambled.join('') === p.word; tries++) {
+        for (let i = scrambled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]]; }
       }
       return {
         word: p.word,
@@ -58,7 +132,7 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
       };
     });
     setPuzzleList(prepared);
-  }, []);
+  }, [difficulty]);
 
   const startGame = () => {
     playTap();
@@ -69,6 +143,8 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
     setUsedIndices(new Set());
     setScore(0);
     setCorrectCount(0);
+    setHintsUsed(0);
+    setWrongTries(0);
     startTimeRef.current = Date.now();
   };
 
@@ -90,23 +166,45 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
       const constructedWord = nextUserLetters.map(l => l.letter).join('');
       if (constructedWord === currentPuzzle.word) {
         // Correct!
+        // Solved: counts as right with at most one hint letter; more hints still score, just fewer points
+        const solvedFair = hintsUsed <= 1;
         playSuccess();
-        setCorrectCount(c => c + 1);
-        setScore(s => s + 200);
+        if (solvedFair) setCorrectCount(c => c + 1);
+        setScore(s => s + Math.max(50, 200 - hintsUsed * 50 - wrongTries * 20));
 
         setTimeout(() => {
-          advanceWord(true);
+          advanceWord(solvedFair);
         }, 500);
       } else {
-        // Incorrect
+        // Incorrect: clear back to the hint letters so they can retry (a Skip button shows after the first miss)
         playError();
+        setWrongTries(t => t + 1);
         setTimeout(() => {
-          // Clear input so they can retry
-          setUserLetters([]);
-          setUsedIndices(new Set());
+          fillHint(hintsUsed);
         }, 600);
       }
     }
+  };
+
+  /* the first n letters of the word, placed for the student (a hint) */
+  const fillHint = (n: number) => {
+    const placed: Array<{ letter: string; originalIndex: number }> = [], used = new Set<number>();
+    for (const letter of currentPuzzle.word.slice(0, n)) {
+      const idx = currentPuzzle.scrambled.findIndex((l, i) => l === letter && !used.has(i));
+      if (idx < 0) break;
+      used.add(idx); placed.push({ letter, originalIndex: idx });
+    }
+    setUserLetters(placed); setUsedIndices(used);
+  };
+  const handleHint = () => {
+    if (hintsUsed >= currentPuzzle.word.length - 1) return;
+    playTap();
+    const n = hintsUsed + 1;
+    setHintsUsed(n); fillHint(n);
+  };
+  const handleSkip = () => {
+    playError();
+    advanceWord(false);
   };
 
   const handleRemoveLast = () => {
@@ -130,6 +228,8 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
   const advanceWord = (wasCorrect: boolean) => {
     setUserLetters([]);
     setUsedIndices(new Set());
+    setHintsUsed(0);
+    setWrongTries(0);
 
     if (currentIndex + 1 >= puzzleList.length) {
       playVictory();
@@ -166,25 +266,18 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
           </div>
 
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
-            Lexical Fluency & Search
+            Word Builder
           </h2>
           <p className="text-slate-400 max-w-xl mx-auto text-sm md:text-base mb-6 leading-relaxed">
-            Stimulate your Left Inferior Frontal Gyrus (BA 44/45 / Broca's Area) and Temporal Lexicon. Rapidly synthesize orthographic letters into neuroscience-themed terms using semantic clues.
+            Read the clue, then tap the mixed-up letters in order to spell the word. Stuck? Tap 💡 to see a letter.
           </p>
-
-          <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-xl max-w-md mx-auto mb-8 text-center text-sm text-slate-300">
-            <p className="font-medium text-white mb-1">Clinical Value:</p>
-            <p className="text-xs text-slate-400">
-              Preserves rapid semantic retrieval pathways, phonological loop synthesis, and word-finding velocity.
-            </p>
-          </div>
 
           <button
             onClick={startGame}
             className="inline-flex items-center gap-2 px-8 py-3.5 bg-pink-600 hover:bg-pink-500 text-white font-medium rounded-xl transition-all shadow-lg shadow-pink-600/20 cursor-pointer"
           >
             <Play className="w-4 h-4 fill-white" />
-            Begin Fluency Session
+            Start
           </button>
         </div>
       )}
@@ -194,17 +287,15 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
           <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-800 text-xs md:text-sm">
             <div className="flex items-center gap-4 text-slate-400">
               <span>Word <strong className="text-white font-mono">{currentIndex + 1}</strong> / {puzzleList.length}</span>
-              <span aria-hidden="true">·</span>
-              <span>Domain: <strong className="text-pink-400">Semantic Access</strong></span>
             </div>
             <div className="flex items-center gap-4 text-slate-400">
-              <span>Neuro Score: <strong className="text-white font-mono tabular-nums">{score}</strong></span>
+              <span>Score: <strong className="text-white font-mono tabular-nums">{score}</strong></span>
             </div>
           </div>
 
           {/* Clue Prompt */}
           <div className="p-4 bg-slate-950/80 rounded-xl border border-slate-800 text-center mb-6">
-            <span className="text-xs uppercase tracking-wider text-pink-400 font-semibold block mb-1">Cognitive Clue</span>
+            <span className="text-xs uppercase tracking-wider text-pink-400 font-semibold block mb-1">Clue</span>
             <p className="text-sm md:text-base text-slate-200 italic">"{currentPuzzle.clue}"</p>
           </div>
 
@@ -265,6 +356,21 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
             >
               Reset
             </button>
+            <button
+              onClick={handleHint}
+              disabled={hintsUsed >= currentPuzzle.word.length - 1}
+              className="px-4 py-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-medium text-amber-300 disabled:opacity-40 transition-colors cursor-pointer"
+            >
+              💡 Show a letter
+            </button>
+            {wrongTries > 0 && (
+              <button
+                onClick={handleSkip}
+                className="px-4 py-2 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                Skip this word
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -275,22 +381,22 @@ export const WordFluencyGame: React.FC<WordGameProps> = ({
             <Check className="w-6 h-6" />
           </div>
 
-          <h2 className="text-2xl font-bold text-white mb-1">Lexical Fluency Complete</h2>
-          <p className="text-slate-400 text-sm mb-6">Broca's Area (BA 44/45) & Semantic Temporal Hub Stimulated</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Nice work!</h2>
+          <p className="text-slate-400 text-sm mb-6">Every round has new words. Try again to beat your score.</p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-lg mx-auto mb-8 text-center">
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-              <span className="text-xs text-slate-400 block">Neuro Score</span>
+              <span className="text-xs text-slate-400 block">Score</span>
               <span className="text-xl font-bold text-white font-mono tabular-nums">{score}</span>
             </div>
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-              <span className="text-xs text-slate-400 block">Words Synthesized</span>
+              <span className="text-xs text-slate-400 block">Words spelled</span>
               <span className="text-xl font-bold text-pink-400 font-mono tabular-nums">
                 {correctCount} / {puzzleList.length}
               </span>
             </div>
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-              <span className="text-xs text-slate-400 block">Fluency Index</span>
+              <span className="text-xs text-slate-400 block">Accuracy</span>
               <span className="text-xl font-bold text-emerald-400 font-mono tabular-nums">
                 {Math.round((correctCount / puzzleList.length) * 100)}%
               </span>

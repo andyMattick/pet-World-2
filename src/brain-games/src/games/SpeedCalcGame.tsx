@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameResult } from '../types/game';
+import { paced } from '../utils/pace';
 import { playSuccess, playError, playTap, playStreak, playVictory } from '../utils/audio';
 import { Play, RotateCcw, Check, Calculator, X } from 'lucide-react';
 
@@ -40,7 +41,7 @@ export const SpeedCalcGame: React.FC<SpeedCalcProps> = ({
   const [timeRemainingPercent, setTimeRemainingPercent] = useState<number>(100);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const timeLimitMs = difficulty === 'expert' ? 2200 : difficulty === 'foundational' ? 4000 : 3000;
+  const timeLimitMs = paced(difficulty === 'expert' ? 2200 : difficulty === 'foundational' ? 4000 : 3000);
 
   const generateProblem = useCallback((): EquationProblem => {
     let a = 0;

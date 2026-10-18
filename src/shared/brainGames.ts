@@ -24,6 +24,9 @@ export const brainGame = (id: string) => BRAIN_GAMES.find(game => game.id === id
 export const STRETCH_GAMES = 3;          // games in each stretch
 export const LEVEL_UP_ACCURACY = 85;     // a game moves up a level after this accuracy (or better)...
 export const LEVEL_UP_IN_A_ROW = 3;      // ...this many times in a row
+export const EASE_ACCURACY = 60;         // below this twice in a row, the game gets gentler:
+export const EASE_IN_A_ROW = 2;          //   down a level, or (at the easiest level) a bit more time
+export const PACE_STEP = 0.25, PACE_MAX = 2;   // extra time comes in quarter steps, up to double; it steps back as she does well
 
 /** Class setting game_settings.brain. Off until a teacher turns it on; every game is in the cycle unless blocked. */
 export interface BrainSettings { enabled: boolean; games: Record<string, boolean> }
@@ -44,6 +47,8 @@ export interface BrainState {
   stretches: BrainStretch[];         // the last 90
   levels: Record<string, number>;    // game id → level index (0 = easiest)
   streak: Record<string, number>;    // game id → results in a row at LEVEL_UP_ACCURACY or better at this level
+  slump: Record<string, number>;     // game id → results in a row below EASE_ACCURACY
+  pace: Record<string, number>;      // game id → time multiplier for timed games (1 = normal, up to PACE_MAX)
   results: BrainResult[];            // the last 400
 }
 
@@ -73,6 +78,9 @@ export function normalizeBrainState(raw: unknown): BrainState {
     stretched, active, stretches,
     levels: perGame(r.levels, id => brainGame(id)!.levels.length - 1),
     streak: perGame(r.streak, () => 99),
+    slump: perGame(r.slump, () => 99),
+    pace: Object.fromEntries(Object.entries(r.pace && typeof r.pace === 'object' ? r.pace : {}).filter(([id, v]) => ids.has(id) && Number.isFinite(+(v as number)))
+      .map(([id, v]) => [id, Math.max(1, Math.min(PACE_MAX, Math.round(+(v as number) / PACE_STEP) * PACE_STEP))])),
     results: (Array.isArray(r.results) ? r.results : []).filter((x: any) => x && ids.has(x.g) && Number.isFinite(+x.t)).slice(-400)
       .map((x: any) => ({ t: +x.t, g: x.g, lv: str(x.lv, 30), acc: num(x.acc, 0, 100), rt: num(x.rt, 0, 600000), sc: num(x.sc, -1e6, 1e9), dur: num(x.dur, 0, 7200), s: str(x.s, 60) }))
   };
@@ -82,6 +90,9 @@ export function normalizeBrainState(raw: unknown): BrainState {
 export function mergeBrainState(base: BrainState, other: unknown): number {
   const o = normalizeBrainState(other);
   let n = 0;
+  const lastPlayed = (s: BrainState) => s.results.reduce<Record<string, number>>((m, x) => { if (x.t > (m[x.g] || 0)) m[x.g] = x.t; return m; }, {});
+  const baseLast = lastPlayed(base), otherLast = lastPlayed(o);   // before the results are combined
+  base.slump = base.slump || {}; base.pace = base.pace || {};
   const seen = new Set(base.results.map(x => `${x.t}:${x.g}`));
   for (const x of o.results) if (!seen.has(`${x.t}:${x.g}`)) { base.results.push(x); n++; }
   base.results = base.results.sort((a, b) => a.t - b.t).slice(-400);
@@ -94,7 +105,12 @@ export function mergeBrainState(base: BrainState, other: unknown): number {
     const mine = base.stretched[day] || (base.stretched[day] = []);
     for (const id of list) if (!mine.includes(id)) { mine.push(id); n++; }
   }
-  for (const [id, lv] of Object.entries(o.levels)) if (lv > (base.levels[id] || 0)) { base.levels[id] = lv; base.streak[id] = o.streak[id] || 0; n++; }
+  /* each game's level and pace come from whichever device played that game last (levels go down as well as up) */
+  for (const { id } of BRAIN_GAMES) {
+    if (!((otherLast[id] || 0) > (baseLast[id] || 0))) continue;
+    if ((o.levels[id] || 0) !== (base.levels[id] || 0) || (o.pace[id] || 1) !== (base.pace[id] || 1)) n++;
+    base.levels[id] = o.levels[id] || 0; base.streak[id] = o.streak[id] || 0; base.slump[id] = o.slump[id] || 0; base.pace[id] = o.pace[id] || 1;
+  }
   if (o.morning > base.morning) { base.morning = o.morning; n++; }
   if (base.active && !base.stretches.some(x => x.id === base.active && x.done < x.games.length)) base.active = '';
   return n;
@@ -107,17 +123,40 @@ export function pickStretchGames(allowed: string[], recent: string[], count = ST
   return [...fresh, ...again].slice(0, Math.min(count, allowed.length));
 }
 
-/** Record a finished game and move its level: up one after LEVEL_UP_IN_A_ROW results in a row at LEVEL_UP_ACCURACY or better. Returns the new level name when it moved up. */
-export function recordBrainResult(state: BrainState, result: BrainResult): string {
+/** What changed after a game: moved up or down a level (the new level's name), more time or less time, a new best. */
+export interface BrainChange { up?: string; down?: string; moreTime?: boolean; lessTime?: boolean; best?: boolean }
+
+/** The time multiplier Pet World passes to a game (?pace=). */
+export const brainPace = (state: BrainState, id: string) => state.pace?.[id] || 1;
+
+/** Record a finished game and adjust it so it always feels doable but keeps growing:
+    - 85%+ three times in a row: up a level. While she has extra time, a good result first takes a step of it away.
+    - under 60% twice in a row: down a level, or at the easiest level, a bit more time (up to double).
+    - anything between keeps things as they are. */
+export function recordBrainResult(state: BrainState, result: BrainResult): BrainChange {
+  const before = state.results.filter(x => x.g === result.g && x.lv === result.lv);
   state.results = [...state.results, result].slice(-400);
-  const game = brainGame(result.g); if (!game) return '';
-  const level = state.levels[game.id] || 0;
-  if (game.levels[level]?.[0] !== result.lv) return '';   // played at another level (an old link): it doesn't count toward moving up
-  if (result.acc < LEVEL_UP_ACCURACY) { state.streak[game.id] = 0; return ''; }
-  const streak = (state.streak[game.id] || 0) + 1;
-  if (streak >= LEVEL_UP_IN_A_ROW && level < game.levels.length - 1) { state.levels[game.id] = level + 1; state.streak[game.id] = 0; return game.levels[level + 1][1]; }
-  state.streak[game.id] = streak;
-  return '';
+  state.slump = state.slump || {}; state.pace = state.pace || {};
+  const game = brainGame(result.g); if (!game) return {};
+  const change: BrainChange = before.length >= 1 && result.acc > Math.max(...before.map(x => x.acc)) ? { best: true } : {};
+  const level = state.levels[game.id] || 0, pace = brainPace(state, game.id);
+  if (game.levels[level]?.[0] !== result.lv) return change;   // played at another level (an old link): it doesn't move anything
+  if (result.acc >= LEVEL_UP_ACCURACY) {
+    state.slump[game.id] = 0;
+    if (pace > 1) { state.pace[game.id] = Math.max(1, pace - PACE_STEP); state.streak[game.id] = 0; return { ...change, lessTime: true }; }
+    const streak = (state.streak[game.id] || 0) + 1;
+    if (streak >= LEVEL_UP_IN_A_ROW && level < game.levels.length - 1) { state.levels[game.id] = level + 1; state.streak[game.id] = 0; return { ...change, up: game.levels[level + 1][1] }; }
+    state.streak[game.id] = streak;
+    return change;
+  }
+  state.streak[game.id] = 0;
+  if (result.acc >= EASE_ACCURACY) { state.slump[game.id] = 0; return change; }
+  const slump = (state.slump[game.id] || 0) + 1;
+  if (slump < EASE_IN_A_ROW) { state.slump[game.id] = slump; return change; }
+  state.slump[game.id] = 0;
+  if (level > 0) { state.levels[game.id] = level - 1; return { ...change, down: game.levels[level - 1][1] }; }
+  if (pace < PACE_MAX) { state.pace[game.id] = Math.min(PACE_MAX, pace + PACE_STEP); return { ...change, moreTime: true }; }
+  return change;
 }
 
 /* ---------- the teacher's 🧠 Brain tab ---------- */
@@ -139,14 +178,14 @@ export function brainReportHTML(raw: unknown, settings?: BrainSettings): string 
     const first = mine.slice(0, 5), last = mine.slice(-5), level = state.levels[game.id] || 0;
     const a0 = avg(first.map(x => x.acc)), a1 = avg(last.map(x => x.acc)), rt = avg(last.map(x => x.rt).filter(n => n > 0));
     const trend = mine.length >= 6 && a0 != null && a1 != null ? `${a0}% → ${a1}%` : `${a1}%`;
-    return `<tr><td>${game.emoji} ${escHTML(game.name)}</td><td>${escHTML(game.levels[level][1])}${level < game.levels.length - 1 ? ` <span class="muted">(${state.streak[game.id] || 0} of ${LEVEL_UP_IN_A_ROW} toward the next)</span>` : ''}</td><td>${mine.length}</td><td>${trend}</td><td>${rt != null ? `${(rt / 1000).toFixed(2)} s` : '–'}</td><td>${dayOf(mine[mine.length - 1].t)}</td></tr>`;
+    return `<tr><td>${game.emoji} ${escHTML(game.name)}</td><td>${escHTML(game.levels[level][1])}${brainPace(state, game.id) > 1 ? ` <span class="muted">(extra time ×${brainPace(state, game.id)})</span>` : level < game.levels.length - 1 ? ` <span class="muted">(${state.streak[game.id] || 0} of ${LEVEL_UP_IN_A_ROW} toward the next)</span>` : ''}</td><td>${mine.length}</td><td>${trend}</td><td>${rt != null ? `${(rt / 1000).toFixed(2)} s` : '–'}</td><td>${dayOf(mine[mine.length - 1].t)}</td></tr>`;
   }).join('');
   const recent = state.results.slice(-15).reverse().map(x => {
     const game = brainGame(x.g), stretch = state.stretches.find(s => s.id === x.s);
     return `<tr><td>${new Date(x.t).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td><td>${game ? `${game.emoji} ${escHTML(game.name)}` : escHTML(x.g)}</td><td>${escHTML(game?.levels.find(([id]) => id === x.lv)?.[1] || x.lv)}</td><td>${x.acc}%</td><td>${x.rt ? `${(x.rt / 1000).toFixed(2)} s` : '–'}</td><td>${escHTML(stretch?.label || '')}</td></tr>`;
   }).join('');
   return `${off}<p>Last 7 days: <b>${finished}</b> of ${recentStretches.length} brain stretch${recentStretches.length === 1 ? '' : 'es'} finished.</p>
-<h3>By game</h3><p class="muted" style="margin-top:0">Accuracy is the first 5 games → the last 5. A game moves up a level after ${LEVEL_UP_IN_A_ROW} results in a row at ${LEVEL_UP_ACCURACY}% or better. Reaction time is the average of the last 5.</p>
+<h3>By game</h3><p class="muted" style="margin-top:0">Accuracy is the first 5 games → the last 5. A game moves up a level after ${LEVEL_UP_IN_A_ROW} results in a row at ${LEVEL_UP_ACCURACY}% or better. After ${EASE_IN_A_ROW} in a row under ${EASE_ACCURACY}%, it moves down a level, or at the easiest level gives extra time, which steps back as she does well. Reaction time is the average of the last 5.</p>
 <table class="steptable"><thead><tr><th>Game</th><th>Level now</th><th>Played</th><th>Accuracy</th><th>Reaction time</th><th>Last played</th></tr></thead><tbody>${rows}</tbody></table>
 <h3>Latest games</h3><table class="steptable"><thead><tr><th>When</th><th>Game</th><th>Level</th><th>Accuracy</th><th>Reaction time</th><th>Stretch</th></tr></thead><tbody>${recent}</tbody></table>`;
 }

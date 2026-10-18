@@ -14,7 +14,7 @@ import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkT
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
-import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult } from '../shared/brainGames';
+import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -5334,7 +5334,7 @@ function renderBrainGame(){
   brainRun.stuck = setTimeout(() => showBrainNext(null, ''), BRAIN_STUCK_MS);
   brainRun.el.innerHTML = `<div class="brain-head"><strong>🧠 ${esc(stretch.label)}</strong><span>Game ${stretch.done + 1} of ${stretch.games.length} · ${game.emoji} ${esc(game.name)} · ${esc(level[1])}</span></div>
     <p class="brain-tip">${esc(game.skill)}. Read the directions, then press start.</p>
-    <iframe id="brainFrame" title="${esc(game.name)}" src="/brain-games/?embed=true&game=${encodeURIComponent(id)}&difficulty=${encodeURIComponent(level[0])}&stretch=${encodeURIComponent(stretch.id)}"></iframe>
+    <iframe id="brainFrame" title="${esc(game.name)}" src="/brain-games/?embed=true&game=${encodeURIComponent(id)}&difficulty=${encodeURIComponent(level[0])}&pace=${brainPace(S.brain, id)}&stretch=${encodeURIComponent(stretch.id)}"></iframe>
     <div class="brain-foot" id="brainFoot" hidden></div>`;
 }
 function brainTick(){
@@ -5350,7 +5350,8 @@ function brainMessage(event){
   showBrainNext(result, recordBrainResult(S.brain, result));
 }
 /* after a game: count it and show the Next (or Done) button. result is null when a game never reported (BRAIN_STUCK_MS). */
-function showBrainNext(result, levelUp){
+/* change (from recordBrainResult): up / down a level, more / less time, a new best. Every message is encouraging. */
+function showBrainNext(result, change = {}){
   const stretch = brainStretch(), foot = $('#brainFoot'); if (!brainRun || brainRun.got || !stretch || !foot) return;
   brainRun.got = true; clearTimeout(brainRun.stuck);
   stretch.done = Math.min(stretch.games.length, stretch.done + 1);
@@ -5361,7 +5362,9 @@ function showBrainNext(result, levelUp){
     logEvent({k:'brain', title:stretch.label, detail:played.map(x => `${brainGame(x.g)?.name || x.g} ${x.acc}%`).join(', ')});
   }
   save();
-  foot.innerHTML = `<span>${result ? `<b>${result.acc}% right</b>${levelUp ? ` · ⬆️ Level up! Next time: ${esc(levelUp)}` : ''}` : 'This game didn’t finish. Let’s go on.'}</span>
+  const note = change.up ? ` · ⬆️ Level up! Next time: ${esc(change.up)}` : change.down ? ` · Next time: ${esc(change.down)}, so you can build back up 💪`
+    : change.moreTime ? ' · Next time you get a little more time 💪' : change.lessTime ? ' · You’re getting quicker! The timer speeds up a little' : '';
+  foot.innerHTML = `<span>${result ? `<b>${result.acc}% right</b>${change.best ? ' · 🌟 Your best yet!' : ''}${note}` : 'This game didn’t finish. Let’s go on.'}</span>
     <button type="button" class="btn berry" id="brainNext">${last ? 'Done! Back to Pet World' : 'Next game →'}</button>`;
   foot.hidden = false;
   $('#brainNext').addEventListener('click', () => { if (last) { closeBrainStretch(true); toast('Brain stretch done! 🧠'); } else renderBrainGame(); });

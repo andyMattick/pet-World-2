@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameResult } from '../types/game';
+import { paced } from '../utils/pace';
 import { playSuccess, playError, playTap, playStreak, playVictory } from '../utils/audio';
 import { Play, RotateCcw, Check, ShieldAlert, Zap, AlertTriangle } from 'lucide-react';
 
@@ -40,7 +41,7 @@ export const GoNoGoGame: React.FC<GoNoGoProps> = ({
   const trialStartTimeRef = useRef<number>(0);
   const trialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const stimulusDurationMs = difficulty === 'high-speed' ? 650 : 850;
+  const stimulusDurationMs = paced(difficulty === 'high-speed' ? 650 : 850);
   const interStimulusIntervalMs = 400;
 
   // Generate trial with ~75% GO stimuli and ~25% NO-GO stimuli

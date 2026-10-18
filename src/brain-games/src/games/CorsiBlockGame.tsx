@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameResult } from '../types/game';
+import { PACE, paced } from '../utils/pace';
 import { playSuccess, playError, playTap, playStreak, playVictory } from '../utils/audio';
 import { Play, RotateCcw, Check, Sparkles, Grid, ArrowLeftRight } from 'lucide-react';
 
@@ -36,7 +37,7 @@ export const CorsiBlockGame: React.FC<CorsiGameProps> = ({
   isEmbedded = false,
 }) => {
   const isReverse = difficulty === 'reverse';
-  const baseSpan = difficulty === 'long-span' ? 5 : 4;
+  const baseSpan = difficulty === 'long-span' ? 5 : PACE > 1 ? 3 : 4;   // with extra time, start with a shorter path
 
   const [gameState, setGameState] = useState<'TITLE_MENU' | 'PLAYING' | 'SUMMARY'>('TITLE_MENU');
   const [roundNumber, setRoundNumber] = useState<number>(1);
@@ -77,18 +78,18 @@ export const CorsiBlockGame: React.FC<CorsiGameProps> = ({
       setTimeout(() => {
         setActiveFlashBlock(blockId);
         playTap();
-      }, (idx + 1) * 750);
+      }, (idx + 1) * paced(750));
 
       setTimeout(() => {
         setActiveFlashBlock(null);
-      }, (idx + 1) * 750 + 450);
+      }, (idx + 1) * paced(750) + paced(450));
     });
 
     // Finished demonstrating
     setTimeout(() => {
       setIsDemonstrating(false);
       roundStartTimeRef.current = Date.now();
-    }, (seq.length + 1) * 750 + 200);
+    }, (seq.length + 1) * paced(750) + 200);
   }, [generateSequence]);
 
   const startGame = () => {

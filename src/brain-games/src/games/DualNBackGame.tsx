@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameResult } from '../types/game';
+import { paced } from '../utils/pace';
 import { playSuccess, playError, playTap, playVictory, playLetterTone } from '../utils/audio';
 import {
   Volume2,
@@ -80,7 +81,7 @@ export const DualNBackGame: React.FC<DualNBackProps> = ({
 
   // Timing
   const [startTime, setStartTime] = useState<number>(0);
-  const stepDurationMs = speedPace === 'relaxed' ? 3200 : 2500;
+  const stepDurationMs = paced(speedPace === 'relaxed' ? 3200 : 2500);
 
   // Pre-generate trials with balanced matches (~35% position, ~35% audio)
   const generateTrials = useCallback((): TrialData[] => {

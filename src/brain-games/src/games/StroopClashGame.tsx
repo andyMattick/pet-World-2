@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameResult } from '../types/game';
+import { paced } from '../utils/pace';
 import { playSuccess, playError, playTap, playStreak, playVictory } from '../utils/audio';
 import { Play, RotateCcw, Zap, Check } from 'lucide-react';
 
@@ -50,7 +51,7 @@ export const StroopClashGame: React.FC<StroopGameProps> = ({
   const [timeRemainingPercent, setTimeRemainingPercent] = useState<number>(100);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const trialDurationMs = difficulty === 'turbo' ? 1600 : difficulty === 'reverse' ? 2200 : 2500;
+  const trialDurationMs = paced(difficulty === 'turbo' ? 1600 : difficulty === 'reverse' ? 2200 : 2500);
 
   const generateStimulus = useCallback(() => {
     // Generate word and color with ~75% incongruency
