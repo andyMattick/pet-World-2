@@ -13,5 +13,5 @@
     "types": ["vite/client", "node"]
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["src/arcade/**"]
+  "exclude": ["src/arcade/**", "src/brain-games/**"]
 }

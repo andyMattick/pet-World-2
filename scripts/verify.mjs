@@ -204,6 +204,9 @@ for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', avail
   if (!existsSync(`public${src}index.html`)) problems.push(`The Arcade game at ${src} isn't built: public${src}index.html is missing. Build it from src${src} (see its README.md).`);
 }
 
+// The brain stretch games are built into public/ (source: src/brain-games/; see its README and docs/BRAIN-GAMES.md)
+if (!existsSync('public/brain-games/index.html')) problems.push("The Brain Games aren't built: public/brain-games/index.html is missing. Build them from src/brain-games (see its README.md).");
+
 // Khan links are well formed (offline; "npm run check-links" opens each one). Docs: KHAN.md
 try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); problems.push(...offlineProblems(await khanLinks())); }
 catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
