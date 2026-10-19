@@ -186,6 +186,15 @@ body.brain-open{overflow:hidden}
 .theme-emoji{font-size:84px; line-height:1.1; animation:move-wiggle 1.2s ease-in-out infinite}
 .theme-box h2{margin:4px 0 10px}
 .theme-pin{margin:10px 0 6px; text-align:left}
+.outside-box{max-width:520px}
+.outside-form{text-align:left; display:flex; flex-direction:column; gap:8px}
+.outside-form label{display:flex; flex-direction:column; gap:3px; font-size:15px}
+.outside-form .row label{flex-direction:column}
+.outside-form input{font:inherit}
+.outside-photos{display:flex; gap:8px; flex-wrap:wrap}
+.outside-photo{position:relative}
+.outside-photo img{max-height:90px; border-radius:6px; display:block}
+.outside-photo button{position:absolute; top:2px; right:2px}
 .theme-pin input{width:6em; margin-left:6px}
 .theme-box [data-theme-later]{margin-top:4px}
 @media (prefers-reduced-motion: reduce){.theme-emoji{animation:none}}

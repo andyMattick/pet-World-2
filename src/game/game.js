@@ -5596,6 +5596,94 @@ function themePlanRows(){
 }
 document.addEventListener('click', event => { if (event.target.closest('[data-theme-open]')) { const theme = todayTheme(); if (theme) openThemeCard(theme, S.themeSeen !== logDayKey()); } });
 setInterval(() => { if (Backend.me) themeCheck(); }, 15000);
+/* ---------- outside work she adds herself (docs/OUTSIDE-WORK.md) ----------
+   On Today's plan: ➕ Outside work opens a form for the course, the activity, the minutes, a grade if there is one, and
+   up to 3 photos (shrunk to small JPEGs) for a grown-up to review. Rows go to the Ledger (ledger_outside) as waiting for
+   review; the teacher marks them ✅ or asks for a 🔁 redo with a note, which shows here with a Fix it button. */
+let outsideCache = {at:0, key:'', rows:[]};
+function outsideFrom(){ const d = new Date(); d.setDate(d.getDate() - 14); return goalDayKey(d); }
+async function loadOutside(force = false){
+  if (!Backend.me || (!force && Date.now() - outsideCache.at < 60000)) return;
+  outsideCache.at = Date.now();
+  const rows = await Backend.listOutsideWork(outsideFrom()); if (!rows) return;
+  const key = JSON.stringify(rows.map(x => [x.id, x.review, x.review_note, x.minutes, x.grade, x.title, x.course, x.day, (x.images || []).length]));
+  if (key === outsideCache.key) return;
+  outsideCache = {...outsideCache, key, rows};
+  if (!$('#scr-home').hidden) renderHome();
+}
+const OUTSIDE_STATE = {waiting:'⏳ waiting for a grown-up', ok:'✅ checked', redo:'🔁 fix it'};
+function outsidePlanHTML(){ void loadOutside(); return ''; }
+function outsideRowsHTML(){
+  if (!Backend.me) return '';
+  const day = logDayKey(), rows = outsideCache.rows.filter(x => x.source === 'student' && (x.day === day || x.review === 'redo'));
+  return `${rows.map(x => `<div class="row extras-row"><span style="flex:1">📎 ${esc(x.course)}${x.title ? `: ${esc(x.title)}` : ''} · <b>${x.minutes} min</b>${x.grade ? ` · grade ${esc(x.grade)}` : ''}${(x.images || []).length ? ` · 📷 ${x.images.length}` : ''} <small class="muted">${OUTSIDE_STATE[x.review] || ''}${x.day !== day ? ` (${esc(x.day)})` : ''}</small>${x.review === 'redo' && x.review_note ? `<br><small>“${esc(x.review_note)}”</small>` : ''}</span>${x.review === 'ok' ? '' : `<button type="button" class="btn small${x.review === 'redo' ? ' berry' : ''}" data-outside-edit="${x.id}">${x.review === 'redo' ? 'Fix it' : 'Edit'}</button>`}</div>`).join('')}
+    <div class="row" style="margin-top:6px"><button type="button" class="btn small" data-outside-add>➕ Outside work</button><small class="muted" style="align-self:center">Did school work somewhere else? Add it here.</small></div>`;
+}
+/* a photo shrunk to a JPEG data URL under about 190 KB (the database takes up to 200 KB each) */
+async function photoToJpeg(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
+    for (const [side, q] of [[1280, .72], [1024, .65], [800, .6], [640, .55], [480, .5]]) {
+      const k = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+      const data = c.toDataURL('image/jpeg', q); if (data.length <= 190000) return data;
+    }
+  } catch(e) { /* not an image the browser can read */ } finally { URL.revokeObjectURL(url); }
+  return null;
+}
+function openOutsideForm(row = null){
+  if ($('.theme-card')) return;
+  const day = logDayKey(), courses = [...new Set(outsideCache.rows.map(x => x.course))].sort();
+  let photos = [...(row?.images || [])];
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Outside work');
+  el.innerHTML = `<div class="theme-box outside-box"><p class="theme-kicker">${row?.review === 'redo' ? 'Fix it and send it again' : 'Work outside Pet World'}</p><h2>📎 ${row ? 'Your outside work' : 'Add outside work'}</h2>
+    ${row?.review === 'redo' && row.review_note ? `<p><b>Note from a grown-up:</b> “${esc(row.review_note)}”</p>` : ''}
+    <form class="outside-form">
+      <label>Course <input name="course" maxlength="80" required list="outsideCourses" placeholder="Piano, Spanish, Science co-op…" value="${esc(row?.course || '')}"></label><datalist id="outsideCourses">${courses.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+      <label>What did you do? <input name="title" maxlength="300" placeholder="Practiced scales, read chapter 4…" value="${esc(row?.title || '')}"></label>
+      <div class="row"><label>Minutes <input name="minutes" type="number" min="1" max="600" required value="${row?.minutes ?? ''}" style="width:6em"></label><label>Grade <small class="muted">(if there is one)</small> <input name="grade" maxlength="20" value="${esc(row?.grade || '')}" style="width:6em" placeholder="A, 95"></label><label>Day <input name="day" type="date" value="${esc(row?.day || day)}" min="${esc(outsideFrom())}" max="${esc(day)}"></label></div>
+      <label>Photos for a grown-up to check <small class="muted">(up to 3)</small> <input name="photos" type="file" accept="image/*" multiple></label>
+      <div class="outside-photos"></div>
+      <div class="row"><button type="submit" class="btn berry">${row ? 'Send again' : 'Add it'}</button><button type="button" class="btn" data-outside-close>Cancel</button>${row ? '<button type="button" class="btn small" data-outside-delete>Take it back</button>' : ''}</div>
+    </form></div>`;
+  document.body.appendChild(el);
+  const strip = el.querySelector('.outside-photos');
+  const drawPhotos = () => { strip.innerHTML = photos.map((src, i) => `<span class="outside-photo"><img src="${esc(src)}" alt="Photo ${i + 1}"><button type="button" class="btn small" data-photo-remove="${i}" aria-label="Remove photo ${i + 1}">✕</button></span>`).join(''); };
+  drawPhotos();
+  strip.addEventListener('click', e => { const b = e.target.closest('[data-photo-remove]'); if (b) { photos.splice(+b.dataset.photoRemove, 1); drawPhotos(); } });
+  el.querySelector('input[name="photos"]').addEventListener('change', async e => {
+    const files = [...e.target.files].slice(0, Math.max(0, 3 - photos.length)); e.target.value = '';
+    if (!files.length) { toast('You can add up to 3 photos.'); return; }
+    toast('Getting your photos ready…');
+    for (const f of files) { const data = await photoToJpeg(f); if (data) photos.push(data); else toast('That photo couldn’t be read. Try another one.'); }
+    drawPhotos();
+  });
+  el.querySelector('[data-outside-close]').addEventListener('click', () => el.remove());
+  el.querySelector('[data-outside-delete]')?.addEventListener('click', async () => {
+    if (await Backend.deleteOutsideWork(row.id)) { el.remove(); toast('Taken back.'); void loadOutside(true); } else toast('That couldn’t be taken back. Is the internet on?');
+  });
+  el.querySelector('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = new FormData(e.target), course = String(f.get('course') || '').trim(), minutes = Math.round(+f.get('minutes') || 0);
+    if (!course) { toast('Name the course first.'); return; }
+    if (!(minutes > 0)) { toast('How many minutes did it take?'); return; }
+    const btn = e.target.querySelector('button[type="submit"]'); btn.disabled = true;
+    const res = await Backend.saveOutsideWork(row?.id ?? null, {day:String(f.get('day') || day), course, title:String(f.get('title') || '').trim(), minutes, grade:String(f.get('grade') || '').trim(), images:photos});
+    btn.disabled = false;
+    if (res.error) { toast(/function|schema/i.test(res.error) ? 'Outside work isn’t set up yet. Ask a grown-up to run the new database file.' : 'That didn’t save. Is the internet on?'); return; }
+    logEvent({k:'outside', title:`${course}${f.get('title') ? `: ${String(f.get('title')).trim()}` : ''} · ${minutes} min${photos.length ? `, ${photos.length} photo${photos.length === 1 ? '' : 's'}` : ''}`, minutes}); save();
+    el.remove(); toast(row ? 'Sent again! 📎' : 'Added! A grown-up will check it. 📎'); void loadOutside(true);
+  });
+  setTimeout(() => el.querySelector('input[name="course"]')?.focus(), 50);
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-outside-add]')) { openOutsideForm(); return; }
+  const b = e.target.closest('[data-outside-edit]'); if (!b) return;
+  const row = outsideCache.rows.find(x => x.id === +b.dataset.outsideEdit); if (row) openOutsideForm(row);
+});
 /* ---------- 👩‍🏫 to the teacher app (docs/TEACHER-LOCK.md) ----------
    The header button asks for the grown-up PIN (the teacher app's lock on this computer if it has one, otherwise the
    student's grown-up PIN, or makes one), locks the teacher app with it if it isn't locked yet, and opens it. */
@@ -6563,7 +6651,7 @@ function planCardHTML(){
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${rows.join('')}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -9845,6 +9933,7 @@ function eventText(e){
   if (e.k === 'move') return `🤸 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
   if (e.k === 'theme') return `🎉 Theme day: ${e.title}`;
   if (e.k === 'done') return `✅ Finished: ${e.title}`;
+  if (e.k === 'outside') return `📎 Outside work: ${e.title}`;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,

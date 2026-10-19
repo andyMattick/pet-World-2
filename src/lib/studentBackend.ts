@@ -212,6 +212,25 @@ class StudentBackend {
     return error ? null : String(data);
   }
 
+  /** Outside work she adds herself (docs: OUTSIDE-WORK.md, migration 20261020000000_outside_work.sql). */
+  async listOutsideWork(fromDay: string): Promise<{ id: number; day: string; course: string; title: string; minutes: number; grade: string; source: string; review: string; review_note: string; images: string[] }[] | null> {
+    if (!this.sb || !this.me) return null;
+    const { data, error } = await this.sb.from('ledger_outside').select('id,day,course,title,minutes,grade,source,review,review_note,images').gte('day', fromDay).order('day', { ascending: false }).order('id', { ascending: false });
+    if (error || !data) return null;
+    return data as { id: number; day: string; course: string; title: string; minutes: number; grade: string; source: string; review: string; review_note: string; images: string[] }[];
+  }
+  /** Adds (id null) or changes one of her rows; returns its id, or an error message. */
+  async saveOutsideWork(id: number | null, row: { day: string; course: string; title: string; minutes: number; grade: string; images: string[] }): Promise<{ id?: number; error?: string }> {
+    if (!this.sb || !this.me) return { error: 'Outside work needs a class sign-in.' };
+    const { data, error } = await this.sb.rpc('save_outside_work', { p_id: id, p_day: row.day, p_course: row.course, p_title: row.title, p_minutes: row.minutes, p_grade: row.grade, p_images: row.images });
+    return error ? { error: error.message } : { id: Number(data) };
+  }
+  async deleteOutsideWork(id: number): Promise<boolean> {
+    if (!this.sb || !this.me) return false;
+    const { data, error } = await this.sb.rpc('delete_outside_work', { p_id: id });
+    return !error && data === true;
+  }
+
   /** Art Studio gallery (ROADMAP F13, docs: ART-STUDIO.md): the student's paintings, newest first. */
   async listPaintings(): Promise<{ id: string; title: string; image: string; at: number }[]> {
     if (!this.sb || !this.me) return [];

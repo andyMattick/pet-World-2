@@ -16,7 +16,7 @@ interface LedgerEntry {
 /* a math station quiz or unit test from the assessments table (kept for every day, before the day log existed too) */
 interface QuizRow { shop: string; station: number | null; kind: string; score: number; total: number; passed: boolean; created_at: string }
 interface DayRow { day: string; entry: LedgerEntry; sent_at: string; edited_by_teacher: boolean }
-interface OutsideRow { id: number; day: string; course: string; title: string; minutes: number; grade: string; notes: string; source: string }
+interface OutsideRow { id: number; day: string; course: string; title: string; minutes: number; grade: string; notes: string; source: string; review?: string; review_note?: string; images?: string[] }
 /* an old Ledger backup (the separate Ledger app): {caleb:{name, entries:[{subject, assignment, minutes, grade, date, id}], subjects}, abi:{...}} */
 interface ImportKid { key: string; name: string; entries: unknown[] }
 interface ImportRow { day: string; course: string; title: string; minutes: number; grade: string }
@@ -167,7 +167,7 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     el.innerHTML = '<p class="muted">Loading the Ledger…</p>';
     const [a, b, c] = await Promise.all([
       client.from('ledger_days').select('day,entry,sent_at,edited_by_teacher').eq('student_id', r.id).gte('day', st.from).lte('day', st.to),
-      client.from('ledger_outside').select('id,day,course,title,minutes,grade,notes,source').eq('student_id', r.id).gte('day', st.from).lte('day', st.to).order('id'),
+      outsideRows(client),
       client.from('assessments').select('shop,station,kind,score,total,passed,created_at').eq('student_id', r.id).gte('created_at', new Date(`${addDays(st.from, -1)}T00:00:00`).toISOString()).lte('created_at', new Date(`${addDays(st.to, 1)}T23:59:59`).toISOString()).order('created_at')
     ]);
     const err = a.error || b.error;
@@ -175,6 +175,13 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     st.days = (a.data || []) as DayRow[]; st.outside = (b.data || []) as OutsideRow[];
     st.quizzes = c.error ? [] : (c.data || []) as QuizRow[];   // the quiz history is a bonus: the Ledger still works without it
     draw();
+  }
+  /* the student's own outside work (review, photos) needs database file 20261020000000_outside_work.sql; without it the
+     Ledger still loads the rest */
+  async function outsideRows(sb: SupabaseClient) {
+    const q = (cols: string) => sb.from('ledger_outside').select(cols).eq('student_id', r.id).gte('day', st.from).lte('day', st.to).order('id');
+    const full = await q('id,day,course,title,minutes,grade,notes,source,review,review_note,images');
+    return full.error && /review|images|column/i.test(full.error.message) ? q('id,day,course,title,minutes,grade,notes,source') : full;
   }
   async function run(work: () => PromiseLike<{ error: { message: string } | null }>, done: string) {
     const { error } = await work();
@@ -187,8 +194,15 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     if (st.editOut === o.id) return `<tr data-out-row="${o.id}"><td><input type="date" data-o="day" value="${esc(o.day)}"></td><td><input data-o="course" list="ledgerCourses" maxlength="80" value="${esc(o.course)}" style="width:110px"></td>
       <td><input data-o="title" maxlength="300" value="${esc(o.title)}"></td><td><input type="number" data-o="minutes" min="0" max="1440" value="${o.minutes}" style="width:70px"></td><td><input data-o="grade" maxlength="20" value="${esc(o.grade)}" style="width:60px"></td>
       <td><input data-o="notes" maxlength="1000" value="${esc(o.notes)}"></td><td style="white-space:nowrap"><button class="btn small primary" data-out-save="${o.id}">Save</button> <button class="btn small" data-out-cancel>Cancel</button></td></tr>`;
-    return `<tr><td>${esc(o.course)}${o.source === 'import' ? ' <span class="tag i">imported</span>' : ''}</td><td>${esc(o.title) || '<span class="muted">—</span>'}</td><td>${o.minutes} min</td><td>${esc(o.grade) || '<span class="muted">—</span>'}</td><td>${esc(o.notes)}</td>
-      <td style="white-space:nowrap"><button class="btn small" data-out-edit="${o.id}">Edit</button> <button class="btn small" data-out-delete="${o.id}">${deleteArmed === o.id ? 'Click again to delete' : 'Delete'}</button></td></tr>`;
+    const mine = o.source === 'student', review = o.review || '', photos = Array.isArray(o.images) ? o.images : [];
+    const reviewTag = review === 'waiting' ? ' <span class="tag a">⏳ waiting for you</span>' : review === 'ok' ? ' <span class="tag i">✅ checked</span>' : review === 'redo' ? ' <span class="tag a">🔁 redo asked</span>' : '';
+    const extra = mine ? `<tr data-out-review="${o.id}"><td colspan="6" style="border-top:0; padding-top:0">
+        ${photos.length ? `<div class="row" style="margin:4px 0; gap:8px">${photos.map(src => `<img src="${esc(src)}" alt="Photo of the work" data-zoom style="max-height:110px; max-width:100%; border-radius:6px; cursor:zoom-in">`).join('')}</div>` : ''}
+        ${review === 'redo' && o.review_note ? `<p class="muted" style="margin:2px 0">Your note: “${esc(o.review_note)}”</p>` : ''}
+        ${review !== 'ok' ? `<div class="row" style="margin:4px 0; gap:6px; align-items:center"><button class="btn small primary" data-out-ok="${o.id}">✓ Looks good</button><input data-out-note="${o.id}" maxlength="500" placeholder="What to fix (for a redo)" style="flex:1; min-width:160px"><button class="btn small" data-out-redo="${o.id}">🔁 Ask for a redo</button></div>` : ''}
+      </td></tr>` : '';
+    return `<tr><td>${esc(o.course)}${o.source === 'import' ? ' <span class="tag i">imported</span>' : ''}${mine ? ` <span class="tag i">added by ${esc(r.n)}</span>${reviewTag}` : ''}</td><td>${esc(o.title) || '<span class="muted">—</span>'}</td><td>${o.minutes} min</td><td>${esc(o.grade) || '<span class="muted">—</span>'}</td><td>${esc(o.notes)}</td>
+      <td style="white-space:nowrap"><button class="btn small" data-out-edit="${o.id}">Edit</button> <button class="btn small" data-out-delete="${o.id}">${deleteArmed === o.id ? 'Click again to delete' : 'Delete'}</button></td></tr>${extra}`;
   }
 
   function editDayHTML(row: DayRow) {
@@ -308,6 +322,8 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     })();
   };
   el.onclick = event => {
+    const zoom = (event.target as HTMLElement).closest<HTMLImageElement>('img[data-zoom]');
+    if (zoom) { const big = zoom.style.maxHeight !== 'none'; zoom.style.maxHeight = big ? 'none' : '110px'; zoom.style.cursor = big ? 'zoom-out' : 'zoom-in'; return; }
     const t = (event.target as HTMLElement).closest<HTMLElement>('button');
     if (!t || !client) return;
     const sb = client, d = t.dataset;
@@ -329,6 +345,14 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     } else if (d.outAddDay) {
       const add = el.querySelector<HTMLDetailsElement>('#ledgerAdd'), box = el.querySelector<HTMLInputElement>('#outDay');
       if (add && box) { add.open = true; box.value = d.outAddDay; add.scrollIntoView({ block: 'center' }); el.querySelector<HTMLInputElement>('#outCourse')?.focus(); }
+    } else if (d.outOk) {
+      const id = +d.outOk;
+      void run(() => sb.from('ledger_outside').update({ review: 'ok', review_note: '' }).eq('id', id), `Marked as checked. ${r.n} sees ✅ on her plan.`);
+    } else if (d.outRedo) {
+      const id = +d.outRedo;
+      const note = (el.querySelector<HTMLInputElement>(`[data-out-note="${id}"]`)?.value || '').trim().slice(0, 500);
+      if (!note) { say('Type what to fix, then press Ask for a redo.'); el.querySelector<HTMLInputElement>(`[data-out-note="${id}"]`)?.focus(); return; }
+      void run(() => sb.from('ledger_outside').update({ review: 'redo', review_note: note }).eq('id', id), `Sent back to ${r.n} with your note.`);
     } else if (d.outEdit) { st.editOut = +d.outEdit; draw(); }
     else if (t.hasAttribute('data-out-cancel')) { st.editOut = 0; draw(); }
     else if (d.outSave) {

@@ -156,6 +156,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F24. 📚 English libraries follow Khan Academy Grammar unit by unit: 4 Adjectives and adverbs (🎨 Poetry), 5 Prepositions and conjunctions (🔗 Link), 6 End marks, commas, and apostrophes (✏️ Punctuation), 7 Colons, semicolons, and more (⏸️ Pause), 8 Sentences and clauses (🧩 Sentence), 9 Conventions of standard English (📏 Rule), 10 Usage and style (🪶 Style). Vocabulary, reading and writing libraries come after. Only unbuilt units moved.
 - [x] F25. 🎉 Theme days (`THEME-DAYS.md`): 18 rotating themes and 6 special days (Pi Day, Earth Day, Space Day, Pirate Day, Costume Day, the 100th day of school), earned by finishing the whole plan the day before when a grown-up says yes (grown-up PIN), announced after the morning brain stretch; teachers can choose every school day or Fridays instead, and which themes
 - [x] F26. 🎨 English Unit 4: Adjectives and Adverbs in the Poetry Library (Khan Grammar Unit 4, all 10 skills in Khan’s order, 4 block quizzes, unit test pass 8 of 10, then the Khan unit test link). Review list: `MODIFIERS-review.md`
+- [x] F27. 📎 Outside work: she adds it on Today's plan (course, activity, minutes, grade, up to 3 photos); teacher reviews it in the Ledger (✅ or 🔁 redo with a note). Needs migration `20261020000000_outside_work.sql`. See `OUTSIDE-WORK.md`
 
 ## Database files, in the order they were run
 
