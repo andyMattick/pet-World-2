@@ -64,3 +64,12 @@ That rewrites the data files in `supabase/demo/`. Run the data files and step 3 
 - The demo functions can only be run from the SQL editor (or pg_cron), not through the app.
 - `demo_reset` refuses an admin account.
 - The `demo_seed_part` table has no policies, so the app can't read it.
+
+## The feature videos
+
+The demo pass page (`/demo`, `public/demo.html`) opens with two short videos with no sound, made from the real app running on this demo class:
+
+- `public/videos/pet-world-for-students.mp4`: the fun parts, 57 seconds.
+- `public/videos/pet-world-for-teachers.mp4`: what a teacher can set up their own way, 63 seconds.
+
+Each video also has a poster image (`.jpg`) that shows before it plays. The files are also linked straight from `/videos/…`, so you can share them on their own.

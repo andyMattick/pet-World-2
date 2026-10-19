@@ -10,5 +10,5 @@ dist-smoke
 # old Ledger app backups hold the children's school records; the repo is public, so never commit them
 ledger-backup*.json
 
-# lesson videos are built here and uploaded to YouTube, never committed (LESSON-VIDEOS.md)
-videos/
+# lesson videos are built here and uploaded to YouTube, never committed (LESSON-VIDEOS.md); public/videos/ holds the demo videos and is committed
+/videos/

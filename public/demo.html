@@ -56,6 +56,11 @@ section.kids > p { margin: 0; color: var(--muted); font-size: 15px }
 .tag { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: var(--berry) }
 .tag.live { background: var(--leaf-soft); color: var(--leaf) }
 .note { font-size: 14px; color: var(--muted); margin: 0; text-align: center }
+.videos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px }
+.vid { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.vid h2 { font: 700 20px/1.2 var(--display); margin: 0 }
+.vid p { margin: 0; color: var(--muted); font-size: 14px }
+.vid video { width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; background: #000; display: block }
 </style>
 </head>
 <body>
@@ -65,6 +70,13 @@ section.kids > p { margin: 0; color: var(--muted); font-size: 15px }
     <h1>🐾 Pet World Demo Pass</h1>
     <p class="lede">A pretend class of 8 students with six weeks of real-looking work. Look around and click anything. The class gets put back the way it was, so nothing you change sticks.</p>
   </header>
+
+  <section class="videos" aria-label="Pet World in a minute">
+    <div class="vid"><h2>🐶 For students</h2><p>The fun parts: pets, shops, brain games, theme days, the Arcade. 57 seconds, no sound.</p>
+      <video controls muted playsinline preload="metadata" poster="videos/pet-world-for-students.jpg"><source src="videos/pet-world-for-students.mp4" type="video/mp4"></video></div>
+    <div class="vid"><h2>👩‍🏫 For teachers</h2><p>What you can set up your way: plans, passing marks, lessons, word lists, grades. 63 seconds, no sound.</p>
+      <video controls muted playsinline preload="metadata" poster="videos/pet-world-for-teachers.jpg"><source src="videos/pet-world-for-teachers.mp4" type="video/mp4"></video></div>
+  </section>
 
   <div class="doors">
     <div class="door">
