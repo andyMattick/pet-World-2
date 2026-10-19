@@ -2,6 +2,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
+import { teacherLock, setTeacherLock, isUnlocked, markUnlocked, relock, pinMatchesLock } from '../shared/grownupLock';
 import { BRAIN_GAMES, brainSettings, type BrainSettings } from '../shared/brainGames';
 import { THEME_DAYS, SPECIAL_DAYS, themeSettings, type ThemeSettings } from '../shared/themeDays';
 import { MOVES, MOVES_PER_BREAK, MOVE_SECONDS, MOVE_MINUTES_MAX, moveSettings, type MoveSettings } from '../shared/moveBreaks';
@@ -46,8 +47,54 @@ const NEW_CLASS_SETTINGS = { brain: { enabled: true }, move: { enabled: true }, 
 
 if (!sb) {
   app.innerHTML = `<div class="card authcard"><h2>Almost there</h2><p>This build has no Supabase settings. Copy <code>.env.example</code> to <code>.env</code>, fill in your project URL and anon key, and rebuild. See the README.</p></div>`;
+} else if (!isUnlocked()) {
+  renderLock();
 } else {
-  sb.auth.onAuthStateChange((_e, session) => { if (session) void loadClasses(); else renderAuth(); });
+  startTeacherApp();
+}
+function startTeacherApp() {
+  lockButton();
+  sb!.auth.onAuthStateChange((_e, session) => { if (session) void loadClasses(); else renderAuth(); });
+}
+
+/* ---------- grown-up lock (docs/TEACHER-LOCK.md): a PIN on this device, so a student can't open the teacher app ---------- */
+function renderLock(msg = '') {
+  app.innerHTML = `<div class="card authcard"><h2>🔒 Grown-ups only</h2><p class="muted" style="margin-top:0">This computer’s teacher app is locked. Type the grown-up PIN.</p>
+    <form id="lockForm"><label for="lockPin">Grown-up PIN</label><input type="password" id="lockPin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required>
+    <div class="row"><button class="btn primary" type="submit">Unlock</button></div></form>
+    <p class="status ${msg ? 'err' : 'muted'}">${esc(msg)}</p>
+    <details><summary class="muted">Forgot the PIN?</summary><p class="muted">Sign in again with your email and password. That removes the PIN from this computer; set a new one with 🔒 at the top.</p><button class="btn small" id="lockForgot">Sign in again</button></details></div>`;
+  $('#lockForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!pinMatchesLock(($('#lockPin') as HTMLInputElement).value.trim())) { renderLock('That PIN does not match.'); return; }
+    markUnlocked(); startTeacherApp();
+  });
+  $('#lockForgot').addEventListener('click', () => { void sb!.auth.signOut().then(() => { setTeacherLock(null); startTeacherApp(); }); });
+  setTimeout(() => ($('#lockPin') as HTMLInputElement | null)?.focus(), 50);
+}
+/* the 🔒 button in the header: lock now, or set a PIN for this computer (a small form opens beside it) */
+function lockButton() {
+  const row = document.querySelector('header.top .row'); if (!row || row.querySelector('#lockBox')) return;
+  const box = document.createElement('span'); box.id = 'lockBox'; box.className = 'row'; box.style.margin = '0'; box.style.gap = '6px';
+  row.prepend(box);
+  const draw = (msg = '') => {
+    box.innerHTML = teacherLock()
+      ? '<button type="button" class="btn small" id="lockNow" title="Lock the teacher app on this computer">🔒 Lock</button>'
+      : `<button type="button" class="btn small" id="lockSet" title="Lock the teacher app on this computer with a 4-digit PIN, so students can’t open it">🔒 Set a PIN</button>${msg ? `<span class="muted">${esc(msg)}</span>` : ''}`;
+    box.querySelector('#lockNow')?.addEventListener('click', () => { relock(); location.reload(); });
+    box.querySelector('#lockSet')?.addEventListener('click', () => {
+      box.innerHTML = `<form id="lockSetForm" class="row" style="margin:0; gap:6px; align-items:center"><label for="lockNew" class="muted">4-digit PIN (use your Pet World grown-up PIN)</label><input type="password" id="lockNew" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required style="width:5em"><button class="btn small primary" type="submit">Lock with it</button><button class="btn small" type="button" id="lockCancel">Cancel</button></form>`;
+      box.querySelector('#lockCancel')!.addEventListener('click', () => draw());
+      box.querySelector('#lockSetForm')!.addEventListener('submit', e => {
+        e.preventDefault();
+        const pin = (box.querySelector('#lockNew') as HTMLInputElement).value.trim();
+        if (!/^\d{4}$/.test(pin)) { draw('The PIN needs exactly 4 digits.'); return; }
+        setTeacherLock(pin); markUnlocked(); draw();
+      });
+      (box.querySelector('#lockNew') as HTMLInputElement).focus();
+    });
+  };
+  draw();
 }
 
 /* ---------- sign in ---------- */

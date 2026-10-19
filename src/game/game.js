@@ -15,6 +15,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
+import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
 import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
@@ -5577,6 +5578,33 @@ function themePlanRows(){
 }
 document.addEventListener('click', event => { if (event.target.closest('[data-theme-open]')) { const theme = todayTheme(); if (theme) openThemeCard(theme, S.themeSeen !== logDayKey()); } });
 setInterval(() => { if (Backend.me) themeCheck(); }, 15000);
+/* ---------- 👩‍🏫 to the teacher app (docs/TEACHER-LOCK.md) ----------
+   The header button asks for the grown-up PIN (the teacher app's lock on this computer if it has one, otherwise the
+   student's grown-up PIN, or makes one), locks the teacher app with it if it isn't locked yet, and opens it. */
+function openTeacherGate(){
+  if ($('.theme-card')) return;
+  const el = document.createElement('div'), making = !teacherLock() && !S?.parentPin;
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Teacher and parent page');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><div class="theme-emoji" aria-hidden="true">👩‍🏫</div><h2>Teacher and parent page</h2>
+    <form class="theme-pin"><label>${making ? 'Make a 4-digit grown-up PIN' : 'Grown-up PIN'} <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label>
+    <div class="row"><button type="submit" class="btn berry">Open</button><button type="button" class="btn" data-gate-close>Cancel</button></div></form>
+    <p class="muted" style="text-align:left">The teacher page stays locked with this PIN on this computer.</p></div>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-gate-close]').addEventListener('click', () => el.remove());
+  el.querySelector('form').addEventListener('submit', event => {
+    event.preventDefault();
+    const pin = String(new FormData(event.target).get('pin') || '').trim();
+    if (!/^\d{4}$/.test(pin)) { toast('Type the 4-digit grown-up PIN.'); return; }
+    const ok = teacherLock() ? pinMatchesLock(pin) : S?.parentPin ? S.parentPin === pinHash(pin) : true;
+    if (!ok) { toast('That PIN does not match.'); return; }
+    if (S && !S.parentPin) { S.parentPin = pinHash(pin); save(); }
+    if (!teacherLock()) setTeacherLock(pin);
+    markUnlocked(); Backend.flush?.();
+    location.href = 'teacher.html';
+  });
+  setTimeout(() => el.querySelector('input[name="pin"]')?.focus(), 50);
+}
+$('#teacherBtn')?.addEventListener('click', openTeacherGate);
 function coinBurst(el, n){
   if (reduceMotion() || !el) return;
   const r = el.getBoundingClientRect();
