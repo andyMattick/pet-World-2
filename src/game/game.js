@@ -164,6 +164,9 @@ function normalize(raw){
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
   s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';   // the last day its theme was announced (docs/THEME-DAYS.md)
   s.themeAsk = s.themeAsk && typeof s.themeAsk.day === 'string' && ['yes', 'no'].includes(s.themeAsk.answer) ? {day:s.themeAsk.day, answer:s.themeAsk.answer, ...(typeof s.themeAsk.id === 'string' ? {id:s.themeAsk.id} : {})} : null;   // today's grown-up answer, and the theme it earned
+  s.planStart = s.planStart && typeof s.planStart.day === 'string' && typeof s.planStart.id === 'string' ? s.planStart : null;   // today's ⭐ Start here
+  s.doneRows = s.doneRows && typeof s.doneRows.day === 'string' && Array.isArray(s.doneRows.ids) ? {day:s.doneRows.day, ids:s.doneRows.ids.filter(x => typeof x === 'string').slice(0, 60)} : {day:'', ids:[]};   // plan rows already reported finished today
+  s.now = s.now && Number.isFinite(+s.now.t) && typeof s.now.what === 'string' ? {t:+s.now.t, what:s.now.what.slice(0, 120)} : null;   // what she's on (the teacher app's Right now card)
   s.warmupShown = typeof s.warmupShown === 'string' ? s.warmupShown : '';   // the last day the warm-up card opened by itself
   s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;   // earned theme days so far (the rotation's place)
   s.planDone = Object.fromEntries(Object.entries(s.planDone && typeof s.planDone === 'object' ? s.planDone : {}).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v === true).sort().slice(-14));   // days the whole plan was done
@@ -5513,8 +5516,23 @@ function lastSchoolDay(day = logDayKey()){
 }
 function recordPlanDone(day = logDayKey()){ if (S?.planDone && !S.planDone[day] && planAllDone(day)) { S.planDone = Object.fromEntries(Object.entries({...S.planDone, [day]:true}).sort().slice(-14)); save(); } }
 let themeAskLater = 0;   // "Ask me later": not again for 20 minutes
+/* each plan row (a subject's time, a unit to practice or pass, an extra, a time goal) that turns ✅ today goes in the day
+   log once as "✅ Finished: …", so the teacher app can say so right away (docs/LIVE.md) */
+function trackDoneRows(){
+  const day = logDayKey(); if (!S?.doneRows) return;
+  if (S.doneRows.day !== day) S.doneRows = {day, ids:[]};
+  const {items, goalRows} = dayPlan(day), today = S.subjectTime?.[day] || {}, fresh = [];
+  items.forEach(x => { const i = planItemInfo(x, day); if (i.status !== 'todo') fresh.push([`plan:${x.id}`, i.label, x.subject || '']); });
+  assignedExtras().forEach(x => { if (Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes)) fresh.push([`extra:${x.id}`, extraLabel(x), '']); });
+  goalRows.forEach(([id, name, goal]) => { if (Math.floor((today[id] || 0) / 60) >= goal) fresh.push([`goal:${id}`, `${name}: ${goal} min`, id]); });
+  const added = fresh.filter(([id]) => !S.doneRows.ids.includes(id));
+  if (!added.length) return;
+  added.forEach(([id, title, subject]) => { S.doneRows.ids.push(id); logEvent({k:'done', title, ...(subject ? {subject} : {})}); });
+  save();
+}
 function themeCheck(){
   if (!S?.brain) return;
+  trackDoneRows();
   const day = logDayKey(), policy = themePolicy();
   if (policy.enabled) recordPlanDone(day);
   if (brainRun || moveRun || $('.theme-card')) return;
@@ -6513,7 +6531,22 @@ function dayPlan(day = logDayKey()){
     if (row) row.minutes = Math.max(Math.round(+row.minutes || 0), goals[id]);
     else items.push({id:`goal:${id}`, kind:'subject', subject, minutes:goals[id], goal:true});
   });
-  return {items, goalRows};
+  return {items:orderPlan(items, day), goalRows};
+}
+/* Order (class setting game_settings.planShuffle, on unless turned off; docs/DAILY-PLAN.md "Start here"): a random
+   subject goes first each day, marked ⭐ Start here (picked once a day from the items still to do, so it doesn't jump
+   around), and items to pass a quiz or unit test go last. */
+const planShuffle = () => Backend.me?.game_settings?.planShuffle !== false;
+function orderPlan(items, day){
+  if (!planShuffle()) return items;
+  const isTest = x => x.kind === 'unit' && (x.what === 'quiz' || x.what === 'test');
+  const rest = items.filter(x => !isTest(x)), tests = items.filter(isTest);
+  if (day === logDayKey() && S && (S.planStart?.day !== day || !rest.some(x => x.id === S.planStart.id))) {
+    const open = rest.filter(x => (x.kind === 'subject' || x.kind === 'unit') && planItemInfo(x, day).status === 'todo');
+    if (open.length) { S.planStart = {day, id:open[Math.floor(Math.random() * open.length)].id}; save(); }
+  }
+  const start = S?.planStart?.day === day ? rest.find(x => x.id === S.planStart.id) : null;
+  return [...(start ? [{...start, start:true}] : []), ...rest.filter(x => x !== start), ...tests];
 }
 function planCardHTML(){
   const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {};
@@ -6525,7 +6558,7 @@ function planCardHTML(){
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
-    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
@@ -9733,7 +9766,7 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => { if (brainRun || moveRun) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
+}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
    S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, text, ...}], labels:{key: name}, sent}
@@ -9808,6 +9841,7 @@ function eventText(e){
   if (e.k === 'brain') return `🧠 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
   if (e.k === 'move') return `🤸 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
   if (e.k === 'theme') return `🎉 Theme day: ${e.title}`;
+  if (e.k === 'done') return `✅ Finished: ${e.title}`;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,

@@ -33,3 +33,9 @@
 - The day's extras (Fact Sprint, Word Workshop) come right after the morning brain stretch (and the theme day, if there is one), before any subject. They're at the top of Today's plan with ☀️, and a **Warm-up time!** card opens by itself once a day.
 - Until they're done, opening a subject (a shop, a library, a museum, the Nature Center or the Reading Log, from a tile or a Go button) shows the warm-up card instead.
 - Class setting `game_settings.extrasFirst`: on unless a teacher turns it off (Quick setup and Settings → ☀️ Warm-up first).
+
+## ⭐ Start here, tests last
+
+- Each day one subject on the plan (time in a subject or a unit's practice, still to do) is picked at random and goes first, marked **⭐ Start here**. It's picked once a day, so it doesn't change while she works.
+- "Pass the quiz" and "pass the unit test" items go to the end of the list.
+- Class setting `game_settings.planShuffle`: on unless a teacher turns it off (Settings → ⭐ Order of the day).

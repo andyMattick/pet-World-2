@@ -86,6 +86,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'project': return course.startsWith('bio') ? 'science' : 'history';
     case 'dig': case 'scribe': return 'history';
     case 'brain': case 'move': return 'breaks';
+    case 'done': { const s = String(ev.subject || ''); return s === 'biology' ? 'science' : ['math', 'english', 'reading', 'history', 'science'].includes(s) ? s : 'other'; }
     default: return 'other';
   }
 }
@@ -134,6 +135,9 @@ function entryFromSave(day: string, r: LedgerStudent): LedgerEntry {
     orders: Object.entries(d.counts || {}).map(([key, c]) => ({ key, label: label(key), n: c.n, ok: c.ok })),
     events: (d.events || []).map(ev => ({ ...ev, text: eventLabel(ev) })) };
 }
+
+/** One day from a student's save, the way the Ledger shows a day she didn't send (the Right now card uses it). */
+export function savedDayHTML(r: LedgerStudent, day: string) { return entryHTML(entryFromSave(day, r)); }
 
 function entryHTML(e: LedgerEntry) {
   const subjects = Object.entries(e.subjects || {}).filter(([, s]) => s >= 30).sort((a, b) => b[1] - a[1]);

@@ -9,6 +9,7 @@ import { MOVES, MOVES_PER_BREAK, MOVE_SECONDS, MOVE_MINUTES_MAX, moveSettings, t
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 import { setLedgerClass } from './ledger';
+import { startAlerts } from './live';
 import { renderApprovals, waitingCount } from './approvals';
 import { renderVocabTab, type VocabRoster, type ClassVocab } from './vocab';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
@@ -218,6 +219,7 @@ async function renderDashboard() {
   pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
   setReportClass(cls.id, cls.game_settings?.home, cls.game_settings?.khan, cls.game_settings?.requireThink);
   setLedgerClass(sb, cls.id);
+  startAlerts(sb!, cls.id, reports);   // pop-ups when a student finishes a subject or passes a test (docs/LIVE.md)
   renderClassReport($('#report'), reports, saveStudentDrills, async (id, clearHistory) => { await resetStudent(id, clearHistory); await renderDashboard(); const student = reports.find(row => row.id === id); alertMain(`${student?.n || 'Student'} was reset.`); }, saveQuizOverride);
   startLive(cls.id);
 }
@@ -492,6 +494,9 @@ function renderSettings() {
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> Brain stretches</label>
       <p class="muted" style="margin-top:0">3 short brain games in a row: one when a student opens Pet World each day, and one each time a subject or unit on their daily plan is done. There's no skip button. Each game starts at its easiest level and moves up after 3 scores in a row of 85% or better. Results are on each student's 🧠 Brain tab.</p>
       <h4>Games in the cycle</h4><div class="row"><button type="button" class="btn small" data-brain-all="1">Use all</button><button type="button" class="btn small" data-brain-all="0">Block all</button></div>${BRAIN_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-brain-game="${game.id}" ${brain.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)} <span class="muted">· ${esc(game.skill)}</span></label>`).join('')}
+      <h3>⭐ Order of the day</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="planShuffle" ${cls.game_settings?.planShuffle === false ? '' : 'checked'}> Random first subject, quizzes and tests last</label>
+      <p class="muted" style="margin-top:0">Each day Pet World picks one subject on the plan for ⭐ Start here, and moves “pass the quiz” and “pass the unit test” items to the end of Today’s plan.</p>
       <h3>☀️ Warm-up first</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="extrasFirst" ${cls.game_settings?.extrasFirst === false ? '' : 'checked'}> Extras before any subject</label>
       <p class="muted" style="margin-top:0">Each student’s extras (the Fact Sprint and Word Workshop you set on their page) come right after the morning brain stretch. Until they’re done, opening a subject shows the warm-up instead.</p>
@@ -585,7 +590,7 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, planShuffle: ($('#planShuffle') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
