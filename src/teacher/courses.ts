@@ -5,6 +5,8 @@
    Saved in quiz_overrides as "courses" (JSON). The transcript (step 7) reads the same numbers. */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ledgerClient } from './ledger';
+import { SHOPS } from '../shared/registry';
+import { LESSON_COURSES } from '../shared/questionBanks';
 
 export interface CourseStudent {
   id: string; n: string;
@@ -23,7 +25,11 @@ export interface CourseRow {
   hours: number; finished: string; test: number | null; quiz: number | null; daily: number | null;
   suggested: number | null; grade: string; overridden: boolean; off: boolean;
   into: string; parts: { id: string; name: string }[];   // into: the course this one is combined into; parts: courses combined into this one
+  items?: GradeItem[];                                   // Pet World courses: every quiz and unit test that counts, with the score used
+  used?: { part: 'test' | 'quiz' | 'daily'; weight: number; value: number }[];   // the parts in the suggestion, after missing parts share their weight
 }
+/** One quiz or unit test behind a Pet World grade: its best score as a percent. */
+export interface GradeItem { kind: 'test' | 'quiz'; label: string; pct: number; passed: boolean; tries?: number; score?: string; when?: number }
 export interface LedgerTotals { days: { day: string; subjects: Record<string, number> }[]; outside: { day: string; course: string; minutes: number; grade: string }[] }
 
 const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
@@ -61,29 +67,47 @@ export function shownGrade(row: CourseRow) {
 const dayOf = (t: number) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 
+/* the name of an English, History or Biology quiz or unit test from its progress key ("final-test", "verbs:quiz:aspect"…) */
+function progressLabel(key: string) {
+  const m = key.match(/^(?:([\w-]+):)?(?:quiz:(.+)|final-test)$/), courseId = m?.[1] || 'nouns';
+  const course = (LESSON_COURSES as { id: string; title: string; groups: { id: string; name: string; quizName?: string }[] }[]).find(c => c.id === courseId);
+  if (!course) return key;
+  if (!m?.[2]) return `${course.title}: Unit test`;
+  const group = course.groups.find(g => g.id === m[2]);
+  return `${course.title}: ${group ? group.quizName || `${group.name} quiz` : m[2]}`;
+}
+const mathLabel = (shop: string, kind: string, station: number | null) => {
+  const s = (SHOPS as Record<string, { name: string; emoji?: string; stations: { id: number; name: string }[] }>)[shop], st = s?.stations.find(x => x.id === station);
+  return `${s?.emoji || ''} ${s?.name || shop}: ${kind === 'test' ? 'Unit test' : st ? `${st.name} quiz` : `Station ${station} quiz`}`.trim();
+};
 /* best score on each quiz and unit test, as percents */
 function petTownScores(r: CourseStudent, store: string, inRange: (day: string) => boolean = () => true) {
-  const tests: number[] = [], quizzes: number[] = [];
+  const tests: number[] = [], quizzes: number[] = [], items: GradeItem[] = [];
   let units = 0;
   if (store === 'math') {
-    const best: Record<string, { pct: number; kind: string; passed: boolean }> = {};
+    const best: Record<string, { pct: number; kind: string; passed: boolean; label: string; score: string; when: number; tries: number }> = {};
     for (const a of r.qz || []) {
       if (!a.total || !inRange(dayOf(a.t))) continue;   // math quizzes and tests have dates; the other subjects' don't
-      const key = `${a.shop}:${a.kind === 'test' ? 'test' : a.station}`, pct = a.score * 100 / a.total;
-      if (!best[key] || pct > best[key].pct) best[key] = { pct, kind: a.kind, passed: a.passed || !!best[key]?.passed };
-      else if (a.passed) best[key].passed = true;
+      const key = `${a.shop}:${a.kind === 'test' ? 'test' : a.station}`, pct = a.score * 100 / a.total, tries = (best[key]?.tries || 0) + 1;
+      if (!best[key] || pct > best[key].pct) best[key] = { pct, kind: a.kind, passed: a.passed || !!best[key]?.passed, label: mathLabel(a.shop, a.kind, a.station), score: `${a.score} of ${a.total}`, when: a.t, tries };
+      else { best[key].tries = tries; if (a.passed) best[key].passed = true; }
     }
-    Object.values(best).forEach(b => { (b.kind === 'test' ? tests : quizzes).push(b.pct); if (b.kind === 'test' && b.passed) units++; });
+    Object.values(best).forEach(b => {
+      (b.kind === 'test' ? tests : quizzes).push(b.pct); if (b.kind === 'test' && b.passed) units++;
+      items.push({ kind: b.kind === 'test' ? 'test' : 'quiz', label: b.label, pct: b.pct, passed: b.passed, tries: b.tries, score: b.score, when: b.when });
+    });
   } else {
     const progress = (r as unknown as Record<string, Record<string, Progress> | undefined>)[store] || {};
     for (const [key, p] of Object.entries(progress)) {
       const isTest = /final-test$/.test(key), isQuiz = /(^|:)quiz:/.test(key);
       if ((!isTest && !isQuiz) || !p?.tries || !p.questionCount) continue;
-      (isTest ? tests : quizzes).push(Math.min(100, (p.best || 0) * 100 / p.questionCount));
+      const pctBest = Math.min(100, (p.best || 0) * 100 / p.questionCount);
+      (isTest ? tests : quizzes).push(pctBest);
       if (isTest && p.passed) units++;
+      items.push({ kind: isTest ? 'test' : 'quiz', label: progressLabel(key), pct: pctBest, passed: !!p.passed, tries: p.tries, score: `${p.best || 0} of ${p.questionCount}` });
     }
   }
-  return { test: avg(tests), quiz: avg(quizzes), units };
+  return { test: avg(tests), quiz: avg(quizzes), units, items };
 }
 
 /** Every course for the student: Pet World, outside (from the Ledger) and added, with hours and grades. */
@@ -103,7 +127,10 @@ export function computeCourses(r: CourseStudent, settingsRaw: unknown, data: Led
     const parts = ([['test', sc.test], ['quiz', sc.quiz], ['daily', daily]] as [keyof typeof w, number | null][]).filter(([k, v]) => v != null && (+w[k] || 0) > 0);
     const total = parts.reduce((a, [k]) => a + (+w[k] || 0), 0);
     const suggested = total ? parts.reduce((a, [k, v]) => a + (v as number) * (+w[k] || 0), 0) / total : null;
-    return finish({ id: p.id, kind: 'pettown', defaultName: p.name, hours: t / 3600, finished: `${sc.units} unit${sc.units === 1 ? '' : 's'} passed`, test: sc.test, quiz: sc.quiz, daily, suggested });
+    const row = finish({ id: p.id, kind: 'pettown', defaultName: p.name, hours: t / 3600, finished: `${sc.units} unit${sc.units === 1 ? '' : 's'} passed`, test: sc.test, quiz: sc.quiz, daily, suggested });
+    row.items = sc.items;
+    row.used = total ? parts.map(([k, v]) => ({ part: k as 'test' | 'quiz' | 'daily', weight: (+w[k] || 0) * 100 / total, value: v as number })) : [];
+    return row;
   });
   const outside: Record<string, { name: string; mins: number; n: number; grades: number[] }> = {};
   data.outside.filter(o => inRange(o.day)).forEach(o => {
@@ -150,6 +177,26 @@ export async function loadLedgerTotals(sb: SupabaseClient, studentId: string): P
   return { days, outside };
 }
 
+/* "What makes up this grade" under a Pet World course: every quiz and unit test that counts, and the math that adds them up */
+function breakdownHTML(x: CourseRow) {
+  if (x.kind !== 'pettown' || x.parts.length) return '';
+  const items = x.items || [];
+  if (!items.length && x.daily == null) return '';
+  const r0 = (n: number) => Math.round(n), date = (t?: number) => (t ? ` <span class="muted">${new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>` : '');
+  const list = (kind: 'test' | 'quiz', title: string, avgValue: number | null) => {
+    const mine = items.filter(i => i.kind === kind).sort((a, b) => a.label.localeCompare(b.label));
+    if (!mine.length) return `<p style="margin:6px 0 2px"><b>${title}</b> <span class="muted">none taken yet</span></p>`;
+    return `<p style="margin:6px 0 2px"><b>${title}</b> · average of best scores: <b>${avgValue == null ? '—' : `${r0(avgValue)}%`}</b></p><ul style="margin:0">${mine.map(i => `<li>${esc(i.label)}: <b>${r0(i.pct)}%</b>${i.score ? ` (${esc(i.score)})` : ''}${i.passed ? ' ✅' : ''}${i.tries ? ` <span class="muted">· best of ${i.tries} ${i.tries === 1 ? 'try' : 'tries'}</span>` : ''}${date(i.when)}</li>`).join('')}</ul>`;
+  };
+  const names: Record<string, string> = { test: 'unit tests', quiz: 'quizzes', daily: 'daily work' };
+  const sum = (x.used || []).map(u => `${r0(u.weight)}% × ${r0(u.value)} (${names[u.part]})`).join(' + ');
+  return `<tr class="grade-breakdown"><td colspan="8" style="padding-top:0"><details><summary class="muted">What makes up this grade</summary><div style="padding:4px 0 8px 12px">
+    ${list('test', 'Unit tests', x.test)}${list('quiz', 'Quizzes', x.quiz)}
+    <p style="margin:6px 0 2px"><b>Daily work</b> · ${x.daily == null ? '<span class="muted">no practice time yet</span>' : `<b>${r0(x.daily)}%</b> <span class="muted">(completion: there is practice time in this subject)</span>`}</p>
+    ${sum ? `<p style="margin:8px 0 0">Suggested grade: ${sum} = <b>${gradeText(x.suggested)}</b>${(x.used || []).length < 3 ? ' <span class="muted">(parts with nothing yet share their weight)</span>' : ''}</p>` : ''}
+    <p class="muted" style="margin:4px 0 0">Practice sets don’t count toward the grade. ${x.id === 'pt:math' ? 'Math tries have dates, so a school year only counts its own.' : 'English, History and Biology keep only the best score and the number of tries, not each try’s date.'}</p>
+  </div></details></td></tr>`;
+}
 const hoursText = (h: number) => (h >= 10 ? String(Math.round(h)) : h.toFixed(1));
 const pct = (n: number | null) => (n == null ? '<span class="muted">—</span>' : `${Math.round(n)}%`);
 
@@ -165,7 +212,8 @@ export function renderCourses(el: HTMLElement, r: CourseStudent, getSettings: ()
   function draw() {
     if (!data) return;
     const s = parseCourseSettings(getSettings()), w = { ...DEFAULT_WEIGHTS, ...(s.w || {}) }, rows = computeCourses(r, s, data);
-    const row = (x: CourseRow) => `<tr data-course="${esc(x.id)}"${x.off ? ' style="opacity:.55"' : ''}>
+    const row = (x: CourseRow) => courseRowHTML(x) + breakdownHTML(x);
+    const courseRowHTML = (x: CourseRow) => `<tr data-course="${esc(x.id)}"${x.off ? ' style="opacity:.55"' : ''}>
       <td><input data-c-name value="${esc(x.name)}" maxlength="80" style="width:150px" aria-label="Course name">${x.kind === 'pettown' ? ' <span class="tag i">Pet World</span>' : x.kind === 'added' ? ' <span class="tag a">added</span>' : ''}
         ${x.parts.length ? `<div class="muted" style="font-size:.85em">Includes ${x.parts.map(p => `${esc(p.name)} <button class="btn small" data-c-split="${esc(p.id)}">Separate</button>`).join(' ')}</div>` : `<div><label class="muted" style="font-size:.85em">Combine with <select data-c-into><option value="">—</option>${rows.filter(o => o.id !== x.id).map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}</select></label></div>`}</td>
       <td>${x.kind === 'added' ? `<input type="number" data-c-hours min="0" max="2000" step="0.5" value="${x.hours || ''}" style="width:70px" aria-label="Hours">` : hoursText(x.hours)}</td>

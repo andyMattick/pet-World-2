@@ -34,6 +34,11 @@
 - The game writes each event's wording (`text`) and each lesson's name (`labels`) into the day log as it happens, so the teacher app can show it without the game's lists.
 - **Math quizzes and unit tests from the quiz history** (the `assessments` table) fill in any day whose record has none, including days before the day log went live (Oct 16, 2026). English, History and Science practice before then was only kept as time by subject and each lesson's best score, so those days can't be filled in.
 
+## What makes up a grade (Courses & grades)
+
+- Under each Pet World course, **What makes up this grade** opens the list behind the suggestion: every unit test and quiz that counts, with the score used (her best), how many tries, whether she passed and (for math) the date; the averages; daily work; and the sum, such as "50% × 90 (unit tests) + 40% × 88 (quizzes) + 10% × 100 (daily work) = 91% (A)".
+- Practice sets never count. English, History and Biology keep only each quiz's best score and number of tries, so their list has no dates.
+
 ## Notes
 
 - The record starts the day step 1 goes live; earlier days can be filled in from time by subject and quiz history, without per-lesson detail.
