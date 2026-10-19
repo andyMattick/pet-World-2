@@ -5510,6 +5510,7 @@ function todayTheme(){
 function planAllDone(day = logDayKey()){
   const {items, goalRows} = dayPlan(day), extras = assignedExtras(), today = S.subjectTime?.[day] || {};
   if (!items.length && !extras.length && !goalRows.length) return false;
+  if (day === logDayKey() && fixItems().length) return false;   // sent-back work comes first (Fix first)
   return items.every(x => planItemInfo(x, day).status !== 'todo')   // "waiting for a grown-up" counts: her part is done
     && extras.every(x => Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes))
     && goalRows.every(([id, , goal]) => Math.floor((today[id] || 0) / 60) >= goal);
@@ -5529,6 +5530,7 @@ function trackDoneRows(){
   items.forEach(x => { const i = planItemInfo(x, day); if (i.status !== 'todo') fresh.push([`plan:${x.id}`, i.label, x.subject || '']); });
   assignedExtras().forEach(x => { if (Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes)) fresh.push([`extra:${x.id}`, extraLabel(x), '']); });
   goalRows.forEach(([id, name, goal]) => { if (Math.floor((today[id] || 0) / 60) >= goal) fresh.push([`goal:${id}`, `${name}: ${goal} min`, id]); });
+  if (S.fixLog?.day === day) Object.entries(S.fixLog.done).forEach(([key, title]) => fresh.push([`fix:${key}`, `🔁 Fixed and sent again: ${title}`, '']));
   const added = fresh.filter(([id]) => !S.doneRows.ids.includes(id));
   if (!added.length) return;
   added.forEach(([id, title, subject]) => { S.doneRows.ids.push(id); logEvent({k:'done', title, ...(subject ? {subject} : {})}); });
@@ -5619,7 +5621,7 @@ const OUTSIDE_STATE = {waiting:'⏳ waiting for a grown-up', ok:'✅ checked', r
 function outsidePlanHTML(){ void loadOutside(); return ''; }
 function outsideRowsHTML(){
   if (!Backend.me) return '';
-  const day = logDayKey(), rows = outsideCache.rows.filter(x => x.source === 'student' && (x.day === day || x.review === 'redo'));
+  const day = logDayKey(), rows = outsideCache.rows.filter(x => x.source === 'student' && x.day === day && x.review !== 'redo');   // ones sent back are Fix first rows
   return `${rows.map(x => `<div class="row extras-row"><span style="flex:1">📎 ${esc(x.course)}${x.title ? `: ${esc(x.title)}` : ''} · <b>${x.minutes} min</b>${x.grade ? ` · grade ${esc(x.grade)}` : ''}${(x.images || []).length ? ` · 📷 ${x.images.length}` : ''} <small class="muted">${OUTSIDE_STATE[x.review] || ''}${x.day !== day ? ` (${esc(x.day)})` : ''}</small>${x.review === 'redo' && x.review_note ? `<br><small>“${esc(x.review_note)}”</small>` : ''}</span>${x.review === 'ok' ? '' : `<button type="button" class="btn small${x.review === 'redo' ? ' berry' : ''}" data-outside-edit="${x.id}">${x.review === 'redo' ? 'Fix it' : 'Edit'}</button>`}</div>`).join('')}
     <div class="row" style="margin-top:6px"><button type="button" class="btn small" data-outside-add>➕ Outside work</button><small class="muted" style="align-self:center">Did school work somewhere else? Add it here.</small></div>`;
 }
@@ -6648,20 +6650,20 @@ function orderPlan(items, day){
 }
 function planCardHTML(){
   const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {};
-  const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending();
-  if (!items.length && !extras.length && !goalRows.length && !brainRows.length) return '';
+  const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0;
+  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML) return '';
   const extraRows = extras.map(x => {
     const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
-    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' && !fixing ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${rows.join('')}${outsideRowsHTML()}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${fixHTML}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -6732,6 +6734,40 @@ function sentBackItems(){
   }
   return items;
 }
+/* ---------- fix first (docs/DAILY-PLAN.md, "Fix first") ----------
+   Everything sent back to fix is also a row at the top of Today's plan, every day until she fixes it: the town banner's
+   items plus outside work a grown-up asked her to redo. The plan isn't done (no theme day) while one is open, and
+   "I'm done for today" lists them. One that disappears (sent again) shows ✅ Fixed for the rest of that day. */
+function fixItems(){
+  const items = sentBackItems().map(x => ({...x}));
+  for (const o of outsideCache.rows.filter(x => x.source === 'student' && x.review === 'redo')) items.push({key:`outside:${o.id}`, kind:'outside', icon:'📎', title:`${o.course}${o.title ? `: ${o.title}` : ''}`, note:o.review_note, row:o});
+  return items;
+}
+function fixRows(){
+  const day = logDayKey(), open = fixItems();
+  if (!S.fixLog || S.fixLog.day !== day) S.fixLog = {day, open:Object.fromEntries(open.map(x => [x.key, x.title])), done:{}};
+  for (const x of open) { S.fixLog.open[x.key] = x.title; delete S.fixLog.done[x.key]; }
+  for (const [key, title] of Object.entries(S.fixLog.open)) if (!open.some(x => x.key === key)) { delete S.fixLog.open[key]; S.fixLog.done[key] = title; }
+  return {open, done:Object.entries(S.fixLog.done).map(([key, title]) => ({key, title}))};
+}
+function openFix(item){
+  if (!item) return;
+  if (item.kind === 'outside') { openOutsideForm(item.row); return; }
+  if (item.kind === 'project') { show('library'); renderHistoryProject(item.id); return; }
+  if (item.kind === 'reading') {
+    const book = S.readingBooks.find(x => x.id === item.bookId);
+    S.readingSelection = {bookId:item.bookId, chapterId:item.chapterId || book?.chapters[book.chapters.length - 1]?.id || null};
+    activeEnglishCourse = 'nouns'; save(); show('library'); return;
+  }
+  openWrittenRedo(item.entry);
+}
+let fixShown = [];
+function fixPlanRowsHTML(){
+  const {open, done} = fixRows(); fixShown = open;
+  return [...open.map((x, i) => `<div class="row extras-row fix-row"><span style="flex:1">⬜ ${i === 0 ? '<b>⭐ Fix first:</b> ' : '<b>🔁 Fix:</b> '}${x.icon} ${esc(x.title)}${x.note ? `<br><small>“${esc(x.note)}”</small>` : ''}</span><button type="button" class="btn small berry" data-fix-open="${i}">Fix it</button></div>`),
+    ...done.map(x => `<div class="row extras-row"><span style="flex:1">✅ Fixed: ${esc(x.title)}</span></div>`)].join('');
+}
+document.addEventListener('click', event => { const b = event.target.closest('[data-fix-open]'); if (b) openFix(fixShown[+b.dataset.fixOpen]); });
 let sentBackShown = [];
 function renderSentBack(){
   const wrap = $('#sentBackWrap'); if (!wrap) return;
@@ -6753,14 +6789,7 @@ $('#sentBackWrap').addEventListener('click', event => {
   const thinkAgain = event.target.closest('[data-think-again]');
   if (thinkAgain) { currentShop = thinkAgain.dataset.thinkAgain.split(':')[0]; startThink(thinkAgain.dataset.thinkAgain); return; }
   const b = event.target.closest('[data-sent-back]'); if (!b) return;
-  const item = sentBackShown[+b.dataset.sentBack]; if (!item) return;
-  if (item.kind === 'project') { show('library'); renderHistoryProject(item.id); return; }
-  if (item.kind === 'reading') {
-    const book = S.readingBooks.find(x => x.id === item.bookId);
-    S.readingSelection = {bookId:item.bookId, chapterId:item.chapterId || book?.chapters[book.chapters.length - 1]?.id || null};
-    activeEnglishCourse = 'nouns'; save(); show('library'); return;
-  }
-  openWrittenRedo(item.entry);
+  openFix(sentBackShown[+b.dataset.sentBack]);
 });
 /* open a written answer that was sent back, ready to fix (from the town banner or the unit page's written answers) */
 function openWrittenRedo(entry){
@@ -10156,7 +10185,8 @@ function dayEntry(day = logDayKey()){
     orders:Object.entries(d.counts).map(([key, c]) => { const [, shop, station] = key.split(':'); return {key, label:stationLabel(shop, station), n:c.n, ok:c.ok}; }),
     events:d.events.map(e => ({...e, text:e.text || eventText(e)})),
     ...(() => { const w = dayWins(d); return {passed:w.passed, mastered:w.mastered}; })(),
-    plan:planItems(day).map(x => { const i = planItemInfo(x, day); return {label:i.label, status:i.status, ...(x.carried ? {carried:true} : {})}; }),
+    plan:[...(day === logDayKey() ? fixItems().map(x => ({label:`🔁 Fix: ${x.title}`, status:'todo'})) : []), ...(day === logDayKey() && S.fixLog?.day === day ? Object.values(S.fixLog.done).map(title => ({label:`🔁 Fixed: ${title}`, status:'done'})) : []),
+      ...planItems(day).map(x => { const i = planItemInfo(x, day); return {label:i.label, status:i.status, ...(x.carried ? {carried:true} : {})}; })],
     extras:assignedExtras().map(x => ({label:extraLabel(x), done:Math.floor(extraSecs(x.id) / 60), goal:Math.round(+x.minutes)})),
     goals:GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id, name]) => ({subject:id, label:name, done:Math.floor((subj[id] || 0) / 60), goal:goals[id]}))};
 }
@@ -10174,7 +10204,9 @@ async function sendDay(){
 function renderDayDone(){
   applyRoom('welcome', null, [], dayPets());   // her pets walk around while she looks back at the day
   const d = dayLogToday();
-  $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small" data-day-back>Back to town</button></div>${daySummaryHTML()}
+  const fixes = fixItems(); fixShown = fixes;
+  const fixNote = fixes.length ? `<div class="sent-back fix-before-done"><h3>🔁 Not done yet: ${fixes.length === 1 ? 'one thing needs' : `${fixes.length} things need`} fixing</h3><p>Fix ${fixes.length === 1 ? 'it' : 'them'} and send ${fixes.length === 1 ? 'it' : 'them'} again before you finish. ${fixes.length === 1 ? 'It stays' : 'They stay'} at the top of your plan until ${fixes.length === 1 ? 'it’s' : 'they’re'} fixed.</p>${fixes.map((x, i) => `<div class="row extras-row"><span style="flex:1">${x.icon} ${esc(x.title)}${x.note ? `<br><small>“${esc(x.note)}”</small>` : ''}</span><button type="button" class="btn small berry" data-fix-open="${i}">Fix it</button></div>`).join('')}</div>` : '';
+  $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small" data-day-back>Back to town</button></div>${fixNote}${daySummaryHTML()}
 <div class="row"><button type="button" class="btn berry" data-day-send>${d.sent ? '✅ Saved to my record (save again)' : 'Send to my record'}</button></div>${d.sent ? `<p class="muted">Saved at ${new Date(d.sent).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}. A grown-up can still change it.</p>` : ''}</div>`;
 }
 document.addEventListener('click', event => {

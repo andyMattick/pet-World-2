@@ -41,3 +41,13 @@
 - Each day one subject on the plan (time in a subject or a unit's practice, still to do) is picked at random and goes first, marked **⭐ Start here**. It's picked once a day, so it doesn't change while she works.
 - "Pass the quiz" and "pass the unit test" items go to the end of the list.
 - Class setting `game_settings.planShuffle`: on unless a teacher turns it off (Settings → ⭐ Order of the day).
+
+## Fix first
+
+Anything a teacher or a parent sends back goes at the top of Today's plan as **⭐ Fix first**, with the note and a **Fix it** button. That includes written answers sent back for a redo, projects and labs with a revision requested, Reading Log notes or reading-quiz essays to fix, and outside work with "Ask for a redo". The 🔁 banner at the top of the town still shows them too.
+
+- **Every day until fixed:** it's on the plan each day until she fixes it and sends it again. Nothing has to be added to the plan by hand.
+- **The plan isn't done while one is open:** no ✅ whole-plan day, so no theme day earned that day. The other plan rows lose their ⭐ Start here mark until the fixes are done.
+- **"I'm done for today"** shows "🔁 Not done yet: one thing needs fixing" with Fix it buttons. She can still save her day to the record. Her time counts either way.
+- **Once she sends it again:** the row turns into **✅ Fixed: …** for the rest of the day. The day log gets "🔁 Fixed and sent again: …", which also pops up as an alert in the teacher app.
+- **In her daily record:** the Ledger's plan list shows open fixes as not done and fixed ones as done.

@@ -161,6 +161,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F29. 📇 Review for the test: optional flashcards of each English unit's terms (gerund, aspect, antecedent…), then 8 mixed questions, before the Pet World test or the Khan test. See `TEST-REVIEW.md`
 - [x] F30. 🔤 Word Workshop: any Word Workshop minutes count toward a Word Workshop extra (fixes a stuck warm-up); grown-up PIN skips the warm-up for a day; best device voice, a voice picker, and 🐢 by-syllable reading with syllables shown after each answer. See `VOCAB.md`
 - [x] F31. 🔤 Word Workshop adapts: word levels (easier, middle, harder) that drop after 2 misses and rise after 4 right; spelling mistakes named by pattern (pre/per, doubles, -ant/-ent…) with a tip; teacher Vocabulary tab suggests words per pattern; bigger spelling box. See `VOCAB.md`
+- [x] F32. 🔁 Fix first: anything sent back goes at the top of Today's plan every day until it's fixed; the plan isn't done (no theme day) while one is open; "I'm done for today" lists them. See `DAILY-PLAN.md`
 
 ## Database files, in the order they were run
 

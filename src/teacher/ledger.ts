@@ -352,7 +352,7 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
       const id = +d.outRedo;
       const note = (el.querySelector<HTMLInputElement>(`[data-out-note="${id}"]`)?.value || '').trim().slice(0, 500);
       if (!note) { say('Type what to fix, then press Ask for a redo.'); el.querySelector<HTMLInputElement>(`[data-out-note="${id}"]`)?.focus(); return; }
-      void run(() => sb.from('ledger_outside').update({ review: 'redo', review_note: note }).eq('id', id), `Sent back to ${r.n} with your note.`);
+      void run(() => sb.from('ledger_outside').update({ review: 'redo', review_note: note }).eq('id', id), `Sent back to ${r.n} with your note. It’s at the top of ${r.n}’s Today’s plan until it’s fixed.`);
     } else if (d.outEdit) { st.editOut = +d.outEdit; draw(); }
     else if (t.hasAttribute('data-out-cancel')) { st.editOut = 0; draw(); }
     else if (d.outSave) {

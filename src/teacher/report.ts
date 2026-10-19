@@ -557,7 +557,7 @@ function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
       <div style="display:grid; gap:4px; margin:6px 0">${e.rubric.map((point, i) => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-written-point="${i}" ${review?.points[i] ? 'checked' : ''}> ${esc(point)}</label>`).join('')}</div>
       <label>Note for the student <input type="text" data-written-comment maxlength="300" value="${esc(review?.comment || '')}"></label>
       <div class="row"><button class="btn small primary" data-written-save="${esc(e.id)}" data-redo="0">${mine && !review?.redo ? '✅ Update: looks good' : '✅ Looks good'}</button> <button class="btn small" data-written-save="${esc(e.id)}" data-redo="1">${mine && review?.redo ? '🔁 Update: send back' : '🔁 Send back to redo'}</button></div>
-      <p class="muted" style="margin:4px 0 0">Send back puts the question back in the student's practice with your note at the top.</p></div>`;
+      <p class="muted" style="margin:4px 0 0">Send back puts the question back in the student's practice with your note, and at the top of their Today's plan as “Fix first” until they send it again.</p></div>`;
       };
       const accepted = (e: WrittenEntry) => { const rv = writtenReview(e, overrides); return !!rv && !rv.redo; };
       const doneList = entries.filter(accepted);
@@ -583,7 +583,7 @@ function historyProjectsHTML(r: StudentReport, overrides: Record<string, string>
     });
     const doneItems = items.filter(x => x.done);
     const rows = items.filter(x => !x.done).map(x => x.html).join('') + archiveHTML(doneItems.map(x => x.html).join(''), doneItems.length);
-  return `<div class="card"><h2>Projects and experiments</h2><p class="muted">Student-built research projects and lab reports. Verify when the work meets your standard, or request a revision.</p>${rows}<p class="status" id="studentQuizMsg2"></p></div>`;
+  return `<div class="card"><h2>Projects and experiments</h2><p class="muted">Student-built research projects and lab reports. Verify when the work meets your standard, or request a revision: it goes at the top of the student's Today's plan as “Fix first” until they send it again.</p>${rows}<p class="status" id="studentQuizMsg2"></p></div>`;
 }
 function englishReadingHTML(r: StudentReport, subject = '') {
   const courses = [
