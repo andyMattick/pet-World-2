@@ -33,6 +33,8 @@
 - The day's extras (Fact Sprint, Word Workshop) come right after the morning brain stretch (and the theme day, if there is one), before any subject. They're at the top of Today's plan with ☀️, and a **Warm-up time!** card opens by itself once a day.
 - Until they're done, opening a subject (a shop, a library, a museum, the Nature Center or the Reading Log, from a tile or a Go button) shows the warm-up card instead.
 - Class setting `game_settings.extrasFirst`: on unless a teacher turns it off (Quick setup and Settings → ☀️ Warm-up first).
+- A Word Workshop extra counts every minute spent in Word Workshop that day, in any mode (practice cards, sprint or spelling), whether or not she finishes a round. It uses the same active time as "Time by subject". Before this, only finished rounds in the assigned mode counted, so a student could spend 25 minutes spelling and still see "0 of 5".
+- **Grown-up: skip the warm-up today** at the bottom of the warm-up card takes the grown-up PIN and opens the subjects for the rest of the day (`S.warmupSkipped`).
 
 ## ⭐ Start here, tests last
 

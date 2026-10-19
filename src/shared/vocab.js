@@ -242,3 +242,125 @@ export function normalizeVocabState(v){
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) }
   };
 }
+
+/* ---------- syllables and how to say them (docs/VOCAB.md, "Hearing the word") ----------
+   For each built-in word: the dictionary syllable breaks to show ("an·a·lyze"), and the same syllables respelled
+   so a computer voice says each one clearly when they are read one at a time ("an|uh|lize"). An optional third part
+   is how to say the whole word when the plain spelling fools the voice (minute, meaning tiny, is "my noot"). */
+const SYLLABLE_DATA = `analyze=an·a·lyze=an|uh|lize
+compare=com·pare=kum|pair
+contrast=con·trast=kon|trast
+describe=de·scribe=dih|scribe
+evidence=ev·i·dence=ev|ih|dense
+predict=pre·dict=prih|dict
+summarize=sum·ma·rize=sum|uh|rize
+infer=in·fer=in|fur
+explain=ex·plain=ex|plane
+identify=i·den·ti·fy=eye|den|tih|fye
+abundant=a·bun·dant=uh|bun|dent
+scarce=scarce=scarce
+fragile=frag·ile=fraj|ul
+sturdy=stur·dy=stur|dee
+ancient=an·cient=ain|shent
+modern=mod·ern=mod|ern
+enormous=e·nor·mous=ih|nor|mus
+minute=mi·nute=my|noot=my noot
+reluctant=re·luc·tant=rih|luck|tent
+eager=ea·ger=ee|gur
+cautious=cau·tious=caw|shus
+confident=con·fi·dent=kon|fih|dent
+curious=cu·ri·ous=kyoor|ee|us
+generous=gen·er·ous=jen|ur|us
+honest=hon·est=on|ist
+patient=pa·tient=pay|shent
+persistent=per·sis·tent=pur|sis|tent
+responsible=re·spon·si·ble=rih|spon|sih|bul
+timid=tim·id=tim|id
+grateful=grate·ful=grate|ful
+accurate=ac·cu·rate=ak|yur|it
+approximate=ap·prox·i·mate=uh|prox|ih|mit
+estimate=es·ti·mate=es|tih|mate
+calculate=cal·cu·late=kal|kyoo|late
+pattern=pat·tern=pat|urn
+equivalent=e·quiv·a·lent=ih|kwiv|uh|lent
+interpret=in·ter·pret=in|tur|prit
+data=da·ta=day|tuh
+survey=sur·vey=sur|vay
+conclusion=con·clu·sion=kun|kloo|zhun
+habitat=hab·i·tat=hab|ih|tat
+adapt=a·dapt=uh|dapt
+migrate=mi·grate=my|grate
+predator=pred·a·tor=pred|uh|tur
+prey=prey=pray
+organism=or·gan·ism=or|guh|niz|um
+environment=en·vi·ron·ment=en|vye|run|ment
+erosion=e·ro·sion=ih|ro|zhun
+nutrient=nu·tri·ent=noo|tree|ent
+observe=ob·serve=ub|zurv
+century=cen·tu·ry=sen|chur|ee
+civilization=civ·i·li·za·tion=siv|uh|luh|zay|shun
+culture=cul·ture=kul|chur
+empire=em·pire=em|pire
+trade=trade=trade
+tradition=tra·di·tion=truh|dish|un
+artifact=ar·ti·fact=ar|tih|fact
+source=source=source
+conflict=con·flict=kon|flict
+migration=mi·gra·tion=my|gray|shun
+consequence=con·se·quence=kon|sih|kwence
+cooperate=co·op·er·ate=ko|op|ur|ate
+determine=de·ter·mine=dih|tur|min
+essential=es·sen·tial=ih|sen|shul
+frequent=fre·quent=free|kwent
+influence=in·flu·ence=in|floo|ence
+obstacle=ob·sta·cle=ob|stuh|kul
+opinion=o·pin·ion=uh|pin|yun
+reveal=re·veal=rih|veel
+require=re·quire=rih|kwire
+astonished=as·ton·ished=uh|ston|isht
+distinct=dis·tinct=dis|tinkt
+drowsy=drow·sy=drow|zee
+eventually=e·ven·tu·al·ly=ih|ven|choo|uh|lee
+hesitate=hes·i·tate=hez|ih|tate
+immense=im·mense=ih|mense
+peculiar=pe·cul·iar=pih|kyool|yur
+rapid=rap·id=rap|id
+vivid=viv·id=viv|id
+wander=wan·der=won|dur
+accomplish=ac·com·plish=uh|kom|plish
+demonstrate=dem·on·strate=dem|un|strate
+expand=ex·pand=ik|spand
+improve=im·prove=im|proov
+investigate=in·ves·ti·gate=in|ves|tih|gate
+locate=lo·cate=lo|kate
+perform=per·form=pur|form
+protect=pro·tect=pruh|tect
+survive=sur·vive=sur|vive
+transform=trans·form=trans|form
+boundary=bound·a·ry=bown|duh|ree
+compromise=com·pro·mise=kom|pruh|mize
+debate=de·bate=dih|bate
+emphasize=em·pha·size=em|fuh|size
+perspective=per·spec·tive=pur|spek|tiv
+precise=pre·cise=prih|sise
+relevant=rel·e·vant=rel|uh|vent
+sequence=se·quence=see|kwence
+significant=sig·nif·i·cant=sig|nif|ih|kent
+thorough=thor·ough=thur|oh`;
+const SYLLABLES = new Map(SYLLABLE_DATA.split('\n').map(line => { const [w, show, say, whole] = line.split('='); return [w, { show: show.split('·'), say: say.split('|'), whole: whole || w }]; }));
+export const SYLLABLE_WORDS = [...SYLLABLES.keys()];
+
+/** A word's syllables to show and to say. Words without built-in data (a teacher's or a parent's own) are split by
+    a simple vowel-group rule, and the voice says those pieces as written. */
+export function syllablesOf(word){
+  const key = String(word || '').trim().toLowerCase(), known = SYLLABLES.get(key);
+  if (known) return { ...known, known: true };
+  if (/\s/.test(key) || key.length < 4) return { show: [key], say: [key], whole: key, known: false };
+  /* one consonant between vowels goes with the next syllable, two or more split after the first; a final silent e stays put */
+  const DIGRAPHS = ['ch', 'sh', 'th', 'ph', 'wh', 'ck', 'ng', 'qu'], code = DIGRAPHS.reduce((s, d, i) => s.split(d).join(String.fromCharCode(0x2460 + i)), key);   // a digraph counts as one consonant
+  const parts = [], re = /[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/g;
+  let m; while ((m = re.exec(code)) && m[0]) parts.push(m[0].replace(/[\u2460-\u2467]/g, c => DIGRAPHS[c.charCodeAt(0) - 0x2460]));
+  if (parts.join('') !== key || parts.length < 2) return { show: [key], say: [key], whole: key, known: false };
+  const last = parts[parts.length - 1]; if (/^[^aeiouy]*e$/.test(last)) { parts.pop(); parts[parts.length - 1] += last; }
+  return { show: parts, say: parts, whole: key, known: false };
+}

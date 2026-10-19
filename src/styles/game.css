@@ -1105,3 +1105,15 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 
 /* the join screen's teacher link is a link styled as a button */
 a.btn{display:inline-block; text-decoration:none}
+
+/* Word Workshop: syllables and the reading voice (docs/VOCAB.md) */
+.syl-row{justify-content:center; align-items:center; gap:6px; flex-wrap:wrap; margin:6px 0}
+.syl-dots{display:inline-flex; gap:6px; margin-left:6px}
+.syl-dot{width:12px; height:12px; border-radius:50%; background:var(--edge); opacity:.35; transition:opacity .15s, transform .15s}
+.syl-dot.on{opacity:1; transform:scale(1.35)}
+.syl-answer{display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0}
+.syl-answer>span:first-child{font-size:1.4rem; font-weight:700; letter-spacing:.02em}
+.syl-answer i{font-style:normal; opacity:.5; margin:0 2px}
+.voice-pick{margin-top:12px; text-align:left}
+.voice-pick select{max-width:100%; font:inherit}
+.warmup-skip{margin-top:10px; text-align:left; font-size:.9rem}

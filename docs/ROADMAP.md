@@ -159,6 +159,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F27. 📎 Outside work: she adds it on Today's plan (course, activity, minutes, grade, up to 3 photos); teacher reviews it in the Ledger (✅ or 🔁 redo with a note). Needs migration `20261020000000_outside_work.sql`. See `OUTSIDE-WORK.md`
 - [x] F28. 🎭 Demo class for showing other teachers: 8 made-up students, 6 weeks of work, class code DEMO26, PIN 1234, reset with `select public.demo_reset(...)`. See `DEMO.md`
 - [x] F29. 📇 Review for the test: optional flashcards of each English unit's terms (gerund, aspect, antecedent…), then 8 mixed questions, before the Pet World test or the Khan test. See `TEST-REVIEW.md`
+- [x] F30. 🔤 Word Workshop: any Word Workshop minutes count toward a Word Workshop extra (fixes a stuck warm-up); grown-up PIN skips the warm-up for a day; best device voice, a voice picker, and 🐢 by-syllable reading with syllables shown after each answer. See `VOCAB.md`
 
 ## Database files, in the order they were run
 

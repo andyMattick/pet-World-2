@@ -12,7 +12,7 @@ import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITI
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
@@ -6523,7 +6523,13 @@ function assignedExtras(){
   try { const list = JSON.parse(Backend.me?.quiz_overrides?.extras || '[]'); return Array.isArray(list) ? list.filter(x => x && typeof x.id === 'string' && (x.kind === 'sprint' || x.kind === 'vocab') && +x.minutes > 0) : []; }
   catch { return []; }
 }
-function extraSecs(id){ if (S.extrasLog.day !== localDay()) S.extrasLog = {day:localDay(), secs:{}}; return S.extrasLog.secs[id] || 0; }
+function extraSecs(id){
+  if (S.extrasLog.day !== localDay()) S.extrasLog = {day:localDay(), secs:{}};
+  const own = S.extrasLog.secs[id] || 0;
+  /* a Word Workshop extra counts every minute in Word Workshop today, in any mode and finished round or not (the same
+     active time as "Time by subject"), so stopping partway or picking a different mode never leaves it stuck */
+  return assignedExtras().find(x => x.id === id)?.kind === 'vocab' ? Math.max(own, S.subjectTime?.[localDay()]?.words || 0) : own;
+}
 function addExtraTime(id, secs){ extraSecs(id); S.extrasLog.secs[id] = Math.round((S.extrasLog.secs[id] || 0) + Math.max(0, Math.min(secs, 900))); save(); }
 const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it'};
 function extraTypes(x){ const t = (x.skills || []).filter(type => DRILL_IMPL[type]?.sprintItem); return t.length ? t : ['times']; }
@@ -6799,7 +6805,7 @@ $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
    until they're done, opening a subject shows the warm-up card instead. Class setting game_settings.extrasFirst
    (on unless a teacher turns it off). */
 const extrasFirst = () => Backend.me?.game_settings?.extrasFirst !== false;
-const warmupPending = () => extrasFirst() && assignedExtras().some(x => Math.floor(extraSecs(x.id) / 60) < Math.round(+x.minutes));
+const warmupPending = () => extrasFirst() && S.warmupSkipped !== localDay() && assignedExtras().some(x => Math.floor(extraSecs(x.id) / 60) < Math.round(+x.minutes));
 const SUBJECT_OPENS = id => !!(SHOPS[id] || ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || id === 'reading');
 function openWarmupCard(){
   if ($('.theme-card')) return;
@@ -6809,9 +6815,18 @@ function openWarmupCard(){
     <p>Do these first, then pick a subject.</p>${list.map(x => {
       const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
       return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
-    }).join('')}<button type="button" class="btn small" data-warmup-close>Back to town</button></div>`;
+    }).join('')}<button type="button" class="btn small" data-warmup-close>Back to town</button>
+    <details class="warmup-skip"><summary>Grown-up: skip the warm-up today</summary><form class="theme-pin" data-warmup-skip><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Skip for today</button></form></details></div>`;
   document.body.appendChild(el);
   el.addEventListener('click', event => { if (event.target.closest('[data-extra-start], [data-warmup-close]')) el.remove(); });
+  el.querySelector('[data-warmup-skip]').addEventListener('submit', event => {
+    event.preventDefault();
+    const pin = String(new FormData(event.target).get('pin') || '').trim();
+    if (!/^\d{4}$/.test(pin)) { toast('Type the 4-digit grown-up PIN.'); return; }
+    if (S.parentPin ? S.parentPin !== pinHash(pin) : teacherLock() && !pinMatchesLock(pin)) { toast('That PIN does not match.'); return; }
+    if (!S.parentPin) S.parentPin = pinHash(pin);
+    S.warmupSkipped = localDay(); save(); el.remove(); renderHome(); toast('Warm-up skipped for today. Pick a subject!');
+  });
 }
 $('#town').addEventListener('click', e => {
   const opens = e.target.closest('[data-open]');
@@ -8150,7 +8165,7 @@ function renderVocab(){
     const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
       sprint:`Read the meaning and tap the word. As many as you can in 60 seconds. Every 2 right earn 🪙 1. Your best: ${S.vocab.sprintBest}.`,
       spell:'Hear the word and read its meaning, then type it. 8 words.'}[vocabTab];
-    body = `<p>${blurb}</p><button type="button" class="btn butter" data-vocab-start="${vocabTab}">Start</button>`;
+    body = `<p>${blurb}</p><button type="button" class="btn butter" data-vocab-start="${vocabTab}">Start</button>${vocabTab === 'sprint' ? '' : voicePickerHTML()}`;
   }
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
@@ -8178,12 +8193,65 @@ function nextVocabCard(){
     : `<form class="typed-fill" data-vocab-spell><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form>`;
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-vocab-stop>Stop</button></div>
     <div class="sprint-card vocab-card">${head}<p class="vocab-ask">${ask}</p><div class="fact vocab-prompt${c.kind === 'meaning' ? '' : ' long'}">${esc(c.prompt)}</div>
-    ${c.kind === 'spell' ? '<button type="button" class="btn small" data-vocab-hear>🔊 Hear the word</button>' : ''}${options}<p class="ela-feedback" aria-live="polite"></p></div>`;
-  if (c.kind === 'spell') { $('#vocabWrap .typed-input').focus(); speakWord(c.word.w); } else addCrossOuts($('#vocabWrap'), '.ela-option');
+    ${c.kind === 'spell' ? `<div class="row syl-row"><button type="button" class="btn small" data-vocab-hear>🔊 Hear the word</button><button type="button" class="btn small" data-vocab-hear="syllables">🐢 By syllables</button><button type="button" class="btn small" data-vocab-hear="slow">Slowly</button><span class="syl-dots" aria-label="${syllablesOf(c.word.w).say.length} syllables">${syllablesOf(c.word.w).say.map(() => '<i class="syl-dot"></i>').join('')}</span></div>` : ''}${options}<p class="ela-feedback" aria-live="polite"></p></div>`;
+  if (c.kind === 'spell') { $('#vocabWrap .typed-input').focus(); void speakWord(c.word.w); } else addCrossOuts($('#vocabWrap'), '.ela-option');
 }
-function speakWord(word){
-  if (typeof speechSynthesis === 'undefined') return;
-  const u = new SpeechSynthesisUtterance(word); u.lang = 'en-US'; u.rate = 0.85; speechSynthesis.cancel(); speechSynthesis.speak(u);
+/* ---------- the reading voice (docs/VOCAB.md, "Hearing the word") ----------
+   The browser's built-in voices vary a lot by device. This picks the clearest English one it can find (the "Natural",
+   "Google" and "Enhanced" voices sound far better than the old robotic ones), and a grown-up can pick a different one
+   in Word Workshop (S.ttsVoice). 🐢 By syllables says each syllable on its own, then the whole word. */
+const NOVELTY_VOICES = /bells|bad news|good news|albert|whisper|zarvox|trinoids|bubbles|cellos|organ|boing|jester|superstar|wobble|bahh|fred|junior|ralph|deranged|hysterical|pipe|princess|eSpeak/i;
+function englishVoices(){
+  if (typeof speechSynthesis === 'undefined') return [];
+  return speechSynthesis.getVoices().filter(v => /^en([-_]|$)/i.test(v.lang) && !NOVELTY_VOICES.test(v.name));
+}
+function voiceScore(v){
+  const n = v.name;
+  return (/natural|neural/i.test(n) ? 60 : 0) + (/google/i.test(n) ? 45 : 0) + (/enhanced|premium/i.test(n) ? 40 : 0) + (/online/i.test(n) ? 15 : 0)
+    + (/samantha|ava|allison|aria|jenny|zoe|serena|evan|nathan/i.test(n) ? 15 : 0) + (/en[-_]us/i.test(v.lang) ? 10 : /en[-_](gb|au|ca)/i.test(v.lang) ? 5 : 0);
+}
+function readingVoice(){
+  const voices = englishVoices();
+  return voices.find(v => v.name === S?.ttsVoice) || [...voices].sort((a, b) => voiceScore(b) - voiceScore(a))[0] || null;
+}
+if (typeof speechSynthesis !== 'undefined') speechSynthesis.addEventListener?.('voiceschanged', () => { if (!$('#scr-vocab')?.hidden && !vocabRun) renderVocab(); });
+let speakToken = 0;
+function say(text, rate = 0.85){
+  return new Promise(done => {
+    const u = new SpeechSynthesisUtterance(text), v = readingVoice();
+    if (v) u.voice = v; u.lang = v?.lang || 'en-US'; u.rate = rate; u.pitch = 1;
+    u.onend = u.onerror = () => done(); speechSynthesis.speak(u);
+    setTimeout(done, 4000 + text.length * 150);   // some browsers never fire onend
+  });
+}
+const pause = ms => new Promise(ok => setTimeout(ok, ms));
+async function speakWord(word, how = 'word'){
+  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return;
+  const token = ++speakToken, syl = syllablesOf(word), dots = $$('#vocabWrap .syl-dot');
+  speechSynthesis.cancel();
+  if (how !== 'syllables' || syl.say.length < 2) { await say(syl.whole, how === 'slow' ? 0.6 : 0.85); return; }
+  for (let i = 0; i < syl.say.length; i++) {
+    if (token !== speakToken) return;
+    dots.forEach((d, k) => d.classList.toggle('on', k === i));
+    await say(syl.say[i], 0.7); await pause(350);
+  }
+  if (token !== speakToken) return;
+  dots.forEach(d => d.classList.remove('on'));
+  await say(syl.whole, 0.75);
+}
+/* after a card is answered: the word split into syllables, with buttons to hear it again */
+function syllableAnswerHTML(word){
+  const syl = syllablesOf(word); if (syl.show.length < 2) return '';
+  return `<p class="syl-answer"><span>${syl.show.map(esc).join('<i>·</i>')}</span> <span class="muted">${syl.say.length} syllables</span>
+    <button type="button" class="btn small" data-vocab-hear>🔊</button><button type="button" class="btn small" data-vocab-hear="syllables">🐢 By syllables</button></p>`;
+}
+document.addEventListener('change', e => { if (e.target.id === 'vocabVoice') { S.ttsVoice = e.target.value; save(); void speakWord('analyze', 'syllables'); } });
+function voicePickerHTML(){
+  const voices = englishVoices(); if (voices.length < 2) return '';
+  const current = readingVoice();
+  return `<details class="voice-pick"><summary>🔊 Reading voice: ${esc(current?.name || 'default')}</summary><p class="muted">Voices come from this device. The ones marked Natural, Google or Enhanced usually sound best.</p>
+    <div class="row"><select id="vocabVoice" aria-label="Reading voice">${[...voices].sort((a, b) => voiceScore(b) - voiceScore(a)).map(v => `<option value="${esc(v.name)}"${v.name === current?.name ? ' selected' : ''}>${esc(v.name)}</option>`).join('')}</select>
+    <button type="button" class="btn small" data-voice-test>Try it</button></div></details>`;
 }
 function answerVocab(ok, shownAnswer){
   const run = vocabRun, c = run.card; if (!run || run.answered) return;
@@ -8191,6 +8259,7 @@ function answerVocab(ok, shownAnswer){
   if (ok) run.correct++; else { run.missed.push(c.word); if (run.mode === 'practice' && run.total < 10 && !(run.retry || []).some(v => v.w === c.word.w)) { (run.retry = run.retry || []).push(c.word); run.total++; } }
   sfx(ok ? 'good' : 'bad');
   $('#vocabWrap .ela-feedback').textContent = ok ? 'That’s right!' : `Not quite. ${shownAnswer}`;
+  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', syllableAnswerHTML(c.word.w));
   $$('#vocabWrap [data-vocab-answer]').forEach(b => { b.disabled = true; if (+b.dataset.vocabAnswer === c.answer) b.classList.add('correct'); });
   $('#vocabWrap .typed-input')?.classList.add(ok ? 'correct' : 'incorrect'); const inp = $('#vocabWrap .typed-input'); if (inp) inp.disabled = true;
   run.index++;
@@ -8199,7 +8268,7 @@ function answerVocab(ok, shownAnswer){
 }
 function finishVocab(){
   stopVocabTimer(); const run = vocabRun; vocabRun = null; if (!run) return;
-    assignedExtras().filter(x => x.kind === 'vocab' && (VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice') === run.mode).forEach(x => addExtraTime(x.id, (performance.now() - run.started) / 1000));   // time on an assigned Word Workshop extra
+    assignedExtras().filter(x => x.kind === 'vocab').forEach(x => addExtraTime(x.id, (performance.now() - run.started) / 1000));   // time on an assigned Word Workshop extra, in any mode
       logEvent({k:'vocab', mode:run.mode, s:run.correct, ...(run.mode === 'sprint' ? {} : {n:run.index})});   // day log
   let extra = '';
   if (run.mode === 'sprint') {
@@ -8254,7 +8323,8 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.vocabStart) { startVocab(b.dataset.vocabStart); return; }
   if (b.hasAttribute('data-vocab-stop')) { stopVocabTimer(); vocabRun = null; renderVocab(); return; }
   if (b.hasAttribute('data-vocab-next')) { nextVocabCard(); return; }
-  if (b.hasAttribute('data-vocab-hear') && vocabRun) { speakWord(vocabRun.card.word.w); return; }
+  if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word.w, b.dataset.vocabHear || 'word'); return; }
+  if (b.hasAttribute('data-voice-test')) { void speakWord('analyze', 'syllables'); return; }
   if (b.dataset.vocabAnswer != null && vocabRun && !vocabRun.answered) { const c = vocabRun.card; answerVocab(+b.dataset.vocabAnswer === c.answer, c.kind === 'meaning' ? `“${c.word.w}” means ${c.word.d}.` : `The word is “${c.word.w}”: ${c.word.d}.`); if (+b.dataset.vocabAnswer !== c.answer) b.classList.add('incorrect'); return; }
   if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').textContent = v ? `${v.w}: ${v.d}${v.s ? ` (${v.s.replace('___', v.w)})` : ''}` : ''; return; }
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
