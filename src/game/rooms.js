@@ -80,6 +80,7 @@ const ROOMS = {
 const LIBRARY = {wall:'#F2E6D3', wall2:'#8B5E3C', pattern:'shelves', floor:'#A0522D', floor2:'#8B4513', floorKind:'carpet', frame:'#6B3A1F', awning:['#6B3A1F','#F2E6D3'], hero:'📚', float:['✨'], motion:'drift'};
 const LIBRARY_PROPS = {
   elaNouns:['🛋️','📚','🧸','📖','🕯️','🪴'], elaVerbs:['⚽','📚','🚲','🛹','🏀','🪴'], elaPron:['🪞','📚','🎭','👥','💬','🪴'], elaDescr:['🌹','📜','🪶','🌙','🎨','🪴'],
+  elaConj:['🔗','📚','🌉','🧵','➕','🪴'], elaColon:['⏸️','📚','📌','🗒️','✒️','🪴'], elaRules:['📏','📚','✅','📐','🧾','🪴'], elaStyle:['🪶','📚','🎙️','💬','🖋️','🪴'],
   elaSent:['🧩','📚','🔗','✏️','🧩','🪴'], elaPunct:['✏️','❗','📝','❓','✏️','🪴'], elaVocab:['🔤','📖','🔍','🗝️','📚','🪴'],
   elaRead:['🔎','🗺️','📚','🧭','🕯️','🪴'], elaLit:['🎭','🏰','📖','🐉','👑','🪴'], elaInfo:['📰','🌍','📊','🗞️','📚','🪴'], elaWrite:['📝','✒️','📓','💡','📚','🪴']
 };
