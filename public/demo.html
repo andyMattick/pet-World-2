@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- The demo pass for visiting teachers (docs/DEMO.md). Served as /demo. -->
+<title>Pet World Demo Pass</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<style>
+/* Layout: a ticket-like pass with two doors (teacher, student), then a class list that says what to look at */
+:root {
+  --bg: #fdf1f4; --paper: #ffffff; --ink: #3b2530; --muted: #7a5c68; --line: #f0cdd8;
+  --berry: #c23a63; --berry-ink: #ffffff; --leaf: #2f7d5b; --leaf-soft: #e3f3ea; --chip: #fbe3ea;
+  --display: 'Grandstander', 'Trebuchet MS', system-ui, sans-serif;
+  --body: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1d1418; --paper: #2a1d23; --ink: #f6e9ee; --muted: #c4a5b1; --line: #4a3139;
+  --berry: #f07a9c; --berry-ink: #2a1017; --leaf: #7fd1a9; --leaf-soft: #1f3a2d; --chip: #3d2630; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1d1418; --paper: #2a1d23; --ink: #f6e9ee; --muted: #c4a5b1; --line: #4a3139;
+  --berry: #f07a9c; --berry-ink: #2a1017; --leaf: #7fd1a9; --leaf-soft: #1f3a2d; --chip: #3d2630; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body);
+  background-image: radial-gradient(var(--line) 1.2px, transparent 1.3px); background-size: 22px 22px; }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 22px }
+header { display: flex; flex-direction: column; gap: 6px }
+h1 { font: 800 clamp(30px, 6vw, 44px)/1.05 var(--display); color: var(--berry); margin: 0; text-wrap: balance }
+.lede { margin: 0; color: var(--muted); max-width: 62ch }
+.doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px }
+.door { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0 }
+.door h2 { font: 700 22px/1.2 var(--display); margin: 0 }
+.door .for { margin: -8px 0 0; color: var(--muted); font-size: 14px }
+.field { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; border-top: 1px dashed var(--line); padding-top: 10px }
+.field .k { grid-column: 1 / -1; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted) }
+.field .v { font: 500 17px/1.3 var(--mono); overflow-wrap: anywhere; min-width: 0 }
+.field .v.big { font: 800 26px/1.1 var(--display); letter-spacing: .06em }
+.copy { font: 700 13px var(--body); border: 2px solid var(--berry); color: var(--berry); background: transparent; border-radius: 999px; padding: 4px 12px; cursor: pointer }
+.copy:hover { background: var(--chip) }
+.copy:focus-visible, a:focus-visible { outline: 3px solid var(--berry); outline-offset: 2px }
+.copy.done { border-color: var(--leaf); color: var(--leaf) }
+.go { align-self: flex-start; background: var(--berry); color: var(--berry-ink); font: 700 15px var(--body); text-decoration: none; padding: 10px 18px; border-radius: 999px }
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; font-size: 15px }
+section.kids { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px }
+section.kids h2 { font: 700 22px/1.2 var(--display); margin: 0 }
+section.kids > p { margin: 0; color: var(--muted); font-size: 15px }
+.list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px }
+.kid { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.kid b { font: 700 16px var(--display) }
+.kid span { font-size: 14px; color: var(--muted) }
+.tag { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: var(--berry) }
+.tag.live { background: var(--leaf-soft); color: var(--leaf) }
+.note { font-size: 14px; color: var(--muted); margin: 0; text-align: center }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>🐾 Pet World Demo Pass</h1>
+    <p class="lede">A pretend class of 8 students with six weeks of real-looking work. Look around and click anything. The class gets put back the way it was, so nothing you change sticks.</p>
+  </header>
+
+  <div class="doors">
+    <div class="door">
+      <h2>👩‍🏫 Teacher view</h2>
+      <p class="for">Dashboard, small groups, Ledger, grades, transcripts</p>
+      <div class="field"><span class="k">Website</span><span class="v">pet-world-2.vercel.app/teacher.html</span><button class="copy" type="button" data-copy="https://pet-world-2.vercel.app/teacher.html">Copy</button></div>
+      <div class="field"><span class="k">Email</span><span class="v">demo@petworld.example</span><button class="copy" type="button" data-copy="demo@petworld.example">Copy</button></div>
+      <div class="field"><span class="k">Password</span><span class="v">PetWorldDemo26</span><button class="copy" type="button" data-copy="PetWorldDemo26">Copy</button></div>
+      <a class="go" href="https://pet-world-2.vercel.app/teacher.html" target="_blank" rel="noopener">Open the teacher view</a>
+      <ol class="steps">
+        <li>Sign in with the email and password.</li>
+        <li>Tap any student's name to open their page, then try the tabs.</li>
+      </ol>
+    </div>
+
+    <div class="door">
+      <h2>🐶 Student view</h2>
+      <p class="for">What a kid sees: Today's plan, shops, lessons, the pet</p>
+      <div class="field"><span class="k">Website</span><span class="v">pet-world-2.vercel.app</span><button class="copy" type="button" data-copy="https://pet-world-2.vercel.app/">Copy</button></div>
+      <div class="field"><span class="k">Class code</span><span class="v big">DEMO26</span><button class="copy" type="button" data-copy="DEMO26">Copy</button></div>
+      <div class="field"><span class="k">Student PIN (every student)</span><span class="v big">1234</span><button class="copy" type="button" data-copy="1234">Copy</button></div>
+      <div class="field"><span class="k">Grown-up PIN (👩‍🏫 button, theme days)</span><span class="v big">1234</span><button class="copy" type="button" data-copy="1234">Copy</button></div>
+      <a class="go" href="https://pet-world-2.vercel.app/" target="_blank" rel="noopener">Open the student view</a>
+      <ol class="steps">
+        <li>Type the class code, pick a student, and enter the PIN.</li>
+        <li>Answer a few questions, then watch them show up in the teacher view.</li>
+      </ol>
+    </div>
+  </div>
+
+  <section class="kids" aria-labelledby="kidsTitle">
+    <h2 id="kidsTitle">Who's in the class</h2>
+    <p>Each student shows off something different. Start with Eli for a student who needs help, or Maya for one who is ahead.</p>
+    <div class="list">
+      <div class="kid"><span class="tag live">On right now</span><b>Maya R.</b><span>Ahead in every subject. A piano practice log with a photo is waiting for review.</span></div>
+      <div class="kid"><span class="tag live">Doing math now</span><b>Jonah K.</b><span>Steady worker. Spanish work from outside Pet World, already checked.</span></div>
+      <div class="kid"><span class="tag">Lab to review</span><b>Priya S.</b><span>Strong in English, mixes up ratio order in math. Her germination lab report is waiting.</span></div>
+      <div class="kid"><span class="tag">Needs help</span><b>Eli M.</b><span>The 7s and 8s pop-ups aren't helping, a quiz is in review, and a written answer went back for a redo.</span></div>
+      <div class="kid"><span class="tag">Photos to check</span><b>Sofia L.</b><span>Science co-op work with photos waiting, and a workbook photo sent back for a missing page.</span></div>
+      <div class="kid"><span class="tag">Missed days</span><b>Theo B.</b><span>Misses a lot of school days. A history project and a quiz review are waiting.</span></div>
+      <div class="kid"><span class="tag">Reading essay</span><b>Ava W.</b><span>Big Reading Log with a reading-quiz essay to grade, and an extra PE course on her Grades tab.</span></div>
+      <div class="kid"><span class="tag">New student</span><b>Leo D.</b><span>Joined last week, so there are only a few days of work.</span></div>
+    </div>
+  </section>
+
+  <p class="note">All names and work are made up. No real students are in this class.</p>
+</div>
+
+<script>
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+  const text = b.dataset.copy, done = () => { b.textContent = 'Copied'; b.classList.add('done'); setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('done'); }, 1500); };
+  try {
+    navigator.clipboard.writeText(text).then(done, () => select(b));
+  } catch (e) { select(b); }
+}));
+function select(b) {
+  const v = b.parentElement.querySelector('.v'), r = document.createRange();
+  r.selectNodeContents(v); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  b.textContent = 'Selected';
+}
+</script>
+</body>
+</html>
