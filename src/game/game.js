@@ -17,6 +17,7 @@ import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
 import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
+import { termCards } from '../shared/termCards';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
@@ -114,6 +115,8 @@ function normalize(raw){
   s.elaProgress = s.elaProgress && typeof s.elaProgress === 'object' ? s.elaProgress : {};
   s.videosWatched = Object.fromEntries(Object.entries(s.videosWatched && typeof s.videosWatched === 'object' ? s.videosWatched : {})   // lesson video key → date watched (80% played)
     .filter(([key, day]) => key.length <= 80 && typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day)).slice(-300));
+  s.cardStats = Object.fromEntries(Object.entries(s.cardStats && typeof s.cardStats === 'object' && !Array.isArray(s.cardStats) ? s.cardStats : {})   // "<course>:<term>" → [times seen, times still learning] (docs/TEST-REVIEW.md)
+    .filter(([k, v]) => k.length <= 80 && Array.isArray(v)).slice(-300).map(([k, v]) => [k, [Math.max(0, Math.round(+v[0]) || 0), Math.max(0, Math.round(+v[1]) || 0)]]));
   s.questionStats = Object.fromEntries(Object.entries(s.questionStats && typeof s.questionStats === 'object' ? s.questionStats : {})   // bank question id → [answered, missed]
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
   s.vocab = normalizeVocabState(s.vocab);   // Word Workshop: answer history per word, sprint best, the family's own words and focus
@@ -5308,7 +5311,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && vocabRun) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -7054,7 +7057,7 @@ const KHAN_UNIT_TESTS = {
 };
 function khanTestCardHTML(courseId){
   const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
-  return `<section class="ela-final-assessment khan-test-next"><div><h3>🎓 Next: the Khan Academy unit test</h3><p class="muted">You passed the Pet World test. Now take Khan Academy’s unit test for the same unit, then tell your ${Backend.me ? 'teacher' : 'grown-up'} your score.</p></div><a class="btn small berry" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open the Khan test</a></section>`;
+  return `<section class="ela-final-assessment khan-test-next"><div><h3>🎓 Next: the Khan Academy unit test</h3><p class="muted">You passed the Pet World test. Now take Khan Academy’s unit test for the same unit, then tell your ${Backend.me ? 'teacher' : 'grown-up'} your score.</p></div><div class="row test-buttons">${testReviewButtonHTML(courseId, true)}<a class="btn small berry" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open the Khan test</a></div></section>`;
 }
 function khanLinkHTML(url, name, key){
   const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
@@ -7068,6 +7071,77 @@ function khanLinkHTML(url, name, key){
   if (!khanOn()) return youtubeLink(name, key, 'Find a video for this lesson on YouTube');   // Khan is off: the lesson text above is the lesson, with a video search if allowed
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>${backup}`;
 }
+/* ---------- 📇 Review for the test (docs/TEST-REVIEW.md) ----------
+   Before the Pet World unit test or the Khan Academy unit test: step 1, flashcards of the unit's terms (term on the front;
+   cards marked "still learning" come back until every card is known; cards missed before come first next time), then
+   step 2, 8 mixed questions from every lesson in the unit. Optional: it never locks a test. */
+let cardRun = null;
+const cardStatKey = (courseId, term) => `${courseId}:${term}`.slice(0, 80);
+function testReviewButtonHTML(courseId, khan = false){
+  return termCards(courseId).length ? `<button type="button" class="btn small" data-test-review data-ela-course="${courseId}"${khan ? ' data-khan' : ''}>📇 Review first</button>` : '';
+}
+function startTestReview(courseId, khan = false){
+  const cards = termCards(courseId); if (!cards.length) { startReviewCheck(courseId, khan); return; }
+  const missedBefore = c => (S.cardStats[cardStatKey(courseId, c.term)]?.[1] || 0) > 0;
+  activeEnglishCourse = courseId;
+  cardRun = {courseId, khan, deck:[...shuffle(cards.filter(missedBefore)), ...shuffle(cards.filter(c => !missedBefore(c)))], total:cards.length, known:0, firstTry:0, missed:[], flipped:false, meaningFirst:false};
+  renderCard();
+}
+function renderCard(){
+  const r = cardRun, card = r.deck[0], course = englishCourse(r.courseId);
+  if (!card) { finishCards(); return; }
+  const extra = card.extra ? '<span class="card-note">This word isn’t its own lesson here, but the Khan test may ask about it.</span>' : '';
+  const front = r.meaningFirst ? `<span class="card-means">${esc(card.means)}</span><span class="card-example">${esc(card.example)}</span><span class="card-ask">What’s the word?</span>`
+    : `<span class="card-term">${esc(card.term)}</span><span class="card-ask">What does it mean? Say it, then flip.</span>`;
+  const back = `<span class="card-term">${esc(card.term)}</span><span class="card-means">${esc(card.means)}</span><span class="card-example">Example: ${esc(card.example)}</span>${extra}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📇 Review: ${esc(course.title)}</h2><button class="btn small" type="button" data-ela-unit data-ela-course="${r.courseId}">Back to the unit</button></div>
+    <p class="muted">Step 1 of 2: flashcards. Cards you’re still learning come back until you know them all. Step 2 is 8 mixed questions.</p>
+    <div class="row card-tools"><span><b>${r.known}</b> of ${r.total} known</span><button type="button" class="btn small" data-card-side>${r.meaningFirst ? 'Show the word first' : 'Show the meaning first'}</button><button type="button" class="btn small" data-card-skip>Skip to the questions</button></div>
+    <div class="flashcard${r.flipped ? ' flipped' : ''}" role="button" tabindex="0" data-card-flip aria-live="polite" aria-label="${r.flipped ? 'Card answer' : 'Flip the card'}">${r.flipped ? back : front}${r.flipped ? '' : '<span class="card-hint">Tap to flip</span>'}</div>
+    ${r.flipped ? '<div class="row card-grade"><button type="button" class="btn" data-card-grade="again">😕 Still learning</button><button type="button" class="btn berry" data-card-grade="knew">✅ I knew it</button></div>' : ''}`;
+  $('#libraryWrap .flashcard').focus();
+}
+function flipCard(){ if (!cardRun || cardRun.flipped) return; cardRun.flipped = true; renderCard(); }
+function gradeCard(knew){
+  const r = cardRun, card = r.deck.shift(), key = cardStatKey(r.courseId, card.term), st = S.cardStats[key] || [0, 0];
+  delete S.cardStats[key]; S.cardStats[key] = [st[0] + 1, st[1] + (knew ? 0 : 1)];   // re-inserted so the newest stay when trimmed
+  if (knew) { r.known++; if (!r.missed.includes(card.term)) r.firstTry++; }
+  else { if (!r.missed.includes(card.term)) r.missed.push(card.term); r.deck.splice(Math.min(3, r.deck.length), 0, card); }   // comes back after a few cards
+  r.flipped = false; save(); renderCard();
+}
+function finishCards(){
+  const r = cardRun; if (!r) return;
+  cardRun = null;
+  if (r.known) { logEvent({k:'review', course:r.courseId, title:'Test review flashcards', s:r.firstTry, n:r.total}); save(); }
+  const cards = termCards(r.courseId), tricky = cards.filter(c => r.missed.includes(c.term));
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📇 ${r.known === r.total ? 'You know every card!' : 'Flashcards'}</h2><button class="btn small" type="button" data-ela-unit data-ela-course="${r.courseId}">Back to the unit</button></div>
+    <div class="ela-question ela-result">${r.known ? `<p><strong>You knew ${r.firstTry} of ${r.total} on the first try.</strong></p>` : ''}
+    ${tricky.length ? `<p>Words to keep an eye on:</p><ul class="card-tricky">${tricky.map(c => `<li><b>${esc(c.term)}</b>: ${esc(c.means)}</li>`).join('')}</ul>` : ''}
+    <div class="row"><button class="btn berry" type="button" data-review-check data-ela-course="${r.courseId}"${r.khan ? ' data-khan' : ''}>Step 2: 8 mixed questions</button><button class="btn" type="button" data-test-review data-ela-course="${r.courseId}"${r.khan ? ' data-khan' : ''}>Go through the cards again</button></div></div>`;
+}
+function startReviewCheck(courseId, khan = false){
+  const course = englishCourse(courseId); cardRun = null; activeEnglishCourse = courseId;
+  const questions = englishAssessmentQuestions(practiceSkills(course), 8, courseId);
+  englishRun = {title:'Test review: mixed questions', progressKey:`${courseId}:test-review`, retryType:'review', retryId:'review', courseId, khan, questions, index:0, score:0, passMark:6, answered:false, outcomes:[], written:null};
+  renderEnglishQuestion();
+}
+function testReviewResult(run){
+  const course = englishCourse(run.courseId), ready = run.score >= run.passMark;
+  const missed = [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))].map(id => course.skills.find(s => s.id === id)).filter(Boolean);
+  const khanUrl = KHAN_UNIT_TESTS[run.courseId], finalOk = englishFinalReady(course);
+  const next = run.khan && khanUrl && khanOn() ? `<a class="btn berry" href="${esc(khanUrl)}" target="_blank" rel="noopener noreferrer">Open the Khan test</a>`
+    : finalOk ? `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">Start the Pet World test</button>` : '';
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${ready ? '✅ Ready for the test!' : '📖 Almost ready'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(course.title)}</button></div>
+    <div class="ela-question ela-result"><p><strong>${run.score} of ${run.questions.length} right.</strong> ${ready ? 'Nice review.' : 'Practice the lessons below before the test.'}</p>
+    ${missed.length ? `<p>Lessons to look at again:</p><div class="row card-missed">${missed.map(s => `<button class="btn small" type="button" data-ela-practice="${s.id}" data-ela-course="${run.courseId}">${esc(s.name)}</button>`).join('')}</div>` : ''}
+    <div class="row">${next}<button class="btn" type="button" data-review-check data-ela-course="${run.courseId}"${run.khan ? ' data-khan' : ''}>8 more questions</button></div></div>`;
+}
+$('#libraryWrap').addEventListener('click', event => { if (event.target.closest('[data-card-flip]')) flipCard(); });
+$('#libraryWrap').addEventListener('keydown', event => {
+  if (!cardRun) return;
+  if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
+  else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
+});
 const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','history','history2','history3','history4','bio1'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
@@ -7666,7 +7740,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -7767,6 +7841,7 @@ function finishEnglishRun(){
   const passed = run.score >= run.passMark;
     logEvent({k:'course', course:run.courseId, title:run.title, kind:run.retryType, s:run.score, n:run.questions.length, passed, ...(run.firstPass ? {first:true} : {})});   // day log
   englishRun = null;
+  if (run.retryType === 'review') { testReviewResult(run); return; }
   if (run.retryType === 'think' && passed && run.nextClosed) { const m = mathStation(run.progressKey), next = m && m.st.id + 1; if (m && stationOpen(m.shop, next)) setTimeout(() => toast(`New station open: ${SHOPS[m.shop].stations.find(x => x.id === next).name}!`), 600); }
   const resultText = passed ? `Passed: ${run.score} of ${run.questions.length} (need ${run.passMark}).` : `You got ${run.score} of ${run.questions.length}. Get ${run.passMark} to pass.`;
   const retry = run.retryType === 'think' ? `<button class="btn berry" type="button" data-think="${run.retryId}">Try again</button>`
@@ -7778,6 +7853,11 @@ function finishEnglishRun(){
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
   if (button.hasAttribute('data-ela-library')) { renderEnglishLibrary(); return; }
+  if (button.hasAttribute('data-test-review')) { startTestReview(button.dataset.elaCourse || activeEnglishCourse, button.hasAttribute('data-khan')); return; }
+  if (button.hasAttribute('data-review-check')) { startReviewCheck(button.dataset.elaCourse || activeEnglishCourse, button.hasAttribute('data-khan')); return; }
+  if (button.dataset.cardGrade && cardRun) { gradeCard(button.dataset.cardGrade === 'knew'); return; }
+  if (button.hasAttribute('data-card-side') && cardRun) { cardRun.meaningFirst = !cardRun.meaningFirst; cardRun.flipped = false; renderCard(); return; }
+  if (button.hasAttribute('data-card-skip') && cardRun) { finishCards(); return; }
   if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-ela-final')) { startEnglishAssessment('final',button.dataset.elaCourse || activeEnglishCourse); return; }
@@ -9923,7 +10003,8 @@ function eventText(e){
   if (e.k === 'assess') return `${stationLabel(e.shop, e.station, e.mode)}${score}${e.passed ? ' ✅ passed' : ''}`;
   if (e.k === 'sprint') return `⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
   if (e.k === 'vocab') return `🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
-  if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
+  if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through', review:'test review'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
+  if (e.k === 'review') return `📇 ${englishCourse(e.course)?.title || e.course}: test review flashcards · ${e.s} of ${e.n} known on the first try`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
   if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;

@@ -512,6 +512,21 @@ h3{margin:22px 0 10px; font-size:1.3rem}
 .ela-assessment>div,.ela-final-assessment>div{min-width:0}
 .ela-assessment p,.ela-final-assessment p{margin:3px 0 0}
 .ela-final-assessment{margin-top:18px; padding:14px; border:2px solid var(--edge); border-radius:10px; background:var(--surface)}
+.test-buttons{margin:0; gap:6px; flex-wrap:wrap; justify-content:flex-end}
+.card-tools{align-items:center; gap:8px; flex-wrap:wrap}
+.flashcard{display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; min-height:220px; margin:14px auto; max-width:560px; padding:24px; text-align:center;
+  background:var(--surface); border:3px solid var(--edge); border-radius:18px; box-shadow:0 6px 0 var(--edge); cursor:pointer; user-select:none}
+.flashcard:focus-visible{outline:3px solid var(--berry, #c23a63); outline-offset:3px}
+.flashcard.flipped{cursor:default; background:var(--card, var(--surface))}
+.card-term{font-family:'Grandstander', system-ui, sans-serif; font-size:1.9rem; font-weight:800; line-height:1.15}
+.card-means{font-size:1.15rem; line-height:1.4; max-width:44ch}
+.card-example{font-style:italic; opacity:.85; max-width:48ch}
+.card-ask,.card-hint,.card-note{font-size:.9rem; opacity:.7}
+.card-grade{justify-content:center; gap:12px}
+.card-tricky{margin:4px 0 10px; padding-left:20px}
+.card-missed{gap:6px; flex-wrap:wrap; margin-bottom:10px}
+@media (prefers-reduced-motion: no-preference){ .flashcard.flipped{animation:card-flip .25s ease-out} }
+@keyframes card-flip{from{transform:rotateY(70deg)}to{transform:none}}
 .ela-parent-grid{display:grid; gap:6px; margin:8px 0 14px}
 .ela-parent-row{display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; padding:7px 0; border-top:1px solid var(--edge)}
 .ela-parent-row>span{color:var(--ink-soft)}

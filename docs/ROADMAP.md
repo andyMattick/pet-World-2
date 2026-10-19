@@ -158,6 +158,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F26. 🎨 English Unit 4: Adjectives and Adverbs in the Poetry Library (Khan Grammar Unit 4, all 10 skills in Khan’s order, 4 block quizzes, unit test pass 8 of 10, then the Khan unit test link). Review list: `MODIFIERS-review.md`
 - [x] F27. 📎 Outside work: she adds it on Today's plan (course, activity, minutes, grade, up to 3 photos); teacher reviews it in the Ledger (✅ or 🔁 redo with a note). Needs migration `20261020000000_outside_work.sql`. See `OUTSIDE-WORK.md`
 - [x] F28. 🎭 Demo class for showing other teachers: 8 made-up students, 6 weeks of work, class code DEMO26, PIN 1234, reset with `select public.demo_reset(...)`. See `DEMO.md`
+- [x] F29. 📇 Review for the test: optional flashcards of each English unit's terms (gerund, aspect, antecedent…), then 8 mixed questions, before the Pet World test or the Khan test. See `TEST-REVIEW.md`
 
 ## Database files, in the order they were run
 

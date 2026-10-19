@@ -82,7 +82,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'assess': case 'sprint': case 'mastered': return 'math';
     case 'vocab': return 'english';
     case 'reading': return 'reading';
-    case 'course': return course === 'math' ? 'math' : course.startsWith('history') ? 'history' : course.startsWith('bio') ? 'science' : 'english';
+    case 'course': case 'review': return course === 'math' ? 'math' : course.startsWith('history') ? 'history' : course.startsWith('bio') ? 'science' : 'english';
     case 'project': return course.startsWith('bio') ? 'science' : 'history';
     case 'dig': case 'scribe': return 'history';
     case 'brain': case 'move': return 'breaks';
