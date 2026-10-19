@@ -63,7 +63,7 @@ export const UNIT_TESTS: Record<string, [string, string]> = {
   nouns: ['elaProgress', 'final-test'], verbs: ['elaProgress', 'verbs:final-test'], pronouns: ['elaProgress', 'pronouns:final-test'], modifiers: ['elaProgress', 'modifiers:final-test'],
   history: ['historyProgress', 'history:final-test'], history2: ['historyProgress', 'history2:final-test'],
   history3: ['historyProgress', 'history3:final-test'], history4: ['historyProgress', 'history4:final-test'],
-  bio1: ['scienceProgress', 'bio1:final-test']
+  bio1: ['scienceProgress', 'bio1:final-test'], bio2: ['scienceProgress', 'bio2:final-test']
 };
 /* the Khan topics for a course: one per block, keyed like lesson_links ("<courseId>:<groupId>") */
 const khanTopics = (courseId: string) => (lessonLinkSlots(courseId) as LinkSlot[]).filter(slot => slot.key.split(':').length === 2);

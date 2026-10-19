@@ -189,6 +189,9 @@ if (sql && !sql.includes('create table if not exists public.assessments')) probl
 if (sql && !sql.includes('create table if not exists public.practice_sessions')) problems.push('Database migration is missing table "practice_sessions"');
 for (const m of ["'session_start'", "'session_ping'", 'export class ActivityTracker', 'async startSession(']) need('src/lib/studentBackend.ts', m);
 need('src/game/game.js', 'townTracker', 'practice time kept in the town');
+need('src/game/game.js', 'function renderSim(', 'Biology Unit 2 science labs (SCIENCE-UNIT2.md)');
+need('src/game/game.js', "step.kind === 'table' ? tableStepHTML", 'project data tables and photos (SCIENCE-UNIT2.md)');
+need('src/shared/questionBanks.js', 'const BIO2_QUESTIONS', 'Biology Unit 2 questions');
 need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
 need('src/teacher/main.ts', 'p_tz', "the teacher's time zone for practice time");
 for (const m of ['const TRACKS = {', 'musicTrack', 'function openMusicMenu(', 'function musicAllowed(']) need('src/game/game.js', m);

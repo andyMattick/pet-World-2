@@ -70,6 +70,30 @@ export const TERM_CARDS = {
     { term: 'superlative', means: 'Compares three or more: add -est or use most.', example: 'tallest, most careful', skill: 'comparativeSuperlative' },
     { term: 'irregular comparison', means: 'Comparatives and superlatives that change the whole word.', example: 'good, better, best; bad, worse, worst', skill: 'comparativeSuperlative' },
     { term: 'intensifier (adverb of degree)', means: 'An adverb that tells how much: very, extremely, quite, almost, barely, too.', example: 'extremely cold; too hot to drink', skill: 'intensifiers' }
+  ],
+  bio2: [
+    { term: 'offspring', means: 'The young that parents produce.', example: 'A lamb is the offspring of a ewe and a ram.', skill: 'traitsReproU' },
+    { term: 'gene', means: 'A piece of information, passed from parents to offspring, that helps decide a trait.', example: 'Genes help decide a goat’s coat color.', skill: 'traitsReproU' },
+    { term: 'inherited trait', means: 'A trait passed from parents to offspring through genes.', example: 'eye color, ear shape, wool color', skill: 'traitsReproU' },
+    { term: 'acquired trait', means: 'A trait an organism picks up during its life. It is not passed on through genes.', example: 'a scar, a trick a dog learned, a haircut', skill: 'traitsReproU' },
+    { term: 'sexual reproduction', means: 'Two parents each give half their genes, so each offspring gets a new mix and offspring vary.', example: 'Kittens in one litter look different from each other.', skill: 'traitsReproU' },
+    { term: 'asexual reproduction', means: 'One parent makes offspring with the same genes as itself.', example: 'strawberry runners, potato pieces, green onion roots', skill: 'traitsReproU' },
+    { term: 'clone', means: 'An offspring with exactly the same genes as its one parent.', example: 'Every Cavendish banana plant is a clone.', skill: 'traitsReproA' },
+    { term: 'variation', means: 'Differences in traits among organisms of the same kind. Variation helps some survive a change.', example: 'Some seed-grown plants survive a frost and some don’t.', skill: 'traitsReproA' },
+    { term: 'reproductive success', means: 'How many offspring survive to grow up and have young of their own.', example: 'A robin that raises 4 chicks to adulthood.', skill: 'animalBehaviorU' },
+    { term: 'courtship', means: 'Behavior that attracts a mate, like a display, song, or dance.', example: 'A peacock spreading his tail; a songbird singing in spring', skill: 'animalBehaviorU' },
+    { term: 'parental care', means: 'Parents feeding, warming, and protecting their young.', example: 'A hen sitting on her eggs', skill: 'animalBehaviorU' },
+    { term: 'migration', means: 'A long trip animals make each year, often to find food or a safe place to raise young.', example: 'Salmon swimming upstream to lay eggs', skill: 'animalBehaviorU' },
+    { term: 'pollinator', means: 'An animal that carries pollen from flower to flower.', example: 'bees, butterflies, hummingbirds, moths', skill: 'plantStructuresU' },
+    { term: 'pollination', means: 'Moving pollen to the part of a flower that makes seeds.', example: 'A bee brushes pollen onto another squash flower.', skill: 'plantStructuresU' },
+    { term: 'nectar', means: 'A sweet liquid in flowers that rewards animals that carry pollen.', example: 'Hummingbirds drink nectar from tube-shaped flowers.', skill: 'plantStructuresU' },
+    { term: 'seed dispersal', means: 'Ways seeds travel away from the parent plant: wind, water, or animals.', example: 'burrs on fur, maple “helicopters,” berries eaten by birds', skill: 'plantStructuresA' },
+    { term: 'genetic factor', means: 'Something inherited from the parents that affects growth.', example: 'A Great Dane’s genes make it grow bigger than a Chihuahua.', skill: 'growthEnvU' },
+    { term: 'environmental factor', means: 'Something around an organism that affects its growth: food, water, light, space, temperature.', example: 'Bean sprouts in the dark grow tall, thin, and pale.', skill: 'growthEnvU' },
+    { term: 'germination', means: 'When a seed starts to grow. It needs water, the right temperature, and oxygen.', example: 'A soaked bean splits open and sends out a root.', skill: 'growthEnvU' },
+    { term: 'nutrients', means: 'Substances living things need to grow. Fertilizer adds them to soil and water.', example: 'Fertilizer washing into a lake feeds algae.', skill: 'growthEnvA' },
+    { term: 'algae bloom', means: 'Algae growing so fast they cover the water, often because of extra nutrients and warm weather.', example: 'Lake Erie near Toledo, Ohio, in 2014', skill: 'growthEnvA' },
+    { term: 'decomposer', means: 'A living thing (like bacteria) that breaks down dead matter. In water, decomposers use up oxygen.', example: 'Bacteria breaking down dead algae', skill: 'growthEnvA' }
   ]
 };
 

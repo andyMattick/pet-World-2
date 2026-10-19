@@ -20,7 +20,8 @@ import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../sh
 import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
 import { termCards } from '../shared/termCards';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS } from './scienceSims.js';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -127,7 +128,7 @@ function normalize(raw){
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
   s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4']);
-  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab']);
+  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
@@ -156,6 +157,7 @@ function normalize(raw){
     s.art.hung = (Array.isArray(s.art.hung) ? s.art.hung : []).filter(f => f && typeof f.id === 'string' && typeof f.painting === 'string' && Number.isFinite(+f.x) && Number.isFinite(+f.y)).slice(0, s.art.frames).map(f => ({id:f.id, painting:f.painting, x:Math.max(4, Math.min(96, +f.x)), y:Math.max(8, Math.min(88, +f.y))}));
     s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
+    s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
     s.planCarry.items = s.planCarry.items.filter(x => x && typeof x === 'object' && typeof x.id === 'string').slice(0, 30);
@@ -5312,7 +5314,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && vocabRun) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -5626,7 +5628,7 @@ function outsideRowsHTML(){
     <div class="row" style="margin-top:6px"><button type="button" class="btn small" data-outside-add>➕ Outside work</button><small class="muted" style="align-self:center">Did school work somewhere else? Add it here.</small></div>`;
 }
 /* a photo shrunk to a JPEG data URL under about 190 KB (the database takes up to 200 KB each) */
-async function photoToJpeg(file){
+async function photoToJpeg(file, maxLen = 190000){
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
@@ -5634,7 +5636,7 @@ async function photoToJpeg(file){
       const k = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
       const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
-      const data = c.toDataURL('image/jpeg', q); if (data.length <= 190000) return data;
+      const data = c.toDataURL('image/jpeg', q); if (data.length <= maxLen) return data;
     }
   } catch(e) { /* not an image the browser can read */ } finally { URL.revokeObjectURL(url); }
   return null;
@@ -6356,6 +6358,142 @@ function digNext(){
   }
   save(); renderDig(site.id);
 }
+/* 🧪 Science simulations (Biology Unit 2): Clone Island vs. Mix Island, the Parenting Strategy Lab and the Duck Pond
+   Lake Lab. The models live in scienceSims.js; progress is kept in S.sims[id] = {done, runs, homes, missions}.
+   A sim card sits under the lesson block it goes with; each sim ends with two questions. Docs: docs/SCIENCE-UNIT2.md */
+let simRun = null;
+function simState(id){ return S.sims[id] || (S.sims[id] = {done:false, runs:0, homes:{}, missions:{}}); }
+function simCardsHTML(courseId, groupId){
+  return SIMS.filter(s => s.course === courseId && s.group === groupId).map(s => {
+    const st = S.sims[s.id], status = st?.done ? '✅ Finished' : st?.runs ? 'Started' : 'Not started';
+    return `<section class="ela-final-assessment sim-card"><div><h3>🧪 ${s.emoji} ${esc(s.name)}</h3><p class="muted">${esc(s.intro)} · ${status}</p></div><button type="button" class="btn small berry" data-sim-open="${s.id}">${st?.done ? 'Play again' : 'Open the lab'}</button></section>`;
+  }).join('');
+}
+function simReady(id){
+  const st = simState(id);
+  if (id === 'cloneIsland') return st.runs > 0;
+  if (id === 'parenting') return HOMES.every(h => st.homes[h.id]);
+  return LAKE_MISSIONS.every(m => st.missions[m.id]);
+}
+function simQuestionsHTML(id){
+  const st = simState(id);
+  if (!simReady(id)) return `<p class="muted">🔒 ${id === 'cloneIsland' ? 'Play all 8 seasons' : id === 'parenting' ? 'Find a strategy that works in all three homes' : 'Finish both missions'} to unlock two questions about what you found.</p>`;
+  if (!simRun.order) simRun.order = SIM_QUESTIONS[id].map(q => shuffle(q.slice(1)));
+  const rows = SIM_QUESTIONS[id].map((q, i) => {
+    const got = simRun.right?.[i] || st.done;
+    return `<div class="sim-q"><p><b>${i + 1}. ${esc(q[0])}</b></p><div class="row">${simRun.order[i].map(opt => `<button type="button" class="btn small${got && opt === q[1] ? ' mint' : ''}" data-sim-answer="${i}" data-sim-choice="${esc(opt)}" ${got ? 'disabled' : ''}>${esc(opt)}</button>`).join('')}</div>${simRun.wrong?.[i] && !got ? '<p class="dig-hint">Not quite. Look back at your results and try again.</p>' : ''}</div>`;
+  }).join('');
+  return `<h3>🔎 What did you find?</h3>${rows}${st.done ? '<p class="review-banner">✅ Lab finished! You can keep experimenting as long as you like.</p>' : ''}`;
+}
+function simAnswer(i, choice){
+  const id = simRun.id, q = SIM_QUESTIONS[id][i], st = simState(id);
+  simRun.right = simRun.right || {}; simRun.wrong = simRun.wrong || {};
+  if (choice === q[1]) { simRun.right[i] = true; sfx('good'); } else { simRun.wrong[i] = true; sfx('bad'); }
+  if (!st.done && SIM_QUESTIONS[id].every((_, k) => simRun.right[k])) {
+    st.done = true; S.coins += 15; updateHeader(); toast(`🧪 Lab finished! +15 🪙`);
+    logEvent({k:'sim', title:simById(id).name, s:2, n:2});
+  }
+  save(); renderSim(id);
+}
+/* 🏝️ */
+const plantTile = p => `<span class="sim-plant" title="${TRAITS.filter(([t]) => p[t]).map(([, , n]) => `handles ${n}`).join(', ') || 'no resistances'}">🌿<small>${TRAITS.filter(([t]) => p[t]).map(([, e]) => e).join('') || '·'}</small></span>`;
+function islandHTML(name, emoji, list, note){
+  return `<section class="card sim-island"><h3>${emoji} ${name} <small class="muted">${list.length} plant${list.length === 1 ? '' : 's'}</small></h3><p class="muted" style="margin-top:0">${note}</p><div class="sim-plants">${list.length ? list.map(plantTile).join('') : '<span class="sim-empty">🪦 No plants left</span>'}</div></section>`;
+}
+function cloneIslandHTML(){
+  const st = simRun.islands, done = islandsDone(st), last = st.log[st.log.length - 1];
+  const lastText = last ? (() => { const w = WEATHER.find(x => x.id === last.weather); return `<p class="sim-news">${w.emoji} <b>Season ${last.season}: ${w.name}.</b> ${w.text} Clone Island lost ${last.lost.clone}, Mix Island lost ${last.lost.mix}. Then the survivors made new plants.</p>`; })() : '<p class="sim-news">Pick the weather for season 1. Each icon under a plant is a trait it inherited: 🔥 handles heat, ❄️ handles cold, 🍄 fights fungus.</p>';
+  return `<p><b>Season ${Math.min(st.season + 1, ISLAND_SEASONS)} of ${ISLAND_SEASONS}</b></p>${lastText}
+    <div class="sim-two">${islandHTML('Clone Island', '🧬', st.clone, 'Copies of one prize plant (asexual). Each plant makes 2 copies a season.')}${islandHTML('Mix Island', '🌼', st.mix, 'Grown from seeds with two parents (sexual). Slower, and every plant is a little different.')}</div>
+    ${done ? `<p class="review-banner">🏁 ${st.clone.length && st.mix.length ? 'Both islands made it.' : st.clone.length ? 'Only Clone Island is still green.' : st.mix.length ? 'Only Mix Island is still green.' : 'Both islands are empty.'} Try again with different weather to see what changes.</p><div class="row"><button type="button" class="btn" data-sim-island-reset>🔁 Start over</button></div>`
+      : `<div class="row" role="group" aria-label="Weather">${WEATHER.map(w => `<button type="button" class="btn small" data-sim-weather="${w.id}">${w.emoji} ${w.name}</button>`).join('')}<button type="button" class="btn small butter" data-sim-weather="random">🎲 Surprise me</button></div>`}
+    ${st.log.length ? `<details class="sim-log"><summary>Season log</summary><ol>${st.log.map(e => { const w = WEATHER.find(x => x.id === e.weather); return `<li>${w.emoji} ${w.name}: Clone Island ${e.clone}, Mix Island ${e.mix}</li>`; }).join('')}</ol></details>` : ''}`;
+}
+/* 🐣 */
+const BABY_LOOK = {beach:['🐢','🦀'], forest:['🐦','🦝'], ice:['🐧','🦭']};
+function parentingHTML(){
+  const st = simState('parenting'), home = HOMES.find(h => h.id === simRun.home) || HOMES[0], n = simRun.sizes[home.id] || 4, care = Math.round(ENERGY / n * 10) / 10;
+  const result = simRun.result?.home === home.id ? simRun.result : null, [grown, eater] = BABY_LOOK[home.id];
+  const babies = result?.babies ? `<div class="sim-babies">${result.babies.map(b => `<span title="${{grown:'grew up', eaten:'eaten by a predator', weak:'not enough care', lost:'didn’t make it'}[b]}">${b === 'grown' ? grown : b === 'eaten' ? eater : b === 'weak' ? '🥚' : '❌'}</span>`).join('')}</div>` : '';
+  const verdict = result?.avg != null ? (homeSolved(home, result.n) ? `<p class="review-banner">✅ ${result.avg.toFixed(1)} grown-up babies per season. That’s a strategy that works here! ${esc(home.real)}</p>`
+    : `<p class="dig-hint">${result.avg.toFixed(1)} grown-up babies per season. A different family size would do better here: try ${result.n < bestFamily(home) ? 'more babies with less care each' : 'fewer babies with more care each'}.</p>`) : result ? `<p class="sim-news">This season: ${result.babies.filter(b => b === 'grown').length} grew up, ${(k => `${k} ${k === 1 ? 'was' : 'were'} eaten`)(result.babies.filter(b => b === 'eaten').length)}, ${result.babies.filter(b => b === 'weak').length} didn’t get enough care.</p>` : '';
+  return `<div class="row subject-tabs" role="tablist">${HOMES.map(h => `<button type="button" role="tab" class="btn small subject-tab" data-sim-home="${h.id}" aria-selected="${h.id === home.id}" aria-pressed="${h.id === home.id}">${h.emoji} ${h.name}${st.homes[h.id] ? ' ✅' : ''}</button>`).join('')}</div>
+    <section class="card"><h3>${home.emoji} ${home.name} <small class="muted">(like ${home.like})</small></h3>
+      <p>You have <b>${ENERGY} energy</b> for this season’s babies.</p>
+      <label class="sim-slider">Family size: <b data-sim-n>${n} bab${n === 1 ? 'y' : 'ies'}</b> · <span data-sim-care>${care} energy of care each</span><input type="range" min="0" max="${FAMILY_SIZES.length - 1}" step="1" value="${Math.max(0, FAMILY_SIZES.indexOf(n))}" data-sim-size style="width:100%"></label>
+      <div class="row"><button type="button" class="btn berry" data-sim-raise>🍼 Raise one season</button><button type="button" class="btn" data-sim-raise20>📊 Run 20 seasons</button></div>
+      ${babies}${verdict}
+      <p class="muted">Key: ${grown} grew up · ${eater} eaten by a predator · 🥚 not enough care to make it · ❌ lost to bad luck</p></section>`;
+}
+/* 🦆 */
+function lakeChartSVG(weeks){
+  const W = 320, H = 160, x = w => 28 + w * (W - 50) / LAKE_WEEKS, y = v => H - 20 - v * (H - 34) / 100;
+  const line = (key, scale, color) => `<polyline fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" points="${weeks.map(w => `${x(w.week).toFixed(1)},${y(w[key] * scale).toFixed(1)}`).join(' ')}"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="sim-chart" role="img" aria-label="Algae, oxygen and fish over 12 weeks">
+    <line x1="24" y1="${H - 20}" x2="${W - 10}" y2="${H - 20}" stroke="#999"/><line x1="24" y1="10" x2="24" y2="${H - 20}" stroke="#999"/>
+    <line x1="24" y1="${y(4 * 9)}" x2="${W - 10}" y2="${y(4 * 9)}" stroke="#2E7BC0" stroke-dasharray="4 4" opacity=".5"/><text x="${W - 12}" y="${y(4 * 9) - 3}" font-size="9" text-anchor="end" fill="#2E7BC0">fish get stressed</text>
+    ${[0, 4, 8, 12].map(w => `<text x="${x(w)}" y="${H - 6}" font-size="10" text-anchor="middle" fill="#666">wk ${w}</text>`).join('')}
+    ${line('algae', 1, '#3F9E3F')}${line('oxygen', 9, '#2E7BC0')}${line('fish', 1, '#E07B24')}</svg>
+    <p class="sim-legend"><span style="color:#3F9E3F">━ Algae</span> <span style="color:#2E7BC0">━ Oxygen</span> <span style="color:#E07B24">━ Fish</span></p>`;
+}
+function lakeLabHTML(){
+  const st = simState('lakeLab'), set = simRun.lake, weeks = simRun.weeks, sum = weeks ? lakeSummary(weeks) : null;
+  const green = sum ? Math.min(1, sum.peakAlgae / 80) : 0.1, fish = sum ? Math.round(sum.fishLeft / 20) : 5;
+  const pond = `<div class="sim-pond" style="background:color-mix(in srgb, #5BA8E0 ${Math.round(100 - green * 100)}%, #4E8F2A)"><span>${'🐟'.repeat(fish) || '💀'}</span><span>🦆</span></div>`;
+  return `<ol class="sim-missions">${LAKE_MISSIONS.map(m => `<li>${st.missions[m.id] ? '✅' : '⬜'} ${esc(m.text)}</li>`).join('')}</ol>
+    <section class="card"><h3>Set up the summer</h3>
+      <p><b>🚜 Fertilizer washing in from the farm</b></p><div class="row" role="group" aria-label="Fertilizer">${FERTILIZER.map((f, i) => `<button type="button" class="btn small${set.fert === i ? ' mint' : ''}" data-sim-fert="${i}" aria-pressed="${set.fert === i}">${f}</button>`).join('')}</div>
+      <p><b>🌡️ Weather</b></p><div class="row" role="group" aria-label="Weather">${HEAT.map(([id, label]) => `<button type="button" class="btn small${set.heat === id ? ' mint' : ''}" data-sim-heat="${id}" aria-pressed="${set.heat === id}">${label}</button>`).join('')}</div>
+      <p><b>🌾 Grass strip along the stream</b> <small class="muted">(its roots catch runoff before it reaches the pond)</small></p><div class="row"><button type="button" class="btn small${set.buffer ? ' mint' : ''}" data-sim-buffer aria-pressed="${set.buffer}">${set.buffer ? '✅ Planted' : 'Plant it'}</button></div>
+      <div class="row" style="margin-top:10px"><button type="button" class="btn berry" data-sim-lake-run>▶️ Run the summer</button></div></section>
+    ${weeks ? `<section class="card"><h3>Your summer</h3>${pond}${lakeChartSVG(weeks)}<p>Highest algae: <b>${Math.round(sum.peakAlgae)}</b> · Lowest oxygen: <b>${sum.lowOxygen.toFixed(1)} mg/L</b> · Fish left: <b>${sum.fishLeft} of 100</b></p>
+      <p class="sim-news">${sum.fishLeft < 40 ? '💀 A fish kill. When the bloom grew too thick, algae died, and the decomposers breaking them down used up the oxygen.' : sum.peakAlgae >= 70 ? '🟢 A big bloom, but the fish hung on.' : sum.peakAlgae >= 40 ? 'The pond got greener, but it stayed healthy.' : '💧 A clear, healthy pond.'}</p></section>` : ''}`;
+}
+function renderSim(id){
+  const sim = simById(id); if (!sim) return;
+  if (simRun?.id !== id) simRun = {id, islands:newIslands(), home:'beach', sizes:{beach:4, forest:20, ice:3}, lake:{fert:0, heat:'normal', buffer:false}, weeks:null};
+  activeEnglishCourse = sim.course;
+  const body = id === 'cloneIsland' ? cloneIslandHTML() : id === 'parenting' ? parentingHTML() : lakeLabHTML();
+  $('#libraryWrap').innerHTML = `<div id="simWrap" class="sim"><div class="backrow"><h2>🧪 ${sim.emoji} ${esc(sim.name)}</h2><button class="btn small" data-dig-back="${sim.course}">Back to unit</button></div>
+    <p class="muted">${esc(sim.intro)}</p>${body}<section class="card">${simQuestionsHTML(id)}</section></div>`;
+}
+function simRanOnce(id){ const st = simState(id); st.runs = (st.runs || 0) + 1; }
+$('#libraryWrap').addEventListener('click', e => {
+  const b = e.target.closest('#simWrap button, button[data-sim-open]'); if (!b) return;
+  if (b.dataset.simOpen) { simRun = null; renderSim(b.dataset.simOpen); return; }
+  if (!simRun) return;
+  const id = simRun.id;
+  if (b.dataset.simAnswer != null) { simAnswer(+b.dataset.simAnswer, b.dataset.simChoice); return; }
+  if (b.dataset.simWeather) {
+    if (islandsDone(simRun.islands)) return;
+    const w = b.dataset.simWeather === 'random' ? WEATHER[Math.floor(Math.random() * WEATHER.length)].id : b.dataset.simWeather;
+    simRun.islands = runSeason(simRun.islands, w);
+    if (islandsDone(simRun.islands)) simRanOnce(id);
+    save(); renderSim(id); return;
+  }
+  if (b.hasAttribute('data-sim-island-reset')) { simRun.islands = newIslands(); renderSim(id); return; }
+  if (b.dataset.simHome) { simRun.home = b.dataset.simHome; simRun.result = null; renderSim(id); return; }
+  if (b.hasAttribute('data-sim-raise') || b.hasAttribute('data-sim-raise20')) {
+    const home = HOMES.find(h => h.id === simRun.home), n = simRun.sizes[home.id] || 4, babies = raiseFamily(home, n);
+    simRun.result = {home:home.id, n, babies, avg:b.hasAttribute('data-sim-raise20') ? averageGrownUps(home, n) : null};
+    if (simRun.result.avg != null) { simRanOnce(id); if (homeSolved(home, n)) simState(id).homes[home.id] = n; }
+    save(); renderSim(id); return;
+  }
+  if (b.dataset.simFert != null) { simRun.lake.fert = +b.dataset.simFert; renderSim(id); return; }
+  if (b.dataset.simHeat) { simRun.lake.heat = b.dataset.simHeat; renderSim(id); return; }
+  if (b.hasAttribute('data-sim-buffer')) { simRun.lake.buffer = !simRun.lake.buffer; renderSim(id); return; }
+  if (b.hasAttribute('data-sim-lake-run')) {
+    simRun.weeks = runLake(simRun.lake); simRanOnce(id);
+    const sum = lakeSummary(simRun.weeks), st = simState(id);
+    LAKE_MISSIONS.forEach(m => { if (!st.missions[m.id] && m.check(sum, simRun.lake)) { st.missions[m.id] = true; toast(`✅ Mission done: ${m.text.split(':')[0]}`); } });
+    save(); renderSim(id);
+  }
+});
+$('#libraryWrap').addEventListener('input', e => {
+  const r = e.target.closest('#simWrap [data-sim-size]'); if (!r || !simRun) return;
+  const n = FAMILY_SIZES[+r.value] || 1; simRun.sizes[simRun.home] = n;
+  $('#simWrap [data-sim-n]').textContent = `${n} bab${n === 1 ? 'y' : 'ies'}`; $('#simWrap [data-sim-care]').textContent = `${Math.round(ENERGY / n * 10) / 10} energy of care each`;
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -6599,7 +6737,7 @@ function unitPassedOn(unit, what, day){
   const d = S.dayLog[day], c = unitCourse(unit); if (!d) return false;
   return d.events.some(e => e.passed && ((e.k === 'assess' && e.shop === unit && e.mode === what) || (e.k === 'course' && !!c && e.course === c && e.kind === (what === 'test' ? 'final' : 'quiz'))));
 }
-const projectBuilding = id => { const c = id.replace(/lab$/, ''); return Object.keys(HISTORY_BUILDING_COURSE).find(b => HISTORY_BUILDING_COURSE[b] === c) || ''; };
+const projectBuilding = id => { const c = id.replace(/lab\d*$/, ''); return Object.keys(HISTORY_BUILDING_COURSE).find(b => HISTORY_BUILDING_COURSE[b] === c) || ''; };
 /* each item's label, the unit its Go button opens, and how it stands on that day: done, waiting for a grown-up, or to do */
 function planItemInfo(x, day = logDayKey()){
   const unitName = id => { const b = BUILDINGS.find(u => u.id === id); return b ? `${b.emoji} ${b.name}` : id; };
@@ -6887,12 +7025,12 @@ $('#town').addEventListener('click', e => {
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
-const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1'};
-const isScienceCourse = id => id === 'bio1';
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1',bioCells:'bio2'};
+const isScienceCourse = id => /^bio\d+$/.test(id);
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id);
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
 const projectStore = key => String(key).startsWith('history') ? S.historyProjects : S.scienceProjects;
-const projectKeys = id => [id, `${id}lab`].filter(key => HISTORY_PROJECTS[key]);
+const projectKeys = id => [id, `${id}lab`, `${id}lab2`, `${id}lab3`].filter(key => HISTORY_PROJECTS[key]);
 /* History and Biology role play: in History the student is a historical figure (or an everyday person of the time) answering
    visitors' questions; in Biology the student is a tour guide at the Nature Center. One card per skill (docs: tone change). */
 const ROLE_CARDS = {
@@ -6936,7 +7074,15 @@ const ROLE_CARDS = {
   seedDispersal:{emoji:'🍁',who:'a tour guide on the Seed Trail',where:'Pet World Nature Center',intro:'Your group walks the trail collecting seeds that traveled in different ways.'},
   digestionHumans:{emoji:'🍎',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'Your group walks through a giant model of the digestive system, starting at the mouth.'},
   digestionIntestines:{emoji:'🌀',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'Your group has reached the long, twisty intestine section of the tunnel.'},
-  humanDigestion:{emoji:'🗺️',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'You are wrapping up the tour with a map of the whole trip food takes.'}
+  humanDigestion:{emoji:'🗺️',who:'a tour guide at the Digestion Tunnel exhibit',where:'Pet World Nature Center',intro:'You are wrapping up the tour with a map of the whole trip food takes.'},
+  traitsReproU:{emoji:'🐑',who:'a tour guide at the Petting Zoo’s Lamb Nursery',where:'Pet World Petting Zoo',intro:'Your tour group is meeting this spring’s lambs and their moms.'},
+  traitsReproA:{emoji:'🍓',who:'a tour guide at the Petting Zoo’s Feed Garden',where:'Pet World Petting Zoo',intro:'The zoo grows strawberries, potatoes, and apples here, some from seeds and some from cuttings.'},
+  animalBehaviorU:{emoji:'🐣',who:'a tour guide at the Petting Zoo’s Chick Hatchery',where:'Pet World Petting Zoo',intro:'Hens are sitting on their eggs, and a peacock is showing off next door.'},
+  animalBehaviorA:{emoji:'📋',who:'a tour guide at the Petting Zoo’s Nesting Barn',where:'Pet World Petting Zoo',intro:'Your group is looking at nest boxes, duck pairs, and charts from the zoo’s animal scientists.'},
+  plantStructuresU:{emoji:'🌻',who:'a tour guide in the Petting Zoo’s Pollinator Patch',where:'Pet World Petting Zoo',intro:'Bees buzz around squash flowers and sunflowers next to the goat pen.'},
+  plantStructuresA:{emoji:'🐿️',who:'a tour guide on the Petting Zoo’s Orchard Walk',where:'Pet World Petting Zoo',intro:'Squirrels bury acorns, burrs stick to the goats, and students are running a bee experiment.'},
+  growthEnvU:{emoji:'📏',who:'a tour guide at the Petting Zoo’s Weigh-In Station',where:'Pet World Petting Zoo',intro:'Keepers weigh and measure the young animals and the garden seedlings every week.'},
+  growthEnvA:{emoji:'🦆',who:'a tour guide at the Petting Zoo’s Duck Pond',where:'Pet World Petting Zoo',intro:'This summer the pond turned bright green, and your group wants to know why.'}
 };
 /* Difficulty-aware picking. Untagged questions count as level 1, so untagged banks still pick at random. */
 const questionLevel = question => question.difficulty || 1;
@@ -6971,6 +7117,36 @@ const HISTORY_PROJECTS = {
     {key:'data',label:'4. Record your observations or measurements for each day (a small table is fine).'},
     {key:'conclusion',label:'5. State your conclusion using your data. Was your hypothesis supported? Name one source of error and how to improve the test.'},
     {key:'connection',label:'6. Connect your results to plant reproduction: why does this matter for how seeds grow in nature?'}]},
+  /* Biology Unit 2: a field guide page and three kitchen labs. kind:'table' steps are data tables with a live chart,
+     kind:'photo' steps take one photo (docs: SCIENCE-UNIT2.md). */
+  bio2:{title:'Field Guide Page: Raising the Next Generation',summary:'Pick one animal and make a field guide page about how it reproduces, what its babies inherit, and what it does to help them survive. Draw the page by hand, then add a photo of it.',steps:[
+    {key:'animal',label:'1. Choose an animal: a petting zoo animal, a pet, or a wild animal. Where does it live, and how many young does it usually have at a time?'},
+    {key:'inherit',label:'2. Traits: name two inherited traits its babies get from their parents, and one acquired trait an animal like it might pick up during its life. Explain the difference.'},
+    {key:'behavior',label:'3. Behaviors: describe at least two behaviors (finding a mate, building a nest or den, guarding, feeding, living in a herd, migrating) and explain how each one helps the young survive.'},
+    {key:'strategy',label:'4. Strategy: does your animal have many young with little care, or a few young with lots of care? Compare it with an animal that uses the opposite strategy, and explain why each strategy fits its home.'},
+    {key:'growth',label:'5. Growth: name two things in the environment (food, space, temperature, and so on) that change how big and healthy the young grow.'},
+    {key:'page',kind:'photo',label:'6. Draw your field guide page on paper: the animal, its babies, and labels for the traits and behaviors. Take a photo and add it here.'},
+    {key:'sources',label:'7. List the sources you used (books, websites, videos) so your teacher can check them.'}]},
+  bio2lab:{title:'Experiment: Bean Sprouts in Light and Dark',summary:'Grow beans in the light and in the dark for about 10 days and measure them. Same seeds, different environment: what changes? Ask an adult to help. Soak dried beans overnight, plant them in two cups of damp soil or paper towels, and wash your hands afterward. Don’t eat the beans or sprouts from this experiment.',steps:[
+    {key:'question',label:'1. Write your question and a hypothesis (“If ... then ... because ...”). Will the beans in the dark grow taller, shorter, or the same as the beans in the light?'},
+    {key:'setup',label:'2. Describe your setup: how many beans are in each cup, where the light cup and the dark cup (a closet or a box) are, and three things you kept the same for both cups.'},
+    {key:'heights',kind:'table',cols:['Day','Light: tallest (cm)','Dark: tallest (cm)','What they look like'],num:[1,2],rows:12,label:'3. Every day or two, measure the tallest sprout in each cup. Write 0 until it sprouts. Note the color and how thick the stems are.'},
+    {key:'photo',kind:'photo',label:'4. On your last day, take a photo of both cups side by side.'},
+    {key:'results',label:'5. Use your numbers: which cup grew taller by the end, and by how much? How were the stems and leaves different in color and thickness?'},
+    {key:'conclusion',label:'6. Was your hypothesis supported? All the beans had the same kind of genes, so what does this show about how the environment changes growth? Name one source of error and how you would fix it.'}]},
+  bio2lab2:{title:'Experiment: Paper Helicopter Seeds',summary:'Maple seeds spin like helicopters, so they fall slowly and the wind can carry them away from the parent tree. Make paper “helicopter seeds” and test how wing length changes the fall. Safety: drop them while standing on the floor, or from a stair landing with an adult watching. Never stand on a chair or table.',steps:[
+    {key:'build',label:'1. Make three paper helicopters: cut a strip of paper 4 cm wide and about 15 cm long, cut down the middle from the top to make two wings, fold the wings opposite ways, and clip a paper clip to the bottom. Make the wings 4 cm, 6 cm, and 8 cm long. Describe what you made.'},
+    {key:'predict',label:'2. Predict: which wing length will stay in the air the longest? Why do you think so?'},
+    {key:'times',kind:'table',cols:['Wings','Trial 1 (sec)','Trial 2 (sec)','Trial 3 (sec)'],num:[1,2,3],rows:3,rowLabels:['4 cm','6 cm','8 cm'],label:'3. Drop each helicopter from the same height three times. Time each fall with a stopwatch.'},
+    {key:'photo',kind:'photo',label:'4. Take a photo of your three helicopters.'},
+    {key:'results',label:'5. Find the average time for each wing length (add the three trials, then divide by 3). Which one fell the slowest? Was your prediction right?'},
+    {key:'dispersal',label:'6. Connect it to real seeds: why does it help a maple tree to have seeds that fall slowly? What would happen if all its seeds dropped straight down under the tree?'}]},
+  bio2lab3:{title:'Experiment: Kitchen Clones',summary:'Regrow green onions from the root ends left over from cooking. Every new shoot is a clone of the plant it came from. Safety: let an adult do any cutting, change the water every day or two, and keep the glass out of hot sun.',steps:[
+    {key:'predict',label:'1. Put three green onion root ends (about 3 cm long, roots down) in a glass with a little water. Predict: will the new shoots be the same as the old onion or different? Why?'},
+    {key:'growth',kind:'table',cols:['Day','Onion 1 (cm)','Onion 2 (cm)','Onion 3 (cm)'],num:[1,2,3],rows:8,label:'2. Every day or two, measure the new green growth on each onion.'},
+    {key:'photo',kind:'photo',label:'3. Take a photo of your regrown onions.'},
+    {key:'explain',label:'4. Is this sexual or asexual reproduction? How many parents does each new shoot have, and how do its genes compare with the parent’s?'},
+    {key:'risk',label:'5. Banana farms grow clones too. Use your onions and the Gros Michel story to explain one good thing and one risky thing about growing only clones.'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -7012,6 +7188,8 @@ const englishCourse = course => course === 'modifiers'
     ? {id:'history4',building:'histEmpires',title:'History Unit 4: Empires and Belief Systems',skills:HISTORY_UNIT4,groups:HISTORY_GROUPS4,finalKey:'history4:final-test',testPer:2,finalPass:19,noQuizzes:true}
   : course === 'bio1'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
+  : course === 'bio2'
+    ? {id:'bio2',building:'bioCells',title:'Biology Unit 2: Organism Growth and Reproduction',skills:BIO_UNIT2,groups:BIO_GROUPS2,finalKey:'bio2:final-test',testPer:3,finalPass:20}
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
 const testSize = course => course.skills.length * (course.testPer || 1);
 /* ---------- Pet World lesson videos (docs: LESSON-VIDEOS.md) ----------
@@ -7187,7 +7365,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','history','history2','history3','history4','bio1'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','history','history2','history3','history4','bio1','bio2'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -7326,7 +7504,7 @@ function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S
 function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId)]; }
 function englishBankQuestions(skillId, courseId='nouns'){
   const edits = Backend.me?.question_edits || {};   // this class's hidden, edited and added questions (docs: LESSON-CONTENT.md)
-  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, BIO1_QUESTIONS[skillId] || [], edits).map(question => {
+  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -7647,7 +7825,7 @@ function historyProjectCardOne(courseId){
 }
 function historyProjectReportHTML(courseId, canReview){
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
-  const answers = project.steps.filter(step => info.answers[step.key]).map(step => `<dt>${esc(step.label)}</dt><dd>${step.kind === 'draw' ? `<img src="${esc(info.answers[step.key])}" alt="Painting" style="max-width:100%;border-radius:8px">` : esc(info.answers[step.key])}</dd>`).join('');
+  const answers = project.steps.filter(step => info.answers[step.key]).map(step => `<dt>${esc(step.label)}</dt><dd${step.kind === 'table' ? ' style="white-space:pre-wrap"' : ''}>${step.kind === 'draw' || step.kind === 'photo' ? `<img src="${esc(info.answers[step.key])}" alt="${step.kind === 'photo' ? 'Photo' : 'Painting'}" style="max-width:100%;border-radius:8px">` : esc(info.answers[step.key])}</dd>`).join('');
   const buttons = canReview && info.state !== 'draft' ? `<div class="row"><button class="btn small" data-project-local-review="verified" data-project-course="${courseId}">Mark verified</button><button class="btn small" data-project-local-review="revise" data-project-course="${courseId}">Request revision</button></div>` : '';
   return `<div class="ela-parent-row"><strong>${esc(project.title)}</strong><span>${PROJECT_STATE_TEXT[info.state]}</span></div>${answers ? `<div class="reading-report-chapter"><dl>${answers}</dl>${buttons}</div>` : ''}`;
 }
@@ -7728,14 +7906,65 @@ function setupDrawBox(box){
     else if (b.hasAttribute('data-draw-clear')) { snap(); wall(); input.value = ''; }
   });
 }
+/* data-table steps (kind:'table', first used by the Biology Unit 2 labs): a grid of small boxes for measurements, with a
+   live line chart of the number columns. The answer is saved as plain text the teacher can read:
+   a header line, then one line per row, cells joined by " | ". step.cols = column names, step.num = number columns,
+   step.rows = how many rows, step.rowLabels = fixed first-column labels (like the wing lengths). */
+const TABLE_SEP = ' | ';
+function tableCells(step, value){
+  const lines = String(value || '').split('\n').slice(1).map(line => line.split(TABLE_SEP));
+  return Array.from({length:step.rows}, (_, r) => step.cols.map((_, c) => c === 0 && step.rowLabels ? step.rowLabels[r] : (lines[r]?.[c] || '').trim()));
+}
+function tableText(step, cells){
+  const filled = cells.filter(row => row.some((cell, c) => cell && !(c === 0 && step.rowLabels)));
+  return filled.length ? [step.cols.join(TABLE_SEP), ...cells.slice(0, cells.lastIndexOf(filled[filled.length - 1]) + 1).map(row => row.map(cell => cell.replace(/\s*\|\s*/g, '/')).join(TABLE_SEP))].join('\n').slice(0, 1500) : '';
+}
+function tableChartSVG(step, cells){
+  const nums = step.num || [], pts = nums.map(c => cells.map((row, r) => [r, parseFloat(String(row[c]).replace(',', '.'))]).filter(([, v]) => Number.isFinite(v)));
+  if (!pts.some(p => p.length >= 2)) return '<p class="muted" style="margin:4px 0">Your chart appears here once you fill in two or more numbers in a column.</p>';
+  const last = Math.max(...pts.flat().map(([r]) => r)), max = Math.max(1, ...pts.flat().map(([, v]) => v)), W = 320, H = 150, x = r => 30 + r * (W - 48) / Math.max(1, last), y = v => H - 20 - v * (H - 34) / max;   // the chart only stretches as far as the filled-in rows
+  const colors = ['#3F9E3F', '#7A3BC2', '#E07B24'];
+  return `<svg viewBox="0 0 ${W} ${H}" class="sim-chart" role="img" aria-label="Chart of your data"><line x1="30" y1="${H - 20}" x2="${W - 8}" y2="${H - 20}" stroke="#999"/><line x1="30" y1="10" x2="30" y2="${H - 20}" stroke="#999"/>
+    <text x="26" y="16" font-size="10" text-anchor="end" fill="#666">${+max.toFixed(1)}</text><text x="26" y="${H - 20}" font-size="10" text-anchor="end" fill="#666">0</text>
+    ${cells.slice(0, last + 1).map((row, r) => `<text x="${x(r)}" y="${H - 6}" font-size="9" text-anchor="middle" fill="#666">${esc(String(row[0] || r + 1).slice(0, 6))}</text>`).join('')}
+    ${pts.map((p, i) => p.length ? `<polyline fill="none" stroke="${colors[i % 3]}" stroke-width="3" stroke-linejoin="round" points="${p.map(([r, v]) => `${x(r).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}"/>${p.map(([r, v]) => `<circle cx="${x(r).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="${colors[i % 3]}"/>`).join('')}` : '').join('')}</svg>
+    <p class="sim-legend">${nums.map((c, i) => `<span style="color:${colors[i % 3]}">━ ${esc(step.cols[c])}</span>`).join(' ')}</p>`;
+}
+function tableStepHTML(step, value, locked){
+  const cells = tableCells(step, value);
+  return `<div class="table-step" data-table="${esc(step.key)}"><p>${esc(step.label)}</p><div class="table-scroll"><table class="data-table"><thead><tr>${step.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>
+    ${cells.map((row, r) => `<tr>${row.map((cell, c) => c === 0 && step.rowLabels ? `<th>${esc(cell)}</th>` : `<td><input data-cell="${r}:${c}" value="${esc(cell)}" maxlength="${(step.num || []).includes(c) ? 8 : 40}" ${(step.num || []).includes(c) ? 'inputmode="decimal"' : ''} aria-label="${esc(step.cols[c])}, row ${r + 1}" ${locked ? 'readonly' : ''}></td>`).join('')}</tr>`).join('')}
+    </tbody></table></div><div data-table-chart>${tableChartSVG(step, cells)}</div><input type="hidden" name="${esc(step.key)}" value="${esc(tableText(step, cells))}"></div>`;
+}
+function syncTableStep(box){
+  const step = HISTORY_PROJECTS[$('#historyProjectForm')?.dataset.course]?.steps.find(s => s.kind === 'table' && s.key === box.dataset.table);
+  if (!step) return;
+  const cells = tableCells(step, ''); box.querySelectorAll('[data-cell]').forEach(inp => { const [r, c] = inp.dataset.cell.split(':').map(Number); cells[r][c] = inp.value.trim(); });
+  box.querySelector('input[type=hidden]').value = tableText(step, cells); box.querySelector('[data-table-chart]').innerHTML = tableChartSVG(step, cells);
+}
+$('#libraryWrap').addEventListener('input', e => { const box = e.target.closest('#historyProjectForm [data-table]'); if (box && e.target.matches('[data-cell]')) syncTableStep(box); });
+/* photo steps (kind:'photo'): one photo, shrunk to a small JPEG kept in the project's answers (like the drawing steps) */
+function photoStepHTML(step, value, locked){
+  return `<div class="photo-step" data-photo-step="${esc(step.key)}"><p>${esc(step.label)}</p>${value ? `<img src="${esc(value)}" alt="Your photo" style="max-width:100%;max-height:320px;border-radius:8px;display:block">` : '<p class="muted">No photo yet.</p>'}
+    ${locked ? '' : `<label class="btn small" style="display:inline-block;margin-top:6px">📷 ${value ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" data-photo-for="${esc(step.key)}" style="display:none"></label>`}<input type="hidden" name="${esc(step.key)}" value="${esc(value || '')}"></div>`;
+}
+$('#libraryWrap').addEventListener('change', async e => {
+  const input = e.target.closest('#historyProjectForm [data-photo-for]'); if (!input?.files?.[0]) return;
+  const box = input.closest('[data-photo-step]'), data = await photoToJpeg(input.files[0], 140000);
+  if (!data) { toast('That photo couldn’t be read. Try a JPEG or PNG.'); return; }
+  box.querySelector('input[type=hidden]').value = data;
+  const img = box.querySelector('img') || box.insertBefore(Object.assign(document.createElement('img'), {alt:'Your photo'}), box.querySelector('p.muted') || box.querySelector('label'));
+  img.src = data; img.style.cssText = 'max-width:100%;max-height:320px;border-radius:8px;display:block'; box.querySelector('p.muted')?.remove();
+  toast('Photo added. Save your draft to keep it.');
+});
 function renderHistoryProject(courseId){
   void Backend.refreshSettings();
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId), locked = info.state === 'submitted' || info.state === 'verified';
-  const guess = projectGuess(courseId), fields = (guess ? `<div class="reading-report-chapter"><b>🧑‍🏫 Your teacher thinks your painting shows:</b><p>${esc(guess)}</p></div>` : '') + project.steps.filter(step => !step.after || guess).map(step => step.kind === 'draw' ? drawStepHTML(step, info.answers[step.key], locked || !!guess) : `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');   // the painting stays as sent once the guess is in
+  const guess = projectGuess(courseId), fields = (guess ? `<div class="reading-report-chapter"><b>🧑‍🏫 Your teacher thinks your painting shows:</b><p>${esc(guess)}</p></div>` : '') + project.steps.filter(step => !step.after || guess).map(step => step.kind === 'draw' ? drawStepHTML(step, info.answers[step.key], locked || !!guess) : step.kind === 'table' ? tableStepHTML(step, info.answers[step.key], locked) : step.kind === 'photo' ? photoStepHTML(step, info.answers[step.key], locked) : `<label>${esc(step.label)}<textarea name="${step.key}" maxlength="1500" rows="4" ${locked ? 'readonly' : ''}>${esc(info.answers[step.key] || '')}</textarea></label>`).join('');   // the painting stays as sent once the guess is in
   const actions = (locked ? (info.state === 'submitted' ? `<button class="btn small" type="button" data-history-project-edit="${courseId}">Withdraw to edit</button>` : '')
     : `<button class="btn" type="submit" data-save-mode="draft">Save draft</button><button class="btn berry" type="submit" data-save-mode="submit">Submit for review</button>`)
     + (info.state === 'draft' ? '' : grownUpCheckHTML('project', courseId, info.state));   // a parent can check it right here, behind the grown-up PIN
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId.replace(/lab$/, '')}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(project.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${courseId.replace(/lab\d*$/, '')}">Back to unit</button></div><p class="muted">${esc(project.summary)} Take your time: this is a long-term project. ${PROJECT_STATE_TEXT[info.state]}.</p><form id="historyProjectForm" data-course="${courseId}"><div class="ela-prompts">${fields}</div><div class="row">${actions}</div></form>`;
     setupDrawSteps();
 }
 $('#libraryWrap').addEventListener('submit', event => {
@@ -7744,7 +7973,7 @@ $('#libraryWrap').addEventListener('submit', event => {
   const courseId = form.dataset.course, p = projectStore(courseId)[courseId], data = new FormData(form);
   p.updatedAt = Date.now();
   HISTORY_PROJECTS[courseId].steps.forEach(step => { if (!form.elements.namedItem(step.key)) return;   // a step not on the page (locked painting, questions not open yet) keeps its answer
-    const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
+    const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' || step.kind === 'photo' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
     if (!HISTORY_PROJECTS[courseId].steps.filter(step => !step.after || projectGuess(courseId)).every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
     p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; logEvent({k:'project', course:courseId, title:HISTORY_PROJECTS[courseId].title}); toast(HISTORY_PROJECTS[courseId].steps.some(step => step.after) && !projectGuess(courseId) ? 'Painting sent! Your teacher will write what they think it shows.' : 'Project submitted for review.');
@@ -7770,7 +7999,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
           : 'Not started · Get 3 of 4 to level up';
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
       const review = reviewDue(course.id, skillId);
-      return `<article class="ela-exercise${unlocked ? '' : ' locked'}${review ? ' review' : ''}"><div>${review ? '<span class="review-tag">🔁 Review: your teacher wants you to practice this again</span>' : ''}<strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked || review ? '' : 'disabled'}>${review ? 'Review' : record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
+      return `<article class="ela-exercise${unlocked ? '' : ' locked'}${review ? ' review' : ''}"><div>${review ? '<span class="review-tag">🔁 Review: your teacher wants you to practice this again</span>' : ''}<strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${skill.why ? `<p class="why-care">💡 <b>Why care?</b> ${esc(skill.why)}</p>` : ''}${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked || review ? '' : 'disabled'}>${review ? 'Review' : record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
     const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key,course.id);
     const canQuiz = blockUnlocked && (unitOpenedByGrownUp(course.building) || group.skills.every(skillId => !!englishRecord(skillId,course.id).passed));
@@ -7778,7 +8007,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3><p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
@@ -10109,6 +10338,7 @@ function placeOnScreen(){
   const form = $('#historyProjectForm'); if (form) return `project:${form.dataset.course}`;
   if ($('#digWrap') && digRun) return `dig:${digRun.site}`;
   if ($('#scribeWrap')) return 'scribe';
+  if ($('#simWrap') && simRun) return `sim:${simRun.id}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
   return `course:${activeEnglishCourse}`;
@@ -10124,6 +10354,7 @@ function placeLabel(key){
   if (kind === 'project') return `📁 ${HISTORY_PROJECTS[a]?.title || a}`;
   if (kind === 'dig') return `⛏️ ${digSiteById(a)?.name || 'Dig Site'}`;
   if (kind === 'scribe') return '✍️ Scribe School';
+  if (kind === 'sim') return `🧪 ${simById(a)?.name || 'Science lab'}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -10137,6 +10368,7 @@ function eventText(e){
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
   if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
+  if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
   if (e.k === 'brain') return `🧠 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;

@@ -897,6 +897,169 @@ Object.entries(BIO1_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEa
   const question = BIO1_QUESTIONS[skillId]?.[index];
   if (question && question.difficulty == null) question.difficulty = level;
 }));
+// Biology Unit 2: Organism growth and reproduction (Khan Academy middle school biology). The student is a tour guide at
+// the Pet World Petting Zoo. Each group has a "hook" (a true story about why this matters) and each skill a "why" line;
+// both are shown on the unit page above the practice. Docs: docs/SCIENCE-UNIT2.md
+const BIO_UNIT2 = [
+  {id:'traitsReproU',name:'Understand: Traits and reproduction',lesson:'Offspring inherit traits from their parents through genes. In sexual reproduction, two parents each give half their genes, so offspring vary. In asexual reproduction, one parent makes offspring with the same genes as itself. Acquired traits (a scar, a learned trick) are not passed on.',why:'It explains why you look like your family, but not exactly like anyone in it.'},
+  {id:'traitsReproA',name:'Apply: Traits and reproduction',lesson:'Use what you know about genes and reproduction to predict offspring. Clones are fast and predictable, but they share every weakness. Variety from sexual reproduction makes it more likely that some offspring survive a change.',why:'Farmers choose between clones and seeds every season, and the banana story shows what is at stake.'},
+  {id:'animalBehaviorU',name:'Understand: Animal behavior and reproductive success',lesson:'Animals have behaviors that raise their chances of having offspring that survive: courtship displays and songs to attract mates, building nests, guarding and feeding young, living in herds, and migrating to safe places to raise young.',why:'An emperor penguin dad stands through the Antarctic winter for about two months with an egg on his feet, eating nothing. A behavior that hard only lasts because it helps babies survive.'},
+  {id:'animalBehaviorA',name:'Apply: Animal behavior and reproductive success',lesson:'Use evidence to explain how a behavior helps offspring survive. Some animals have many young and give no care; others have a few young and give lots of care. Both strategies can work in the right environment.',why:'Wildlife scientists use these ideas to protect animals, like keeping beaches dark at night so baby sea turtles can find the ocean.'},
+  {id:'plantStructuresU',name:'Understand: Plant structures and reproductive success',lesson:'Plants have special structures that help them reproduce: bright petals, scent, and nectar attract pollinators; fruit, hooks, wings, and fluff help seeds travel. Animals that visit plants often help them reproduce.',why:'About one out of every three bites of food you eat depends on pollinators like bees.'},
+  {id:'plantStructuresA',name:'Apply: Plant structures and reproductive success',lesson:'Use evidence to explain how a plant structure or an animal’s behavior raises a plant’s chance of making seeds and spreading them.',why:'Velcro was invented after an engineer, George de Mestral, studied the burrs stuck to his dog. Seed structures solve real problems.'},
+  {id:'growthEnvU',name:'Understand: Organism growth and the environment',lesson:'How big an organism grows depends on genetic factors (the genes from its parents) and environmental factors (food, water, light, space, temperature). Genes set the range; the environment decides where in that range an organism ends up.',why:'Two puppies from the same litter can grow to different sizes if one gets less food.'},
+  {id:'growthEnvA',name:'Apply: Organism growth and the environment',lesson:'Use data to explain how a change in the environment changes growth. For example, extra nutrients and warm water can make algae grow so fast they harm a whole lake.',why:'The same rules that make a garden grow can turn a lake green and dangerous, like Lake Erie in 2014.'}
+];
+const BIO_GROUPS2 = [
+  {id:'traits',name:'Traits, reproduction, and animal behavior',quizName:'Quiz 1',learn:'How offspring inherit traits from one or two parents, why variety matters, and how animal behaviors help young survive.',skills:['traitsReproU','traitsReproA','animalBehaviorU','animalBehaviorA'],
+    hook:{emoji:'🍌',title:'The banana that disappeared',story:'Your great-great-grandparents ate a different banana, the Gros Michel. Every Gros Michel plant was a clone, grown from a piece of another plant, so they all had the same weakness. When a soil fungus called Panama disease spread in the early 1900s, it wiped out farm after farm, and by the 1960s growers had switched to the Cavendish banana. Almost every banana in stores today is a Cavendish, also a clone, and a new strain of the fungus called TR4 is spreading. How living things reproduce decides whether a population can survive a surprise.'}},
+  {id:'growth',name:'Plant reproduction and growth in the environment',quizName:'Quiz 2',learn:'How flowers, fruit, and seeds help plants reproduce with help from animals, and how genes and the environment work together to decide how organisms grow.',skills:['plantStructuresU','plantStructuresA','growthEnvU','growthEnvA'],
+    hook:{emoji:'🚱',title:'The city that couldn’t drink its water',story:'In August 2014, about 400,000 people in and around Toledo, Ohio, were told not to drink their tap water for three days. The reason was algae. Fertilizer washing off farms and lawns fed a huge algae bloom in Lake Erie, right where the city takes in its water, and the bloom made a toxin. Living things grow according to their genes and their environment. Change the environment (more nutrients, warmer water) and you change how fast things grow, sometimes in ways nobody wanted.'}}
+];
+const BIO2_QUESTIONS = {
+  traitsReproU:[
+    mc('A kid on your tour asks: “Why does this lamb look like its mom but not exactly like her?”','It inherited genes from both parents','It copied each of its traits from its mom','It chose its traits while it was growing','It got its genes from its dad and no one else'),
+    mc('A visitor asks what an inherited trait is. What do you say?','A trait passed from parents through genes','A skill an animal learns by watching other animals around it','A change caused by an injury or accident','A trait an animal gets from the food it eats'),
+    mc('A grandparent points at the goat with a torn ear from a fence and asks if her kids will have torn ears. What do you say?','No, it happened during the goat’s life','Yes, so its kids will be born with torn ears','Yes, because goats inherit their ears','No, ears are not passed from parents'),
+    mc('A kid asks how many parents give genes to a baby made by sexual reproduction. What do you say?','Two','One','Three','None')
+  ],
+  traitsReproA:[
+    mc('A farmer on your tour wants every new apple tree to taste exactly like her best tree. What do you suggest?','Grow new trees from cuttings of that tree','Plant the seeds from that tree’s own apples','Let bees pollinate it with other trees','Plant seeds from a neighbor’s tree'),
+    mc('A visitor asks why one disease could wipe out a whole field of cloned plants. What do you explain?','Every plant has the same weakness','The plants grow too close together','Clones never get any sunlight','Clones need more water than others'),
+    mc('A kid asks which group is more likely to have some survivors after a brand-new disease arrives. What do you say?','A herd made by sexual reproduction','A field of identical clones','A greenhouse of cuttings from one plant','A patch of runners from one strawberry'),
+    mc('A parent asks which plants usually grow in number faster in good weather with no disease. What do you say?','Plants that reproduce asexually','Plants that need a pollinator','Animals that need to find a mate','Animals that raise one baby a year')
+  ],
+  animalBehaviorU:[
+    mc('A kid on your tour watches a peacock spread its tail and asks: “Why does he do that?”','To attract a mate','To scare away the rain','To cool off on a hot day','To find food in the grass'),
+    mc('A visitor asks why the mother hen sits on her eggs all day. What do you say?','She keeps the eggs warm so they develop','She is too tired to leave the nest','She is hiding from the other hens','She is waiting for the eggs to grow bigger'),
+    mc('A parent asks what “parental care” means. What do you explain?','Parents feeding and protecting their young','Young animals taking care of their parents','Parents leaving eggs and swimming away','Animals choosing where to sleep at night'),
+    mc('A kid asks why geese fly south together every fall and come back in spring. Which behavior is this?','Migration','Courtship','Nest building','Hibernation')
+  ],
+  animalBehaviorA:[
+    mc('A kid asks: “Two duck pairs nest by the pond. One guards its ducklings and one doesn’t. Which will probably raise more ducklings?”','The pair that guards its ducklings','The pair that does not guard them','Both pairs will raise exactly the same number','Neither pair will raise any'),
+    mc('A visitor asks why some fish lay thousands of eggs. What is the best explanation?','Most eggs get eaten, so a few survive','Fish can only lay eggs in big piles','The eggs need each other to stay warm','Big piles of eggs scare away predators'),
+    mc('A parent reads that birds that sing longer songs attract more mates. Which prediction fits?','Long-song males will have more chicks','Short-song males will have more chicks','Song length will not affect chicks','Females will stop singing too'),
+    mc('A grandparent asks why bright beach lights are bad for baby sea turtles. What do you explain?','Hatchlings head toward light and get lost','The light makes the eggs hatch much too early','Lights make the sand too hot','Turtles are afraid of electricity')
+  ],
+  plantStructuresU:[
+    mc('A kid in the Feed Garden asks why the squash flowers are big and bright yellow. What do you say?','They attract bees that carry pollen','They keep the leaves cool in the sun','They store water for dry days','They scare away hungry rabbits'),
+    mc('A visitor asks what nectar is for. What do you explain?','It rewards animals that carry pollen','It feeds the plant’s own roots','It keeps the flower from freezing','It helps the flower’s seeds grow bigger'),
+    mc('A burr sticks to a goat’s fur. A grandparent asks how this helps the plant. What do you say?','The goat moves the seed somewhere new','The goat waters the seed with its fur','The burr protects the goat from bugs','The burr helps the goat stay warm'),
+    mc('A kid asks why apple trees grow sweet fruit around their seeds. What is the main reason?','Animals eat it and spread the seeds','The fruit feeds the tree during winter','The fruit keeps the seeds from sprouting','Sweet fruit attracts bees to the flowers')
+  ],
+  plantStructuresA:[
+    mc('A visitor notices that bees never visit one tomato bed. What do you predict?','That bed will make fewer tomatoes','That bed will make more tomatoes','The bed will grow much taller roots','The leaves will turn into fruit'),
+    mc('A kid asks why the zoo plants flowers that bloom at different times all summer. What do you explain?','Bees have food all season, so they stay','Flowers that bloom late make the soil softer','Different flowers keep goats out of the garden','It makes the garden need less water each day'),
+    mc('A grandparent asks how the zoo’s squirrels help the oak trees. What do you say?','They bury acorns and forget some','They eat the oak’s old leaves each fall','They water the oak roots after it rains','They pollinate the acorns in spring'),
+    mc('Students bagged some squash flowers so insects could not reach them. Bagged: 1 squash. Open: 9 squash. A parent asks what that shows. What do you say?','Insect visits help squash form','Bags make squash grow much larger','Squash grows best in the dark','Insects eat squash flowers')
+  ],
+  growthEnvU:[
+    mc('A kid asks why two lambs from the same mom grew to different sizes. What is one likely reason?','One got more food than the other','One was born on a different day of the week','Lambs grow only when it rains','One lamb chose to stop growing'),
+    mc('A visitor asks what “environmental factors” are. What do you say?','Conditions around it, like food and light','The genes it got from its two parents','The species name it was given','How old its parents were when it was born'),
+    mc('A grandparent asks if genes alone decide how tall a plant grows. What is the best answer?','No, light, water, and soil matter too','Yes, genes decide how tall it grows','No, the weather is the one thing that matters','Yes, but just for trees'),
+    mc('A parent asks: “Two identical clone plants grew in sun and shade, and the sun plant grew bigger. What caused the difference?”','The environment','Their genes','Their species','How old the plants are')
+  ],
+  growthEnvA:[
+    mc('At the Duck Pond, a kid asks why the water turned bright green this summer. What do you explain?','Fertilizer and warm water fed an algae bloom','The ducks stirred green mud up from the bottom','Cold weather made the water change color','Fish turned the water green by eating plants'),
+    mc('A visitor asks where extra nutrients in a lake often come from. What do you say?','Fertilizer washing off farms and lawns','Fish breathing underwater','Snow melting on mountains very far away','Sunlight hitting the water'),
+    mc('A grandparent asks how algae can kill fish when algae don’t eat fish. What do you explain?','Dead algae rot and use up the oxygen','Algae wrap around fish in long sticky threads','The algae eat all the fish food','The algae make the water too cold'),
+    mc('A parent asks which change would most help stop algae blooms in a lake near farms. What do you say?','Grass strips that catch runoff','Adding more fertilizer to the fields','Removing all the fish from the lake','Painting the lake bottom white')
+  ]
+};
+const BIO2_EXTRA_QUESTIONS = {
+  traitsReproU:[
+    mcLevel(1,'A visitor asks what offspring are. What do you say?','The young made by parents','The oldest animals in a herd','The food parents bring to babies','The place where babies are born'),
+    mcLevel(1,'A kid asks how many parents each offspring has in asexual reproduction. What do you say?','One','Two','Three','Four'),
+    mcLevel(1,'A kid asks which trait a chick inherits rather than learns. Which is it?','The color of its feathers','Which bowl it eats from','The name the keepers gave it','Where it likes to nap'),
+    mcLevel(2,'A visitor asks why offspring from sexual reproduction aren’t identical to each other. What do you explain?','Each gets its own mix of the parents’ genes','Each one eats different food in the barn','Each one copies a different older relative','Their genes change as they grow older each year'),
+    mcLevel(2,'Offspring made by asexual reproduction are best described as:','Genetically identical to the parent','A blend of two parents’ traits','Always bigger and stronger than the parent','A brand new kind of living thing'),
+    mcLevel(2,'A bunny was born with long ears like its dad. Later it learned to come when called. Which trait is acquired?','Coming when called','Its long floppy ears','Its gray fur color','Its brown eye color'),
+    mcLevel(3,'A student says, “Asexual reproduction is useless because there is no variation.” What is the best reply?','It makes many offspring fast without a partner','It makes healthier offspring than sexual reproduction','It mixes genes from two parents','It happens just in plants'),
+    mcLevel(3,'About what share of its genes does a sexually produced offspring get from its mother?','About half','Almost all of them','Hardly any of them','About one tenth'),
+    mcLevel(3,'Two black goats have a white kid. What is the best explanation?','Both parents carried a hidden gene for white','The kid’s color came from the food its mother ate','The kid copied the color of a nearby goat','White fur was caused by cold weather')
+  ],
+  traitsReproA:[
+    mcLevel(1,'A gardener plants a piece of potato and gets a new plant. Its traits will be:','The same as the parent potato','A mix of two parent potatoes','Totally different from the parent','Picked by the gardener'),
+    mcLevel(2,'Kittens from the same litter look different from each other. Which kind of reproduction made them?','Sexual reproduction','Asexual reproduction','Budding','Cloning from cuttings'),
+    mcLevel(2,'Why do farmers who grow only one banana variety, all clones, worry about new diseases?','One disease could harm every plant','Clones cannot make any fruit at all','Clones grow too slowly to sell','Bananas need two parents to grow'),
+    mcLevel(2,'A piece of coral breaks off and grows into a new coral. What does this show?','Asexual reproduction','Sexual reproduction','Cross-pollination by bees','Seasonal migration'),
+    mcLevel(3,'Island A has 50 identical clone plants. Island B has 50 plants grown from seeds. A cold snap kills every plant without cold resistance, and Island A’s clones lack it. What most likely happens?','Island A loses all its plants; Island B keeps some','Both islands lose all their plants','Island B loses all its plants; Island A keeps some','Neither island loses any plants'),
+    mcLevel(3,'Gros Michel bananas were all clones. In the 1900s, Panama disease spread through the farms. Why did growers have to switch to a new banana?','The fungus could infect every plant','The bananas became too sweet to sell','People stopped liking yellow fruit','The plants started making seeds'),
+    mcLevel(3,'A plant can reproduce both by runners and by seeds. Which is the best reason this helps?','It spreads fast but still has varied seeds','It never needs any sunlight or water to grow','Its runners make seeds grow faster','Both ways make identical offspring'),
+    mcLevel(3,'A scientist wants to test a new fertilizer, with no genetic differences between her plants. Which plants should she use?','Clones of one plant','Seeds from many plants','Plants of many species','Wild plants from different places')
+  ],
+  animalBehaviorU:[
+    mcLevel(1,'A visitor asks why male songbirds sing in spring. What is one main reason?','To attract a mate','To help feathers grow back','To warm up their bodies','To call the rain'),
+    mcLevel(1,'A visitor sees a bird carrying twigs. What is it most likely doing?','Building a nest','Migrating south','Getting ready to hibernate','Hunting for worms'),
+    mcLevel(1,'Which is an example of parental care?','A cow licking and feeding her calf','A frog laying eggs and leaving','A fish swimming away from its eggs','A turtle burying eggs and leaving'),
+    mcLevel(2,'Elephants live in herds that keep calves in the middle. How does this behavior help reproductive success?','More calves survive to adulthood','Calves grow their tusks much faster','Adults need less food each day','The herd moves more slowly'),
+    mcLevel(2,'A sea turtle lays about 100 eggs in the sand, then swims away. Which statement best explains this strategy?','Many eggs make up for no care','Turtles cannot count their eggs','The eggs need cold water to hatch','The mother protects them from far away'),
+    mcLevel(2,'Male birds with the brightest feathers attract the most mates. What most likely happens to this trait over many generations?','It becomes more common','It disappears quickly','It stays exactly as rare','It turns into a new behavior'),
+    mcLevel(3,'An emperor penguin dad keeps an egg on his feet for about two months in the Antarctic winter, eating nothing. Why does this behavior help?','The egg would freeze without his warmth','He is too heavy to walk back to the sea','The egg needs to stay cold so it can hatch','He wants to keep the egg away from mom'),
+    mcLevel(3,'Which pair shows the trade-off between two parenting strategies?','Lots of eggs, no care vs. one baby, lots of care','Big parents vs. small parents','Day animals vs. night animals','Animals that eat plants vs. animals that eat meat'),
+    mcLevel(3,'Wolves hunt in packs and bring food to pups at the den. Which result best supports that this behavior helps reproductive success?','More pups survive in packs that share food','Wolves in packs howl much more loudly at night','Pack wolves grow thicker winter fur','Lone wolves walk farther each day')
+  ],
+  animalBehaviorA:[
+    mcLevel(1,'Which behavior helps the most baby birds survive?','Parents feeding and guarding the nest','Parents leaving the nest alone for a week','Parents building nests in the open','Parents singing all night'),
+    mcLevel(2,'A bowerbird decorates a “bower” with blue objects. Females choose males with the best bowers. What is the bower for?','To attract a mate','To store food','To hide from hawks','To keep eggs warm'),
+    mcLevel(2,'Data: in nests guarded by parents, 8 of 10 chicks survived. In unguarded nests, 2 of 10 survived. What do the data show?','Guarding helps chicks survive','Guarding makes chicks grow slower','Chicks survive better alone','Guarding has no effect'),
+    mcLevel(2,'Salmon swim hundreds of miles upstream to lay eggs in the stream where they hatched. How does this help their offspring?','Eggs land in clean, safe gravel streams','Salmon parents feed every baby by themselves','The long swim makes the eggs bigger','Rivers are warmer than the ocean'),
+    mcLevel(3,'A frog lays 2,000 eggs. A kangaroo raises one joey at a time in its pouch. Which statement is true?','Both strategies can work','The frog’s strategy works and the kangaroo’s fails','The kangaroo’s strategy works and the frog’s fails','Neither animal has offspring that survive'),
+    mcLevel(3,'Scientists want to know if a hen’s clucking helps chicks find her. Which is a fair test?','Clucks for some chicks, silence for the rest','Use a different breed of chick in each of the pens','Test some of the chicks by day and others at night','Give some of the chicks more food than the others'),
+    mcLevel(3,'Species A lays 6 eggs and feeds its chicks for 2 weeks. Species B lays 2 eggs and feeds its chicks for 8 weeks. Which is most likely true?','B gives each chick more care','A gives each chick more care','Both give exactly equal care','Neither species cares for chicks'),
+    mcLevel(3,'A storm destroys many nests in a bird colony early in spring. Which behavior would most help the birds still raise chicks this year?','Building a new nest and laying again','Flying away to a new colony for good','Stopping their singing and courtship','Leaving the eggs out on bare rock')
+  ],
+  plantStructuresU:[
+    mcLevel(1,'Which flower part makes pollen?','Stamen','Pistil','Petal','Root'),
+    mcLevel(1,'Which animal helps pollinate flowers?','Bee','Earthworm','Fish','Snail'),
+    mcLevel(2,'A flower is red and tube-shaped, with nectar deep inside. Which pollinator is it best shaped for?','Hummingbird','Beetle','Earthworm','Ant'),
+    mcLevel(2,'Some seeds have a hard coat and pass through an animal’s gut unharmed. How does the hard coat help?','The seed survives and is dropped far away','The seed gets more food while inside the gut','The coat makes the fruit taste sweeter','The coat helps the seed float on water'),
+    mcLevel(2,'About one out of every three bites of food people eat depends on pollinators. Which crop would be hurt most if honeybees disappeared?','Almonds','Wheat','Corn','Rice'),
+    mcLevel(2,'A pine tree makes clouds of light, dusty pollen. How is its pollen moved?','By wind','By bees','By hummingbirds','By water'),
+    mcLevel(3,'Which structure helps a plant reproduce where there are no pollinators?','Light pollen carried by the wind','Bright petals with sweet nectar','A strong scent that attracts flies','Landing pads for bees on petals'),
+    mcLevel(3,'Velcro was invented after an engineer studied burrs stuck to his dog. Which plant structure inspired it?','Tiny hooks on seed burrs','Sticky sap on pine tree bark','Sharp thorns on rose stems','Fuzzy hairs on lamb’s ear leaves')
+  ],
+  plantStructuresA:[
+    mcLevel(1,'A gardener wants more pumpkins. What should she plant nearby?','Flowers that attract bees','Plants that keep bees away','Tall plants that block the sun','Weeds that use up the water'),
+    mcLevel(2,'A plant on a windy prairie has seeds with fluffy tufts. How does this trait help?','Wind carries the seeds far away','The tufts keep seeds from moving','The tufts attract bees','The tufts store water'),
+    mcLevel(2,'A flower blooms only at night and smells sweet. Which pollinator does it most likely depend on?','Moths','Bees','Butterflies','Hummingbirds'),
+    mcLevel(2,'A student counts bee visits for 30 minutes: purple flowers 24, white flowers 5. Which is the best conclusion?','Bees visited purple flowers more often','Bees dislike all white things','Purple flowers make more seeds than any plant','White flowers do not have pollen'),
+    mcLevel(3,'A student tests whether flower color changes bee visits. What should stay the same?','Flower size, scent, and location','Flower color','The number of bee visits counted','The colors of the flowers tested'),
+    mcLevel(3,'Bee numbers drop near an orchard. Which action would best protect the apple harvest?','Plant wildflowers and stop using bug spray','Spray more bug killer on each of the blossoms','Pick every flower off the trees by hand','Cut down the trees closest to the beehives'),
+    mcLevel(3,'Some fruits stay green and sour until the seeds are ready, then turn red and sweet. Why?','So animals eat them when seeds are ready','Red fruit stays on the tree a lot longer','Sour fruit grows faster in the shade','Green fruit attracts more bees'),
+    mcLevel(3,'A burr plant grows mostly along a deer trail. Which claim best explains where it grows?','Deer carry its hooked seeds along the trail','Deer plant the seeds there on purpose','The burrs grow best in soil deer have trampled','Wind blows the seeds along the trail')
+  ],
+  growthEnvU:[
+    mcLevel(1,'Which is an environmental factor for a plant?','Sunlight','Its seed type','Its species','Its genes'),
+    mcLevel(1,'A chick gets plenty of food and space. What will most likely happen?','It grows healthy and strong','It stops growing','It grows feathers on its feet','It turns into a duck'),
+    mcLevel(2,'A Great Dane puppy and a Chihuahua puppy get the same food. The Great Dane grows much bigger. What mainly explains this?','Genetic factors','The amount of food','The weather','The size of the yard'),
+    mcLevel(2,'Plants in crowded pots grow smaller than the same plants spaced apart. What is limiting their growth?','Space and shared resources','The color of the pots they are in','Their genes','The day they were planted'),
+    mcLevel(2,'A seed needs water, the right temperature, and oxygen to start growing. What is this first growth called?','Germination','Pollination','Migration','Fertilization'),
+    mcLevel(3,'Bean seedlings in a dark closet grew taller but were pale and thin. Seedlings in light were shorter and green. What does this show?','Light changes how seedlings grow','Genes made the dark plants taller','Darkness is best for plant health','Light stops plants from growing'),
+    mcLevel(3,'A student grows identical bean plants with 0, 1, or 2 spoons of fertilizer. Which variable is she changing?','The amount of fertilizer','The height of the plants','The type of beans','The amount of light'),
+    mcLevel(3,'Fish in a pond grow faster in summer than in winter. Which explanation fits?','Temperature affects how fast they grow','Fish genes change at the start of each summer','Winter water has more food','Fish stop eating in summer')
+  ],
+  growthEnvA:[
+    mcLevel(1,'Algae are living things that grow in water. What do they need to grow?','Light and nutrients','Darkness and salt','Ice and cold snow','Sand and strong wind'),
+    mcLevel(2,'A lake got fertilizer runoff after heavy spring rain. By summer, algae covered it. Which order is correct?','Runoff, more nutrients, algae bloom','Algae bloom, runoff, more nutrients','More nutrients, runoff, algae bloom','Algae bloom, more nutrients, runoff'),
+    mcLevel(2,'In 2014, about 400,000 people in Toledo, Ohio, could not drink their tap water for three days. What caused it?','A toxic algae bloom in Lake Erie','A broken dam upriver','Salt water flooding the city','A snowstorm that froze the pipes'),
+    mcLevel(2,'Pond oxygen: week 1, 9 mg/L; week 4, 6 mg/L; week 6 (after the bloom died), 2 mg/L. What most likely happened to the fish by week 6?','Many fish died or swam away','The fish grew much faster','More fish hatched','Nothing changed for the fish'),
+    mcLevel(3,'Warm water holds less oxygen than cold water. Why are fish kills from algae blooms most common in late summer?','Water is warm and blooms are dying','The fish are hibernating in the mud','Winter ice traps the oxygen','Algae grow best in winter'),
+    mcLevel(3,'A student puts pond water in 3 jars with 0, 1, and 3 drops of plant fertilizer, all in the same sunny window. After 2 weeks, which result fits the bloom idea?','The 3-drop jar is the greenest','The 0-drop jar is the greenest','All jars look exactly alike','The 1-drop jar has no algae'),
+    mcLevel(3,'A town wants to protect its lake. Which plan uses what you know about growth and the environment?','Cut runoff so algae get fewer nutrients','Add fertilizer so the fish have more food','Drain the lake each summer','Remove the plants along the shore'),
+    mcLevel(3,'Why is an algae bloom an example of the environment changing how organisms grow?','More nutrients let algae grow much faster','Algae change their genes so they can grow faster','Algae grow the same no matter what','Fish make the algae grow larger')
+  ]
+};
+Object.entries(BIO2_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { BIO2_QUESTIONS[skillId] = [...(BIO2_QUESTIONS[skillId] || []), ...questions]; });
+// Difficulty tags for the four starter questions in each Biology Unit 2 skill.
+const BIO2_BUILT_IN_LEVELS = {
+  traitsReproU:[1,1,2,1], traitsReproA:[2,2,2,2], animalBehaviorU:[1,1,1,1], animalBehaviorA:[2,2,2,2],
+  plantStructuresU:[1,1,1,1], plantStructuresA:[2,2,1,2], growthEnvU:[1,1,2,2], growthEnvA:[1,1,2,2]
+};
+Object.entries(BIO2_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEach((level, index) => {
+  const question = BIO2_QUESTIONS[skillId]?.[index];
+  if (question && question.difficulty == null) question.difficulty = level;
+}));
 const KHAN = 'https://www.khanacademy.org/';
 const GRAMMAR = `${KHAN}humanities/grammar/parts-of-speech-the-`, WORLD = `${KHAN}humanities/world-history/x66f79d8a:`, BIO6 = `${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:`;
 const KHAN_LINKS = {
@@ -909,6 +1072,7 @@ const KHAN_LINKS = {
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
   history4:{comparePortable:`${WORLD}empires-and-belief-systems/x66f79d8a:comparing-portable-belief-systems`},   // the other Unit 4 lessons keep a Khan search until their links are confirmed (KHAN.md)
   bio1:{cells:`${BIO6}cellular-organization/v/ms-cells-and-organisms`,plants:`${BIO6}reproduction-in-plants/v/ms-plant-reproductive-success`,digestion:`${BIO6}human-digestive-system/e/digestion-in-humans-and-herbivores`}
+  // bio2 (Petting Zoo) keeps the Khan search until its middle school biology links are confirmed (KHAN.md)
 };
 const q = (prompt, correct, ...wrong) => ({prompt, options:[correct, ...wrong], answer:0});
 const PLURAL_QUESTIONS = {
@@ -1693,8 +1857,8 @@ const MODIFIER_QUESTIONS = {
 export {
   ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, ENGLISH_UNIT4, ENGLISH_GROUPS4,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4,
-  BIO_UNIT1, BIO_GROUPS,
-  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS, MODIFIER_QUESTIONS,
+  BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2,
+  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS, MODIFIER_QUESTIONS,
   KHAN, KHAN_LINKS, mc
 };
 
@@ -1710,12 +1874,13 @@ export const LESSON_COURSES = [
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
   {id:'history4', title:'History Unit 4: Empires and Belief Systems', skills:HISTORY_UNIT4, groups:HISTORY_GROUPS4},
-  {id:'bio1', title:'Biology Unit 1: Life Sciences', skills:BIO_UNIT1, groups:BIO_GROUPS}
+  {id:'bio1', title:'Biology Unit 1: Life Sciences', skills:BIO_UNIT1, groups:BIO_GROUPS},
+  {id:'bio2', title:'Biology Unit 2: Organism Growth and Reproduction', skills:BIO_UNIT2, groups:BIO_GROUPS2}
 ];
 
 /* The built-in bank for a course, the same lookup englishQuestions() uses in the game. */
 export function builtInBank(courseId){
-  return courseId === 'bio1' ? BIO1_QUESTIONS
+  return courseId === 'bio1' ? BIO1_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS
     : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS
     : courseId === 'history2' ? HISTORY2_QUESTIONS : courseId === 'history' ? HISTORY_QUESTIONS
     : courseId === 'verbs' ? VERB_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : PLURAL_QUESTIONS;

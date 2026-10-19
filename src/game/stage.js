@@ -31,13 +31,17 @@ const SCENES = {
   garden:   {sky:['#A9DCF5','#E6F6FC'], ground:['#8CCB6E','#74B758']},
   greenhouse:{sky:['#DFF5E8','#F5FCF8'], ground:['#8B5E3C','#734A2D'], indoor:true, glass:true},
   trail:    {sky:['#F7D9A8','#FCEFD8'], ground:['#9C7A4E','#80623B']},
-  tunnel:   {sky:['#F6B7C3','#FCE1E7'], ground:['#E58FA3','#D0738A'], indoor:true, tunnel:true}
+  tunnel:   {sky:['#F6B7C3','#FCE1E7'], ground:['#E58FA3','#D0738A'], indoor:true, tunnel:true},
+  // Science: Pet World Petting Zoo (Biology Unit 2)
+  barn:     {sky:['#F7D9A8','#FCEFD8'], ground:['#D9B56A','#BF9A4C']},
+  pond:     {sky:['#A9DCF5','#E6F6FC'], ground:['#8CCB6E','#74B758'], sea:true}
 };
 
 // first matching rule picks the scene, tested against who + where + intro
 const SCENE_RULES = [
   [/microscope/i,'lab'], [/cell model|cell detective/i,'cell'], [/pollinator/i,'garden'], [/greenhouse/i,'greenhouse'],
   [/seed trail/i,'trail'], [/digestion/i,'tunnel'], [/nature center/i,'garden'],
+  [/duck pond/i,'pond'], [/feed garden|orchard/i,'garden'], [/petting zoo/i,'barn'],
   [/battuta|envoy|xuanzang|traveling merchant|monk and traveler/i,'travel'],
   [/cave/i,'cave'], [/ice age/i,'ice'], [/campfire|foraging band/i,'campfire'], [/herder/i,'pasture'],
   [/farm|wheat|abu hureyra/i,'field'], [/dilmun|bahrain|sailor|ships/i,'harbor'], [/nile|kush|nubia/i,'river'],

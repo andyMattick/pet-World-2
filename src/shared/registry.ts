@@ -638,7 +638,7 @@ export const BUILDINGS: Building[] = [
   {id:'histConflict', emoji:'🕊️', name:'War and Peace Museum',   unit:'Unit 8: Global Conflict (1914 to 1991 CE)', hood:'g6', subject:'history', pin:{x:60,y:16}},
   {id:'histGlobal2',  emoji:'🌐', name:'Singapore Museum',       unit:'Unit 9: Globalization (1900 CE to the Present)', hood:'g6', subject:'history', pin:{x:79,y:55}},
   {id:'bioChem',    emoji:'🌿', name:'Nature Center',   unit:'Unit 1: Life Sciences (cells, plants, digestion)', hood:'g6', subject:'biology', open:true},
-  {id:'bioCells',   emoji:'🐑', name:'Petting Zoo',     unit:'Cell structure and function', hood:'g6', subject:'biology'},
+  {id:'bioCells',   emoji:'🐑', name:'Petting Zoo',     unit:'Unit 2: Organism growth and reproduction', hood:'g6', subject:'biology', open:true},
   {id:'bioEnergy',  emoji:'🌺', name:'Greenhouse',      unit:'Photosynthesis and cellular respiration', hood:'g6', subject:'biology'},
   {id:'bioDivide',  emoji:'🦋', name:'Butterfly House', unit:'Cell division and life cycles', hood:'g6', subject:'biology'},
   {id:'bioGenes',   emoji:'🐄', name:'Farm Barn',       unit:'Heredity and genes', hood:'g6', subject:'biology'},

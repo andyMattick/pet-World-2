@@ -162,6 +162,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F30. 🔤 Word Workshop: any Word Workshop minutes count toward a Word Workshop extra (fixes a stuck warm-up); grown-up PIN skips the warm-up for a day; best device voice, a voice picker, and 🐢 by-syllable reading with syllables shown after each answer. See `VOCAB.md`
 - [x] F31. 🔤 Word Workshop adapts: word levels (easier, middle, harder) that drop after 2 misses and rise after 4 right; spelling mistakes named by pattern (pre/per, doubles, -ant/-ent…) with a tip; teacher Vocabulary tab suggests words per pattern; bigger spelling box. See `VOCAB.md`
 - [x] F32. 🔁 Fix first: anything sent back goes at the top of Today's plan every day until it's fixed; the plan isn't done (no theme day) while one is open; "I'm done for today" lists them. See `DAILY-PLAN.md`
+- [x] F33. 🐑 Biology Unit 2 at the Petting Zoo (Organism growth and reproduction): 8 lessons with “why it matters” stories, 2 quizzes, a 24-question unit test, tour-guide role play, review flashcards, three in-browser labs (Clone Island vs. Mix Island, Parenting Strategy Lab, Duck Pond Lake Lab), a field guide project and three kitchen labs with data tables and photos. See `SCIENCE-UNIT2.md`
 
 ## Database files, in the order they were run
 

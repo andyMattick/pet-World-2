@@ -85,6 +85,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'course': case 'review': return course === 'math' ? 'math' : course.startsWith('history') ? 'history' : course.startsWith('bio') ? 'science' : 'english';
     case 'project': return course.startsWith('bio') ? 'science' : 'history';
     case 'dig': case 'scribe': return 'history';
+    case 'sim': return 'science';
     case 'brain': case 'move': return 'breaks';
     case 'done': { const s = String(ev.subject || ''); return s === 'biology' ? 'science' : ['math', 'english', 'reading', 'history', 'science'].includes(s) ? s : 'other'; }
     default: return 'other';
