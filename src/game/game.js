@@ -12,7 +12,8 @@ import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITI
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
+import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
@@ -8113,10 +8114,19 @@ $('#libraryWrap').addEventListener('click', event => {
 let vocabRun = null, vocabTab = 'practice', vocabTimer = null;
 /* the student's words: the lists (vocabList), plus every word they looked up with 📌 (a known word, or a flagged word
    a grown-up has since defined) added to the focus words even if a grown-up picked other focus words */
+/* words a teacher picked to practice a spelling pattern (quiz_overrides.spellFocus, a JSON list): from the word lists
+   or the pattern words in vocab.js; they join practice and come up more often (docs/VOCAB.md, "Spelling patterns") */
+function spellFocusWords(all){
+  let list = []; try { list = JSON.parse(Backend.me?.quiz_overrides?.spellFocus || '[]'); } catch { list = []; }
+  if (!Array.isArray(list)) return [];
+  const pool = [...all, ...PATTERN_WORDS.filter(v => !all.some(a => wordKey(a.w) === wordKey(v.w)))];
+  return list.map(w => findWord(pool, String(w))).filter(Boolean);
+}
 const vocabWords = () => {
   const list = vocabList({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
-  const mine = lookedUpWords(list.all), have = new Set(list.focus.map(v => wordKey(v.w)));
-  return {...list, focus:[...list.focus, ...mine.filter(v => !have.has(wordKey(v.w)))], lookedUp:mine};
+  const mine = lookedUpWords(list.all), spell = spellFocusWords(list.all), have = new Set(list.focus.map(v => wordKey(v.w)));
+  const extra = [...mine, ...spell].filter(v => { const k = wordKey(v.w); if (have.has(k)) return false; have.add(k); return true; });
+  return {...list, all:[...list.all, ...spell.filter(v => !list.all.some(a => wordKey(a.w) === wordKey(v.w)))], focus:[...list.focus, ...extra], lookedUp:mine, spellFocus:new Set(spell.map(v => wordKey(v.w)))};
 };
 function lookedUpWords(all){
   const seen = new Set(), out = [];
@@ -8132,10 +8142,24 @@ function recordVocab(word, ok){
   save();
 }
 /* a word to ask about, weaker words more often, never the same one twice in a row */
-function nextVocabWord(list, last){
-  const pool = list.length > 1 ? list.filter(v => wordKey(v.w) !== wordKey(last)) : list;
+/* Adaptive: words at or below her level for this kind of practice (S.vocab.level), mostly at it. Two misses in a row
+   drop the level, four right in a row raise it (adaptVocab). Weaker, looked-up and teacher-picked pattern words come up more. */
+const vocabKind = mode => (mode === 'spell' ? 'spell' : 'cards');
+function nextVocabWord(list, last, kind = 'cards', spellFocus = new Set()){
+  const lvl = S.vocab.level?.[kind] || 2;
+  let pool = list.length > 1 ? list.filter(v => wordKey(v.w) !== wordKey(last)) : list;
+  const fits = pool.filter(v => wordLevel(v.w) <= lvl || spellFocus.has(wordKey(v.w)));
+  if (fits.length >= 3) pool = fits;
   const looked = new Set(lookedUpWords(pool).map(v => wordKey(v.w)));
-  return weightedPick(pool, v => wordWeight(vocabStat(v.w)) * (looked.has(wordKey(v.w)) && wordStatus(vocabStat(v.w)) !== 'solid' ? 2 : 1));   // looked-up words come up twice as often until solid
+  return weightedPick(pool, v => wordWeight(vocabStat(v.w)) * (looked.has(wordKey(v.w)) && wordStatus(vocabStat(v.w)) !== 'solid' ? 2 : 1)   // looked-up words come up twice as often until solid
+    * (wordLevel(v.w) === lvl ? 2 : 1) * (spellFocus.has(wordKey(v.w)) && wordStatus(vocabStat(v.w)) !== 'solid' ? 3 : 1));
+}
+function adaptVocab(kind, ok){
+  const v = S.vocab; v.streak = ok ? Math.max(1, (v.streak || 0) + 1) : Math.min(-1, (v.streak || 0) - 1);
+  const lvl = v.level[kind] || 2;
+  if (v.streak <= -2 && lvl > 1) { v.level[kind] = lvl - 1; v.streak = 0; return 'down'; }
+  if (v.streak >= 4 && lvl < 3) { v.level[kind] = lvl + 1; v.streak = 0; return 'up'; }
+  return '';
 }
 /* 3 wrong choices; for "use it in a sentence", from other sets first so only one word fits the sentence */
 function vocabDistractors(word, all, otherSetsFirst){
@@ -8165,7 +8189,8 @@ function renderVocab(){
     const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
       sprint:`Read the meaning and tap the word. As many as you can in 60 seconds. Every 2 right earn 🪙 1. Your best: ${S.vocab.sprintBest}.`,
       spell:'Hear the word and read its meaning, then type it. 8 words.'}[vocabTab];
-    body = `<p>${blurb}</p><button type="button" class="btn butter" data-vocab-start="${vocabTab}">Start</button>${vocabTab === 'sprint' ? '' : voicePickerHTML()}`;
+    const kind = vocabKind(vocabTab), lvl = S.vocab.level[kind] || 2;
+    body = `<p>${blurb}</p>${vocabTab === 'sprint' ? '' : `<p class="row level-row"><span>${esc(LEVEL_NAMES[lvl])}</span><button type="button" class="btn small" data-vocab-level="-1" ${lvl <= 1 ? 'disabled' : ''}>Easier</button><button type="button" class="btn small" data-vocab-level="1" ${lvl >= 3 ? 'disabled' : ''}>Harder</button><span class="muted">It changes by itself too: 2 misses in a row go easier, 4 right in a row go harder.</span></p>`}<button type="button" class="btn butter" data-vocab-start="${vocabTab}">Start</button>${vocabTab === 'sprint' ? '' : voicePickerHTML()}`;
   }
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
@@ -8175,7 +8200,7 @@ function renderVocab(){
 function startVocab(mode){
   const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
   stopVocabTimer();
-  vocabRun = {mode, all, focus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + 60000 : 0, started:performance.now()};
+  vocabRun = {mode, all, focus, spellFocus:vocabWords().spellFocus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + 60000 : 0, started:performance.now()};
   if (mode === 'sprint') vocabTimer = setInterval(() => { const left = Math.max(0, vocabRun.end - performance.now()); const t = $('#vocabTime'); if (t) t.textContent = Math.ceil(left / 1000); if (left <= 0) finishVocab(); }, 200);
   nextVocabCard();
 }
@@ -8183,11 +8208,11 @@ function stopVocabTimer(){ if (vocabTimer) { clearInterval(vocabTimer); vocabTim
 function nextVocabCard(){
   const run = vocabRun; if (!run) return;
   if (run.index >= run.total) { finishVocab(); return; }
-  const word = run.retry?.length && run.index >= run.total - run.retry.length ? run.retry.shift() : nextVocabWord(run.focus, run.last);
+  const word = run.retry?.length && run.index >= run.total - run.retry.length ? run.retry.shift() : nextVocabWord(run.focus, run.last, run.mode === 'spell' ? 'spell' : ['cards', 'cards', 'spell'][run.index % 3], run.spellFocus);
   const kind = run.mode === 'sprint' ? 'define' : run.mode === 'spell' ? 'spell' : ['meaning', 'use', 'spell'][run.index % 3];
   run.card = kind === 'define' ? (() => { const wrong = vocabDistractors(word, run.all, false), options = shuffle([word, ...wrong]); return {kind, word, options, answer:options.indexOf(word), prompt:word.d}; })() : vocabCard(kind, word, run.all);
   run.last = word.w; run.answered = false;
-  const c = run.card, head = run.mode === 'sprint' ? `<p class="sprint-stats"><span>✅ ${run.correct} correct</span><span><span id="vocabTime">${Math.ceil(Math.max(0, run.end - performance.now()) / 1000)}</span> sec</span></p>` : `<p class="muted">Card ${run.index + 1} of ${run.total} · ${run.correct} right</p>`;
+  const c = run.card, head = run.mode === 'sprint' ? `<p class="sprint-stats"><span>✅ ${run.correct} correct</span><span><span id="vocabTime">${Math.ceil(Math.max(0, run.end - performance.now()) / 1000)}</span> sec</span></p>` : `<p class="muted">Card ${run.index + 1} of ${run.total} · ${run.correct} right · ${LEVEL_NAMES[S.vocab.level[c.kind === 'spell' ? 'spell' : 'cards'] || 2]}</p>`;
   const ask = {meaning:'What does this word mean?', use:'Which word fits the sentence?', spell:'Spell the word that means:', define:'Which word means:'}[c.kind];
   const options = c.options ? `<div class="ela-options">${c.options.map((v, k) => `<button type="button" class="ela-option" data-vocab-answer="${k}">${esc(c.kind === 'meaning' ? v.d : v.w)}</button>`).join('')}</div>`
     : `<form class="typed-fill" data-vocab-spell><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form>`;
@@ -8253,13 +8278,17 @@ function voicePickerHTML(){
     <div class="row"><select id="vocabVoice" aria-label="Reading voice">${[...voices].sort((a, b) => voiceScore(b) - voiceScore(a)).map(v => `<option value="${esc(v.name)}"${v.name === current?.name ? ' selected' : ''}>${esc(v.name)}</option>`).join('')}</select>
     <button type="button" class="btn small" data-voice-test>Try it</button></div></details>`;
 }
-function answerVocab(ok, shownAnswer){
+function answerVocab(ok, shownAnswer, typed = ''){
   const run = vocabRun, c = run.card; if (!run || run.answered) return;
   run.answered = true; recordVocab(c.word.w, ok);
+  const kinds = !ok && c.kind === 'spell' ? spellingPatterns(c.word.w, typed) : [];
+  if (!ok && c.kind === 'spell' && typed.trim()) { S.vocab.mistakes = [...S.vocab.mistakes, {w:c.word.w, typed:typed.trim().slice(0, 40), kinds, t:Date.now()}].slice(-80); save(); }
+  const moved = run.mode === 'sprint' ? '' : adaptVocab(vocabKind(c.kind === 'spell' ? 'spell' : 'cards'), ok);
   if (ok) run.correct++; else { run.missed.push(c.word); if (run.mode === 'practice' && run.total < 10 && !(run.retry || []).some(v => v.w === c.word.w)) { (run.retry = run.retry || []).push(c.word); run.total++; } }
   sfx(ok ? 'good' : 'bad');
   $('#vocabWrap .ela-feedback').textContent = ok ? 'That’s right!' : `Not quite. ${shownAnswer}`;
-  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', syllableAnswerHTML(c.word.w));
+  const tip = kinds.length ? patternById(kinds[0]) : null;
+  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', `${tip ? `<p class="spell-tip"><b>Tricky part: ${esc(tip.name)}.</b> ${esc(tip.tip)}</p>` : ''}${syllableAnswerHTML(c.word.w)}${moved === 'down' ? '<p class="level-note">🌱 Let’s try some easier words for a bit.</p>' : moved === 'up' ? `<p class="level-note">🌳 Nice! On to ${esc(LEVEL_NAMES[S.vocab.level[c.kind === 'spell' ? 'spell' : 'cards']].replace(/^\S+ /, '').toLowerCase())}.</p>` : ''}`);
   $$('#vocabWrap [data-vocab-answer]').forEach(b => { b.disabled = true; if (+b.dataset.vocabAnswer === c.answer) b.classList.add('correct'); });
   $('#vocabWrap .typed-input')?.classList.add(ok ? 'correct' : 'incorrect'); const inp = $('#vocabWrap .typed-input'); if (inp) inp.disabled = true;
   run.index++;
@@ -8315,12 +8344,13 @@ $('#vocabWrap').addEventListener('submit', event => {
   if (!event.target.closest('[data-vocab-spell]') || !vocabRun || vocabRun.answered) return;
   event.preventDefault();
   const typed = $('#vocabWrap .typed-input').value; if (!typed.trim()) return;
-  const c = vocabRun.card; answerVocab(normalizeTyped(typed) === normalizeTyped(c.word.w), `It’s spelled “${c.word.w}.”`);
+  const c = vocabRun.card; answerVocab(normalizeTyped(typed) === normalizeTyped(c.word.w), `It’s spelled “${c.word.w}.” You wrote “${typed.trim()}.”`, typed);
 });
 $('#vocabWrap').addEventListener('click', event => {
   const b = event.target.closest('button, [data-vocab-peek]'); if (!b) return;
   if (b.dataset.vocabTab) { vocabTab = b.dataset.vocabTab; renderVocab(); return; }
   if (b.dataset.vocabStart) { startVocab(b.dataset.vocabStart); return; }
+  if (b.dataset.vocabLevel) { const kind = vocabKind(vocabTab); S.vocab.level[kind] = Math.max(1, Math.min(3, (S.vocab.level[kind] || 2) + +b.dataset.vocabLevel)); S.vocab.streak = 0; save(); renderVocab(); return; }
   if (b.hasAttribute('data-vocab-stop')) { stopVocabTimer(); vocabRun = null; renderVocab(); return; }
   if (b.hasAttribute('data-vocab-next')) { nextVocabCard(); return; }
   if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word.w, b.dataset.vocabHear || 'word'); return; }

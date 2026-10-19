@@ -971,7 +971,7 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .typed-order:empty::before{content:"Your order shows here."; color:var(--ink-soft); margin-left:-28px}
 .typed-pool{border-top:2px dashed var(--edge); padding-top:10px}
 .typed-fill{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-.typed-input{flex:1; min-width:180px; min-height:48px; padding:8px 12px; font-size:1.1rem; border:2px solid var(--edge); border-radius:10px; background:var(--surface); color:var(--ink)}
+.typed-input{flex:1; min-width:180px; min-height:48px; padding:8px 12px; font-family:inherit; font-size:1.1rem; border:2px solid var(--edge); border-radius:10px; background:var(--surface); color:var(--ink)}
 .typed-input.correct{background:var(--mint); color:var(--mint-ink)}
 .typed-input.incorrect{background:var(--bad); color:#4A2E2A}
 .typed-sort{display:grid; gap:8px}
@@ -1117,3 +1117,11 @@ a.btn{display:inline-block; text-decoration:none}
 .voice-pick{margin-top:12px; text-align:left}
 .voice-pick select{max-width:100%; font:inherit}
 .warmup-skip{margin-top:10px; text-align:left; font-size:.9rem}
+/* Word Workshop spelling: a big box in the game's font, a tip for the tricky part, and the word level */
+.vocab-card .typed-fill{justify-content:center}
+.vocab-card .typed-fill .typed-input{flex:1 1 100%; max-width:520px; min-height:64px; font-size:2rem; font-weight:700; letter-spacing:.06em; text-align:center}
+.vocab-card .typed-fill .btn{min-height:56px; font-size:1.1rem}
+.spell-tip{margin:6px auto; max-width:46ch; padding:8px 12px; border-radius:10px; background:var(--butter, #FFF1C2); color:#4A3A1A; text-align:left}
+.level-note{margin:6px 0; font-weight:700}
+.level-row{justify-content:center; align-items:center; gap:8px; flex-wrap:wrap}
+.level-row .muted{flex-basis:100%; text-align:center; font-size:.85rem}

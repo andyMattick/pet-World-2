@@ -25,3 +25,44 @@ To make a voice sound better on a device, install a better one:
 
 - **Windows:** Settings → Time & language → Speech. Edge's "Natural" voices are the best of the free ones.
 - **Mac and iPad:** Settings → Accessibility → Spoken Content → System Voice. Download an "Enhanced" or "Premium" voice such as Ava or Samantha.
+
+## Word levels (adaptive)
+
+Every word has a level from its syllables, its length, and tricky spellings like ough, -tion and ie (`wordLevel` in `vocab.js`):
+
+- 🌱 **Easier:** short, 1 or 2 syllables, like compare or rapid.
+- 🌿 **Middle:** like accurate or habitat.
+- 🌳 **Harder:** like civilization or approximate.
+
+She has her own level for spelling and another for the meaning cards (`S.vocab.level`). Spelling starts at Easier.
+
+- She only gets words at or below her level, mostly at it.
+- **2 misses in a row** drop her a level ("🌱 Let's try some easier words for a bit").
+- **4 right in a row** move her up a level.
+- **Easier** and **Harder** buttons on the start screen change it by hand.
+- Words she has missed still come back more often.
+
+## Spelling patterns
+
+When she misspells a word, Pet World lines up what she typed with the right word and names the kind of mistake (`src/shared/spellingPatterns.js`):
+
+| Pattern | Example |
+|---|---|
+| pre / per / pro at the start | perdict → predict |
+| ie or ei | recieve → receive |
+| Double letters | acurate → accurate |
+| -ant / -ent, -ance / -ence | relevent → relevant |
+| -ible / -able | responsable → responsible |
+| -tion / -sion / -cian | conclution → conclusion |
+| c that sounds like s or k | presise → precise |
+| Letters switched | invesitgate → investigate |
+| The quiet "uh" vowel | seperate → separate |
+| Missing letters or sounds | enviroment → environment |
+| Extra letters | thourough → thorough |
+
+- **For her:** right after a miss she sees "Tricky part: pre / per / pro at the start", with a tip on how to remember it.
+- **What's saved:** her last 80 misses, in `S.vocab.mistakes`.
+
+**For the teacher:** the Vocabulary tab has a ✏️ Spelling patterns card for each student who has misspelled words. It lists each pattern with how often it happened, what she wrote, and how to teach it. Below that are **suggested words** for the same patterns: the words she missed, then practice words built for that pattern, then words from the lists. **Practice these with …** saves the ticked words for that student (`quiz_overrides.spellFocus`). They come up 3 times as often in her Word Workshop until they're solid, at any level.
+
+The practice words built for each pattern (prepare, prevent, perhaps, believe, receive, necessary, -able and -ible words, and others) are in `PATTERN_WORDS` in `vocab.js`. Each has a meaning, a sentence and its syllables.

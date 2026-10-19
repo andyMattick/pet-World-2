@@ -11,7 +11,7 @@ import { renderClassReport, setReportClass, esc, type StudentReport } from './re
 import { setLedgerClass } from './ledger';
 import { startAlerts } from './live';
 import { renderApprovals, waitingCount } from './approvals';
-import { renderVocabTab, type VocabRoster, type ClassVocab } from './vocab';
+import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus } from './vocab';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
@@ -406,16 +406,28 @@ function renderVocabularyTab() {
     return error ? error.message : null;
   };
   let roster: VocabRoster;
-  const draw = () => { if (current?.id === cls.id && tab === 'vocab') renderVocabTab($('#pane'), cls, save, roster); };
+  /* one student's spelling-pattern words, kept with her other settings in quiz_overrides (read fresh so nothing else is lost) */
+  const saveSpellFocus: SaveSpellFocus = async (id, words) => {
+    const { data, error } = await sb!.from('students').select('quiz_overrides').eq('id', id).maybeSingle();
+    if (error) return error.message;
+    const next = { ...((data?.quiz_overrides as Record<string, string> | null) || {}) };
+    if (words.length) next.spellFocus = JSON.stringify(words.slice(0, 30)); else delete next.spellFocus;
+    const { error: e2 } = await sb!.from('students').update({ quiz_overrides: next }).eq('id', id);
+    if (!e2 && roster) { const st = roster.find(r => r.id === id); if (st) st.spellFocus = words; }
+    return e2 ? e2.message : null;
+  };
+  const draw = () => { if (current?.id === cls.id && tab === 'vocab') renderVocabTab($('#pane'), cls, save, roster, saveSpellFocus); };
   draw();
   void (async () => {
-    const { data: kids, error } = await sb!.from('students').select('id,display_name').eq('class_id', cls.id).order('display_name');
+    const { data: kids, error } = await sb!.from('students').select('id,display_name,quiz_overrides').eq('class_id', cls.id).order('display_name');
     if (error) { roster = null; draw(); return; }
-    const list = (kids || []) as { id: string; display_name: string }[];
+    const list = (kids || []) as { id: string; display_name: string; quiz_overrides?: Record<string, string> | null }[];
     const { data, error: saveError } = list.length ? await sb!.from('saves').select('student_id, vocab:state->vocab').in('student_id', list.map(k => k.id)) : { data: [], error: null };
     if (saveError) { roster = null; draw(); return; }
-    const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[] } }[]).map(row => [row.student_id, row.vocab || {}]));
-    roster = list.map(k => ({ name: k.display_name, stats: byStudent.get(k.id)?.stats || {}, flagged: Array.isArray(byStudent.get(k.id)?.flagged) ? byStudent.get(k.id)!.flagged! : [] }));
+    const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[] } }[]).map(row => [row.student_id, row.vocab || {}]));
+    const focusOf = (k: typeof list[number]) => { try { const v = JSON.parse(k.quiz_overrides?.spellFocus || '[]'); return Array.isArray(v) ? v.map(String) : []; } catch { return []; } };
+    roster = list.map(k => ({ id: k.id, name: k.display_name, stats: byStudent.get(k.id)?.stats || {}, flagged: Array.isArray(byStudent.get(k.id)?.flagged) ? byStudent.get(k.id)!.flagged! : [],
+      mistakes: Array.isArray(byStudent.get(k.id)?.mistakes) ? byStudent.get(k.id)!.mistakes! : [], spellFocus: focusOf(k) }));
     draw();
   })();
 }

@@ -236,12 +236,67 @@ export function normalizeVocabState(v){
   /* words the student looked up with 📌 that were already on a list: they join practice and come up more often */
   const lookedUp = (Array.isArray(out.lookedUp) ? out.lookedUp : []).filter(f => f && typeof f.w === 'string' && f.w.length <= VOCAB_LIMITS.word)
     .map(f => ({ w: wordKey(f.w), at: Number.isFinite(+f.at) ? +f.at : 0 })).slice(-60);
+  /* spelling misses, for the patterns (spellingPatterns.js): the word, what was typed, and the patterns found */
+  const mistakes = (Array.isArray(out.mistakes) ? out.mistakes : []).filter(m => m && typeof m.w === 'string' && typeof m.typed === 'string')
+    .map(m => ({ w: m.w.slice(0, VOCAB_LIMITS.word), typed: m.typed.slice(0, 40), kinds: (Array.isArray(m.kinds) ? m.kinds : []).filter(k => typeof k === 'string').slice(0, 4), t: Number.isFinite(+m.t) ? +m.t : 0 })).slice(-80);
+  /* how hard the words are right now, per kind of practice: 1 easier, 2 middle, 3 harder (wordLevel) */
+  const lv = out.level && typeof out.level === 'object' ? out.level : {}, level = x => Math.max(1, Math.min(3, Math.round(+x) || 2));
   return {
-    flagged, lookedUp, stats, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
+    flagged, lookedUp, stats, mistakes, level: { spell: level(lv.spell ?? 1), cards: level(lv.cards) }, streak: Number.isFinite(+out.streak) ? Math.max(-9, Math.min(9, Math.round(+out.streak))) : 0, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
     home: { builtIn: home.builtIn !== false, words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) }
   };
 }
+
+
+/* Extra words for practicing one spelling pattern (docs/VOCAB.md, "Spelling patterns"). They join a student's practice
+   only when a teacher picks them from the student's pattern suggestions (quiz_overrides.spellFocus). */
+export const PATTERN_WORDS = [
+  W('Spelling: pre / per / pro', 'prepare', 'to get ready for something', 'We ___ the room before the party starts.'),
+  W('Spelling: pre / per / pro', 'prevent', 'to stop something from happening', 'A helmet can ___ a head injury.'),
+  W('Spelling: pre / per / pro', 'previous', 'coming before; earlier', 'The ___ owner left a box in the garage.'),
+  W('Spelling: pre / per / pro', 'perhaps', 'maybe', '___ it will snow tomorrow.'),
+  W('Spelling: pre / per / pro', 'permit', 'to allow', 'The rules do not ___ phones in class.'),
+  W('Spelling: pre / per / pro', 'persuade', 'to get someone to agree by giving reasons', 'She tried to ___ her dad to get a puppy.'),
+  W('Spelling: pre / per / pro', 'produce', 'to make or grow something', 'These trees ___ apples every fall.'),
+  W('Spelling: pre / per / pro', 'promise', 'to say you will surely do something', 'I ___ to feed the cat every morning.'),
+  W('Spelling: ie / ei', 'believe', 'to think something is true', 'I ___ you; I know you would not lie.'),
+  W('Spelling: ie / ei', 'receive', 'to get something that is given or sent', 'Did you ___ my letter?'),
+  W('Spelling: ie / ei', 'neighbor', 'a person who lives next to you', 'Our ___ waters our plants when we are away.'),
+  W('Spelling: ie / ei', 'piece', 'one part of something', 'May I have a ___ of pie?'),
+  W('Spelling: ie / ei', 'ceiling', 'the top inside surface of a room', 'A spider hung from the ___.'),
+  W('Spelling: ie / ei', 'field', 'an open area of land', 'The cows grazed in the ___.'),
+  W('Spelling: double letters', 'necessary', 'needed', 'Water is ___ for every living thing.'),
+  W('Spelling: double letters', 'tomorrow', 'the day after today', 'We will finish the project ___.'),
+  W('Spelling: double letters', 'occasion', 'a special event or time', 'A birthday is a happy ___.'),
+  W('Spelling: double letters', 'address', 'where someone lives', 'Write your ___ on the envelope.'),
+  W('Spelling: double letters', 'success', 'getting what you worked for', 'The bake sale was a big ___.'),
+  W('Spelling: double letters', 'beginning', 'the start of something', 'Go back to the ___ of the chapter.'),
+  W('Spelling: -ant / -ent', 'important', 'mattering a lot', 'Sleep is ___ for your brain.'),
+  W('Spelling: -ant / -ent', 'different', 'not the same', 'The twins wore ___ shirts.'),
+  W('Spelling: -ant / -ent', 'patience', 'staying calm while you wait', 'Learning to knit takes ___.'),
+  W('Spelling: -ant / -ent', 'distance', 'how far apart two things are', 'We walked a short ___ to the lake.'),
+  W('Spelling: -ant / -ent', 'excellent', 'very, very good', 'You did an ___ job on your poster.'),
+  W('Spelling: -ant / -ent', 'assistant', 'a helper', 'The vet’s ___ held the puppy still.'),
+  W('Spelling: -ible / -able', 'comfortable', 'feeling relaxed and at ease', 'This chair is very ___.'),
+  W('Spelling: -ible / -able', 'possible', 'able to happen', 'Is it ___ to swim across the lake?'),
+  W('Spelling: -ible / -able', 'valuable', 'worth a lot', 'The old coin is very ___.'),
+  W('Spelling: -ible / -able', 'visible', 'able to be seen', 'The moon is ___ tonight.'),
+  W('Spelling: -ible / -able', 'terrible', 'very bad', 'We had ___ weather on our trip.'),
+  W('Spelling: -ible / -able', 'reliable', 'able to be trusted', 'My old bike is slow but ___.'),
+  W('Spelling: -tion / -sion', 'question', 'something you ask', 'Raise your hand to ask a ___.'),
+  W('Spelling: -tion / -sion', 'vacation', 'time off for rest or travel', 'We went to the beach on ___.'),
+  W('Spelling: -tion / -sion', 'decision', 'a choice you make', 'Picking a puppy was a hard ___.'),
+  W('Spelling: -tion / -sion', 'television', 'a screen for watching shows', 'We watched the game on ___.'),
+  W('Spelling: -tion / -sion', 'musician', 'a person who plays or makes music', 'The ___ played the violin.'),
+  W('Spelling: -tion / -sion', 'attention', 'careful listening or watching', 'Please pay ___ to the directions.'),
+  W('Spelling: soft and hard c', 'circle', 'a perfectly round shape', 'Draw a ___ around the answer.'),
+  W('Spelling: soft and hard c', 'notice', 'to see or become aware of', 'Did you ___ the new sign?'),
+  W('Spelling: soft and hard c', 'decide', 'to make up your mind', 'Help me ___ which book to read.'),
+  W('Spelling: soft and hard c', 'concert', 'a music show', 'The band played a ___ in the park.'),
+  W('Spelling: soft and hard c', 'success', 'getting what you worked for', 'The bake sale was a big ___.'),
+  W('Spelling: soft and hard c', 'cycle', 'a series of events that repeats', 'Rain is part of the water ___.')
+].filter((v, i, a) => a.findIndex(x => x.w === v.w) === i);
 
 /* ---------- syllables and how to say them (docs/VOCAB.md, "Hearing the word") ----------
    For each built-in word: the dictionary syllable breaks to show ("an·a·lyze"), and the same syllables respelled
@@ -346,7 +401,50 @@ precise=pre·cise=prih|sise
 relevant=rel·e·vant=rel|uh|vent
 sequence=se·quence=see|kwence
 significant=sig·nif·i·cant=sig|nif|ih|kent
-thorough=thor·ough=thur|oh`;
+thorough=thor·ough=thur|oh
+prepare=pre·pare=prih|pair
+prevent=pre·vent=prih|vent
+previous=pre·vi·ous=pree|vee|us
+perhaps=per·haps=pur|haps
+permit=per·mit=pur|mit
+persuade=per·suade=pur|swade
+produce=pro·duce=pruh|doos
+promise=prom·ise=prom|iss
+believe=be·lieve=bih|leev
+receive=re·ceive=rih|seev
+neighbor=neigh·bor=nay|bur
+piece=piece=peese
+ceiling=ceil·ing=see|ling
+field=field=feeld
+necessary=nec·es·sar·y=ness|uh|sair|ee
+tomorrow=to·mor·row=tuh|mor|oh
+occasion=oc·ca·sion=uh|kay|zhun
+address=ad·dress=uh|dress
+success=suc·cess=suk|sess
+beginning=be·gin·ning=bih|gin|ing
+important=im·por·tant=im|por|tent
+different=dif·fer·ent=dif|ur|ent
+patience=pa·tience=pay|shence
+distance=dis·tance=dis|tence
+excellent=ex·cel·lent=ek|suh|lent
+assistant=as·sis·tant=uh|sis|tent
+comfortable=com·fort·a·ble=kum|fur|tuh|bul
+possible=pos·si·ble=poss|uh|bul
+valuable=val·u·a·ble=val|yoo|uh|bul
+visible=vis·i·ble=viz|uh|bul
+terrible=ter·ri·ble=tair|uh|bul
+reliable=re·li·a·ble=rih|lie|uh|bul
+question=ques·tion=kwes|chun
+vacation=va·ca·tion=vay|kay|shun
+decision=de·ci·sion=dih|sizh|un
+television=tel·e·vi·sion=tel|uh|vizh|un
+musician=mu·si·cian=myoo|zish|un
+attention=at·ten·tion=uh|ten|shun
+circle=cir·cle=sur|kul
+notice=no·tice=no|tiss
+decide=de·cide=dih|side
+concert=con·cert=kon|surt
+cycle=cy·cle=sy|kul`;
 const SYLLABLES = new Map(SYLLABLE_DATA.split('\n').map(line => { const [w, show, say, whole] = line.split('='); return [w, { show: show.split('·'), say: say.split('|'), whole: whole || w }]; }));
 export const SYLLABLE_WORDS = [...SYLLABLES.keys()];
 
@@ -364,3 +462,12 @@ export function syllablesOf(word){
   const last = parts[parts.length - 1]; if (/^[^aeiouy]*e$/.test(last)) { parts.pop(); parts[parts.length - 1] += last; }
   return { show: parts, say: parts, whole: key, known: false };
 }
+
+/** How hard a word is to spell and read: 1 (short, 1-2 syllables), 2 (middle), 3 (long or tricky). */
+export function wordLevel(word){
+  const w = String(word || '').toLowerCase(), syl = syllablesOf(w).say.length;
+  const tricky = /ough|eigh|ph|tious|cious|gue$|([a-z])\1.*([a-z])\2|sion$|cian$|ible$|ance$|ence$|ei|ie/.test(w) ? 1 : 0;
+  const score = syl + (w.length >= 9 ? 1 : 0) + (w.length <= 5 ? -1 : 0) + tricky;
+  return score <= 2 ? 1 : score <= 3 ? 2 : 3;
+}
+export const LEVEL_NAMES = { 1: '🌱 Easier words', 2: '🌿 Middle words', 3: '🌳 Harder words' };
