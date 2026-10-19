@@ -5,7 +5,8 @@ A short movement break between subjects, led by the student's pet. Separate from
 ## Owner decisions
 
 - **When:** after a student finishes one subject and goes to start a different one (Math, English, Reading Log, History, Science).
-- **What:** her pet acts out 4 moves, 20 seconds each, with a countdown (about 1½ minutes).
+- **What:** her pet acts out 4 moves with a countdown: 2 stretches and 2 fun ones, taking turns. Stretches are 20 seconds; fun ones are 20 to 45 seconds (a lap of the house or a water break gets more time).
+- **Moves:** 8 stretches (reach, toe touch, arm circles, march, side bends, twists, shoulder rolls, jumping jacks) and 19 fun ones: a lap of the house, juggling, toss and catch, sock basketball, push-ups, plank, wall sit, handstand or cartwheel, a big breath held for a count of 10, a staring contest with Mom, a dance party, animal walks, flamingo, freeze statue, one-foot hops, funny faces, telling someone a joke, a water break and a pet hug. New moves start in every class's cycle; a teacher can uncheck any.
 - **No skipping.** There is no close button. Done shows when the last countdown ends.
 - **Teachers control all of it:** on/off, how many minutes in a subject before a switch brings a break, and which moves are in the cycle.
 

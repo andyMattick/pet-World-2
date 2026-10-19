@@ -170,6 +170,13 @@ body.brain-open{overflow:hidden}
 @keyframes move-twist{0%,100%{transform:scaleX(1)}25%{transform:scaleX(-1)}50%{transform:scaleX(1)}75%{transform:scaleX(-1)}}
 @keyframes move-shoulders{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.06,.94)}}
 @keyframes move-jacks{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.15)}}
+.move-flip{animation:move-flip 2.4s ease-in-out infinite; transform-origin:50% 50%}
+.move-puff{animation:move-puff 4s ease-in-out infinite}
+.move-wiggle{animation:move-wiggle .5s ease-in-out infinite}
+.move-still{animation:none}
+@keyframes move-flip{0%,20%{transform:rotate(0)}50%,70%{transform:rotate(180deg)}100%{transform:rotate(360deg)}}
+@keyframes move-puff{0%,100%{transform:scale(1)}40%,70%{transform:scale(1.25)}}
+@keyframes move-wiggle{0%,100%{transform:rotate(-10deg) translateY(0)}50%{transform:rotate(10deg) translateY(-8px)}}
 @media (prefers-reduced-motion: reduce){.move-pet{animation:none}}
 
 /* Pet Room and Dress-up */

@@ -15,7 +15,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
-import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, MOVE_SECONDS, MOVE_SUBJECTS } from '../shared/moveBreaks';
+import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -5435,7 +5435,7 @@ function openMoveBreak(after, to){
   const el = document.createElement('div');
   el.className = 'move-break'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Stand and stretch');
   document.body.appendChild(el); document.body.classList.add('brain-open');
-  moveRun = {el, ids, step:0, left:MOVE_SECONDS, after, to, timer:setInterval(moveTick, 1000)};
+  moveRun = {el, ids, step:0, left:moveSeconds(ids[0]), after, to, timer:setInterval(moveTick, 1000)};
   renderMoveStep();
 }
 function renderMoveStep(){
@@ -5444,7 +5444,7 @@ function renderMoveStep(){
   r.el.innerHTML = `<div class="move-card">
     <p class="move-head">🤸 Stand and stretch · move ${r.step + 1} of ${r.ids.length}</p>
     <p class="muted move-why">Nice work in ${esc(MOVE_SUBJECT_NAME[r.after] || 'that subject')}! Stand up and stretch with ${esc(pet?.name || 'your pet')} before your next subject.</p>
-    <div class="move-pet move-${esc(move.id)}" aria-hidden="true">${pet?.emoji || '🐾'}</div>
+    <div class="move-pet move-${esc(move.anim || move.id)}" aria-hidden="true">${pet?.emoji || '🐾'}</div>
     <h2>${move.emoji} ${esc(move.name)}</h2>
     <p class="move-cue">${esc(move.cue)}</p>
     <div class="move-count" id="moveCount" aria-live="polite">${r.left}</div>
@@ -5454,7 +5454,7 @@ function moveTick(){
   const r = moveRun; if (!r || document.hidden) return;   // the countdown waits while Pet World is in the background
   r.left--;
   if (r.left > 0) { const count = $('#moveCount'); if (count) count.textContent = r.left; return; }
-  if (r.step < r.ids.length - 1) { r.step++; r.left = MOVE_SECONDS; sfx('tick'); renderMoveStep(); return; }
+  if (r.step < r.ids.length - 1) { r.step++; r.left = moveSeconds(r.ids[r.step]); sfx('tick'); renderMoveStep(); return; }
   clearInterval(r.timer); r.timer = null; sfx('good');
   $('#moveCount').textContent = '✓';
   $('#moveFoot').innerHTML = `<button type="button" class="btn berry" id="moveDone">Done! Back to work</button>`;
@@ -5463,7 +5463,7 @@ function moveTick(){
 function finishMoveBreak(){
   const r = moveRun; if (!r) return;
   const m = S.move;
-  m.due = ''; m.recent = [...m.recent, ...r.ids].slice(-8);
+  m.due = ''; m.recent = [...m.recent, ...r.ids].slice(-12);
   m.breaks = [...m.breaks, {t:Date.now(), after:r.after, to:r.to, moves:r.ids}].slice(-60);
   logEvent({k:'move', title:`Stand and stretch after ${MOVE_SUBJECT_NAME[r.after] || r.after}`, detail:r.ids.map(id => moveById(id)?.name || id).join(', ')});
   save(); closeMoveBreak(); kickMusic(); toast('Nice stretching! 🤸');
