@@ -903,6 +903,7 @@ const KHAN_LINKS = {
   nouns:{intro:`${GRAMMAR}noun/grammar-nouns/v/introduction-to-nouns-the-parts-of-speech-grammar-khan-academy`,types:`${GRAMMAR}noun/types-of-nouns/v/common-and-proper-nouns`,irregularBase:`${GRAMMAR}noun/irregular-plural-nouns-base-plurals-and-irregular-endings/v/irregular-plural-nouns-part-i-the-parts-of-speech-grammar-khan-academy`,irregularForeign:`${GRAMMAR}noun/irregular-plural-nouns-mutant-and-foreign-plurals/v/irregular-plural-nouns-part-iv-the-parts-of-speech-grammar`},
   verbs:{foundation:`${GRAMMAR}verb/introduction-to-verbs/v/introduction-to-verbs-the-parts-of-speech-grammar`,irregular:`${GRAMMAR}verb/irregular-verbs/v/introduction-to-irregular-verbs-the-parts-of-speech-grammar`,aspect:`${GRAMMAR}verb/verb-aspect-simple-progressive-and-perfect/v/intro-to-aspect`,aspectModal:`${GRAMMAR}verb/verb-aspect-and-modal-verbs/v/perfect-progressive-aspect-the-parts-of-speech-grammar`},
   pronouns:{intro:`${GRAMMAR}pronoun/introduction-to-pronouns/v/what-is-a-pronoun-the-parts-of-speech-grammar`,possessive:`${GRAMMAR}pronoun/possessive-and-reflexive-pronouns/v/possessive-pronouns-the-parts-of-speech-grammar`,relative:`${GRAMMAR}pronoun/relative-pronouns/v/relative-pronouns-the-parts-of-speech-grammar`,caseNumber:`${GRAMMAR}pronoun/subject-object-person-and-number/v/subject-and-object-pronouns-the-parts-of-speech-grammar`,indefinite:`${GRAMMAR}pronoun/indefinite-pronouns-pronoun-vagueness-and-emphatic-pronouns/v/indefinite-pronouns-the-parts-of-speech-grammar`},
+  modifiers:{intro:`${GRAMMAR}modifier/introduction-to-adjectives-and-articles/v/intro-to-adjectives-v1`,adverbs:`${GRAMMAR}modifier/introduction-to-adverbs/v/intro-to-adverbs`,order:`${GRAMMAR}modifier/adjective-order-and-commas-with-adjectives/v/adjective-order`,degree:`${GRAMMAR}modifier/comparative-superlative-intensifiers-and-adverbs-of-degree/v/intro-to-the-comparative-and-the-superlative-v2`},
   history:{stories:`${WORLD}origins-of-history/x66f79d8a:history-stories-1-1/v/meet-oer-project-world-history`,frames:`${WORLD}origins-of-history/x66f79d8a:history-frames-1-3/v/frame-concept-introduction-world-history-project-beta`,memory:`${WORLD}origins-of-history/x66f79d8a:history-and-memory-1-4/a/activity-opener-worst-day-ever`},
   history2:{earliestHumans:`${WORLD}early-humans/x66f79d8a:the-earliest-humans-2-1/a/activity-opener-then-vs-now`,migrationArt:`${WORLD}early-humans/x66f79d8a:migration-and-art-2-2/a/activity-opener-who-s-an-authority`,foragingSocieties:`${WORLD}early-humans/x66f79d8a:foraging-societies-2-3/a/activity-opener-what-is-this-asking-introduction-origins`,agriculturalRevolution:`${WORLD}early-humans/x66f79d8a:the-agricultural-revolution-2-4/a/activity-opener-which-frame`,biggestMistake:`${WORLD}early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/a/activity-opener-casual-map-jack-and-the-giant-beanstalk`},
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
@@ -1504,13 +1505,196 @@ const PRONOUN_QUESTIONS = {
     qLevel(3,"Which sentence is correct?","The students themselves planned the bake sale.","The students theirselves planned the bake sale.","The students themself planned the bake sale.","Themselves planned the bake sale.")
   ]
 };
+/* ---------- English Unit 4: Adjectives and Adverbs (Khan Academy Grammar, Unit 4: Parts of speech: the modifier) ----------
+   One lesson per Khan skill, in Khan's order, grouped by Khan's lessons. 14 questions a lesson: 4 at level 1, 4 at
+   level 2, 6 at level 3 (Khan unit test level). The right answer is listed first; the game shuffles the choices. */
+const ENGLISH_UNIT4 = [
+  {id:'meetAdjective',name:'Meet the adjective',lesson:'An adjective describes a noun or pronoun. It tells what kind (a muddy boot), how many (three boots), or which one (the left boot). It can come before the noun or after a linking verb: the soup tastes salty.'},
+  {id:'meetArticle',name:'Meet the article',lesson:'A, an, and the are articles, a small kind of adjective that comes before a noun (sometimes with other adjectives in between): the tall tree, an old map.'},
+  {id:'definiteIndefinite',name:'Choosing between definite and indefinite articles',lesson:'The points to one particular thing the reader knows about. A and an mean any one. Use an before a vowel sound (an hour, an umbrella) and a before a consonant sound (a unicorn, a one-way street).'},
+  {id:'meetAdverb',name:'Meet the adverb',lesson:'An adverb describes a verb, an adjective, or another adverb. It tells how (slowly), when (tomorrow), where (outside), how often (always), or how much (very). Many end in -ly, but not all: soon, fast, well.'},
+  {id:'adverbOrAdjective',name:'Using adverbs and adjectives',lesson:'Use an adjective to describe a noun (a careful driver) and an adverb to describe an action (she drives carefully). After linking verbs like feel, look, smell, and taste, use an adjective: the pie smells delicious.'},
+  {id:'relativeAdverbs',name:'Identifying relative adverbs',lesson:'Where, when, and why are relative adverbs when they start a clause that describes a noun: the park where we met, the day when it snowed, the reason why she laughed. When they ask a question, they are not relative adverbs.'},
+  {id:'adjectiveOrder',name:'Adjective order',lesson:'When adjectives stack up, they usually go in this order: number, opinion, size, age, shape, color, origin, material, purpose. That is why we say “a lovely little old wooden house.”'},
+  {id:'commasAdjectives',name:'Commas and adjectives',lesson:'Put a comma between two adjectives only if you could switch them or join them with “and”: a cold, rainy day (a rainy and cold day). No comma when you can’t: a big red barn, a heavy winter coat.'},
+  {id:'comparativeSuperlative',name:'Comparative and superlative adjectives and adverbs',lesson:'Compare two with -er or more (taller, more careful). Compare three or more with -est or most (tallest, most careful). Some are irregular: good, better, best; bad, worse, worst. Never use both: not “more taller.”'},
+  {id:'intensifiers',name:'Intensifiers and adverbs of degree',lesson:'Adverbs of degree tell how much: very, extremely, quite, almost, barely, too. They make an adjective or adverb stronger (extremely cold) or weaker (slightly cold). Too means more than is good: too hot to drink.'}
+];
+const ENGLISH_GROUPS4 = [
+  {id:'intro',quizName:'Adjectives and articles Quiz',name:'Introduction to adjectives and articles',learn:'Find adjectives and articles, and choose a, an, or the.',skills:['meetAdjective','meetArticle','definiteIndefinite']},
+  {id:'adverbs',quizName:'Adverbs Quiz',name:'Introduction to adverbs',learn:'Find adverbs, choose between an adjective and an adverb, and spot relative adverbs.',skills:['meetAdverb','adverbOrAdjective','relativeAdverbs']},
+  {id:'order',quizName:'Adjective order and commas Quiz',name:'Adjective order and commas with adjectives',learn:'Put adjectives in the right order, and decide when they need a comma between them.',skills:['adjectiveOrder','commasAdjectives']},
+  {id:'degree',quizName:'Comparing and intensifying Quiz',name:'Comparative, superlative, intensifiers, and adverbs of degree',learn:'Compare with -er and -est (or more and most), and make words stronger or weaker.',skills:['comparativeSuperlative','intensifiers']}
+];
+const MODIFIER_QUESTIONS = {
+  meetAdjective:[
+    qLevel(1,"Which word is an adjective? The tired puppy slept on the rug.","tired","puppy","slept","rug"),
+    qLevel(1,"Which word is an adjective? We climbed a steep hill.","steep","climbed","hill","We"),
+    qLevel(1,"Which word describes the noun “jacket”? Mom bought a waterproof jacket.","waterproof","bought","Mom","jacket"),
+    qLevel(1,"Which word could describe a noun?","noisy","noise","quickly","under"),
+    qLevel(2,"What question does the adjective answer? Three goats crossed the bridge.","How many?","What kind?","Which one?","Where?"),
+    qLevel(2,"Which word is an adjective? The soup in the bowl smells delicious.","delicious","smells","soup","bowl"),
+    qLevel(2,"Not counting a, an, and the, how many adjectives are in this sentence? A small brown bird sang a cheerful song.","3","2","4","1"),
+    qLevel(2,"In which sentence is “light” an adjective?","She packed a light suitcase.","Please light the candle.","The light flickered all night.","Turn off the light before bed."),
+    qLevel(3,"Which word does the adjective “brave” describe? The firefighter was brave during the storm.","firefighter","storm","was","during"),
+    qLevel(3,"Which sentence has an adjective that comes after the noun it describes?","The lemonade tasted sour.","The sour lemonade spilled on the table.","We made lemonade today.","Dad poured the lemonade slowly."),
+    qLevel(3,"Which pair of words are both adjectives? The old wooden bench creaked loudly near the quiet lake.","old, quiet","wooden, loudly","bench, quiet","creaked, old"),
+    qLevel(3,"Why does “Spanish” start with a capital letter in “We ate Spanish rice”?","It is an adjective made from a proper noun","It is the first important word in the sentence","It is a verb that names an action","It tells how many people ate"),
+    qLevel(3,"In which sentence is “cold” an adjective?","The cold wind stung my face.","I caught a cold last week.","My cold kept me home from school.","A cold can last about a week."),
+    qLevel(3,"Which word is an adjective made from a noun?","sunny","sun","sunshine","sunbathe")
+  ],
+  meetArticle:[
+    qLevel(1,"Which words in this sentence are articles? The owl caught a mouse.","The, a","owl, mouse","caught, a","The, owl"),
+    qLevel(1,"Which list has only articles?","a, an, the","a, and, the","an, on, the","the, this, that"),
+    qLevel(1,"Which word is an article? She found an old coin.","an","old","found","coin"),
+    qLevel(1,"Which phrase uses an article?","the blue kite","my blue kite","two blue kites","her blue kite"),
+    qLevel(2,"Articles are a special kind of which part of speech?","adjective","verb","adverb","pronoun"),
+    qLevel(2,"In “the tallest tree,” which word is the article?","the","tallest","tree","there is no article"),
+    qLevel(2,"How many articles are in this sentence? An hour later, the bus finally reached a small town.","3","2","4","1"),
+    qLevel(2,"Which sentence uses its articles correctly?","We saw an eagle at the lake.","We saw a eagle at the lake.","We saw an eagle at an lake.","We saw a eagle and an hawk at the lake."),
+    qLevel(3,"Which word comes before a noun but is NOT an article? My friend brought a cake to the party.","My","a","the","both a and the"),
+    qLevel(3,"Which sentence is missing an article?","I need pencil for the test.","I need a pencil for the test.","I need the pencil on the desk.","I need pencils for the test."),
+    qLevel(3,"Which sentence has an extra article that should be taken out?","She is a my best friend.","She is my best friend.","She is a good friend.","She is the best friend I have had."),
+    qLevel(3,"Which sentence uses no article and is still correct?","Dogs need exercise every day.","Dog needs exercise every day.","The dogs need an exercise every day.","A dogs need exercise every day."),
+    qLevel(3,"How many articles are in “An apple a day keeps the doctor away”?","3","2","1","4"),
+    qLevel(3,"Which word in “Give me the red one” is an article?","the","me","red","one")
+  ],
+  definiteIndefinite:[
+    qLevel(1,"Choose the correct phrase.","an elephant","a elephant","an elephants","a elephants"),
+    qLevel(1,"Choose the correct phrase.","a banana","an banana","a bananas","an bananas"),
+    qLevel(1,"Which article points to one particular thing the reader already knows about?","the","a","an","a or an"),
+    qLevel(1,"Which sentence talks about any dog, not one particular dog?","I want a dog someday.","I want the dog in that window.","The dog next door barks.","Feed the dog before school."),
+    qLevel(2,"Which sentence is correct?","We waited an hour.","We waited a hour.","We waited an hours.","We waited a hours."),
+    qLevel(2,"Which words fit? Mia read ___ book last night. ___ book was about volcanoes.","a, The","the, A","an, The","a, A"),
+    qLevel(2,"Which sentence uses its articles correctly?","An owl and a hawk sat on the fence.","A owl and a hawk sat on the fence.","An owl and an hawk sat on the fence.","A owl and an hawk sat on a fence."),
+    qLevel(2,"Which article fits? Please pass me ___ salt shaker sitting by your plate.","the","a","an","no article"),
+    qLevel(3,"Choose the correct phrase.","a university","an university","a universities","an universities"),
+    qLevel(3,"Why does “an” come before “honest”?","Honest starts with a vowel sound because the h is silent","Honest starts with the letter h, and h always takes “an”","Honest is an adjective, and adjectives take “an”","“An” goes before words that start with the letter h"),
+    qLevel(3,"Choose the correct phrase.","a one-way street","an one-way street","a one-ways street","an one-ways street"),
+    qLevel(3,"Choose the correct phrase.","an X-ray","a X-ray","an X-rays","a X-rays"),
+    qLevel(3,"Which sentence is correct?","It was an unusual day.","It was a unusual day.","It was an usual day.","It was a unusual days."),
+    qLevel(3,"Which sentence is correct?","We planned a European trip.","We planned an European trip.","We planned a European trips.","We planned an European trips.")
+  ],
+  meetAdverb:[
+    qLevel(1,"Which word is the adverb? The turtle moved slowly across the yard.","slowly","turtle","moved","across"),
+    qLevel(1,"Which word is the adverb? We will leave tomorrow.","tomorrow","leave","will","We"),
+    qLevel(1,"Which word tells where? The kids played games outside.","outside","played","kids","games"),
+    qLevel(1,"Which word is an adverb?","gently","gentle","gentleness","gentlest"),
+    qLevel(2,"What question does the adverb answer? She always brushes her teeth.","How often?","Where?","What kind?","How many?"),
+    qLevel(2,"Which word does “carefully” describe? Leo carefully carried the tray.","carried","Leo","tray","the"),
+    qLevel(2,"Which word is the adverb? The test was very hard.","very","test","hard","was"),
+    qLevel(2,"How many adverbs are in this sentence? Yesterday, the dog barked loudly outside.","3","2","1","4"),
+    qLevel(3,"In “The singer sang extremely well,” what does “extremely” describe?","the adverb “well”","the verb “sang”","the noun “singer”","the whole sentence at once"),
+    qLevel(3,"Which sentence uses “fast” as an adverb?","Jamal ran fast.","Jamal is a fast runner.","The fast car zoomed by.","That was a fast game."),
+    qLevel(3,"Which word is an adverb even though it doesn’t end in -ly?","soon","lovely","friendly","silly"),
+    qLevel(3,"Which word is NOT an adverb?","lonely","quietly","early","often"),
+    qLevel(3,"Which sentence uses “well” as an adverb?","Marta plays the violin well.","Marta feels well today.","The old well behind the barn was very deep.","Well, let’s get started."),
+    qLevel(3,"Which word in this sentence is an adverb? Surprisingly, nobody noticed the huge mistake.","Surprisingly","nobody","noticed","huge")
+  ],
+  adverbOrAdjective:[
+    qLevel(1,"Which sentence is correct?","The baby slept peacefully.","The baby slept peaceful.","The peacefully baby slept.","The baby peaceful slept."),
+    qLevel(1,"Which sentence is correct?","Ava answered the question correctly.","Ava answered the question correct.","Ava correct answered the question.","Ava answered the correctly question."),
+    qLevel(1,"Which word fits? The ___ dog chased its tail.","playful","playfully","play","playfulness"),
+    qLevel(1,"Which sentence is correct?","The cheetah is a quick animal.","The cheetah is a quickly animal.","The quickly cheetah ran.","The cheetah is an quick animal."),
+    qLevel(2,"Which sentence is correct?","The pie smells delicious.","The pie smells deliciously.","The pie smell delicious.","The pie is smelling deliciously."),
+    qLevel(2,"Which sentence is correct?","You did well on the quiz.","You did good on the quiz.","You done well on the quiz.","You did real good on the quiz."),
+    qLevel(2,"Which sentence uses an adjective after a linking verb?","The water felt cold.","She quickly drank the water.","The water flowed quickly.","He poured water into a glass."),
+    qLevel(2,"Which word fits? The choir sang ___ at the concert.","beautifully","beautiful","beauty","beautifuler"),
+    qLevel(3,"Which word goes in the blank, and why? The kids worked ___ on the project.","quietly, because it describes the verb “worked”","quiet, because it describes the verb “worked”","quietly, because it describes the noun “kids”","quiet, because it describes the noun “project” at the end"),
+    qLevel(3,"Which sentence is correct?","Sam looks happy today.","Sam looks happily today.","Sam happy looks today.","Sam looks happiness today."),
+    qLevel(3,"Which sentence is correct?","The detective looked carefully at the footprints.","The detective looked careful at the footprints.","The detective looked at the carefully footprints.","The detective carefully looked careful at the footprints."),
+    qLevel(3,"Which sentence is written in standard English?","This puzzle is really hard.","This puzzle is real hard.","This puzzle is really hardly.","This puzzle is real hardly."),
+    qLevel(3,"Which sentence is correct in formal writing?","I feel bad that I forgot your birthday.","I feel badly that I forgot your birthday.","I feel badness that I forgot your birthday.","I bad feel that I forgot your birthday."),
+    qLevel(3,"Which sentence is correct?","The music was surprisingly loud.","The music was surprising loud.","The music was surprisingly loudly.","The music surprisingly was loudly.")
+  ],
+  relativeAdverbs:[
+    qLevel(1,"Which word is a relative adverb? This is the park where we met.","where","This","park","met"),
+    qLevel(1,"Which relative adverb fits? I remember the day ___ we got our puppy.","when","where","why","what"),
+    qLevel(1,"Which relative adverb fits? That’s the store ___ Dad buys fresh bread.","where","when","why","who"),
+    qLevel(1,"Which words can be relative adverbs?","where, when, why","who, what, which","here, there, now","and, but, or"),
+    qLevel(2,"Which relative adverb fits? Tell me the reason ___ you were late.","why","where","when","how"),
+    qLevel(2,"In which sentence is “where” a relative adverb?","We visited the town where my mom grew up.","Where did you put my shoes?","Where is the nearest library in this town?","Where are we going for dinner?"),
+    qLevel(2,"In which sentence is “when” a relative adverb?","Summer is the season when we swim every day.","When does the movie start?","When will we get to Grandma’s house tonight?","When is your birthday?"),
+    qLevel(2,"Which sentence combines these correctly? “This is the lake. We caught three fish there.”","This is the lake where we caught three fish.","This is the lake when we caught three fish.","This is the lake why we caught three fish.","This is where the lake we caught three fish."),
+    qLevel(3,"What does the relative clause describe? I found the box where Grandma kept her letters.","the noun “box”","the verb “found”","the noun “letters”","the pronoun “I”"),
+    qLevel(3,"In “Do you know the place where the trail ends?”, what job does “where” do?","It starts a clause that describes the noun “place”","It asks a question all by itself, like “Where is it?”","It names a place on the map","It describes the verb “ends”"),
+    qLevel(3,"Which sentence uses a relative adverb correctly?","Nobody knows the reason why the lights went out.","Nobody knows the reason where the lights went out.","Nobody knows the reason when the lights went out.","Nobody knows the time why the lights went out."),
+    qLevel(3,"Which sentence has a relative adverb?","That was the year when I learned to swim.","When I learned to swim, I was only six years old.","I learned to swim at camp.","Did you learn to swim at camp?"),
+    qLevel(3,"What is “why” doing in “Why did the bell ring early?”","It asks a question","It joins a clause to the noun “reason”","It describes a noun in the sentence","It names a time"),
+    qLevel(3,"Which relative adverb fits? Saturday is the day ___ the library opens late.","when","where","why","which")
+  ],
+  adjectiveOrder:[
+    qLevel(1,"Which phrase sounds right?","a big red ball","a red big ball","a ball big red","a big ball red"),
+    qLevel(1,"Which phrase is in the right order?","a cute little puppy","a little cute puppy","a puppy cute little","a cute puppy little"),
+    qLevel(1,"Which phrase is in the right order?","an old wooden chair","a wooden old chair","an old chair wooden","a wooden chair old"),
+    qLevel(1,"Which phrase sounds right?","two shiny coins","shiny two coins","two coins shiny","coins two shiny"),
+    qLevel(2,"Which phrase is in the right order?","a beautiful old Italian painting","an Italian old beautiful painting","an old beautiful Italian painting","a beautiful Italian old painting"),
+    qLevel(2,"Which phrase is in the right order?","a small round wooden table","a round small wooden table","a wooden small round table","a small wooden round table"),
+    qLevel(2,"Which kind of adjective usually comes first in a list?","an opinion word, like lovely or ugly","a color word, like blue or green","a material word, like cotton or wool","a purpose word, like “sleeping” in sleeping bag"),
+    qLevel(2,"Why does “a big old house” sound right but “an old big house” sound odd?","Size words usually come before age words","Shorter words always come before longer ones","Age words go at the very end of the list","Adjectives go in ABC order"),
+    qLevel(3,"Which phrase is in the right order?","a new blue sleeping bag","a blue new sleeping bag","a sleeping new blue bag","a new sleeping blue bag"),
+    qLevel(3,"Which phrase is in the right order?","a tall young Canadian athlete","a young tall Canadian athlete","a Canadian tall young athlete","a tall Canadian young athlete"),
+    qLevel(3,"Which sentence has its adjectives in the right order?","We found a strange tiny green bug.","We found a tiny strange green bug.","We found a green strange tiny bug.","We found a strange green tiny bug."),
+    qLevel(3,"Which phrase is in the wrong order?","a cotton white shirt","a soft white shirt","a large white cotton shirt","a new white shirt"),
+    qLevel(3,"Which phrase is in the right order?","three delicious square chocolate cookies","three square delicious chocolate cookies","delicious three square chocolate cookies","three delicious chocolate square cookies"),
+    qLevel(3,"Which phrase is in the right order?","an ugly old green sweater","an old ugly green sweater","a green ugly old sweater","an ugly green old sweater")
+  ],
+  commasAdjectives:[
+    qLevel(1,"Which sentence is punctuated correctly?","It was a cold, rainy morning.","It was a cold rainy, morning.","It was a, cold rainy morning.","It was a cold, rainy, morning."),
+    qLevel(1,"Which sentence is punctuated correctly?","She owns three gray cats.","She owns three, gray cats.","She owns three gray, cats.","She owns, three gray cats."),
+    qLevel(1,"Which phrase is punctuated correctly?","a happy, excited crowd","a happy excited, crowd","a, happy excited crowd","a happy, excited, crowd"),
+    qLevel(1,"Which phrase is punctuated correctly?","a soft, fluffy blanket","a soft fluffy, blanket","a soft, fluffy, blanket","a, soft fluffy blanket"),
+    qLevel(2,"Which test tells you to put a comma between two adjectives?","You can switch their order and put “and” between them","Both adjectives are long words with three or more syllables","The adjectives come after the noun they describe","One of the adjectives ends in -y"),
+    qLevel(2,"Which phrase needs a comma?","a friendly helpful neighbor","a small brown dog next door","three red apples","a big wooden box"),
+    qLevel(2,"Which sentence is punctuated correctly?","We watched a long, boring movie.","We watched a long boring, movie.","We watched, a long boring movie.","We watched a long, boring, movie."),
+    qLevel(2,"Where does the comma go in “a bright cheerful smile”?","between “bright” and “cheerful”","after “a”","between “cheerful” and “smile”","nowhere, because no comma is needed in this phrase"),
+    qLevel(3,"Why is there no comma in “a big wooden box”?","“A wooden big box” and “a big and wooden box” both sound wrong","Both adjectives are short words","“Wooden” is really a noun in this phrase","Commas never go between two adjectives that come before a noun"),
+    qLevel(3,"Which sentence uses commas correctly?","The tired, hungry hikers reached the old stone cabin.","The tired hungry hikers reached the old, stone cabin.","The tired, hungry hikers reached the old, stone cabin.","The tired hungry, hikers reached the old stone cabin."),
+    qLevel(3,"Which sentence needs a comma between two adjectives?","It was a dark stormy night.","It was a bright summer day.","We ate two warm muffins.","She wore a red wool hat."),
+    qLevel(3,"Comma or no comma in “a heavy winter coat”?","No comma: “winter coat” is one idea, so the words can’t switch","A comma, because there are two adjectives before the noun “coat”","A comma, because “coat” is a noun","No comma, because “heavy” is a long word"),
+    qLevel(3,"Which sentence is punctuated correctly?","Our clever, playful puppy learned a new trick.","Our clever playful, puppy learned a new trick.","Our, clever playful puppy learned a new trick.","Our clever, playful, puppy learned a new trick."),
+    qLevel(3,"Which phrase should NOT have a comma between its adjectives?","two small kittens","a warm sunny afternoon","a kind patient teacher","a soft fluffy pillow")
+  ],
+  comparativeSuperlative:[
+    qLevel(1,"Which word fits? My dog is ___ than your dog.","smaller","small","smallest","more small"),
+    qLevel(1,"Which word fits? Of all the planets, Jupiter is the ___.","largest","larger","most large","large"),
+    qLevel(1,"Which word compares two things?","taller","tall","tallest","most tall"),
+    qLevel(1,"Which sentence uses a superlative?","Today is the hottest day of the summer.","Today is hotter than yesterday and the day before.","Today is very hot.","Today is hot and sunny."),
+    qLevel(2,"Which sentence is correct?","This test was easier than the last one.","This test was more easier than the last one.","This test was easiest than the last one.","This test was more easy than the last one."),
+    qLevel(2,"Which sentence is correct?","This is the most exciting book I have read.","This is the excitingest book I have read.","This is the more exciting book I have read.","This is the most excitingest book I have read."),
+    qLevel(2,"Which sentence is correct?","My cold is worse today than yesterday.","My cold is badder today than yesterday.","My cold is worst today than yesterday.","My cold is more bad today than yesterday."),
+    qLevel(2,"Which sentence is correct?","Of the three runners, Kai ran the fastest.","Of the three runners, Kai ran the faster.","Of the three runners, Kai ran the most fast.","Of the three runners, Kai ran more fast."),
+    qLevel(3,"Which sentence compares two actions correctly?","Lena speaks more softly than her sister.","Lena speaks softlier than her sister.","Lena speaks most softly than her sister.","Lena speaks more softer than her sister."),
+    qLevel(3,"You are comparing only two pizzas. Which is correct in formal writing?","This pizza is the better of the two.","This pizza is the best of the two.","This pizza is the most good of the two.","This pizza is the gooder of the two."),
+    qLevel(3,"Which sentence has a mistake?","Our team is more stronger this year.","Our team is stronger this year.","Our team is the strongest in the league.","Our team plays more confidently this year."),
+    qLevel(3,"Which sentence is correct?","Grandma lives farther from school than we do.","Grandma lives farer from school than we do.","Grandma lives farthest from school than we do.","Grandma lives more far from school than we do."),
+    qLevel(3,"Which sentence is correct?","Of all my friends, Rosa draws the most carefully.","Of all my friends, Rosa draws the carefulest.","Of all my friends, Rosa draws more carefully than anyone.","Of all my friends, Rosa draws the most careful."),
+    qLevel(3,"Which sentence is correct?","I have less homework than my brother.","I have littler homework than my brother.","I have least homework than my brother.","I have more little homework than my brother.")
+  ],
+  intensifiers:[
+    qLevel(1,"Which word is an adverb of degree? The soup is very hot.","very","soup","hot","is"),
+    qLevel(1,"Which word tells how much? I am almost finished.","almost","I","am","finished"),
+    qLevel(1,"Which word makes “tired” stronger? I was ___ tired after the race.","extremely","slightly","somewhat","a little"),
+    qLevel(1,"Which sentence uses an intensifier?","The water was incredibly cold.","The water was cold.","The cold water splashed.","We swam in the cold water of the lake."),
+    qLevel(2,"Which word makes the adjective weaker? The movie was ___ funny.","somewhat","very","really","incredibly"),
+    qLevel(2,"Which sentence means the box is more than you can lift?","The box is too heavy for me to lift.","The box is very heavy, but I can lift it.","The box is quite heavy.","The box is heavy enough to hold the door open."),
+    qLevel(2,"Which word does “really” describe? The puppy is really small.","small","puppy","is","the"),
+    qLevel(2,"Which word tells to what degree? She barely made it to the bus.","barely","made","bus","She"),
+    qLevel(3,"Which sentence uses an adverb of degree to describe another adverb?","He spoke quite slowly.","He spoke slowly.","He is quite tall for his age.","He was slow."),
+    qLevel(3,"Which sentence means the cookies are not finished baking?","The cookies are nearly done.","The cookies are completely done.","The cookies are totally done.","The cookies are done."),
+    qLevel(3,"Which word is NOT an adverb of degree?","quickly","very","rather","extremely"),
+    qLevel(3,"Which sentence avoids a mistake in formal writing?","Every snowflake is unique.","Every snowflake is very unique.","Every snowflake is extremely unique.","Every snowflake is really very unique."),
+    qLevel(3,"Which sentence uses “too” to mean “more than is good”?","The bath water is too hot to get in.","I want to come too.","She has two cats and a dog.","Can I have some ice cream and a cookie too?"),
+    qLevel(3,"Which sentence shows the smallest amount?","I am slightly hungry.","I am very hungry.","I am extremely hungry.","I am really hungry.")
+  ]
+};
 /* ---------- end of the moved banks ---------- */
 
 export {
-  ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3,
+  ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, ENGLISH_UNIT4, ENGLISH_GROUPS4,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4,
   BIO_UNIT1, BIO_GROUPS,
-  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS,
+  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS, MODIFIER_QUESTIONS,
   KHAN, KHAN_LINKS, mc
 };
 
@@ -1521,6 +1705,7 @@ export const LESSON_COURSES = [
   {id:'nouns', title:'English Unit 1: Nouns', skills:ENGLISH_UNIT1, groups:ENGLISH_GROUPS},
   {id:'verbs', title:'English Unit 2: Verbs', skills:ENGLISH_UNIT2, groups:ENGLISH_GROUPS2},
   {id:'pronouns', title:'English Unit 3: Pronouns', skills:ENGLISH_UNIT3, groups:ENGLISH_GROUPS3},
+  {id:'modifiers', title:'English Unit 4: Adjectives and Adverbs', skills:ENGLISH_UNIT4, groups:ENGLISH_GROUPS4},
   {id:'history', title:'History Unit 1: Origins of History', skills:HISTORY_UNIT1, groups:HISTORY_GROUPS},
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
@@ -1533,7 +1718,7 @@ export function builtInBank(courseId){
   return courseId === 'bio1' ? BIO1_QUESTIONS
     : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS
     : courseId === 'history2' ? HISTORY2_QUESTIONS : courseId === 'history' ? HISTORY_QUESTIONS
-    : courseId === 'verbs' ? VERB_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : PLURAL_QUESTIONS;
+    : courseId === 'verbs' ? VERB_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : PLURAL_QUESTIONS;
 }
 
 /* Every place a lesson shows a Khan link: one per block, plus each extra reading in that block.

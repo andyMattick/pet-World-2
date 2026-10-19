@@ -18,7 +18,7 @@ import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainS
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
 import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -304,7 +304,7 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
-const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test'};
+const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test'};
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (ELA_FINAL_KEYS[unit]) {
@@ -6473,7 +6473,7 @@ const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science'};
 const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology'};
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
-const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns'};
+const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers'};
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
@@ -6860,7 +6860,9 @@ const HISTORY_PROJECTS = {
     {key:'claim',label:'4. Answer “Was agriculture a mistake?” with a claim, supporting evidence, and a counterargument.'},
     {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]}
 };
-const englishCourse = course => course === 'pronouns'
+const englishCourse = course => course === 'modifiers'
+  ? {id:'modifiers',building:'elaDescr',title:'English Unit 4: Adjectives and Adverbs',skills:ENGLISH_UNIT4,groups:ENGLISH_GROUPS4,finalKey:'modifiers:final-test',finalPass:8}
+  : course === 'pronouns'
   ? {id:'pronouns',building:'elaPron',title:'English Unit 3: Pronouns',skills:ENGLISH_UNIT3,groups:ENGLISH_GROUPS3,finalKey:'pronouns:final-test',finalPass:9}
   : course === 'verbs'
   ? {id:'verbs',building:'elaVerbs',title:'English Unit 2: Verbs',skills:ENGLISH_UNIT2,groups:ENGLISH_GROUPS2,finalKey:'verbs:final-test',finalPass:9}
@@ -6959,7 +6961,8 @@ const youtubeLink = (name, key, text = 'Find videos on YouTube') => youtubeOn() 
 const KHAN_UNIT_TESTS = {
   nouns:`${KHAN}humanities/grammar/parts-of-speech-the-noun/test/parts-of-speech-the-noun-unit-test`,
   verbs:`${KHAN}humanities/grammar/parts-of-speech-the-verb/test/parts-of-speech-the-verb-unit-test`,
-  pronouns:`${KHAN}humanities/grammar/parts-of-speech-the-pronoun/test/parts-of-speech-the-pronoun-unit-test`
+  pronouns:`${KHAN}humanities/grammar/parts-of-speech-the-pronoun/test/parts-of-speech-the-pronoun-unit-test`,
+  modifiers:`${KHAN}humanities/grammar/parts-of-speech-the-modifier/test/parts-of-speech-the-modifier-unit-test`
 };
 function khanTestCardHTML(courseId){
   const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
@@ -6977,7 +6980,7 @@ function khanLinkHTML(url, name, key){
   if (!khanOn()) return youtubeLink(name, key, 'Find a video for this lesson on YouTube');   // Khan is off: the lesson text above is the lesson, with a video search if allowed
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>${backup}`;
 }
-const REPORT_COURSES = ['nouns','verbs','pronouns','history','history2','history3','history4','bio1'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','history','history2','history3','history4','bio1'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -7124,7 +7127,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (courseId === 'verbs' || courseId === 'pronouns') return applyQuestionEdits(courseId, skillId, (courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers') return applyQuestionEdits(courseId, skillId, (courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -7396,7 +7399,7 @@ function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
