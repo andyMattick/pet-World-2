@@ -151,6 +151,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F19. 🐾 Teacher ⇄ student: Open Pet World and Student view (class code filled in) in the teacher app; a clearer teacher button on the join screen
 - [x] F20. 📦 `npm run import-game` for Arcade and Brain Games built outside Pet World (`IMPORT-GAMES.md`)
 - [x] F21. 🤸 Stand-and-stretch breaks (`MOVE-BREAKS.md`): when a student finishes one subject and starts another, her pet leads 4 moves (20 seconds each), no skip; teachers switch it on or off, set the minutes, and pick the moves
+- [x] F22. 🪞 English Unit 3: Pronouns in the new Mirror Library (Khan Grammar Unit 3, all 11 skills in Khan’s order, 5 block quizzes, unit test pass 9 of 11). It opens after the Verbs unit test; the Poetry Library (adjectives and adverbs, Khan Unit 4) moves to fourth. Review list: `PRONOUNS-review.md`
+- [x] F23. 🎓 After an English unit test is passed, the unit page links to Khan’s matching unit test (when Khan is on); a sent-back written answer has a Fix it button on the unit page too, and still opens if the question was reworded or hidden since
 
 ## Database files, in the order they were run
 

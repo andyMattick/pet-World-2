@@ -16,7 +16,7 @@ import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, 
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, MOVE_SECONDS, MOVE_SUBJECTS } from '../shared/moveBreaks';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -293,10 +293,12 @@ function unitLockedText(building){
   const prev = prevBuilding(building.id);
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
+/* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
+const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test'};
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
-  if (unit === 'elaNouns' || unit === 'elaVerbs') {
-    const key = unit === 'elaNouns' ? 'final-test' : 'verbs:final-test';
+  if (ELA_FINAL_KEYS[unit]) {
+    const key = ELA_FINAL_KEYS[unit];
     return !!S.elaProgress?.[key]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   }
   const key = `${unit}:test`;
@@ -6325,7 +6327,8 @@ const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science'};
 const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology'};
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
-const unitCourse = id => (id === 'elaNouns' ? 'nouns' : id === 'elaVerbs' ? 'verbs' : HISTORY_BUILDING_COURSE[id] || '');
+const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns'};
+const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
   return !!x && typeof x.id === 'string' && ((x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]));
@@ -6481,13 +6484,22 @@ $('#sentBackWrap').addEventListener('click', event => {
     S.readingSelection = {bookId:item.bookId, chapterId:item.chapterId || book?.chapters[book.chapters.length - 1]?.id || null};
     activeEnglishCourse = 'nouns'; save(); show('library'); return;
   }
-  const entry = item.entry, m = entry.courseId === 'math' ? mathStation(entry.skillId) : null;
-  const question = entry.skillId === 'unit-test' ? unitEssay(entry.courseId)
+  openWrittenRedo(item.entry);
+});
+/* open a written answer that was sent back, ready to fix (from the town banner or the unit page's written answers) */
+function openWrittenRedo(entry){
+  const m = entry.courseId === 'math' ? mathStation(entry.skillId) : null;
+  const found = entry.skillId === 'unit-test' ? unitEssay(entry.courseId)
     : typedQuestions(entry.courseId, entry.skillId, TYPED_QUESTIONS[entry.courseId]?.[entry.skillId], Backend.me?.question_edits || {}).find(q => q.id === entry.qid);
-  if (!question) { if (m) { currentShop = m.shop; show('cafe'); } else { show('library'); renderEnglishUnit(entry.courseId); } return; }
+  /* a question that was reworded or hidden after she answered it: redo it from the copy saved with her answer */
+  const question = found || {type:entry.type === 'essay' ? 'essay' : 'short', prompt:entry.prompt, rubric:entry.rubric || [], model:entry.model || '', minWords:entry.type === 'essay' ? 40 : 8, id:entry.qid, skillId:entry.skillId};
   show('library'); if (!m) activeEnglishCourse = entry.courseId;
   englishRun = {title:'Fix your written answer', courseId:entry.courseId, shop:m?.shop, questions:[], index:0, score:0, passMark:0, outcomes:[], written:question, redoOnly:true, retryType:entry.where === 'test' ? 'final' : 'practice'};
   renderWrittenStep();
+}
+document.addEventListener('click', event => {
+  const b = event.target.closest('[data-written-redo]'); if (!b) return;
+  const entry = S.writtenAnswers.find(x => x.id === b.dataset.writtenRedo); if (entry) openWrittenRedo(entry);
 });
 let pickerMode = '', pickerSlot = -1;
 function openDisplayPicker(mode, slot){
@@ -6529,7 +6541,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'room') show('room');
   else if (id === 'artstudio') show('artstudio');
   else if (id === 'reading') { activeEnglishCourse = 'nouns'; show('library'); }
-  else if (id === 'elaNouns' || id === 'elaVerbs') { show('library'); renderEnglishUnit(id === 'elaVerbs' ? 'verbs' : 'nouns'); }
+  else if (ELA_BUILDING_COURSE[id]) { show('library'); renderEnglishUnit(ELA_BUILDING_COURSE[id]); }
   else if (HISTORY_BUILDING_COURSE[id]) { show('library'); renderEnglishUnit(HISTORY_BUILDING_COURSE[id]); }
   else if (id === 'shop') show('book');
   else if (id === 'book') show('book');
@@ -6647,7 +6659,9 @@ const HISTORY_PROJECTS = {
     {key:'claim',label:'4. Answer “Was agriculture a mistake?” with a claim, supporting evidence, and a counterargument.'},
     {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]}
 };
-const englishCourse = course => course === 'verbs'
+const englishCourse = course => course === 'pronouns'
+  ? {id:'pronouns',building:'elaPron',title:'English Unit 3: Pronouns',skills:ENGLISH_UNIT3,groups:ENGLISH_GROUPS3,finalKey:'pronouns:final-test',finalPass:9}
+  : course === 'verbs'
   ? {id:'verbs',building:'elaVerbs',title:'English Unit 2: Verbs',skills:ENGLISH_UNIT2,groups:ENGLISH_GROUPS2,finalKey:'verbs:final-test',finalPass:9}
   : course === 'history'
     ? {id:'history',building:'histOrigins',title:'History Unit 1: Origins of History',skills:HISTORY_UNIT1,groups:HISTORY_GROUPS,finalKey:'history:final-test',testPer:2,finalPass:6,noQuizzes:true}
@@ -6739,6 +6753,17 @@ const youtubeLink = (name, key, text = 'Find videos on YouTube') => youtubeOn() 
 /* exact lesson URLs are used where known; otherwise a Khan Academy search for the lesson name */
 /* key ("<courseId>:<groupId>", or ":<n>" after it for an extra reading): if the class's teacher saved their own
    https:// link for this lesson, it comes first, with a smaller Khan link under it unless the teacher turned that off */
+/* After the Pet World unit test is passed: send her to Khan's own unit test, the outside check (docs: KHAN.md).
+   The score goes to the grown-up, who logs it in the teacher app (Lessons & questions → Khan unit test check). */
+const KHAN_UNIT_TESTS = {
+  nouns:`${KHAN}humanities/grammar/parts-of-speech-the-noun/test/parts-of-speech-the-noun-unit-test`,
+  verbs:`${KHAN}humanities/grammar/parts-of-speech-the-verb/test/parts-of-speech-the-verb-unit-test`,
+  pronouns:`${KHAN}humanities/grammar/parts-of-speech-the-pronoun/test/parts-of-speech-the-pronoun-unit-test`
+};
+function khanTestCardHTML(courseId){
+  const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
+  return `<section class="ela-final-assessment khan-test-next"><div><h3>🎓 Next: the Khan Academy unit test</h3><p class="muted">You passed the Pet World test. Now take Khan Academy’s unit test for the same unit, then tell your ${Backend.me ? 'teacher' : 'grown-up'} your score.</p></div><a class="btn small berry" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open the Khan test</a></section>`;
+}
 function khanLinkHTML(url, name, key){
   const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
   /* a fixed link can break if Khan moves a page, so it always comes with a search for the lesson as a backup (docs: KHAN.md) */
@@ -6751,7 +6776,7 @@ function khanLinkHTML(url, name, key){
   if (!khanOn()) return youtubeLink(name, key, 'Find a video for this lesson on YouTube');   // Khan is off: the lesson text above is the lesson, with a video search if allowed
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>${backup}`;
 }
-const REPORT_COURSES = ['nouns','verbs','history','history2','history3','history4','bio1'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','history','history2','history3','history4','bio1'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -6898,7 +6923,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (courseId === 'verbs') return applyQuestionEdits(courseId, skillId, VERB_QUESTIONS[skillId] || [], edits).map(question => {
+  if (courseId === 'verbs' || courseId === 'pronouns') return applyQuestionEdits(courseId, skillId, (courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -7170,7 +7195,7 @@ function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' ? `verbs:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
@@ -7349,7 +7374,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -7636,7 +7661,8 @@ function writtenListHTML(courseId, prefix = ''){
   const rows = entries.map(entry => {
     const review = writtenReviewOf(entry), state = writtenState(entry);
     const result = review ? `<p><b>${reviewScore(review)} of ${entry.rubric.length}</b> · checked by ${review.by === 'teacher' ? 'your teacher' : 'a grown-up'}${review.comment ? ` · “${esc(review.comment)}”` : ''}</p><ul class="written-points">${entry.rubric.map((point, i) => `<li class="${review.points[i] ? 'ok' : 'no'}">${review.points[i] ? '✓' : '○'} ${esc(point)}</li>`).join('')}</ul>` : '';
-    return `<details class="written-entry"><summary><span>${esc(entry.prompt)}</span><small>${entry.where === 'test' ? 'Unit test · ' : ''}${WRITTEN_STATE_TEXT[state]}</small></summary><p class="written-mine">${esc(entry.text)}</p>${result}</details>`;
+    const fix = state === 'redo' && latestWritten(entry.qid)?.id === entry.id ? `<div class="row"><button type="button" class="btn small berry" data-written-redo="${esc(entry.id)}">Fix it →</button></div>` : '';
+    return `<details class="written-entry"${fix ? ' open' : ''}><summary><span>${esc(entry.prompt)}</span><small>${entry.where === 'test' ? 'Unit test · ' : ''}${WRITTEN_STATE_TEXT[state]}</small></summary><p class="written-mine">${esc(entry.text)}</p>${result}${fix}</details>`;
   }).join('');
   return `<section class="ela-final-assessment written-list"><div style="width:100%"><h3>✍️ My written answers</h3>${rows}</div></section>`;
 }

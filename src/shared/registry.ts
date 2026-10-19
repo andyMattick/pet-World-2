@@ -647,6 +647,7 @@ export const BUILDINGS: Building[] = [
   {id:'bioPlanet',  emoji:'🦁', name:'Zoo',             unit:'Biodiversity and human impact', hood:'g6', subject:'biology'},
   {id:'elaNouns',  emoji:'📖', name:'Story Corner Library', unit:'Unit 1: Nouns', hood:'g6', subject:'english', open:true},
   {id:'elaVerbs',  emoji:'🏃', name:'Action Library',       unit:'Unit 2: Verbs', hood:'g6', subject:'english', open:true},
+  {id:'elaPron',   emoji:'🪞', name:'Mirror Library',       unit:'Unit 3: Pronouns', hood:'g6', subject:'english', open:true},
   {id:'elaDescr',  emoji:'🎨', name:'Poetry Library',       unit:'Adjectives and adverbs', hood:'g6', subject:'english'},
   {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Prepositions, conjunctions, and sentence structure', hood:'g6', subject:'english'},
   {id:'elaPunct',  emoji:'✏️', name:'Punctuation Library',  unit:'Punctuation and capitalization', hood:'g6', subject:'english'},

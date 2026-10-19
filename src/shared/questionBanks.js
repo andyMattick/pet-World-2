@@ -902,6 +902,7 @@ const GRAMMAR = `${KHAN}humanities/grammar/parts-of-speech-the-`, WORLD = `${KHA
 const KHAN_LINKS = {
   nouns:{intro:`${GRAMMAR}noun/grammar-nouns/v/introduction-to-nouns-the-parts-of-speech-grammar-khan-academy`,types:`${GRAMMAR}noun/types-of-nouns/v/common-and-proper-nouns`,irregularBase:`${GRAMMAR}noun/irregular-plural-nouns-base-plurals-and-irregular-endings/v/irregular-plural-nouns-part-i-the-parts-of-speech-grammar-khan-academy`,irregularForeign:`${GRAMMAR}noun/irregular-plural-nouns-mutant-and-foreign-plurals/v/irregular-plural-nouns-part-iv-the-parts-of-speech-grammar`},
   verbs:{foundation:`${GRAMMAR}verb/introduction-to-verbs/v/introduction-to-verbs-the-parts-of-speech-grammar`,irregular:`${GRAMMAR}verb/irregular-verbs/v/introduction-to-irregular-verbs-the-parts-of-speech-grammar`,aspect:`${GRAMMAR}verb/verb-aspect-simple-progressive-and-perfect/v/intro-to-aspect`,aspectModal:`${GRAMMAR}verb/verb-aspect-and-modal-verbs/v/perfect-progressive-aspect-the-parts-of-speech-grammar`},
+  pronouns:{intro:`${GRAMMAR}pronoun/introduction-to-pronouns/v/what-is-a-pronoun-the-parts-of-speech-grammar`,possessive:`${GRAMMAR}pronoun/possessive-and-reflexive-pronouns/v/possessive-pronouns-the-parts-of-speech-grammar`,relative:`${GRAMMAR}pronoun/relative-pronouns/v/relative-pronouns-the-parts-of-speech-grammar`,caseNumber:`${GRAMMAR}pronoun/subject-object-person-and-number/v/subject-and-object-pronouns-the-parts-of-speech-grammar`,indefinite:`${GRAMMAR}pronoun/indefinite-pronouns-pronoun-vagueness-and-emphatic-pronouns/v/indefinite-pronouns-the-parts-of-speech-grammar`},
   history:{stories:`${WORLD}origins-of-history/x66f79d8a:history-stories-1-1/v/meet-oer-project-world-history`,frames:`${WORLD}origins-of-history/x66f79d8a:history-frames-1-3/v/frame-concept-introduction-world-history-project-beta`,memory:`${WORLD}origins-of-history/x66f79d8a:history-and-memory-1-4/a/activity-opener-worst-day-ever`},
   history2:{earliestHumans:`${WORLD}early-humans/x66f79d8a:the-earliest-humans-2-1/a/activity-opener-then-vs-now`,migrationArt:`${WORLD}early-humans/x66f79d8a:migration-and-art-2-2/a/activity-opener-who-s-an-authority`,foragingSocieties:`${WORLD}early-humans/x66f79d8a:foraging-societies-2-3/a/activity-opener-what-is-this-asking-introduction-origins`,agriculturalRevolution:`${WORLD}early-humans/x66f79d8a:the-agricultural-revolution-2-4/a/activity-opener-which-frame`,biggestMistake:`${WORLD}early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/a/activity-opener-casual-map-jack-and-the-giant-beanstalk`},
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
@@ -1302,13 +1303,214 @@ const ENGLISH_BUILT_IN_LEVELS = {"identifyNouns":[1,1,1,1,1,2,2,2,1,1],"singular
 [PLURAL_QUESTIONS, VERB_QUESTIONS].forEach(bank => Object.entries(ENGLISH_BUILT_IN_LEVELS).forEach(([skillId, levels]) => levels.forEach((level, index) => { const question = bank[skillId]?.[index]; if (question && question.difficulty == null) question.difficulty = level; })));
 Object.entries(PLURAL_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { PLURAL_QUESTIONS[skillId] = [...(PLURAL_QUESTIONS[skillId] || []), ...questions]; });
 Object.entries(VERB_EXTRA_QUESTIONS).forEach(([skillId, questions]) => { VERB_QUESTIONS[skillId] = [...(VERB_QUESTIONS[skillId] || []), ...questions]; });
+/* ---------- English Unit 3: Pronouns (Khan Academy Grammar, Unit 3: Parts of speech: the pronoun) ----------
+   One lesson per Khan skill, in Khan's order, grouped by Khan's lessons. Every question has a level: 1 (easier),
+   2 (medium) or 3 (Khan unit test level and up). The right answer is listed first; the game shuffles the choices. */
+const ENGLISH_UNIT3 = [
+  {id:'questionWord',name:'The question word',lesson:'Who, whom, whose, what, and which can start a question and stand in for the answer you don’t know yet. Who asks about a person, what about a thing, whose about an owner, and which about a choice.'},
+  {id:'personalPronoun',name:'Meet the personal pronoun',lesson:'Personal pronouns (I, you, he, she, it, we, they, me, him, her, us, them) take the place of a noun that was already named, so you don’t repeat it.'},
+  {id:'possessivePronoun',name:'Possessive pronouns and adjectives',lesson:'My, your, his, her, its, our, and their go before a noun (my bike). Mine, yours, his, hers, ours, and theirs stand alone (the bike is mine). Its never takes an apostrophe; it’s means it is.'},
+  {id:'reflexivePronoun',name:'Reflexive pronouns',lesson:'A reflexive pronoun (myself, yourself, himself, herself, itself, ourselves, yourselves, themselves) is used when the subject does something to itself: She taught herself to knit.'},
+  {id:'relativePronoun',name:'Relative pronouns',lesson:'Who, whom, whose, which, and that start a clause that tells more about a noun. Use who and whom for people, which and that for things, and whose to show ownership.'},
+  {id:'pronounCase',name:'Choosing between subject and object pronouns',lesson:'Subject pronouns (I, he, she, we, they) do the action. Object pronouns (me, him, her, us, them) receive it or come after words like to, with, and between. Cover up the other person to check: Mia and I went; Dad drove Mia and me.'},
+  {id:'pronounPerson',name:'Pronoun person',lesson:'First person is the speaker (I, we), second person is the listener (you), and third person is anyone else (he, she, it, they). Don’t switch person partway through a sentence.'},
+  {id:'pronounNumber',name:'Pronoun number',lesson:'A pronoun must match the noun it stands for: one thing takes a singular pronoun (it, he, she), more than one takes a plural pronoun (they, them).'},
+  {id:'indefinitePronoun',name:'Indefinite pronouns',lesson:'Indefinite pronouns don’t name a certain person or thing: someone, anybody, nothing, each, few, several, all. Words ending in -one, -body, and -thing, plus each and either, are singular.'},
+  {id:'pronounVagueness',name:'Pronoun vagueness',lesson:'A pronoun is vague when a reader can’t tell which noun it means. If “she” could be two different girls, use a name instead.'},
+  {id:'emphaticPronoun',name:'Emphatic pronouns',lesson:'An emphatic pronoun looks like a reflexive pronoun but only adds emphasis: The mayor herself cut the ribbon. You can take it out and the sentence still makes sense.'}
+];
+const ENGLISH_GROUPS3 = [
+  {id:'intro',quizName:'Introduction to pronouns Quiz',name:'Introduction to pronouns',learn:'Spot pronouns, use them to stand in for nouns, and use question words to ask about people and things.',skills:['questionWord','personalPronoun']},
+  {id:'possessive',quizName:'Possessive and reflexive pronouns Quiz',name:'Possessive and reflexive pronouns',learn:'Show who owns something, and use -self and -selves pronouns when the subject acts on itself.',skills:['possessivePronoun','reflexivePronoun']},
+  {id:'relative',quizName:'Relative pronouns Quiz',name:'Relative pronouns',learn:'Use who, whom, whose, which, and that to add information about a noun.',skills:['relativePronoun']},
+  {id:'caseNumber',quizName:'Subject, object, person, and number Quiz',name:'Subject, object, person, and number',learn:'Choose I or me, keep the same person, and match each pronoun to its noun.',skills:['pronounCase','pronounPerson','pronounNumber']},
+  {id:'indefinite',quizName:'Indefinite, vague, and emphatic pronouns Quiz',name:'Indefinite pronouns, pronoun vagueness, and emphatic pronouns',learn:'Match verbs to words like everyone and several, fix pronouns that could mean two people, and use pronouns for emphasis.',skills:['indefinitePronoun','pronounVagueness','emphaticPronoun']}
+];
+const PRONOUN_QUESTIONS = {
+  questionWord:[
+    qLevel(1,"Which word asks about a person? ___ left the gate open?","Who","What","Which","Whose"),
+    qLevel(1,"Which question word fits? ___ is your favorite sandwich?","What","Who","Whom","Whose"),
+    qLevel(1,"Which question word fits? ___ jacket is on the floor?","Whose","Who’s","Who","Whom"),
+    qLevel(1,"Which word is the question word in this sentence? Who knocked on the door?","Who","knocked","door","the"),
+    qLevel(2,"You have three flavors to choose from. Which question fits best?","Which flavor do you want?","Whose flavor do you want?","Who flavor do you want?","Whom flavor do you want?"),
+    qLevel(2,"Which sentence is correct?","Who’s coming to the game?","Whose coming to the game?","Whos coming to the game?","Who’se coming to the game?"),
+    qLevel(2,"Which question word fits? ___ of these two paintings did you make?","Which","Who","Whose","Whom"),
+    qLevel(2,"In “What fell off the shelf?”, what does “What” stand for?","the thing that fell, which the speaker doesn’t know yet","the shelf, because that is the place where the thing fell from","the person asking","a thing the speaker already named"),
+    qLevel(3,"Which question word fits? To ___ did you give the note?","whom","who","whose","which"),
+    qLevel(3,"Which sentence uses a question word correctly?","Whom did you invite to the party?","Whom is knocking so loudly at the front door?","Whom ate my sandwich?","Whom wants to play?"),
+    qLevel(3,"“Who” and “whom” both ask about people. When do you use “whom”?","When the person receives the action, like “Whom did you call?”","When the person does the action, like “Whom called you?”","When the person owns something, as in “Whom backpack is sitting here?”","When the question is about a thing"),
+    qLevel(3,"Which question is about who owns something?","Whose idea was this?","Who had this idea?","What was the idea?","Which idea was this?"),
+    qLevel(3,"Which sentence is correct?","Whose turn is it to feed the fish?","Who’s turn is it to feed the fish?","Whos turn is it to feed the fish?","Who turn is it to feed the fish?"),
+    qLevel(3,"Which question word fits? ___ of you finished the puzzle first?","Which","Whose","Whom","What")
+  ],
+  personalPronoun:[
+    qLevel(1,"Which word is a pronoun? Maya lost her ball, so she looked under the porch.","she","Maya","ball","porch"),
+    qLevel(1,"Which pronoun can replace the underlined words? MY DAD AND I built a birdhouse.","We","They","Us","Them"),
+    qLevel(1,"Which pronoun can replace “the backpack”? The backpack was too heavy to carry.","It","They","He","Them"),
+    qLevel(1,"Which word is a personal pronoun?","them","table","quickly","jump"),
+    qLevel(2,"Which pronoun can replace “Jordan and Eli”? Jordan and Eli raced to the corner.","They","Them","He","We"),
+    qLevel(2,"How many personal pronouns are in this sentence? She told us that they would bring it.","4","3","2","5"),
+    qLevel(2,"In “Grandpa called, and Mom answered him,” who is “him”?","Grandpa","Mom","the speaker","nobody named"),
+    qLevel(2,"Which sentence uses a pronoun to avoid repeating a noun?","Leo found a shell and showed it to Ana.","Leo found a shell and showed the shell to Ana.","Leo found a shell and Ana found a shell.","Leo and Ana found shells on the beach."),
+    qLevel(3,"Which word is NOT a personal pronoun?","this","us","her","it"),
+    qLevel(3,"Which pronoun should replace the blank? The coach gave the twins a high five, and ___ smiled.","they","them","we","it"),
+    qLevel(3,"Read: “The book was heavy, so Kim put it down.” What noun does “it” replace?","book","Kim","down","heavy"),
+    qLevel(3,"Which sentence uses a pronoun correctly to replace “Sara”?","Sara was tired, so she went to bed early.","Sara was tired, so her went to bed early.","Sara was tired, so it went to bed early.","Sara was tired, so herself went to bed early."),
+    qLevel(3,"In “When the twins got home, they ate dinner,” what does “they” replace?","the twins","home","dinner","the speaker and the twins"),
+    qLevel(3,"Which sentence fixes the repeated noun? “The students turned in the students’ projects.”","The students turned in their projects.","The students turned in its projects.","The students turned in they projects.","The students turned in them projects yesterday.")
+  ],
+  possessivePronoun:[
+    qLevel(1,"Which word fits? That red bike is ___.","mine","my","me","I"),
+    qLevel(1,"Which word fits? The cat licked ___ paw.","its","it’s","its’","it is"),
+    qLevel(1,"Which word fits? We cleaned ___ room.","our","ours","us","we"),
+    qLevel(1,"Which word shows that the backpack belongs to Lily? That backpack is ___.","hers","her’s","hers’","she"),
+    qLevel(2,"Which sentence is correct?","It’s raining, so the dog stayed in its house.","Its raining, so the dog stayed in it’s house.","It’s raining, so the dog stayed in it’s house.","Its raining, so the dog stayed in its house."),
+    qLevel(2,"Which sentence is correct?","The blue towels are theirs.","The blue towels are their’s.","The blue towels are theirs’.","The blue towels are their."),
+    qLevel(2,"Which word is a possessive adjective (it goes before a noun)?","your","yours","you","you’re"),
+    qLevel(2,"Which word is a possessive pronoun that stands alone?","yours","your","you’re","you"),
+    qLevel(3,"Which sentence is correct?","Is this pencil yours or mine?","Is this pencil your’s or mine?","Is this pencil yours or my?","Is this pencil your or mine?"),
+    qLevel(3,"Which word fits both blanks? I lost ___ hat, so Dad let me borrow ___.","my, his","mine, his","my, him","mine, he"),
+    qLevel(3,"Which sentence needs a correction?","The team lost it’s first game.","The team lost its first game.","It’s the team’s first game.","The team says it’s ready for the next game."),
+    qLevel(3,"Which sentence is correct?","Their house is next to ours.","There house is next to ours.","Their house is next to our’s.","They’re house is next to ours."),
+    qLevel(3,"Which words fit? The dog wagged ___ tail because ___ time for a walk.","its, it’s","it’s, its","its, its","it’s, it’s"),
+    qLevel(3,"Which sentence uses a possessive adjective, not a possessive pronoun?","Your idea won the contest.","The winning idea was yours.","The prize is ours to share.","Is that seat hers or mine?")
+  ],
+  reflexivePronoun:[
+    qLevel(1,"Which word fits? I made ___ a sandwich.","myself","me","mine","I"),
+    qLevel(1,"Which word fits? The kids cleaned up after ___.","themselves","them","theirselves","themself"),
+    qLevel(1,"Which word is a reflexive pronoun?","herself","her","hers","she"),
+    qLevel(1,"Which word fits? Be careful! You might hurt ___.","yourself","you","your","yours"),
+    qLevel(2,"Which sentence is correct?","He taught himself to juggle.","He taught hisself to juggle.","He taught heself to juggle.","He taught himselves to juggle."),
+    qLevel(2,"Which word fits? We gave ___ a high five after the game.","ourselves","ourself","us","ourselfs"),
+    qLevel(2,"Which word fits? The robot can charge ___.","itself","it","its","itselves"),
+    qLevel(2,"When do you use a reflexive pronoun like “herself”?","When the subject acts on itself, as in “She saw herself in the mirror.”","Any time you mean “her,” as in “Mom drove herself and me to school.”","To show that something belongs to her, as in “That jacket is herself’s.”","At the start of a sentence, as in “Herself and I went to the store yesterday.”"),
+    qLevel(3,"Which sentence uses a reflexive pronoun correctly?","Mia and I made ourselves a snack.","Mia and myself fixed the bike.","Mom drove Mia and myself to school.","Myself and Mia fixed the bike."),
+    qLevel(3,"Which sentence needs a correction?","Please give the papers to Mr. Ruiz or myself.","Please give the papers to Mr. Ruiz or me.","I gave myself a break after the test.","Mr. Ruiz reminded himself to check the papers."),
+    qLevel(3,"Which sentence is correct?","The twins dressed themselves for the play.","The twins dressed theirselves for the play.","The twins dressed themself for the play.","The twins dressed theirself for the play."),
+    qLevel(3,"Which word fits? You two should be proud of ___.","yourselves","yourself","yourselfs","you"),
+    qLevel(3,"Which sentence is correct?","Lucas and I quizzed ourselves before the test.","Lucas and I quizzed myself before the test.","Lucas and I quizzed ourself before the test.","Lucas and myself quizzed each other before the big test."),
+    qLevel(3,"Which sentence uses a reflexive pronoun?","The kitten saw itself in the mirror and hissed.","The kitten itself is tiny enough to fit in a cup.","The kitten hissed at it in the mirror.","Its reflection made the kitten hiss.")
+  ],
+  relativePronoun:[
+    qLevel(1,"Which word fits? The girl ___ won the race is my cousin.","who","which","whose","whom"),
+    qLevel(1,"Which word fits? I lost the book ___ you lent me.","that","who","whose","whom"),
+    qLevel(1,"Which word is the relative pronoun? The man who fixed our sink was friendly.","who","man","fixed","friendly"),
+    qLevel(1,"Which word fits? That’s the boy ___ dog chased the mail truck.","whose","who’s","who","which"),
+    qLevel(2,"Which sentence is correct?","The teacher who coaches soccer also teaches art.","The teacher which coaches soccer also teaches art.","The teacher whose coaches soccer also teaches art.","The teacher whom coaches soccer also teaches art."),
+    qLevel(2,"Which word fits? Our school bus, ___ is usually on time, came late today.","which","that","who","whose"),
+    qLevel(2,"In “I found the keys that you dropped,” what does “that” refer to?","the keys","you","I","the act of dropping something"),
+    qLevel(2,"Which word fits? The artist ___ paintings hang in the hall visited our class.","whose","who","that","which"),
+    qLevel(3,"Which word fits? The friend ___ I called last night is moving.","whom","who’s","which","whose"),
+    qLevel(3,"Which sentence uses a comma and a relative pronoun correctly?","My bike, which is ten years old, still works.","My bike, that is ten years old, still works.","My bike which, is ten years old, still works.","My bike, who is ten years old, still works."),
+    qLevel(3,"Which sentence needs a correction?","The dog who’s collar is red belongs to Sam.","The dog whose collar is red belongs to Sam.","The dog that has a red collar belongs to Sam.","The dog, which has a red collar, belongs to Sam."),
+    qLevel(3,"Which word fits? The coach, to ___ we gave the card, smiled.","whom","who","which","that"),
+    qLevel(3,"Which sentence is correct?","The trail that we hiked was muddy.","The trail who we hiked was muddy.","The trail whom we hiked was muddy.","The trail whose we hiked was muddy."),
+    qLevel(3,"Which sentence needs commas around its relative clause?","Mount Everest which is the tallest mountain on Earth is in Asia.","The mountain that we climbed was steep.","The hikers who reached the top of the tallest peak cheered loudly.","The map that I drew had a mistake.")
+  ],
+  pronounCase:[
+    qLevel(1,"Which word fits? ___ and Grace walked to the library.","She","Her","Me","Him"),
+    qLevel(1,"Which word fits? Grandma made pancakes for ___.","us","we","our","ours"),
+    qLevel(1,"Which sentence is correct?","She and I like to draw.","Her and me like to draw.","Me and her like to draw.","Her and I like to draw."),
+    qLevel(1,"Which word fits? The coach told ___ to stretch.","them","they","their","theirs"),
+    qLevel(2,"Which sentence is correct?","Dad drove Ella and me to practice.","Dad drove Ella and I to practice.","Dad drove I and Ella to practice.","Dad drove Ella and myself to practice."),
+    qLevel(2,"Which sentence is correct?","Keep this secret between you and me.","Keep this secret between you and I.","Keep this secret between I and you.","Keep this secret between yourself and I."),
+    qLevel(2,"Which word fits in formal writing? It was ___ who left the cookies for you.","we","us","our","ours"),
+    qLevel(2,"Which trick helps you choose between “Ben and I” and “Ben and me”?","Cover “Ben and” and see whether “I” or “me” sounds right alone","Put “I” at the end of the list of people, since that is polite","Use “me” whenever the pronoun comes right after the word “and”","Use whichever sounds more polite"),
+    qLevel(3,"Which sentence is correct?","The teacher asked him and her to hand out papers.","The teacher asked he and she to hand out papers.","The teacher asked him and she to hand out papers.","The teacher asked he and her to hand out papers."),
+    qLevel(3,"Which sentence is correct?","We students cleaned the park.","Us students cleaned the park.","Ours students cleaned the park.","Us student’s cleaned the park."),
+    qLevel(3,"Which sentence is correct?","The principal gave us students a reward.","The principal gave we students a reward.","The principal gave we student a reward.","The principal gave students us a reward."),
+    qLevel(3,"Which sentence needs a correction?","Him and his brother built a fort.","He and his brother built a fort.","His brother and he built a fort.","They built a fort with his brother."),
+    qLevel(3,"Which sentence is correct?","Mom and she are making tacos.","Mom and her are making tacos.","Her and Mom are making tacos.","Mom and herself are making tacos."),
+    qLevel(3,"Which word fits? Our neighbors invited my brother and ___ to swim.","me","I","myself","mine")
+  ],
+  pronounPerson:[
+    qLevel(1,"Which pronoun is first person?","we","you","they","she"),
+    qLevel(1,"Which pronoun is second person?","you","I","he","them"),
+    qLevel(1,"Which pronoun is third person?","they","we","I","you"),
+    qLevel(1,"A story that uses “I” and “me” for the narrator is told in which person?","first person","second person","third person","first and third person mixed"),
+    qLevel(2,"Which list has only third-person pronouns?","he, she, it, they","I, me, we, us","you, your, yours","him, her, it, them, and also you"),
+    qLevel(2,"Which sentence is in second person?","You should stretch before you run.","I stretch before I run.","She stretches before she runs.","They stretch for ten minutes before they run."),
+    qLevel(2,"Which pronoun fits? When I study, ___ like to play quiet music.","I","you","they","he"),
+    qLevel(2,"Which pronoun fits? When people visit the zoo, ___ should bring water.","they","you","we","I"),
+    qLevel(3,"Which sentence switches person by mistake?","When I swim in the lake, you get cold fast.","When I swim in the lake, I get cold fast.","When you swim in the lake, you get cold fast.","When we swim in the lake, we get cold fast."),
+    qLevel(3,"Fix the shift in person: “If a student studies, you will do better.”","If a student studies, he or she will do better.","If a student studies, we will do better.","If a student studies, I will do better.","If a student studies, you and I will both do better."),
+    qLevel(3,"Which sentence keeps the same person all the way through?","Our class planted trees, and we watered them every week.","Our class planted trees, and you watered them every week.","When I plant trees, you have to water them every week.","If a person plants a tree, you should water it every week."),
+    qLevel(3,"A narrator says, “She opened the door and saw a fox.” What person is the story told in?","third person","first person","second person","first and second person mixed"),
+    qLevel(3,"Which revision fixes the shift? “I love the library because you can find any book there.”","I love the library because I can find any book there.","I love the library because they can find any book there.","You love the library because I can find any book there.","I love the library because we can find you any book there."),
+    qLevel(3,"Which sentence is in first person plural?","We packed our bags for camp.","I packed my bag for camp.","You packed your bags for camp.","They packed their bags for camp.")
+  ],
+  pronounNumber:[
+    qLevel(1,"Which pronoun fits? The dogs barked until ___ got tired.","they","it","he","she"),
+    qLevel(1,"Which pronoun fits? The kite got stuck, so we pulled ___ down.","it","them","they","us"),
+    qLevel(1,"Which pronoun fits? My sisters said ___ would help.","they","she","it","her"),
+    qLevel(1,"Which pronoun is plural?","them","him","her","it"),
+    qLevel(2,"Which sentence is correct?","The plants need water, so I watered them.","The plants need water, so I watered it.","The plants need water, so I watered its.","The plants need water, so I watered it with the hose."),
+    qLevel(2,"Which pronoun fits? The class finished ___ project early. (Think of the class as one group.)","its","their","they’re","it’s"),
+    qLevel(2,"Which pronoun fits? Each of the boys brought ___ own lunch.","his","their","its","they"),
+    qLevel(2,"Which pronoun fits? Lin and Rosa said ___ would be late.","they","she","her","it"),
+    qLevel(3,"Which sentence has a pronoun that doesn’t match its noun?","The team cheered when they won its trophy.","The team cheered when it won its trophy.","The players cheered when they won their trophy.","The team cheered when it won the trophy."),
+    qLevel(3,"Which sentence is correct?","My grandparents sold their old car.","My grandparents sold its old car.","My grandparents sold them old car.","My grandparents sold they’re old car."),
+    qLevel(3,"Which pronoun fits? The library closes ___ doors at six.","its","their","it’s","they"),
+    qLevel(3,"Which sentence needs a correction?","A bird built their nest in our tree.","A bird built its nest in our tree.","Two birds built their nest in our tree.","The birds built their nests in our tree."),
+    qLevel(3,"Which word fits? Either the cat or the dog left ___ toy on the stairs.","its","their","they’re","them"),
+    qLevel(3,"What does “them” refer to? The kids found two kittens and took them home.","the kittens","the kids","home","the kids and the kittens")
+  ],
+  indefinitePronoun:[
+    qLevel(1,"Which word is an indefinite pronoun?","someone","Sam","she","sister"),
+    qLevel(1,"Which word fits? Everyone ___ ready for the field trip.","is","are","were","be"),
+    qLevel(1,"Which word is an indefinite pronoun? Nobody heard the bell.","Nobody","heard","bell","the"),
+    qLevel(1,"Which word fits? Several of the cookies ___ broken.","are","is","was","has been"),
+    qLevel(2,"Which word fits? Each of the students ___ a locker.","has","have","are having","were having"),
+    qLevel(2,"Which indefinite pronoun is always plural?","both","everyone","each","nobody"),
+    qLevel(2,"Which sentence is correct?","Somebody left a jacket on the bus.","Somebody leave a jacket on the bus.","Somebody have left a jacket on the bus.","Somebody were leaving a jacket on the bus."),
+    qLevel(2,"Which word fits? Few of the players ___ ever won a trophy.","have","has","is","was"),
+    qLevel(3,"Which sentence is correct?","All of the pizza is gone.","All of the pizza are gone.","All of the pizza were gone.","All of the pizza have gone."),
+    qLevel(3,"Which sentence is correct?","All of the pencils are sharp.","All of the pencils is sharp.","All of the pencils was sharp.","All of the pencils has been sharp."),
+    qLevel(3,"Which sentence needs a correction?","Either of the routes are fine.","Either of the routes is fine.","Both of the routes are fine.","Neither of the routes is long or hard to follow."),
+    qLevel(3,"Which word fits? Nothing in these boxes ___ to me.","belongs","belong","are belonging","have belonged"),
+    qLevel(3,"Which sentence is correct in formal writing?","Neither of the answers is right.","Neither of the answers are right.","Neither of the answers were right.","Neither of the answers have been right."),
+    qLevel(3,"Which word fits? Some of the milk ___ spilled.","was","were","are","have been")
+  ],
+  pronounVagueness:[
+    qLevel(1,"Which sentence has a vague pronoun?","When Mia met Ana at the park, she laughed.","When Mia met Ana at the park, Mia laughed.","Mia laughed when she met Ana at the park.","Ana laughed when Mia arrived at the park."),
+    qLevel(1,"What makes a pronoun vague?","A reader can’t tell which noun it stands for","It names a place","It is plural","It comes at the very end of the sentence, after the verb"),
+    qLevel(1,"Which sentence is clear?","Dad pointed out that Leo’s shoe was untied.","Dad told Leo that his shoe was untied.","He told him that his shoe was untied.","Dad told him his shoe was untied, and he tied it."),
+    qLevel(1,"In “Sam gave Tom his pencil,” why is “his” vague?","It could mean Sam’s pencil or Tom’s pencil","Pencils can’t belong to people","“His” should be “him”","There is no noun anywhere before “his” in the sentence"),
+    qLevel(2,"Which revision fixes the vague pronoun? “The vase fell off the shelf, and it broke.”","The vase fell off the shelf, and the vase broke.","The vase fell off the shelf, and they broke.","It fell off the shelf, and it broke.","The vase fell off the shelf, and then they both broke."),
+    qLevel(2,"Which sentence has a vague pronoun?","They say it will snow tomorrow.","The weather report says it will snow tomorrow.","Mr. Diaz says it will snow tomorrow.","The news says snow is coming tomorrow."),
+    qLevel(2,"Which sentence is clear?","Rosa asked Kayla, “May I borrow your scarf?”","Rosa asked Kayla to borrow her scarf.","She asked her to borrow her scarf.","Rosa asked her if she could borrow her blue scarf tomorrow."),
+    qLevel(2,"Which revision makes this clear? “Jake’s dog chased the cat until it got tired.”","Jake’s dog chased the cat until the dog got tired.","Jake’s dog chased the cat until they got tired.","It chased the cat until it got tired.","Jake’s dog chased the cat around the yard until it got tired."),
+    qLevel(3,"Which sentence has a vague pronoun?","I put the plate on the table and then cleaned it.","I put the plate on the table and then cleaned the plate.","I cleaned the plate and put it on the table.","After I cleaned the table, I set the plate on it."),
+    qLevel(3,"Which sentence has a vague “this”?","Our bus was late and it rained. This made me grumpy.","Our bus was late. This delay made me grumpy.","The late bus made me grumpy.","I was grumpy all morning because the bus was late and it rained."),
+    qLevel(3,"Which revision is clearest? “When the coach talked to the player, he was upset.”","The coach was upset when he talked to the player.","When the coach talked to the player, they were upset.","When he talked to him, he was upset.","When the coach talked to the player, him was upset."),
+    qLevel(3,"Which sentence has NO vague pronoun?","Ana handed the map to Ben so Ben could read it.","Ana handed the map to Ben so she could read it.","Ana handed it to Ben so he could read it.","She handed the map to him so they could read it."),
+    qLevel(3,"Which sentence is clear?","After the bike hit the fence, its front tire went flat.","After the bike hit the fence, it was damaged.","When the bike hit the fence, it fell over.","After the bike hit the fence, it needed to be fixed by Dad."),
+    qLevel(3,"Why is “it” vague in “Put the milk in the fridge when it is cold”?","It could mean the milk or the fridge","“It” should be “them” because milk is more than one thing","It should be “they”","It comes at the end of the sentence")
+  ],
+  emphaticPronoun:[
+    qLevel(1,"Which word is an emphatic pronoun? The chef herself served our dinner.","herself","chef","served","dinner"),
+    qLevel(1,"Which sentence uses an emphatic pronoun?","I myself saw the eagle.","I saw myself in the window.","I saw the eagle.","I saw it by the lake."),
+    qLevel(1,"What does an emphatic pronoun do?","It adds emphasis, and the sentence still works without it","It shows who owns something","It replaces the subject","It replaces a noun that was never named anywhere earlier in the sentence"),
+    qLevel(1,"Which word fits? The president ___ called to say thank you.","himself","hisself","him","his"),
+    qLevel(2,"Which sentence still makes sense if you remove the word in capitals?","The players THEMSELVES chose the team name.","The players taught THEMSELVES the song.","The players saw THEMSELVES on TV.","The players made THEMSELVES a big lunch after practice."),
+    qLevel(2,"Is “itself” emphatic or reflexive in “The cat cleaned itself”?","reflexive, because the cat does the action to itself","emphatic, because you can remove it","emphatic, because it is at the end","neither, because “itself” is a possessive pronoun for animals"),
+    qLevel(2,"Is “myself” emphatic or reflexive in “I painted the whole fence myself”?","emphatic, because the sentence still works without it","reflexive, because I painted myself","possessive, because it shows the fence is mine","reflexive, because the subject “I” does the painting to the fence"),
+    qLevel(2,"Which sentence is correct?","We built the robot ourselves.","We built the robot ourself.","We built the robot ourselfs.","We built the robot by ourself for the science fair."),
+    qLevel(3,"Which sentence uses an emphatic pronoun correctly?","The author herself signed my book.","The author signed my book and herself.","Herself signed my book.","The author signed herself’s book."),
+    qLevel(3,"Which sentence uses “themselves” for emphasis, not as a reflexive pronoun?","The kids themselves raised the money.","The kids hurt themselves on the slide.","The kids gave themselves a break.","The kids saw themselves in the photo."),
+    qLevel(3,"Which sentence needs a correction?","The mayor and myself cut the ribbon.","The mayor herself cut the ribbon.","I cut the ribbon myself with a giant pair of scissors.","The mayor cut the ribbon herself."),
+    qLevel(3,"Which word fits? You ___ said the test would be easy.","yourself","yourselfs","yourself’s","your"),
+    qLevel(3,"Which sentence uses an emphatic pronoun?","I wrote the song myself, without any help.","I taught myself the song.","I sang the song to myself.","I bought myself a guitar and a book of songs."),
+    qLevel(3,"Which sentence is correct?","The students themselves planned the bake sale.","The students theirselves planned the bake sale.","The students themself planned the bake sale.","Themselves planned the bake sale.")
+  ]
+};
 /* ---------- end of the moved banks ---------- */
 
 export {
-  ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2,
+  ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4,
   BIO_UNIT1, BIO_GROUPS,
-  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS,
+  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS,
   KHAN, KHAN_LINKS, mc
 };
 
@@ -1318,6 +1520,7 @@ export {
 export const LESSON_COURSES = [
   {id:'nouns', title:'English Unit 1: Nouns', skills:ENGLISH_UNIT1, groups:ENGLISH_GROUPS},
   {id:'verbs', title:'English Unit 2: Verbs', skills:ENGLISH_UNIT2, groups:ENGLISH_GROUPS2},
+  {id:'pronouns', title:'English Unit 3: Pronouns', skills:ENGLISH_UNIT3, groups:ENGLISH_GROUPS3},
   {id:'history', title:'History Unit 1: Origins of History', skills:HISTORY_UNIT1, groups:HISTORY_GROUPS},
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
@@ -1330,7 +1533,7 @@ export function builtInBank(courseId){
   return courseId === 'bio1' ? BIO1_QUESTIONS
     : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS
     : courseId === 'history2' ? HISTORY2_QUESTIONS : courseId === 'history' ? HISTORY_QUESTIONS
-    : courseId === 'verbs' ? VERB_QUESTIONS : PLURAL_QUESTIONS;
+    : courseId === 'verbs' ? VERB_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : PLURAL_QUESTIONS;
 }
 
 /* Every place a lesson shows a Khan link: one per block, plus each extra reading in that block.

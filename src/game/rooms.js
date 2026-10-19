@@ -79,7 +79,7 @@ const ROOMS = {
 // English libraries share a bookshelf room, each with its own props
 const LIBRARY = {wall:'#F2E6D3', wall2:'#8B5E3C', pattern:'shelves', floor:'#A0522D', floor2:'#8B4513', floorKind:'carpet', frame:'#6B3A1F', awning:['#6B3A1F','#F2E6D3'], hero:'📚', float:['✨'], motion:'drift'};
 const LIBRARY_PROPS = {
-  elaNouns:['🛋️','📚','🧸','📖','🕯️','🪴'], elaVerbs:['⚽','📚','🚲','🛹','🏀','🪴'], elaDescr:['🌹','📜','🪶','🌙','🎨','🪴'],
+  elaNouns:['🛋️','📚','🧸','📖','🕯️','🪴'], elaVerbs:['⚽','📚','🚲','🛹','🏀','🪴'], elaPron:['🪞','📚','🎭','👥','💬','🪴'], elaDescr:['🌹','📜','🪶','🌙','🎨','🪴'],
   elaSent:['🧩','📚','🔗','✏️','🧩','🪴'], elaPunct:['✏️','❗','📝','❓','✏️','🪴'], elaVocab:['🔤','📖','🔍','🗝️','📚','🪴'],
   elaRead:['🔎','🗺️','📚','🧭','🕯️','🪴'], elaLit:['🎭','🏰','📖','🐉','👑','🪴'], elaInfo:['📰','🌍','📊','🗞️','📚','🪴'], elaWrite:['📝','✒️','📓','💡','📚','🪴']
 };
