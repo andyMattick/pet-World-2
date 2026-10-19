@@ -7336,7 +7336,7 @@ $('#libraryWrap').addEventListener('submit', event => {
     const v = String(data.get(step.key) || '').trim(); p.answers[step.key] = step.kind === 'draw' ? (/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(v) && v.length <= 150000 ? v : '') : v.slice(0,1500); });
   if (event.submitter?.dataset.saveMode === 'submit') {
     if (!HISTORY_PROJECTS[courseId].steps.filter(step => !step.after || projectGuess(courseId)).every(step => p.answers[step.key])) { toast('Answer every step before submitting.'); save(); renderHistoryProject(courseId); return; }
-    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; logEvent({k:'project', title:HISTORY_PROJECTS[courseId].title}); toast(HISTORY_PROJECTS[courseId].steps.some(step => step.after) && !projectGuess(courseId) ? 'Painting sent! Your teacher will write what they think it shows.' : 'Project submitted for review.');
+    p.status = 'submitted'; p.submittedAt = Date.now(); p.localReview = ''; logEvent({k:'project', course:courseId, title:HISTORY_PROJECTS[courseId].title}); toast(HISTORY_PROJECTS[courseId].steps.some(step => step.after) && !projectGuess(courseId) ? 'Painting sent! Your teacher will write what they think it shows.' : 'Project submitted for review.');
   } else toast('Draft saved.');
   save(); renderHistoryProject(courseId);
 }, true);
@@ -9568,8 +9568,10 @@ const townTracker = new ActivityTracker(seconds => {
 }, seconds => { if (brainRun || moveRun) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
-   S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, ...}], sent}
-   Each 15-second active-time credit also goes to the lesson on screen; scores are added as events. Last 14 days kept. */
+   S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, text, ...}], labels:{key: name}, sent}
+   Each 15-second active-time credit also goes to the lesson on screen; scores are added as events. Last 14 days kept.
+   Each event keeps its own wording (text) and each lesson key its name (labels), so the teacher app's Ledger can show a
+   day she never sent with "I'm done for today" straight from the save. */
 const DAYLOG_DAYS = 14;
 function normalizeDayLog(raw){
   const out = {}, num = v => (Number.isFinite(+v) && +v > 0 ? Math.round(+v) : 0);
@@ -9580,18 +9582,21 @@ function normalizeDayLog(raw){
     for (const [k, v] of Object.entries(d.counts || {})) if (typeof k === 'string' && k.length <= 80 && v && num(v.n)) counts[k] = {n:num(v.n), ok:Math.min(num(v.ok), num(v.n))};
     const events = (Array.isArray(d.events) ? d.events : []).filter(e => e && typeof e.k === 'string' && Number.isFinite(+e.t)).slice(-200)
       .map(e => Object.fromEntries(Object.entries(e).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v) || Array.isArray(v)).map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 160) : Array.isArray(v) ? v.slice(0, 12).map(String) : v])));
-    out[day] = {places, counts, events, sent:num(d.sent), synced:!!d.synced};
+    const labels = {};
+    for (const [k, v] of Object.entries(d.labels || {})) if ((places[k] || counts[k]) && typeof v === 'string') labels[k] = v.slice(0, 120);
+    out[day] = {places, counts, events, labels, sent:num(d.sent), synced:!!d.synced};
   }
   return out;
 }
 function dayLogToday(){
   const day = logDayKey();
-  if (!S.dayLog[day]) { S.dayLog[day] = {places:{}, counts:{}, events:[], sent:0}; const days = Object.keys(S.dayLog).sort(); for (const old of days.slice(0, Math.max(0, days.length - DAYLOG_DAYS))) delete S.dayLog[old]; }
+  if (!S.dayLog[day]) { S.dayLog[day] = {places:{}, counts:{}, events:[], labels:{}, sent:0}; const days = Object.keys(S.dayLog).sort(); for (const old of days.slice(0, Math.max(0, days.length - DAYLOG_DAYS))) delete S.dayLog[old]; }
   return S.dayLog[day];
 }
-function logPlaceTime(place, seconds){ if (!(seconds > 0) || !place) return; const d = dayLogToday(); d.places[place] = Math.min(86400, (d.places[place] || 0) + seconds); }
-function logCount(key, ok){ const d = dayLogToday(), c = d.counts[key] || (d.counts[key] = {n:0, ok:0}); c.n++; if (ok) c.ok++; }
-function logEvent(e){ const d = dayLogToday(); d.events = [...d.events, {t:Date.now(), ...e}].slice(-200); }
+const logLabel = (d, key) => { d.labels = d.labels || {}; if (!d.labels[key]) d.labels[key] = String(placeLabel(key)).slice(0, 120); };
+function logPlaceTime(place, seconds){ if (!(seconds > 0) || !place) return; const d = dayLogToday(); d.places[place] = Math.min(86400, (d.places[place] || 0) + seconds); logLabel(d, place); }
+function logCount(key, ok){ const d = dayLogToday(), c = d.counts[key] || (d.counts[key] = {n:0, ok:0}); c.n++; if (ok) c.ok++; logLabel(d, key); }
+function logEvent(e){ const d = dayLogToday(), event = {t:Date.now(), ...e}; d.events = [...d.events, {...event, text:String(eventText(event)).slice(0, 160)}].slice(-200); }
 /* the lesson on screen, for time per lesson */
 function placeOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
@@ -9673,7 +9678,7 @@ function dayEntry(day = logDayKey()){
   return {v:1, day, totalSecs:Object.values(subj).reduce((a, b) => a + b, 0), subjects:subj,
     lessons:Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]).map(([key, secs]) => ({key, label:placeLabel(key), secs})),
     orders:Object.entries(d.counts).map(([key, c]) => { const [, shop, station] = key.split(':'); return {key, label:stationLabel(shop, station), n:c.n, ok:c.ok}; }),
-    events:d.events.map(e => ({...e, text:eventText(e)})),
+    events:d.events.map(e => ({...e, text:e.text || eventText(e)})),
     ...(() => { const w = dayWins(d); return {passed:w.passed, mastered:w.mastered}; })(),
     plan:planItems(day).map(x => { const i = planItemInfo(x, day); return {label:i.label, status:i.status, ...(x.carried ? {carried:true} : {})}; }),
     extras:assignedExtras().map(x => ({label:extraLabel(x), done:Math.floor(extraSecs(x.id) / 60), goal:Math.round(+x.minutes)})),

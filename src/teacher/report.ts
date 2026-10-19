@@ -4,7 +4,7 @@ import { LESSON_COURSES } from '../shared/questionBanks';
 import { subjectTimeTableHTML, GOAL_SUBJECTS, parseSubjectGoals, subjectDayKey } from '../shared/subjectTime';
 import { thinkReportHTML } from '../shared/thinkReport';
 import { brainReportHTML, type BrainSettings } from '../shared/brainGames';
-import { renderLedger } from './ledger';
+import { renderLedger, type SaveDayLog } from './ledger';
 import { renderCourses } from './courses';
 import { renderTranscript } from './transcript';
 import { renderPlanCard } from './plan';
@@ -38,6 +38,7 @@ export interface StudentReport {
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   writtenAnswers?: WrittenEntry[];
   subjectTime?: Record<string, Record<string, number>>;
+  dayLog?: Record<string, SaveDayLog>;   // the save's day log (src/teacher/ledger.ts)
   brain?: unknown; brainOn?: BrainSettings;   // brain stretches: S.brain from the save, and the class setting
   mathThink?: Record<string, { best?: number; tries?: number; passed?: boolean; lastScore?: number; questionCount?: number; lastMissed?: string[] }>;   // 🧠 Think it through sets, from the save   // active seconds per day and subject, from the student's save
 }

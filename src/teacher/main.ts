@@ -163,6 +163,7 @@ async function renderDashboard() {
     student.writtenAnswers = Array.isArray(state?.writtenAnswers) ? state.writtenAnswers as NonNullable<StudentReport['writtenAnswers']> : [];
     student.mathThink = state?.mathThink && typeof state.mathThink === 'object' ? state.mathThink as NonNullable<StudentReport['mathThink']> : {};
     student.subjectTime = state?.subjectTime && typeof state.subjectTime === 'object' ? state.subjectTime as NonNullable<StudentReport['subjectTime']> : {};
+    student.dayLog = state?.dayLog && typeof state.dayLog === 'object' ? state.dayLog as NonNullable<StudentReport['dayLog']> : {};   // the last 14 days in detail (the 📅 Ledger tab)
     student.brain = state?.brain ?? null;   // brain stretches (the 🧠 Brain tab)
     student.brainOn = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   });

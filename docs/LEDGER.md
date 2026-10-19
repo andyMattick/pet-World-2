@@ -27,6 +27,13 @@
 7. ✅ **Transcript (F11).** School years with grown-up-set dates; a printable page per year: each course with hours, units or assignments finished, and grade; outside courses; totals. (built: `src/teacher/transcript.ts`, the 📜 Transcript tab. School years (name, start and end dates that can't overlap, grade level) and the school name are saved in `quiz_overrides` as `transcript`. Each year adds up the Ledger and Pet World work in its dates; grades start from the Grades tab and can be changed for one year, a course can be left off one year, and a year can have its own added courses. Courses added on the Grades tab belong to the year that holds today. Math scores count quizzes and tests in the year's dates; English, History and Biology progress has no dates, so it counts all of it. Prints one year or the full transcript (every year plus totals) in a plain print window with a signature line)
 8. ✅ **Daily plan (F10)** builds on steps 1 and 2: the plan's checkmarks and the "finished" summary are this day log. (built: see `DAILY-PLAN.md`; the day's plan, with each item's status, goes into the Ledger day and shows on the Ledger tab)
 
+## By subject, with every score (added after step 8)
+
+- Each Ledger day lists what she did **grouped by subject** (Math, English, Reading Log, History, Science, brain and movement breaks): every practice set, quiz, unit test, Fact Sprint and Word Workshop round with its time, score and percent, and for each subject the minutes and the total right (for example "6 scored · 21 of 25 right (84%)").
+- **Days she didn't send** with "I'm done for today" show the same detail, read from her save's day log (the last 14 days). "Save this day to the record" now saves that detail too.
+- The game writes each event's wording (`text`) and each lesson's name (`labels`) into the day log as it happens, so the teacher app can show it without the game's lists.
+- **Math quizzes and unit tests from the quiz history** (the `assessments` table) fill in any day whose record has none, including days before the day log went live (Oct 16, 2026). English, History and Science practice before then was only kept as time by subject and each lesson's best score, so those days can't be filled in.
+
 ## Notes
 
 - The record starts the day step 1 goes live; earlier days can be filled in from time by subject and quiz history, without per-lesson detail.

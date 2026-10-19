@@ -3,6 +3,7 @@
    grown-up adds. A grown-up can edit any day; an edited Pet World day keeps the student's version so it can go back. */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUBJECT_TIME, subjectDayKey } from '../shared/subjectTime';
+import { SHOPS } from '../shared/registry';
 
 interface LedgerEvent { t?: number; k?: string; text?: string; [key: string]: unknown }
 interface LedgerEntry {
@@ -12,6 +13,8 @@ interface LedgerEntry {
   note?: string; fromSave?: boolean; original?: LedgerEntry | null; plan?: { label: string; status: string; carried?: boolean }[];
   passed?: { text: string; s?: number; n?: number; test?: boolean }[]; mastered?: string[];
 }
+/* a math station quiz or unit test from the assessments table (kept for every day, before the day log existed too) */
+interface QuizRow { shop: string; station: number | null; kind: string; score: number; total: number; passed: boolean; created_at: string }
 interface DayRow { day: string; entry: LedgerEntry; sent_at: string; edited_by_teacher: boolean }
 interface OutsideRow { id: number; day: string; course: string; title: string; minutes: number; grade: string; notes: string; source: string }
 /* an old Ledger backup (the separate Ledger app): {caleb:{name, entries:[{subject, assignment, minutes, grade, date, id}], subjects}, abi:{...}} */
@@ -50,7 +53,9 @@ function parseBackup(text: string): ImportKid[] | string {
   return kids.length ? kids : 'No children with entries were found in that file.';
 }
 
-export interface LedgerStudent { id: string; n: string; subjectTime?: Record<string, Record<string, number>> }
+/* the day log kept in the student's save for the last 14 days (game.js normalizeDayLog, docs: LEDGER.md) */
+export interface SaveDayLog { places?: Record<string, number>; counts?: Record<string, { n: number; ok: number }>; events?: LedgerEvent[]; labels?: Record<string, string>; sent?: number }
+export interface LedgerStudent { id: string; n: string; subjectTime?: Record<string, Record<string, number>>; dayLog?: Record<string, SaveDayLog> }
 
 let client: SupabaseClient | null = null, ledgerClass = '';
 /** main.ts calls this when a class opens, so the Ledger reads and writes that class's rows. */
@@ -67,6 +72,69 @@ const addDays = (day: string, n: number) => { const d = new Date(`${day}T12:00:0
 const dayName = (day: string) => new Date(`${day}T12:00:00`).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/* ---------- what she did, by subject, with every score (docs: LEDGER.md, "By subject") ---------- */
+const SUBJECT_ORDER: [string, string][] = [['math', '➗ Math'], ['english', '📚 English'], ['reading', '📖 Reading Log'], ['history', '🏛️ History'], ['science', '🦁 Science'], ['breaks', '🧠 Brain and movement breaks'], ['other', 'Other']];
+/* which subject an event belongs to; the time in each group comes from these time-by-subject ids */
+const GROUP_TIME: Record<string, string[]> = { math: ['math'], english: ['english', 'words'], reading: ['reading'], history: ['history'], science: ['science'], breaks: ['brain'], other: [] };
+function eventSubject(ev: LedgerEvent): string {
+  const course = String(ev.course || '');
+  switch (ev.k) {
+    case 'assess': case 'sprint': case 'mastered': return 'math';
+    case 'vocab': return 'english';
+    case 'reading': return 'reading';
+    case 'course': return course === 'math' ? 'math' : course.startsWith('history') ? 'history' : course.startsWith('bio') ? 'science' : 'english';
+    case 'project': return course.startsWith('bio') ? 'science' : 'history';
+    case 'dig': case 'scribe': return 'history';
+    case 'brain': case 'move': return 'breaks';
+    default: return 'other';
+  }
+}
+const scoreOf = (ev: LedgerEvent) => { const s = Number(ev.s), n = Number(ev.n); return Number.isFinite(s) && n > 0 ? { s, n, pct: Math.round(s * 100 / n) } : null; };
+/* events saved before each one carried its own wording */
+function eventLabel(ev: LedgerEvent) {
+  if (ev.text) return String(ev.text);
+  const score = scoreOf(ev);
+  const what = ev.k === 'assess' ? `Math ${ev.mode === 'test' ? 'unit test' : ev.mode === 'quiz' ? 'station quiz' : 'practice'}${ev.shop ? ` (${ev.shop}${ev.station ? ` station ${ev.station}` : ''})` : ''}`
+    : ev.k === 'course' ? `${ev.course || ''}: ${ev.title || ''} (${ev.kind === 'final' ? 'unit test' : ev.kind || 'practice'})` : String(ev.title || ev.k || '');
+  return `${what}${score ? ` · ${score.s} of ${score.n}` : ''}${ev.passed ? ' ✅' : ''}`;
+}
+function bySubjectHTML(e: LedgerEntry, time: (t?: number) => string) {
+  const events = (e.events || []).filter(ev => ev.k !== 'note'), notes = (e.events || []).filter(ev => ev.k === 'note');
+  if (!events.length && !notes.length) return '';
+  const groups = SUBJECT_ORDER.map(([id, name]) => {
+    const list = events.filter(ev => eventSubject(ev) === id).sort((a, b) => (Number(a.t) || 0) - (Number(b.t) || 0));
+    if (!list.length) return '';
+    const secs = GROUP_TIME[id].reduce((a, key) => a + (+(e.subjects || {})[key] || 0), 0);
+    const scored = list.map(scoreOf).filter((x): x is NonNullable<ReturnType<typeof scoreOf>> => !!x);
+    const right = scored.reduce((a, x) => a + x.s, 0), total = scored.reduce((a, x) => a + x.n, 0);
+    const summary = [secs >= 30 ? `${mins(secs)} min` : '', scored.length ? `${scored.length} scored · <b>${right} of ${total} right (${Math.round(right * 100 / total)}%)</b>` : ''].filter(Boolean).join(' · ');
+    return `<h4 style="margin:10px 0 4px">${name}${summary ? ` <span class="muted" style="font-weight:normal">· ${summary}</span>` : ''}</h4><ul style="margin:0">${list.map(ev => {
+      const score = scoreOf(ev);
+      return `<li>${time(Number(ev.t) || undefined)}${esc(eventLabel(ev))}${score ? ` <b>${score.pct}%</b>` : ''}</li>`;
+    }).join('')}</ul>`;
+  }).join('');
+  return `<h4 style="margin:10px 0 4px">What she did, by subject</h4><div style="margin-left:8px">${groups}</div>`
+    + (notes.length ? `<h4 style="margin:10px 0 4px">Added by a grown-up</h4><ul style="margin:0">${notes.map(ev => `<li>${esc(ev.text || '')}</li>`).join('')}</ul>` : '');
+}
+/* math quizzes and tests from the quiz history, for a day whose own record has none (days before the day log, Oct 16 2026) */
+function quizEvent(q: QuizRow): LedgerEvent {
+  const shop = (SHOPS as Record<string, { name: string; emoji?: string; stations: { id: number; name: string }[] }>)[q.shop], st = shop?.stations.find(x => x.id === q.station);
+  const where = `${shop?.emoji || ''} ${shop?.name || q.shop}${q.kind === 'test' ? ' · Unit Test' : st ? ` · ${st.name} quiz` : ' quiz'}`.trim();
+  return { t: Date.parse(q.created_at), k: 'assess', shop: q.shop, station: q.station ?? undefined, mode: q.kind, s: q.score, n: q.total, passed: q.passed, text: `${where} · ${q.score} of ${q.total}${q.passed ? ' ✅ passed' : ''}` };
+}
+function withQuizHistory(e: LedgerEntry, quizzes: QuizRow[]): LedgerEntry {
+  if (!quizzes.length || (e.events || []).some(ev => ev.k === 'assess')) return e;
+  return { ...e, events: [...(e.events || []), ...quizzes.map(quizEvent)] };
+}
+/* a day she didn't send: the same entry "I'm done for today" would have made, read from the save's day log */
+function entryFromSave(day: string, r: LedgerStudent): LedgerEntry {
+  const d = r.dayLog?.[day] || {}, subjects = { ...(r.subjectTime?.[day] || {}) }, label = (key: string) => d.labels?.[key] || key;
+  return { v: 1, day, totalSecs: sum(subjects), subjects, fromSave: true,
+    lessons: Object.entries(d.places || {}).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]).map(([key, secs]) => ({ key, label: label(key), secs })),
+    orders: Object.entries(d.counts || {}).map(([key, c]) => ({ key, label: label(key), n: c.n, ok: c.ok })),
+    events: (d.events || []).map(ev => ({ ...ev, text: eventLabel(ev) })) };
+}
+
 function entryHTML(e: LedgerEntry) {
   const subjects = Object.entries(e.subjects || {}).filter(([, s]) => s >= 30).sort((a, b) => b[1] - a[1]);
   const list = (title: string, items: string[]) => (items.length ? `<h4 style="margin:10px 0 4px">${title}</h4><ul style="margin:0">${items.join('')}</ul>` : '');
@@ -74,32 +142,34 @@ function entryHTML(e: LedgerEntry) {
   return list('Time by subject', subjects.map(([id, s]) => `<li>${esc(SUBJECT_NAMES[id] || id)}: <b>${mins(s)} min</b></li>`))
     + list('Time by lesson', (e.lessons || []).map(l => `<li>${esc(l.label)}: <b>${mins(l.secs)} min</b></li>`))
     + list('Practice orders', (e.orders || []).map(o => `<li>${esc(o.label)}: <b>${o.n}</b> order${o.n === 1 ? '' : 's'}, ${o.ok} perfect</li>`))
-    + list('Finished', (e.events || []).map(ev => `<li>${time(ev.t)}${esc(ev.text || ev.k || '')}</li>`))
+    + bySubjectHTML(e, time)
     + list('🏅 Passed', (e.passed || []).map(p => `<li>${p.test ? '🏆' : '📝'} ${esc(p.text)}${p.n ? ` · <b>${p.s} of ${p.n}</b>` : ''}</li>`))
     + list('⭐ Mastered', (e.mastered || []).map(m => `<li>${esc(m)}</li>`))
     + list('🗓️ Plan', (e.plan || []).map(p => `<li>${p.status === 'done' ? '✅' : p.status === 'waiting' ? '⏳' : '⬜'} ${esc(p.label)}${p.carried ? ' <span class="muted">(from an earlier day)</span>' : ''}${p.status === 'todo' ? ' <span class="muted">(not done)</span>' : ''}</li>`))
     + list('📋 Extras', (e.extras || []).map(x => `<li>${x.done >= x.goal ? '✅' : '⬜'} ${esc(x.label)}: ${x.done} of ${x.goal} min</li>`))
     + list('🎯 Time goals', (e.goals || []).map(g => `<li>${g.done >= g.goal ? '✅' : '⬜'} ${esc(g.label)}: ${g.done} of ${g.goal} min</li>`))
     + (e.note ? `<p><b>Grown-up’s note:</b> ${esc(e.note)}</p>` : '')
-    + (e.fromSave ? '<p class="muted">Saved from time by subject; lesson detail wasn’t sent for this day.</p>' : '')
+    + (e.fromSave && !(e.events || []).length && !(e.lessons || []).length ? '<p class="muted">Saved from time by subject; lesson detail wasn’t sent for this day.</p>' : '')
     + (!subjects.length && !(e.events || []).length && !e.note ? '<p class="muted">No practice time recorded.</p>' : '');
 }
 
 export function renderLedger(el: HTMLElement, r: LedgerStudent) {
   const today = subjectDayKey();
-  const st = { from: addDays(today, -29), to: today, days: [] as DayRow[], outside: [] as OutsideRow[], open: new Set<string>([today]), edit: '', editOut: 0, msg: '', imp: null as ImportState | null, importing: false };
+  const st = { from: addDays(today, -29), to: today, days: [] as DayRow[], outside: [] as OutsideRow[], quizzes: [] as QuizRow[], open: new Set<string>([today]), edit: '', editOut: 0, msg: '', imp: null as ImportState | null, importing: false };
   let deleteArmed = 0, deleteTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function load() {
     if (!client) { el.innerHTML = '<p class="muted">The Ledger needs the online teacher app (signed in to the database).</p>'; return; }
     el.innerHTML = '<p class="muted">Loading the Ledger…</p>';
-    const [a, b] = await Promise.all([
+    const [a, b, c] = await Promise.all([
       client.from('ledger_days').select('day,entry,sent_at,edited_by_teacher').eq('student_id', r.id).gte('day', st.from).lte('day', st.to),
-      client.from('ledger_outside').select('id,day,course,title,minutes,grade,notes,source').eq('student_id', r.id).gte('day', st.from).lte('day', st.to).order('id')
+      client.from('ledger_outside').select('id,day,course,title,minutes,grade,notes,source').eq('student_id', r.id).gte('day', st.from).lte('day', st.to).order('id'),
+      client.from('assessments').select('shop,station,kind,score,total,passed,created_at').eq('student_id', r.id).gte('created_at', new Date(`${addDays(st.from, -1)}T00:00:00`).toISOString()).lte('created_at', new Date(`${addDays(st.to, 1)}T23:59:59`).toISOString()).order('created_at')
     ]);
     const err = a.error || b.error;
     if (err) { el.innerHTML = `<p class="status">Couldn’t load the Ledger: ${esc(err.message)}. Has database file 8 (<code>20261017000000_ledger.sql</code>) been run in Supabase?</p>`; return; }
     st.days = (a.data || []) as DayRow[]; st.outside = (b.data || []) as OutsideRow[];
+    st.quizzes = c.error ? [] : (c.data || []) as QuizRow[];   // the quiz history is a bonus: the Ledger still works without it
     draw();
   }
   async function run(work: () => PromiseLike<{ error: { message: string } | null }>, done: string) {
@@ -127,6 +197,7 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
       <div class="row"><button class="btn small primary" data-day-save="${esc(row.day)}">Save this day</button> <button class="btn small" data-day-cancel>Cancel</button></div></div>`;
   }
 
+  const quizzesOn = (day: string) => st.quizzes.filter(q => subjectDayKey(new Date(q.created_at)) === day);
   function dayHTML(day: string) {
     const row = st.days.find(d => d.day === day), outs = st.outside.filter(o => o.day === day);
     const saveRow = r.subjectTime?.[day] || {}, saveSecs = sum(saveRow);
@@ -134,9 +205,9 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     const tags = [row?.edited_by_teacher ? '<span class="tag a">edited by a grown-up</span>' : '', !row && saveSecs ? '<span class="tag stale-tag">not sent yet</span>' : ''].filter(Boolean).join(' ');
     let body = '<h3 style="margin:8px 0 4px">🏡 Pet World</h3>';
     if (row && st.edit === day) body += editDayHTML(row);
-    else if (row) body += entryHTML(row.entry) + `<p class="muted">${row.entry.fromSave ? 'Saved by a grown-up' : `Sent ${new Date(row.sent_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`}.</p>
+    else if (row) body += entryHTML(withQuizHistory(row.entry, quizzesOn(day))) + `<p class="muted">${row.entry.fromSave ? 'Saved by a grown-up' : `Sent ${new Date(row.sent_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`}.</p>
       <div class="row"><button class="btn small" data-day-edit-open="${esc(day)}">Edit this day</button>${row.entry.original ? ` <button class="btn small" data-day-revert="${esc(day)}">Go back to ${esc(r.n)}’s version</button>` : ''}</div>`;
-    else if (saveSecs) body += `<p class="muted" style="margin:0">${esc(r.n)} didn’t press “I’m done for today”. Time by subject from the save:</p><ul style="margin:4px 0">${Object.entries(saveRow).filter(([, s]) => s >= 30).map(([id, s]) => `<li>${esc(SUBJECT_NAMES[id] || id)}: <b>${mins(s)} min</b></li>`).join('')}</ul>
+    else if (saveSecs || (r.dayLog?.[day]?.events || []).length) body += `<p class="muted" style="margin:0">${esc(r.n)} didn’t press “I’m done for today”, so this comes from her save (it keeps the last 14 days).</p>${entryHTML(withQuizHistory(entryFromSave(day, r), quizzesOn(day)))}
       <div class="row"><button class="btn small" data-day-fromsave="${esc(day)}">Save this day to the record</button></div>`;
     else body += '<p class="muted" style="margin:0">No Pet World time this day.</p>';
     body += `<h3 style="margin:12px 0 4px">📚 Outside Pet World</h3>${outs.length ? `<table class="steptable"><tr><th>Course</th><th>Assignment</th><th>Time</th><th>Grade</th><th>Notes</th><th></th></tr>${outs.map(outsideRowHTML).join('')}</table>` : '<p class="muted" style="margin:0">Nothing added.</p>'}
@@ -292,8 +363,7 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
       if (!row?.entry.original) return;
       void run(() => sb.from('ledger_days').update({ entry: row.entry.original, edited_by_teacher: false }).eq('student_id', r.id).eq('day', day), `${dayName(day)} is back to ${r.n}’s version.`);
     } else if (d.dayFromsave) {
-      const day = d.dayFromsave, subjects = { ...(r.subjectTime?.[day] || {}) };
-      const entry: LedgerEntry = { v: 1, day, totalSecs: sum(subjects), subjects, lessons: [], orders: [], events: [], fromSave: true };
+      const day = d.dayFromsave, entry = entryFromSave(day, r);
       void run(() => sb.from('ledger_days').insert({ student_id: r.id, class_id: ledgerClass, day, entry, edited_by_teacher: false }), `Saved ${dayName(day)} to the record.`);
     }
   };
