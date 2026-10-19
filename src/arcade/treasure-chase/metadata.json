@@ -1,0 +1,6 @@
+{
+  "name": "The Great Treasure Chase",
+  "description": "A globetrotting detective game where players solve challenging geography and historical puzzles to track down stolen artifacts across the world.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
