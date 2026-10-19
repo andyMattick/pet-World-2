@@ -20,3 +20,16 @@
   - a project: ✅ once a grown-up verifies it, ⏳ while it is sent and waiting, ⬜ otherwise (also when a revision was asked for).
 - **Carry-over:** "I'm done for today" saves the day's not-done items in the save (`S.planCarry`); the next days show them marked "(from before)" until a later "I'm done" replaces the list. An item that is already on the new day's plan isn't doubled.
 - **Ledger:** the day's plan with each item's status goes into the Ledger day (`entry.plan`) and shows on the teacher's Ledger tab.
+
+## One list on the town page (plan and time goals together)
+
+- A time goal for a subject that the plan already has time for doesn't get its own row: that plan row uses the larger of the two minutes.
+- A time goal for a subject that isn't on the plan becomes a plan row ("📚 English: 30 min in the Mirror Library") with a **Go** button.
+- Only a goal with no plan subject (the 📖 Reading Log) stays a goal row, also with a Go button.
+- "Whole plan done" (theme days) uses this same list.
+
+## Warm-up first
+
+- The day's extras (Fact Sprint, Word Workshop) come right after the morning brain stretch (and the theme day, if there is one), before any subject. They're at the top of Today's plan with ☀️, and a **Warm-up time!** card opens by itself once a day.
+- Until they're done, opening a subject (a shop, a library, a museum, the Nature Center or the Reading Log, from a tile or a Go button) shows the warm-up card instead.
+- Class setting `game_settings.extrasFirst`: on unless a teacher turns it off (Quick setup and Settings → ☀️ Warm-up first).

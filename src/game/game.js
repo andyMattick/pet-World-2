@@ -163,6 +163,7 @@ function normalize(raw){
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
   s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';   // the last day its theme was announced (docs/THEME-DAYS.md)
   s.themeAsk = s.themeAsk && typeof s.themeAsk.day === 'string' && ['yes', 'no'].includes(s.themeAsk.answer) ? {day:s.themeAsk.day, answer:s.themeAsk.answer, ...(typeof s.themeAsk.id === 'string' ? {id:s.themeAsk.id} : {})} : null;   // today's grown-up answer, and the theme it earned
+  s.warmupShown = typeof s.warmupShown === 'string' ? s.warmupShown : '';   // the last day the warm-up card opened by itself
   s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;   // earned theme days so far (the rotation's place)
   s.planDone = Object.fromEntries(Object.entries(s.planDone && typeof s.planDone === 'object' ? s.planDone : {}).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v === true).sort().slice(-14));   // days the whole plan was done
   s.move = normalizeMoveState(s.move);      // stand-and-stretch breaks between subjects (docs/MOVE-BREAKS.md)
@@ -5499,12 +5500,11 @@ function todayTheme(){
 }
 /* the whole plan for today done: every plan item, every extra, every time goal (and at least one of them) */
 function planAllDone(day = logDayKey()){
-  const items = planItems(day), extras = assignedExtras(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
-  const goalIds = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id]) => id);
-  if (!items.length && !extras.length && !goalIds.length) return false;
+  const {items, goalRows} = dayPlan(day), extras = assignedExtras(), today = S.subjectTime?.[day] || {};
+  if (!items.length && !extras.length && !goalRows.length) return false;
   return items.every(x => planItemInfo(x, day).status !== 'todo')   // "waiting for a grown-up" counts: her part is done
     && extras.every(x => Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes))
-    && goalIds.every(id => Math.floor((today[id] || 0) / 60) >= goals[id]);
+    && goalRows.every(([id, , goal]) => Math.floor((today[id] || 0) / 60) >= goal);
 }
 /* the last day before today that she was in Pet World */
 function lastSchoolDay(day = logDayKey()){
@@ -5516,13 +5516,17 @@ function themeCheck(){
   if (!S?.brain) return;
   const day = logDayKey(), policy = themePolicy();
   if (policy.enabled) recordPlanDone(day);
-  if (!policy.enabled || brainRun || moveRun || $('.theme-card')) return;
+  if (brainRun || moveRun || $('.theme-card')) return;
   if (brainAllowed().length && (S.brain.morning !== day || S.brain.active)) return;   // the morning brain stretch comes first
   if (!brainBreakNow()) return;
-  const prev = lastSchoolDay(day);
-  if (policy.when === 'earned' && !themeFor(day, policy, schoolStart()) && S.themeAsk?.day !== day && prev && S.planDone[prev] && Date.now() > themeAskLater) { openThemeAsk(prev); return; }
-  const theme = S.themeSeen === day ? null : todayTheme();
-  if (theme) openThemeCard(theme, true);
+  /* then the theme day (the grown-up's question first), then the warm-up */
+  if (policy.enabled) {
+    const prev = lastSchoolDay(day);
+    if (policy.when === 'earned' && !themeFor(day, policy, schoolStart()) && S.themeAsk?.day !== day && prev && S.planDone[prev] && Date.now() > themeAskLater) { openThemeAsk(prev); return; }
+    const theme = S.themeSeen === day ? null : todayTheme();
+    if (theme) { openThemeCard(theme, true); return; }
+  }
+  if (S.warmupShown !== day && warmupPending() && !$('#scr-home').hidden) { S.warmupShown = day; save(); openWarmupCard(); }
 }
 /* the grown-up's question: did she earn a theme day? (behind the grown-up PIN, the same one as the progress report) */
 function openThemeAsk(prev){
@@ -5563,7 +5567,7 @@ function openThemeCard(theme, first){
   el.querySelector('[data-theme-close]').addEventListener('click', () => {
     el.remove();
     const day = logDayKey();
-    if (S.themeSeen !== day) { S.themeSeen = day; logEvent({k:'theme', title:theme.name}); save(); if (!$('#scr-home').hidden) renderHome(); setTimeout(moveCheck, 300); }
+    if (S.themeSeen !== day) { S.themeSeen = day; logEvent({k:'theme', title:theme.name}); save(); if (!$('#scr-home').hidden) renderHome(); setTimeout(() => { moveCheck(); themeCheck(); }, 300); }
   });
   if (first) sfx('unlock');
 }
@@ -6467,21 +6471,38 @@ function planItemInfo(x, day = logDayKey()){
   return {label:`📁 ${HISTORY_PROJECTS[x.project].title}`, open:projectBuilding(x.project), status:state === 'verified' ? 'done' : state === 'submitted' ? 'waiting' : 'todo', progress:state === 'revise' ? 'fix it and send it again' : state === 'submitted' ? 'sent · waiting for a grown-up' : ''};
 }
 /* the town page card: plan items, then extras, then time goals */
+/* The plan and the time goals as one list, so a subject never shows twice: a goal for a subject the plan already has
+   time for raises that row's minutes to the goal (the larger wins), and a goal for a subject not on the plan becomes a
+   plan row with a Go button. Only goals with no plan subject (the Reading Log) stay goal rows. */
+const GOAL_PLAN_SUBJECT = {math:'math', english:'english', history:'history', science:'biology'};
+function dayPlan(day = logDayKey()){
+  const goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), items = planItems(day).map(x => ({...x}));
+  const goalRows = [];
+  GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).forEach(([id, name]) => {
+    const subject = GOAL_PLAN_SUBJECT[id];
+    if (!subject) { goalRows.push([id, name, goals[id]]); return; }
+    const row = items.find(x => x.kind === 'subject' && x.subject === subject);
+    if (row) row.minutes = Math.max(Math.round(+row.minutes || 0), goals[id]);
+    else items.push({id:`goal:${id}`, kind:'subject', subject, minutes:goals[id], goal:true});
+  });
+  return {items, goalRows};
+}
 function planCardHTML(){
-  const items = planItems(), extras = assignedExtras(), day = goalDayKey(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
-  const goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0), brainRows = [...themePlanRows(), ...brainPlanRows()];
+  const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {};
+  const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending();
   if (!items.length && !extras.length && !goalRows.length && !brainRows.length) return '';
-  const rows = items.map(x => {
-    const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
-    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small berry" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
-  }).concat(extras.map(x => {
+  const extraRows = extras.map(x => {
     const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
-  }), goalRows.map(([id, name]) => {
-    const done = Math.floor((today[id] || 0) / 60), goal = goals[id];
-    return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} 🎯 ${esc(name)}</span><b>${Math.min(done, goal)} of ${goal} min</b></div>`;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+  });
+  const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
+    const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+  }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
+    const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
+    return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${rows.join('')}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${rows.join('')}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -6621,6 +6642,29 @@ $('#displayPickerOptions').addEventListener('click', e => {
   if (pickerMode === 'decor' && button.dataset.pickerId) { S.displayed[pickerSlot] = button.dataset.pickerId; save(); closeDisplayPicker(); renderHome(); }
 });
 $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
+/* ---------- warm-up first (docs/DAILY-PLAN.md, "Warm-up first") ----------
+   The day's extras (Fact Sprint, Word Workshop) come right after the morning brain stretch, before any subject:
+   until they're done, opening a subject shows the warm-up card instead. Class setting game_settings.extrasFirst
+   (on unless a teacher turns it off). */
+const extrasFirst = () => Backend.me?.game_settings?.extrasFirst !== false;
+const warmupPending = () => extrasFirst() && assignedExtras().some(x => Math.floor(extraSecs(x.id) / 60) < Math.round(+x.minutes));
+const SUBJECT_OPENS = id => !!(SHOPS[id] || ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || id === 'reading');
+function openWarmupCard(){
+  if ($('.theme-card')) return;
+  const list = assignedExtras(), el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Warm-up');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">Before your first subject</p><div class="theme-emoji" aria-hidden="true">☀️</div><h2>Warm-up time!</h2>
+    <p>Do these first, then pick a subject.</p>${list.map(x => {
+      const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
+      return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+    }).join('')}<button type="button" class="btn small" data-warmup-close>Back to town</button></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', event => { if (event.target.closest('[data-extra-start], [data-warmup-close]')) el.remove(); });
+}
+$('#town').addEventListener('click', e => {
+  const opens = e.target.closest('[data-open]');
+  if (opens && SUBJECT_OPENS(opens.dataset.open) && warmupPending()) { e.stopImmediatePropagation(); sfx('tick'); openWarmupCard(); }
+}, true);
 $('#town').addEventListener('click', e => {
   const classBack = e.target.closest('[data-class-back]'); if (classBack) { viewSubject = null; renderHome(); return; }
   const classTile = e.target.closest('[data-class]'); if (classTile) { viewSubject = classTile.dataset.class; sfx('tick'); renderHome(); return; }

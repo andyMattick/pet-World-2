@@ -378,6 +378,7 @@ interface SetupChoice { id: string; emoji: string; name: string; what: string; o
 const SETUP_CHOICES: SetupChoice[] = [
   { id: 'brain', emoji: '🧠', name: 'Brain stretches', what: '3 short brain games each morning and after each subject on the daily plan. Results go to each student’s 🧠 Brain tab.', on: g => brainSettings(g?.brain as Partial<BrainSettings> | undefined).enabled },
   { id: 'move', emoji: '🤸', name: 'Stand-and-stretch breaks', what: 'When a student finishes one subject and goes to start another, their pet leads a 1½-minute movement break. Pick the moves and minutes in Settings.', on: g => moveSettings(g?.move as Partial<MoveSettings> | undefined).enabled },
+  { id: 'extrasFirst', emoji: '☀️', name: 'Warm-up first', what: 'A student’s extras (Fact Sprint, Word Workshop) come right after the morning brain stretch. Subjects open once they’re done.', on: g => g?.extrasFirst !== false },
   { id: 'themes', emoji: '🎉', name: 'Theme days', what: 'A fun theme day (Pajama Day, Detective Day, Pi Day…) earned by finishing the whole plan the day before, when a grown-up says yes. Shown right after the morning brain stretch. Every day or Fridays instead in Settings.', on: g => themeSettings(g?.themes as Partial<ThemeSettings> | undefined).enabled },
   { id: 'arcade', emoji: '🕹️', name: 'Arcade', what: 'Games students play with the practice time they earn. Pick which games in Settings.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).enabled },
   { id: 'freePlay', emoji: '🎟️', name: 'Arcade Free Play', what: 'No coin admission or tickets: practice time alone opens the Arcade.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).freePlay },
@@ -399,7 +400,7 @@ function renderSetup() {
     const game_settings = { ...old, allowMusic: val('allowMusic'), requireThink: val('requireThink'), khan: val('khan'), youtube: val('youtube'),
       brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
       move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: val('move') },
-      themes: { ...themeSettings(old.themes as Partial<ThemeSettings> | undefined), enabled: val('themes') },
+      themes: { ...themeSettings(old.themes as Partial<ThemeSettings> | undefined), enabled: val('themes') }, extrasFirst: val('extrasFirst'),
       arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') } };
     $('#setupMsg').textContent = 'Saving…';
     const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
@@ -444,6 +445,9 @@ function renderSettings() {
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> Brain stretches</label>
       <p class="muted" style="margin-top:0">3 short brain games in a row: one when a student opens Pet World each day, and one each time a subject or unit on their daily plan is done. There's no skip button. Each game starts at its easiest level and moves up after 3 scores in a row of 85% or better. Results are on each student's 🧠 Brain tab.</p>
       <h4>Games in the cycle</h4><div class="row"><button type="button" class="btn small" data-brain-all="1">Use all</button><button type="button" class="btn small" data-brain-all="0">Block all</button></div>${BRAIN_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-brain-game="${game.id}" ${brain.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)} <span class="muted">· ${esc(game.skill)}</span></label>`).join('')}
+      <h3>☀️ Warm-up first</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="extrasFirst" ${cls.game_settings?.extrasFirst === false ? '' : 'checked'}> Extras before any subject</label>
+      <p class="muted" style="margin-top:0">Each student’s extras (the Fact Sprint and Word Workshop you set on their page) come right after the morning brain stretch. Until they’re done, opening a subject shows the warm-up instead.</p>
       <h3>🎉 Theme days</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="themesEnabled" ${themes.enabled ? 'checked' : ''}> Theme days</label>
       <p class="muted" style="margin-top:0">A fun theme for the day, like Pajama Day or Detective Day, with something to wear and a small challenge. Students see it right after the morning brain stretch, and it stays in Today’s plan all day. Earned (the default): when a student finished every plan item, extra and time goal the school day before, the morning asks a grown-up (with the grown-up PIN) whether the attitude earned it too. A no means the plan is checked again the next day.</p>
@@ -534,7 +538,7 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
