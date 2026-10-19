@@ -112,6 +112,8 @@ export function mergeBrainState(base: BrainState, other: unknown): number {
     base.levels[id] = o.levels[id] || 0; base.streak[id] = o.streak[id] || 0; base.slump[id] = o.slump[id] || 0; base.pace[id] = o.pace[id] || 1;
   }
   if (o.morning > base.morning) { base.morning = o.morning; n++; }
+  /* the other copy has a stretch in progress and this one has none: keep it going, or it would sit unfinished and never open */
+  if (!base.active && o.active && base.stretches.some(x => x.id === o.active && x.done < x.games.length)) { base.active = o.active; n++; }
   if (base.active && !base.stretches.some(x => x.id === base.active && x.done < x.games.length)) base.active = '';
   return n;
 }

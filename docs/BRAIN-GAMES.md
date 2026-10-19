@@ -22,6 +22,6 @@
 - **A break:** never during an order (`shift`), a Fact Sprint, a Word Workshop run, a lesson question, the Reading Log, a project form, a dig, Scribe School, the Art Studio or the Arcade. The game checks after each screen change and every 15 seconds.
 - **Stuck game:** if a game never reports (didn't load, froze), a Next button shows after 8 minutes so she isn't trapped. That game counts as played with no result.
 - **Save:** `S.brain` (`src/shared/brainGames.ts`): `results` (last 400: game, level, accuracy, reaction time, score, seconds, stretch), `stretches` (last 90), `levels`, `streak`, `slump`, `pace`, `morning`, `stretched`, `active`. `mergeWork` keeps both devices' results, and each game's level and pace from whichever device played it last.
-- **Town page:** each of today's stretches is a row in 📋 Today's plan (✅ when its 3 games are done).
+- **Town page:** each of today's stretches is a row in 📋 Today's plan (✅ when its 3 games are done); an unfinished one has a Start / Keep going button that opens it right away. A stretch from today that lost its place (a save merged in from another device) is picked back up on the next check.
 - **Ledger:** a finished stretch is an event ("🧠 Morning brain stretch · Color Clash 90%, …"); minutes show as 🧠 Brain stretch.
 - **Teacher report:** the 🧠 Brain tab shows stretches finished in the last 7 days, each game's level, times played, accuracy (first 5 → last 5) and reaction time, and the latest 15 games.

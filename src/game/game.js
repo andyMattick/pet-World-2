@@ -5304,6 +5304,10 @@ function brainCheck(){
   if (brainRun || !S?.brain || !brainAllowed().length) return;
   const day = logDayKey(), stretched = S.brain.stretched[day] || (S.brain.stretched[day] = []);
   if (S.brain.active && brainStretch()?.day !== day) S.brain.active = '';   // left unfinished on an earlier day
+  if (!S.brain.active) {   // a stretch from today that lost its place (e.g. a save from another device came in): pick it back up
+    const open = S.brain.stretches.find(x => x.day === day && x.done < x.games.length);
+    if (open) { S.brain.active = open.id; save(); }
+  }
   if (!S.brain.active) {
     const core = planItems(day).filter(x => x.kind === 'subject' || x.kind === 'unit');
     if (S.brain.morning !== day) {
@@ -5382,8 +5386,14 @@ function closeBrainStretch(finished){
 function brainPlanRows(){
   if (!brainAllowed().length) return [];
   const day = logDayKey();
-  return S.brain.stretches.filter(x => x.day === day).map(x => `<div class="row extras-row"><span style="flex:1">${x.done >= x.games.length ? '✅' : '⬜'} 🧠 ${esc(x.label)} · <b>${x.done} of ${x.games.length} games</b></span></div>`);
+  return S.brain.stretches.filter(x => x.day === day).map(x => { const finished = x.done >= x.games.length;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} 🧠 ${esc(x.label)} · <b>${x.done} of ${x.games.length} games</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-brain-go="${esc(x.id)}">${x.done ? 'Keep going' : 'Start'}</button>`}</div>`; });
 }
+document.addEventListener('click', event => {   // the plan row's button: open today's unfinished stretch now
+  const b = event.target.closest('[data-brain-go]'); if (!b || brainRun) return;
+  const stretch = S.brain.stretches.find(x => x.id === b.dataset.brainGo && x.day === logDayKey() && x.done < x.games.length); if (!stretch) return;
+  S.brain.active = stretch.id; save(); openBrainStretch();
+});
 window.addEventListener('message', brainMessage);
 setInterval(() => { if (Backend.me) brainCheck(); }, 15000);   // notices a plan item turning ✅ while she stays on one screen
 function coinBurst(el, n){
