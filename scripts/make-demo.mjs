@@ -19,6 +19,7 @@ const Banks = await import('data:text/javascript;base64,' + Buffer.from(banksSrc
 const { TYPED_QUESTIONS } = await import(pathToFileURL(file('src/shared/typedQuestions.js').pathname).href);
 const { VOCAB_WORDS } = await import(pathToFileURL(file('src/shared/vocab.js').pathname).href);
 const Reg = await import(pathToFileURL(file('src/shared/registry.ts').pathname).href);
+const { spellingPatterns } = await import(pathToFileURL(file('src/shared/spellingPatterns.js').pathname).href);
 
 /* ---------- seeded random ---------- */
 let seed = 20261019;
@@ -522,6 +523,47 @@ KIDS.forEach((k, i) => {
   if (log) log.events.push({ t: T(Math.max(1, n), 14 * 60), k: 'reading', title: notes[notes.length - 1][0], text: `📖 Sent Reading Log notes: ${notes[notes.length - 1][0]}` });
 });
 
+const tokKey = t => (typeof t === 'string' && t.startsWith('@M') ? -(+t.slice(2)) : t);
+/* spelling: each student's usual kinds of misspelling in Word Workshop (for the teacher's ✏️ Spelling patterns card),
+   their word levels, and for Eli the words a teacher already picked to practice */
+const SPELL_HABITS = {
+  'Eli M.': { level: 1, n: 14, habits: ['prePer', 'double', 'missing'] },
+  'Priya S.': { level: 2, n: 9, habits: ['double', 'antEnt'] },
+  'Theo B.': { level: 1, n: 10, habits: ['prePer', 'schwa'] },
+  'Jonah K.': { level: 2, n: 7, habits: ['tionSion', 'softC', 'ieEi'] },
+  'Sofia L.': { level: 2, n: 8, habits: ['antEnt', 'missing'] },
+  'Leo D.': { level: 1, n: 6, habits: ['swap', 'double', 'missing'] },
+  'Maya R.': { level: 3, n: 2, habits: ['schwa'] },
+  'Ava W.': { level: 3, n: 3, habits: ['schwa', 'double'] }
+};
+/* real misspellings kids make, by pattern (each one checked against spellingPatterns below) */
+const MISSPELLINGS = {
+  prePer: [['predict', 'perdict'], ['perform', 'preform'], ['perspective', 'prespective'], ['protect', 'pertect'], ['persistent', 'presistent'], ['predator', 'perdator'], ['precise', 'percise']],
+  double: [['accurate', 'acurate'], ['summarize', 'sumarize'], ['approximate', 'aproximate'], ['immense', 'imense'], ['accomplish', 'acomplish'], ['essential', 'esential'], ['pattern', 'patern'], ['eventually', 'eventualy'], ['habitat', 'habbitat']],
+  antEnt: [['relevant', 'relevent'], ['persistent', 'persistant'], ['abundant', 'abundent'], ['confident', 'confidant'], ['significant', 'significent'], ['consequence', 'consequance'], ['influence', 'influance'], ['evidence', 'evidance']],
+  tionSion: [['conclusion', 'conclution'], ['tradition', 'tradision'], ['migration', 'migrasion'], ['civilization', 'civilizasion']],
+  softC: [['precise', 'presise'], ['century', 'sentury'], ['calculate', 'kalculate'], ['civilization', 'sivilization'], ['sequence', 'sequense']],
+  schwa: [['boundary', 'boundery'], ['predator', 'predetor'], ['compromise', 'compremise'], ['organism', 'orgenism'], ['demonstrate', 'demenstrate'], ['estimate', 'estamate'], ['relevant', 'relivant']],
+  missing: [['environment', 'enviroment'], ['investigate', 'investgate'], ['responsible', 'responsble'], ['eventually', 'eventully'], ['significant', 'signifcant'], ['generous', 'genrous']],
+  swap: [['analyze', 'anaylze'], ['interpret', 'intrepret'], ['require', 'reqiure']],
+  ieEi: [['ancient', 'anceint'], ['patient', 'pateint'], ['nutrient', 'nutreint']]
+};
+for (const [habit, list] of Object.entries(MISSPELLINGS)) for (const [w, typed] of list) if (!spellingPatterns(w, typed).includes(habit)) throw new Error(`${typed} for ${w} is not ${habit}: ${spellingPatterns(w, typed)}`);
+KIDS.forEach((k, i) => {
+  const h = SPELL_HABITS[k.n], st = states[i]; if (!h) return;
+  st.vocab.level = { spell: h.level, cards: Math.min(3, h.level + 1) };
+  const days = Object.keys(st.dayLog).map(d => +d.slice(2)).sort((a, b) => a - b), out = [];
+  for (let tries = 0; out.length < h.n && tries < 400; tries++) {
+    const habit = h.habits[tries % h.habits.length], [word, typed] = pick(MISSPELLINGS[habit]);
+    if (out.some(m => m.w === word) && tries < 200) continue;   // mostly different words; a repeat now and then is real
+    const kinds = spellingPatterns(word, typed);
+    const n = pick(days.length ? days : [1]);
+    out.push({ w: word, typed, kinds, t: T(n, 10 * 60 + ri(0, 50)) });
+  }
+  st.vocab.mistakes = out.sort((a, b) => (tokKey(a.t) < tokKey(b.t) ? -1 : 1));
+});
+overrides[kid('Eli M.')].spellFocus = JSON.stringify(['predict', 'perform', 'prepare', 'prevent', 'perhaps', 'accurate', 'necessary', 'tomorrow']);
+
 /* a theme day Maya earned, and Khan results for the units some students finished */
 { const log = S('Maya R.').dayLog[D(4)]; if (log) log.events.unshift({ t: T(4, 8 * 60 + 35), k: 'theme', title: '🛌 Pajama Day', text: '🎉 Theme day: 🛌 Pajama Day' }); }
 KIDS.forEach((k, i) => {
@@ -558,7 +600,6 @@ for (const [name, list] of [['Maya R.', [[0, 'Piano: Practiced recital piece: F�
   if (row) { const original = JSON.parse(JSON.stringify(row[2])); row[2].events.push({ t: row[3], k: 'note', text: '📝 Did 20 more minutes of times tables on paper with me after lunch.' }); row[2].original = original; row[4] = true; } }
 
 /* sort each day's events by time (tokens sort the same as the times they stand for, within one day) */
-const tokKey = t => (typeof t === 'string' && t.startsWith('@M') ? -(+t.slice(2)) : t);
 for (const st of states) for (const d of Object.values(st.dayLog)) d.events.sort((a, b) => (tokKey(a.t) < tokKey(b.t) ? -1 : tokKey(a.t) > tokKey(b.t) ? 1 : 0));
 
 KIDS.forEach((k, i) => OUT.students.push([k.n, overrides[i]]));

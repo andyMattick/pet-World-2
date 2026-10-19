@@ -4,6 +4,8 @@ A pretend class for showing Pet World to other teachers. They sign in to a demo 
 
 Nothing here touches real students. The demo lives in its own teacher account.
 
+Every student also has a few Word Workshop misspellings, so the teacher's Vocabulary tab shows the ✏️ Spelling patterns card. Eli mixes up pre and per and drops double letters, and already has practice words picked. Priya writes -ent for -ant. Theo has pre/per mixups and quiet-vowel mistakes. Jonah writes s for soft c and gets -tion/-sion and ie/ei wrong.
+
 ## The students
 
 | Student | What a visitor will see |
