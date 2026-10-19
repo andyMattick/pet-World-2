@@ -20,16 +20,23 @@ Nothing here touches real students. The demo lives in its own teacher account.
 ## Set it up (once)
 
 1. **Make the demo account.** Supabase → **Authentication → Users → Add user → Create new user**. Email `demo@petworld.example`, a password (the card uses `PetWorldDemo26`), and tick **Auto Confirm User**. Don't use your own account: a reset deletes every class the demo account owns.
-2. **Load the demo.** Supabase → **SQL Editor → New query**. Paste all of `supabase/demo/demo-class.sql` (it's big, about 1.3 MB) and **Run**.
+2. **Load the demo.** The data is too big for one SQL Editor query, so it comes in 9 files in `supabase/demo/`. In Supabase → **SQL Editor**, run each one in a new query, in order:
+   - `demo-0-functions.sql`
+   - `demo-1-data.sql`, `demo-2-data.sql`, and on through the last data file
+
+   Each file says "part 3 of 8" (and so on) on its first line.
 3. **Build the class.** In a new query:
    ```sql
    select public.demo_reset('demo@petworld.example');
    ```
    It answers "Demo class ready: 8 students, class code DEMO26…".
 
-If the SQL editor won't take a file that big, run it from the Codespace terminal with the database connection string (Supabase → **Connect** → **Connection string → URI**):
+If a part is missed, step 3 says which ones: "Only 6 of the 8 demo data files have been run. Missing: demo-5-data.sql…". Running a part twice is fine.
+
+Or load them all from the Codespace terminal with the database connection string (Supabase → **Connect** → **Session pooler** URI):
 ```
-psql "postgresql://postgres:…" -f supabase/demo/demo-class.sql
+sudo apt-get install -y postgresql-client
+for f in supabase/demo/demo-*.sql; do psql "postgresql://postgres.…" -f "$f"; done
 ```
 
 ## Keep it fresh
@@ -48,10 +55,10 @@ The data comes from `scripts/make-demo.mjs`: the students, how fast each one lea
 ```
 node --experimental-strip-types scripts/make-demo.mjs
 ```
-That rewrites `supabase/demo/demo-class.sql`. Run steps 2 and 3 again. The script uses the real question banks, so the Lessons tab's miss rates line up with real questions.
+That rewrites the data files in `supabase/demo/`. Run the data files and step 3 again (the functions file only when it changes). The script uses the real question banks, so the Lessons tab's miss rates line up with real questions.
 
 ## Safety
 
 - The demo functions can only be run from the SQL editor (or pg_cron), not through the app.
 - `demo_reset` refuses an admin account.
-- The `demo_seed` table has no policies, so the app can't read it.
+- The `demo_seed_part` table has no policies, so the app can't read it.

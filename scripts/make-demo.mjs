@@ -1,4 +1,4 @@
-// Builds supabase/demo/demo-class.sql: a demo teacher's class of 8 made-up students with about 6 weeks of believable
+// Builds the demo files in supabase/demo/ (demo-N-data.sql): a demo teacher's class of 8 made-up students with about 6 weeks of believable
 // work, so other teachers can sign in and see every page with data on it (docs/DEMO.md).
 //   node --experimental-strip-types scripts/make-demo.mjs
 // The output is deterministic (seeded random), so re-running it only changes the file when this script or the
@@ -573,16 +573,24 @@ const data = {
   sessions: OUT.sessions, ledgerDays: OUT.ledgerDays, outside: OUT.outside
 };
 const json = JSON.stringify(data);
-const sqlTemplate = fs.readFileSync(new URL('../supabase/demo/demo-functions.sql', import.meta.url), 'utf8');
-const dollar = '$demo$';
+/* The Supabase SQL editor refuses big queries, so the data goes in as numbered parts of about 180 KB each: the
+   functions file first, then each part, then demo_reset() puts the parts back together. */
+const PART_BYTES = 180 * 1024, dollar = '$demo$', parts = [];
 if (json.includes(dollar)) throw new Error('data contains the dollar quote');
-const out = `${sqlTemplate}
-
--- ---------------------------------------------------------------- the demo data (made by scripts/make-demo.mjs)
-insert into public.demo_seed (id, data) values (1, ${dollar}${json}${dollar}::jsonb)
-on conflict (id) do update set data = excluded.data;
-`;
-fs.writeFileSync(new URL('../supabase/demo/demo-class.sql', import.meta.url), out);
+for (let i = 0; i < json.length;) {
+  let j = i, bytes = 0;
+  while (j < json.length && bytes < PART_BYTES) { const c = json.charCodeAt(j); bytes += c < 0x80 ? 1 : c < 0x800 ? 2 : c >= 0xD800 && c <= 0xDBFF ? 4 : c >= 0xDC00 && c <= 0xDFFF ? 0 : 3; j++; }
+  if (j < json.length && json.charCodeAt(j - 1) >= 0xD800 && json.charCodeAt(j - 1) <= 0xDBFF) j++;   // never split an emoji
+  parts.push(json.slice(i, j)); i = j;
+}
+const demoDir = new URL('../supabase/demo/', import.meta.url);
+for (const f of fs.readdirSync(demoDir)) if (/^demo-(class|\d+-data)\.sql$/.test(f)) fs.unlinkSync(new URL(f, demoDir));
+parts.forEach((txt, k) => fs.writeFileSync(new URL(`demo-${k + 1}-data.sql`, demoDir),
+  `-- Pet World demo data, part ${k + 1} of ${parts.length} (made by scripts/make-demo.mjs; docs/DEMO.md)\n` +
+  `-- Run demo-0-functions.sql first, then every part, then: select public.demo_reset('demo@petworld.example');\n` +
+  `insert into public.demo_seed_part (n, total, txt) values (${k + 1}, ${parts.length}, ${dollar}${txt}${dollar})\n` +
+  `on conflict (n) do update set total = excluded.total, txt = excluded.txt;\n`));
+console.log(`supabase/demo: demo-0-functions.sql + ${parts.length} data parts (${(json.length / 1024).toFixed(0)} KB of data)`);
 const count = Object.fromEntries(Object.entries(OUT).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [k, v.length]));
-console.log(`supabase/demo/demo-class.sql: ${(out.length / 1024).toFixed(0)} KB`, JSON.stringify(count));
+console.log("rows:", JSON.stringify(count));
 for (const [i, st] of states.entries()) console.log(KIDS[i].n.padEnd(9), 'math', Object.entries(st.quizzes).filter(([, q]) => q.passed).map(([k]) => k).join(' '), '| english', Object.entries(st.elaProgress).filter(([k, v]) => /final-test/.test(k) && v.passed).map(([k]) => k).join(' '), '| days', Object.keys(st.subjectTime).length);

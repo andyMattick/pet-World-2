@@ -1,7 +1,7 @@
 -- Pet World demo class (docs/DEMO.md)
 -- A made-up class of 8 students with about 6 weeks of work, for showing other teachers the teacher app.
 --
--- Run this whole file once in the Supabase SQL editor, then:
+-- In the Supabase SQL editor, run this file, then each data file (demo-1-data.sql, demo-2-data.sql, …), then:
 --   select public.demo_reset('demo@petworld.example');
 -- (the email of a teacher account made only for the demo: Authentication > Users > Add user, with Auto Confirm).
 -- Run demo_reset again any time to put the class back the way it was; dates move up to the day you run it.
@@ -9,11 +9,14 @@
 -- demo_reset DELETES every class the demo account owns, so never give it your own email. It refuses an admin account.
 -- Only the SQL editor (and pg_cron) can run these functions: they are not available through the app's API.
 
-create table if not exists public.demo_seed (
-  id    int primary key,
-  data  jsonb not null
+-- the demo data, in parts small enough for the SQL editor (the data files fill it)
+create table if not exists public.demo_seed_part (
+  n      int primary key,
+  total  int not null,
+  txt    text not null
 );
-alter table public.demo_seed enable row level security;   -- no policies: the app's API can't read it
+alter table public.demo_seed_part enable row level security;   -- no policies: the app's API can't read it
+drop table if exists public.demo_seed;                          -- an earlier version kept the data in one row
 
 /* school day n: 0 is today, 1 the weekday before today, and so on (weekends skipped) */
 create or replace function public.demo_days(p_tz text, p_count int default 80) returns date[]
@@ -86,13 +89,19 @@ create or replace function public.demo_reset(p_email text, p_tz text default 'Am
 language plpgsql set search_path = public, extensions as $$
 declare
   uid uuid; cid uuid; ids uuid[] := '{}'; sid uuid;
-  d jsonb; days date[]; r jsonb; i int; overrides jsonb; khan text;
+  d jsonb; days date[]; r jsonb; i int; overrides jsonb; khan text; parts_total int; parts_have int;
 begin
   select u.id into uid from auth.users u where lower(u.email) = lower(btrim(p_email));
   if uid is null then raise exception 'No account with the email %. Add it first: Authentication > Users > Add user.', p_email; end if;
   if exists (select 1 from public.app_admins where user_id = uid) then raise exception 'That is an admin account. Use an account made only for the demo.'; end if;
-  select data into d from public.demo_seed where id = 1;
-  if d is null then raise exception 'The demo data is missing. Run all of supabase/demo/demo-class.sql first.'; end if;
+  select max(total) into parts_total from public.demo_seed_part;
+  select count(*) into parts_have from public.demo_seed_part where n <= parts_total;
+  if parts_total is null then raise exception 'The demo data is missing. Run demo-1-data.sql, demo-2-data.sql and the rest first.'; end if;
+  if parts_have <> parts_total then
+    raise exception 'Only % of the % demo data files have been run. Missing: %.', parts_have, parts_total,
+      (select string_agg(format('demo-%s-data.sql', g), ', ') from generate_series(1, parts_total) g where not exists (select 1 from public.demo_seed_part p where p.n = g));
+  end if;
+  select string_agg(txt, '' order by n)::jsonb into d from public.demo_seed_part where n <= parts_total;
   days := public.demo_days(p_tz, 80);
 
   insert into public.parent_approvals (user_id) values (uid) on conflict (user_id) do nothing;   -- the demo account is approved
