@@ -15,6 +15,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
+import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, MOVE_SECONDS, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -159,6 +160,7 @@ function normalize(raw){
   s.sentBackSeen = Array.isArray(s.sentBackSeen) ? s.sentBackSeen.filter(key => typeof key === 'string').slice(-60) : [];   // sent-back items already announced (renderSentBack)
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
+  s.move = normalizeMoveState(s.move);      // stand-and-stretch breaks between subjects (docs/MOVE-BREAKS.md)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
   if (!Array.isArray(s.completedSets)) s.completedSets = [];
@@ -5056,7 +5058,9 @@ function show(id){
   syncRoom(id);
   window.scrollTo(0,0);
   if (brainRun && (id === 'join' || id === 'name' || id === 'loading')) closeBrainStretch(false);   // signed out: the stretch waits in the save
+  if (moveRun && (id === 'join' || id === 'name' || id === 'loading')) closeMoveBreak();            // the same for a stand-and-stretch break
   brainCheck();
+  moveCheck();
 }
 /* Themed room behind building screens (src/game/rooms.js). Summary keeps the room it came from. */
 function syncRoom(id){
@@ -5301,7 +5305,7 @@ function newBrainStretch(kind, label, item){
   S.brain.stretches = [...S.brain.stretches, stretch].slice(-90); S.brain.active = stretch.id; save();
 }
 function brainCheck(){
-  if (brainRun || !S?.brain || !brainAllowed().length) return;
+  if (brainRun || moveRun || !S?.brain || !brainAllowed().length) return;
   const day = logDayKey(), stretched = S.brain.stretched[day] || (S.brain.stretched[day] = []);
   if (S.brain.active && brainStretch()?.day !== day) S.brain.active = '';   // left unfinished on an earlier day
   if (!S.brain.active) {   // a stretch from today that lost its place (e.g. a save from another device came in): pick it back up
@@ -5381,7 +5385,7 @@ function closeBrainStretch(finished){
   if (!finished) return;
   kickMusic();
   if (!$('#scr-home').hidden) renderHome();   // the plan card shows the ✅
-  setTimeout(brainCheck, 500);   // another stretch may be waiting
+  setTimeout(() => { brainCheck(); moveCheck(); }, 500);   // another stretch, or a stand-and-stretch break, may be waiting
 }
 function brainPlanRows(){
   if (!brainAllowed().length) return [];
@@ -5390,12 +5394,87 @@ function brainPlanRows(){
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} 🧠 ${esc(x.label)} · <b>${x.done} of ${x.games.length} games</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-brain-go="${esc(x.id)}">${x.done ? 'Keep going' : 'Start'}</button>`}</div>`; });
 }
 document.addEventListener('click', event => {   // the plan row's button: open today's unfinished stretch now
-  const b = event.target.closest('[data-brain-go]'); if (!b || brainRun) return;
+  const b = event.target.closest('[data-brain-go]'); if (!b || brainRun || moveRun) return;
   const stretch = S.brain.stretches.find(x => x.id === b.dataset.brainGo && x.day === logDayKey() && x.done < x.games.length); if (!stretch) return;
   S.brain.active = stretch.id; save(); openBrainStretch();
 });
 window.addEventListener('message', brainMessage);
 setInterval(() => { if (Backend.me) brainCheck(); }, 15000);   // notices a plan item turning ✅ while she stays on one screen
+/* ---------- stand-and-stretch breaks (docs/MOVE-BREAKS.md) ----------
+   When she has spent at least the class's minutes (game_settings.move.minutes) in one subject and then goes to start a
+   different subject, her pet leads 4 moves, 20 seconds each, before the new subject. There is no skip button: Done
+   shows when the last countdown ends. The break waits for a good moment (brainBreakNow), never opens over a brain
+   stretch, and comes back after a reload (S.move.due). Walking around town or the Arcade in between doesn't count as a
+   new subject. Break time goes to no subject. */
+let moveRun = null;   // {el, ids, step, left, after, to, timer}
+const MOVE_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', reading:'📖 Reading', history:'🏛️ History', science:'🦁 Science'};
+const movePolicy = () => (gamesOnlyMode || !Backend.me) ? moveSettings(null) : moveSettings(Backend.me.game_settings?.move);
+function moveNewDay(){ const m = S.move, day = logDayKey(); if (m.day !== day) Object.assign(m, {day, subject:'', secs:0, due:''}); }
+/* from the town tracker: active seconds in the subject on screen */
+function moveTrack(subject, seconds){
+  if (!S?.move) return;
+  moveNewDay();
+  if (MOVE_SUBJECTS.includes(subject) && subject === S.move.subject) S.move.secs += seconds;
+}
+function moveCheck(){
+  if (moveRun || brainRun || !S?.move || !allowedMoves(movePolicy()).length) return;
+  moveNewDay();
+  const m = S.move, subject = subjectOnScreen();
+  if (!MOVE_SUBJECTS.includes(subject)) return;
+  if (subject !== m.subject) {   // she has gone to start a different subject
+    if (m.subject && m.secs >= movePolicy().minutes * 60) m.due = m.subject;
+    m.subject = subject; m.secs = 0; save();
+  }
+  if (m.due && brainBreakNow()) openMoveBreak(m.due, subject);
+}
+function openMoveBreak(after, to){
+  const ids = pickMoves(allowedMoves(movePolicy()), S.move.recent); if (!ids.length) { S.move.due = ''; save(); return; }
+  Music.stop();
+  const el = document.createElement('div');
+  el.className = 'move-break'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Stand and stretch');
+  document.body.appendChild(el); document.body.classList.add('brain-open');
+  moveRun = {el, ids, step:0, left:MOVE_SECONDS, after, to, timer:setInterval(moveTick, 1000)};
+  renderMoveStep();
+}
+function renderMoveStep(){
+  const r = moveRun; if (!r) return;
+  const move = moveById(r.ids[r.step]), pet = petReward();
+  r.el.innerHTML = `<div class="move-card">
+    <p class="move-head">🤸 Stand and stretch · move ${r.step + 1} of ${r.ids.length}</p>
+    <p class="muted move-why">Nice work in ${esc(MOVE_SUBJECT_NAME[r.after] || 'that subject')}! Stand up and stretch with ${esc(pet?.name || 'your pet')} before your next subject.</p>
+    <div class="move-pet move-${esc(move.id)}" aria-hidden="true">${pet?.emoji || '🐾'}</div>
+    <h2>${move.emoji} ${esc(move.name)}</h2>
+    <p class="move-cue">${esc(move.cue)}</p>
+    <div class="move-count" id="moveCount" aria-live="polite">${r.left}</div>
+    <div class="move-foot" id="moveFoot"></div></div>`;
+}
+function moveTick(){
+  const r = moveRun; if (!r || document.hidden) return;   // the countdown waits while Pet World is in the background
+  r.left--;
+  if (r.left > 0) { const count = $('#moveCount'); if (count) count.textContent = r.left; return; }
+  if (r.step < r.ids.length - 1) { r.step++; r.left = MOVE_SECONDS; sfx('tick'); renderMoveStep(); return; }
+  clearInterval(r.timer); r.timer = null; sfx('good');
+  $('#moveCount').textContent = '✓';
+  $('#moveFoot').innerHTML = `<button type="button" class="btn berry" id="moveDone">Done! Back to work</button>`;
+  $('#moveDone').addEventListener('click', finishMoveBreak);
+}
+function finishMoveBreak(){
+  const r = moveRun; if (!r) return;
+  const m = S.move;
+  m.due = ''; m.recent = [...m.recent, ...r.ids].slice(-8);
+  m.breaks = [...m.breaks, {t:Date.now(), after:r.after, to:r.to, moves:r.ids}].slice(-60);
+  logEvent({k:'move', title:`Stand and stretch after ${MOVE_SUBJECT_NAME[r.after] || r.after}`, detail:r.ids.map(id => moveById(id)?.name || id).join(', ')});
+  save(); closeMoveBreak(); kickMusic(); toast('Nice stretching! 🤸');
+  setTimeout(brainCheck, 500);
+}
+function closeMoveBreak(){
+  if (!moveRun) return;
+  clearInterval(moveRun.timer); moveRun.el.remove();
+  if (!brainRun) document.body.classList.remove('brain-open');
+  moveRun = null;
+}
+document.addEventListener('click', () => { if (Backend.me) setTimeout(moveCheck, 0); });   // opening a course inside the Library doesn't go through show()
+setInterval(() => { if (Backend.me) moveCheck(); }, 15000);
 function coinBurst(el, n){
   if (reduceMotion() || !el) return;
   const r = el.getBoundingClientRect();
@@ -9460,7 +9539,7 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => { if (brainRun) return; addSubjectTime(S.subjectTime, subjectOnScreen(), seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick)
+}, seconds => { if (brainRun || moveRun) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
    S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, ...}], sent}
@@ -9528,6 +9607,7 @@ function eventText(e){
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
   if (e.k === 'brain') return `🧠 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
+  if (e.k === 'move') return `🤸 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,

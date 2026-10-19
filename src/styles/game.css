@@ -144,6 +144,33 @@ body.arcade-open{overflow:hidden}
 .brain-foot{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:8px 4px 0}
 .brain-foot[hidden]{display:none}
 body.brain-open{overflow:hidden}
+/* A stand-and-stretch break (docs/MOVE-BREAKS.md): her pet acts out each move, with a countdown; no close button */
+.move-break{position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; background:var(--board); color:var(--chalk); padding:16px; overflow:auto}
+.move-card{max-width:520px; width:100%; text-align:center}
+.move-head{margin:0; font-weight:700; font-size:17px}
+.move-why{margin:4px 0 0; color:var(--chalk-dim)}
+.move-card h2{margin:6px 0 4px}
+.move-cue{margin:0 auto; max-width:420px; font-size:18px}
+.move-pet{font-size:110px; line-height:1; margin:18px auto 10px; display:inline-block; transform-origin:50% 100%}
+.move-count{font-size:44px; font-weight:800; margin:10px 0}
+.move-foot{min-height:48px}
+.move-reach{animation:move-reach 2s ease-in-out infinite}
+.move-toes{animation:move-toes 2.4s ease-in-out infinite}
+.move-circles{animation:move-circles 1.6s linear infinite; transform-origin:50% 50%}
+.move-march{animation:move-march .7s ease-in-out infinite}
+.move-side{animation:move-side 2.4s ease-in-out infinite}
+.move-twist{animation:move-twist 2s ease-in-out infinite}
+.move-shoulders{animation:move-shoulders 1.4s ease-in-out infinite}
+.move-jacks{animation:move-jacks .9s ease-in-out infinite}
+@keyframes move-reach{0%,100%{transform:scaleY(1)}50%{transform:translateY(-14px) scaleY(1.18)}}
+@keyframes move-toes{0%,100%{transform:rotate(0)}50%{transform:rotate(80deg) translateY(10px)}}
+@keyframes move-circles{to{transform:rotate(360deg)}}
+@keyframes move-march{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-16px) rotate(4deg)}}
+@keyframes move-side{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+@keyframes move-twist{0%,100%{transform:scaleX(1)}25%{transform:scaleX(-1)}50%{transform:scaleX(1)}75%{transform:scaleX(-1)}}
+@keyframes move-shoulders{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.06,.94)}}
+@keyframes move-jacks{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-22px) scale(1.15)}}
+@media (prefers-reduced-motion: reduce){.move-pet{animation:none}}
 
 /* Pet Room and Dress-up */
 .room-layout{display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start}

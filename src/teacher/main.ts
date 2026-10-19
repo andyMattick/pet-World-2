@@ -3,6 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
 import { BRAIN_GAMES, brainSettings, type BrainSettings } from '../shared/brainGames';
+import { MOVES, MOVES_PER_BREAK, MOVE_SECONDS, MOVE_MINUTES_MAX, moveSettings, type MoveSettings } from '../shared/moveBreaks';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 import { setLedgerClass } from './ledger';
@@ -40,7 +41,7 @@ const gameUrl = () => new URL('./', location.href).href;
 /* the student side with a class code filled in (the game reads ?code=) */
 const studentViewUrl = (code: string) => `${gameUrl()}?code=${encodeURIComponent(code)}`;
 /* a class made from now on starts with these (existing classes keep what they have) */
-const NEW_CLASS_SETTINGS = { brain: { enabled: true } };
+const NEW_CLASS_SETTINGS = { brain: { enabled: true }, move: { enabled: true } };
 
 if (!sb) {
   app.innerHTML = `<div class="card authcard"><h2>Almost there</h2><p>This build has no Supabase settings. Copy <code>.env.example</code> to <code>.env</code>, fill in your project URL and anon key, and rebuild. See the README.</p></div>`;
@@ -374,6 +375,7 @@ function renderVocabularyTab() {
 interface SetupChoice { id: string; emoji: string; name: string; what: string; on: (g: ClassRow['game_settings']) => boolean }
 const SETUP_CHOICES: SetupChoice[] = [
   { id: 'brain', emoji: '🧠', name: 'Brain stretches', what: '3 short brain games each morning and after each subject on the daily plan. Results go to each student’s 🧠 Brain tab.', on: g => brainSettings(g?.brain as Partial<BrainSettings> | undefined).enabled },
+  { id: 'move', emoji: '🤸', name: 'Stand-and-stretch breaks', what: 'When a student finishes one subject and goes to start another, their pet leads a 1½-minute movement break. Pick the moves and minutes in Settings.', on: g => moveSettings(g?.move as Partial<MoveSettings> | undefined).enabled },
   { id: 'arcade', emoji: '🕹️', name: 'Arcade', what: 'Games students play with the practice time they earn. Pick which games in Settings.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).enabled },
   { id: 'freePlay', emoji: '🎟️', name: 'Arcade Free Play', what: 'No coin admission or tickets: practice time alone opens the Arcade.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).freePlay },
   { id: 'allowMusic', emoji: '🎵', name: 'Background music', what: 'Students can turn music on. Sound effects stay up to each student.', on: g => g?.allowMusic !== false },
@@ -393,6 +395,7 @@ function renderSetup() {
     const old = cls.game_settings || {};
     const game_settings = { ...old, allowMusic: val('allowMusic'), requireThink: val('requireThink'), khan: val('khan'), youtube: val('youtube'),
       brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
+      move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: val('move') },
       arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') } };
     $('#setupMsg').textContent = 'Saving…';
     const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
@@ -412,6 +415,7 @@ function renderSettings() {
   const quizzes = quizSettings(cls.quiz_settings || QUIZ_DEFAULTS);
   const arcade = arcadeSettings(cls.game_settings?.arcade as Partial<ArcadeSettings> | undefined);
   const brain = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
+  const move = moveSettings(cls.game_settings?.move as Partial<MoveSettings> | undefined);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="card setup-callout"><div class="row" style="margin:0; align-items:center"><span style="flex:1"><b>🧭 Quick setup</b> <span class="muted">· everything you can turn on or off, on one page</span></span><button type="button" class="btn small primary" id="openSetup">Open quick setup</button></div></div><div class="two">
@@ -435,6 +439,11 @@ function renderSettings() {
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> Brain stretches</label>
       <p class="muted" style="margin-top:0">3 short brain games in a row: one when a student opens Pet World each day, and one each time a subject or unit on their daily plan is done. There's no skip button. Each game starts at its easiest level and moves up after 3 scores in a row of 85% or better. Results are on each student's 🧠 Brain tab.</p>
       <h4>Games in the cycle</h4><div class="row"><button type="button" class="btn small" data-brain-all="1">Use all</button><button type="button" class="btn small" data-brain-all="0">Block all</button></div>${BRAIN_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-brain-game="${game.id}" ${brain.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)} <span class="muted">· ${esc(game.skill)}</span></label>`).join('')}
+      <h3>🤸 Stand-and-stretch breaks</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="moveEnabled" ${move.enabled ? 'checked' : ''}> Stand-and-stretch breaks</label>
+      <p class="muted" style="margin-top:0">When a student finishes one subject and goes to start a different one, their pet leads ${MOVES_PER_BREAK} moves, ${MOVE_SECONDS} seconds each, before the new subject. There's no skip button. Walking around town or the Arcade in between doesn't count as a new subject, and break time doesn't count toward any subject.</p>
+      <label for="moveMinutes">Minutes in a subject before switching brings a break (0 = every switch)</label><input type="number" id="moveMinutes" min="0" max="${MOVE_MINUTES_MAX}" step="1" value="${move.minutes}">
+      <h4>Moves in the cycle</h4><div class="row"><button type="button" class="btn small" data-move-all="1">Use all</button><button type="button" class="btn small" data-move-all="0">Block all</button></div>${MOVES.map(m => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-move="${m.id}" ${move.moves[m.id] ? 'checked' : ''}> ${m.emoji} ${esc(m.name)}</label>`).join('')}
       <h3>Arcade</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Open the Arcade</label>
       <p class="muted" style="margin-top:0">When it's off, the Arcade is closed and students see a lock on its town tile. Students already playing are sent back within a minute.</p>
@@ -491,6 +500,9 @@ function renderSettings() {
     const brainGames: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-brain-game]').forEach(input => { brainGames[input.dataset.brainGame!] = input.checked; });
     const brainSettingsForClass = brainSettings({ enabled: ($('#brainEnabled') as HTMLInputElement).checked, games: brainGames });
+    const moves: Record<string, boolean> = {};
+    pane.querySelectorAll<HTMLInputElement>('[data-move]').forEach(input => { moves[input.dataset.move!] = input.checked; });
+    const moveSettingsForClass = moveSettings({ enabled: ($('#moveEnabled') as HTMLInputElement).checked, minutes: +($('#moveMinutes') as HTMLInputElement).value, moves });
     const arcadeGames: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { arcadeGames[input.dataset.arcadeGame!] = input.checked; });
     const arcadeSettingsForClass = arcadeSettings({
@@ -507,12 +519,13 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
   pane.querySelectorAll<HTMLButtonElement>('[data-brain-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-brain-game]').forEach(input => { input.checked = button.dataset.brainAll === '1'; }); }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-move-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-move]').forEach(input => { input.checked = button.dataset.moveAll === '1'; }); }));
   pane.querySelectorAll<HTMLButtonElement>('[data-arcade-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { input.checked = button.dataset.arcadeAll === '1'; }); }));
   $('#openSetup').addEventListener('click', () => { tab = 'setup'; renderMain(); });
   $('#copyJoin').addEventListener('click', () => { void copyText(`Go to: ${gameUrl()}\nClass code: ${cls.join_code}`, $('#copyJoin') as HTMLButtonElement, $('#joinFallback') as HTMLTextAreaElement); });

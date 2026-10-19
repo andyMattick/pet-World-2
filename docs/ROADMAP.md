@@ -150,6 +150,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F18. 🧭 Teacher Quick setup: a new class starts with brain stretches on and opens on one page of every on/off choice; Settings links back to it
 - [x] F19. 🐾 Teacher ⇄ student: Open Pet World and Student view (class code filled in) in the teacher app; a clearer teacher button on the join screen
 - [x] F20. 📦 `npm run import-game` for Arcade and Brain Games built outside Pet World (`IMPORT-GAMES.md`)
+- [x] F21. 🤸 Stand-and-stretch breaks (`MOVE-BREAKS.md`): when a student finishes one subject and starts another, her pet leads 4 moves (20 seconds each), no skip; teachers switch it on or off, set the minutes, and pick the moves
 
 ## Database files, in the order they were run
 
