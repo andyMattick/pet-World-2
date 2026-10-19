@@ -3,6 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import { makeClient } from '../lib/supabase';
 import { installLanguage, type Language } from '../shared/language';
 import { BRAIN_GAMES, brainSettings, type BrainSettings } from '../shared/brainGames';
+import { THEME_DAYS, SPECIAL_DAYS, themeSettings, type ThemeSettings } from '../shared/themeDays';
 import { MOVES, MOVES_PER_BREAK, MOVE_SECONDS, MOVE_MINUTES_MAX, moveSettings, type MoveSettings } from '../shared/moveBreaks';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
@@ -41,7 +42,7 @@ const gameUrl = () => new URL('./', location.href).href;
 /* the student side with a class code filled in (the game reads ?code=) */
 const studentViewUrl = (code: string) => `${gameUrl()}?code=${encodeURIComponent(code)}`;
 /* a class made from now on starts with these (existing classes keep what they have) */
-const NEW_CLASS_SETTINGS = { brain: { enabled: true }, move: { enabled: true } };
+const NEW_CLASS_SETTINGS = { brain: { enabled: true }, move: { enabled: true }, themes: { enabled: true } };
 
 if (!sb) {
   app.innerHTML = `<div class="card authcard"><h2>Almost there</h2><p>This build has no Supabase settings. Copy <code>.env.example</code> to <code>.env</code>, fill in your project URL and anon key, and rebuild. See the README.</p></div>`;
@@ -377,6 +378,7 @@ interface SetupChoice { id: string; emoji: string; name: string; what: string; o
 const SETUP_CHOICES: SetupChoice[] = [
   { id: 'brain', emoji: '🧠', name: 'Brain stretches', what: '3 short brain games each morning and after each subject on the daily plan. Results go to each student’s 🧠 Brain tab.', on: g => brainSettings(g?.brain as Partial<BrainSettings> | undefined).enabled },
   { id: 'move', emoji: '🤸', name: 'Stand-and-stretch breaks', what: 'When a student finishes one subject and goes to start another, their pet leads a 1½-minute movement break. Pick the moves and minutes in Settings.', on: g => moveSettings(g?.move as Partial<MoveSettings> | undefined).enabled },
+  { id: 'themes', emoji: '🎉', name: 'Theme days', what: 'A fun theme for the day (Pajama Day, Detective Day, Pi Day, the 100th day of school…), announced right after the morning brain stretch. Choose every day or Fridays in Settings.', on: g => themeSettings(g?.themes as Partial<ThemeSettings> | undefined).enabled },
   { id: 'arcade', emoji: '🕹️', name: 'Arcade', what: 'Games students play with the practice time they earn. Pick which games in Settings.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).enabled },
   { id: 'freePlay', emoji: '🎟️', name: 'Arcade Free Play', what: 'No coin admission or tickets: practice time alone opens the Arcade.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).freePlay },
   { id: 'allowMusic', emoji: '🎵', name: 'Background music', what: 'Students can turn music on. Sound effects stay up to each student.', on: g => g?.allowMusic !== false },
@@ -397,6 +399,7 @@ function renderSetup() {
     const game_settings = { ...old, allowMusic: val('allowMusic'), requireThink: val('requireThink'), khan: val('khan'), youtube: val('youtube'),
       brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
       move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: val('move') },
+      themes: { ...themeSettings(old.themes as Partial<ThemeSettings> | undefined), enabled: val('themes') },
       arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') } };
     $('#setupMsg').textContent = 'Saving…';
     const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
@@ -417,6 +420,7 @@ function renderSettings() {
   const arcade = arcadeSettings(cls.game_settings?.arcade as Partial<ArcadeSettings> | undefined);
   const brain = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   const move = moveSettings(cls.game_settings?.move as Partial<MoveSettings> | undefined);
+  const themes = themeSettings(cls.game_settings?.themes as Partial<ThemeSettings> | undefined);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="card setup-callout"><div class="row" style="margin:0; align-items:center"><span style="flex:1"><b>🧭 Quick setup</b> <span class="muted">· everything you can turn on or off, on one page</span></span><button type="button" class="btn small primary" id="openSetup">Open quick setup</button></div></div><div class="two">
@@ -440,6 +444,13 @@ function renderSettings() {
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> Brain stretches</label>
       <p class="muted" style="margin-top:0">3 short brain games in a row: one when a student opens Pet World each day, and one each time a subject or unit on their daily plan is done. There's no skip button. Each game starts at its easiest level and moves up after 3 scores in a row of 85% or better. Results are on each student's 🧠 Brain tab.</p>
       <h4>Games in the cycle</h4><div class="row"><button type="button" class="btn small" data-brain-all="1">Use all</button><button type="button" class="btn small" data-brain-all="0">Block all</button></div>${BRAIN_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-brain-game="${game.id}" ${brain.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)} <span class="muted">· ${esc(game.skill)}</span></label>`).join('')}
+      <h3>🎉 Theme days</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="themesEnabled" ${themes.enabled ? 'checked' : ''}> Theme days</label>
+      <p class="muted" style="margin-top:0">A fun theme for the day, like Pajama Day or Detective Day, with something to wear and a small challenge. Students see it right after the morning brain stretch, and it stays in Today’s plan all day. The same theme shows for everyone in the class.</p>
+      <label for="themesWhen">How often</label><select id="themesWhen"><option value="every" ${themes.when === 'every' ? 'selected' : ''}>Every school day (Monday to Friday)</option><option value="fri" ${themes.when === 'fri' ? 'selected' : ''}>Fridays only</option></select>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="themesSpecial" ${themes.special ? 'checked' : ''}> Special days on their dates: ${SPECIAL_DAYS.map(s => `${s.emoji} ${esc(s.name)}`).join(', ')}</label>
+      <p class="muted" style="margin-top:0">The 100th day of school counts weekdays from the school year’s start date on each student’s Transcript tab (holidays aren’t skipped).</p>
+      <h4>Themes in the rotation</h4><div class="row"><button type="button" class="btn small" data-theme-all="1">Use all</button><button type="button" class="btn small" data-theme-all="0">Block all</button></div>${THEME_DAYS.map(th => `<label style="display:flex; gap:8px; align-items:center" title="${esc(th.wear)} ${esc(th.challenge)}"><input type="checkbox" data-themeday="${th.id}" ${themes.themes[th.id] ? 'checked' : ''}> ${th.emoji} ${esc(th.name)}</label>`).join('')}
       <h3>🤸 Stand-and-stretch breaks</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="moveEnabled" ${move.enabled ? 'checked' : ''}> Stand-and-stretch breaks</label>
       <p class="muted" style="margin-top:0">When a student finishes one subject and goes to start a different one, their pet leads ${MOVES_PER_BREAK} moves (half stretches, half fun ones like a staring contest or sock basketball), about ${MOVE_SECONDS} seconds each, before the new subject. There's no skip button. Walking around town or the Arcade in between doesn't count as a new subject, and break time doesn't count toward any subject.</p>
@@ -504,6 +515,9 @@ function renderSettings() {
     const moves: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-move]').forEach(input => { moves[input.dataset.move!] = input.checked; });
     const moveSettingsForClass = moveSettings({ enabled: ($('#moveEnabled') as HTMLInputElement).checked, minutes: +($('#moveMinutes') as HTMLInputElement).value, moves });
+    const themeChecks: Record<string, boolean> = {};
+    pane.querySelectorAll<HTMLInputElement>('[data-themeday]').forEach(input => { themeChecks[input.dataset.themeday!] = input.checked; });
+    const themeSettingsForClass = themeSettings({ enabled: ($('#themesEnabled') as HTMLInputElement).checked, when: ($('#themesWhen') as HTMLSelectElement).value === 'fri' ? 'fri' : 'every', special: ($('#themesSpecial') as HTMLInputElement).checked, themes: themeChecks });
     const arcadeGames: Record<string, boolean> = {};
     pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { arcadeGames[input.dataset.arcadeGame!] = input.checked; });
     const arcadeSettingsForClass = arcadeSettings({
@@ -520,12 +534,13 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, ...(homeSel ? { home: homeSel.value } : {}) };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);
   });
   pane.querySelectorAll<HTMLButtonElement>('[data-brain-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-brain-game]').forEach(input => { input.checked = button.dataset.brainAll === '1'; }); }));
+  pane.querySelectorAll<HTMLButtonElement>('[data-theme-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-themeday]').forEach(input => { input.checked = button.dataset.themeAll === '1'; }); }));
   pane.querySelectorAll<HTMLButtonElement>('[data-move-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-move]').forEach(input => { input.checked = button.dataset.moveAll === '1'; }); }));
   pane.querySelectorAll<HTMLButtonElement>('[data-arcade-all]').forEach(button => button.addEventListener('click', () => { pane.querySelectorAll<HTMLInputElement>('[data-arcade-game]').forEach(input => { input.checked = button.dataset.arcadeAll === '1'; }); }));
   $('#openSetup').addEventListener('click', () => { tab = 'setup'; renderMain(); });

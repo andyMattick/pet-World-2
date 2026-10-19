@@ -178,6 +178,14 @@ body.brain-open{overflow:hidden}
 @keyframes move-puff{0%,100%{transform:scale(1)}40%,70%{transform:scale(1.25)}}
 @keyframes move-wiggle{0%,100%{transform:rotate(-10deg) translateY(0)}50%{transform:rotate(10deg) translateY(-8px)}}
 @media (prefers-reduced-motion: reduce){.move-pet{animation:none}}
+/* A theme day announcement (docs/THEME-DAYS.md) */
+.theme-card{position:fixed; inset:0; z-index:71; display:flex; align-items:center; justify-content:center; background:rgba(20,16,30,.6); padding:16px}
+.theme-box{max-width:460px; width:100%; background:var(--board); color:var(--chalk); border-radius:16px; padding:20px 22px; text-align:center; box-shadow:0 10px 30px #0006}
+.theme-box p{margin:8px 0; font-size:17px; text-align:left}
+.theme-box .theme-kicker{text-align:center; margin:0; color:var(--chalk-dim)}
+.theme-emoji{font-size:84px; line-height:1.1; animation:move-wiggle 1.2s ease-in-out infinite}
+.theme-box h2{margin:4px 0 10px}
+@media (prefers-reduced-motion: reduce){.theme-emoji{animation:none}}
 
 /* Pet Room and Dress-up */
 .room-layout{display:grid; grid-template-columns:minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start}

@@ -15,6 +15,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
+import { themeFor, themeSettings } from '../shared/themeDays';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
@@ -160,6 +161,7 @@ function normalize(raw){
   s.sentBackSeen = Array.isArray(s.sentBackSeen) ? s.sentBackSeen.filter(key => typeof key === 'string').slice(-60) : [];   // sent-back items already announced (renderSentBack)
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
+  s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';   // the last day its theme was announced (docs/THEME-DAYS.md)
   s.move = normalizeMoveState(s.move);      // stand-and-stretch breaks between subjects (docs/MOVE-BREAKS.md)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
@@ -5063,6 +5065,7 @@ function show(id){
   if (moveRun && (id === 'join' || id === 'name' || id === 'loading')) closeMoveBreak();            // the same for a stand-and-stretch break
   brainCheck();
   moveCheck();
+  themeCheck();
 }
 /* Themed room behind building screens (src/game/rooms.js). Summary keeps the room it came from. */
 function syncRoom(id){
@@ -5387,7 +5390,7 @@ function closeBrainStretch(finished){
   if (!finished) return;
   kickMusic();
   if (!$('#scr-home').hidden) renderHome();   // the plan card shows the ✅
-  setTimeout(() => { brainCheck(); moveCheck(); }, 500);   // another stretch, or a stand-and-stretch break, may be waiting
+  setTimeout(() => { brainCheck(); moveCheck(); themeCheck(); }, 500);   // another stretch, or a stand-and-stretch break, may be waiting
 }
 function brainPlanRows(){
   if (!brainAllowed().length) return [];
@@ -5419,7 +5422,7 @@ function moveTrack(subject, seconds){
   if (MOVE_SUBJECTS.includes(subject) && subject === S.move.subject) S.move.secs += seconds;
 }
 function moveCheck(){
-  if (moveRun || brainRun || !S?.move || !allowedMoves(movePolicy()).length) return;
+  if (moveRun || brainRun || $('.theme-card') || !S?.move || !allowedMoves(movePolicy()).length) return;
   moveNewDay();
   const m = S.move, subject = subjectOnScreen();
   if (!MOVE_SUBJECTS.includes(subject)) return;
@@ -5477,6 +5480,44 @@ function closeMoveBreak(){
 }
 document.addEventListener('click', () => { if (Backend.me) setTimeout(moveCheck, 0); });   // opening a course inside the Library doesn't go through show()
 setInterval(() => { if (Backend.me) moveCheck(); }, 15000);
+/* ---------- theme days (docs/THEME-DAYS.md) ----------
+   A theme for the school day (Pajama Day, Detective Day, Pi Day…), announced once a day right after the morning brain
+   stretch, or the first time the town is on screen if brain stretches are off. It stays in Today's plan all day. */
+const themePolicy = () => (gamesOnlyMode || !Backend.me) ? themeSettings(null) : themeSettings(Backend.me.game_settings?.themes);
+/* the first day of the school year that holds today, from the student's Transcript tab (for the 100th day of school) */
+function schoolStart(day = logDayKey()){
+  try { const years = JSON.parse(Backend.me?.quiz_overrides?.transcript || '{}')?.years; return (Array.isArray(years) ? years : []).find(y => y && y.from <= day && (!y.to || y.to >= day))?.from || ''; } catch(e) { return ''; }
+}
+const todayTheme = () => themeFor(logDayKey(), themePolicy(), schoolStart());
+function themeCheck(){
+  if (!S?.brain) return;
+  const day = logDayKey(), theme = S?.themeSeen === day ? null : todayTheme();
+  if (!theme || brainRun || moveRun || $('.theme-card')) return;
+  if (brainAllowed().length && (S.brain.morning !== day || S.brain.active)) return;   // the morning brain stretch comes first
+  if (!brainBreakNow()) return;
+  openThemeCard(theme, true);
+}
+function openThemeCard(theme, first){
+  if ($('.theme-card')) return;
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', theme.name);
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${first ? 'Today is…' : 'Today’s theme'}</p><div class="theme-emoji" aria-hidden="true">${theme.emoji}</div><h2>${esc(theme.name)}</h2>
+    <p><b>Wear it:</b> ${esc(theme.wear)}</p><p><b>Today’s challenge:</b> ${esc(theme.challenge)}</p>
+    <button type="button" class="btn berry" data-theme-close>${first ? 'Let’s go! 🎉' : 'Got it'}</button></div>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-theme-close]').addEventListener('click', () => {
+    el.remove();
+    const day = logDayKey();
+    if (S.themeSeen !== day) { S.themeSeen = day; logEvent({k:'theme', title:theme.name}); save(); if (!$('#scr-home').hidden) renderHome(); setTimeout(moveCheck, 300); }
+  });
+  if (first) sfx('unlock');
+}
+function themePlanRows(){
+  const theme = todayTheme(); if (!theme) return [];
+  return [`<div class="row extras-row"><span style="flex:1">${theme.emoji} Today is <b>${esc(theme.name)}</b></span><button type="button" class="btn small" data-theme-open>See it</button></div>`];
+}
+document.addEventListener('click', event => { if (event.target.closest('[data-theme-open]')) { const theme = todayTheme(); if (theme) openThemeCard(theme, S.themeSeen !== logDayKey()); } });
+setInterval(() => { if (Backend.me) themeCheck(); }, 15000);
 function coinBurst(el, n){
   if (reduceMotion() || !el) return;
   const r = el.getBoundingClientRect();
@@ -6373,7 +6414,7 @@ function planItemInfo(x, day = logDayKey()){
 /* the town page card: plan items, then extras, then time goals */
 function planCardHTML(){
   const items = planItems(), extras = assignedExtras(), day = goalDayKey(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
-  const goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0), brainRows = brainPlanRows();
+  const goalRows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0), brainRows = [...themePlanRows(), ...brainPlanRows()];
   if (!items.length && !extras.length && !goalRows.length && !brainRows.length) return '';
   const rows = items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
@@ -9639,6 +9680,7 @@ function eventText(e){
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
   if (e.k === 'brain') return `🧠 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
   if (e.k === 'move') return `🤸 ${e.title}${e.detail ? ` · ${e.detail}` : ''}`;
+  if (e.k === 'theme') return `🎉 Theme day: ${e.title}`;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,
