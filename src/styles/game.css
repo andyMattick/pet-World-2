@@ -185,6 +185,9 @@ body.brain-open{overflow:hidden}
 .theme-box .theme-kicker{text-align:center; margin:0; color:var(--chalk-dim)}
 .theme-emoji{font-size:84px; line-height:1.1; animation:move-wiggle 1.2s ease-in-out infinite}
 .theme-box h2{margin:4px 0 10px}
+.theme-pin{margin:10px 0 6px; text-align:left}
+.theme-pin input{width:6em; margin-left:6px}
+.theme-box [data-theme-later]{margin-top:4px}
 @media (prefers-reduced-motion: reduce){.theme-emoji{animation:none}}
 
 /* Pet Room and Dress-up */

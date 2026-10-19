@@ -15,7 +15,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord } from '../shared/vocab';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
-import { themeFor, themeSettings } from '../shared/themeDays';
+import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
@@ -162,6 +162,9 @@ function normalize(raw){
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
   s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';   // the last day its theme was announced (docs/THEME-DAYS.md)
+  s.themeAsk = s.themeAsk && typeof s.themeAsk.day === 'string' && ['yes', 'no'].includes(s.themeAsk.answer) ? {day:s.themeAsk.day, answer:s.themeAsk.answer, ...(typeof s.themeAsk.id === 'string' ? {id:s.themeAsk.id} : {})} : null;   // today's grown-up answer, and the theme it earned
+  s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;   // earned theme days so far (the rotation's place)
+  s.planDone = Object.fromEntries(Object.entries(s.planDone && typeof s.planDone === 'object' ? s.planDone : {}).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v === true).sort().slice(-14));   // days the whole plan was done
   s.move = normalizeMoveState(s.move);      // stand-and-stretch breaks between subjects (docs/MOVE-BREAKS.md)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
   if (!Array.isArray(s.seenCollection)) s.seenCollection = [];
@@ -5488,14 +5491,66 @@ const themePolicy = () => (gamesOnlyMode || !Backend.me) ? themeSettings(null) :
 function schoolStart(day = logDayKey()){
   try { const years = JSON.parse(Backend.me?.quiz_overrides?.transcript || '{}')?.years; return (Array.isArray(years) ? years : []).find(y => y && y.from <= day && (!y.to || y.to >= day))?.from || ''; } catch(e) { return ''; }
 }
-const todayTheme = () => themeFor(logDayKey(), themePolicy(), schoolStart());
+/* today's theme: a special day, today's turn in an every-day or Friday rotation, or a theme day a grown-up said yes to */
+function todayTheme(){
+  const day = logDayKey(), policy = themePolicy(), byDate = themeFor(day, policy, schoolStart());
+  if (byDate || policy.when !== 'earned') return byDate;
+  return S?.themeAsk?.day === day && S.themeAsk.answer === 'yes' ? themeById(S.themeAsk.id) || null : null;
+}
+/* the whole plan for today done: every plan item, every extra, every time goal (and at least one of them) */
+function planAllDone(day = logDayKey()){
+  const items = planItems(day), extras = assignedExtras(), goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), today = S.subjectTime?.[day] || {};
+  const goalIds = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).map(([id]) => id);
+  if (!items.length && !extras.length && !goalIds.length) return false;
+  return items.every(x => planItemInfo(x, day).status !== 'todo')   // "waiting for a grown-up" counts: her part is done
+    && extras.every(x => Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes))
+    && goalIds.every(id => Math.floor((today[id] || 0) / 60) >= goals[id]);
+}
+/* the last day before today that she was in Pet World */
+function lastSchoolDay(day = logDayKey()){
+  return [...new Set([...Object.keys(S.subjectTime || {}), ...Object.keys(S.dayLog || {}), ...Object.keys(S.planDone || {})])].filter(d => d < day).sort().pop() || '';
+}
+function recordPlanDone(day = logDayKey()){ if (S?.planDone && !S.planDone[day] && planAllDone(day)) { S.planDone = Object.fromEntries(Object.entries({...S.planDone, [day]:true}).sort().slice(-14)); save(); } }
+let themeAskLater = 0;   // "Ask me later": not again for 20 minutes
 function themeCheck(){
   if (!S?.brain) return;
-  const day = logDayKey(), theme = S?.themeSeen === day ? null : todayTheme();
-  if (!theme || brainRun || moveRun || $('.theme-card')) return;
+  const day = logDayKey(), policy = themePolicy();
+  if (policy.enabled) recordPlanDone(day);
+  if (!policy.enabled || brainRun || moveRun || $('.theme-card')) return;
   if (brainAllowed().length && (S.brain.morning !== day || S.brain.active)) return;   // the morning brain stretch comes first
   if (!brainBreakNow()) return;
-  openThemeCard(theme, true);
+  const prev = lastSchoolDay(day);
+  if (policy.when === 'earned' && !themeFor(day, policy, schoolStart()) && S.themeAsk?.day !== day && prev && S.planDone[prev] && Date.now() > themeAskLater) { openThemeAsk(prev); return; }
+  const theme = S.themeSeen === day ? null : todayTheme();
+  if (theme) openThemeCard(theme, true);
+}
+/* the grown-up's question: did she earn a theme day? (behind the grown-up PIN, the same one as the progress report) */
+function openThemeAsk(prev){
+  const el = document.createElement('div'), name = S.name || 'your student';
+  const when = new Date(`${prev}T12:00:00`).toLocaleDateString([], {weekday:'long'});
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Theme day check');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><div class="theme-emoji" aria-hidden="true">🎉</div>
+    <h2>${esc(name)} finished the whole plan on ${esc(when)}!</h2>
+    <p>Did ${esc(name)} also earn a theme day with a good attitude? If yes, today becomes a theme day.</p>
+    <form class="theme-pin"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label>
+    <div class="row"><button type="submit" class="btn berry" value="yes">Yes, theme day! 🎉</button><button type="submit" class="btn" value="no">Not this time</button></div></form>
+    <button type="button" class="btn small" data-theme-later>Ask me later</button></div>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-theme-later]').addEventListener('click', () => { themeAskLater = Date.now() + 20 * 60000; el.remove(); setTimeout(moveCheck, 300); });
+  el.querySelector('form').addEventListener('submit', event => {
+    event.preventDefault();
+    const pin = String(new FormData(event.target).get('pin') || '').trim(), yes = event.submitter?.value === 'yes';
+    if (!/^\d{4}$/.test(pin)) { toast('Type the 4-digit grown-up PIN.'); return; }
+    if (!S.parentPin) S.parentPin = pinHash(pin); else if (S.parentPin !== pinHash(pin)) { toast('That PIN does not match.'); return; }
+    const day = logDayKey(), theme = yes ? rotationTheme(S.themeTurn, themePolicy()) : null;
+    S.themeAsk = {day, answer:yes && theme ? 'yes' : 'no', ...(theme ? {id:theme.id} : {})};
+    if (theme) S.themeTurn++;
+    save(); el.remove();
+    if (theme) openThemeCard(theme, true);
+    else { toast('Finish the whole plan today for another chance at a theme day! 💪'); setTimeout(moveCheck, 300); }
+    if (!$('#scr-home').hidden) renderHome();
+  });
+  setTimeout(() => el.querySelector('input[name="pin"]')?.focus(), 50);
 }
 function openThemeCard(theme, first){
   if ($('.theme-card')) return;
@@ -9728,6 +9783,7 @@ function dayEntry(day = logDayKey()){
 }
 async function sendDay(){
   const day = logDayKey(), d = dayLogToday(); d.sent = Date.now();
+  recordPlanDone(day);   // a theme day can be earned from today (docs/THEME-DAYS.md)
   S.planCarry = {after:day, items:planItems(day).filter(x => planItemInfo(x, day).status === 'todo').map(({carried, ...x}) => x)};   // what's left moves to the next day
   save();
   const result = await Backend.sendLedgerDay(day, dayEntry(day));

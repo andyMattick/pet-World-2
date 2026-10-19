@@ -1,6 +1,7 @@
 /* Theme days (docs/THEME-DAYS.md): a fun theme for the school day, announced right after the morning brain stretch
-   (or when the town first opens, if brain stretches are off). Shared by the game (the announcement, the plan row)
-   and the teacher app (class settings). Every device picks the same theme for the same day. */
+   (or when the town first opens, if brain stretches are off). By default a theme day is earned: when the whole plan
+   was done the day before, a grown-up says yes with the grown-up PIN. Shared by the game (the question, the
+   announcement, the plan row) and the teacher app (class settings). */
 
 export interface ThemeDay {
   id: string; emoji: string; name: string;
@@ -9,7 +10,8 @@ export interface ThemeDay {
   date?: string;       // "MM-DD": a special day that always lands on this date
 }
 
-/* The rotation: one a day (or one each Friday), in this order, then around again. */
+/* The rotation, in this order, then around again: the next one each time a theme day is earned (or each school day,
+   or each Friday, when the class picks those). */
 export const THEME_DAYS: ThemeDay[] = [
   { id: 'pajamas', emoji: '🛌', name: 'Pajama Day', wear: 'Do school in your coziest pajamas and slippers.', challenge: 'Build a blanket fort and do your Reading Log inside it.' },
   { id: 'stuffies', emoji: '🧸', name: 'Stuffed Animal Day', wear: 'Pick a stuffed animal to be your study buddy all day.', challenge: 'Explain one thing you learned today to your stuffed animal, like you’re the teacher.' },
@@ -44,11 +46,12 @@ export const SPECIAL_DAYS: ThemeDay[] = [
 export const ALL_THEMES = [...THEME_DAYS, ...SPECIAL_DAYS];
 export const themeById = (id: string) => ALL_THEMES.find(t => t.id === id);
 
-/** Class setting game_settings.themes: off until a teacher turns it on; "every" school day or Fridays only;
-    every rotating theme is in the cycle unless unchecked; special days can be turned off together. */
-export interface ThemeSettings { enabled: boolean; when: 'every' | 'fri'; special: boolean; themes: Record<string, boolean> }
+/** Class setting game_settings.themes: off until a teacher turns it on. when: "earned" (the default: after a day with
+    the whole plan done, when a grown-up says yes), every school day, or Fridays only. Every rotating theme is in the
+    cycle unless unchecked; special days (always free, never asked about) can be turned off together. */
+export interface ThemeSettings { enabled: boolean; when: 'earned' | 'every' | 'fri'; special: boolean; themes: Record<string, boolean> }
 export function themeSettings(raw: Partial<ThemeSettings> | null | undefined): ThemeSettings {
-  return { enabled: raw?.enabled === true, when: raw?.when === 'fri' ? 'fri' : 'every', special: raw?.special !== false,
+  return { enabled: raw?.enabled === true, when: raw?.when === 'fri' || raw?.when === 'every' ? raw.when : 'earned', special: raw?.special !== false,
     themes: Object.fromEntries(THEME_DAYS.map(t => [t.id, raw?.themes?.[t.id] !== false])) };
 }
 
@@ -63,7 +66,15 @@ export function schoolDayNumber(day: string, start: string): number {
   return n;
 }
 
-/** The theme for a day ("YYYY-MM-DD"), or null. schoolStart: the first day of the school year that holds this day. */
+/** The next theme in the rotation after n earned theme days. */
+export function rotationTheme(n: number, settings: ThemeSettings): ThemeDay | null {
+  const list = THEME_DAYS.filter(t => settings.themes[t.id]);
+  return list.length ? list[Math.max(0, Math.floor(n)) % list.length] : null;
+}
+
+/** The theme for a day ("YYYY-MM-DD") by the date alone, or null: a special day, or in "every" and "fri" the date's
+    turn in the rotation. In "earned" only special days come from here; the game adds earned ones.
+    schoolStart: the first day of the school year that holds this day. */
 export function themeFor(day: string, settings: ThemeSettings, schoolStart = ''): ThemeDay | null {
   if (!settings.enabled || !DAY.test(day)) return null;
   const w = weekday(day);
@@ -72,7 +83,7 @@ export function themeFor(day: string, settings: ThemeSettings, schoolStart = '')
     const fixed = SPECIAL_DAYS.find(t => t.date === day.slice(5));
     if (fixed) return fixed;
   }
-  if (w === 0 || w === 6 || (settings.when === 'fri' && w !== 5)) return null;
+  if (settings.when === 'earned' || w === 0 || w === 6 || (settings.when === 'fri' && w !== 5)) return null;
   const list = THEME_DAYS.filter(t => settings.themes[t.id]);
   if (!list.length) return null;
   const d = dayNumber(day) + 3, week = Math.floor(d / 7);   // weeks start on Monday (day 0, Jan 1 1970, was a Thursday)
