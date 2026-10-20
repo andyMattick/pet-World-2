@@ -40,7 +40,20 @@ Anywhere in Pet World (questions, stories, reading notes, math problems), the st
 
 In any box she writes in (written answers, essays, reading notes, projects), she can double-click a word, or press and hold it on a tablet, and tap **📌 What does it mean?**. It works exactly like flagging a word while reading: a word on her lists joins her practice, and any other word is saved as flagged for a grown-up, with the sentence she wrote around it. Grown-up boxes (PIN answers, word lists, backup codes) don't show the button.
 
+## 📌 Add a word while reviewing her writing (teacher)
+
+On a student's page in the teacher app, anywhere her own writing is shown (written answers, reading notes, reading-quiz essays, projects), double-click a word, or press and hold it, and tap **📌 Add to vocab**. A small box opens with:
+- the word (lowercased, editable),
+- a kid-friendly meaning to type,
+- an example sentence taken from her own sentence, with ___ in place of the word,
+- a **📖 Dictionary ↗** link to help write the meaning.
+
+**Add to the class list** saves it to the class words (`classes.game_settings.vocab`), the same list as the Vocabulary tab, and adds it to the focus words if the class picked some. A word already on a list just shows its meaning. Code: `src/teacher/wordPick.ts`.
+
 ## 📖 Dictionary links
+
+In the teacher app's Vocabulary tab, every class word and every flagged word has a **📖 Dictionary ↗** link (Merriam-Webster).
+
 
 In 📊 My words, tapping a word shows its meaning with a **📖 ↗** link that opens it in Merriam-Webster. Each word in "Words you flagged" has the same link.
 

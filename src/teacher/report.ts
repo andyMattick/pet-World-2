@@ -604,7 +604,7 @@ function writtenCardHTML(r: StudentReport, overrides: Record<string, string>) {
       const accepted = (e: WrittenEntry) => { const rv = writtenReview(e, overrides); return !!rv && !rv.redo; };
       const doneList = entries.filter(accepted);
       const rows = entries.filter(e => !accepted(e)).map(card).join('') + archiveHTML(doneList.map(card).join(''), doneList.length);
-  return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.”</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
+  return `<div class="card"><h2>Written answers${entries.length ? ` · ${writtenWaiting({ ...r, qx: overrides }).length} waiting` : ''}</h2><p class="muted">Tick each point the answer shows. Written answers don't change practice or test scores. The student sees your ticks and note under “My written answers.” To add a word from her writing to the vocabulary list, double-click it and tap 📌 Add to vocab.</p>${rows || '<p class="muted">No written answers yet.</p>'}</div>`;
 }
 /* projects and experiments a student can submit; shown on the Projects tab and counted on the dashboard's waiting card */
 const GUESS_PROJECTS = new Set(['historylab']);   // projects where the teacher guesses what a drawing shows before the last questions open

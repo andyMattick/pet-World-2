@@ -12,6 +12,7 @@ import { setLedgerClass } from './ledger';
 import { startAlerts } from './live';
 import { renderApprovals, waitingCount } from './approvals';
 import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus } from './vocab';
+import { installWordPick } from './wordPick';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
@@ -398,14 +399,17 @@ async function loadLessonExtras(classId: string): Promise<LessonExtras> {
 }
 
 /* ---------- vocabulary (docs: VOCAB.md): the class list is saved in classes.game_settings.vocab ---------- */
+const classVocabSaver = (cls: ClassRow) => async (vocab: ClassVocab) => {
+  const game_settings = { ...(cls.game_settings || {}), vocab };
+  const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
+  if (!error) cls.game_settings = game_settings;
+  return error ? error.message : null;
+};
+/* 📌 a word highlighted in a student's writing on her page goes on the class list (src/teacher/wordPick.ts) */
+installWordPick(() => current ? { vocab: (current.game_settings?.vocab as ClassVocab | undefined) || {}, save: classVocabSaver(current) } : null);
 function renderVocabularyTab() {
   const cls = current!;
-  const save = async (vocab: ClassVocab) => {
-    const game_settings = { ...(cls.game_settings || {}), vocab };
-    const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
-    if (!error) cls.game_settings = game_settings;
-    return error ? error.message : null;
-  };
+  const save = classVocabSaver(cls);
   let roster: VocabRoster;
   /* one student's spelling-pattern words, kept with her other settings in quiz_overrides (read fresh so nothing else is lost) */
   const saveSpellFocus: SaveSpellFocus = async (id, words) => {
