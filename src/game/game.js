@@ -7661,7 +7661,15 @@ const KHAN_UNIT_TESTS = {
   verbs:`${KHAN}humanities/grammar/parts-of-speech-the-verb/test/parts-of-speech-the-verb-unit-test`,
   pronouns:`${KHAN}humanities/grammar/parts-of-speech-the-pronoun/test/parts-of-speech-the-pronoun-unit-test`,
   modifiers:`${KHAN}humanities/grammar/parts-of-speech-the-modifier/test/parts-of-speech-the-modifier-unit-test`,
-  prepositions:`${KHAN}ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/test/x90cef5375e9bcad6:prepositions-and-interjections-5-unit-test`
+  prepositions:`${KHAN}ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/test/x90cef5375e9bcad6:prepositions-and-interjections-5-unit-test`,
+  /* History follows Khan's World History Project (Origins to the Present), Biology Unit 1 Grade 6 Science: Life sciences,
+     Biology Unit 2 Middle school biology: Organism growth and reproduction (checked on khanacademy.org, Oct 20 2026) */
+  history:`${KHAN}humanities/world-history/x66f79d8a:origins-of-history/x66f79d8a:history-and-memory-1-4/test/x66f79d8a:origins-of-history-unit-test`,
+  history2:`${KHAN}humanities/world-history/x66f79d8a:early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/test/x66f79d8a:early-humans-unit-test`,
+  history3:`${KHAN}humanities/world-history/x66f79d8a:early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/test/x66f79d8a:early-agrarian-societies-unit-test`,
+  history4:`${KHAN}humanities/world-history/x66f79d8a:empires-and-belief-systems/x66f79d8a:women-in-the-ancient-world-4-15/test/x66f79d8a:empires-and-belief-systems-unit-test`,
+  bio1:`${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:human-digestive-system/test/x88f5990a7622d8f5:life-sciences-unit-test`,
+  bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`
 };
 function khanTestCardHTML(courseId){
   const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
