@@ -34,6 +34,20 @@
 - The game writes each event's wording (`text`) and each lesson's name (`labels`) into the day log as it happens, so the teacher app can show it without the game's lists.
 - **Math quizzes and unit tests from the quiz history** (the `assessments` table) fill in any day whose record has none, including days before the day log went live (Oct 16, 2026). English, History and Science practice before then was only kept as time by subject and each lesson's best score, so those days can't be filled in.
 
+## Shorter days (October 2026)
+
+Each day now reads top to bottom with nothing said twice:
+
+- **One time line:** total minutes, then minutes per subject. This replaces the “Time by subject” and “Time by lesson” lists.
+- **One plan line:** ✅ / ⬜ for each plan row. On a day read from her save, it lists the rows she finished, and the “✅ Finished” lines are no longer repeated under each subject.
+- **One goals line:** extras and time goals together.
+- **Each subject:**
+  - Each place appears once, with its minutes and (for shops) its orders. A unit’s lessons count as one place, and a station’s practice and quiz as one station.
+  - Her scores are listed under the place, without repeating its name.
+  - Tries at the same lesson are merged, for example “History Stories (practice) · 3 tries: 4/4 ✅, 2/4, 3/4 ✅”.
+- **Breaks:** brain stretches and stand-and-stretch breaks are one line.
+- The separate 🏅 Passed and ⭐ Mastered lists only show on older days without scores.
+
 ## What makes up a grade (Courses & grades)
 
 - Under each Pet World course, **What makes up this grade** opens the list behind the suggestion: every unit test and quiz that counts, with the score used (her best), how many tries, whether she passed and (for math) the date; the averages; daily work; and the sum, such as "50% × 90 (unit tests) + 40% × 88 (quizzes) + 10% × 100 (daily work) = 91% (A)".

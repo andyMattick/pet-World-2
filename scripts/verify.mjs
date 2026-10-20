@@ -192,6 +192,8 @@ need('src/game/game.js', 'townTracker', 'practice time kept in the town');
 need('src/game/game.js', 'function renderSim(', 'Biology Unit 2 science labs (SCIENCE-UNIT2.md)');
 need('src/game/game.js', "step.kind === 'table' ? tableStepHTML", 'project data tables and photos (SCIENCE-UNIT2.md)');
 need('src/shared/questionBanks.js', 'const BIO2_QUESTIONS', 'Biology Unit 2 questions');
+need('src/game/game.js', 'function openHelpCard(', '✋ I have a question (QUESTIONS.md)');
+need('src/teacher/report.ts', 'function questionsWaitingHTML(', 'teacher sees ✋ questions waiting (QUESTIONS.md)');
 need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
 need('src/teacher/main.ts', 'p_tz', "the teacher's time zone for practice time");
 for (const m of ['const TRACKS = {', 'musicTrack', 'function openMusicMenu(', 'function musicAllowed(']) need('src/game/game.js', m);

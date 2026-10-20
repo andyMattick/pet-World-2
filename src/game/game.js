@@ -158,6 +158,7 @@ function normalize(raw){
     s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
+    s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
     s.planCarry.items = s.planCarry.items.filter(x => x && typeof x === 'object' && typeof x.id === 'string').slice(0, 30);
@@ -6788,20 +6789,20 @@ function orderPlan(items, day){
 }
 function planCardHTML(){
   const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {};
-  const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0;
-  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML) return '';
+  const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0, helpHTML = helpPlanHTML();
+  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML) return '';
   const extraRows = extras.map(x => {
     const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
-    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' && !fixing ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' && !fixing ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${fixHTML}${rows.join('')}${outsideRowsHTML()}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${fixHTML}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -6968,6 +6969,152 @@ $('#displayPickerOptions').addEventListener('click', e => {
   if (pickerMode === 'decor' && button.dataset.pickerId) { S.displayed[pickerSlot] = button.dataset.pickerId; save(); closeDisplayPicker(); renderHome(); }
 });
 $('#displayPickerClose').addEventListener('click', closeDisplayPicker);
+/* ---------- ✋ I have a question (docs/QUESTIONS.md) ----------
+   A big button on every assignment. She says what went wrong (something broken, or she doesn't know how), and can add
+   a picture of the screen. Her time stops while she writes. Sending it goes to her teacher (a ✋ alert in the teacher
+   app, and on her page) and takes her back to her plan: the place she asked about stays closed, with a note on the
+   plan, until the teacher answers (or a grown-up answers here with the PIN). Kept in S.help; the teacher's answer is
+   quiz_overrides["help:<id>"] = "answered:<text>". */
+const HELP_KINDS = {bug:'🐞 Something isn’t working', how:'🤔 I don’t know how to do this'};
+function normalizeHelp(raw){
+  const week = Date.now() - 7 * 86400000;
+  return (Array.isArray(raw) ? raw : []).filter(q => q && typeof q.id === 'string' && Number.isFinite(+q.at)).slice(-12).map(q => ({
+    id:q.id.slice(0, 40), at:+q.at, kind:q.kind === 'bug' ? 'bug' : 'how', text:String(q.text || '').slice(0, 600), where:String(q.where || '').slice(0, 120), label:String(q.label || '').slice(0, 120), open:String(q.open || '').slice(0, 40),
+    shot:typeof q.shot === 'string' && /^data:image\/jpeg;base64,/.test(q.shot) && q.shot.length <= 150000 && !(q.localAnswer && +q.at < week) ? q.shot : '',
+    localAnswer:String(q.localAnswer || '').slice(0, 600), seen:!!q.seen, told:!!q.told}));
+}
+/* the answer: the teacher's (hosted) or a grown-up's on this device */
+function helpAnswer(q){ const t = String(Backend.me?.quiz_overrides?.[`help:${q.id}`] || ''); return t.startsWith('answered:') ? t.slice(9).trim() || 'Answered' : q.localAnswer; }
+const helpWaiting = () => (S.help || []).filter(q => !helpAnswer(q));
+const helpLockFor = open => open ? helpWaiting().find(q => q.open === open) : null;
+const courseBuilding = c => (c && (Object.keys(ELA_BUILDING_COURSE).find(b => ELA_BUILDING_COURSE[b] === c) || Object.keys(HISTORY_BUILDING_COURSE).find(b => HISTORY_BUILDING_COURSE[b] === c))) || '';
+/* where she is, and which town button (data-open) leads back there */
+function helpPlace(){
+  const where = placeOnScreen(), [kind, a = ''] = where.split(':');
+  const open = kind === 'shop' ? a : ['vocab', 'sprint', 'arcade', 'reading'].includes(kind) ? kind
+    : kind === 'course' ? (a === 'math' ? currentShop || '' : courseBuilding(a)) : kind === 'project' ? projectBuilding(a)
+    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
+  return {where, label:String(placeLabel(where)), open};
+}
+const helpBtn = document.createElement('button');
+helpBtn.type = 'button'; helpBtn.id = 'helpBtn'; helpBtn.className = 'help-btn'; helpBtn.hidden = true; helpBtn.innerHTML = '✋ <span>I have a question</span>';
+document.body.appendChild(helpBtn);
+setInterval(() => { helpBtn.hidden = !S || !!$('#helpCard') || !!$('.theme-card') || placeOnScreen() === 'town'; }, 1000);
+helpBtn.addEventListener('click', () => openHelpCard());
+/* a picture of the screen: the browser asks which tab to share (works on computers); or she adds a screenshot she took */
+async function captureScreen(card){
+  if (!navigator.mediaDevices?.getDisplayMedia) return null;
+  card.style.visibility = 'hidden';
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({video:{displaySurface:'browser'}, audio:false, preferCurrentTab:true, selfBrowserSurface:'include'});
+    const video = document.createElement('video'); video.srcObject = stream; video.muted = true; await video.play();
+    await new Promise(ok => setTimeout(ok, 400));
+    const w = video.videoWidth, h = video.videoHeight; if (!w || !h) return null;
+    for (const [side, q] of [[1280, .7], [1024, .6], [800, .55], [640, .5]]) {
+      const k = Math.min(1, side / Math.max(w, h)), c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+      const data = c.toDataURL('image/jpeg', q); if (data.length <= 140000) return data;
+    }
+    return null;
+  } catch(e) { return null; }
+  finally { stream?.getTracks().forEach(t => t.stop()); card.style.visibility = ''; }
+}
+function openHelpCard(){
+  if ($('#helpCard')) return;
+  const place = helpPlace(), el = document.createElement('div');
+  let shot = '';
+  el.className = 'theme-card'; el.id = 'helpCard'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Ask your teacher a question');
+  const canGrab = !!navigator.mediaDevices?.getDisplayMedia;
+  el.innerHTML = `<form class="theme-box help-box" data-help-form><p class="theme-kicker">Ask your teacher · your time is paused</p><div class="theme-emoji" aria-hidden="true">✋</div><h2>What’s going on?</h2>
+    <p class="muted" style="margin:0">You were in: <b>${esc(place.label)}</b></p>
+    <div class="row help-kinds" role="radiogroup" aria-label="What kind of problem">${Object.entries(HELP_KINDS).map(([k, t]) => `<label class="btn small help-kind"><input type="radio" name="kind" value="${k}" required> ${t}</label>`).join('')}</div>
+    <label>Tell your teacher what happened and what you were trying to do.<textarea name="text" rows="4" maxlength="600" required placeholder="For example: I typed 3/4 and it said wrong, but I think it’s right. Or: I don’t know what “gerund” means."></textarea></label>
+    <div class="help-shot"><p style="margin:6px 0 4px"><b>📷 A picture of the screen</b> <small class="muted">(helps a lot if something looks broken)</small></p><div data-help-preview><p class="muted" style="margin:0">No picture yet.</p></div>
+      <div class="row">${canGrab ? '<button type="button" class="btn small" data-help-grab>📸 Take a picture of this screen</button>' : ''}<label class="btn small">🖼️ Add a screenshot<input type="file" accept="image/*" data-help-file style="display:none"></label></div></div>
+    <div class="row" style="margin-top:10px"><button type="submit" class="btn berry">Send my question</button><button type="button" class="btn small" data-help-cancel>Never mind, keep working</button></div></form>`;
+  document.body.appendChild(el); setTimeout(() => el.querySelector('textarea')?.focus(), 50);
+  const showShot = data => { shot = data; el.querySelector('[data-help-preview]').innerHTML = `<img src="${esc(data)}" alt="Picture of the screen" style="max-width:100%;max-height:130px;border-radius:8px;display:block">`; };
+  el.addEventListener('click', async e => {
+    if (e.target.closest('[data-help-cancel]')) { el.remove(); return; }
+    if (e.target.closest('[data-help-grab]')) { const data = await captureScreen(el); if (data) showShot(data); else toast('No picture was taken. You can add a screenshot instead.'); }
+    if (e.target.closest('[data-help-back]')) { el.remove(); show('home'); }
+  });
+  el.addEventListener('change', async e => {
+    const input = e.target.closest('[data-help-file]'); if (!input?.files?.[0]) return;
+    const data = await photoToJpeg(input.files[0], 140000); if (data) showShot(data); else toast('That picture couldn’t be read. Try a PNG or JPEG.');
+  });
+  el.querySelector('[data-help-form]').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = new FormData(e.target), text = String(f.get('text') || '').trim();
+    if (text.length < 5) { toast('Write a few words about the problem first.'); return; }
+    const q = {id:`${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, at:Date.now(), kind:f.get('kind') === 'bug' ? 'bug' : 'how', text, where:place.where, label:place.label, open:place.open, shot, localAnswer:'', seen:false, told:false};
+    S.help = normalizeHelp([...(S.help || []), q]);
+    logEvent({k:'help', title:place.label, q:text.slice(0, 120), kind:q.kind});
+    save(); sfx('tick');
+    el.querySelector('.theme-box').innerHTML = `<div class="theme-emoji" aria-hidden="true">📨</div><h2>Your question was sent!</h2>
+      <p>Your teacher will answer it soon.${place.open ? ` Until then, <b>${esc(place.label)}</b> is closed.` : ''}</p><p>Let’s go back to your plan and try something else.</p>
+      <div class="row"><button type="button" class="btn berry" data-help-back>Back to my plan</button></div>`;
+  });
+}
+/* the grown-up page: her questions, newest first; a waiting one can be answered here with the PIN */
+function helpParentHTML(){
+  const list = [...(S.help || [])].reverse(); if (!list.length) return '';
+  return `<div class="panel help-panel"><h3>✋ ${esc(S.name || 'Your student')}’s questions</h3>${list.slice(0, 8).map(q => { const a = helpAnswer(q);
+    return `<div class="help-q"><p style="margin:4px 0"><b>${q.kind === 'bug' ? '🐞 Something isn’t working' : '🤔 Didn’t know how'}</b> · ${esc(q.label)} · <span class="muted">${new Date(q.at).toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'})}</span></p><p style="margin:4px 0">“${esc(q.text)}”</p>${q.shot ? `<details><summary>📷 Picture of the screen</summary><img src="${esc(q.shot)}" alt="Screen" style="max-width:100%;border-radius:8px"></details>` : ''}${a ? `<p style="margin:4px 0">↳ <b>${esc(a)}</b></p>` : `<button type="button" class="btn small berry" data-help-parent="${esc(q.id)}">Answer (grown-up PIN)</button>`}</div>`; }).join('<hr>')}</div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-help-parent]'); if (!b) return;
+  const q = (S.help || []).find(x => x.id === b.dataset.helpParent); if (!q) return;
+  openHelpWaitCard(q); const d = $('.theme-card details'); if (d) d.open = true;
+});
+/* the plan: a question still waiting, and an answer she hasn't read */
+function helpPlanHTML(){
+  const waiting = helpWaiting().map(q => `<div class="row extras-row help-row"><span style="flex:1">✋ <b>Question waiting for your teacher</b> · ${esc(q.label)}<br><small>“${esc(q.text.slice(0, 140))}”${q.open ? ' · You can’t go back there until it’s answered. Try something else.' : ''}</small></span></div>`);
+  const answered = (S.help || []).filter(q => helpAnswer(q) && !q.seen).map(q => `<div class="row extras-row help-row answered"><span style="flex:1">💬 <b>Your teacher answered</b> your question about ${esc(q.label)}:<br>“${esc(helpAnswer(q))}”</span><button type="button" class="btn small berry" data-help-seen="${esc(q.id)}">Got it</button></div>`);
+  return [...answered, ...waiting].join('');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-help-seen]'); if (!b) return;
+  const q = (S.help || []).find(x => x.id === b.dataset.helpSeen); if (q) { q.seen = true; q.told = true; save(); renderHome(); }
+});
+/* a place with a question waiting stays closed: the waiting card instead (a grown-up can answer it here with the PIN) */
+function openHelpWaitCard(q){
+  if ($('.theme-card')) return;
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Question waiting');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(q.label)}</p><div class="theme-emoji" aria-hidden="true">✋</div><h2>Your question is waiting</h2>
+    <p>“${esc(q.text)}”</p><p>Your teacher hasn’t answered yet, so this stays closed for now. Pick something else on your plan.</p>
+    <button type="button" class="btn berry" data-help-close>Back to my plan</button>
+    <details class="warmup-skip"><summary>Grown-up: answer it here</summary><form class="theme-pin" data-help-answer><label>Answer<textarea name="answer" rows="2" maxlength="600" placeholder="(optional)"></textarea></label><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Answer and open it</button></form></details></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', event => { if (event.target.closest('[data-help-close]')) el.remove(); });
+  el.querySelector('[data-help-answer]').addEventListener('submit', event => {
+    event.preventDefault();
+    const f = new FormData(event.target), pin = String(f.get('pin') || '').trim();
+    if (!/^\d{4}$/.test(pin)) { toast('Type the 4-digit grown-up PIN.'); return; }
+    if (S.parentPin ? S.parentPin !== pinHash(pin) : teacherLock() && !pinMatchesLock(pin)) { toast('That PIN does not match.'); return; }
+    if (!S.parentPin) S.parentPin = pinHash(pin);
+    q.localAnswer = String(f.get('answer') || '').trim().slice(0, 600) || 'A grown-up opened it again.'; q.seen = true; q.told = true;
+    save(); el.remove(); if (!$('#scr-parent')?.hidden) renderParent(); else renderHome(); toast('Answered. It’s open again.');
+  });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-open], [data-extra-start]'); if (!b || b.closest('.theme-card')) return;
+  const extra = b.dataset.extraStart ? assignedExtras().find(x => x.id === b.dataset.extraStart) : null;
+  const q = helpLockFor(extra ? (extra.kind === 'vocab' ? 'vocab' : 'sprint') : b.dataset.open);
+  if (q) { e.preventDefault(); e.stopImmediatePropagation(); sfx('tick'); openHelpWaitCard(q); }
+}, true);
+/* check for the teacher's answer every 30 seconds while a question waits */
+setInterval(() => {
+  if (!Backend.me || !S?.help?.length || !helpWaiting().length && (S.help || []).every(q => q.told)) return;
+  void Backend.refreshSettings().then(() => {
+    const fresh = (S.help || []).filter(q => helpAnswer(q) && !q.told); if (!fresh.length) return;
+    fresh.forEach(q => { q.told = true; }); save(); sfx('good');
+    toast(`💬 Your teacher answered your question about ${fresh[0].label}. It’s on your plan.`);
+    if (!$('#scr-home').hidden) renderHome();
+  });
+}, 30000);
 /* ---------- warm-up first (docs/DAILY-PLAN.md, "Warm-up first") ----------
    The day's extras (Fact Sprint, Word Workshop) come right after the morning brain stretch, before any subject:
    until they're done, opening a subject shows the warm-up card instead. Class setting game_settings.extrasFirst
@@ -10171,6 +10318,7 @@ function renderParent(){
   }).join('');
   const legendary = REWARDS.filter(r => r.legendary && owns(r));
   $('#parentWrap').innerHTML = `<div class="backrow"><h2>Progress report: ${esc(S.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
+    ${helpParentHTML()}
     <div class="panel"><h3>Ideas or arithmetic?</h3><div class="stats">
       <div class="stat"><b>${cP === null ? '–' : cP + '%'}</b>idea steps right on the first try (${cc} of ${ca})</div>
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
@@ -10295,7 +10443,7 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
+}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun || $('#helpCard')) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
    S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, text, ...}], labels:{key: name}, sent}
@@ -10368,6 +10516,7 @@ function eventText(e){
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
   if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
+  if (e.k === 'help') return `✋ Asked a question in ${e.title}: “${e.q || ''}”`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;

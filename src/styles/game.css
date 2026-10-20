@@ -1150,3 +1150,19 @@ a.btn{display:inline-block; text-decoration:none}
 .data-table{border-collapse:collapse; margin:6px 0}
 .data-table th, .data-table td{border:1px solid color-mix(in srgb, var(--edge) 30%, transparent); padding:3px 5px; font-size:.9em; text-align:left}
 .data-table input{width:100%; min-width:64px; font:inherit; padding:4px; border-radius:6px}
+
+/* ✋ I have a question (docs: QUESTIONS.md) */
+.help-btn{position:fixed; left:14px; bottom:14px; z-index:40; display:flex; align-items:center; gap:8px; font:800 20px/1 Grandstander, system-ui, sans-serif; padding:14px 20px; border-radius:999px; border:3px solid var(--edge); background:#FFD84D; color:#3B2A00; box-shadow:0 5px 0 var(--edge); cursor:pointer}
+.help-btn:hover{transform:translateY(-1px)} .help-btn:active{transform:translateY(3px); box-shadow:0 2px 0 var(--edge)}
+.help-btn[hidden]{display:none}
+@media (max-width:520px){ .help-btn{font-size:17px; padding:11px 15px} }
+.help-box{text-align:left; max-height:calc(100vh - 40px); overflow:auto}
+.help-box h2, .help-box .theme-kicker, .help-box .theme-emoji{text-align:center}
+.help-box textarea{width:100%; font:inherit; padding:8px; border-radius:10px; margin-top:4px}
+.help-kinds{flex-wrap:wrap} .help-kind{display:inline-flex; gap:6px; align-items:center}
+.help-row{background:color-mix(in srgb, var(--surface) 80%, #FFD84D); border-radius:12px; padding:6px 10px}
+.help-row.answered{background:color-mix(in srgb, var(--surface) 80%, #74B758)}
+.help-box .muted{color:var(--chalk-dim)}
+.help-box label.btn{display:inline-flex; width:auto; align-items:center; gap:6px; white-space:nowrap}
+.help-box .row{flex-wrap:wrap; gap:8px}
+.help-box p{margin:6px 0}

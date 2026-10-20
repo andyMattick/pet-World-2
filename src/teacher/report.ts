@@ -38,6 +38,7 @@ export interface StudentReport {
   scienceProgress?: Record<string, { answered?: number; misses?: number; tries?: number; best?: number; passed?: boolean; questionCount?: number }>;
   scienceProjects?: Record<string, { answers?: Record<string, string>; status?: string; submittedAt?: number; localReview?: string }>;
   writtenAnswers?: WrittenEntry[];
+  help?: HelpQuestion[];   // ✋ questions she asked (docs/QUESTIONS.md), from the save
   subjectTime?: Record<string, Record<string, number>>;
   dayLog?: Record<string, SaveDayLog>;   // the save's day log (src/teacher/ledger.ts)
   brain?: unknown; brainOn?: BrainSettings;   // brain stretches: S.brain from the save, and the class setting
@@ -134,6 +135,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     <div class="kpi"><b>${pctTxt(ip)}</b>idea steps right, first try</div>
     <div class="kpi"><b>${pctTxt(ap)}</b>arithmetic steps right, first try</div>
     <div class="kpi"><b>${readingStudents}</b>students with Reading Logs · ${englishStudents} practiced English</div></div>`;
+  h += questionsWaitingHTML(list);
   h += waitingHTML(list);
 
   const groups: Record<string, { r: StudentReport; n: number; ex?: string }[]> = {};
@@ -229,6 +231,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dReset">Reset</button> <button class="btn small" id="dClose">Close</button></span></div><div id="studentResetPanel" class="reset-panel" hidden></div>
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
+  h += '<div id="helpQCard" class="noprint"></div>';   // ✋ questions (docs/QUESTIONS.md)
   h += '<div id="liveNowCard" class="noprint"></div>';   // 🔴 Right now (docs/LIVE.md)
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
@@ -376,7 +379,19 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       void saveOverride('subjectGoals', Object.keys(base).length || Object.keys(days).length ? JSON.stringify(next) : null);
     });
   }
+  /* ✋ her questions: the waiting ones with an answer box, the answered ones folded away */
+  function renderHelpQCard() {
+    const card = $('#helpQCard'); if (!card) return;
+    card.innerHTML = helpQuestionsHTML(r, overrides);
+    card.querySelectorAll<HTMLButtonElement>('[data-help-quick]').forEach(b => b.addEventListener('click', () => { const box = b.closest('[data-help-q]')?.querySelector('textarea'); if (box) { box.value = b.dataset.helpQuick || ''; box.focus(); } }));
+    card.querySelectorAll<HTMLButtonElement>('[data-help-answer]').forEach(b => b.addEventListener('click', () => {
+      const box = b.closest('[data-help-q]')?.querySelector('textarea'), text = box?.value.trim() || '';
+      if (!text) { box?.focus(); return; }
+      void saveOverride(`help:${b.dataset.helpAnswer}`, `answered:${text.slice(0, 600)}`);
+    }));
+  }
   function renderQuizCard() {
+    renderHelpQCard();
     const el2 = $('#quizCard');
     if (!el2) return;
     el2.innerHTML = quizCardHtml();
@@ -509,6 +524,29 @@ const lessonName = (courseId: string, skillId: string) => {
 };
 const placeTitle = (courseId: string, skillId: string) => courseId === 'math' ? `${SHOPS[skillId.split(':')[0]]?.emoji || ''} ${SHOPS[skillId.split(':')[0]]?.name || 'Math'}` : courseTitle(courseId)?.title || courseId;
 const writtenWaiting = (r: StudentReport) => (r.writtenAnswers || []).filter(e => !writtenReview(e, r.qx || {}));
+/* ✋ questions (docs/QUESTIONS.md): asked from any assignment; the place she asked about stays closed until answered */
+export interface HelpQuestion { id: string; at: number; kind?: string; text?: string; label?: string; open?: string; shot?: string; localAnswer?: string }
+const helpAnswerOf = (q: HelpQuestion, overrides: Record<string, string>) => { const t = String(overrides[`help:${q.id}`] || ''); return t.startsWith('answered:') ? t.slice(9) : q.localAnswer || ''; };
+const helpOpen = (r: StudentReport) => (r.help || []).filter(q => q && q.id && !helpAnswerOf(q, r.qx || {}));
+const HELP_QUICK = ['I fixed it. Try again!', 'Skip that one for now and keep going.', 'Watch the lesson video again, then try once more.', 'Let’s go over it together later today.'];
+function helpQuestionsHTML(r: StudentReport, overrides: Record<string, string>) {
+  const all = (r.help || []).filter(q => q && q.id).sort((a, b) => b.at - a.at), waiting = all.filter(q => !helpAnswerOf(q, overrides)), answered = all.filter(q => helpAnswerOf(q, overrides));
+  if (!all.length) return '';
+  const when = (t: number) => new Date(t).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  const one = (q: HelpQuestion) => `<div class="help-q" data-help-q="${esc(q.id)}"><p style="margin:4px 0"><b>${q.kind === 'bug' ? '🐞 Something isn’t working' : '🤔 Doesn’t know how'}</b> · ${esc(q.label || 'Pet World')} · <span class="muted">${esc(when(q.at))}</span></p>
+    <p style="margin:4px 0">“${esc(q.text || '')}”</p>${q.shot ? `<details><summary>📷 Picture of her screen</summary><img src="${esc(q.shot)}" alt="Her screen" style="max-width:100%;border-radius:8px;border:1px solid #ccc"></details>` : ''}
+    <div class="row" style="flex-wrap:wrap">${HELP_QUICK.map(t => `<button type="button" class="btn small" data-help-quick="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <textarea rows="2" maxlength="600" style="width:100%" placeholder="Your answer. Sending it opens ${esc(q.label || 'that place')} again."></textarea>
+    <div class="row"><button type="button" class="btn small primary" data-help-answer="${esc(q.id)}">Send answer</button></div></div>`;
+  return `<div class="card help-card"><h2>✋ Questions from ${esc(r.n)}${waiting.length ? ` · ${waiting.length} waiting` : ''}</h2>${waiting.length ? `<p class="muted" style="margin-top:0">She can’t go back to the place she asked about until you answer. Your answer shows on her plan.</p>${waiting.map(one).join('<hr>')}` : '<p class="muted" style="margin-top:0">Nothing waiting.</p>'}
+    ${answered.length ? `<details><summary>Answered (${answered.length})</summary>${answered.slice(0, 8).map(q => `<p style="margin:6px 0">${esc(when(q.at))} · ${esc(q.label || '')}: “${esc(q.text || '')}”<br>↳ <b>${esc(helpAnswerOf(q, overrides))}</b>${q.localAnswer && !String(overrides[`help:${q.id}`] || '') ? ' <span class="muted">(answered at home)</span>' : ''}</p>`).join('')}</details>` : ''}</div>`;
+}
+function questionsWaitingHTML(list: StudentReport[]) {
+  const rows = list.flatMap(r => helpOpen(r).map(q => ({ r, q }))).sort((a, b) => a.q.at - b.q.at);
+  if (!rows.length) return '';
+  return `<div class="card help-card"><h2>✋ Questions waiting · ${rows.length}</h2><p class="muted" style="margin-top:0">Each student is stuck on these until you answer. Tap a name to answer on their page.</p>
+    <table class="steptable"><thead><tr><th>Student</th><th>Where</th><th>Question</th><th>Asked</th></tr></thead><tbody>${rows.map(({ r, q }) => `<tr><td><button class="namebtn" data-id="${esc(r.id)}">${esc(r.n)}</button></td><td>${esc(q.label || '')}</td><td>${q.kind === 'bug' ? '🐞' : '🤔'} ${esc((q.text || '').slice(0, 140))}${q.shot ? ' 📷' : ''}</td><td>${esc(ago(q.at))}</td></tr>`).join('')}</tbody></table></div>`;
+}
 /* "Waiting for a grown-up" on the class dashboard: everything a student sent that nobody has checked yet. A parent's
    check at home (grown-up PIN) counts as checked, the same as on the student's page; the teacher can still change it. */
 function projectsWaiting(r: StudentReport) {

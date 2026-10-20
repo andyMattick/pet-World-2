@@ -86,6 +86,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'project': return course.startsWith('bio') ? 'science' : 'history';
     case 'dig': case 'scribe': return 'history';
     case 'sim': return 'science';
+    case 'help': return 'other';
     case 'brain': case 'move': return 'breaks';
     case 'done': { const s = String(ev.subject || ''); return s === 'biology' ? 'science' : ['math', 'english', 'reading', 'history', 'science'].includes(s) ? s : 'other'; }
     default: return 'other';
@@ -100,22 +101,64 @@ function eventLabel(ev: LedgerEvent) {
     : ev.k === 'course' ? `${ev.course || ''}: ${ev.title || ''} (${ev.kind === 'final' ? 'unit test' : ev.kind || 'practice'})` : String(ev.title || ev.k || '');
   return `${what}${score ? ` · ${score.s} of ${score.n}` : ''}${ev.passed ? ' ✅' : ''}`;
 }
+/* which subject a lesson key from the day log (places) belongs to */
+function placeSubject(key: string): string {
+  const [k, a = ''] = key.split(':');
+  if (k === 'shop' || k === 'sprint') return 'math';
+  if (k === 'vocab') return 'english';
+  if (k === 'reading') return 'reading';
+  if (k === 'dig' || k === 'scribe') return 'history';
+  if (k === 'sim') return 'science';
+  if (k === 'project') return a.startsWith('bio') ? 'science' : 'history';
+  if (k === 'course') return a === 'math' ? 'math' : a.startsWith('history') ? 'history' : a.startsWith('bio') ? 'science' : 'english';
+  return '';
+}
+const shortScore = (text: string) => text.replace(/(\d+) of (\d+)/g, '$1/$2').replace(/ ✅ passed$/, ' ✅');
+/* one line per lesson: tries of the same lesson on the same day are merged ("3 tries: 4/4 ✅, 2/4, 3/4 ✅") */
+function mergedLines(list: { t?: number; text: string }[], time: (t?: number) => string) {
+  const groups: { t?: number; name: string; scores: string[] }[] = [];
+  list.forEach(ev => {
+    const m = /^(.*?)\s·\s(\d+\/\d+.*)$/.exec(shortScore(ev.text)), name = m ? m[1] : shortScore(ev.text), score = m ? m[2] : '';
+    const g = groups.find(x => x.name === name && score);
+    if (g) g.scores.push(score); else groups.push({ t: ev.t, name, scores: score ? [score] : [] });
+  });
+  return groups.map(g => `<li>${time(g.t)}${esc(g.name)}${g.scores.length > 1 ? ` · ${g.scores.length} tries: <b>${esc(g.scores.join(', '))}</b>` : g.scores.length ? ` · <b>${esc(g.scores[0])}</b>` : ''}</li>`).join('');
+}
+/* What she did, one block per subject: each lesson once, with its minutes (and orders), and her scores under it.
+   The plan and the breaks get one line each. (docs/LEDGER.md, "By subject") */
 function bySubjectHTML(e: LedgerEntry, time: (t?: number) => string) {
-  const events = (e.events || []).filter(ev => ev.k !== 'note'), notes = (e.events || []).filter(ev => ev.k === 'note');
-  if (!events.length && !notes.length) return '';
-  const groups = SUBJECT_ORDER.map(([id, name]) => {
-    const list = events.filter(ev => eventSubject(ev) === id).sort((a, b) => (Number(a.t) || 0) - (Number(b.t) || 0));
-    if (!list.length) return '';
+  const all = e.events || [], notes = all.filter(ev => ev.k === 'note');
+  const events = all.filter(ev => ev.k !== 'note' && ev.k !== 'done' && ev.k !== 'brain' && ev.k !== 'move');
+  const orders = new Map((e.orders || []).map(o => [o.key, o]));
+  const groups = SUBJECT_ORDER.filter(([id]) => id !== 'breaks').map(([id, name]) => {
+    const list = events.filter(ev => eventSubject(ev) === id).sort((a, b) => (Number(a.t) || 0) - (Number(b.t) || 0)).map(ev => ({ t: Number(ev.t) || undefined, text: eventLabel(ev), ev }));
+    /* a unit's lessons count as one place (its title), and a station's practice and quiz as one station */
+    const merged = new Map<string, { key: string; label: string; secs: number }>();
+    (e.lessons || []).filter(l => placeSubject(l.key) === id).forEach(l => {
+      const parts = l.key.split(':'), course = parts[0] === 'course', station = parts[0] === 'shop' && parts[3] !== 'test';
+      const key = course ? parts.slice(0, 2).join(':') : station ? parts.slice(0, 3).join(':') : l.key;
+      const label = course ? l.label.split(' · ')[0] : station ? l.label.replace(/ quiz$/, '') : l.label;
+      const m = merged.get(key); if (m) m.secs += l.secs; else merged.set(key, { key, label, secs: l.secs });
+    });
+    const places = [...merged.values()].sort((a, b) => b.secs - a.secs);
+    if (!list.length && !places.length) return '';
     const secs = GROUP_TIME[id].reduce((a, key) => a + (+(e.subjects || {})[key] || 0), 0);
-    const scored = list.map(scoreOf).filter((x): x is NonNullable<ReturnType<typeof scoreOf>> => !!x);
+    const scored = list.map(x => scoreOf(x.ev)).filter((x): x is NonNullable<ReturnType<typeof scoreOf>> => !!x);
     const right = scored.reduce((a, x) => a + x.s, 0), total = scored.reduce((a, x) => a + x.n, 0);
-    const summary = [secs >= 30 ? `${mins(secs)} min` : '', scored.length ? `${scored.length} scored · <b>${right} of ${total} right (${Math.round(right * 100 / total)}%)</b>` : ''].filter(Boolean).join(' · ');
-    return `<h4 style="margin:10px 0 4px">${name}${summary ? ` <span class="muted" style="font-weight:normal">· ${summary}</span>` : ''}</h4><ul style="margin:0">${list.map(ev => {
-      const score = scoreOf(ev);
-      return `<li>${time(Number(ev.t) || undefined)}${esc(eventLabel(ev))}${score ? ` <b>${score.pct}%</b>` : ''}</li>`;
-    }).join('')}</ul>`;
+    const summary = [secs >= 30 ? `${mins(secs)} min` : '', total ? `<b>${right}/${total} right (${Math.round(right * 100 / total)}%)</b>` : ''].filter(Boolean).join(' · ');
+    const used = new Set<number>();
+    const bare = (t: string) => t.replace(/^[^\p{L}\p{N}]+/u, '');   // labels and scores can start with different emoji (🏛️ / 📚)
+    const placeRows = places.filter(p => !(bare(p.label) === bare(name) && !list.some(x => bare(x.text).startsWith(bare(p.label))))).map(p => {
+      const mine = list.filter((x, i) => !used.has(i) && bare(x.text).startsWith(bare(p.label)) && (used.add(i), true)).map(x => ({ t: x.t, text: bare(x.text).slice(bare(p.label).length).replace(/^[:\s·]+/, '') || x.text }));
+      const o = orders.get(p.key);
+      return `<li><b>${esc(p.label)}</b> · ${mins(p.secs)} min${o ? ` · ${o.n} order${o.n === 1 ? '' : 's'}, ${o.ok} perfect` : ''}${mine.length ? `<ul style="margin:2px 0 4px">${mergedLines(mine, time)}</ul>` : ''}</li>`;
+    }).join('');
+    const rest = mergedLines(list.filter((_, i) => !used.has(i)), time);
+    return `<h4 style="margin:10px 0 4px">${name}${summary ? ` <span class="muted" style="font-weight:normal">· ${summary}</span>` : ''}</h4><ul style="margin:0">${placeRows}${rest}</ul>`;
   }).join('');
-  return `<h4 style="margin:10px 0 4px">What she did, by subject</h4><div style="margin-left:8px">${groups}</div>`
+  const brains = all.filter(ev => ev.k === 'brain'), moves = all.filter(ev => ev.k === 'move');
+  const breaks = [brains.length ? `🧠 ${brains.length === 1 ? 'Brain stretch' : `${brains.length} brain stretches`}${brains[0].detail ? ` <span class="muted">(${esc(brains.map(b => b.detail).join('; '))})</span>` : ''}` : '', moves.length ? `🤸 ${moves.length} stand-and-stretch break${moves.length === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+  return groups + (breaks ? `<p style="margin:8px 0 0">${breaks}</p>` : '')
     + (notes.length ? `<h4 style="margin:10px 0 4px">Added by a grown-up</h4><ul style="margin:0">${notes.map(ev => `<li>${esc(ev.text || '')}</li>`).join('')}</ul>` : '');
 }
 /* math quizzes and tests from the quiz history, for a day whose own record has none (days before the day log, Oct 16 2026) */
@@ -144,18 +187,21 @@ function entryHTML(e: LedgerEntry) {
   const subjects = Object.entries(e.subjects || {}).filter(([, s]) => s >= 30).sort((a, b) => b[1] - a[1]);
   const list = (title: string, items: string[]) => (items.length ? `<h4 style="margin:10px 0 4px">${title}</h4><ul style="margin:0">${items.join('')}</ul>` : '');
   const time = (t?: number) => (t ? `<span class="muted">${new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span> ` : '');
-  return list('Time by subject', subjects.map(([id, s]) => `<li>${esc(SUBJECT_NAMES[id] || id)}: <b>${mins(s)} min</b></li>`))
-    + list('Time by lesson', (e.lessons || []).map(l => `<li>${esc(l.label)}: <b>${mins(l.secs)} min</b></li>`))
-    + list('Practice orders', (e.orders || []).map(o => `<li>${esc(o.label)}: <b>${o.n}</b> order${o.n === 1 ? '' : 's'}, ${o.ok} perfect</li>`))
+  const events = e.events || [], hasEvents = events.some(ev => ev.k !== 'note');
+  /* the plan: the plan she sent, or (a day read from her save) the plan rows she finished */
+  const done = events.filter(ev => ev.k === 'done').map(ev => String(ev.title || '').trim()).filter(Boolean);
+  const plan = (e.plan || []).length ? (e.plan || []).map(p => `${p.status === 'done' ? '✅' : p.status === 'waiting' ? '⏳' : '⬜'} ${esc(p.label)}${p.carried ? ' <span class="muted">(from before)</span>' : ''}`)
+    : done.map(t => `✅ ${esc(t)}`);
+  const goals = [...(e.extras || []).map(x => `${x.done >= x.goal ? '✅' : '⬜'} ${esc(x.label)} ${x.done}/${x.goal} min`), ...(e.goals || []).map(g => `${g.done >= g.goal ? '✅' : '⬜'} ${esc(g.label)} ${g.done}/${g.goal} min`)];
+  return (subjects.length ? `<p style="margin:4px 0"><b>${mins(e.totalSecs ?? sum(e.subjects))} min</b> · ${subjects.map(([id, s]) => `${esc(SUBJECT_NAMES[id] || id)} ${mins(s)}`).join(' · ')}</p>` : '')
+    + (plan.length ? `<p style="margin:4px 0"><b>🗓️ Plan:</b> ${plan.join(' · ')}</p>` : '')
+    + (goals.length ? `<p style="margin:4px 0"><b>🎯 Goals:</b> ${goals.join(' · ')}</p>` : '')
     + bySubjectHTML(e, time)
-    + list('🏅 Passed', (e.passed || []).map(p => `<li>${p.test ? '🏆' : '📝'} ${esc(p.text)}${p.n ? ` · <b>${p.s} of ${p.n}</b>` : ''}</li>`))
-    + list('⭐ Mastered', (e.mastered || []).map(m => `<li>${esc(m)}</li>`))
-    + list('🗓️ Plan', (e.plan || []).map(p => `<li>${p.status === 'done' ? '✅' : p.status === 'waiting' ? '⏳' : '⬜'} ${esc(p.label)}${p.carried ? ' <span class="muted">(from an earlier day)</span>' : ''}${p.status === 'todo' ? ' <span class="muted">(not done)</span>' : ''}</li>`))
-    + list('📋 Extras', (e.extras || []).map(x => `<li>${x.done >= x.goal ? '✅' : '⬜'} ${esc(x.label)}: ${x.done} of ${x.goal} min</li>`))
-    + list('🎯 Time goals', (e.goals || []).map(g => `<li>${g.done >= g.goal ? '✅' : '⬜'} ${esc(g.label)}: ${g.done} of ${g.goal} min</li>`))
+    /* older days without scores in the day log keep their passed and mastered lists */
+    + (hasEvents ? '' : list('🏅 Passed', (e.passed || []).map(p => `<li>${p.test ? '🏆' : '📝'} ${esc(p.text)}${p.n ? ` · <b>${p.s}/${p.n}</b>` : ''}</li>`)) + list('⭐ Mastered', (e.mastered || []).map(m => `<li>${esc(m)}</li>`)))
     + (e.note ? `<p><b>Grown-up’s note:</b> ${esc(e.note)}</p>` : '')
-    + (e.fromSave && !(e.events || []).length && !(e.lessons || []).length ? '<p class="muted">Saved from time by subject; lesson detail wasn’t sent for this day.</p>' : '')
-    + (!subjects.length && !(e.events || []).length && !e.note ? '<p class="muted">No practice time recorded.</p>' : '');
+    + (e.fromSave && !hasEvents && !(e.lessons || []).length ? '<p class="muted">Saved from time by subject; lesson detail wasn’t sent for this day.</p>' : '')
+    + (!subjects.length && !hasEvents && !e.note ? '<p class="muted">No practice time recorded.</p>' : '');
 }
 
 export function renderLedger(el: HTMLElement, r: LedgerStudent) {
@@ -226,7 +272,7 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     if (row && st.edit === day) body += editDayHTML(row);
     else if (row) body += entryHTML(withQuizHistory(row.entry, quizzesOn(day))) + `<p class="muted">${row.entry.fromSave ? 'Saved by a grown-up' : `Sent ${new Date(row.sent_at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`}.</p>
       <div class="row"><button class="btn small" data-day-edit-open="${esc(day)}">Edit this day</button>${row.entry.original ? ` <button class="btn small" data-day-revert="${esc(day)}">Go back to ${esc(r.n)}’s version</button>` : ''}</div>`;
-    else if (saveSecs || (r.dayLog?.[day]?.events || []).length) body += `<p class="muted" style="margin:0">${esc(r.n)} didn’t press “I’m done for today”, so this comes from her save (it keeps the last 14 days).</p>${entryHTML(withQuizHistory(entryFromSave(day, r), quizzesOn(day)))}
+    else if (saveSecs || (r.dayLog?.[day]?.events || []).length) body += `<p class="muted" style="margin:0">Not sent with “I’m done for today” yet; read from her save.</p>${entryHTML(withQuizHistory(entryFromSave(day, r), quizzesOn(day)))}
       <div class="row"><button class="btn small" data-day-fromsave="${esc(day)}">Save this day to the record</button></div>`;
     else body += '<p class="muted" style="margin:0">No Pet World time this day.</p>';
     body += `<h3 style="margin:12px 0 4px">📚 Outside Pet World</h3>${outs.length ? `<table class="steptable"><tr><th>Course</th><th>Assignment</th><th>Time</th><th>Grade</th><th>Notes</th><th></th></tr>${outs.map(outsideRowHTML).join('')}</table>` : '<p class="muted" style="margin:0">Nothing added.</p>'}

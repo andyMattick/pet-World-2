@@ -209,6 +209,7 @@ async function renderDashboard() {
     student.historyProjects = state?.historyProjects && typeof state.historyProjects === 'object' ? state.historyProjects as NonNullable<StudentReport['historyProjects']> : {};
     student.scienceProgress = state?.scienceProgress && typeof state.scienceProgress === 'object' ? state.scienceProgress as NonNullable<StudentReport['scienceProgress']> : {};
     student.scienceProjects = state?.scienceProjects && typeof state.scienceProjects === 'object' ? state.scienceProjects as NonNullable<StudentReport['scienceProjects']> : {};
+    student.help = Array.isArray(state?.help) ? state.help as NonNullable<StudentReport['help']> : [];   // ✋ questions (docs/QUESTIONS.md)
     student.writtenAnswers = Array.isArray(state?.writtenAnswers) ? state.writtenAnswers as NonNullable<StudentReport['writtenAnswers']> : [];
     student.mathThink = state?.mathThink && typeof state.mathThink === 'object' ? state.mathThink as NonNullable<StudentReport['mathThink']> : {};
     student.subjectTime = state?.subjectTime && typeof state.subjectTime === 'object' ? state.subjectTime as NonNullable<StudentReport['subjectTime']> : {};

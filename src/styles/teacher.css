@@ -148,3 +148,7 @@ details.unit-card[open]>summary{margin-bottom:8px}
 .setup-callout{padding:10px 16px}
 
 a.btn{display:inline-block; text-decoration:none}
+
+/* ✋ questions from students (docs/QUESTIONS.md) */
+.help-card{border-color:#E0A800; background:color-mix(in srgb, var(--surface, #fff) 88%, #FFD84D)}
+.help-q textarea{font:inherit; padding:6px; border-radius:8px; margin-top:6px}
