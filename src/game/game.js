@@ -308,24 +308,30 @@ function unitOpenByRules(unit){
   if (Array.isArray(classOpen) && classOpen.includes(unit)) return true;
   return unitTestPassed(prev.id);
 }
-/* English keeps only two libraries open: the one she is on (the first open one after the last unit test she passed)
-   and the one she finished just before it. Older and later ones close until she gets there.
-   "Unlock every station" at home still opens them all. */
-function englishKeptOpen(hood){
+/* English opens every library up through the one she is on (the first open one after the last unit test she passed),
+   or through a later one the teacher opened for the class. Earlier libraries stay open even if a test was skipped;
+   later ones stay closed until she gets there. "Unlock every station" at home still opens them all. */
+function englishOn(hood){
   const list = buildingsInClass(hood, 'english').filter(b => b.open);
   let last = -1; list.forEach((b, i) => { if (unitTestPassed(b.id)) last = i; });
-  const on = list.slice(last + 1).find(b => unitOpenByRules(b.id));
-  return new Set([on?.id, last >= 0 ? list[last].id : null].filter(Boolean));
+  return {list, last, on:list.slice(last + 1).find(b => unitOpenByRules(b.id)) || null};
+}
+function englishOpenThrough(hood){
+  const {list, last, on} = englishOn(hood), classOpen = Backend.me?.game_settings?.openUnits;
+  const teacher = list.reduce((m, b, i) => Array.isArray(classOpen) && classOpen.includes(b.id) ? i : m, -1);
+  return Math.max(on ? list.indexOf(on) : -1, last, teacher, 0);
 }
 function unitOpen(unit){
   const building = BUILDINGS.find(b => b.id === unit);
-  if (building?.subject === 'english' && !(!Backend.me && S.unlockAll)) return unitOpenByRules(unit) && englishKeptOpen(building.hood).has(unit);
+  if (building?.subject === 'english' && building.open && !(!Backend.me && S.unlockAll)) {
+    const list = buildingsInClass(building.hood, 'english').filter(b => b.open);
+    return list.indexOf(building) <= englishOpenThrough(building.hood);
+  }
   return unitOpenByRules(unit);
 }
 /* what a locked building says: built ones name the unit test that opens them */
 function unitLockedText(building){
   const prev = prevBuilding(building.id);
-  if (building.subject === 'english' && building.open && unitOpenByRules(building.id)) return unitTestPassed(building.id) ? `Closed for now. You finished the ${building.name}.` : `Closed for now. Finish the library you're on first.`;
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
@@ -6672,9 +6678,8 @@ $('#libraryWrap').addEventListener('click', e => {
    While she is in English Unit 5 (the Link Library is open and its unit test isn't passed), it is a daily item on
    Today's plan, done when she finds all 48 that day. The rest of the time it is an Arcade game. Wherever she plays,
    the page posts {type:'prep:result'} and the round is kept in S.prepRecall (last 30 rounds and her best time). */
-/* she is "in" the unit when it is the English unit she's working on now: the first open one whose test isn't passed.
-   A later unit a teacher opened early (or an earlier unit she skipped) doesn't count. */
-const inPrepUnit = () => nextUnit('english')?.id === 'elaConj';
+/* she is "in" the unit when the Link Library is open and its test isn't passed (English only opens through the library she's on) */
+const inPrepUnit = () => unitOpen('elaConj') && !unitTestPassed('elaConj');
 const prepRecallDoneOn = day => (S.prepRecall?.games || []).some(g => g.completed && logDayKey(new Date(g.t)) === day);
 const fmtRecall = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 function prepRecallCardHTML(courseId, groupId){
@@ -6936,6 +6941,7 @@ function planItems(day = logDayKey()){
 }
 /* the unit to keep going in: the first open one in the subject whose unit test isn't passed yet (this grade first) */
 function nextUnit(subject){
+  if (subject === 'english') { const on = englishOn(currentHood()).on; if (on && unitOpen(on.id)) return on; }   // a skipped earlier library doesn't pull her back
   const built = BUILDINGS.filter(b => b.subject === subject && b.open && (SHOPS[b.id] || unitCourse(b.id))), here = built.filter(b => b.hood === currentHood()), list = here.length ? here : built;
   return list.find(b => unitOpen(b.id) && !unitTestPassed(b.id)) || list.filter(b => unitOpen(b.id)).pop() || null;
 }
