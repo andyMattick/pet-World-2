@@ -10,7 +10,7 @@ interface PlanSettings { week?: Record<string, PlanItem[]>; days?: Record<string
 const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 const WEEK: [string, string][] = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
 const DOW = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-const SUBJECTS: [string, string][] = [['math', '➗ Math'], ['english', '📚 English'], ['history', '🏛️ History'], ['biology', '🦁 Biology']];
+const SUBJECTS: [string, string][] = [['math', '➗ Math'], ['english', '📚 English'], ['history', '🏛️ History'], ['biology', '🦁 Biology'], ['reading', '📖 Reading Log']];
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const UNITS = BUILDINGS.filter(b => b.open);
 let pick = 'mon';   // the weekday or date being edited
@@ -20,7 +20,7 @@ function parsePlan(raw: unknown): PlanSettings {
 }
 function label(x: PlanItem, projects: Record<string, string>) {
   const unit = UNITS.find(b => b.id === x.unit), unitName = unit ? `${unit.emoji} ${unit.name}` : x.unit;
-  if (x.kind === 'subject') return `${SUBJECTS.find(s => s[0] === x.subject)?.[1] || x.subject}: ${x.minutes || 15} min in the next unit`;
+  if (x.kind === 'subject') return `${SUBJECTS.find(s => s[0] === x.subject)?.[1] || x.subject}: ${x.minutes || 15} min${x.subject === 'reading' ? '' : ' in the next unit'}`;
   if (x.kind === 'unit') return x.what === 'quiz' ? `Pass a quiz in the ${unitName}` : x.what === 'test' ? `Pass the unit test in the ${unitName}` : `Practice in the ${unitName}: ${x.minutes || 15} min`;
   return `📁 ${projects[x.project || ''] || x.project}`;
 }
@@ -31,8 +31,8 @@ export function renderPlanCard(el: HTMLElement, name: string, projects: Record<s
   const isDate = DAY.test(pick), weekday = isDate ? DOW[new Date(`${pick}T12:00:00`).getDay()] : pick;
   const own = isDate ? days[pick] : week[pick], items = own || (isDate ? week[weekday] || [] : []);
   const changed = Object.keys(days).filter(d => d >= today).sort();
-  const unitOptions = SUBJECTS.map(([sid, sname]) => `<optgroup label="${esc(sname)}">${UNITS.filter(b => b.subject === sid).map(b => `<option value="${esc(b.id)}">${esc(`${b.emoji} ${b.name} (${b.unit})`)}</option>`).join('')}</optgroup>`).join('');
-  el.innerHTML = `<p class="muted" style="margin-top:0">What ${esc(name)} does each day, shown on the town page as “Today’s plan” with ✅ done, ⏳ sent and waiting for you, or ⬜ to do, and a Go button that opens the right place. Extras and time goals show in the same list. Anything not done when ${esc(name)} taps “I’m done for today” moves to the next day.</p>
+  const unitOptions = SUBJECTS.filter(([sid]) => sid !== 'reading').map(([sid, sname]) => `<optgroup label="${esc(sname)}">${UNITS.filter(b => b.subject === sid).map(b => `<option value="${esc(b.id)}">${esc(`${b.emoji} ${b.name} (${b.unit})`)}</option>`).join('')}</optgroup>`).join('');
+  el.innerHTML = `<p class="muted" style="margin-top:0">What ${esc(name)} does each day, shown on the town page as “Today’s plan” with ✅ done, ⏳ sent and waiting for you, or ⬜ to do, and a Go button that opens the right place. Extras show in the same list. This is where each subject’s minutes are set (there are no separate time goals). Anything not done when ${esc(name)} taps “I’m done for today” moves to the next day.</p>
     <div class="row noprint subject-tabs">${WEEK.map(([id, n]) => `<button type="button" class="btn small subject-tab" data-plan-pick="${id}" aria-pressed="${pick === id}">${n.slice(0, 3)}</button>`).join('')}
       <label>One day <input type="date" id="planDate" value="${isDate ? esc(pick) : ''}" min="${esc(today)}"></label></div>
     ${changed.length ? `<p class="muted" style="margin:0">Days with their own plan: ${changed.map(d => `<button class="btn small" data-plan-pick="${esc(d)}">${esc(dayName(d))}</button>`).join(' ')}</p>` : ''}

@@ -6709,8 +6709,8 @@ function goalsCardHTML(){
    unit of a subject), {id, kind:'unit', unit, what:'practice'|'quiz'|'test', minutes} and {id, kind:'project', project}.
    Extras and time goals show in the same card. Items still to do when she taps "I'm done for today" move to the next day. */
 const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science'};
-const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology'};
+const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science', reading:'reading'};
+const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology', reading:'📖 Reading Log'};
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
 const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers'};
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
@@ -6744,8 +6744,8 @@ function planItemInfo(x, day = logDayKey()){
   const unitName = id => { const b = BUILDINGS.find(u => u.id === id); return b ? `${b.emoji} ${b.name}` : id; };
   const minutes = () => Math.max(1, Math.min(240, Math.round(+x.minutes || 15)));
   if (x.kind === 'subject') {
-    const unit = nextUnit(x.subject), mins = minutes(), secs = (S.subjectTime?.[day] || {})[PLAN_SUBJECT_TIME[x.subject]] || 0;
-    return {label:`${PLAN_SUBJECT_NAME[x.subject]}: ${mins} min${unit ? ` in the ${unit.name}` : ''}`, open:unit?.id || '', status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`};
+    const unit = x.subject === 'reading' ? null : nextUnit(x.subject), mins = minutes(), secs = (S.subjectTime?.[day] || {})[PLAN_SUBJECT_TIME[x.subject]] || 0;
+    return {label:`${PLAN_SUBJECT_NAME[x.subject]}: ${mins} min${unit ? ` in the ${unit.name}` : ''}`, open:x.subject === 'reading' ? 'reading' : unit?.id || '', status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`};
   }
   if (x.kind === 'unit') {
     if (x.what !== 'quiz' && x.what !== 'test') { const mins = minutes(), secs = unitSecs(x.unit, day); return {label:`Practice in the ${unitName(x.unit)}: ${mins} min`, open:x.unit, status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`}; }
@@ -6759,7 +6759,7 @@ function planItemInfo(x, day = logDayKey()){
 /* The plan and the time goals as one list, so a subject never shows twice: a goal for a subject the plan already has
    time for raises that row's minutes to the goal (the larger wins), and a goal for a subject not on the plan becomes a
    plan row with a Go button. Only goals with no plan subject (the Reading Log) stay goal rows. */
-const GOAL_PLAN_SUBJECT = {math:'math', english:'english', history:'history', science:'biology'};
+const GOAL_PLAN_SUBJECT = {math:'math', english:'english', history:'history', science:'biology', reading:'reading'};   // old time goals (no longer set in the teacher app) still count, as plan rows
 function dayPlan(day = logDayKey()){
   const goals = goalsFor(parseSubjectGoals(Backend.me?.quiz_overrides?.subjectGoals), day), items = planItems(day).map(x => ({...x}));
   const goalRows = [];
@@ -6796,7 +6796,7 @@ function planCardHTML(){
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
-    const i = planItemInfo(x), go = i.status === 'todo' && i.open && unitOpen(i.open);
+    const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || unitOpen(i.open));
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' && !fixing ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);

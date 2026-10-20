@@ -5,7 +5,7 @@
 ## Owner decisions
 
 - A **weekly plan** (a list for each weekday) plus **changes for single days**.
-- Items: **time in a subject** (Pet World picks the next unit), **practice in a unit**, **a quiz or the unit test in a unit**, **a project**. Extras (F7) and time goals (F8) show in the same list.
+- Items: **time in a subject** (Pet World picks the next unit), **practice in a unit**, **a quiz or the unit test in a unit**, **a project**. Extras (F7) show in the same list. **📖 Reading Log** is a subject too (time in the Reading Log). Time goals (F8) were removed in October 2026 because they set the same minutes as the plan.
 - When she taps "I'm done for today", the summary shows each item as done, waiting or not done, and **not-done items move to the next day**.
 
 ## How it works
@@ -20,6 +20,13 @@
   - a project: ✅ once a grown-up verifies it, ⏳ while it is sent and waiting, ⬜ otherwise (also when a revision was asked for).
 - **Carry-over:** "I'm done for today" saves the day's not-done items in the save (`S.planCarry`); the next days show them marked "(from before)" until a later "I'm done" replaces the list. An item that is already on the new day's plan isn't doubled.
 - **Ledger:** the day's plan with each item's status goes into the Ledger day (`entry.plan`) and shows on the teacher's Ledger tab.
+
+## Time goals were folded into the plan (October 2026)
+
+- The teacher app no longer has a 🎯 Time goals card: a subject’s minutes are set only in the daily plan.
+- A student who still has old goals keeps them on her plan (as plan rows).
+- Her page shows a note with **Move them into the daily plan**. It adds them to Monday–Friday (a subject already on a day keeps the larger number of minutes) and clears the old goals.
+- Word Workshop minutes belong in Extras.
 
 ## One list on the town page (plan and time goals together)
 
