@@ -299,7 +299,7 @@ let unlockQueue = [], unlockActive = null;
 /* A built unit (BUILDINGS entry with open:true) opens for a student once the unit before it
    in BUILDINGS order has its Unit Test passed or excused, or when the teacher opens it for the
    class (game_settings.openUnits), or in local mode with "Unlock every station". The café is always open. */
-function unitOpen(unit){
+function unitOpenByRules(unit){
   const building = BUILDINGS.find(b => b.id === unit), prev = prevBuilding(unit);
   if (!building || !building.open) return false;
   if (!prev) return true;                                    // the first shop of every neighborhood is open
@@ -308,9 +308,24 @@ function unitOpen(unit){
   if (Array.isArray(classOpen) && classOpen.includes(unit)) return true;
   return unitTestPassed(prev.id);
 }
+/* English keeps only two libraries open: the one she is on (the first open one after the last unit test she passed)
+   and the one she finished just before it. Older and later ones close until she gets there.
+   "Unlock every station" at home still opens them all. */
+function englishKeptOpen(hood){
+  const list = buildingsInClass(hood, 'english').filter(b => b.open);
+  let last = -1; list.forEach((b, i) => { if (unitTestPassed(b.id)) last = i; });
+  const on = list.slice(last + 1).find(b => unitOpenByRules(b.id));
+  return new Set([on?.id, last >= 0 ? list[last].id : null].filter(Boolean));
+}
+function unitOpen(unit){
+  const building = BUILDINGS.find(b => b.id === unit);
+  if (building?.subject === 'english' && !(!Backend.me && S.unlockAll)) return unitOpenByRules(unit) && englishKeptOpen(building.hood).has(unit);
+  return unitOpenByRules(unit);
+}
 /* what a locked building says: built ones name the unit test that opens them */
 function unitLockedText(building){
   const prev = prevBuilding(building.id);
+  if (building.subject === 'english' && building.open && unitOpenByRules(building.id)) return unitTestPassed(building.id) ? `Closed for now. You finished the ${building.name}.` : `Closed for now. Finish the library you're on first.`;
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
@@ -6657,7 +6672,9 @@ $('#libraryWrap').addEventListener('click', e => {
    While she is in English Unit 5 (the Link Library is open and its unit test isn't passed), it is a daily item on
    Today's plan, done when she finds all 48 that day. The rest of the time it is an Arcade game. Wherever she plays,
    the page posts {type:'prep:result'} and the round is kept in S.prepRecall (last 30 rounds and her best time). */
-const inPrepUnit = () => unitOpen('elaConj') && !unitTestPassed('elaConj');
+/* she is "in" the unit when it is the English unit she's working on now: the first open one whose test isn't passed.
+   A later unit a teacher opened early (or an earlier unit she skipped) doesn't count. */
+const inPrepUnit = () => nextUnit('english')?.id === 'elaConj';
 const prepRecallDoneOn = day => (S.prepRecall?.games || []).some(g => g.completed && logDayKey(new Date(g.t)) === day);
 const fmtRecall = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 function prepRecallCardHTML(courseId, groupId){

@@ -53,7 +53,7 @@ English projects are saved with History's (`S.historyProjects`). `projectStore` 
 
 The recall game the user made (type all 48 prepositions against the clock) is served at `public/prep-recall/index.html`.
 
-**While she is in this unit** (the Link Library is open and its unit test isn't passed):
+**While she is in this unit** (the Link Library is her current English unit: the first open English unit whose test she hasn't passed, the same unit the plan's English row sends her to):
 - It is the first row of Today's plan every day: **🔗 Prep test: name all 48 prepositions**.
 - The row is ✅ once she finds all 48 that day (hints and alphabetical blanks are allowed). Unfinished days don't carry over.
 - It also has a card on the unit page.
