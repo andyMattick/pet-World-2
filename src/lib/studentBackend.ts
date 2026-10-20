@@ -92,6 +92,8 @@ class StudentBackend {
   private lastSyncedAt = 0;
   /** set by the game: merges a newer save from another device into the open town (docs: PRACTICE-TIME.md, "Two devices") */
   onRemoteSave: ((state: Record<string, unknown>) => void) | null = null;
+  /** called after refreshSettings() loads the newest teacher settings and overrides */
+  onSettings: (() => void) | null = null;
 
   get enabled() { return !!this.sb; }
 
@@ -150,6 +152,7 @@ class StudentBackend {
     this.me.question_edits = next.question_edits;
     this.me.min_station = next.min_station;
     this.me.reset_at = next.reset_at;
+    this.onSettings?.();   // the game applies any new teacher clears (game.js, applyClears)
     const remoteAt = next.saved_at ? Date.parse(next.saved_at) || 0 : 0;
     if (next.state && remoteAt > this.lastSyncedAt) { this.lastSyncedAt = remoteAt; this.onRemoteSave?.(next.state); }   // another device saved since this one last loaded or saved
   }

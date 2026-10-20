@@ -10963,11 +10963,63 @@ function mergeProgress(base, other){
   for (const id of other.scribe?.done || []) if (!base.scribe.done.includes(id)) { base.scribe.done.push(id); n++; }
   return n;
 }
+/* ---------- 🧹 teacher clears (docs/CLEARING-PROGRESS.md) ----------
+   A teacher can take back progress a student didn't earn, without a full reset. The student's quiz_overrides gets a key
+   "clear:<id>" whose value lists what to take back, comma-separated:
+     ela:<course>          an English unit: its practice, quizzes, unit test, written answers and projects (e.g. ela:pronouns)
+     shop:<shop>           a math shop: every station's orders, quizzes, Think it through, review, unit test and skill mastery
+     station:<shop>:<n>    one station: its orders, quiz, Think it through and skill mastery (e.g. station:cafe:4)
+     quiz:<key>            one quiz or test result and its review (e.g. quiz:cafe:3, quiz:cafe:test)
+     think:<shop>:<n>      one station's 🧠 Think it through result (e.g. think:cafe:3)
+   Each clear runs once per save copy (state.clearsDone). Both copies are cleared before two devices' saves are merged,
+   so an older copy can't bring the work back. */
+function applyClears(state){
+  const clears = Object.entries(Backend.me?.quiz_overrides || {}).filter(([k, v]) => k.startsWith('clear:') && typeof v === 'string');
+  if (!clears.length || !state) return false;
+  state.clearsDone = Array.isArray(state.clearsDone) ? state.clearsDone : [];
+  let changed = false;
+  const dropKeys = (obj, test) => { for (const k of Object.keys(obj || {})) if (test(k)) { delete obj[k]; changed = true; } };
+  const dropSkills = skills => { for (const store of ['kn', 'kr', 'ks']) dropKeys(state[store], k => skills.includes(k)); };
+  const stationSkills = (shop, n) => (SHOPS[shop]?.stations.find(st => st.id === n)?.skills || []);
+  for (const [id, spec] of clears) {
+    if (state.clearsDone.includes(id)) continue;
+    for (const token of spec.split(',').map(t => t.trim()).filter(Boolean)) {
+      const [kind, a, b] = token.split(':');
+      if (kind === 'ela' && a) {
+        const course = englishCourse(a), skills = new Set((course?.skills || []).map(sk => sk.id));
+        if (course?.id !== a) continue;   // an unknown course name falls back to Nouns in englishCourse; never clear that by mistake
+        dropKeys(state.elaProgress, k => skills.has(k) || k.startsWith(`${a}:`));
+        const before = (state.writtenAnswers || []).length;
+        state.writtenAnswers = (state.writtenAnswers || []).filter(w => w.courseId !== a); if (state.writtenAnswers.length !== before) changed = true;
+        dropKeys(state.historyProjects, k => projectKeys(a).includes(k));
+      } else if (kind === 'shop' && SHOPS[a]) {
+        if (state[a]?.st) { for (const n of Object.keys(state[a].st)) if (state[a].st[n]) { state[a].st[n] = 0; changed = true; } }
+        for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k.startsWith(`${a}:`));
+        if (state.stationsOpenedBefore?.[a]) { delete state.stationsOpenedBefore[a]; changed = true; }
+        dropSkills(SHOPS[a].stations.flatMap(st => st.skills));
+      } else if (kind === 'station' && SHOPS[a] && Number.isFinite(+b)) {
+        const n = +b;
+        if (state[a]?.st?.[n]) { state[a].st[n] = 0; changed = true; }
+        for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k === `${a}:${n}`);
+        if (Array.isArray(state.stationsOpenedBefore?.[a]) && state.stationsOpenedBefore[a].includes(n)) { state.stationsOpenedBefore[a] = state.stationsOpenedBefore[a].filter(x => x !== n); changed = true; }
+        dropSkills(stationSkills(a, n));
+      } else if (kind === 'think' && a && b) {
+        dropKeys(state.mathThink, k => k === `${a}:${b}`);
+      } else if (kind === 'quiz' && a && b) {
+        for (const store of ['quizzes', 'review']) dropKeys(state[store], k => k === `${a}:${b}`);
+      }
+    }
+    state.clearsDone.push(id); changed = true;
+  }
+  return changed;
+}
+Backend.onSettings = () => { if (Backend.me && applyClears(S)) { save(); if (!$('#scr-home').hidden) renderHome(); } };
 /* a town left open on another device: when it comes back on screen (or any screen refreshes settings), a newer save from
    another device is merged in before this one saves again, so neither device's work or practice time is lost */
 Backend.onRemoteSave = remote => {
   if (!Backend.me || (Backend.me.reset_at && Backend.me.reset_at !== S.resetSeen)) return;   // a teacher reset is handled on the next sign-in, never merged over
-  const brought = mergeWork(S, normalize(remote));
+  const other = normalize(remote); applyClears(other);   // an older copy can't bring back cleared work
+  const brought = mergeWork(S, other);
   if (brought) { save(); toast('Brought in your work from your other device.'); if (!$('#scr-home').hidden) renderHome(); }
 };
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Backend.me) void Backend.refreshSettings(); });
@@ -10981,7 +11033,8 @@ function enterAs(me){
   else {
     const remoteNewer = !!remote && (remote.savedAt || 0) > (local.savedAt || 0);
     S = remoteNewer ? normalize(remote) : normalize(local);   // normalized either way, so mergeWork always has every field
-    if (remote) mergeWork(S, remoteNewer ? local : normalize(remote));   // keep work saved on either device (see mergeWork)
+    applyClears(S);   // teacher clears, on both copies before they merge
+    if (remote) { const other = remoteNewer ? normalize(local) : normalize(remote); applyClears(other); mergeWork(S, other); }   // keep work saved on either device (see mergeWork)
     S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
   }
   syncLanguageControls();
