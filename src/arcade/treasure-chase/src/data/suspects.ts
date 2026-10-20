@@ -173,7 +173,7 @@ export const SUSPECTS: Suspect[] = [
     id: 'xiao_lin',
     name: 'Professor Xiao Lin',
     alias: 'The Jade Serpent',
-    gender: 'Non-binary',
+    gender: 'Male',
     hair: 'Jet Black',
     vehicle: 'High-Speed Maglev',
     hobby: 'Chess',

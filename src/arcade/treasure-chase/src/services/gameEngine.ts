@@ -126,17 +126,22 @@ export function generateNewCase(difficulty: 'Rookie' | 'Detective' | 'Scholar' =
   const remainingCities = CITIES.filter((c) => c.id !== startingCity.id);
   const trailCities: CityDestination[] = [startingCity];
 
-  // Procedurally chain cities across different continents or diverse geography
-  const chosenTrail = getRandomElements(remainingCities, trailLength - 1);
-  trailCities.push(...chosenTrail);
+  // Each next city is one of the 6 nearest that aren't on the trail yet, so a case stays in one part of the world
+  // and the map can zoom in on it (Pet World change).
+  const near = (from: CityDestination, list: CityDestination[], n: number) =>
+    [...list].sort((a, b) => calculateDistanceKm(from.lat, from.lng, a.lat, a.lng) - calculateDistanceKm(from.lat, from.lng, b.lat, b.lng)).slice(0, n);
+  for (let step = 1; step < trailLength; step++) {
+    const left = remainingCities.filter((c) => !trailCities.includes(c));
+    trailCities.push(getRandomElements(near(trailCities[trailCities.length - 1], left, 6), 1)[0]);
+  }
 
   // 6. Build the legs
   const legs: CaseLeg[] = [];
 
   // Trait distribution for culprit clues across legs
   const culpritTraits: { name: 'Gender' | 'Hair' | 'Vehicle' | 'Hobby' | 'Accessory' | 'Mark'; value: string; phrase: string }[] = [
-    { name: 'Gender', value: culprit.gender, phrase: `The witness noted the suspect was a ${culprit.gender}.` },
-    { name: 'Hair', value: culprit.hair, phrase: `Informants noticed a flash of distinct ${culprit.hair} hair beneath their fedora.` },
+    { name: 'Gender', value: culprit.gender, phrase: `The witness noted the suspect was a ${culprit.gender === 'Female' ? 'woman' : 'man'}.` },
+    { name: 'Hair', value: culprit.hair, phrase: `Informants noticed a flash of distinct ${culprit.hair} hair beneath ${culprit.gender === 'Female' ? 'her' : 'his'} fedora.` },
     { name: 'Vehicle', value: culprit.vehicle, phrase: `The fugitive bragged about escaping across borders in a ${culprit.vehicle}.` },
     { name: 'Hobby', value: culprit.hobby, phrase: `A baggage handler saw luggage filled with gear for ${culprit.hobby}.` },
     { name: 'Accessory', value: culprit.accessory, phrase: `A vendor recalled the suspect adjusting a prominent ${culprit.accessory}.` },
@@ -199,7 +204,7 @@ export function generateNewCase(difficulty: 'Rookie' | 'Detective' | 'Scholar' =
           id: `final_clue_${siteIdx}`,
           category: 'architecture' as const,
           difficulty: 'detective' as const,
-          text: `A shadowy figure matching the suspect was seen slipping into an old safehouse near ${currentCity.landmarks[siteIdx % currentCity.landmarks.length]}! You have tracked them to their final lair!`,
+          text: `A shadowy figure matching the suspect was seen slipping into an old safehouse near ${currentCity.landmarks[siteIdx % currentCity.landmarks.length]}! You have tracked ${culprit.gender === 'Female' ? 'her' : 'him'} to the final hideout!`,
           hintHelp: `This is the suspect's final lair! Ensure you have an Arrest Warrant issued before raiding the safehouse!`,
           searchKeywords: [currentCity.name, 'Final Lair'],
         };
@@ -216,8 +221,9 @@ export function generateNewCase(difficulty: 'Rookie' | 'Detective' | 'Scholar' =
     }
 
     // Travel options: if not final leg, nextCity + 3 random decoys. If final, 4 random decoys (or final options)
+    // Wrong choices are near the right one (from the 7 nearest), so the clues decide it, not the distance
     const otherCities = CITIES.filter((c) => c.id !== currentCity.id && (!nextCity || c.id !== nextCity.id));
-    const decoys = getRandomElements(otherCities, 3);
+    const decoys = getRandomElements(near(nextCity || currentCity, otherCities, 7), 3);
     const travelOptions = nextCity ? [nextCity, ...decoys].sort(() => 0.5 - Math.random()) : decoys;
 
     legs.push({

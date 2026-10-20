@@ -98,7 +98,7 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
             sounds.play('click');
             onComplete();
           }}
-          className="absolute top-4 right-4 z-30 px-3 py-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 font-mono text-xs flex items-center gap-1.5 cursor-pointer transition-all backdrop-blur-sm"
+          className="absolute top-4 right-4 z-30 px-3 py-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 font-mono text-sm flex items-center gap-1.5 cursor-pointer transition-all backdrop-blur-sm"
           title="Skip cinematic transit"
         >
           <span>Skip</span>
@@ -118,12 +118,12 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
           {/* Flight Badge on Image */}
           <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono tracking-widest uppercase bg-amber-500 text-slate-950 font-bold">
+              <span className="px-2 py-0.5 rounded text-sm font-mono tracking-widest uppercase bg-amber-500 text-slate-950 font-bold">
                 FLIGHT {flightNumber}
               </span>
-              <span className="text-xs font-mono text-amber-300">INTERCONTINENTAL TRANSIT</span>
+              <span className="text-sm font-mono text-amber-300">INTERCONTINENTAL TRANSIT</span>
             </div>
-            <div className="text-xs font-mono text-slate-300">
+            <div className="text-sm font-mono text-slate-300">
               SPEED: <span className="text-emerald-400 font-bold">870 KM/H</span>
             </div>
           </div>
@@ -136,16 +136,16 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
             {/* Origin City */}
             <div className="text-left flex-1">
               <div className="text-2xl mb-1">{originCity.flag}</div>
-              <span className="text-[10px] font-mono uppercase text-slate-500 block">DEPARTURE</span>
-              <h3 className="text-lg sm:text-xl font-bold font-terminal text-white">
+              <span className="text-sm font-mono uppercase text-slate-500 block">DEPARTURE</span>
+              <h3 className="text-xl sm:text-xl font-bold font-terminal text-white">
                 {originCity.name}
               </h3>
-              <p className="text-xs font-mono text-slate-400">{originCity.country}</p>
+              <p className="text-sm font-mono text-slate-400">{originCity.country}</p>
             </div>
 
             {/* Flight Path Graphic */}
             <div className="flex flex-col items-center justify-center px-2 flex-1">
-              <span className="text-[10px] font-mono text-amber-400 font-bold mb-1">
+              <span className="text-sm font-mono text-amber-400 font-bold mb-1">
                 {totalDistance.toLocaleString()} KM
               </span>
 
@@ -160,7 +160,7 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
                 </div>
               </div>
 
-              <span className="text-[10px] font-mono text-slate-400">
+              <span className="text-sm font-mono text-slate-400">
                 {hoursSpent} Hours Transit
               </span>
             </div>
@@ -168,11 +168,11 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
             {/* Destination City */}
             <div className="text-right flex-1">
               <div className="text-2xl mb-1">{destinationCity.flag}</div>
-              <span className="text-[10px] font-mono uppercase text-slate-500 block">ARRIVAL</span>
-              <h3 className="text-lg sm:text-xl font-bold font-terminal text-emerald-400">
+              <span className="text-sm font-mono uppercase text-slate-500 block">ARRIVAL</span>
+              <h3 className="text-xl sm:text-xl font-bold font-terminal text-emerald-400">
                 {destinationCity.name}
               </h3>
-              <p className="text-xs font-mono text-slate-400">{destinationCity.country}</p>
+              <p className="text-sm font-mono text-slate-400">{destinationCity.country}</p>
             </div>
           </div>
 
@@ -183,22 +183,22 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
                 <Clock className="w-6 h-6 animate-[spin_4s_linear_infinite]" />
               </div>
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">
+                <span className="text-sm font-mono uppercase tracking-widest text-slate-400">
                   MISSION CLOCK IN TRANSIT
                 </span>
-                <div className="text-lg font-bold font-mono text-amber-300">
+                <div className="text-xl font-bold font-mono text-amber-300">
                   {runningTimeInfo.text}
                 </div>
               </div>
             </div>
 
             <div className="text-right">
-              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              <div className="text-sm font-mono uppercase tracking-wider text-slate-500">
                 TIME REMAINING
               </div>
               <div className="text-xl font-bold font-mono text-slate-100 flex items-center gap-2">
                 <span>{currentRunningRemaining} Hours</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <span className="text-sm px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">
                   -{animatedHour}h
                 </span>
               </div>
@@ -209,14 +209,14 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
           {currentStep === 'arrival' && stampLanded && (
             <div className="flex items-center justify-center pt-1 animate-in zoom-in-75 duration-300">
               <div className="border-4 border-emerald-400/80 rounded-xl p-3 px-6 text-center transform -rotate-3 bg-emerald-950/40 backdrop-blur-md shadow-2xl shadow-emerald-500/20">
-                <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-bold font-mono text-xs tracking-widest uppercase">
+                <div className="flex items-center justify-center gap-1.5 text-emerald-400 font-bold font-mono text-sm tracking-widest uppercase">
                   <ShieldCheck className="w-4 h-4" />
                   <span>CUSTOMS ENTRY PERMIT</span>
                 </div>
-                <div className="text-lg font-extrabold font-terminal text-emerald-300 tracking-wider">
+                <div className="text-xl font-extrabold font-terminal text-emerald-300 tracking-wider">
                   IMMIGRATION • {destinationCity.name.toUpperCase()}
                 </div>
-                <div className="text-[10px] font-mono text-emerald-400/80">
+                <div className="text-sm font-mono text-emerald-400/80">
                   G.L.O.B.E. SPECIAL DETECTIVE DISPATCH AUTHORIZED
                 </div>
               </div>
@@ -225,7 +225,7 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
 
           {/* Progress Indicator */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-[11px] font-mono text-slate-400">
+            <div className="flex justify-between text-sm font-mono text-slate-400">
               <span>Status: {currentStep === 'boarding' ? 'Boarding Gate...' : currentStep === 'airborne' ? 'Cruising to Destination...' : 'Touchdown & Customs Clear!'}</span>
               <span>{Math.round((animatedHour / hoursSpent) * 100)}% Complete</span>
             </div>
@@ -239,7 +239,7 @@ export const TravelCinematicModal: React.FC<TravelCinematicModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800 px-6 flex items-center justify-between text-xs font-mono text-slate-500">
+        <div className="p-3 bg-slate-950 border-t border-slate-800 px-6 flex items-center justify-between text-sm font-mono text-slate-500">
           <span>Flight Duration: {hoursSpent} Hours</span>
           <span className="text-amber-400/90 flex items-center gap-1">
             <span>Entering local airspace...</span>

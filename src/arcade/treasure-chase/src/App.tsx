@@ -313,7 +313,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-6 space-y-6 relative">
         {/* Animated Floating Time Cost Notification */}
         {timeCostNotice && (
-          <div className="fixed top-24 right-6 z-40 bg-slate-950/90 border border-amber-500/80 rounded-xl px-4 py-2.5 shadow-2xl text-xs font-mono text-amber-300 flex items-center gap-2 animate-in slide-in-from-top-4 duration-300 backdrop-blur-md">
+          <div className="fixed top-24 right-6 z-40 bg-slate-950/90 border border-amber-500/80 rounded-xl px-4 py-2.5 shadow-2xl text-sm font-mono text-amber-300 flex items-center gap-2 animate-in slide-in-from-top-4 duration-300 backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             <span className="font-bold">{timeCostNotice}</span>
           </div>
@@ -321,7 +321,7 @@ export default function App() {
 
         {/* Wrong Turn / Decoy Alert Banner */}
         {wrongTurnNotification && (
-          <div className="bg-rose-950/80 border-2 border-rose-500/80 rounded-xl p-4 flex items-center justify-between gap-4 text-xs font-mono text-rose-200 shadow-xl animate-shake">
+          <div className="bg-rose-950/80 border-2 border-rose-500/80 rounded-xl p-4 flex items-center justify-between gap-4 text-sm font-mono text-rose-200 shadow-xl animate-shake">
             <div className="flex items-center gap-3">
               <span className="text-xl">⚠️</span>
               <div>
@@ -397,7 +397,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-900 bg-slate-950/80 py-4 px-3 sm:px-6 text-center text-xs font-mono text-slate-500">
+      <footer className="mt-auto border-t border-slate-900 bg-slate-950/80 py-4 px-3 sm:px-6 text-center text-sm font-mono text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
             The Great Treasure Chase • G.L.O.B.E. Heritage Protection Directorate

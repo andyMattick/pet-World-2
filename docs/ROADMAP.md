@@ -165,6 +165,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F33. 🐑 Biology Unit 2 at the Petting Zoo (Organism growth and reproduction): 8 lessons with “why it matters” stories, 2 quizzes, a 24-question unit test, tour-guide role play, review flashcards, three in-browser labs (Clone Island vs. Mix Island, Parenting Strategy Lab, Duck Pond Lake Lab), a field guide project and three kitchen labs with data tables and photos. See `SCIENCE-UNIT2.md`
 - [x] F34. ✋ I have a question: a big button on every assignment; she describes the problem and can add a picture of the screen, time stops, and she goes back to her plan with that place closed until the teacher (or a grown-up with the PIN) answers. Ledger days are shorter: one time line, one plan line, each lesson once with its tries merged. See `QUESTIONS.md`, `LEDGER.md`
 - [x] F35. 🗓️ One place for minutes: the 🎯 Time goals card is gone from the teacher app (it set the same minutes as the daily plan). The plan gets 📖 Reading Log as a subject; old goals still count and move into the plan with one click. See `DAILY-PLAN.md`
+- [x] F36. 🗺️ Treasure Chase: bigger words everywhere; a real map (coastlines, seas and continent names) that zooms to where you are and where you can fly, with a Whole world button; each case stays in one part of the world (the next city is one of the 6 nearest, and the wrong choices are near the right one); suspects are male or female. Rebuild it after applying: `src/arcade/treasure-chase/README.md`
 
 ## Database files, in the order they were run
 

@@ -91,7 +91,7 @@ export const ArrestSceneModal: React.FC<ArrestSceneModalProps> = ({
           </div>
 
           <div>
-            <span className="text-[10px] font-mono tracking-widest uppercase font-bold">
+            <span className="text-sm font-mono tracking-widest uppercase font-bold">
               {isWon ? 'MISSION ACCOMPLISHED • ARREST LOGGED' : 'MISSION FAILED • FUGITIVE ESCAPED'}
             </span>
             <h2 className="text-2xl font-bold font-terminal text-white">
@@ -107,7 +107,7 @@ export const ArrestSceneModal: React.FC<ArrestSceneModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-5 text-xs font-mono text-slate-200">
+        <div className="p-6 space-y-5 text-sm font-mono text-slate-200">
           {/* Narrative Outcome */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
             {isWon ? (
@@ -143,37 +143,37 @@ export const ArrestSceneModal: React.FC<ArrestSceneModalProps> = ({
           {/* Suspect & Artifact Debriefing Cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase block">True Culprit</span>
-              <div className="font-bold text-slate-100 text-sm mt-0.5">
+              <span className="text-sm text-slate-500 uppercase block">True Culprit</span>
+              <div className="font-bold text-slate-100 text-base mt-0.5">
                 {currentCase.culprit.name}
               </div>
-              <span className="text-[11px] text-amber-400">"{currentCase.culprit.alias}"</span>
+              <span className="text-sm text-amber-400">"{currentCase.culprit.alias}"</span>
             </div>
 
             <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 uppercase block">Stolen Relic</span>
-              <div className="font-bold text-slate-100 text-sm mt-0.5 truncate">
+              <span className="text-sm text-slate-500 uppercase block">Stolen Relic</span>
+              <div className="font-bold text-slate-100 text-base mt-0.5 truncate">
                 {currentCase.artifact.name}
               </div>
-              <span className="text-[11px] text-slate-400">{currentCase.artifact.originCity}</span>
+              <span className="text-sm text-slate-400">{currentCase.artifact.originCity}</span>
             </div>
           </div>
 
           {/* Performance Stats */}
           <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800 flex items-center justify-around text-center">
             <div>
-              <span className="text-[10px] text-slate-500 uppercase block">Time Remaining</span>
-              <span className="font-bold text-amber-300 text-sm">{Math.max(0, currentCase.hoursRemaining)}h</span>
+              <span className="text-sm text-slate-500 uppercase block">Time Remaining</span>
+              <span className="font-bold text-amber-300 text-base">{Math.max(0, currentCase.hoursRemaining)}h</span>
             </div>
             <div className="h-7 w-[1px] bg-slate-800" />
             <div>
-              <span className="text-[10px] text-slate-500 uppercase block">Clues Uncovered</span>
-              <span className="font-bold text-purple-300 text-sm">{currentCase.clueLog.length}</span>
+              <span className="text-sm text-slate-500 uppercase block">Clues Uncovered</span>
+              <span className="font-bold text-purple-300 text-base">{currentCase.clueLog.length}</span>
             </div>
             <div className="h-7 w-[1px] bg-slate-800" />
             <div>
-              <span className="text-[10px] text-slate-500 uppercase block">Total Solved</span>
-              <span className="font-bold text-emerald-300 text-sm">{career.casesSolved}</span>
+              <span className="text-sm text-slate-500 uppercase block">Total Solved</span>
+              <span className="font-bold text-emerald-300 text-base">{career.casesSolved}</span>
             </div>
           </div>
         </div>
@@ -185,7 +185,7 @@ export const ArrestSceneModal: React.FC<ArrestSceneModalProps> = ({
               sounds.play('click');
               onOpenCareer();
             }}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-sm flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer"
           >
             <Award className="w-4 h-4 text-amber-400" />
             <span>View Career Dossier</span>
@@ -197,7 +197,7 @@ export const ArrestSceneModal: React.FC<ArrestSceneModalProps> = ({
                 sounds.play('beep');
                 onNextCase('Detective');
               }}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold font-mono text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer transition-all"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold font-mono text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer transition-all"
             >
               <span>{isWon ? 'NEXT CASE (DETECTIVE)' : 'PLAY AGAIN'}</span>
               <ArrowRight className="w-4 h-4" />
@@ -207,7 +207,7 @@ export const ArrestSceneModal: React.FC<ArrestSceneModalProps> = ({
                 sounds.play('beep');
                 onNextCase('Scholar');
               }}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold font-mono text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/20 cursor-pointer transition-all"
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold font-mono text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/20 cursor-pointer transition-all"
               title="Launch case with advanced historical research riddles"
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />

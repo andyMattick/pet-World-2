@@ -1,4 +1,4 @@
-export type Gender = 'Male' | 'Female' | 'Non-binary';
+export type Gender = 'Male' | 'Female';
 export type HairColor = 'Jet Black' | 'Silver Gray' | 'Auburn Red' | 'Platinum Blonde' | 'Chestnut Brown';
 export type EscapeVehicle = 'Seaplane' | 'Vintage Sports Car' | 'Armored Yacht' | 'High-Speed Maglev' | 'Cargo Tramp Steamer' | 'Helicopter';
 export type Hobby = 'Falconry' | 'Fencing' | 'Rare Numismatics' | 'Celestial Navigation' | 'Cryptography' | 'Chess' | 'Antique Horology' | 'Opera';

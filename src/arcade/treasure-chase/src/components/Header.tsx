@@ -55,14 +55,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-terminal font-bold text-lg tracking-wider text-amber-400 crt-amber-glow uppercase">
+              <span className="font-terminal font-bold text-xl tracking-wider text-amber-400 crt-amber-glow uppercase">
                 The Great Treasure Chase
               </span>
-              <span className="hidden md:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono tracking-widest uppercase bg-amber-500/10 border border-amber-500/30 text-amber-300">
+              <span className="hidden md:inline-block px-1.5 py-0.5 rounded text-sm font-mono tracking-widest uppercase bg-amber-500/10 border border-amber-500/30 text-amber-300">
                 G.L.O.B.E. INTERPOL
               </span>
             </div>
-            <p className="text-xs text-slate-400 font-mono flex items-center gap-2">
+            <p className="text-sm text-slate-400 font-mono flex items-center gap-2">
               <span>CASE #{currentCase.caseNumber}</span>
               <span className="text-slate-600">•</span>
               <span className="text-slate-300 font-semibold">{currentCase.artifact.name}</span>
@@ -76,14 +76,14 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-xl">{currentCase.currentCity.flag}</span>
             <div className="text-left">
-              <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <div className="text-sm font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-emerald-400" />
                 Current City
               </div>
-              <div className="font-bold text-sm text-slate-100 flex items-center gap-1.5">
+              <div className="font-bold text-base text-slate-100 flex items-center gap-1.5">
                 {currentCase.currentCity.name}
                 {currentCase.legs[currentCase.currentLegIndex]?.isFinalHideout && (
-                  <span className="px-1 py-0.5 text-[9px] font-bold uppercase rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse">
+                  <span className="px-1 py-0.5 text-xs font-bold uppercase rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse">
                     Hideout
                   </span>
                 )}
@@ -105,13 +105,13 @@ export const Header: React.FC<HeaderProps> = ({
               <Clock className={`w-4 h-4 ${isUrgent ? 'animate-bounce' : 'animate-[spin_12s_linear_infinite]'}`} />
             </div>
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5">
+              <div className="text-sm font-mono uppercase tracking-wider flex items-center gap-1.5">
                 <span className={isUrgent ? 'text-rose-400 font-bold animate-pulse' : 'text-slate-300 font-medium'}>
                   {timeInfo.text}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`font-mono text-xs font-bold ${isUrgent ? 'text-rose-400 font-extrabold' : 'text-amber-300'}`}>
+                <span className={`font-mono text-sm font-bold ${isUrgent ? 'text-rose-400 font-extrabold' : 'text-amber-300'}`}>
                   {currentCase.hoursRemaining}h left
                 </span>
                 <div className="w-16 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700/60">
@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
               sounds.play('click');
               onSelectTab('warrant');
             }}
-            className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg border text-sm font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
               currentCase.warrantIssuedFor
                 ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-300 shadow-sm shadow-emerald-500/20'
                 : 'bg-amber-950/40 border-amber-500/40 text-amber-300 hover:bg-amber-900/40'
@@ -162,12 +162,12 @@ export const Header: React.FC<HeaderProps> = ({
               sounds.play('click');
               onOpenCareer();
             }}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer"
+            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-sm font-mono flex items-center gap-1.5 transition-all cursor-pointer"
             title="Detective Career File"
           >
             <Award className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden lg:inline">{career.rankTitle}</span>
-            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px]">
+            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold text-sm">
               {career.casesSolved}
             </span>
           </button>
@@ -195,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sounds.play('click');
                 onSelectTab('investigate');
               }}
-              className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-md font-mono text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'investigate'
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -210,7 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sounds.play('click');
                 onSelectTab('travel');
               }}
-              className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-md font-mono text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'travel'
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -225,7 +225,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sounds.play('click');
                 onSelectTab('warrant');
               }}
-              className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-md font-mono text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'warrant'
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -240,7 +240,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sounds.play('click');
                 onSelectTab('research');
               }}
-              className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-md font-mono text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'research'
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -249,7 +249,7 @@ export const Header: React.FC<HeaderProps> = ({
               <BookOpen className="w-3.5 h-3.5" />
               <span>RESEARCH TERMINAL & NOTES</span>
               {currentCase.clueLog.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[10px] font-bold flex items-center justify-center">
+                <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-sm font-bold flex items-center justify-center">
                   {currentCase.clueLog.length}
                 </span>
               )}
@@ -260,7 +260,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sounds.play('click');
                 onSelectTab('mission_log');
               }}
-              className={`px-3 py-1.5 rounded-md font-mono text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-md font-mono text-sm font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'mission_log'
                   ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-bold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -269,7 +269,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="w-2 h-2 rounded-full bg-amber-400" />
               <span>MISSION LOG</span>
               {career.missionHistory && career.missionHistory.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-amber-300 border border-slate-700 text-[10px] font-bold">
+                <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-amber-300 border border-slate-700 text-sm font-bold">
                   {career.missionHistory.length}
                 </span>
               )}
@@ -281,7 +281,7 @@ export const Header: React.FC<HeaderProps> = ({
               sounds.play('click');
               onOpenBriefing();
             }}
-            className="text-xs font-mono text-amber-400/90 hover:text-amber-300 underline underline-offset-4 flex items-center gap-1.5 cursor-pointer px-2 whitespace-nowrap"
+            className="text-sm font-mono text-amber-400/90 hover:text-amber-300 underline underline-offset-4 flex items-center gap-1.5 cursor-pointer px-2 whitespace-nowrap"
           >
             <span>Read Case Dossier</span>
           </button>

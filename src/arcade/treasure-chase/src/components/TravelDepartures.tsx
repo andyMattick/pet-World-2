@@ -31,13 +31,13 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-mono tracking-widest text-amber-400 uppercase">
+          <span className="text-sm font-mono tracking-widest text-amber-400 uppercase">
             TRANSIT FLIGHT IN PROGRESS
           </span>
           <h2 className="text-2xl font-bold font-terminal text-white">
             Flying from {currentCase.currentCity.name} to {flyingDestination.name}
           </h2>
-          <p className="text-xs font-mono text-slate-400">
+          <p className="text-sm font-mono text-slate-400">
             Distance: {calculateDistanceKm(currentCase.currentCity.lat, currentCase.currentCity.lng, flyingDestination.lat, flyingDestination.lng)} km
             • Duration: {calculateFlightHours(currentCase.currentCity, flyingDestination)} hours
           </p>
@@ -48,7 +48,7 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
           <div className="h-full bg-gradient-to-r from-amber-500 via-emerald-400 to-amber-500 animate-[pulse_1s_infinite] w-full" />
         </div>
 
-        <p className="text-xs font-mono text-slate-500 italic">
+        <p className="text-sm font-mono text-slate-500 italic">
           Cruising at 34,000 feet... G.L.O.B.E. ground agents awaiting arrival...
         </p>
       </div>
@@ -67,20 +67,20 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
             <h2 className="text-xl font-bold font-terminal text-white">
               International Flight Departures
             </h2>
-            <p className="text-xs font-mono text-slate-400">
+            <p className="text-sm font-mono text-slate-400">
               Terminal: {currentCase.currentCity.name} Intercontinental Hub • Select next destination
             </p>
           </div>
         </div>
 
-        <div className="text-xs font-mono text-amber-400/90 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-2">
+        <div className="text-sm font-mono text-amber-400/90 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-2">
           <Compass className="w-4 h-4 text-amber-400" />
           <span>Cross-check witness clues before booking!</span>
         </div>
       </div>
 
       {/* Warning Notice */}
-      <div className="bg-amber-950/20 border border-amber-500/30 rounded-xl p-3.5 flex items-start gap-3 text-xs font-mono text-amber-200/90">
+      <div className="bg-amber-950/20 border border-amber-500/30 rounded-xl p-3.5 flex items-start gap-3 text-sm font-mono text-amber-200/90">
         <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
         <p>
           <strong>Detective Advisory:</strong> Flight transit will consume between 3 to 10 hours of mission time depending on distance. If you fly to a decoy destination with no suspect trail, you will lose valuable time backtracking!
@@ -117,11 +117,11 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{dest.flag}</span>
-                    <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+                    <span className="text-sm font-mono uppercase tracking-wider text-slate-400">
                       {dest.continent}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                  <div className="flex items-center gap-1 text-sm font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
                     <Clock className="w-3.5 h-3.5" />
                     <span>-{flightHours} Hours</span>
                   </div>
@@ -130,9 +130,9 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
                 <h3 className="text-xl font-bold font-terminal text-white group-hover:text-amber-400 transition-colors">
                   {dest.name}
                 </h3>
-                <p className="text-xs text-slate-400 mb-3">{dest.country}</p>
+                <p className="text-sm text-slate-400 mb-3">{dest.country}</p>
 
-                <p className="text-xs text-slate-300 leading-relaxed line-clamp-2 mb-3">
+                <p className="text-sm text-slate-300 leading-relaxed line-clamp-2 mb-3">
                   {dest.shortDescription}
                 </p>
 
@@ -141,7 +141,7 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
                   {dest.landmarks.slice(0, 3).map((lm, idx) => (
                     <span
                       key={idx}
-                      className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-slate-400"
+                      className="text-sm font-mono px-2 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-slate-400"
                     >
                       {lm}
                     </span>
@@ -151,7 +151,7 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
 
               {/* Bottom Flight Action */}
               <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                <div className="text-[11px] font-mono text-slate-400">
+                <div className="text-sm font-mono text-slate-400">
                   <span>Distance: </span>
                   <span className="text-slate-200 font-bold">{distKm.toLocaleString()} km</span>
                 </div>
@@ -162,7 +162,7 @@ export const TravelDepartures: React.FC<TravelDeparturesProps> = ({
                     sounds.play('flight');
                     onSelectFlight(dest);
                   }}
-                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono text-xs font-bold flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer transition-all active:scale-95"
+                  className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono text-sm font-bold flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer transition-all active:scale-95"
                 >
                   <span>Book Flight</span>
                   <ArrowRight className="w-3.5 h-3.5" />
