@@ -94,12 +94,18 @@ class StudentBackend {
   onRemoteSave: ((state: Record<string, unknown>) => void) | null = null;
   /** called after refreshSettings() loads the newest teacher settings and overrides */
   onSettings: (() => void) | null = null;
+  /** called when this browser's sign-in now belongs to a different student (another tab signed in as someone else).
+      From then on this tab sends nothing, so one student's town can never be saved or merged into another's. */
+  onAccountSwitch: (() => void) | null = null;
+  private switched = false;
 
   get enabled() { return !!this.sb; }
 
   constructor() {
     if (!this.sb) return;
     setInterval(() => { void this.flush(); }, 5000);
+    /* every tab on this site shares one sign-in (storage key pt-student): when another tab signs in, check who we are now */
+    window.addEventListener('storage', e => { if (this.me && (e.key === null || e.key.startsWith('pt-student'))) void this.refreshSettings(); });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { void this.flush(); void this.pushSave(); }
     });
@@ -143,6 +149,7 @@ class StudentBackend {
     const { data, error } = await this.sb.rpc('my_student');
     if (error || !data) return;
     const next = data as StudentInfo;
+    if (next.student_id !== this.me.student_id) { this.accountSwitched(); return; }
     this.me.class_drills = next.class_drills;
     this.me.student_drills = next.student_drills;
     this.me.quiz_settings = next.quiz_settings;
@@ -254,16 +261,26 @@ class StudentBackend {
     return !error;
   }
 
+  /** Another student signed in on this browser: stop saving, logging, and merging here (docs: CLEARING-PROGRESS.md) */
+  private accountSwitched() {
+    if (this.switched) return;
+    this.switched = true;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.pendingState = null;
+    this.tracker?.stop(); this.tracker = null;
+    this.onAccountSwitch?.();
+  }
+
   /** Called on every game save; writes to the server after a short pause. */
   saveSoon(state: Record<string, unknown>) {
-    if (!this.me) return;
+    if (!this.me || this.switched) return;
     this.pendingState = state;
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => { void this.pushSave(); }, 2000);
   }
 
   private async pushSave() {
-    if (!this.sb || !this.me || !this.pendingState || this.saving) return;
+    if (!this.sb || !this.me || !this.pendingState || this.saving || this.switched) return;
     this.saving = true;
     const state = this.pendingState; this.pendingState = null;
     const savedAt = typeof state.savedAt === 'number' ? new Date(state.savedAt) : new Date();
@@ -275,13 +292,13 @@ class StudentBackend {
   }
 
   log(table: Table, row: Record<string, unknown>) {
-    if (!this.me) return;
+    if (!this.me || this.switched) return;
     this.queue.push({ table, row: { ...row, student_id: this.me.student_id, class_id: this.me.class_id, created_at: new Date().toISOString() } });
     this.persistQueue();
   }
 
   async flush() {
-    if (!this.sb || !this.me || this.flushing || !this.queue.length) return;
+    if (!this.sb || !this.me || this.flushing || !this.queue.length || this.switched) return;
     this.flushing = true;
     const batch = this.queue.slice(0, 200);
     const byTable = new Map<Table, Record<string, unknown>[]>();

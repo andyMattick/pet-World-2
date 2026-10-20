@@ -19,3 +19,14 @@ The game applies each clear once per save copy and records it in `state.clearsDo
 The report tables (`assessments`, `problems`, `attempts`) aren't part of the save; delete those rows in SQL. Example: `supabase/one-off/2026-10-20-clear-abigail.sql`.
 
 Locks follow from the cleared results: a math shop opens when the shop before it has its unit test passed, and English opens every library through the one she is on (the first open one after the last unit test she passed).
+
+## Why Abigail's town had work she never did (Oct 20, 2026)
+
+Her browser's saved copy had the demo class's **Maya R.** in it: the same Pronouns written answers (same ids), 36 identical English records, and the same Café unit test (best 93, one try). That test unlocked the Bakery, so the plan sent her there.
+
+How: every tab of Pet World on one browser shares one sign-in. Someone opened the demo student view on that browser and signed in as Maya (DEMO26), which re-pointed the shared sign-in at Maya. Abigail's tab, still open, asked the server for its newest save, got Maya's, treated it as "her own work from another device," and merged it in (`Backend.onRemoteSave` → `mergeWork`). Her next sign-in sent the merged town to the server.
+
+Guardrails added:
+- `refreshSettings()` checks the returned student is the one this tab signed in as. If not, the tab stops saving, logging and merging (`Backend.onAccountSwitch`) and reloads as whoever is signed in now. A `storage` listener makes other tabs notice right away.
+- Every save is stamped with its student (`state.owner`), and `mergeWork()` refuses a town stamped for someone else (or, for older saves, with a different name).
+- The demo pass page tells visitors to use a private window, since signing in there signs out any student on that browser.

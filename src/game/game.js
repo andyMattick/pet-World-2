@@ -10883,6 +10883,12 @@ function startTownTracker(){ localSession = null; townTracker.start(); }
    reading quizzes, written answers, and flagged words. Then mergeProgress() brings in practice: time, arcade minutes, and progress. Returns how many pieces it brought in. */
 function mergeWork(base, other){
   other = normalize(other);   // a brand-new device's town is a bare fresh() without the newer fields; the caller passes a normalized base
+  /* never merge two different students' towns (Oct 20: a demo student's work was merged into a real student's town
+     when another tab signed in as the demo student on the same browser). Saves are stamped with their student (owner);
+     older saves without a stamp are compared by name. */
+  if ((base.owner && other.owner && base.owner !== other.owner) || (!(base.owner && other.owner) && base.name && other.name && base.name !== other.name)) {
+    console.warn('[Pet World] not merging another student\'s town', base.owner || base.name, other.owner || other.name); return 0;
+  }
   let n = 0;
   const filled = obj => Object.values(obj || {}).filter(v => typeof v === 'string' && v.trim()).length;
   const newer = (a, b, text) => (a.updatedAt || 0) !== (b.updatedAt || 0) ? (a.updatedAt || 0) > (b.updatedAt || 0)
@@ -11013,6 +11019,13 @@ function applyClears(state){
   }
   return changed;
 }
+/* another tab on this browser signed in as a different student: this tab stops saving at once (studentBackend) and
+   reloads, so it opens as whoever is signed in now and never mixes the two towns */
+Backend.onAccountSwitch = () => {
+  try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){}   // keep this student's own work in her own key on this device
+  toast('Someone else signed in on this browser. Reloading…');
+  setTimeout(() => location.reload(), 1500);
+};
 Backend.onSettings = () => { if (Backend.me && applyClears(S)) { save(); if (!$('#scr-home').hidden) renderHome(); } };
 /* a town left open on another device: when it comes back on screen (or any screen refreshes settings), a newer save from
    another device is merged in before this one saves again, so neither device's work or practice time is lost */
@@ -11037,6 +11050,7 @@ function enterAs(me){
     if (remote) { const other = remoteNewer ? normalize(local) : normalize(remote); applyClears(other); mergeWork(S, other); }   // keep work saved on either device (see mergeWork)
     S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
   }
+  S.owner = me.student_id;   // the student this town belongs to; mergeWork refuses a town stamped for someone else
   syncLanguageControls();
   drillSettings();
   checkUnlocks({announce:false});
