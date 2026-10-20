@@ -36,6 +36,14 @@ Anywhere in Pet World (questions, stories, reading notes, math problems), the st
   - **Teacher:** the Vocabulary tab lists every word students flagged, who flagged it and where. Add a meaning and it joins the class list.
   - Once a word has a meaning on any list, it drops off the student's flagged list by itself and joins her looked-up words.
 
+## 📌 Keep a word from her own writing
+
+In any box she writes in (written answers, essays, reading notes, projects), she can double-click a word, or press and hold it on a tablet, and tap **📌 What does it mean?**. It works exactly like flagging a word while reading: a word on her lists joins her practice, and any other word is saved as flagged for a grown-up, with the sentence she wrote around it. Grown-up boxes (PIN answers, word lists, backup codes) don't show the button.
+
+## 📖 Dictionary links
+
+In 📊 My words, tapping a word shows its meaning with a **📖 ↗** link that opens it in Merriam-Webster. Each word in "Words you flagged" has the same link.
+
 ## What grown-ups see
 
 - **Teacher:** Vocabulary tab → "Class progress on focus words" shows each student's counts and the words to reteach.

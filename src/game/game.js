@@ -8838,7 +8838,7 @@ function renderVocab(){
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
     <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}
-    ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: <b>${flaggedWaiting().map(f => esc(f.w)).join(', ')}</b> · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, highlight it (or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
+    ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: ${flaggedWaiting().map(f => `<b>${esc(f.w)}</b> ${dictLinkHTML(f.w)}`).join(' · ')} · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, or want to keep a word from your own writing, highlight it (double-click, or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
 }
 function startVocab(mode){
   const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
@@ -8999,7 +8999,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word.w, b.dataset.vocabHear || 'word'); return; }
   if (b.hasAttribute('data-voice-test')) { void speakWord('analyze', 'syllables'); return; }
   if (b.dataset.vocabAnswer != null && vocabRun && !vocabRun.answered) { const c = vocabRun.card; answerVocab(+b.dataset.vocabAnswer === c.answer, c.kind === 'meaning' ? `“${c.word.w}” means ${c.word.d}.` : `The word is “${c.word.w}”: ${c.word.d}.`); if (+b.dataset.vocabAnswer !== c.answer) b.classList.add('incorrect'); return; }
-  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').textContent = v ? `${v.w}: ${v.d}${v.s ? ` (${v.s.replace('___', v.w)})` : ''}` : ''; return; }
+  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}` : ''; return; }
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
   if (!parentReadingUnlocked) return;
   if (b.hasAttribute('data-vocab-import')) {
@@ -9045,7 +9045,30 @@ flagPop.className = 'word-flag-pop'; flagPop.hidden = true; flagPop.setAttribute
 document.body.append(flagBtn, flagPop);
 let flagPick = null, flagTimer = null;
 const FLAG_WORD = /^[\p{L}][\p{L}'’-]{1,29}$/u;
+function dictUrl(w){ return `https://www.merriam-webster.com/dictionary/${encodeURIComponent(w)}`; }   // hoisted: the Word Workshop uses these too
+function dictLinkHTML(w){ return `<a class="dict-link" href="${dictUrl(w)}" target="_blank" rel="noopener noreferrer" title="Look up “${esc(w)}” in the dictionary" aria-label="Look up ${esc(w)} in the dictionary">📖 ↗</a>`; }
+/* her own writing: a word she selects (double-click, or press and hold) in a box she types in can go to the Word Workshop too.
+   Grown-up, backup and word-list boxes don't count. */
+let flagPointer = null;
+const writingBox = el => el?.tagName === 'TEXTAREA' && !el.readOnly && !el.disabled && !el.classList.contains('code') && !!el.closest('main') && !el.closest('#scr-vocab, .theme-pin, .warmup-skip, #scr-join, #scr-name');
+function flagTextarea(ta){
+  const a = ta.selectionStart, b = ta.selectionEnd, raw = ta.value.slice(a, b), text = raw.trim().replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+  if (a === b || !FLAG_WORD.test(text)) return false;
+  const before = ta.value.slice(0, a), after = ta.value.slice(b), start = Math.max(before.lastIndexOf('.'), before.lastIndexOf('!'), before.lastIndexOf('?'), before.lastIndexOf('\n')) + 1;
+  const ends = ['.', '!', '?', '\n'].map(c => after.indexOf(c)).filter(i => i >= 0), end = ends.length ? Math.min(...ends) + 1 : after.length;
+  flagPick = {w:text, ctx:(before.slice(start) + raw + after.slice(0, end)).replace(/\s+/g, ' ').trim().slice(0, 200), box:ta};
+  flagBtn.hidden = false;
+  const r = ta.getBoundingClientRect(), x = flagPointer && flagPointer.el === ta ? flagPointer.x : r.left + 40, y = flagPointer && flagPointer.el === ta ? flagPointer.y : r.top;
+  flagBtn.style.left = `${Math.max(8, Math.min(window.innerWidth - flagBtn.offsetWidth - 8, x - flagBtn.offsetWidth / 2))}px`;
+  flagBtn.style.top = `${y - flagBtn.offsetHeight - 14 < 8 ? y + 18 : y - flagBtn.offsetHeight - 14}px`;
+  return true;
+}
+document.addEventListener('pointerup', event => { if (writingBox(event.target)) { flagPointer = {el:event.target, x:event.clientX, y:event.clientY}; clearTimeout(flagTimer); flagTimer = setTimeout(flagSelection, 250); } }, true);
+document.addEventListener('select', event => { if (writingBox(event.target)) { clearTimeout(flagTimer); flagTimer = setTimeout(flagSelection, 250); } }, true);
+document.addEventListener('input', event => { if (writingBox(event.target)) { flagBtn.hidden = true; flagPick = null; } }, true);
 function flagSelection(){
+  const active = document.activeElement;
+  if (writingBox(active) && flagTextarea(active)) return;
   const sel = window.getSelection(), text = String(sel?.toString() || '').trim().replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
   const node = sel?.anchorNode?.nodeType === 3 ? sel.anchorNode.parentElement : sel?.anchorNode;
   const ok = sel && !sel.isCollapsed && FLAG_WORD.test(text) && node?.closest?.('main') && !node.closest('input, textarea, select, [contenteditable], button, a, nav, .tile, .tabs, .backrow, header, #scr-vocab, .word-flag-pop, #scr-join, #scr-name');   // reading text only, not buttons, tiles or titles
@@ -9073,9 +9096,10 @@ flagBtn.addEventListener('click', () => {
     html = `📌 <b>${esc(w)}</b> is saved. A grown-up will add what it means, and then it shows up in your 🔤 Word Workshop. You can look it up in the dictionary now too.`;
   }
   const dictWord = found ? found.w : w;   // a dictionary link too, for either kind of word (the word is still saved as above)
-  flagPop.innerHTML = `${html}<div class="row"><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(dictWord)}" target="_blank" rel="noopener noreferrer">📖 Look it up in the dictionary ↗</a><button type="button" class="btn small" data-flag-close>Got it</button></div>`;
+  flagPop.innerHTML = `${html}<div class="row"><a class="btn small" href="${dictUrl(dictWord)}" target="_blank" rel="noopener noreferrer">📖 Look it up in the dictionary ↗</a><button type="button" class="btn small" data-flag-close>Got it</button></div>`;
   flagPop.hidden = false; flagPop.style.left = flagBtn.style.left; flagPop.style.top = flagBtn.style.top;
-  flagBtn.hidden = true; window.getSelection()?.removeAllRanges(); sfx('tick');
+  if (flagPick.box) flagPick.box.setSelectionRange(flagPick.box.selectionEnd, flagPick.box.selectionEnd); else window.getSelection()?.removeAllRanges();
+  flagBtn.hidden = true; sfx('tick');
   flagPop.querySelector('[data-flag-close]').focus();
 });
 flagPop.addEventListener('click', event => { if (event.target.closest('[data-flag-close]')) flagPop.hidden = true; });
