@@ -10977,6 +10977,9 @@ function mergeProgress(base, other){
      station:<shop>:<n>    one station: its orders, quiz, Think it through and skill mastery (e.g. station:cafe:4)
      quiz:<key>            one quiz or test result and its review (e.g. quiz:cafe:3, quiz:cafe:test)
      think:<shop>:<n>      one station's 🧠 Think it through result (e.g. think:cafe:3)
+     skill:<id>            one math skill's mastery record (e.g. skill:equiv)
+     rec:<store>:<key>     one lesson record in elaProgress, historyProgress or scienceProgress (e.g. rec:historyProgress:historyScale)
+     word:<word>           one Word Workshop word's answer history (e.g. word:eager)
    Each clear runs once per save copy (state.clearsDone). Both copies are cleared before two devices' saves are merged,
    so an older copy can't bring the work back. */
 function applyClears(state){
@@ -11009,6 +11012,12 @@ function applyClears(state){
         for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k === `${a}:${n}`);
         if (Array.isArray(state.stationsOpenedBefore?.[a]) && state.stationsOpenedBefore[a].includes(n)) { state.stationsOpenedBefore[a] = state.stationsOpenedBefore[a].filter(x => x !== n); changed = true; }
         dropSkills(stationSkills(a, n));
+      } else if (kind === 'skill' && a) {
+        dropSkills([a]);
+      } else if (kind === 'rec' && ['elaProgress', 'historyProgress', 'scienceProgress'].includes(a) && b) {
+        dropKeys(state[a], k => k === token.slice(`rec:${a}:`.length));
+      } else if (kind === 'word' && a) {
+        dropKeys(state.vocab?.stats, k => k === a);
       } else if (kind === 'think' && a && b) {
         dropKeys(state.mathThink, k => k === `${a}:${b}`);
       } else if (kind === 'quiz' && a && b) {

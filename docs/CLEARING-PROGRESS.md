@@ -13,6 +13,9 @@ A full **Reset** wipes a student's whole town. To take back only part of it (a u
 | `station:<shop>:<n>` | One station: its orders, quiz, Think it through, and its skills' mastery |
 | `quiz:<shop>:<n>` / `quiz:<shop>:test` | One station quiz or the unit test, and its review |
 | `think:<shop>:<n>` | One station's 🧠 Think it through result |
+| `skill:<id>` | One math skill's mastery record |
+| `rec:<store>:<key>` | One lesson record in `elaProgress`, `historyProgress` or `scienceProgress` |
+| `word:<word>` | One Word Workshop word's answer history |
 
 The game applies each clear once per save copy and records it in `state.clearsDone`. It clears both copies before merging two devices' saves (`enterAs`, `Backend.onRemoteSave`), and checks for new clears whenever settings refresh (`Backend.onSettings`), so an old copy on a tablet can't bring the work back. Code: `applyClears()` in `src/game/game.js`.
 
