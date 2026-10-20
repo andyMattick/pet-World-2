@@ -21,7 +21,8 @@ import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/the
 import { termCards } from '../shared/termCards';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS } from './scienceSims.js';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -127,7 +128,7 @@ function normalize(raw){
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
-  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4']);
+  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4','prepositions','prepositionslab','prepositionslab2']);   // English projects are kept here too
   s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
@@ -158,6 +159,7 @@ function normalize(raw){
     s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
+    s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
@@ -311,7 +313,7 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
-const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test'};
+const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test'};
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (ELA_FINAL_KEYS[unit]) {
@@ -5315,7 +5317,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && vocabRun) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -6495,6 +6497,161 @@ $('#libraryWrap').addEventListener('input', e => {
   const n = FAMILY_SIZES[+r.value] || 1; simRun.sizes[simRun.home] = n;
   $('#simWrap [data-sim-n]').textContent = `${n} bab${n === 1 ? 'y' : 'ies'}`; $('#simWrap [data-sim-care]').textContent = `${Math.round(ENERGY / n * 10) / 10} energy of care each`;
 });
+/* 🎮 Grammar games (English Unit 5, docs/ENGLISH-UNIT5.md): Pet Hide-and-Seek, Cross It Out and the Comic Strip Studio.
+   Each round counts as right on the first try or not; stars from first tries. Coins: 10 + 5 a star the first time,
+   then 5 for each new star; 3 stars in all three is "Link Library Master" (+50 once). S.grammarGames[id] = {best, plays}. */
+let ggRun = null;
+function ggState(id){ return S.grammarGames[id] || (S.grammarGames[id] = {best:0, plays:0}); }
+function ggameCardsHTML(courseId, groupId){
+  return GGAMES.filter(g => g.course === courseId && g.group === groupId).map(g => {
+    const st = S.grammarGames[g.id], stars = st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)}` : 'Not played yet';
+    return `<section class="ela-final-assessment sim-card"><div><h3>🎮 ${g.emoji} ${esc(g.name)}</h3><p class="muted">${esc(g.intro)} · ${stars}</p></div><button type="button" class="btn small berry" data-gg-open="${g.id}">${st?.plays ? 'Play again' : 'Play'}</button></section>`;
+  }).join('');
+}
+function ggStart(id){
+  if (id === 'hide') ggRun = {id, rounds:newHideRounds(), i:0, first:0, tries:0, msg:'', done:false, prep:'', obj:''};
+  if (id === 'cross') ggRun = {id, i:0, first:0, tries:0, msg:'', done:false, crossed:[], step:'cross', missed:false};
+  if (id === 'comic') ggRun = {id, i:0, first:0, tries:0, msg:'', done:false, word:'', mark:'', lines:[], missed:false};
+  renderGgame();
+}
+function ggFinish(total){
+  const g = ggameById(ggRun.id), st = ggState(g.id), stars = starsFor(ggRun.first, total), before = st.best;
+  const coins = st.plays ? Math.max(0, stars - before) * 5 : 10 + 5 * stars;
+  st.plays++; st.best = Math.max(before, stars); ggRun.done = true; ggRun.stars = stars; ggRun.coins = coins;
+  if (coins) { S.coins += coins; updateHeader(); }
+  logEvent({k:'ggame', title:g.name, s:ggRun.first, n:total});
+  if (!S.grammarGames.master && GGAMES.every(x => (S.grammarGames[x.id]?.best || 0) >= 3)) { S.grammarGames.master = true; S.coins += 50; updateHeader(); ggRun.master = true; }
+  sfx('good'); save();
+}
+function ggDoneHTML(total){
+  return `<section class="card"><h3>🏁 ${'⭐'.repeat(ggRun.stars)}${'☆'.repeat(3 - ggRun.stars)} ${ggRun.first} of ${total} right on the first try</h3>
+    <p>${ggRun.stars === 3 ? 'Perfect detective work!' : ggRun.stars === 2 ? 'So close to three stars. Try again?' : 'Every round makes you sharper. Try again for more stars!'}${ggRun.coins ? ` +${ggRun.coins} 🪙` : ''}</p>
+    ${ggRun.master ? '<p class="review-banner">🏅 Link Library Master! Three stars in every game. +50 🪙</p>' : ''}
+    <div class="row"><button type="button" class="btn berry" data-gg-again>🔁 Play again</button></div></section>`;
+}
+/* 🐾 */
+function hideHTML(){
+  const r = ggRun.rounds[ggRun.i], spot = spotById(r.spot), pet = petEmoji();
+  const furniture = ROOM.map(f => f.table ? `<div class="hs-table" style="left:${f.x}%;top:${f.y}%"></div>`
+    : f.rug ? `<div class="hs-rug" style="left:${f.x}%;top:${f.y}%"></div>`
+    : `<span class="hs-item${f.shelf ? ' hs-shelf' : ''}" style="left:${f.x}%;top:${f.y}%;font-size:${f.size}em" aria-hidden="true">${f.emoji}</span>`).join('');
+  const showPet = r.mode === 'tell' || ggRun.reveal;
+  const petHTML = showPet ? `<span class="hs-pet${spot.behind ? ' behind' : ''}" style="left:${spot.x}%;top:${spot.y}%" aria-label="Your pet">${pet}</span>` : '';
+  const taps = r.mode === 'find' && !ggRun.reveal ? SPOTS.map(s => `<button type="button" class="hs-spot" style="left:${s.x}%;top:${s.y}%" data-hs-spot="${s.id}" aria-label="Look here"></button>`).join('') : '';
+  const ask = r.mode === 'find'
+    ? `<p class="gg-ask">🔎 Your pet is hiding <b>${esc(r.clue)}</b>. Tap the spot!</p>`
+    : `<p class="gg-ask">✍️ Where is your pet? Finish the sentence.</p><div class="row hs-tell"><span>My pet is</span>
+        <select data-hs-prep aria-label="Preposition"><option value="">preposition…</option>${HIDE_PREPS.map(p => `<option${ggRun.prep === p ? ' selected' : ''}>${p}</option>`).join('')}</select>
+        <select data-hs-obj aria-label="Object"><option value="">object…</option>${HIDE_OBJECTS.map(o => `<option${ggRun.obj === o ? ' selected' : ''}>${o}</option>`).join('')}</select><span>.</span>
+        <button type="button" class="btn berry" data-hs-tell ${ggRun.reveal ? 'disabled' : ''}>Check</button></div>`;
+  return `<p><b>Round ${ggRun.i + 1} of ${HIDE_ROUNDS}</b> · ⭐ ${ggRun.first} on the first try</p>${ask}
+    <div class="hs-room">${furniture}${petHTML}${taps}</div>
+    ${ggRun.msg ? `<p class="${ggRun.ok ? 'sim-news' : 'dig-hint'}">${ggRun.msg}</p>` : ''}
+    ${ggRun.reveal ? `<button type="button" class="btn berry" data-gg-next>${ggRun.i + 1 < HIDE_ROUNDS ? 'Next round' : 'Finish'}</button>` : ''}`;
+}
+function hideAnswer(right, shown){
+  ggRun.tries++;
+  if (right) { if (ggRun.tries === 1) ggRun.first++; ggRun.ok = true; ggRun.reveal = true; ggRun.msg = `✅ ${ggRun.tries === 1 ? 'First try! ' : ''}${shown}`; sfx('good'); }
+  else if (ggRun.tries >= 2) { ggRun.ok = false; ggRun.reveal = true; ggRun.msg = `Not quite. ${shown}`; sfx('bad'); }
+  else { ggRun.ok = false; ggRun.msg = 'Not quite. Read it again and look closely. One more try!'; sfx('bad'); }
+  renderGgame();
+}
+/* ✂️ */
+function crossHTML(){
+  const c = CROSS_SENTENCES[ggRun.i], words = parseCross(c.text), crossedAll = ggRun.step !== 'cross';
+  const sentence = words.map((x, i) => {
+    if (x.blank) return `<span class="cx-blank">${ggRun.verb ? `<b>${esc(ggRun.verb)}</b>` : '___'}${esc(x.w.slice(3))}</span>`;
+    const crossed = ggRun.crossed.includes(i), subject = crossedAll && x.subject;
+    return `<button type="button" class="cx-word${crossed ? ' crossed' : ''}${subject ? ' subject' : ''}" data-cx="${i}" ${crossedAll ? 'disabled' : ''}>${esc(x.w)}</button>`;
+  }).join(' ');
+  const verbs = [...c.verbs].sort();
+  return `<p><b>Sentence ${ggRun.i + 1} of ${CROSS_SENTENCES.length}</b> · ⭐ ${ggRun.first} on the first try</p>
+    <p class="gg-ask">${ggRun.step === 'cross' ? '✂️ Tap every word of every prepositional phrase to cross it out.' : ggRun.step === 'verb' ? '🎯 Now the subject is easy to see. Which verb agrees with it?' : ''}</p>
+    <p class="cx-sentence">${sentence}</p>
+    ${ggRun.step === 'cross' ? '<div class="row"><button type="button" class="btn berry" data-cx-check>Check my cross-outs</button></div>' : ''}
+    ${ggRun.step === 'verb' ? `<div class="row">${verbs.map(v => `<button type="button" class="btn berry" data-cx-verb="${v}">${v}</button>`).join('')}</div>` : ''}
+    ${ggRun.msg ? `<p class="${ggRun.ok ? 'sim-news' : 'dig-hint'}">${ggRun.msg}</p>` : ''}
+    ${ggRun.step === 'done' ? `<button type="button" class="btn berry" data-gg-next>${ggRun.i + 1 < CROSS_SENTENCES.length ? 'Next sentence' : 'Finish'}</button>` : ''}`;
+}
+/* 💥 */
+function comicHTML(){
+  const p = COMIC_PANELS[ggRun.i];
+  const strip = ggRun.lines.map(l => `<div class="comic-panel"><div class="comic-scene">${l.scene}</div><div class="comic-bubble">${petEmoji()} ${esc(l.line)}</div></div>`).join('');
+  return `<p><b>Panel ${ggRun.i + 1} of ${COMIC_PANELS.length}</b> · ⭐ ${ggRun.first} on the first try</p>
+    ${strip ? `<div class="comic-strip">${strip}</div>` : ''}
+    <section class="card comic-now"><div class="comic-scene big">${p.scene}</div><p class="gg-ask">${esc(p.setup)} What does your pet say?</p>
+      <div class="row comic-words">${COMIC_WORDS.map(w => `<button type="button" class="btn small${ggRun.word === w ? ' mint' : ''}" data-cm-word="${w}" aria-pressed="${ggRun.word === w}">${w}</button>`).join('')}</div>
+      <div class="row"><span>Punctuation:</span><button type="button" class="btn small${ggRun.mark === '!' ? ' mint' : ''}" data-cm-mark="!">! (strong feeling)</button><button type="button" class="btn small${ggRun.mark === ',' ? ' mint' : ''}" data-cm-mark=",">, (mild feeling)</button></div>
+      <p class="comic-preview">${ggRun.word && ggRun.mark ? esc(comicLine(p, ggRun.word, ggRun.mark)) : `<span class="muted">${ggRun.word || '___'}${ggRun.mark || '?'} ${esc(p.rest)}${p.end}</span>`}</p>
+      <div class="row"><button type="button" class="btn berry" data-cm-check ${ggRun.word && ggRun.mark ? '' : 'disabled'}>Add to my comic</button></div>
+      ${ggRun.msg ? `<p class="dig-hint">${ggRun.msg}</p>` : ''}</section>`;
+}
+function renderGgame(){
+  const g = ggameById(ggRun.id), total = g.id === 'hide' ? HIDE_ROUNDS : g.id === 'cross' ? CROSS_SENTENCES.length : COMIC_PANELS.length;
+  activeEnglishCourse = g.course;
+  const body = ggRun.done ? (g.id === 'comic' ? `<h3>📰 Your comic</h3><div class="comic-strip">${ggRun.lines.map(l => `<div class="comic-panel"><div class="comic-scene">${l.scene}</div><div class="comic-bubble">${petEmoji()} ${esc(l.line)}</div></div>`).join('')}</div>` : '') + ggDoneHTML(total)
+    : g.id === 'hide' ? hideHTML() : g.id === 'cross' ? crossHTML() : comicHTML();
+  $('#libraryWrap').innerHTML = `<div id="ggWrap" class="sim gg"><div class="backrow"><h2>🎮 ${g.emoji} ${esc(g.name)}</h2><button class="btn small" data-dig-back="${g.course}">Back to unit</button></div><p class="muted">${esc(g.intro)}</p>${body}</div>`;
+}
+$('#libraryWrap').addEventListener('change', e => {
+  if (!ggRun || ggRun.id !== 'hide') return;
+  if (e.target.matches('[data-hs-prep]')) ggRun.prep = e.target.value;
+  if (e.target.matches('[data-hs-obj]')) ggRun.obj = e.target.value;
+});
+$('#libraryWrap').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.ggOpen) { ggStart(b.dataset.ggOpen); return; }
+  if (!ggRun || !b.closest('#ggWrap')) return;
+  if (b.hasAttribute('data-gg-again')) { ggStart(ggRun.id); return; }
+  const total = ggRun.id === 'hide' ? HIDE_ROUNDS : CROSS_SENTENCES.length;
+  if (b.hasAttribute('data-gg-next')) {
+    ggRun.i++; ggRun.tries = 0; ggRun.msg = ''; ggRun.reveal = false; ggRun.prep = ''; ggRun.obj = ''; ggRun.crossed = []; ggRun.step = 'cross'; ggRun.verb = ''; ggRun.missed = false;
+    if (ggRun.i >= total) ggFinish(total);
+    renderGgame(); return;
+  }
+  /* 🐾 */
+  if (b.dataset.hsSpot) { const r = ggRun.rounds[ggRun.i]; hideAnswer(b.dataset.hsSpot === r.spot, `Your pet was ${r.clue}.`); return; }
+  if (b.hasAttribute('data-hs-tell')) {
+    const r = ggRun.rounds[ggRun.i]; if (!ggRun.prep || !ggRun.obj) { toast('Pick a preposition and an object.'); return; }
+    hideAnswer(tellIsRight(r.spot, ggRun.prep, ggRun.obj), `${tellIsRight(r.spot, ggRun.prep, ggRun.obj) ? 'Yes: ' : 'Your pet is '}${spotById(r.spot).phrases.join(', or ')}.`); return;
+  }
+  /* ✂️ */
+  if (b.dataset.cx != null && ggRun.step === 'cross') { const i = +b.dataset.cx; ggRun.crossed = ggRun.crossed.includes(i) ? ggRun.crossed.filter(x => x !== i) : [...ggRun.crossed, i]; ggRun.msg = ''; renderGgame(); return; }
+  if (b.hasAttribute('data-cx-check')) {
+    const words = parseCross(CROSS_SENTENCES[ggRun.i].text), want = crossTargets(words), got = [...ggRun.crossed].sort((x, y) => x - y);
+    if (want.length === got.length && want.every((x, i) => x === got[i])) { ggRun.step = 'verb'; ggRun.ok = true; ggRun.msg = `✅ Crossed out! The subject is “${words.find(x => x.subject).w}.”`; sfx('good'); }
+    else {
+      ggRun.missed = true; ggRun.ok = false; sfx('bad');
+      const extra = got.filter(i => !want.includes(i)).length, missing = want.filter(i => !got.includes(i)).length;
+      ggRun.msg = ++ggRun.tries >= 2 ? 'Here are the phrases. Each starts with a preposition and ends with its object.' : `Not yet: ${missing ? `${missing} word${missing === 1 ? '' : 's'} of a phrase still showing` : ''}${missing && extra ? ', and ' : ''}${extra ? `${extra} crossed word${extra === 1 ? '' : 's'} that aren’t in a phrase` : ''}. Try again!`;
+      if (ggRun.tries >= 2) { ggRun.crossed = want; ggRun.step = 'verb'; }
+    }
+    renderGgame(); return;
+  }
+  if (b.dataset.cxVerb) {
+    const c = CROSS_SENTENCES[ggRun.i], right = b.dataset.cxVerb === c.verbs[0], subject = parseCross(c.text).find(x => x.subject).w;
+    ggRun.verb = c.verbs[0]; ggRun.step = 'done';
+    if (right && !ggRun.missed) { ggRun.first++; ggRun.ok = true; ggRun.msg = `⭐ First try! “${subject}” goes with “${c.verbs[0]}.”`; sfx('good'); }
+    else { ggRun.ok = right; ggRun.msg = right ? `✅ Right: “${subject}” goes with “${c.verbs[0]}.”` : `Not quite. The subject is “${subject},” so the verb is “${c.verbs[0]}.”`; sfx(right ? 'good' : 'bad'); }
+    renderGgame(); return;
+  }
+  /* 💥 */
+  if (b.dataset.cmWord) { ggRun.word = b.dataset.cmWord; ggRun.msg = ''; renderGgame(); return; }
+  if (b.dataset.cmMark) { ggRun.mark = b.dataset.cmMark; ggRun.msg = ''; renderGgame(); return; }
+  if (b.hasAttribute('data-cm-check')) {
+    const p = COMIC_PANELS[ggRun.i], wrong = comicCheck(p, ggRun.word, ggRun.mark);
+    if (wrong) {
+      ggRun.missed = true; sfx('bad');
+      ggRun.msg = wrong === 'word' ? `Does “${ggRun.word}” fit how you’d feel? Try a different interjection.` : p.feel === 'strong' ? 'That’s a strong feeling! It needs an exclamation point.' : 'That’s a mild feeling, so use a comma and keep going.';
+      renderGgame(); return;
+    }
+    if (!ggRun.missed) ggRun.first++;
+    ggRun.lines.push({scene:p.scene, line:comicLine(p, ggRun.word, ggRun.mark)}); sfx('good');
+    ggRun.i++; ggRun.word = ''; ggRun.mark = ''; ggRun.msg = ''; ggRun.missed = false;
+    if (ggRun.i >= COMIC_PANELS.length) ggFinish(COMIC_PANELS.length);
+    renderGgame();
+  }
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -6712,7 +6869,7 @@ const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science', reading:'reading'};
 const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology', reading:'📖 Reading Log'};
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
-const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers'};
+const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions'};
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
@@ -6738,7 +6895,7 @@ function unitPassedOn(unit, what, day){
   const d = S.dayLog[day], c = unitCourse(unit); if (!d) return false;
   return d.events.some(e => e.passed && ((e.k === 'assess' && e.shop === unit && e.mode === what) || (e.k === 'course' && !!c && e.course === c && e.kind === (what === 'test' ? 'final' : 'quiz'))));
 }
-const projectBuilding = id => { const c = id.replace(/lab\d*$/, ''); return Object.keys(HISTORY_BUILDING_COURSE).find(b => HISTORY_BUILDING_COURSE[b] === c) || ''; };
+const projectBuilding = id => { const c = id.replace(/lab\d*$/, ''); return Object.keys(HISTORY_BUILDING_COURSE).find(b => HISTORY_BUILDING_COURSE[b] === c) || Object.keys(ELA_BUILDING_COURSE).find(b => ELA_BUILDING_COURSE[b] === c) || ''; };
 /* each item's label, the unit its Go button opens, and how it stands on that day: done, waiting for a grown-up, or to do */
 function planItemInfo(x, day = logDayKey()){
   const unitName = id => { const b = BUILDINGS.find(u => u.id === id); return b ? `${b.emoji} ${b.name}` : id; };
@@ -6993,7 +7150,7 @@ function helpPlace(){
   const where = placeOnScreen(), [kind, a = ''] = where.split(':');
   const open = kind === 'shop' ? a : ['vocab', 'sprint', 'arcade', 'reading'].includes(kind) ? kind
     : kind === 'course' ? (a === 'math' ? currentShop || '' : courseBuilding(a)) : kind === 'project' ? projectBuilding(a)
-    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
+    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
   return {where, label:String(placeLabel(where)), open};
 }
 const helpBtn = document.createElement('button');
@@ -7174,9 +7331,9 @@ $('#town').addEventListener('click', e => {
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
 const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1',bioCells:'bio2'};
 const isScienceCourse = id => /^bio\d+$/.test(id);
-const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id);
+const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id) || id === 'prepositions';
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
-const projectStore = key => String(key).startsWith('history') ? S.historyProjects : S.scienceProjects;
+const projectStore = key => String(key).startsWith('bio') ? S.scienceProjects : S.historyProjects;   // English projects live with History's
 const projectKeys = id => [id, `${id}lab`, `${id}lab2`, `${id}lab3`].filter(key => HISTORY_PROJECTS[key]);
 /* History and Biology role play: in History the student is a historical figure (or an everyday person of the time) answering
    visitors' questions; in Biology the student is a tour guide at the Nature Center. One card per skill (docs: tone change). */
@@ -7294,6 +7451,24 @@ const HISTORY_PROJECTS = {
     {key:'photo',kind:'photo',label:'3. Take a photo of your regrown onions.'},
     {key:'explain',label:'4. Is this sexual or asexual reproduction? How many parents does each new shoot have, and how do its genes compare with the parent’s?'},
     {key:'risk',label:'5. Banana farms grow clones too. Use your onions and the Gros Michel story to explain one good thing and one risky thing about growing only clones.'}]},
+  /* English Unit 5: a treasure hunt at home, prepositions in her own reading, and a hand-drawn comic (docs: ENGLISH-UNIT5.md) */
+  prepositions:{title:'Treasure Hunt Directions',summary:'Hide a small treasure somewhere at home and write directions a grown-up has to follow to find it, using prepositional phrases. Then watch them try! Keep it safe: no climbing, nothing hot, nothing high up.',steps:[
+    {key:'hide',label:'1. What did you hide, and where? (Write the spot as a prepositional phrase, like “inside the blue boot behind the closet door.”)'},
+    {key:'directions',label:'2. Write the directions from the front door to the treasure. Use at least 8 prepositional phrases, and include at least 2 phrases of direction (to, into, toward, across, through) and 2 of position (under, behind, between, beside).'},
+    {key:'phrases',kind:'table',cols:['Prepositional phrase','Preposition','Object','Tells (where / which way / when / how)'],rows:10,label:'3. List the prepositional phrases from your directions, with the preposition, its object, and what the phrase tells.'},
+    {key:'hunt',label:'4. A grown-up followed your directions. What happened? Which phrase helped most? Was any phrase confusing, and how would you rewrite it?'},
+    {key:'photo',kind:'photo',label:'5. Take a photo of the treasure in its hiding spot.'}]},
+  prepositionslab:{title:'Field Notes: Prepositions in the Wild',summary:'Become a word detective in a book you are reading. Collect prepositional phrases and interjections the author used, and figure out why they’re there.',steps:[
+    {key:'book',label:'1. Which book are you using? (Title, author, and the pages you searched.)'},
+    {key:'found',kind:'table',cols:['Phrase from the book','Page','Tells (time / place / direction / how)'],rows:10,label:'2. Copy 10 prepositional phrases from the book. Write the page and what each one tells.'},
+    {key:'pattern',label:'3. Look at your table. Which kind did the author use most? Why do you think stories need so many phrases like that?'},
+    {key:'interjections',label:'4. Find two interjections in the book (or in a comic). Copy each one with its punctuation, and explain why the author used an exclamation point or a comma.'},
+    {key:'rewrite',label:'5. Pick one sentence from the book and rewrite it with a different preposition. How does the meaning change?'}]},
+  prepositionslab2:{title:'Make a Comic: Interjections in Action',summary:'Draw a 4-panel comic on paper starring your pet. The characters have to react to what happens, so their speech bubbles need interjections.',steps:[
+    {key:'plan',label:'1. Plan your comic: what happens in each of the 4 panels?'},
+    {key:'comic',kind:'photo',label:'2. Draw the comic on paper with speech bubbles. Use at least 4 interjections (at least 2 strong ones with an exclamation point and 2 mild ones with a comma) and at least 3 prepositional phrases. Take a photo and add it here.'},
+    {key:'lines',label:'3. Type the words from your speech bubbles, exactly as you wrote them.'},
+    {key:'explain',label:'4. Pick one strong and one mild interjection from your comic. Explain how you chose the punctuation for each.'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -7319,7 +7494,9 @@ const HISTORY_PROJECTS = {
     {key:'claim',label:'4. Answer “Was agriculture a mistake?” with a claim, supporting evidence, and a counterargument.'},
     {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]}
 };
-const englishCourse = course => course === 'modifiers'
+const englishCourse = course => course === 'prepositions'
+  ? {id:'prepositions',building:'elaConj',title:'English Unit 5: Prepositions and Interjections',skills:ENGLISH_UNIT5,groups:ENGLISH_GROUPS5,finalKey:'prepositions:final-test',testPer:2,finalPass:13}
+  : course === 'modifiers'
   ? {id:'modifiers',building:'elaDescr',title:'English Unit 4: Adjectives and Adverbs',skills:ENGLISH_UNIT4,groups:ENGLISH_GROUPS4,finalKey:'modifiers:final-test',finalPass:8}
   : course === 'pronouns'
   ? {id:'pronouns',building:'elaPron',title:'English Unit 3: Pronouns',skills:ENGLISH_UNIT3,groups:ENGLISH_GROUPS3,finalKey:'pronouns:final-test',finalPass:9}
@@ -7423,7 +7600,8 @@ const KHAN_UNIT_TESTS = {
   nouns:`${KHAN}humanities/grammar/parts-of-speech-the-noun/test/parts-of-speech-the-noun-unit-test`,
   verbs:`${KHAN}humanities/grammar/parts-of-speech-the-verb/test/parts-of-speech-the-verb-unit-test`,
   pronouns:`${KHAN}humanities/grammar/parts-of-speech-the-pronoun/test/parts-of-speech-the-pronoun-unit-test`,
-  modifiers:`${KHAN}humanities/grammar/parts-of-speech-the-modifier/test/parts-of-speech-the-modifier-unit-test`
+  modifiers:`${KHAN}humanities/grammar/parts-of-speech-the-modifier/test/parts-of-speech-the-modifier-unit-test`,
+  prepositions:`${KHAN}ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/test/x90cef5375e9bcad6:prepositions-and-interjections-5-unit-test`
 };
 function khanTestCardHTML(courseId){
   const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
@@ -7512,7 +7690,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','history','history2','history3','history4','bio1','bio2'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','history','history2','history3','history4','bio1','bio2'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -7659,7 +7837,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers') return applyQuestionEdits(courseId, skillId, (courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'prepositions') return applyQuestionEdits(courseId, skillId, (courseId === 'prepositions' ? PREPOSITION_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -8146,7 +8324,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
           : 'Not started · Get 3 of 4 to level up';
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
       const review = reviewDue(course.id, skillId);
-      return `<article class="ela-exercise${unlocked ? '' : ' locked'}${review ? ' review' : ''}"><div>${review ? '<span class="review-tag">🔁 Review: your teacher wants you to practice this again</span>' : ''}<strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${skill.why ? `<p class="why-care">💡 <b>Why care?</b> ${esc(skill.why)}</p>` : ''}${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked || review ? '' : 'disabled'}>${review ? 'Review' : record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
+      return `<article class="ela-exercise${unlocked ? '' : ' locked'}${review ? ' review' : ''}"><div>${review ? '<span class="review-tag">🔁 Review: your teacher wants you to practice this again</span>' : ''}<strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${skill.why ? `<p class="why-care">💡 <b>Why care?</b> ${esc(skill.why)}</p>` : ''}${skill.tip ? `<p class="why-care">💡 <b>Tip:</b> ${esc(skill.tip)}</p>` : ''}${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked || review ? '' : 'disabled'}>${review ? 'Review' : record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
     const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key,course.id);
     const canQuiz = blockUnlocked && (unitOpenedByGrownUp(course.building) || group.skills.every(skillId => !!englishRecord(skillId,course.id).passed));
@@ -8154,7 +8332,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
@@ -10487,6 +10665,7 @@ function placeOnScreen(){
   if ($('#digWrap') && digRun) return `dig:${digRun.site}`;
   if ($('#scribeWrap')) return 'scribe';
   if ($('#simWrap') && simRun) return `sim:${simRun.id}`;
+  if ($('#ggWrap') && ggRun) return `ggame:${ggRun.id}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
   return `course:${activeEnglishCourse}`;
@@ -10503,6 +10682,7 @@ function placeLabel(key){
   if (kind === 'dig') return `⛏️ ${digSiteById(a)?.name || 'Dig Site'}`;
   if (kind === 'scribe') return '✍️ Scribe School';
   if (kind === 'sim') return `🧪 ${simById(a)?.name || 'Science lab'}`;
+  if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -10517,6 +10697,7 @@ function eventText(e){
   if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
   if (e.k === 'help') return `✋ Asked a question in ${e.title}: “${e.q || ''}”`;
+  if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;

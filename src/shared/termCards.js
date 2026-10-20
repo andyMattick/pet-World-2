@@ -94,6 +94,22 @@ export const TERM_CARDS = {
     { term: 'nutrients', means: 'Substances living things need to grow. Fertilizer adds them to soil and water.', example: 'Fertilizer washing into a lake feeds algae.', skill: 'growthEnvA' },
     { term: 'algae bloom', means: 'Algae growing so fast they cover the water, often because of extra nutrients and warm weather.', example: 'Lake Erie near Toledo, Ohio, in 2014', skill: 'growthEnvA' },
     { term: 'decomposer', means: 'A living thing (like bacteria) that breaks down dead matter. In water, decomposers use up oxygen.', example: 'Bacteria breaking down dead algae', skill: 'growthEnvA' }
+  ],
+  prepositions: [
+    { term: 'preposition', means: 'A word that shows how a noun or pronoun is related to the rest of the sentence: where, when, or how.', example: 'under the bed, after lunch, with a spoon', skill: 'meetPreposition' },
+    { term: 'object of the preposition', means: 'The noun or pronoun at the end of a prepositional phrase.', example: 'behind the shed (shed), with her (her)', skill: 'prepPhrases' },
+    { term: 'prepositional phrase', means: 'A preposition, its object, and any words describing the object.', example: 'across the wide river', skill: 'prepPhrases' },
+    { term: 'compound preposition', means: 'A preposition made of more than one word.', example: 'in front of, next to, because of', skill: 'meetPreposition' },
+    { term: 'phrase used like an adjective', means: 'A prepositional phrase that describes a noun: which one or what kind.', example: 'the girl with red boots', skill: 'prepPhrases' },
+    { term: 'phrase used like an adverb', means: 'A prepositional phrase that tells when, where, or how something happens.', example: 'We ate after the game.', skill: 'prepPhrases' },
+    { term: 'prepositions of time', means: 'Prepositions that tell when.', example: 'before, during, until, since (a starting point), for (an amount of time)', skill: 'prepPurpose' },
+    { term: 'prepositions of place and direction', means: 'Prepositions that tell where something is or which way it moves.', example: 'on, under, between, among; to, into, toward, across, through', skill: 'prepPurpose' },
+    { term: 'between / among', means: 'Between is for two people or things; among is for three or more.', example: 'between the two trees; among all the trees', skill: 'prepPurpose' },
+    { term: 'subject-verb agreement', means: 'The verb agrees with the subject, never with a noun inside a prepositional phrase. Cross out the phrase to check.', example: 'The box (of crayons) is on the desk.', skill: 'prepAgreement' },
+    { term: 'preposition or adverb', means: 'A word like up, down, or inside is a preposition if an object follows it, and an adverb if it stands alone.', example: 'She ran up the stairs. (preposition) She looked up. (adverb)', skill: 'prepOrAdverb' },
+    { term: 'interjection', means: 'A word or short phrase that shows a feeling and isn’t grammatically connected to the rest of the sentence.', example: 'wow, oops, ouch, hooray, phew, hmm', skill: 'meetInterjection' },
+    { term: 'strong interjection', means: 'Shows a strong feeling. Use an exclamation point; the next word starts a new sentence.', example: 'Ouch! That hurts.', skill: 'interjectionPunct' },
+    { term: 'mild interjection', means: 'Shows a mild feeling. Use a comma and keep the sentence going.', example: 'Well, I guess so.', skill: 'interjectionPunct' }
   ]
 };
 

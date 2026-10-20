@@ -194,6 +194,8 @@ need('src/game/game.js', "step.kind === 'table' ? tableStepHTML", 'project data 
 need('src/shared/questionBanks.js', 'const BIO2_QUESTIONS', 'Biology Unit 2 questions');
 need('src/game/game.js', 'function openHelpCard(', '✋ I have a question (QUESTIONS.md)');
 need('src/teacher/report.ts', 'function questionsWaitingHTML(', 'teacher sees ✋ questions waiting (QUESTIONS.md)');
+need('src/shared/questionBanks.js', 'const PREPOSITION_QUESTIONS', 'English Unit 5 questions (ENGLISH-UNIT5.md)');
+need('src/game/game.js', 'function renderGgame(', 'English Unit 5 grammar games (ENGLISH-UNIT5.md)');
 need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
 need('src/teacher/main.ts', 'p_tz', "the teacher's time zone for practice time");
 for (const m of ['const TRACKS = {', 'musicTrack', 'function openMusicMenu(', 'function musicAllowed(']) need('src/game/game.js', m);

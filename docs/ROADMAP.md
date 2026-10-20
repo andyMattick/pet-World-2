@@ -166,6 +166,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F34. ✋ I have a question: a big button on every assignment; she describes the problem and can add a picture of the screen, time stops, and she goes back to her plan with that place closed until the teacher (or a grown-up with the PIN) answers. Ledger days are shorter: one time line, one plan line, each lesson once with its tries merged. See `QUESTIONS.md`, `LEDGER.md`
 - [x] F35. 🗓️ One place for minutes: the 🎯 Time goals card is gone from the teacher app (it set the same minutes as the daily plan). The plan gets 📖 Reading Log as a subject; old goals still count and move into the plan with one click. See `DAILY-PLAN.md`
 - [x] F36. 🗺️ Treasure Chase: bigger words everywhere; a real map (coastlines, seas and continent names) that zooms to where you are and where you can fly, with a Whole world button; each case stays in one part of the world (the next city is one of the 6 nearest, and the wrong choices are near the right one); suspects are male or female. Rebuild it after applying: `src/arcade/treasure-chase/README.md`
+- [x] F37. 🔗 English Unit 5 at the Link Library (Prepositions and interjections): 8 lessons with a challenge lesson, 2 quizzes, a 16-question test and essay, review flashcards, three games (Pet Hide-and-Seek, Cross It Out, Comic Strip Studio, plus Link Library Master), and three projects off the screen (a treasure hunt at home, prepositions in her own book, a hand-drawn comic). See `ENGLISH-UNIT5.md`
 
 ## Database files, in the order they were run
 

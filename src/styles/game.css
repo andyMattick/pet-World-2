@@ -1166,3 +1166,35 @@ a.btn{display:inline-block; text-decoration:none}
 .help-box label.btn{display:inline-flex; width:auto; align-items:center; gap:6px; white-space:nowrap}
 .help-box .row{flex-wrap:wrap; gap:8px}
 .help-box p{margin:6px 0}
+
+/* 🎮 English Unit 5 grammar games (docs: ENGLISH-UNIT5.md) */
+.gg-ask{font-size:1.15em; margin:8px 0}
+.hs-room{position:relative; width:100%; max-width:760px; aspect-ratio:16/10; margin:8px 0; border-radius:16px; overflow:hidden; border:3px solid var(--edge);
+  background:linear-gradient(#F6E7C8 0 68%, #C99A6E 68% 100%); container-type:inline-size}
+.hs-item{position:absolute; transform:translate(-50%,-50%); line-height:1; z-index:2; font-size:4em; user-select:none}
+.hs-room .hs-item{font-size:clamp(28px, 9cqw, 72px)}
+.hs-shelf{background:#8B5E3C; border-radius:6px; padding:2px 6px 30cqh; box-shadow:inset 0 -8px 0 #6E4A2E}
+.hs-table{position:absolute; transform:translate(-50%,-50%); width:22%; height:24%; z-index:2;
+  background:linear-gradient(#8B5E3C 0 18%, transparent 18%), linear-gradient(90deg, transparent 6%, #8B5E3C 6% 12%, transparent 12% 88%, #8B5E3C 88% 94%, transparent 94%)}
+.hs-rug{position:absolute; transform:translate(-50%,-50%); width:30%; height:9%; border-radius:50%; background:repeating-radial-gradient(#C0392B 0 6px, #E8C07A 6px 12px); z-index:1}
+.hs-pet{position:absolute; transform:translate(-50%,-50%); font-size:clamp(30px, 8cqw, 64px); filter:drop-shadow(0 2px 2px #0005); z-index:4; animation:hsPop .4s ease-out}
+.hs-pet.behind{z-index:1}
+@keyframes hsPop{from{transform:translate(-50%,-30%) scale(.4); opacity:0} to{transform:translate(-50%,-50%) scale(1); opacity:1}}
+.hs-spot{position:absolute; transform:translate(-50%,-50%); width:11%; aspect-ratio:1; border-radius:50%; border:3px dashed rgba(74,46,42,.45); background:rgba(255,255,255,.18); z-index:5; cursor:pointer}
+.hs-spot:hover{background:rgba(255,216,77,.45); border-color:var(--edge)}
+.hs-tell{flex-wrap:wrap; align-items:center; font-size:1.1em; gap:8px}
+.hs-tell select{font:inherit; padding:6px 8px; border-radius:10px}
+.cx-sentence{font-size:1.4em; line-height:2.1; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.cx-word{font:inherit; border:2px solid transparent; background:var(--surface); border-radius:10px; padding:2px 8px; cursor:pointer; color:var(--ink)}
+.cx-word:hover{border-color:var(--edge)}
+.cx-word.crossed{text-decoration:line-through 3px #C0392B; opacity:.55}
+.cx-word.subject{background:#FFD84D; font-weight:800}
+.cx-word:disabled{cursor:default}
+.cx-blank{border-bottom:3px solid var(--edge); padding:0 6px; min-width:3em; text-align:center}
+.comic-strip{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin:8px 0}
+.comic-panel{border:3px solid var(--edge); border-radius:10px; background:#fff; color:#222; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:120px}
+.comic-scene{font-size:2em; text-align:center; letter-spacing:4px}
+.comic-scene.big{font-size:3.2em}
+.comic-bubble{background:#fff; border:2px solid #222; border-radius:14px; padding:4px 8px; font:700 1em Patrick Hand, Grandstander, system-ui, sans-serif; position:relative}
+.comic-words{flex-wrap:wrap; gap:6px}
+.comic-preview{font:700 1.4em Patrick Hand, Grandstander, system-ui, sans-serif; min-height:1.5em}
