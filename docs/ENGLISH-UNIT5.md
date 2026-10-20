@@ -49,6 +49,20 @@ The game cards sit under their block.
 
 English projects are saved with History's (`S.historyProjects`). `projectStore` now sends only `bio…` to the science store.
 
-## Daily prep test
+## 🔗 Daily prep test: Name all 48 prepositions
 
-The **preposition-recall** app the user added is joined to Today's plan, only while she is in this unit. That is a separate change; see the next patch.
+The recall game the user made (type all 48 prepositions against the clock) is served at `public/prep-recall/index.html`.
+
+**While she is in this unit** (the Link Library is open and its unit test isn't passed):
+- It is the first row of Today's plan every day: **🔗 Prep test: name all 48 prepositions**.
+- The row is ✅ once she finds all 48 that day (hints and alphabetical blanks are allowed). Unfinished days don't carry over.
+- It also has a card on the unit page.
+- It isn't listed in the Arcade.
+
+**The rest of the time** it is an Arcade game (**Name All 48 Prepositions**), on or off in the class Arcade settings like any other.
+
+**Wherever she plays:**
+- The page posts `{type:'prep:result'}` to Pet World.
+- The round is kept in `S.prepRecall` (last 30 rounds and her best time) and goes in the day log under English.
+- Coins: 10 the first time she finishes on a day, and 5 for a new best time.
+- The page still keeps its own history table and CSV download on that device.

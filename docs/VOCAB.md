@@ -66,3 +66,11 @@ When she misspells a word, Pet World lines up what she typed with the right word
 **For the teacher:** the Vocabulary tab has a ✏️ Spelling patterns card for each student who has misspelled words. It lists each pattern with how often it happened, what she wrote, and how to teach it. Below that are **suggested words** for the same patterns: the words she missed, then practice words built for that pattern, then words from the lists. **Practice these with …** saves the ticked words for that student (`quiz_overrides.spellFocus`). They come up 3 times as often in her Word Workshop until they're solid, at any level.
 
 The practice words built for each pattern (prepare, prevent, perhaps, believe, receive, necessary, -able and -ible words, and others) are in `PATTERN_WORDS` in `vocab.js`. Each has a meaning, a sentence and its syllables.
+
+## Spelling patterns: add to focus and practice (October 2026)
+
+The **Add to focus and practice with …** button under each student's suggested words used to do nothing after any other save on the Vocabulary tab, because the redraw dropped the button's handler. Now:
+- The ticked words are saved as that student's practice words (`spellFocus`).
+- Words not on the class list are added (set "Spelling patterns") and marked **➕ new** beforehand.
+- When the class uses focus words, words that aren't focus words are added to them, marked **○ not in focus** beforehand.
+- A message in that student's box says what was saved and added.

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>48 Prepositions: Recall Challenge</title>
+<!-- Pet World: served at /prep-recall/. Played from Today's plan while she is in English Unit 5, and from the Arcade the rest of the time. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
@@ -298,6 +299,8 @@ function finish(completed){
   const missed=WORDS.filter(w=>!found.has(w));
   renderGrid();
   saveGame({date:new Date().toISOString(), ms, found:found.size, wrong, hints, completed, missed, wrongWords, alpha:usedAlpha});
+  // Pet World: tell the game (Today's plan, the Arcade or the unit page) how the round went (docs/ENGLISH-UNIT5.md)
+  try{ if(window.parent!==window) window.parent.postMessage({type:"prep:result", result:{ms, found:found.size, wrong, hints, completed, missed, alpha:usedAlpha}}, location.origin); }catch(e){}
   if(completed){ play("win"); bigCue("good","All 48!"); }
   if(completed) say(`All 48 in ${fmt(ms)} with ${wrong} wrong and ${hints} hints.`,"good");
   else say(`Stopped at ${found.size} of 48. The ${missed.length} you missed are shown in red.`,"bad");

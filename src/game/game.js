@@ -160,6 +160,7 @@ function normalize(raw){
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
+    s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
@@ -5128,7 +5129,7 @@ let activeArcadeRun = null, arcadeTimer = null;
 const arcadePolicy = () => gamesOnlyMode ? arcadeSettings({enabled:true, freePlay:true}) : Backend.me ? arcadeSettings(Backend.me.game_settings?.arcade) : arcadeSettings({enabled:true, freePlay:true});
 const arcadeGamesForClass = () => {
   const policy = arcadePolicy();
-  return ARCADE_GAMES.filter(game => game.available && policy.games[game.id]);
+  return ARCADE_GAMES.filter(game => game.available && policy.games[game.id] && !(game.id === 'prep-recall' && inPrepUnit()));   // during English Unit 5 the prep test is on Today's plan instead
 };
 const arcadeTicketPrizesEnabled = () => { const policy = arcadePolicy(); return policy.enabled && !policy.freePlay; };
 async function openArcade(){
@@ -6652,6 +6653,39 @@ $('#libraryWrap').addEventListener('click', e => {
     renderGgame();
   }
 });
+/* ---------- 🔗 Name all 48 prepositions (public/prep-recall, docs/ENGLISH-UNIT5.md) ----------
+   While she is in English Unit 5 (the Link Library is open and its unit test isn't passed), it is a daily item on
+   Today's plan, done when she finds all 48 that day. The rest of the time it is an Arcade game. Wherever she plays,
+   the page posts {type:'prep:result'} and the round is kept in S.prepRecall (last 30 rounds and her best time). */
+const inPrepUnit = () => unitOpen('elaConj') && !unitTestPassed('elaConj');
+const prepRecallDoneOn = day => (S.prepRecall?.games || []).some(g => g.completed && logDayKey(new Date(g.t)) === day);
+const fmtRecall = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
+function prepRecallCardHTML(courseId, groupId){
+  if (courseId !== 'prepositions' || groupId !== 'prepositions') return '';
+  const r = S.prepRecall || {games:[]}, today = prepRecallDoneOn(logDayKey());
+  return `<section class="ela-final-assessment sim-card"><div><h3>🔗 Name all 48 prepositions</h3><p class="muted">Type every preposition you can remember, as fast as you can. While you’re in this unit it’s part of your plan each day. ${today ? '✅ Done today' : 'Not done today'}${r.best ? ` · Best time ${fmtRecall(r.best)}` : ''}</p></div><button type="button" class="btn small berry" data-open="prepRecall">Play</button></section>`;
+}
+function openPrepRecall(){
+  if ($('#prepRecallWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'prepRecallWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Name all 48 prepositions');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🔗 Name all 48 prepositions</b><button type="button" class="btn small" data-recall-close>Done</button></div><iframe src="/prep-recall/" title="Name all 48 prepositions"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-recall-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-home').hidden) renderHome(); else if ($('#libraryWrap .ela-unit-group')) renderEnglishUnit('prepositions'); });
+}
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || e.data?.type !== 'prep:result') return;
+  const r = e.data.result || {}, ms = Math.max(0, Math.round(+r.ms || 0)), found = Math.max(0, Math.min(48, Math.round(+r.found || 0))), completed = !!r.completed && found === 48;
+  const day = logDayKey(), firstToday = completed && !prepRecallDoneOn(day), st = S.prepRecall;
+  const newBest = completed && (!st.best || ms < st.best);
+  st.games = [...st.games, {t:Date.now(), ms, found, wrong:Math.max(0, +r.wrong || 0), hints:Math.max(0, +r.hints || 0), completed}].slice(-30);
+  if (newBest) st.best = ms;
+  logEvent({k:'recall', s:found, n:48, title:completed ? `all 48 in ${fmtRecall(ms)}` : `${found} of 48`});
+  const coins = (firstToday ? 10 : 0) + (newBest && st.games.filter(g => g.completed).length > 1 ? 5 : 0);
+  if (coins) { S.coins += coins; updateHeader(); }
+  save();
+  toast(completed ? `🔗 All 48 in ${fmtRecall(ms)}!${newBest ? ' A new best time!' : ''}${coins ? ` +${coins} 🪙` : ''}` : `🔗 ${found} of 48. Keep going tomorrow!`);
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -6873,14 +6907,15 @@ const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronou
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
-  return !!x && typeof x.id === 'string' && ((x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]));
+  return !!x && typeof x.id === 'string' && ((x.kind === 'recall' && inPrepUnit()) || (x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]));
 }
 /* the day's items: that date's own list, or its weekday's, plus what was left from an earlier day */
 function planItems(day = logDayKey()){
   const s = planSettings(), dow = PLAN_DAYS[new Date(`${day}T12:00:00`).getDay()];
   const base = (Array.isArray(s.days?.[day]) ? s.days[day] : Array.isArray(s.week?.[dow]) ? s.week[dow] : []).filter(validPlanItem);
-  const carry = S.planCarry.after && S.planCarry.after < day ? S.planCarry.items.filter(validPlanItem).filter(x => !base.some(b => b.id === x.id)).map(x => ({...x, carried:true})) : [];
-  return [...base, ...carry];
+  const carry = S.planCarry.after && S.planCarry.after < day ? S.planCarry.items.filter(validPlanItem).filter(x => !base.some(b => b.id === x.id) && x.kind !== 'recall').map(x => ({...x, carried:true})) : [];
+  const recall = inPrepUnit() ? [{id:'recall:prepositions', kind:'recall'}] : [];   // the daily prep test, only while she is in English Unit 5
+  return [...recall, ...base, ...carry];
 }
 /* the unit to keep going in: the first open one in the subject whose unit test isn't passed yet (this grade first) */
 function nextUnit(subject){
@@ -6909,6 +6944,7 @@ function planItemInfo(x, day = logDayKey()){
     const test = x.what === 'test', done = unitPassedOn(x.unit, x.what, day) || (test && unitTestPassed(x.unit));
     return {label:`${test ? 'Pass the unit test' : 'Pass a quiz'} in the ${unitName(x.unit)}`, open:x.unit, status:done ? 'done' : 'todo', progress:''};
   }
+  if (x.kind === 'recall') { const done = prepRecallDoneOn(day); return {label:'🔗 Prep test: name all 48 prepositions', open:'prepRecall', status:done ? 'done' : 'todo', progress:S.prepRecall?.best ? `best ${fmtRecall(S.prepRecall.best)}` : ''}; }
   const state = historyProjectState(x.project).state;
   return {label:`📁 ${HISTORY_PROJECTS[x.project].title}`, open:projectBuilding(x.project), status:state === 'verified' ? 'done' : state === 'submitted' ? 'waiting' : 'todo', progress:state === 'revise' ? 'fix it and send it again' : state === 'submitted' ? 'sent · waiting for a grown-up' : ''};
 }
@@ -6953,7 +6989,7 @@ function planCardHTML(){
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
-    const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || unitOpen(i.open));
+    const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' && !fixing ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
@@ -7326,6 +7362,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'book') show('book');
   else if (id === 'hall') { renderHall(); show('hall'); }
   else if (id === 'arcade') void openArcade();
+  else if (id === 'prepRecall') openPrepRecall();
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
@@ -8332,7 +8369,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
@@ -10656,6 +10693,7 @@ function logEvent(e){ const d = dayLogToday(), event = {t:Date.now(), ...e}; d.e
 /* the lesson on screen, for time per lesson */
 function placeOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
+  if ($('#prepRecallWrap')) return 'recall';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
   if (on('vocab')) return `vocab:${vocabRun?.mode || vocabTab}`;
@@ -10682,6 +10720,7 @@ function placeLabel(key){
   if (kind === 'dig') return `⛏️ ${digSiteById(a)?.name || 'Dig Site'}`;
   if (kind === 'scribe') return '✍️ Scribe School';
   if (kind === 'sim') return `🧪 ${simById(a)?.name || 'Science lab'}`;
+  if (kind === 'recall') return '🔗 Name all 48 prepositions';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
@@ -10697,6 +10736,7 @@ function eventText(e){
   if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
   if (e.k === 'help') return `✋ Asked a question in ${e.title}: “${e.q || ''}”`;
+  if (e.k === 'recall') return `🔗 Prep test: ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
@@ -10778,6 +10818,7 @@ document.addEventListener('click', event => {
 });
 function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
+  if ($('#prepRecallWrap')) return 'english';
   if (on('cafe') || on('shift') || on('sprint') || on('summary')) return 'math';
   if (on('vocab')) return 'words';
   if (on('arcade')) return 'arcade';

@@ -14,6 +14,7 @@ export type VocabRoster = { id?: string; name: string; stats: Record<string, { r
 export type SaveSpellFocus = (studentId: string, words: string[]) => Promise<string | null>;
 
 let flash = '';
+let spNote: { id: string; text: string } | null = null;   /* the result of “Add to focus and practice”, shown in that student's box after the redraw */
 let leftover = '';   /* words that still need a meaning, put back in the import box after a save */
 export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVocab, roster: VocabRoster, saveSpellFocus?: SaveSpellFocus) {
   const vocab: ClassVocab = cls.game_settings?.vocab || {};
@@ -72,14 +73,25 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
       ${sets.map(set => `<details${set === 'My words' ? ' open' : ''}><summary><b>${esc(set)}</b></summary><div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:4px; margin:6px 0">${all.filter(v => (v.set || 'My words') === set).map(v => `<label title="${esc(v.d)}" style="display:flex; gap:6px; align-items:center"><input type="checkbox" data-vb-focus="${esc(v.w)}" ${allFocus || focusSet.has(wordKey(v.w)) ? 'checked' : ''}> ${esc(v.w)}</label>`).join('')}</div></details>`).join('')}
       <div class="row"><button class="btn primary" id="vbSaveFocus">Save focus words</button></div>
     </div>
-    ${flaggedCard}${spellingCard(roster, all)}
+    ${flaggedCard}${spellingCard(roster, all, focusSet)}
     <div class="card"><h2>Class progress on focus words</h2>${progress}</div>${wordsCard}`;
   /* spelling patterns: practice the suggested words */
+  /* spelling patterns: the ticked words go on the student's practice list, and any that aren't on the class list or in
+     the focus words are added there too, so she practices them in every mode */
   pane.querySelectorAll<HTMLButtonElement>('[data-sp-save]').forEach(b => b.addEventListener('click', async () => {
     const id = b.dataset.spSave!, box = b.closest('[data-sp-student]')!, words = [...box.querySelectorAll<HTMLInputElement>('[data-sp-word]:checked')].map(i => i.value);
-    if (!saveSpellFocus) return;
-    b.disabled = true; const err = await saveSpellFocus(id, words); b.disabled = false;
-    const msg = box.querySelector('[data-sp-msg]'); if (msg) msg.textContent = err ? `Couldn’t save: ${err}` : words.length ? `Saved. These ${words.length} words now come up more often in her Word Workshop.` : 'Cleared.';
+    const name = (roster?.find(st => st.id === id)?.name || 'this student').replace(/\.$/, ''), msg = box.querySelector('[data-sp-msg]');
+    if (!saveSpellFocus) { if (msg) msg.textContent = 'Couldn’t save: reload the page and try again.'; return; }
+    b.disabled = true; b.textContent = 'Saving…';
+    const err = await saveSpellFocus(id, words);
+    if (err) { b.disabled = false; b.textContent = `Add to focus and practice with ${name}`; if (msg) msg.textContent = `Couldn’t save: ${err}`; return; }
+    const newWords = words.filter(w => !findWord(all, w)).map(w => findWord(PATTERN_WORDS as VocabWord[], w)).filter(Boolean) as VocabWord[];
+    const unfocused = focusSet.size ? words.filter(w => !focusSet.has(wordKey(w))) : [];
+    const said = !words.length ? `Cleared ${name}’s practice words.` : `✅ ${words.length} word${words.length === 1 ? '' : 's'} saved for ${name}. They come up more often in Word Workshop.${newWords.length ? ` Added ${newWords.length} to the class list (set “Spelling patterns”).` : ''}${unfocused.length ? ` Added ${unfocused.length} to the focus words.` : ''}`;
+    spNote = { id, text: said };
+    if (newWords.length || unfocused.length) {
+      void commit({ ...vocab, words: [...(vocab.words || []), ...newWords.map(v => ({ w: v.w, d: v.d, ...(v.s ? { s: v.s } : {}), set: 'Spelling patterns' }))], focus: focusSet.size ? [...new Set([...focusSet, ...words.map(wordKey)])] : [] }, said);
+    } else renderVocabTab(pane, cls, save, roster, saveSpellFocus);
   }));
 
   const commit = async (next: ClassVocab, done: string) => {
@@ -87,7 +99,7 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     if (error) { leftover = ''; const m = pane.querySelector('#vbMsg'); if (m) { m.textContent = error; m.className = 'status err'; } return; }
     flash = done;
     cls.game_settings = { ...(cls.game_settings || {}), vocab: next };
-    renderVocabTab(pane, cls, save, roster);
+    renderVocabTab(pane, cls, save, roster, saveSpellFocus);   // keep the spelling-pattern save hooked up after a redraw
   };
   pane.querySelector('#vbBuiltIn')!.addEventListener('change', e => { void commit({ ...vocab, builtIn: (e.target as HTMLInputElement).checked }, 'Saved.'); });
   pane.querySelector('#vbAdd')!.addEventListener('click', () => {
@@ -133,7 +145,8 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
    Each student's spelling misses in Word Workshop, grouped by the kind of mistake (pre for per, a missing double
    letter, -ant for -ent…), with examples, a tip, and suggested words that practice the same pattern. Ticked words
    are saved for that student and come up more often in her practice, at any level. */
-function spellingCard(roster: VocabRoster, all: VocabWord[]): string {
+function spellingCard(roster: VocabRoster, all: VocabWord[], focusSet: Set<string>): string {
+  const note = spNote; spNote = null;
   if (!roster || !roster.some(st => (st.mistakes || []).length)) return '';
   const rows = roster.filter(st => (st.mistakes || []).length).map(st => {
     const sum = patternSummary(st.mistakes || []).slice(0, 4), picked = new Set((st.spellFocus || []).map(wordKey));
@@ -148,8 +161,8 @@ function spellingCard(roster: VocabRoster, all: VocabWord[]): string {
     return `<details open data-sp-student="${esc(st.id || '')}"><summary><b>${esc(st.name)}</b> <span class="muted">${(st.mistakes || []).length} recent misspellings</span></summary>
       <table class="steptable"><tr><th>Pattern</th><th>Times</th><th>What she wrote</th><th>How to teach it</th></tr>${sum.map(x => { const p = patternById(x.id)!; return `<tr><td><b>${esc(p.name)}</b></td><td>${x.n}</td><td>${x.examples.map(e => `<s>${esc(e.typed)}</s> → ${esc(e.w)}`).join('<br>')}</td><td class="muted">${esc(p.tip)}</td></tr>`; }).join('')}</table>
       ${suggest.length && st.id ? `<p style="margin:8px 0 4px"><b>Suggested words to practice</b> <span class="muted">(same patterns; untick any you don’t want)</span></p>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:4px">${suggest.map(v => `<label title="${esc(v.d)}" style="display:flex; gap:6px; align-items:center"><input type="checkbox" data-sp-word value="${esc(v.w)}" ${!picked.size || picked.has(wordKey(v.w)) ? 'checked' : ''}> ${esc(v.w)}</label>`).join('')}</div>
-      <div class="row" style="margin-top:6px"><button class="btn small primary" type="button" data-sp-save="${esc(st.id)}">Practice these with ${esc(st.name)}</button>${picked.size ? ` <span class="muted">Now practicing: ${esc([...picked].join(', '))}</span>` : ''}</div><p class="status" data-sp-msg></p>` : ''}</details>`;
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:4px">${suggest.map(v => `<label title="${esc(v.d)}" style="display:flex; gap:6px; align-items:center"><input type="checkbox" data-sp-word value="${esc(v.w)}" ${!picked.size || picked.has(wordKey(v.w)) ? 'checked' : ''}> ${esc(v.w)}${!findWord(all, v.w) ? ' <small class="muted" title="Not on the class list yet: it will be added">➕ new</small>' : focusSet.size && !focusSet.has(wordKey(v.w)) ? ' <small class="muted" title="On the list but not a focus word: it will be added to the focus words">○ not in focus</small>' : ''}</label>`).join('')}</div>
+      <div class="row" style="margin-top:6px"><button class="btn small primary" type="button" data-sp-save="${esc(st.id)}">Add to focus and practice with ${esc(st.name)}</button>${picked.size ? ` <span class="muted">Now practicing: ${esc([...picked].join(', '))}</span>` : ''}</div><p class="status" data-sp-msg>${note && note.id === st.id ? esc(note.text) : ''}</p>` : ''}</details>`;
   }).join('');
   return `<div class="card"><h2>✏️ Spelling patterns</h2><p class="muted" style="margin-top:0">When a student misspells a word in Word Workshop, Pet World names the kind of mistake: per for pre, a missing double letter, ie for ei, -ant for -ent, a missing syllable. Most common first, from each student’s last 80 misspellings. Pick words that practice the same pattern; they come up more often in that student’s Word Workshop.</p>${rows}</div>`;
 }

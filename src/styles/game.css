@@ -1198,3 +1198,8 @@ a.btn{display:inline-block; text-decoration:none}
 .comic-bubble{background:#fff; border:2px solid #222; border-radius:14px; padding:4px 8px; font:700 1em Patrick Hand, Grandstander, system-ui, sans-serif; position:relative}
 .comic-words{flex-wrap:wrap; gap:6px}
 .comic-preview{font:700 1.4em Patrick Hand, Grandstander, system-ui, sans-serif; min-height:1.5em}
+
+/* 🔗 Name all 48 prepositions (docs: ENGLISH-UNIT5.md) */
+.prep-recall{position:fixed; inset:0; z-index:65; display:flex; flex-direction:column; background:var(--bg)}
+.prep-recall-bar{padding:8px 12px; background:var(--surface); border-bottom:3px solid var(--edge); font-size:1.1em}
+.prep-recall iframe{flex:1; width:100%; border:0}
