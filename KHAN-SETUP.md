@@ -36,7 +36,7 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 | Nile Valley Museum | World history | [Early agrarian societies](https://www.khanacademy.org/humanities/world-history/x66f79d8a:early-agrarian-societies) |
 | Rome Museum | World history | [Empires and belief systems](https://www.khanacademy.org/humanities/world-history/x66f79d8a:empires-and-belief-systems). Comparing portable belief systems and The rise and fall of empires link straight to Khan; the other lessons show a Khan search. |
 | Nature Center (Biology) | Grade 6 science | [Life sciences](https://www.khanacademy.org/science/grade-6-science/x88f5990a7622d8f5:life-sciences) |
-| Petting Zoo (Biology Unit 2) | Middle school biology | Organism growth and reproduction (the lessons use a Khan search until the links are confirmed; a teacher can paste exact links in Lessons) |
+| Petting Zoo (Biology Unit 2) | Middle school biology | Organism growth and reproduction (a teacher can still paste their own links in Lessons) |
 
 A few math stations borrow one exercise from another Khan course, such as 7th grade math or Algebra basics. Pet World links straight to that exercise, so you don't need to add those courses.
 
