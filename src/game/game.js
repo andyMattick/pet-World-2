@@ -56,6 +56,11 @@ const CUSTOMERS = [['🐻','Biscuit'],['🐶','Waffles'],['🐭','Pip'],['🐨',
 /* ---------- state ---------- */
 const LOCAL_KEY = 'pettown:v1', OLD_KEY = 'petcafe:v1';
 let storeKey = LOCAL_KEY;          // per-student key when signed in, so shared computers never mix towns
+/* Look only (docs/LOOK-ONLY.md): the teacher app opens /?look=<student id> to show a student's town exactly as she
+   sees it, with the teacher's own sign-in. Nothing is saved (not to the server, not to this browser), nothing is
+   merged, no time is counted, and the morning pop-ups stay closed. The student's own sign-in on this browser, if any,
+   is never used or changed. */
+const LOOK_ID = new URLSearchParams(location.search).get('look') || '';
 const SLOW_MS = {concept:15000, compute:10000, sprint:6000};
 const QUESTION_STATS_MAX = 400;   // bank questions with a saved answered/missed tally (questionStats)
 const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice(2,10), coins:0, power:1, home:DEFAULT_HOME, sprintBest:0, sprintPick:['times'], bestStreak:0,
@@ -247,7 +252,7 @@ function syncLanguageControls(){
   refreshLanguage();
   document.querySelectorAll('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === S.practiceLanguage)));
 }
-function save(){ S.savedAt = Date.now(); try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){} if (Backend.me) Backend.saveSoon(S); }
+function save(){ if (LOOK_ID) return; S.savedAt = Date.now(); try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){} if (Backend.me) Backend.saveSoon(S); }
 
 /* ---------- facts (times tables) ---------- */
 const fkey = (x,y) => Math.min(x,y) + 'x' + Math.max(x,y);
@@ -5351,6 +5356,7 @@ function newBrainStretch(kind, label, item){
   S.brain.stretches = [...S.brain.stretches, stretch].slice(-90); S.brain.active = stretch.id; save();
 }
 function brainCheck(){
+  if (LOOK_ID) return;   // look only: no pop-ups
   if (brainRun || moveRun || !S?.brain || !brainAllowed().length) return;
   const day = logDayKey(), stretched = S.brain.stretched[day] || (S.brain.stretched[day] = []);
   if (S.brain.active && brainStretch()?.day !== day) S.brain.active = '';   // left unfinished on an earlier day
@@ -5463,6 +5469,7 @@ function moveTrack(subject, seconds){
   if (MOVE_SUBJECTS.includes(subject) && subject === S.move.subject) S.move.secs += seconds;
 }
 function moveCheck(){
+  if (LOOK_ID) return;   // look only: no pop-ups
   if (moveRun || brainRun || $('.theme-card') || !S?.move || !allowedMoves(movePolicy()).length) return;
   moveNewDay();
   const m = S.move, subject = subjectOnScreen();
@@ -5528,6 +5535,7 @@ setInterval(() => { if (Backend.me) moveCheck(); }, 15000);
 const NUDGE_MINUTES = 30, NUDGE_HOUR = 15;
 const NUDGE_SUBJECT_NAME = {math:'math', english:'English', reading:'reading', history:'History', science:'Biology', words:'Word Workshop', facts:'Fact Sprint'};
 function nudgeCheck(){
+  if (LOOK_ID) return;   // look only: no pop-ups
   if (!S?.nudges || document.hidden || $('.nudge-banner')) return;
   const day = logDayKey(), n = S.nudges;
   if (n.day !== day) { n.day = day; n.shown = []; }
@@ -5593,6 +5601,7 @@ function trackDoneRows(){
   save();
 }
 function themeCheck(){
+  if (LOOK_ID) return;   // look only: no pop-ups
   if (!S?.brain) return;
   trackDoneRows();
   const day = logDayKey(), policy = themePolicy();
@@ -7419,7 +7428,7 @@ function openWarmupCard(){
 }
 $('#town').addEventListener('click', e => {
   const opens = e.target.closest('[data-open]');
-  if (opens && SUBJECT_OPENS(opens.dataset.open) && warmupPending()) { e.stopImmediatePropagation(); sfx('tick'); openWarmupCard(); }
+  if (opens && SUBJECT_OPENS(opens.dataset.open) && warmupPending() && !LOOK_ID) { e.stopImmediatePropagation(); sfx('tick'); openWarmupCard(); }
 }, true);
 /* ---------- finish from before first (docs/DAILY-PLAN.md, "Finish from before first") ----------
    After the warm-up, time rows carried from an earlier day (a subject's minutes, or practice in a unit) come first and
@@ -7461,7 +7470,7 @@ function openCarryCard(){
 $('#town').addEventListener('click', e => {
   const opens = e.target.closest('[data-open]'); if (!opens) return;
   const id = opens.dataset.open;
-  if (SUBJECT_OPENS(id) && carryFirst().length && !carryAllows(id)) { e.stopImmediatePropagation(); sfx('tick'); openCarryCard(); }
+  if (SUBJECT_OPENS(id) && carryFirst().length && !carryAllows(id) && !LOOK_ID) { e.stopImmediatePropagation(); sfx('tick'); openCarryCard(); }
 }, true);
 $('#town').addEventListener('click', e => {
   const classBack = e.target.closest('[data-class-back]'); if (classBack) { viewSubject = null; renderHome(); return; }
@@ -11161,6 +11170,7 @@ Backend.onSettings = () => { if (Backend.me && applyClears(S)) { save(); if (!$(
 /* a town left open on another device: when it comes back on screen (or any screen refreshes settings), a newer save from
    another device is merged in before this one saves again, so neither device's work or practice time is lost */
 Backend.onRemoteSave = remote => {
+  if (LOOK_ID) { S = normalize(remote); applyClears(S); if (!$('#scr-home').hidden) renderHome(); return; }   // look only: show her newest save as is, merge nothing
   if (!Backend.me || (Backend.me.reset_at && Backend.me.reset_at !== S.resetSeen)) return;   // a teacher reset is handled on the next sign-in, never merged over
   const other = normalize(remote); applyClears(other);   // an older copy can't bring back cleared work
   const brought = mergeWork(S, other);
@@ -11181,7 +11191,7 @@ async function tabIsStale(){
     if (live && live !== RUNNING_BUILD) {
       buildStale = true;
       Backend.pause();
-      try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){}
+      if (!LOOK_ID) try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){}
       toast('Pet World was updated. Reloading…');
       setTimeout(() => location.reload(), 1200);
     }
@@ -11190,6 +11200,23 @@ async function tabIsStale(){
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Backend.me) void tabIsStale().then(stale => { if (!stale) void Backend.refreshSettings(); }); });
 setInterval(() => { if (Backend.me && !document.hidden) void tabIsStale(); }, 10 * 60000);
+/* look only: her server save as it is, never this browser's copy, never merged */
+function enterLook(me){
+  viewHood = null; viewSubject = null;
+  storeKey = 'pettown:look';   // save() never writes in look only; this keeps her real key untouched either way
+  S = normalize(me.state && typeof me.state === 'object' ? me.state : fresh());
+  applyClears(S);   // in memory only: what she'll see after her next load
+  S.name = me.name; S.minStation = me.min_station || 1;
+  syncLanguageControls(); drillSettings(); checkUnlocks({announce:false});
+  const bar = document.createElement('div');
+  bar.className = 'look-banner'; bar.setAttribute('role', 'status');
+  bar.innerHTML = `<span>👀 <b>Look only:</b> ${esc(me.name)}’s town, as she sees it. Nothing you do here is saved.</span><button type="button" class="btn small" data-look-refresh>Refresh</button><button type="button" class="btn small" data-look-close>Close</button>`;
+  bar.querySelector('[data-look-refresh]').addEventListener('click', () => { void Backend.refreshSettings(); toast('Checking for her newest save…'); });
+  bar.querySelector('[data-look-close]').addEventListener('click', () => { window.close(); setTimeout(() => { location.href = '/teacher.html'; }, 300); });   // a tab the browser won't close goes back to the teacher app
+  document.body.appendChild(bar); document.body.classList.add('look-only');
+  show('home');
+  setInterval(() => { if (!document.hidden) void Backend.refreshSettings(); }, 60000);   // keep up with her while she works
+}
 function enterAs(me){
   viewHood = null; viewSubject = null;
   storeKey = 'pettown:v1:' + me.student_id;
@@ -11218,6 +11245,12 @@ function enterAs(me){
   if (!Backend.enabled) { S = loadState(LOCAL_KEY); syncLanguageControls(); drillSettings(); checkUnlocks({announce:false}); save(); startTownTracker(); if (!S.name) openName(); else show('home'); return; }
   show('loading');
   let me = null;
+  if (LOOK_ID) {
+    try { me = await Backend.look(LOOK_ID); } catch(e){}
+    if (me) enterLook(me);
+    else document.body.innerHTML = '<p style="padding:24px;font:16px system-ui">👀 Look only needs the teacher app signed in on this browser, and a student in one of your classes. Open it from the teacher app’s roster.</p>';
+    return;
+  }
   try { me = await Backend.restore(); } catch(e){}
   if (me) enterAs(me); else openJoin();
 })();

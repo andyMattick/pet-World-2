@@ -98,6 +98,9 @@ class StudentBackend {
       From then on this tab sends nothing, so one student's town can never be saved or merged into another's. */
   onAccountSwitch: (() => void) | null = null;
   private switched = false;
+  /** Look only (docs/LOOK-ONLY.md): a teacher viewing a student's town from the teacher app. Nothing is saved,
+      logged or counted, and the student's own sign-in on this browser is never touched. */
+  lookOnly = false;
 
   get enabled() { return !!this.sb; }
 
@@ -109,6 +112,21 @@ class StudentBackend {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { void this.flush(); void this.pushSave(); }
     });
+  }
+
+  /** Look only: open one of the signed-in teacher's students (teacher_view_student), with the teacher's own sign-in.
+      Returns null when no teacher is signed in on this browser or the student isn't in one of their classes. */
+  async look(studentId: string): Promise<StudentInfo | null> {
+    const teacher = makeClient('pt-teacher');
+    if (!teacher) return null;
+    const { data: { session } } = await teacher.auth.getSession();
+    if (!session) return null;
+    const { data, error } = await teacher.rpc('teacher_view_student', { p_student: studentId });
+    if (error || !data) return null;
+    this.sb = teacher; this.lookOnly = true; this.switched = true;   // switched: saveSoon, pushSave, log and flush never write
+    this.me = data as StudentInfo;
+    this.lastSyncedAt = this.me.saved_at ? Date.parse(this.me.saved_at) || 0 : 0;
+    return this.me;
   }
 
   /** Resume a signed-in student on this device, if there is one. */
@@ -146,7 +164,7 @@ class StudentBackend {
 
   async refreshSettings() {
     if (!this.sb || !this.me) return;
-    const { data, error } = await this.sb.rpc('my_student');
+    const { data, error } = this.lookOnly ? await this.sb.rpc('teacher_view_student', { p_student: this.me.student_id }) : await this.sb.rpc('my_student');
     if (error || !data) return;
     const next = data as StudentInfo;
     if (next.student_id !== this.me.student_id) { this.accountSwitched(); return; }
@@ -169,6 +187,7 @@ class StudentBackend {
    * stopped first, so calling this twice never double-counts.
    */
   async startSession() {
+    if (this.lookOnly) return;
     this.tracker?.stop();
     this.tracker = null;
     this.sessionId = null;
@@ -209,6 +228,7 @@ class StudentBackend {
   }
 
   async signOut() {
+    if (this.lookOnly) return;
     await this.endSession();
     await this.flush(); await this.pushSave();
     this.me = null; this.queue = [];
@@ -217,7 +237,7 @@ class StudentBackend {
 
   /** Ledger (docs: LEDGER.md step 3): send one day's summary. Returns 'saved', 'kept' (a grown-up edited that day), or null in local mode, offline, or before the migration is run. */
   async sendLedgerDay(day: string, entry: Record<string, unknown>): Promise<string | null> {
-    if (!this.sb || !this.me) return null;
+    if (!this.sb || !this.me || this.lookOnly) return null;
     const { data, error } = await this.sb.rpc('send_ledger_day', { p_day: day, p_entry: entry });
     return error ? null : String(data);
   }
@@ -225,18 +245,19 @@ class StudentBackend {
   /** Outside work she adds herself (docs: OUTSIDE-WORK.md, migration 20261020000000_outside_work.sql). */
   async listOutsideWork(fromDay: string): Promise<{ id: number; day: string; course: string; title: string; minutes: number; grade: string; source: string; review: string; review_note: string; images: string[] }[] | null> {
     if (!this.sb || !this.me) return null;
-    const { data, error } = await this.sb.from('ledger_outside').select('id,day,course,title,minutes,grade,source,review,review_note,images').gte('day', fromDay).order('day', { ascending: false }).order('id', { ascending: false });
+    const { data, error } = await this.sb.from('ledger_outside').select('id,day,course,title,minutes,grade,source,review,review_note,images').eq('student_id', this.me.student_id).gte('day', fromDay).order('day', { ascending: false }).order('id', { ascending: false });
     if (error || !data) return null;
     return data as { id: number; day: string; course: string; title: string; minutes: number; grade: string; source: string; review: string; review_note: string; images: string[] }[];
   }
   /** Adds (id null) or changes one of her rows; returns its id, or an error message. */
   async saveOutsideWork(id: number | null, row: { day: string; course: string; title: string; minutes: number; grade: string; images: string[] }): Promise<{ id?: number; error?: string }> {
     if (!this.sb || !this.me) return { error: 'Outside work needs a class sign-in.' };
+    if (this.lookOnly) return { error: 'Look only: nothing is saved.' };
     const { data, error } = await this.sb.rpc('save_outside_work', { p_id: id, p_day: row.day, p_course: row.course, p_title: row.title, p_minutes: row.minutes, p_grade: row.grade, p_images: row.images });
     return error ? { error: error.message } : { id: Number(data) };
   }
   async deleteOutsideWork(id: number): Promise<boolean> {
-    if (!this.sb || !this.me) return false;
+    if (!this.sb || !this.me || this.lookOnly) return false;
     const { data, error } = await this.sb.rpc('delete_outside_work', { p_id: id });
     return !error && data === true;
   }
@@ -244,19 +265,19 @@ class StudentBackend {
   /** Art Studio gallery (ROADMAP F13, docs: ART-STUDIO.md): the student's paintings, newest first. */
   async listPaintings(): Promise<{ id: string; title: string; image: string; at: number }[]> {
     if (!this.sb || !this.me) return [];
-    const { data, error } = await this.sb.from('art_paintings').select('id,title,image,created_at').order('created_at', { ascending: false }).limit(20);
+    const { data, error } = await this.sb.from('art_paintings').select('id,title,image,created_at').eq('student_id', this.me.student_id).order('created_at', { ascending: false }).limit(20);
     if (error || !data) return [];
     return (data as { id: number; title: string; image: string; created_at: string }[]).map(p => ({ id: String(p.id), title: p.title, image: p.image, at: Date.parse(p.created_at) }));
   }
   /** Saves a painting; returns its id, 'full' when the gallery has 20 already, or null on error (offline, or before migration 9). */
   async savePainting(title: string, image: string): Promise<string | null> {
-    if (!this.sb || !this.me) return null;
+    if (!this.sb || !this.me || this.lookOnly) return null;
     const { data, error } = await this.sb.rpc('save_painting', { p_title: title, p_image: image });
     if (error) return /gallery full/i.test(error.message) ? 'full' : null;
     return String(data);
   }
   async deletePainting(id: string): Promise<boolean> {
-    if (!this.sb || !this.me) return false;
+    if (!this.sb || !this.me || this.lookOnly) return false;
     const { error } = await this.sb.from('art_paintings').delete().eq('id', Number(id));
     return !error;
   }
