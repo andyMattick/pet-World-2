@@ -10,6 +10,9 @@ Every new piece of learning content in Pet World follows these rules: a new less
 - **Every unit test** ends with one paragraph question (`essay`).
 - **Every math station** gets a Think it through set: 2 scored questions and 1 "explain your thinking" short answer.
 
+- **Every lesson** has a short `lesson:` explanation in its own words (1–2 sentences). The test review shows it when she misses that lesson, so it has to teach the idea, not just name it.
+- **Every unit** has a Khan unit test link (`KHAN_UNIT_TESTS`, or `MATH_KHAN_UNITS` for a math shop) and goes through the shared test review, PIN and fix-up steps (CLAUDE.md, "Tests: review first"). No unit gets its own test screen.
+
 ## 2. Multiple choice
 
 - The right answer is never the longest choice. Make at least one wrong answer as long or longer.

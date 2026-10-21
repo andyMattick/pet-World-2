@@ -1,6 +1,6 @@
 # Review for the test
 
-A **📇 Review first** button sits next to each English unit test, both the Pet World test and the "Next: the Khan Academy unit test" card. It's optional and never locks a test. It's for when a few days have passed since she last saw the unit.
+A **📇 Review first** button sits next to each English unit test, both the Pet World test and the "Next: the Khan Academy unit test" card. Since Oct 21 it's required before every test, with a grown-up's PIN: see TEST-GATE.md.
 
 ## Step 1: flashcards
 
@@ -25,3 +25,10 @@ On the Ledger, under English: "📇 English Unit 2: Verbs: test review flashcard
 ## The cards
 
 `src/shared/termCards.js`. Each card has its term, what it means, an example, and the lesson it belongs to. The wording follows the lesson text in `questionBanks.js`. Only the English units have decks so far. A unit without a deck shows no Review first button.
+
+## Teach what she missed (Oct 21, 2026)
+
+The review teaches, it isn't just another quiz. It's the same review before the Pet World test and the Khan test.
+
+- **English, History, Biology:** a wrong answer shows the lesson for that skill right away (its short lesson, the group's "learn" line, and its video or Khan link). After the 8 questions, every lesson she missed comes back in a **fix-up round**: the lesson first, then a new question on it. A miss shows the lesson again and adds another new question (up to 3 per lesson). The test is ready only after the fix-up round. The result screen shows her first-try score and which lessons she went back over.
+- **Math:** a miss already brings the step hints, the mix-up note and practice pop-ups. After the 8 orders, each skill she didn't get perfect comes back as fix-up orders (her pet explains the idea first; Hint stays available) until she gets one perfect, up to 10 extra orders.

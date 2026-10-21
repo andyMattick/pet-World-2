@@ -220,6 +220,30 @@ if (!existsSync('public/brain-games/index.html')) problems.push("The Brain Games
 try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); problems.push(...offlineProblems(await khanLinks())); }
 catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
 
+// Tests: review first, a grown-up's PIN, every unit (CLAUDE.md, "Tests: review first"; docs/TEST-GATE.md)
+for (const [fn, what] of [['async function gatedTestReview(', 'the PIN before a test review'], ['async function gatedPetWorldTest(', 'the review + PIN before a Pet World test'],
+  ['async function gatedKhanTest(', 'the review + PIN before a Khan test'], ['async function gatedUnitReview(', 'the PIN before a math unit review'], ['async function gatedUnitTest(', 'the review + PIN before a math Unit Test'],
+  ['function askGrownUp(', 'the grown-up PIN card'], ['function startReviewFixup(', 'the review fix-up round (teach what she missed)'], ['function reviewTeachHTML(', 'the lesson shown for a missed review question'],
+  ['shift.unitReview.needs', 'the math review fix-up orders'], ['data-written-hint', 'the written-answer hint behind the grown-up PIN']]) need('src/game/game.js', fn, what);
+if (/data-ela-final'\)\) \{ startEnglishAssessment/.test(game)) problems.push('src/game/game.js starts a Pet World test without the review and grown-up PIN (use gatedPetWorldTest)');
+if (/data-unit-test\]'\);\s*if \(unitTest && !unitTest\.disabled\) \{ void startAssessment/.test(game)) problems.push('src/game/game.js starts a math Unit Test without the review and grown-up PIN (use gatedUnitTest)');
+if (/<a [^>]*>Open the Khan test<\/a>/.test(game)) problems.push('src/game/game.js links straight to a Khan test without the review and grown-up PIN (use data-khan-open)');
+{
+  // every built library unit and every built 6th grade math shop has a Khan unit test link
+  const block = (name) => (game.match(new RegExp(`const ${name} = \\{([\\s\\S]*?)\\n\\};`)) || [])[1] || '';
+  const keysOf = (src) => new Set([...src.matchAll(/^\s*([A-Za-z0-9]+):/gm)].map(m => m[1]));
+  const libKhan = keysOf(block('KHAN_UNIT_TESTS')), mathKhan = keysOf(block('MATH_KHAN_UNITS'));
+  const reportCourses = ((game.match(/const REPORT_COURSES = \[([^\]]*)\]/) || [])[1] || '').match(/[A-Za-z0-9]+/g) || [];
+  if (!reportCourses.length) problems.push('src/game/game.js: REPORT_COURSES (the built library units) could not be read');
+  for (const c of reportCourses) if (!libKhan.has(c)) problems.push(`Library unit "${c}" has no Khan unit test link in KHAN_UNIT_TESTS (src/game/game.js)`);
+  for (const [, id] of rewardRegistry.matchAll(/\{id:'([a-z0-9]+)',[^\n]*hood:'g6', subject:'math', open:true/g)) if (!mathKhan.has(id)) problems.push(`Math shop "${id}" has no Khan unit link in MATH_KHAN_UNITS (src/game/game.js)`);
+  // every lesson has its short lesson: explanation (the review shows it when she misses that lesson)
+  const banks = read('src/shared/questionBanks.js');
+  for (const [, id, body] of banks.matchAll(/\{id:'([A-Za-z0-9]+)',([^{}]*?)\}/g)) {
+    if (body.includes('name:') && !body.includes('skills:') && !/lesson:'[^']{12,}/.test(body) && !/lesson:"[^"]{12,}/.test(body)) problems.push(`Lesson "${id}" in src/shared/questionBanks.js has no lesson: explanation (the test review teaches from it)`);
+  }
+}
+
 if (problems.length) {
   console.error('\n❌ Pet World verify FAILED. Do not commit.\n');
   problems.forEach(p => console.error('  - ' + p));

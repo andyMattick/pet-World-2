@@ -30,7 +30,7 @@
 ## Wrap-it-up reminders
 
 - A banner at the top of the screen (not a pop-up, so it never interrupts a problem), each once a day (`S.nudges`):
-  - **3:00 PM:** finish what you're working on; then you **can** be done for the day, if that's what your teacher says.
+  - **End of the school day** (3:00 PM unless a grown-up picks another time at the morning theme question; the last time picked is used again): finish what you're working on; then you **can** be done for the day, if that's what your teacher says. Not shown once her day is saved.
   - **30 minutes in a subject today** (math, English, reading, History, Biology, Word Workshop, Fact Sprint): finish what you're working on; then you **can** move on, if that's what your teacher says.
 - It only reminds. Nothing is locked or ended.
 - **Ledger:** the day's plan with each item's status goes into the Ledger day (`entry.plan`) and shows on the teacher's Ledger tab.
@@ -72,3 +72,7 @@ Anything a teacher or a parent sends back goes at the top of Today's plan as **�
 - **"I'm done for today"** shows "🔁 Not done yet: one thing needs fixing" with Fix it buttons. She can still save her day to the record. Her time counts either way.
 - **Once she sends it again:** the row turns into **✅ Fixed: …** for the rest of the day. The day log gets "🔁 Fixed and sent again: …", which also pops up as an alert in the teacher app.
 - **In her daily record:** the Ledger's plan list shows open fixes as not done and fixed ones as done.
+
+## After "I'm done for today"
+
+Once she has saved her day to her record, opening Pet World again that day opens **📅 What I did today** first, with **➕ Add more to today** to go back to the town. The town's button reads "Today's record (saved) · save again", and the end-of-day reminder doesn't show again.

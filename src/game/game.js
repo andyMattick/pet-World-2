@@ -185,7 +185,11 @@ function normalize(raw){
   s.warmupShown = typeof s.warmupShown === 'string' ? s.warmupShown : '';   // the last day the warm-up card opened by itself
   s.carrySkipped = typeof s.carrySkipped === 'string' ? s.carrySkipped : '';
   s.nudges = s.nudges && typeof s.nudges.day === 'string' && Array.isArray(s.nudges.shown) ? {day:s.nudges.day, shown:s.nudges.shown.filter(x => typeof x === 'string').slice(0, 20)} : {day:'', shown:[]};   // today's "wrap it up" reminders already shown   // the last day a grown-up let her skip "Finish from before first"
-  s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;   // earned theme days so far (the rotation's place)
+  s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;
+  s.testReady = Object.fromEntries(Object.entries(s.testReady && typeof s.testReady === 'object' ? s.testReady : {}).filter(([k, v]) => typeof k === 'string' && Number.isFinite(+v)).slice(-60));   // "<course or shop>:pw|khan": the review is done for the next test (docs/TEST-GATE.md)
+  s.endOfDay = s.endOfDay && typeof s.endOfDay.day === 'string' && /^\d{2}:\d{2}$/.test(s.endOfDay.at) ? {day:s.endOfDay.day, at:s.endOfDay.at} : null;   // today's end of the school day, set at the theme question
+  s.endDefault = /^\d{2}:\d{2}$/.test(s.endDefault) ? s.endDefault : '15:00';   // the end of day the grown-up picked last
+  s.readTimer = s.readTimer && Number.isFinite(+s.readTimer.start) ? {start:+s.readTimer.start} : null;   // a running Reading Log timer (wall clock: keeps going while the screen sleeps)   // earned theme days so far (the rotation's place)
   s.planDone = Object.fromEntries(Object.entries(s.planDone && typeof s.planDone === 'object' ? s.planDone : {}).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v === true).sort().slice(-14));   // days the whole plan was done
   s.move = normalizeMoveState(s.move);      // stand-and-stretch breaks between subjects (docs/MOVE-BREAKS.md)
   s.sessions = Array.isArray(s.sessions) ? s.sessions.filter(x => x && typeof x.start === 'number' && typeof x.active === 'number').slice(-30) : [];
@@ -5532,7 +5536,10 @@ setInterval(() => { if (Backend.me) moveCheck(); }, 15000);
    A banner (not a pop-up, so it never cuts off a problem) at 3:00 PM, and when she reaches 30 minutes in a subject
    today. Each shows once a day. It tells her to finish what she's on, and that she CAN stop (or move on) if that's
    what her teacher says. */
-const NUDGE_MINUTES = 30, NUDGE_HOUR = 15;
+const NUDGE_MINUTES = 30;
+/* the end of the school day (docs/DAILY-PLAN.md): set each morning at the theme question, else the last one picked, else 3:00 */
+function endOfDayAt(day = logDayKey()){ return S?.endOfDay?.day === day ? S.endOfDay.at : S?.endDefault || '15:00'; }
+const fmtClock = hm => { const [h, m] = hm.split(':').map(Number); return `${(h % 12) || 12}:${String(m).padStart(2, '0')}${h < 12 ? ' AM' : ' PM'}`; };
 const NUDGE_SUBJECT_NAME = {math:'math', english:'English', reading:'reading', history:'History', science:'Biology', words:'Word Workshop', facts:'Fact Sprint'};
 function nudgeCheck(){
   if (LOOK_ID) return;   // look only: no pop-ups
@@ -5540,8 +5547,9 @@ function nudgeCheck(){
   const day = logDayKey(), n = S.nudges;
   if (n.day !== day) { n.day = day; n.shown = []; }
   const show = (key, html) => { n.shown.push(key); save(); openNudge(html); };
-  if (new Date().getHours() >= NUDGE_HOUR && !n.shown.includes('pm')) {
-    show('pm', `⏰ <b>It’s 3:00!</b> Finish what you’re working on. Then you <b>can</b> be done for the day, if that’s what your teacher says.`); return;
+  const end = endOfDayAt(day), now = new Date(), hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  if (hm >= end && !n.shown.includes('pm') && !dayLogToday().sent) {   // once her day is sent, she isn't asked again
+    show('pm', `⏰ <b>It’s ${esc(fmtClock(end))}, the end of the school day!</b> Finish what you’re working on. Then you <b>can</b> be done for the day, if that’s what your teacher says.`); return;
   }
   const subject = subjectOnScreen(), secs = (S.subjectTime?.[day] || {})[subject] || 0;
   if (NUDGE_SUBJECT_NAME[subject] && secs >= NUDGE_MINUTES * 60 && !n.shown.includes(`s:${subject}`)) {
@@ -5556,6 +5564,37 @@ function openNudge(html){
   document.body.appendChild(el); sfx('tick');
 }
 setInterval(() => { if (Backend.me) nudgeCheck(); }, 15000);
+/* ---------- grown-up PIN check (docs/TEST-GATE.md) ----------
+   One card for everything a grown-up has to OK: starting a test review, a Pet World test or a Khan test, a written-answer
+   hint, reading minutes from another timer. There is no skip: the only other button is Cancel. Each OK goes in the day
+   log, so the teacher sees it in the Ledger. Same PIN as the progress report (the first one typed makes it). */
+function grownUpPinError(pin){
+  if (!/^\d{4}$/.test(pin)) return 'Type the 4-digit grown-up PIN.';
+  if (S.parentPin ? S.parentPin !== pinHash(pin) : teacherLock() && !pinMatchesLock(pin)) return 'That PIN does not match.';
+  if (!S.parentPin) S.parentPin = pinHash(pin);
+  return '';
+}
+function askGrownUp({title, text = '', ok = 'OK', log = ''}){
+  if (LOOK_ID) return Promise.resolve(true);
+  return new Promise(resolve => {
+    const el = document.createElement('div');
+    el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', title);
+    el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><div class="theme-emoji" aria-hidden="true">🔐</div><h2>${esc(title)}</h2>${text ? `<p>${text}</p>` : ''}
+      <form class="theme-pin"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label>
+      <div class="row"><button type="submit" class="btn berry">${esc(ok)}</button><button type="button" class="btn" data-pin-cancel>Cancel</button></div></form></div>`;
+    document.body.appendChild(el);
+    const done = v => { el.remove(); resolve(v); };
+    el.querySelector('[data-pin-cancel]').addEventListener('click', () => done(false));
+    el.querySelector('form').addEventListener('submit', event => {
+      event.preventDefault();
+      const err = grownUpPinError(String(new FormData(event.target).get('pin') || '').trim());
+      if (err) { toast(err); return; }
+      if (log) logEvent({k:'gate', title:log});
+      save(); done(true);
+    });
+    setTimeout(() => el.querySelector('input[name="pin"]')?.focus(), 50);
+  });
+}
 /* ---------- theme days (docs/THEME-DAYS.md) ----------
    A theme for the school day (Pajama Day, Detective Day, Pi Day…), announced once a day right after the morning brain
    stretch, or the first time the town is on screen if brain stretches are off. It stays in Today's plan all day. */
@@ -5638,6 +5677,8 @@ function openThemeAsk(prev){
     ${!prev ? '' : left.length ? `<p>Here’s what ${esc(name)} didn’t get to on ${esc(when)}. It comes first today, right after the warm-up:</p><ul class="theme-left">${left.map(t => `<li>⬜ ${esc(t)}</li>`).join('')}</ul>`
       : S.planDone[prev] ? `<p>${esc(name)} finished the whole plan on ${esc(when)}! 🎉</p>` : ''}
     <p>If yes, today becomes a theme day.</p>
+    <label class="theme-end">School day ends at <input name="end" type="time" value="${esc(endOfDayAt())}" step="300"></label>
+    <p class="muted" style="margin-top:0">She can keep going after that, but she’ll be reminded to wrap up.</p>
     <form class="theme-pin"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label>
     <div class="row"><button type="submit" class="btn berry" value="yes">Yes, theme day! 🎉</button><button type="submit" class="btn" value="no">Not this time</button></div></form>
     <button type="button" class="btn small" data-theme-later>Ask me later</button></div>`;
@@ -5648,6 +5689,8 @@ function openThemeAsk(prev){
     const pin = String(new FormData(event.target).get('pin') || '').trim(), yes = event.submitter?.value === 'yes';
     if (!/^\d{4}$/.test(pin)) { toast('Type the 4-digit grown-up PIN.'); return; }
     if (!S.parentPin) S.parentPin = pinHash(pin); else if (S.parentPin !== pinHash(pin)) { toast('That PIN does not match.'); return; }
+    const end = String(new FormData(event.target).get('end') || '');
+    if (/^\d{2}:\d{2}$/.test(end)) { S.endOfDay = {day:logDayKey(), at:end}; S.endDefault = end; }
     const day = logDayKey(), theme = yes ? rotationTheme(S.themeTurn, themePolicy()) : null;
     S.themeAsk = {day, answer:yes && theme ? 'yes' : 'no', ...(theme ? {id:theme.id} : {})};
     if (theme) S.themeTurn++;
@@ -7098,7 +7141,7 @@ function renderHome(){
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = planCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">✅ I’m done for today</button>` + hoodSwitchHTML();
+  let h = planCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">${dayLogToday().sent ? '📅 Today’s record (saved) · save again' : '✅ I’m done for today'}</button>` + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {
@@ -7780,9 +7823,22 @@ const KHAN_UNIT_TESTS = {
   bio1:`${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:human-digestive-system/test/x88f5990a7622d8f5:life-sciences-unit-test`,
   bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`
 };
+/* math: the Khan unit(s) that go with each shop (KHAN-SETUP.md); each Khan unit ends with its unit test */
+const KHAN_MATH = 'https://www.khanacademy.org/math/';
+const MATH_KHAN_UNITS = {
+  cafe:[['Ratios', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-ratios-prop-topic`]],
+  bakery:[['Arithmetic operations', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-arithmetic-operations`]],
+  market:[['Rates and percentages', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-rates-and-percentages`]],
+  clock:[['Exponents and order of operations', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-exponents-and-order-of-operations`]],
+  rink:[['Negative numbers', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-negative-number-topic`]],
+  potion:[['Variables and expressions', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-expressions-and-variables`], ['Equations and inequalities', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-equations-and-inequalities`]],
+  houses:[['Plane figures', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-plane-figures`], ['Coordinate plane', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:coordinate-plane`], ['Volume and surface area', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-geometry-topic`]],
+  show:[['Data and statistics', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-data-statistics`]]
+};
+const mathKhanUnits = shop => MATH_KHAN_UNITS[shop] || (BUILDINGS.find(b => b.id === shop)?.hood === 'g4' ? [['4th grade math', `${KHAN_MATH}cc-fourth-grade-math`]] : []);
 function khanTestCardHTML(courseId){
   const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
-  return `<section class="ela-final-assessment khan-test-next"><div><h3>🎓 Next: the Khan Academy unit test</h3><p class="muted">You passed the Pet World test. Now take Khan Academy’s unit test for the same unit, then tell your ${Backend.me ? 'teacher' : 'grown-up'} your score.</p></div><div class="row test-buttons">${testReviewButtonHTML(courseId, true)}<a class="btn small berry" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Open the Khan test</a></div></section>`;
+  return `<section class="ela-final-assessment khan-test-next"><div><h3>🎓 Next: the Khan Academy unit test</h3><p class="muted">You passed the Pet World test. Now take Khan Academy’s unit test for the same unit, then tell your ${Backend.me ? 'teacher' : 'grown-up'} your score.</p></div><div class="row test-buttons">${testReviewButtonHTML(courseId, true)}<button type="button" class="btn small${testReady(`${courseId}:khan`) ? ' berry' : ''}" data-khan-open data-ela-course="${courseId}">🔐 Open the Khan test</button></div></section>`;
 }
 function khanLinkHTML(url, name, key){
   const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
@@ -7799,11 +7855,38 @@ function khanLinkHTML(url, name, key){
 /* ---------- 📇 Review for the test (docs/TEST-REVIEW.md) ----------
    Before the Pet World unit test or the Khan Academy unit test: step 1, flashcards of the unit's terms (term on the front;
    cards marked "still learning" come back until every card is known; cards missed before come first next time), then
-   step 2, 8 mixed questions from every lesson in the unit. Optional: it never locks a test. */
+   step 2, 8 mixed questions from every lesson in the unit. Required before every test since Oct 21, with a grown-up PIN (docs/TEST-GATE.md). */
 let cardRun = null;
 const cardStatKey = (courseId, term) => `${courseId}:${term}`.slice(0, 80);
+/* Every unit test (Pet World and Khan, every subject) needs the review first, and a grown-up's PIN before the review and
+   again before the test (docs/TEST-GATE.md). Finishing the review's 8 questions marks the next test ready
+   (S.testReady["<course>:pw" or ":khan"]); starting that test uses it up, so each try needs its own review. */
+const testReady = key => !!S.testReady?.[key];
+function markTestReady(key){ S.testReady = {...S.testReady, [key]:Date.now()}; save(); }
+function useTestReady(key){ if (S.testReady?.[key]) { delete S.testReady[key]; save(); } }
 function testReviewButtonHTML(courseId, khan = false){
-  return termCards(courseId).length ? `<button type="button" class="btn small" data-test-review data-ela-course="${courseId}"${khan ? ' data-khan' : ''}>📇 Review first</button>` : '';
+  const ready = testReady(`${courseId}:${khan ? 'khan' : 'pw'}`);
+  return `<button type="button" class="btn small${ready ? '' : ' berry'}" data-test-review data-ela-course="${courseId}"${khan ? ' data-khan' : ''}>${ready ? '✅ Reviewed · review again' : '📇 Review first (needed)'}</button>`;
+}
+async function gatedTestReview(courseId, khan){
+  const course = englishCourse(courseId);
+  if (!await askGrownUp({title:`${khan ? 'Khan test' : 'Pet World test'} review: ${course.title}`, text:'She’s starting the review for a unit test. A grown-up OKs every test review and every test.', ok:'Start the review', log:`🔐 Grown-up OK: ${khan ? 'Khan' : 'Pet World'} test review, ${course.title}`})) return;
+  startTestReview(courseId, khan);
+}
+async function gatedPetWorldTest(courseId){
+  const course = englishCourse(courseId);
+  if (!testReady(`${courseId}:pw`)) { toast('Do the 📇 review first. Then a grown-up OKs the test.'); return; }
+  if (!await askGrownUp({title:`Pet World test: ${course.title}`, text:'The review is done. A grown-up OKs the test before it starts.', ok:'Start the test', log:`🔐 Grown-up OK: Pet World test, ${course.title}`})) return;
+  useTestReady(`${courseId}:pw`);
+  startEnglishAssessment('final', courseId);
+}
+async function gatedKhanTest(key, title, url){
+  if (!testReady(`${key}:khan`)) { toast('Do the 📇 review first. Then a grown-up OKs the Khan test.'); return; }
+  if (!await askGrownUp({title:`Khan test: ${title}`, text:'The review is done. A grown-up OKs the Khan Academy test before it opens.', ok:'Open the Khan test', log:`🔐 Grown-up OK: Khan test, ${title}`})) return;
+  useTestReady(`${key}:khan`);
+  const w = window.open(url, '_blank', 'noopener');
+  if (!w) toast('Your browser blocked the new tab. Allow pop-ups for Pet World, then try again.');
+  if (!$('#scr-library').hidden && activeEnglishCourse === key) rerenderLibraryPage();
 }
 function startTestReview(courseId, khan = false){
   const cards = termCards(courseId); if (!cards.length) { startReviewCheck(courseId, khan); return; }
@@ -7842,7 +7925,7 @@ function finishCards(){
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📇 ${r.known === r.total ? 'You know every card!' : 'Flashcards'}</h2><button class="btn small" type="button" data-ela-unit data-ela-course="${r.courseId}">Back to the unit</button></div>
     <div class="ela-question ela-result">${r.known ? `<p><strong>You knew ${r.firstTry} of ${r.total} on the first try.</strong></p>` : ''}
     ${tricky.length ? `<p>Words to keep an eye on:</p><ul class="card-tricky">${tricky.map(c => `<li><b>${esc(c.term)}</b>: ${esc(c.means)}</li>`).join('')}</ul>` : ''}
-    <div class="row"><button class="btn berry" type="button" data-review-check data-ela-course="${r.courseId}"${r.khan ? ' data-khan' : ''}>Step 2: 8 mixed questions</button><button class="btn" type="button" data-test-review data-ela-course="${r.courseId}"${r.khan ? ' data-khan' : ''}>Go through the cards again</button></div></div>`;
+    <div class="row"><button class="btn berry" type="button" data-review-check data-ela-course="${r.courseId}"${r.khan ? ' data-khan' : ''}>Step 2: 8 mixed questions</button><button class="btn" type="button" data-test-review data-in-review data-ela-course="${r.courseId}"${r.khan ? ' data-khan' : ''}>Go through the cards again</button></div></div>`;
 }
 function startReviewCheck(courseId, khan = false){
   const course = englishCourse(courseId); cardRun = null; activeEnglishCourse = courseId;
@@ -7850,14 +7933,58 @@ function startReviewCheck(courseId, khan = false){
   englishRun = {title:'Test review: mixed questions', progressKey:`${courseId}:test-review`, retryType:'review', retryId:'review', courseId, khan, questions, index:0, score:0, passMark:6, answered:false, outcomes:[], written:null};
   renderEnglishQuestion();
 }
+/* The review teaches, not just quizzes (docs/TEST-REVIEW.md, "Teach what she missed"): a wrong answer shows the lesson
+   for that skill right away (its short lesson and its video or Khan link). After the 8 questions, every lesson she
+   missed comes back in a fix-up round: the lesson first, then a new question on it; a miss brings the lesson and
+   another new question (up to 3 per lesson). The test is ready only after the fix-up round. Same review before the
+   Pet World test and the Khan test. */
+function reviewSkillOf(courseId, skillId){
+  const course = englishCourse(courseId), skill = course.skills.find(s => s.id === skillId);
+  const group = (course.groups || []).find(g => (g.skills || []).includes(skillId));
+  return {course, skill, group};
+}
+function reviewTeachHTML(courseId, skillId, kicker = '📘 Let’s learn it'){
+  const {course, skill, group} = reviewSkillOf(courseId, skillId); if (!skill) return '';
+  const link = group ? khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`) : '';
+  return `<div class="review-teach"><b>${kicker}: ${esc(skill.name)}</b>${skill.lesson ? `<p>${esc(skill.lesson)}</p>` : ''}${group?.learn ? `<p class="muted">${esc(group.learn)}</p>` : ''}${link}</div>`;
+}
+/* one new question on a lesson, not one she already saw in this review */
+function freshReviewQuestion(courseId, skillId, seen){
+  const pool = englishQuestions(skillId, courseId), unseen = pool.filter(q => !seen.has(String(q.prompt || q.sentence || '')));
+  const q = (unseen.length ? shuffle(unseen) : shuffle(pool))[0]; if (q) seen.add(String(q.prompt || q.sentence || ''));
+  return q || null;
+}
+function startReviewFixup(run, missed){
+  const seen = new Set(run.questions.map(q => String(q.prompt || q.sentence || '')));
+  const questions = missed.map(id => freshReviewQuestion(run.courseId, id, seen)).filter(Boolean);
+  if (!questions.length) return false;
+  activeEnglishCourse = run.courseId;
+  englishRun = {title:'Review: fix what you missed', progressKey:`${run.courseId}:test-review-fix`, retryType:'review', retryId:'review', courseId:run.courseId, khan:run.khan, fixup:true,
+    first:{score:run.score, total:run.questions.length, missed}, seen, tries:{}, questions, index:0, score:0, passMark:questions.length, answered:false, outcomes:[], written:null};
+  toast('Now let’s fix the ones you missed. 📘');
+  renderEnglishQuestion(); return true;
+}
+/* in the fix-up round a miss adds another new question on that lesson (up to 3 tries per lesson) */
+function reviewFixupMiss(run, question){
+  if (!run.fixup) return;
+  const n = run.tries[question.skillId] = (run.tries[question.skillId] || 1) + 1;
+  if (n > 3) return;
+  const q = freshReviewQuestion(run.courseId, question.skillId, run.seen); if (q) run.questions.push(q);
+}
 function testReviewResult(run){
+  if (!run.fixup) {
+    const missedIds = [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))];
+    if (missedIds.length && startReviewFixup(run, missedIds)) return;   // teach what she missed before the test
+  }
+  markTestReady(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`);   // the review is done: the next test can start (with a grown-up's PIN)
+  if (run.fixup) run = {...run, score:run.first.score, passMark:6, questions:run.questions.slice(0, run.first.total), outcomes:[], fixedAll:run.outcomes.every(Boolean)};
   const course = englishCourse(run.courseId), ready = run.score >= run.passMark;
-  const missed = [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))].map(id => course.skills.find(s => s.id === id)).filter(Boolean);
+  const missed = (run.first ? run.first.missed : [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))]).map(id => course.skills.find(s => s.id === id)).filter(Boolean);
   const khanUrl = KHAN_UNIT_TESTS[run.courseId], finalOk = englishFinalReady(course);
-  const next = run.khan && khanUrl && khanOn() ? `<a class="btn berry" href="${esc(khanUrl)}" target="_blank" rel="noopener noreferrer">Open the Khan test</a>`
-    : finalOk ? `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">Start the Pet World test</button>` : '';
+  const next = run.khan && khanUrl && khanOn() ? `<button class="btn berry" type="button" data-khan-open data-ela-course="${run.courseId}">🔐 Open the Khan test</button>`
+    : finalOk ? `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">🔐 Start the Pet World test</button>` : '';
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${ready ? '✅ Ready for the test!' : '📖 Almost ready'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(course.title)}</button></div>
-    <div class="ela-question ela-result"><p><strong>${run.score} of ${run.questions.length} right.</strong> ${ready ? 'Nice review.' : 'Practice the lessons below before the test.'}</p>
+    <div class="ela-question ela-result"><p><strong>${run.score} of ${run.first ? run.first.total : run.questions.length} right the first time.</strong> ${run.first ? `Then you went back over ${run.first.missed.length} lesson${run.first.missed.length === 1 ? '' : 's'} you missed${run.fixedAll ? ' and got them right.' : '. Some are still tricky: practice them below.'}` : ready ? 'Nice review.' : 'Practice the lessons below before the test.'}</p>
     ${missed.length ? `<p>Lessons to look at again:</p><div class="row card-missed">${missed.map(s => `<button class="btn small" type="button" data-ela-practice="${s.id}" data-ela-course="${run.courseId}">${esc(s.name)}</button>`).join('')}</div>` : ''}
     <div class="row">${next}<button class="btn" type="button" data-review-check data-ela-course="${run.courseId}"${run.khan ? ' data-khan' : ''}>8 more questions</button></div></div>`;
 }
@@ -8041,9 +8168,57 @@ function renderEnglishLibrary(){
     <div class="ela-start"><p>The game does not check whether notes match the book.</p></div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book, then add a chapter to save your notes.</p></div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📖 Reading Log</h2><button class="btn small" data-go="home">Back to town</button></div>
     <p class="muted">Build your own book report one chapter at a time. Save your notes and return to them whenever you read more. Notes are not checked for accuracy; a parent can review them with you.</p>
+    ${readTimerHTML()}
     <div class="ela-layout"><aside class="ela-shelf"><h3>My books</h3>${bookList || '<p class="muted">No books added yet.</p>'}<form id="elaBookForm" class="ela-add-book"><label>Book title<input name="title" maxlength="120" required></label><label>Author <span class="muted">(optional)</span><input name="author" maxlength="120"></label><button class="btn" type="submit">Add a book</button></form></aside>
     <div class="ela-workspace">${activeBook ? `<div class="ela-chapters"><div class="ela-chapters-head"><h3>Chapters</h3><button type="button" class="btn small" data-ela-delete="${esc(activeBook.id)}">Delete book</button></div><button type="button" class="btn mint reading-quiz-open" data-reading-quiz="${esc(activeBook.id)}">📝 Reading Quiz</button>${deletingBookId === activeBook.id ? `<div class="ela-delete-confirm"><p>Delete this book and all its chapter notes?</p><button type="button" class="btn small" data-ela-delete-confirm="${esc(activeBook.id)}">Delete permanently</button><button type="button" class="btn small" data-ela-delete-cancel>Cancel</button></div>` : ''}${chapterList}<form id="elaAddChapter" class="ela-add-chapter"><label>Chapter name or number<input name="label" maxlength="100" required placeholder="Chapter 1"></label><button class="btn small" type="submit">Add chapter</button></form></div>` : ''}${editor}</div></div>`;
 }
+/* ---------- reading timer (docs/READING-TIMER.md) ----------
+   Reading a paper book has no taps or clicks, so the active-time clock (which needs one each minute) stopped counting
+   it. The timer counts by the wall clock instead: Start saves the start time in the save, so it keeps going while the
+   screen sleeps, the tab is closed, or the computer is off, and Stop adds the minutes to Reading (up to 3 hours at a
+   time). Minutes from another timer (a phone, a kitchen timer) can be added with the grown-up PIN. */
+const READ_MAX_SECS = 3 * 3600;
+const readElapsed = () => S?.readTimer ? Math.max(0, Math.floor((Date.now() - S.readTimer.start) / 1000)) : 0;
+const fmtTimer = secs => `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+function readTimerHTML(){
+  if (S.readTimer) return `<div class="read-timer running"><span>⏱️ Reading timer: <b data-read-elapsed>${fmtTimer(readElapsed())}</b></span><button type="button" class="btn small berry" data-read-stop>Stop and add the minutes</button><button type="button" class="btn small" data-read-cancel>Cancel</button></div>`;
+  return `<div class="read-timer"><span>⏱️ Reading a book? Start the timer. It keeps counting even if the computer goes to sleep.</span><button type="button" class="btn small berry" data-read-start>Start reading timer</button>
+    <details><summary>Used another timer?</summary><form id="readAddForm" class="row"><label>Minutes read <input name="minutes" type="number" min="1" max="180" required style="width:80px"></label><button type="submit" class="btn small">Add with grown-up PIN</button></form></details></div>`;
+}
+function creditReading(secs, how){
+  secs = Math.max(0, Math.min(READ_MAX_SECS, Math.round(secs))); if (!secs) return 0;
+  addSubjectTime(S.subjectTime, 'reading', secs); logPlaceTime('reading', secs);
+  logEvent({k:'readtime', title:`📖 Reading (${how}): ${Math.round(secs / 60)} min`, subject:'reading'});
+  save(); return secs;
+}
+function stopReadTimer(keep){
+  if (!S.readTimer) return;
+  const secs = readElapsed(); S.readTimer = null;
+  if (keep) { const added = creditReading(secs, 'timer'); toast(added ? `Added ${Math.round(added / 60)} reading minutes! 📖${secs > READ_MAX_SECS ? ' (3 hours at most at a time)' : ''}` : 'Timer stopped.'); }
+  else { save(); toast('Timer canceled.'); }
+  renderReadChip(); if ($('#libraryWrap .read-timer')) rerenderLibraryPage();
+}
+function renderReadChip(){   // while the timer runs, a small chip shows on every screen
+  let chip = $('#readChip');
+  if (!S?.readTimer || LOOK_ID) { chip?.remove(); return; }
+  if (!chip) { chip = document.createElement('button'); chip.id = 'readChip'; chip.type = 'button'; chip.className = 'read-chip'; chip.addEventListener('click', () => { activeEnglishCourse = 'nouns'; show('library'); }); document.body.appendChild(chip); }
+  chip.textContent = `📖 ${fmtTimer(readElapsed())}`;
+  const inPage = $('#libraryWrap [data-read-elapsed]'); if (inPage) inPage.textContent = fmtTimer(readElapsed());
+}
+setInterval(renderReadChip, 1000);
+$('#libraryWrap').addEventListener('click', event => {
+  if (event.target.closest('[data-read-start]')) { S.readTimer = {start:Date.now()}; save(); renderReadChip(); rerenderLibraryPage(); toast('Timer started. Happy reading! 📖'); return; }
+  if (event.target.closest('[data-read-stop]')) { stopReadTimer(true); return; }
+  if (event.target.closest('[data-read-cancel]')) { if (confirm('Cancel the timer without adding the minutes?')) stopReadTimer(false); }
+});
+$('#libraryWrap').addEventListener('submit', event => {
+  if (event.target.id !== 'readAddForm') return;
+  event.preventDefault(); event.stopImmediatePropagation();
+  const minutes = Math.round(+new FormData(event.target).get('minutes'));
+  if (!(minutes >= 1 && minutes <= 180)) { toast('Type 1 to 180 minutes.'); return; }
+  void askGrownUp({title:`Add ${minutes} reading minutes?`, text:'She read with another timer. A grown-up OKs the minutes.', ok:'Add the minutes', log:`🔐 Grown-up OK: ${minutes} reading minutes from another timer`})
+    .then(ok => { if (ok) { creditReading(minutes * 60, 'another timer'); toast(`Added ${minutes} reading minutes! 📖`); rerenderLibraryPage(); } });
+}, true);
 $('#libraryWrap').addEventListener('submit', event => {
   event.preventDefault(); const form = event.target;
   if (form.id === 'elaBookForm') {
@@ -8516,7 +8691,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -8558,6 +8733,7 @@ function renderEnglishQuestion(){
     history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}${typeOf(question) === 'mc' ? `<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div>` : `<div class="typed" data-type="${typeOf(question)}">${typedBodyHTML(question, run)}</div>`}<div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
   addCrossOuts($('#libraryWrap'), '.ela-option:not([data-typed-place]):not([data-typed-unplace])');
   const talkLog = $('#libraryWrap .stage-history'); if (talkLog) talkLog.scrollTop = talkLog.scrollHeight;   // newest exchange in view
+  if (run.fixup) $('#libraryWrap .ela-question')?.insertAdjacentHTML('afterbegin', reviewTeachHTML(run.courseId, question.skillId, '📘 First, the lesson'));   // the review's fix-up: teach, then ask
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
@@ -8598,7 +8774,7 @@ function recordEnglishAnswer(run, question, correct){
   save();
 }
 function commitEnglishRun(run){
-  if (run.committed) return;
+  if (run.committed || run.fixup) return;   // the review's fix-up round keeps no record of its own
   run.committed = true;
   const store = progressStore(run.courseId);
   const previous = englishRecord(run.progressKey,run.courseId), passed = run.score >= run.passMark;
@@ -8629,14 +8805,15 @@ function finishEnglishRun(){
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
   if (button.hasAttribute('data-ela-library')) { renderEnglishLibrary(); return; }
-  if (button.hasAttribute('data-test-review')) { startTestReview(button.dataset.elaCourse || activeEnglishCourse, button.hasAttribute('data-khan')); return; }
+  if (button.hasAttribute('data-test-review')) { const id = button.dataset.elaCourse || activeEnglishCourse, khan = button.hasAttribute('data-khan'); if (button.hasAttribute('data-in-review')) startTestReview(id, khan); else void gatedTestReview(id, khan); return; }
+  if (button.hasAttribute('data-khan-open')) { const id = button.dataset.elaCourse || activeEnglishCourse; void gatedKhanTest(id, englishCourse(id).title, KHAN_UNIT_TESTS[id]); return; }
   if (button.hasAttribute('data-review-check')) { startReviewCheck(button.dataset.elaCourse || activeEnglishCourse, button.hasAttribute('data-khan')); return; }
   if (button.dataset.cardGrade && cardRun) { gradeCard(button.dataset.cardGrade === 'knew'); return; }
   if (button.hasAttribute('data-card-side') && cardRun) { cardRun.meaningFirst = !cardRun.meaningFirst; cardRun.flipped = false; renderCard(); return; }
   if (button.hasAttribute('data-card-skip') && cardRun) { finishCards(); return; }
   if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
-  if (button.hasAttribute('data-ela-final')) { startEnglishAssessment('final',button.dataset.elaCourse || activeEnglishCourse); return; }
+  if (button.hasAttribute('data-ela-final')) { void gatedPetWorldTest(button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
@@ -8649,6 +8826,7 @@ $('#libraryWrap').addEventListener('click', event => {
     feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
       : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
       : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${question.options[question.answer]}.`;
+    if (!correct && englishRun.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(englishRun.courseId, question.skillId)); reviewFixupMiss(englishRun, question); }
     button.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>'); return;
   }
   if (button.hasAttribute('data-ela-next') && englishRun) {
@@ -8767,6 +8945,7 @@ function answerTyped(){
   feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${answerText(question)}.`)
     : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
     : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${answerText(question)}.`;
+  if (!correct && run.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(run.courseId, question.skillId)); reviewFixupMiss(run, question); }
   host.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>');
 }
 /* the written step at the end of a practice (short answer) or a unit test (paragraph) */
@@ -8779,19 +8958,27 @@ function renderWrittenStep(){
   const words = wordCount(run.writtenText || '');
   const redoHTML = !redo ? '' : `<div class="written-redo"><b>🔁 ${redo.by === 'teacher' ? 'Your teacher' : 'A grown-up'} asked for a redo.</b>${redo.comment ? `<p class="written-note">“${esc(redo.comment)}”</p>` : ''}
     <p class="muted">Your last answer is below. Change it to add what’s missing, then send it again.</p></div>`;
-  const rubricHTML = redo ? `<div class="written-rubric"><b>A strong answer:</b><ul class="written-points">${question.rubric.map((point, i) => `<li class="${redo.points[i] ? 'ok' : 'no'}">${redo.points[i] ? '✓ you had this:' : '○ still needed:'} ${esc(point)}</li>`).join('')}</ul></div>`
-    : `<div class="written-rubric"><b>A strong answer:</b><ul>${question.rubric.map(point => `<li>${esc(point)}</li>`).join('')}</ul></div>`;
+  /* what a strong answer has stays hidden: a grown-up can show it as a hint with the PIN (docs/QUESTION-TYPES.md) */
+  const had = redo ? question.rubric.filter((_, i) => redo.points[i]).length : 0;
+  const rubricHTML = !run.hintShown ? `<div class="written-rubric">${redo ? `<p style="margin:0 0 6px">Your last answer had <b>${had} of ${question.rubric.length}</b> things a strong answer has.</p>` : ''}<button type="button" class="btn small" data-written-hint>💡 Hint (grown-up PIN)</button></div>`
+    : redo ? `<div class="written-rubric"><b>💡 Hint: a strong answer</b><ul class="written-points">${question.rubric.map((point, i) => `<li class="${redo.points[i] ? 'ok' : 'no'}">${redo.points[i] ? '✓ you had this:' : '○ still needed:'} ${esc(point)}</li>`).join('')}</ul></div>`
+    : `<div class="written-rubric"><b>💡 Hint: a strong answer</b><ul>${question.rubric.map(point => `<li>${esc(point)}</li>`).join('')}</ul></div>`;
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to the shop</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Exit</button>`}</div>
     <div class="ela-question written-step"><p class="muted">${run.redoOnly ? 'Fix your answer and send it again' : test ? `Last part · written answer · your score so far: ${run.score} of ${run.questions.length}` : `One more: a written answer · ${run.score} of ${run.questions.length} correct`}</p>
     <h3>✍️ ${esc(question.prompt)}</h3>${redoHTML}${rubricHTML}
     <textarea class="written-text" rows="${question.type === 'essay' ? 10 : 5}" maxlength="4000" aria-label="Your answer">${esc(run.writtenText || '')}</textarea>
     <p class="muted written-count">${words} word${words === 1 ? '' : 's'}${words < need ? ` · at least ${need}` : ' ✓'}</p>
-    <p class="muted">${esc(who[0].toUpperCase() + who.slice(1))} will read this and check it against the list above. It doesn’t change your ${test ? 'test' : 'practice'} score.</p>
+    <p class="muted">${esc(who[0].toUpperCase() + who.slice(1))} will read this and check it. It doesn’t change your ${test ? 'test' : 'practice'} score.</p>
     <div class="row"><button type="button" class="btn berry" data-written-send ${words < need ? 'disabled' : ''}>Send to ${who}</button>${run.redoOnly ? '<button type="button" class="btn" data-written-skip>Not now</button>' : test ? '' : '<button type="button" class="btn" data-written-skip>Skip for now</button>'}</div></div>`;
   $('#libraryWrap .written-text').focus();
 }
 $('#libraryWrap').addEventListener('click', event => {
   const run = englishRun; if (!run?.written) return;
+  if (event.target.closest('[data-written-hint]')) {
+    void askGrownUp({title:'Show a hint?', text:'This shows what a strong answer has.', ok:'Show the hint', log:`💡 Grown-up showed a written-answer hint: ${String(run.written.prompt).slice(0, 60)}`})
+      .then(ok => { if (ok && englishRun === run) { run.hintShown = true; renderWrittenStep(); } });
+    return;
+  }
   if (event.target.closest('[data-written-skip]')) { if (run.redoOnly) { englishRun = null; show('home'); return; } run.writtenDone = true; finishEnglishRun(); return; }
   if (!event.target.closest('[data-written-send]')) return;
   const question = run.written, text = String(run.writtenText || '').trim();
@@ -9274,10 +9461,10 @@ function renderShopFloor(shop){
   const testKey = assessKey(config.id, null), testReviewSkills = reviewSkillsNeeded(testKey), testPassed = unitTestPassed(config.id);
   const testReviewStation = config.stations.find(st => st.skills.some(skill => testReviewSkills.includes(skill)))?.id ?? 1;
   const unitTestCard = !allStationsBuilt ? '' : `<div class="station unit-test${allStationQuizzesPassed || testPassed ? '' : ' locked'}">
-    <div class="se">🏆</div><h3>Unit Test</h3>${testPassed ? '<p class="muted" style="margin:0">✅ Unit Test passed</p>'
+    <div class="se">🏆</div><h3>Unit Test</h3>${testPassed ? `<p class="muted" style="margin:0">✅ Unit Test passed</p>${mathKhanCardHTML(config.id)}`
       : testReviewSkills.length ? `<p class="muted" style="margin:0">🔁 Review: ${testReviewSkills.length} skill${testReviewSkills.length === 1 ? '' : 's'} to practice</p><button class="btn" data-review-key="${esc(testKey)}" data-review-station="${testReviewStation}" data-shop="${config.id}">Review practice</button>`
-      : S.quizzes[testKey]?.tries && reviewComplete(testKey) ? `<button class="btn" data-unit-test data-shop="${config.id}">Retake unit test</button>`
-      : allStationQuizzesPassed ? `<p class="muted" style="margin:0">Every station quiz is passed.</p><button class="btn berry" data-unit-test data-shop="${config.id}">Start Unit Test</button>`
+      : S.quizzes[testKey]?.tries && reviewComplete(testKey) ? `${unitReviewButtonHTML(config.id)}<button class="btn${testReady(`${config.id}:pw`) ? ' berry' : ''}" data-unit-test data-shop="${config.id}">🔐 Retake unit test</button>`
+      : allStationQuizzesPassed ? `<p class="muted" style="margin:0">Every station quiz is passed. 📇 Review first, then a grown-up enters the PIN.</p>${unitReviewButtonHTML(config.id)}<button class="btn${testReady(`${config.id}:pw`) ? ' berry' : ''}" data-unit-test data-shop="${config.id}">🔐 Start Unit Test</button>`
       : '<p class="muted" style="margin:0">Pass every station quiz first</p>'}</div>`;
   $('#stations').innerHTML = unitTestCard + config.stations.map(st => {
     const open = stationOpen(config.id, st.id), done = progress.st[st.id] || 0;
@@ -9308,7 +9495,11 @@ function renderShopFloor(shop){
 $('#stations').addEventListener('click', e => {
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
-  if (unitTest && !unitTest.disabled) { void startAssessment(unitTest.dataset.shop, null); return; }
+  if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
+  const unitReview = e.target.closest('[data-unit-review]');
+  if (unitReview) { void gatedUnitReview(unitReview.dataset.shop, unitReview.hasAttribute('data-khan')); return; }
+  const mathKhan = e.target.closest('[data-math-khan]');
+  if (mathKhan) { const units = mathKhanUnits(mathKhan.dataset.shop); void gatedKhanTest(mathKhan.dataset.shop, `${SHOPS[mathKhan.dataset.shop]?.name || ''} (${units.map(u => u[0]).join(', ')})`, units[+mathKhan.dataset.mathKhan]?.[1]); return; }
   const review = e.target.closest('[data-review-key]');
   if (review && !review.disabled) { void startShift(review.dataset.shop, +review.dataset.reviewStation, review.dataset.reviewKey); return; }
   const quiz = e.target.closest('[data-quiz]');
@@ -9317,6 +9508,29 @@ $('#stations').addEventListener('click', e => {
   if (station && !station.disabled) void startShift(station.dataset.shop, +station.dataset.station);
 });
 
+/* math unit review (docs/TEST-GATE.md): 8 practice orders from every station of the unit, before the Unit Test or the
+   Khan test. A grown-up's PIN starts it, and again starts the test. */
+function unitReviewButtonHTML(shop, khan = false){
+  const ready = testReady(`${shop}:${khan ? 'khan' : 'pw'}`);
+  return `<button class="btn${ready ? '' : ' berry'}" data-unit-review data-shop="${shop}"${khan ? ' data-khan' : ''}>${ready ? '✅ Reviewed · review again' : '📇 Review first (needed)'}</button>`;
+}
+function mathKhanCardHTML(shop){
+  const units = mathKhanUnits(shop); if (!units.length || !khanOn()) return '';
+  const ready = testReady(`${shop}:khan`);
+  return `<div class="khan-test-next"><p style="margin:6px 0 4px"><b>🎓 Next: the Khan Academy unit test</b></p><p class="muted" style="margin:0 0 6px">Review, then a grown-up OKs it. Each Khan unit ends with its unit test.</p>${unitReviewButtonHTML(shop, true)}${units.map(([name], i) => `<button class="btn${ready ? ' berry' : ''}" data-math-khan="${i}" data-shop="${shop}">🔐 Khan: ${esc(name)}</button>`).join('')}</div>`;
+}
+async function gatedUnitReview(shop, khan){
+  const name = SHOPS[shop]?.name || shop;
+  if (!await askGrownUp({title:`${khan ? 'Khan test' : 'Unit Test'} review: ${name}`, text:'She’s starting the review for a unit test. A grown-up OKs every test review and every test.', ok:'Start the review', log:`🔐 Grown-up OK: ${khan ? 'Khan' : 'Pet World'} test review, ${name}`})) return;
+  void startShift(shop, 1, null, {khan});
+}
+async function gatedUnitTest(shop){
+  const name = SHOPS[shop]?.name || shop;
+  if (!testReady(`${shop}:pw`)) { toast('Do the 📇 review first. Then a grown-up OKs the test.'); return; }
+  if (!await askGrownUp({title:`Unit Test: ${name}`, text:'The review is done. A grown-up OKs the test before it starts.', ok:'Start the test', log:`🔐 Grown-up OK: Pet World unit test, ${name}`})) return;
+  useTestReady(`${shop}:pw`);
+  void startAssessment(shop, null);
+}
 /* ---------- shift engine ---------- */
 let shift = null, order = null;
 let patienceTimer = null;
@@ -9325,16 +9539,16 @@ function resetTown(resetAt){
   S = normalize(Object.assign(fresh(), {name:me?.name || S.name, minStation:me?.min_station || S.minStation || 1, practiceLanguage:S.practiceLanguage, resetSeen:resetAt}));
   syncLanguageControls();
 }
-async function startShift(shop, station, reviewKey = null){
+async function startShift(shop, station, reviewKey = null, unitReview = null){
   const config = SHOPS[shop] || SHOPS.cafe;
   await Backend.refreshSettings();
   const resetAt = Backend.me?.reset_at, resetMs = resetAt ? Date.parse(resetAt) : NaN;
   if (resetAt && Number.isFinite(resetMs) && resetMs > (Date.parse(S.resetSeen || '') || 0)) {
     resetTown(resetAt); save(); toast('Your teacher reset your town. Fresh start!'); show('home'); return;
   }
-  shift = {shop:config.id, station, mode:'practice', reviewKey, n:0, total:5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
+  shift = {shop:config.id, station, mode:'practice', reviewKey, unitReview, n:0, total:unitReview ? 8 : 5, earned:0, perfect:0, missed:[], power:S.power, practiced:new Set(), drillMisses:new Set(), popups:0, lastSkill:null};
   $('#helperPet').textContent = petEmoji();
-  $('#shiftStation').textContent = config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
+  $('#shiftStation').textContent = unitReview ? `${config.emoji} ${config.name} · 📇 Review for the ${unitReview.khan ? 'Khan' : 'Unit'} Test` : config.emoji + ' ' + config.name + ' · ' + config.stations[station-1].emoji + ' ' + config.stations[station-1].name;
   $('#leaveShift').textContent = config.id === 'cafe' ? 'Close the café early' : `Close the ${config.name.toLowerCase()} early`;
   show('shift'); nextCustomer();
 }
@@ -9383,7 +9597,7 @@ function startPatience(seconds, fromPct, showStartCue = false){
 function freezePatience(){ const p = $('#patience'); if (patienceTimer) { clearInterval(patienceTimer); patienceTimer = null; } const w = getComputedStyle(p).width; p.style.transition = 'none'; p.style.width = w; }
 function chooseSkill(){
   const W = {new:3, struggling:5, practicing:3, mastered:1};
-  const skills = shift.reviewKey ? reviewSkillsNeeded(shift.reviewKey) : SHOPS[shift.shop].stations[shift.station-1].skills;
+  const skills = shift.unitReview?.fixing && shift.unitReview.needs?.length ? shift.unitReview.needs : shift.unitReview ? SHOPS[shift.shop].stations.flatMap(st => st.skills) : shift.reviewKey ? reviewSkillsNeeded(shift.reviewKey) : SHOPS[shift.shop].stations[shift.station-1].skills;
   let list = skills.filter(s => s !== shift.lastSkill); if (!list.length) list = skills;
   return weightedPick(list, s => W[skillStatus(s)]);
 }
@@ -9424,6 +9638,10 @@ function ticketHTML(text){
 }
 function nextCustomer(){
   if (shift.mode === 'practice' && shift.reviewKey && reviewComplete(shift.reviewKey)) { endShift(); return; }
+  if (shift.unitReview && shift.n >= shift.total && shift.unitReview.needs?.length && (shift.unitReview.extra || 0) < 10) {   // fix what she missed before the review counts
+    const ur = shift.unitReview; if (!ur.fixing) { ur.fixing = true; toast('Now let’s fix the ones you missed. 📘'); }
+    ur.extra = (ur.extra || 0) + 1; shift.total++;
+  }
   if (shift.n >= shift.total) { endShift(); return; }
   stopOrderSpeech(); cancelReadFirst(order);
   shift.n++; renderDots();
@@ -9440,7 +9658,7 @@ function nextCustomer(){
   const plan = p.steps.map((st, i) => `<span class="chip${i === 0 ? ' now' : ''}" data-plan-step="${i}">${i + 1}. ${esc(st.name)}</span>`).join('<span class="plan-arrow" aria-hidden="true">→</span>');
   $('#custBubble').textContent = friend ? pick([`Hi, it's me, ${c[1]}! I came back to visit.`, `${c[1]} here! Can you help a friend?`, `Remember me? It's ${c[1]}!`]) : pick(['Here\'s my order!','Order up, please!','Can you help me with this one?']);
   $('#custName').classList.toggle('friend', !!friend);
-  if (!assessment) setHelper(p.helper || 'Take it one step at a time.');
+  if (!assessment) setHelper(shift.unitReview?.fixing ? `📘 Let’s fix ${SKILLS[sk]?.name || 'this one'}. ${p.helper || ''} Tap Hint whenever you need it.` : p.helper || 'Take it one step at a time.');
   $('#board').innerHTML = `<div class="board-title">${esc(p.title)}</div><div class="skill-tag">${esc(SKILLS[sk].name)}</div>
     <div class="ticket"><div class="ticket-customer"><span>${c[0]}</span><b>${esc(c[1])}</b></div><div id="ticketText"></div><button class="ticket-read" id="readOrderBtn" type="button" hidden>🔊 Read it to me</button></div>
     <div class="plan" id="plan" aria-label="Order plan"${assessment && !shift.showSteps ? ' hidden' : ''}>${plan}</div>
@@ -9807,6 +10025,11 @@ function completeOrder(){
   const p = order.p, perfect = order.tries === 0 && order.hints === 0;
   recordProblem(p.skill, perfect);
   reviewCredit(S, p.skill, perfect);
+  if (shift.unitReview) {   // the unit review keeps a list of skills to fix: a miss adds one, a perfect fix-up order clears it
+    const ur = shift.unitReview; ur.needs = ur.needs || [];
+    if (!perfect && !ur.needs.includes(p.skill)) ur.needs.push(p.skill);
+    else if (perfect && ur.fixing) ur.needs = ur.needs.filter(sk => sk !== p.skill);
+  }
   const stations = SHOPS[shift.shop].stations, progress = shopProgress(shift.shop);
   const before = stations.map(s => stationOpen(shift.shop, s.id));
   progress.st[shift.station] = (progress.st[shift.station]||0) + 1;
@@ -9838,17 +10061,20 @@ function endShift(){
   const pw = shift.power; S.day++; S.power = 1; save(); updateHeader(); Backend.flush();
   const miss = [...new Set(shift.missed)];
   const shop = shift.shop, config = SHOPS[shop];
-  const reviewKey = shift.reviewKey, reviewFinished = !!reviewKey && reviewComplete(reviewKey);
+  const reviewKey = shift.reviewKey, reviewFinished = !!reviewKey && reviewComplete(reviewKey), unitReview = shift.unitReview && shift.n >= shift.total ? shift.unitReview : null;   // finished: all 8, then the fix-ups
+  if (unitReview) { markTestReady(`${shop}:${unitReview.khan ? 'khan' : 'pw'}`); logEvent({k:'gate', title:`📇 Finished the ${unitReview.khan ? 'Khan' : 'Unit'} Test review: ${config.name}`}); }
   const retakeStation = reviewKey?.endsWith(':test') ? null : Number(reviewKey?.slice(reviewKey.lastIndexOf(':') + 1));
   const retakeLabel = reviewKey?.endsWith(':test') ? 'Retake unit test' : 'Retake quiz';
   $('#summaryCard').innerHTML = `<div class="big-emoji">🌙</div><h2>${config.name} closed for the day</h2>
     <p>You earned <b>${shift.earned}</b> coins${pw > 1 ? ` with a ×${fmtPow(pw)} sprint boost` : ''}.</p>
     <p>Perfect orders: <b>${shift.perfect}</b> of ${shift.total}</p>
     ${miss.length ? `<p class="muted">Keep practicing</p><div class="factchips">${miss.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : '<p>No mistakes today. Amazing!</p>'}
-    <div class="row">${reviewFinished ? `<button class="btn berry" id="sumRetakeQuiz">${retakeLabel}</button>` : '<button class="btn berry" id="sumAgain">Another shift</button>'}<button class="btn" data-go="home">Back to town</button></div>`;
-  const station = shift.station, nextButton = reviewFinished ? '#sumRetakeQuiz' : '#sumAgain'; shift = null; currentShop = shop;
+    ${unitReview ? `<p><b>📇 Review done.</b>${unitReview.extra ? ` You went back over ${unitReview.extra} order${unitReview.extra === 1 ? '' : 's'} on the skills you missed${unitReview.needs?.length ? '; keep practicing those at their stations' : ''}.` : ''} Next, a grown-up enters the PIN to start the ${unitReview.khan ? 'Khan' : 'Unit'} Test.</p>` : ''}
+    <div class="row">${unitReview ? `<button class="btn berry" id="sumUnitTest">🔐 ${unitReview.khan ? 'Back to the shop for the Khan test' : 'Start the Unit Test'}</button>` : reviewFinished ? `<button class="btn berry" id="sumRetakeQuiz">${retakeLabel}</button>` : '<button class="btn berry" id="sumAgain">Another shift</button>'}<button class="btn" data-go="home">Back to town</button></div>`;
+  const station = shift.station, nextButton = unitReview ? '#sumUnitTest' : reviewFinished ? '#sumRetakeQuiz' : '#sumAgain'; shift = null; currentShop = shop;
   show('summary');
-  if (reviewFinished) $('#sumRetakeQuiz').addEventListener('click', () => { void startAssessment(shop, retakeStation); });
+  if (unitReview) $('#sumUnitTest').addEventListener('click', () => { if (unitReview.khan) show('cafe'); else void gatedUnitTest(shop); });
+  else if (reviewFinished) $('#sumRetakeQuiz').addEventListener('click', () => { void startAssessment(shop, retakeStation); });
   else $('#sumAgain').addEventListener('click', () => { void startShift(shop, station, reviewKey); });
   sfx('good'); setTimeout(() => $(nextButton).focus(), 60);
 }
@@ -10822,7 +11048,7 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun || $('#helpCard')) return; const subject = subjectOnScreen(); moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
+}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun || $('#helpCard')) return; const subject = subjectOnScreen(); if (S.readTimer && subject === 'reading') return; moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // the reading timer counts Reading itself   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
    S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, text, ...}], labels:{key: name}, sent}
@@ -10972,7 +11198,7 @@ function renderDayDone(){
   const d = dayLogToday();
   const fixes = fixItems(); fixShown = fixes;
   const fixNote = fixes.length ? `<div class="sent-back fix-before-done"><h3>🔁 Not done yet: ${fixes.length === 1 ? 'one thing needs' : `${fixes.length} things need`} fixing</h3><p>Fix ${fixes.length === 1 ? 'it' : 'them'} and send ${fixes.length === 1 ? 'it' : 'them'} again before you finish. ${fixes.length === 1 ? 'It stays' : 'They stay'} at the top of your plan until ${fixes.length === 1 ? 'it’s' : 'they’re'} fixed.</p>${fixes.map((x, i) => `<div class="row extras-row"><span style="flex:1">${x.icon} ${esc(x.title)}${x.note ? `<br><small>“${esc(x.note)}”</small>` : ''}</span><button type="button" class="btn small berry" data-fix-open="${i}">Fix it</button></div>`).join('')}</div>` : '';
-  $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small" data-day-back>Back to town</button></div>${fixNote}${daySummaryHTML()}
+  $('#town').innerHTML = `<div class="card day-done" style="grid-column:1/-1"><div class="backrow"><h2>📅 What I did today</h2><button type="button" class="btn small${d.sent ? ' berry' : ''}" data-day-back>${d.sent ? '➕ Add more to today' : 'Back to town'}</button></div>${d.sent ? '<p class="muted">Your day is in your record. Did more? Tap ➕ Add more to today, then save again when you’re done.</p>' : ''}${fixNote}${daySummaryHTML()}
 <div class="row"><button type="button" class="btn berry" data-day-send>${d.sent ? '✅ Saved to my record (save again)' : 'Send to my record'}</button></div>${d.sent ? `<p class="muted">Saved at ${new Date(d.sent).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}. A grown-up can still change it.</p>` : ''}</div>`;
 }
 document.addEventListener('click', event => {
@@ -11232,10 +11458,12 @@ function enterAs(me){
     S.name = me.name; S.minStation = me.min_station || 1; S.resetSeen = resetAt || S.resetSeen || null;
   }
   S.owner = me.student_id;   // the student this town belongs to; mergeWork refuses a town stamped for someone else
+  const sentToday = !!S.dayLog?.[logDayKey()]?.sent;   // she already finished her day: open her record, with a way to add more
   syncLanguageControls();
   drillSettings();
   checkUnlocks({announce:false});
   save(); show('home');
+  if (sentToday) setTimeout(renderDayDone, 0);
   startTownTracker();
   void Backend.startSession();
 }

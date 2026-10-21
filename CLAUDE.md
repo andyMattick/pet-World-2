@@ -70,6 +70,22 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 3. Make the change in small steps, running `npm run verify` along the way.
 4. Report what you changed, what you tested, and anything you couldn't test.
 
+## Tests: review first, a grown-up's PIN, every unit (owner rule, Oct 21, 2026)
+
+This applies to **every unit in every subject, now and in the future** (English, History, Biology, every math shop, every grade). See `docs/TEST-GATE.md` and `docs/TEST-REVIEW.md`.
+
+1. **Review before every test.** The 📇 review comes before the Pet World unit test and again before the Khan unit test. It's the same review both times. Starting a test uses the review up, so every try needs a new one (`S.testReady`, `markTestReady`, `useTestReady`).
+2. **The review teaches what she missed.** A wrong answer shows that lesson right away (`reviewTeachHTML`). After the questions, every missed lesson comes back in a fix-up round: the lesson first, then a new question (`startReviewFixup`). Math does the same with fix-up orders (`shift.unitReview.needs`). The test is ready only after the fix-up.
+3. **A grown-up's PIN** before each review and before each test (`askGrownUp`, `gatedTestReview`, `gatedPetWorldTest`, `gatedKhanTest`, `gatedUnitReview`, `gatedUnitTest`). There's no skip button, only Cancel. Every OK goes in the day log.
+4. **Written answers** never show what a strong answer has unless a grown-up opens the 💡 hint with the PIN.
+
+**A new unit is not done until:**
+- It runs through the shared library course (`englishCourse`) or shop (`SHOPS` + `renderShopFloor`) code, so it gets the review, the PIN steps and the fix-up for free. Never build a separate test screen around them.
+- It has a Khan unit test link: `KHAN_UNIT_TESTS` (English, History, Biology) or `MATH_KHAN_UNITS` (math) in `src/game/game.js`, and the table in `KHAN-SETUP.md`.
+- Every lesson has its short `lesson:` explanation (what the review shows when she misses it).
+
+`npm run verify` checks all of this. Never remove or weaken these steps to make a check pass.
+
 ## Reading Quiz
 
 Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet World coins. See `docs/READING-QUIZ.md`.

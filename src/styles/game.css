@@ -179,6 +179,14 @@ body.brain-open{overflow:hidden}
 @keyframes move-wiggle{0%,100%{transform:rotate(-10deg) translateY(0)}50%{transform:rotate(10deg) translateY(-8px)}}
 @media (prefers-reduced-motion: reduce){.move-pet{animation:none}}
 /* A theme day announcement (docs/THEME-DAYS.md) */
+.review-teach{margin:10px 0; padding:10px 12px; border-left:4px solid #2B5BA8; border-radius:8px; background:var(--surface)}
+.review-teach p{margin:6px 0}
+.read-timer{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; padding:10px 12px; border:2px dashed var(--edge); border-radius:12px; background:var(--surface)}
+.read-timer > span{flex:1; min-width:200px}
+.read-timer.running{border-style:solid}
+.read-timer details{flex-basis:100%}
+.read-chip{position:fixed; right:12px; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:70; border:2px solid var(--ink); border-radius:999px; background:var(--surface); color:var(--ink); padding:6px 12px; font-weight:700; cursor:pointer}
+.theme-end{display:flex; gap:8px; align-items:center; justify-content:center; margin-top:8px}
 .look-banner{position:fixed; left:0; right:0; bottom:0; z-index:90; display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px)); background:#2B5BA8; color:#fff}
 .look-banner span{flex:1; min-width:200px}
 body.look-only{padding-bottom:64px}
