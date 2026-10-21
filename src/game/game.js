@@ -11090,50 +11090,63 @@ function mergeProgress(base, other){
      rec:<store>:<key>     one lesson record in elaProgress, historyProgress or scienceProgress (e.g. rec:historyProgress:historyScale)
      word:<word>           one Word Workshop word's answer history (e.g. word:eager)
    Each clear runs once per save copy (state.clearsDone). Both copies are cleared before two devices' saves are merged,
-   so an older copy can't bring the work back. */
+   so an older copy can't bring the work back.
+   Oct 21: that wasn't enough. A Pet World tab left open since before the clears (running older code with no clears and
+   no guardrails) merged the demo copy back into a save that was already marked cleared. So a clear that's done is
+   checked again on every copy, every time: dated records (quizzes, tests, lesson records, Think it through, written
+   answers, projects) from before the clear's date (the YYYY-MM-DD in its id) are dropped again. Work dated on or after
+   that day, and records with no date, stay. */
 function applyClears(state){
   const clears = Object.entries(Backend.me?.quiz_overrides || {}).filter(([k, v]) => k.startsWith('clear:') && typeof v === 'string');
   if (!clears.length || !state) return false;
   state.clearsDone = Array.isArray(state.clearsDone) ? state.clearsDone : [];
-  let changed = false;
-  const dropKeys = (obj, test) => { for (const k of Object.keys(obj || {})) if (test(k)) { delete obj[k]; changed = true; } };
+  let changed = false, recheck = false, cutoff = 0;
+  /* a record's date: the newest of its time stamps (0 when it has none) */
+  const stamp = r => Math.max(0, ...['lastAt', 'lastPassAt', 'at', 'updatedAt', 'submittedAt', 'finishedAt'].map(k => Number(r?.[k])).filter(Number.isFinite));
+  const old = r => { const t = stamp(r); return t > 0 && t < cutoff; };   // on a recheck: dated before the clear (undated records stay)
+  /* timed: the store's records carry dates, so a recheck can tell old ones from new work. Untimed stores (order counts,
+     skill mastery, word history) are only cleared the first time. */
+  const dropKeys = (obj, test, timed = false) => { if (recheck && !timed) return; for (const k of Object.keys(obj || {})) if (test(k) && (!recheck || old(obj[k]))) { delete obj[k]; changed = true; } };
   const dropSkills = skills => { for (const store of ['kn', 'kr', 'ks']) dropKeys(state[store], k => skills.includes(k)); };
   const stationSkills = (shop, n) => (SHOPS[shop]?.stations.find(st => st.id === n)?.skills || []);
   for (const [id, spec] of clears) {
-    if (state.clearsDone.includes(id)) continue;
+    recheck = state.clearsDone.includes(id);
+    const date = (id.match(/\d{4}-\d{2}-\d{2}/) || [])[0];
+    if (recheck && !date) continue;   // an undated clear can't be checked again
+    cutoff = date ? new Date(`${date}T00:00:00`).getTime() : 0;
     for (const token of spec.split(',').map(t => t.trim()).filter(Boolean)) {
       const [kind, a, b] = token.split(':');
       if (kind === 'ela' && a) {
         const course = englishCourse(a), skills = new Set((course?.skills || []).map(sk => sk.id));
         if (course?.id !== a) continue;   // an unknown course name falls back to Nouns in englishCourse; never clear that by mistake
-        dropKeys(state.elaProgress, k => skills.has(k) || k.startsWith(`${a}:`));
+        dropKeys(state.elaProgress, k => skills.has(k) || k.startsWith(`${a}:`), true);
         const before = (state.writtenAnswers || []).length;
-        state.writtenAnswers = (state.writtenAnswers || []).filter(w => w.courseId !== a); if (state.writtenAnswers.length !== before) changed = true;
-        dropKeys(state.historyProjects, k => projectKeys(a).includes(k));
+        state.writtenAnswers = (state.writtenAnswers || []).filter(w => w.courseId !== a || (recheck && !old(w))); if (state.writtenAnswers.length !== before) changed = true;
+        dropKeys(state.historyProjects, k => projectKeys(a).includes(k), true);
       } else if (kind === 'shop' && SHOPS[a]) {
-        if (state[a]?.st) { for (const n of Object.keys(state[a].st)) if (state[a].st[n]) { state[a].st[n] = 0; changed = true; } }
-        for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k.startsWith(`${a}:`));
-        if (state.stationsOpenedBefore?.[a]) { delete state.stationsOpenedBefore[a]; changed = true; }
+        if (!recheck && state[a]?.st) { for (const n of Object.keys(state[a].st)) if (state[a].st[n]) { state[a].st[n] = 0; changed = true; } }
+        for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k.startsWith(`${a}:`), true);
+        if (!recheck && state.stationsOpenedBefore?.[a]) { delete state.stationsOpenedBefore[a]; changed = true; }
         dropSkills(SHOPS[a].stations.flatMap(st => st.skills));
       } else if (kind === 'station' && SHOPS[a] && Number.isFinite(+b)) {
         const n = +b;
-        if (state[a]?.st?.[n]) { state[a].st[n] = 0; changed = true; }
-        for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k === `${a}:${n}`);
-        if (Array.isArray(state.stationsOpenedBefore?.[a]) && state.stationsOpenedBefore[a].includes(n)) { state.stationsOpenedBefore[a] = state.stationsOpenedBefore[a].filter(x => x !== n); changed = true; }
+        if (!recheck && state[a]?.st?.[n]) { state[a].st[n] = 0; changed = true; }
+        for (const store of ['quizzes', 'review', 'mathThink']) dropKeys(state[store], k => k === `${a}:${n}`, true);
+        if (!recheck && Array.isArray(state.stationsOpenedBefore?.[a]) && state.stationsOpenedBefore[a].includes(n)) { state.stationsOpenedBefore[a] = state.stationsOpenedBefore[a].filter(x => x !== n); changed = true; }
         dropSkills(stationSkills(a, n));
       } else if (kind === 'skill' && a) {
         dropSkills([a]);
       } else if (kind === 'rec' && ['elaProgress', 'historyProgress', 'scienceProgress'].includes(a) && b) {
-        dropKeys(state[a], k => k === token.slice(`rec:${a}:`.length));
+        dropKeys(state[a], k => k === token.slice(`rec:${a}:`.length), true);
       } else if (kind === 'word' && a) {
         dropKeys(state.vocab?.stats, k => k === a);
       } else if (kind === 'think' && a && b) {
-        dropKeys(state.mathThink, k => k === `${a}:${b}`);
+        dropKeys(state.mathThink, k => k === `${a}:${b}`, true);
       } else if (kind === 'quiz' && a && b) {
-        for (const store of ['quizzes', 'review']) dropKeys(state[store], k => k === `${a}:${b}`);
+        for (const store of ['quizzes', 'review']) dropKeys(state[store], k => k === `${a}:${b}`, true);
       }
     }
-    state.clearsDone.push(id); changed = true;
+    if (!recheck) { state.clearsDone.push(id); changed = true; }
   }
   return changed;
 }
@@ -11153,7 +11166,30 @@ Backend.onRemoteSave = remote => {
   const brought = mergeWork(S, other);
   if (brought) { save(); toast('Brought in your work from your other device.'); if (!$('#scr-home').hidden) renderHome(); }
 };
-document.addEventListener('visibilitychange', () => { if (!document.hidden && Backend.me) void Backend.refreshSettings(); });
+/* A tab left open for days keeps running the code it opened with, even after a new version is published. On Oct 21 a
+   tab opened Oct 19 (before the clears and the guardrails) woke up and merged the demo copy back into Abigail's town.
+   So when the town comes back on screen, and every 10 minutes, the published page is checked first: if it loads a newer
+   game build than this tab, this tab stops saving, keeps its copy on this device only, and reloads. The reload opens the
+   new code, which applies teacher clears and the guardrails before anything is merged. */
+const RUNNING_BUILD = (import.meta.url.match(/\/assets\/(game-[\w-]+\.js)/) || [])[1] || '';   // '' in npm run dev
+let buildStale = false;
+async function tabIsStale(){
+  if (!RUNNING_BUILD || buildStale) return buildStale;
+  try {
+    const html = await (await fetch(`/?build=${Date.now()}`, {cache:'no-store'})).text();
+    const live = (html.match(/\/assets\/(game-[\w-]+\.js)/) || [])[1];
+    if (live && live !== RUNNING_BUILD) {
+      buildStale = true;
+      Backend.pause();
+      try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){}
+      toast('Pet World was updated. Reloading…');
+      setTimeout(() => location.reload(), 1200);
+    }
+  } catch(e){}
+  return buildStale;
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Backend.me) void tabIsStale().then(stale => { if (!stale) void Backend.refreshSettings(); }); });
+setInterval(() => { if (Backend.me && !document.hidden) void tabIsStale(); }, 10 * 60000);
 function enterAs(me){
   viewHood = null; viewSubject = null;
   storeKey = 'pettown:v1:' + me.student_id;

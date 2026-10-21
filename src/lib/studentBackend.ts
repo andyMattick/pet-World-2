@@ -262,6 +262,14 @@ class StudentBackend {
   }
 
   /** Another student signed in on this browser: stop saving, logging, and merging here (docs: CLEARING-PROGRESS.md) */
+  /** Stop saving, logging and counting time in this tab (a newer version of the page is about to reload it). */
+  pause() {
+    this.switched = true;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.pendingState = null;
+    this.tracker?.stop(); this.tracker = null;
+  }
+
   private accountSwitched() {
     if (this.switched) return;
     this.switched = true;

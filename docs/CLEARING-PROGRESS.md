@@ -33,3 +33,16 @@ Guardrails added:
 - `refreshSettings()` checks the returned student is the one this tab signed in as. If not, the tab stops saving, logging and merging (`Backend.onAccountSwitch`) and reloads as whoever is signed in now. A `storage` listener makes other tabs notice right away.
 - Every save is stamped with its student (`state.owner`), and `mergeWork()` refuses a town stamped for someone else (or, for older saves, with a different name).
 - The demo pass page tells visitors to use a private window, since signing in there signs out any student on that browser.
+
+## Why it came back (Oct 21, 2026)
+
+The morning after the Oct 20 clears, the Bakery and English Units 3–4 were open again with Maya R.'s scores. Her records matched Maya's from the Oct 19 demo reset exactly (dates shifted by the daily reset), so it was the same demo copy, not new work.
+
+How: a Chrome browser on Windows had been signed in as Abigail since Oct 19, 2:09 PM (the afternoon the demo class was built). A Pet World tab there stayed open, still running Oct 19's code, which has no clears and no guardrails. It woke up at about 5:50 AM, merged its old copy (with Maya's work in it) into the server copy, which was already marked as cleared (`clearsDone`), and saved it. Newer code saw the clears marked done and skipped them.
+
+Guardrails added:
+- **Clears are checked again.** A clear that's done runs again on every copy, every time, for dated records (quizzes and tests, lesson records, Think it through, written answers, projects): anything dated before the clear's date (the `YYYY-MM-DD` in its id) is dropped. Work dated on or after that day, and undated records, stay. Order counts, skill mastery and word history are cleared only the first time.
+- **Old tabs reload.** When the town comes back on screen, and every 10 minutes, the game checks the published page. If it loads a newer game build than the tab is running, the tab stops saving (`Backend.pause()`), keeps its copy on the device only, and reloads into the new code.
+- `supabase/one-off/2026-10-21-clear-abigail-3.sql` repeats both Oct 20 clears as one new clear.
+
+To avoid it entirely: open the demo only in a private window or a separate Chrome profile, never in a browser a student uses.
