@@ -36,7 +36,7 @@ const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => 
 export const DEFAULT_WEIGHTS = { test: 50, quiz: 40, daily: 10 };
 /* each Pet World course: its time-by-subject ids and where its quizzes and tests live */
 const PET_TOWN: { id: string; name: string; time: string[]; store: 'math' | 'elaProgress' | 'historyProgress' | 'scienceProgress' }[] = [
-  { id: 'pt:math', name: 'Math', time: ['math'], store: 'math' },
+  { id: 'pt:math', name: 'Math', time: ['math', 'facts'], store: 'math' },
   { id: 'pt:english', name: 'English', time: ['english', 'reading', 'words'], store: 'elaProgress' },
   { id: 'pt:history', name: 'History', time: ['history'], store: 'historyProgress' },
   { id: 'pt:science', name: 'Biology', time: ['science'], store: 'scienceProgress' }

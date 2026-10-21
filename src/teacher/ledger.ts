@@ -75,7 +75,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 /* ---------- what she did, by subject, with every score (docs: LEDGER.md, "By subject") ---------- */
 const SUBJECT_ORDER: [string, string][] = [['math', '➗ Math'], ['english', '📚 English'], ['reading', '📖 Reading Log'], ['history', '🏛️ History'], ['science', '🦁 Science'], ['breaks', '🧠 Brain and movement breaks'], ['other', 'Other']];
 /* which subject an event belongs to; the time in each group comes from these time-by-subject ids */
-const GROUP_TIME: Record<string, string[]> = { math: ['math'], english: ['english', 'words'], reading: ['reading'], history: ['history'], science: ['science'], breaks: ['brain'], other: [] };
+const GROUP_TIME: Record<string, string[]> = { math: ['math', 'facts'], english: ['english', 'words'], reading: ['reading'], history: ['history'], science: ['science'], breaks: ['brain'], other: [] };
 function eventSubject(ev: LedgerEvent): string {
   const course = String(ev.course || '');
   switch (ev.k) {
@@ -220,7 +220,7 @@ export function renderLedger(el: HTMLElement, r: LedgerStudent) {
     ]);
     const err = a.error || b.error;
     if (err) { el.innerHTML = `<p class="status">Couldn’t load the Ledger: ${esc(err.message)}. Has database file 8 (<code>20261017000000_ledger.sql</code>) been run in Supabase?</p>`; return; }
-    st.days = (a.data || []) as DayRow[]; st.outside = (b.data || []) as OutsideRow[];
+    st.days = (a.data || []) as DayRow[]; st.outside = (b.data || []) as unknown as OutsideRow[];
     st.quizzes = c.error ? [] : (c.data || []) as QuizRow[];   // the quiz history is a bonus: the Ledger still works without it
     draw();
   }

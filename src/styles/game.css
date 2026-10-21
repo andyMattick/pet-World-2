@@ -179,6 +179,8 @@ body.brain-open{overflow:hidden}
 @keyframes move-wiggle{0%,100%{transform:rotate(-10deg) translateY(0)}50%{transform:rotate(10deg) translateY(-8px)}}
 @media (prefers-reduced-motion: reduce){.move-pet{animation:none}}
 /* A theme day announcement (docs/THEME-DAYS.md) */
+.nudge-banner{position:fixed; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); transform:translateX(-50%); z-index:72; display:flex; gap:10px; align-items:center; max-width:min(560px, calc(100vw - 32px)); background:var(--surface); color:var(--ink); border:2px solid var(--ink); border-radius:14px; padding:10px 14px; box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.nudge-banner span{flex:1}
 .theme-card{position:fixed; inset:0; z-index:71; display:flex; align-items:center; justify-content:center; background:rgba(20,16,30,.6); padding:16px}
 .theme-box{max-width:460px; width:100%; background:var(--board); color:var(--chalk); border-radius:16px; padding:20px 22px; text-align:center; box-shadow:0 10px 30px #0006}
 .theme-box p{margin:8px 0; font-size:17px; text-align:left}

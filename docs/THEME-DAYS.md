@@ -4,9 +4,9 @@ A fun theme for the school day, with something to wear and a small challenge, of
 
 ## Owner decisions
 
-- **Earned (the default):** a theme day follows a day when **the whole plan was done**: every plan item, every extra and every time goal (an item waiting for a grown-up's check counts, since her part is done). The next morning, right after the brain stretch, a card asks a grown-up: did she also earn it with her attitude? The grown-up answers with the grown-up PIN (the same PIN as the progress report; the first answer makes one if there isn't one yet).
+- **Earned (the default):** every school morning, right after the brain stretch and before the ☀️ warm-up (Fact Sprint and Word Workshop), a card asks a grown-up: make today a theme day? Finishing the plan the day before is no longer required. The card first lists what she didn't get to on her last school day (the rows carried to today, plus anything sent back to fix), or says she finished the whole plan. The grown-up answers with the grown-up PIN (the same PIN as the progress report; the first answer makes one if there isn't one yet).
   - **Yes:** today is a theme day. The next theme in the rotation is announced right away.
-  - **Not this time:** no theme today. Tomorrow morning the day before is checked again, so finishing today's whole plan brings the question back.
+  - **Not this time:** no theme today. The question comes back tomorrow morning.
   - **Ask me later:** the card comes back in 20 minutes.
 - **When she sees it:** right after the grown-up says yes (or, for a special day or the every-day and Friday options, right after the morning brain stretch). It stays in 📋 Today's plan all day with a **See it** button.
 - **Themes:** 18 in the rotation and 6 special days.

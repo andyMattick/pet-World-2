@@ -178,6 +178,8 @@ function normalize(raw){
   s.doneRows = s.doneRows && typeof s.doneRows.day === 'string' && Array.isArray(s.doneRows.ids) ? {day:s.doneRows.day, ids:s.doneRows.ids.filter(x => typeof x === 'string').slice(0, 60)} : {day:'', ids:[]};   // plan rows already reported finished today
   s.now = s.now && Number.isFinite(+s.now.t) && typeof s.now.what === 'string' ? {t:+s.now.t, what:s.now.what.slice(0, 120)} : null;   // what she's on (the teacher app's Right now card)
   s.warmupShown = typeof s.warmupShown === 'string' ? s.warmupShown : '';   // the last day the warm-up card opened by itself
+  s.carrySkipped = typeof s.carrySkipped === 'string' ? s.carrySkipped : '';
+  s.nudges = s.nudges && typeof s.nudges.day === 'string' && Array.isArray(s.nudges.shown) ? {day:s.nudges.day, shown:s.nudges.shown.filter(x => typeof x === 'string').slice(0, 20)} : {day:'', shown:[]};   // today's "wrap it up" reminders already shown   // the last day a grown-up let her skip "Finish from before first"
   s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;   // earned theme days so far (the rotation's place)
   s.planDone = Object.fromEntries(Object.entries(s.planDone && typeof s.planDone === 'object' ? s.planDone : {}).filter(([d, v]) => /^\d{4}-\d{2}-\d{2}$/.test(d) && v === true).sort().slice(-14));   // days the whole plan was done
   s.move = normalizeMoveState(s.move);      // stand-and-stretch breaks between subjects (docs/MOVE-BREAKS.md)
@@ -5519,6 +5521,33 @@ function closeMoveBreak(){
 }
 document.addEventListener('click', () => { if (Backend.me) setTimeout(moveCheck, 0); });   // opening a course inside the Library doesn't go through show()
 setInterval(() => { if (Backend.me) moveCheck(); }, 15000);
+/* ---------- wrap-it-up reminders (docs/DAILY-PLAN.md, "Wrap-it-up reminders") ----------
+   A banner (not a pop-up, so it never cuts off a problem) at 3:00 PM, and when she reaches 30 minutes in a subject
+   today. Each shows once a day. It tells her to finish what she's on, and that she CAN stop (or move on) if that's
+   what her teacher says. */
+const NUDGE_MINUTES = 30, NUDGE_HOUR = 15;
+const NUDGE_SUBJECT_NAME = {math:'math', english:'English', reading:'reading', history:'History', science:'Biology', words:'Word Workshop', facts:'Fact Sprint'};
+function nudgeCheck(){
+  if (!S?.nudges || document.hidden || $('.nudge-banner')) return;
+  const day = logDayKey(), n = S.nudges;
+  if (n.day !== day) { n.day = day; n.shown = []; }
+  const show = (key, html) => { n.shown.push(key); save(); openNudge(html); };
+  if (new Date().getHours() >= NUDGE_HOUR && !n.shown.includes('pm')) {
+    show('pm', `⏰ <b>It’s 3:00!</b> Finish what you’re working on. Then you <b>can</b> be done for the day, if that’s what your teacher says.`); return;
+  }
+  const subject = subjectOnScreen(), secs = (S.subjectTime?.[day] || {})[subject] || 0;
+  if (NUDGE_SUBJECT_NAME[subject] && secs >= NUDGE_MINUTES * 60 && !n.shown.includes(`s:${subject}`)) {
+    show(`s:${subject}`, `⏰ <b>${NUDGE_MINUTES} minutes of ${esc(NUDGE_SUBJECT_NAME[subject])} today!</b> Finish what you’re working on. Then you <b>can</b> move on to something else, if that’s what your teacher says.`);
+  }
+}
+function openNudge(html){
+  const el = document.createElement('div');
+  el.className = 'nudge-banner'; el.setAttribute('role', 'status');
+  el.innerHTML = `<span>${html}</span><button type="button" class="btn small berry">OK</button>`;
+  el.querySelector('button').addEventListener('click', () => el.remove());
+  document.body.appendChild(el); sfx('tick');
+}
+setInterval(() => { if (Backend.me) nudgeCheck(); }, 15000);
 /* ---------- theme days (docs/THEME-DAYS.md) ----------
    A theme for the school day (Pajama Day, Detective Day, Pi Day…), announced once a day right after the morning brain
    stretch, or the first time the town is on screen if brain stretches are off. It stays in Today's plan all day. */
@@ -5568,26 +5597,38 @@ function themeCheck(){
   trackDoneRows();
   const day = logDayKey(), policy = themePolicy();
   if (policy.enabled) recordPlanDone(day);
+  ensureCarry(day);   // what she didn't get to last time is on today's plan, even without "I'm done for today"
   if (brainRun || moveRun || $('.theme-card')) return;
   if (brainAllowed().length && (S.brain.morning !== day || S.brain.active)) return;   // the morning brain stretch comes first
   if (!brainBreakNow()) return;
   /* then the theme day (the grown-up's question first), then the warm-up */
   if (policy.enabled) {
     const prev = lastSchoolDay(day);
-    if (policy.when === 'earned' && !themeFor(day, policy, schoolStart()) && S.themeAsk?.day !== day && prev && S.planDone[prev] && Date.now() > themeAskLater) { openThemeAsk(prev); return; }
+    /* every morning (not only after a day with the whole plan done): the grown-up sees what wasn't finished and decides */
+    if (policy.when === 'earned' && !themeFor(day, policy, schoolStart()) && S.themeAsk?.day !== day && Date.now() > themeAskLater) { openThemeAsk(prev); return; }
     const theme = S.themeSeen === day ? null : todayTheme();
     if (theme) { openThemeCard(theme, true); return; }
   }
   if (S.warmupShown !== day && warmupPending() && !$('#scr-home').hidden) { S.warmupShown = day; save(); openWarmupCard(); }
 }
-/* the grown-up's question: did she earn a theme day? (behind the grown-up PIN, the same one as the progress report) */
+/* the grown-up's question, every morning before the warm-up: make today a theme day? It first lists what she didn't get
+   to last time (those rows are first on today's plan), so the grown-up decides with that in front of them. Behind the
+   grown-up PIN (the same one as the progress report). */
+function leftFromLastTime(prev){
+  if (!prev) return [];
+  const onPrev = planItems(prev);   // each row as it stood that day, so its minutes show what she did then
+  const rows = S.planCarry.after === prev ? S.planCarry.items.filter(validPlanItem).map(x => { const i = planItemInfo(onPrev.find(y => y.id === x.id) || x, prev); return `${i.label}${i.progress ? ` · ${i.progress}` : ''}`; }) : [];
+  return [...rows, ...fixItems().map(x => `🔁 Fix: ${x.title}`)];
+}
 function openThemeAsk(prev){
   const el = document.createElement('div'), name = S.name || 'your student';
-  const when = new Date(`${prev}T12:00:00`).toLocaleDateString([], {weekday:'long'});
+  const when = prev ? new Date(`${prev}T12:00:00`).toLocaleDateString([], {weekday:'long'}) : '', left = leftFromLastTime(prev);
   el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Theme day check');
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><div class="theme-emoji" aria-hidden="true">🎉</div>
-    <h2>${esc(name)} finished the whole plan on ${esc(when)}!</h2>
-    <p>Did ${esc(name)} also earn a theme day with a good attitude? If yes, today becomes a theme day.</p>
+    <h2>Make today a theme day?</h2>
+    ${!prev ? '' : left.length ? `<p>Here’s what ${esc(name)} didn’t get to on ${esc(when)}. It comes first today, right after the warm-up:</p><ul class="theme-left">${left.map(t => `<li>⬜ ${esc(t)}</li>`).join('')}</ul>`
+      : S.planDone[prev] ? `<p>${esc(name)} finished the whole plan on ${esc(when)}! 🎉</p>` : ''}
+    <p>If yes, today becomes a theme day.</p>
     <form class="theme-pin"><label>${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'} <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label>
     <div class="row"><button type="submit" class="btn berry" value="yes">Yes, theme day! 🎉</button><button type="submit" class="btn" value="no">Not this time</button></div></form>
     <button type="button" class="btn small" data-theme-later>Ask me later</button></div>`;
@@ -5603,7 +5644,7 @@ function openThemeAsk(prev){
     if (theme) S.themeTurn++;
     save(); el.remove();
     if (theme) openThemeCard(theme, true);
-    else { toast('Finish the whole plan today for another chance at a theme day! 💪'); setTimeout(moveCheck, 300); }
+    else { toast('No theme day today. Maybe tomorrow! 💪'); setTimeout(moveCheck, 300); }
     if (!$('#scr-home').hidden) renderHome();
   });
   setTimeout(() => el.querySelector('input[name="pin"]')?.focus(), 50);
@@ -6931,6 +6972,18 @@ function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.
 function validPlanItem(x){
   return !!x && typeof x.id === 'string' && ((x.kind === 'recall' && inPrepUnit()) || (x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]));
 }
+/* "I'm done for today" saves what's left (S.planCarry). If she never tapped it on her last school day, the first look at
+   today's plan works it out from that day instead, so nothing quietly drops off. */
+function ensureCarry(day = logDayKey()){
+  if (!S?.planCarry || day !== logDayKey()) return;
+  const prev = lastSchoolDay(day);
+  if (!prev || S.planCarry.after >= prev) return;
+  S.planCarry = {after:prev, items:planItems(prev).filter(x => x.kind !== 'recall' && planItemInfo(x, prev).status === 'todo').map(({carried, ...x}) => x)};
+  save();
+}
+/* a time row (a subject's minutes, or practice in a unit): the only kind of carried row that holds up the day.
+   Carried minutes don't add to today's: a carried 30 math minutes and today's 30 are both done after 30 minutes of math. */
+const timeKey = y => y.kind === 'subject' ? `s:${y.subject}` : y.kind === 'unit' && y.what !== 'quiz' && y.what !== 'test' ? `u:${y.unit}` : '';
 /* the day's items: that date's own list, or its weekday's, plus what was left from an earlier day */
 function planItems(day = logDayKey()){
   const s = planSettings(), dow = PLAN_DAYS[new Date(`${day}T12:00:00`).getDay()];
@@ -6982,7 +7035,7 @@ function dayPlan(day = logDayKey()){
   GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).forEach(([id, name]) => {
     const subject = GOAL_PLAN_SUBJECT[id];
     if (!subject) { goalRows.push([id, name, goals[id]]); return; }
-    const row = items.find(x => x.kind === 'subject' && x.subject === subject);
+    const row = items.find(x => x.kind === 'subject' && x.subject === subject && !x.carried);   // a goal is for today's row, not one carried from before
     if (row) row.minutes = Math.max(Math.round(+row.minutes || 0), goals[id]);
     else items.push({id:`goal:${id}`, kind:'subject', subject, minutes:goals[id], goal:true});
   });
@@ -6993,18 +7046,22 @@ function dayPlan(day = logDayKey()){
    around), and items to pass a quiz or unit test go last. */
 const planShuffle = () => Backend.me?.game_settings?.planShuffle !== false;
 function orderPlan(items, day){
-  if (!planShuffle()) return items;
   const isTest = x => x.kind === 'unit' && (x.what === 'quiz' || x.what === 'test');
+  /* rows carried from before go first, right after the warm-up (docs/DAILY-PLAN.md, "Finish from before first") */
+  const before = items.filter(x => x.carried && !isTest(x));
+  items = items.filter(x => !before.includes(x));
+  if (!planShuffle()) return [...before, ...items];
   const rest = items.filter(x => !isTest(x)), tests = items.filter(isTest);
   if (day === logDayKey() && S && (S.planStart?.day !== day || !rest.some(x => x.id === S.planStart.id))) {
     const open = rest.filter(x => (x.kind === 'subject' || x.kind === 'unit') && planItemInfo(x, day).status === 'todo');
     if (open.length) { S.planStart = {day, id:open[Math.floor(Math.random() * open.length)].id}; save(); }
   }
   const start = S?.planStart?.day === day ? rest.find(x => x.id === S.planStart.id) : null;
-  return [...(start ? [{...start, start:true}] : []), ...rest.filter(x => x !== start), ...tests];
+  return [...before, ...(start ? [{...start, start:true}] : []), ...rest.filter(x => x !== start), ...tests];
 }
 function planCardHTML(){
-  const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {};
+  ensureCarry();
+  const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {}, first = carryFirst();
   const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0, helpHTML = helpPlanHTML();
   if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML) return '';
   const extraRows = extras.map(x => {
@@ -7013,12 +7070,13 @@ function planCardHTML(){
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
-    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${x.start && i.status === 'todo' && !fixing ? '<b>⭐ Start here:</b> ' : ''}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+    const must = first.some(y => y.id === x.id && y.carried === x.carried), lead = must ? '<b>⏪ Finish first:</b> ' : x.start && i.status === 'todo' && !fixing && !first.length ? '<b>⭐ Start here:</b> ' : '';
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${fixHTML}${rows.join('')}${outsideRowsHTML()}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -7362,6 +7420,48 @@ function openWarmupCard(){
 $('#town').addEventListener('click', e => {
   const opens = e.target.closest('[data-open]');
   if (opens && SUBJECT_OPENS(opens.dataset.open) && warmupPending()) { e.stopImmediatePropagation(); sfx('tick'); openWarmupCard(); }
+}, true);
+/* ---------- finish from before first (docs/DAILY-PLAN.md, "Finish from before first") ----------
+   After the warm-up, time rows carried from an earlier day (a subject's minutes, or practice in a unit) come first and
+   must be done before the rest of the plan: until then, opening any other subject shows this card. Quizzes, unit tests
+   and projects carried over still show "(from before)" but don't hold up the day. Brain stretches and stand-and-stretch
+   breaks run as usual. A grown-up can let her skip it for today with the grown-up PIN. */
+function carryFirst(){
+  if (!S || S.carrySkipped === logDayKey()) return [];
+  return dayPlan().items.filter(x => x.carried && timeKey(x) && planItemInfo(x).status === 'todo');
+}
+function carryAllows(id){
+  return carryFirst().some(x => planItemInfo(x).open === id || (x.kind === 'subject' && BUILDINGS.some(b => b.id === id && b.subject === x.subject)));
+}
+function openCarryCard(){
+  if ($('.theme-card')) return;
+  const list = carryFirst(), el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Finish from before first');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">Before the rest of today’s plan</p><div class="theme-emoji" aria-hidden="true">⏪</div><h2>Finish what’s left from before</h2>
+    <p>These didn’t get finished last time. Do them first, then the rest of today’s plan opens up.</p>${list.map(x => {
+      const i = planItemInfo(x), go = i.open && (i.open === 'reading' || unitOpen(i.open));
+      return `<div class="row extras-row"><span style="flex:1">⬜ ${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}</span>${go ? `<button type="button" class="btn small berry" data-carry-go="${esc(i.open)}">Go</button>` : ''}</div>`;
+    }).join('')}<button type="button" class="btn small" data-carry-close>Back to town</button>
+    <details class="warmup-skip"><summary>Grown-up: skip this for today</summary><form class="theme-pin" data-carry-skip><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Skip for today</button></form></details></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', event => {
+    const go = event.target.closest('[data-carry-go]');
+    if (go) { el.remove(); $(`#town [data-open="${CSS.escape(go.dataset.carryGo)}"]`)?.click(); return; }
+    if (event.target.closest('[data-carry-close]')) el.remove();
+  });
+  el.querySelector('[data-carry-skip]').addEventListener('submit', event => {
+    event.preventDefault();
+    const pin = String(new FormData(event.target).get('pin') || '').trim();
+    if (!/^\d{4}$/.test(pin)) { toast('Type the 4-digit grown-up PIN.'); return; }
+    if (S.parentPin ? S.parentPin !== pinHash(pin) : teacherLock() && !pinMatchesLock(pin)) { toast('That PIN does not match.'); return; }
+    if (!S.parentPin) S.parentPin = pinHash(pin);
+    S.carrySkipped = logDayKey(); save(); el.remove(); renderHome(); toast('Skipped for today. Pick a subject!');
+  });
+}
+$('#town').addEventListener('click', e => {
+  const opens = e.target.closest('[data-open]'); if (!opens) return;
+  const id = opens.dataset.open;
+  if (SUBJECT_OPENS(id) && carryFirst().length && !carryAllows(id)) { e.stopImmediatePropagation(); sfx('tick'); openCarryCard(); }
 }, true);
 $('#town').addEventListener('click', e => {
   const classBack = e.target.closest('[data-class-back]'); if (classBack) { viewSubject = null; renderHome(); return; }
@@ -10814,7 +10914,7 @@ function dayWins(d){
 }
 function daySummaryHTML(day = logDayKey()){
   const d = S.dayLog[day] || {places:{}, counts:{}, events:[]}, subj = S.subjectTime?.[day] || {}, mins = s => (s < 60 ? '<1' : String(Math.round(s / 60)));
-  const subjects = [...GOAL_SUBJECTS, ['brain', '🧠 Brain stretch'], ['arcade', '🕹️ Arcade']].filter(([id]) => subj[id] >= 30);
+  const subjects = [...GOAL_SUBJECTS, ['facts', '⚡ Fact Sprint'], ['brain', '🧠 Brain stretch'], ['arcade', '🕹️ Arcade']].filter(([id]) => subj[id] >= 30);
   const total = Object.values(subj).reduce((a, b) => a + b, 0);
   const places = Object.entries(d.places).filter(([k, s]) => s >= 30 && k !== 'town').sort((a, b) => b[1] - a[1]);
   const counts = Object.entries(d.counts).map(([k, c]) => { const [, shop, station] = k.split(':'); return `<li>${esc(stationLabel(shop, station))}: <b>${c.n}</b> order${c.n === 1 ? '' : 's'}, ${c.ok} perfect</li>`; });
@@ -10874,7 +10974,8 @@ document.addEventListener('click', event => {
 function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'english';
-  if (on('cafe') || on('shift') || on('sprint') || on('summary')) return 'math';
+  if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
+  if (on('cafe') || on('shift') || on('summary')) return 'math';
   if (on('vocab')) return 'words';
   if (on('arcade')) return 'arcade';
   if (!on('library')) return 'town';

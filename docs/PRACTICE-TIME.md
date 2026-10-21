@@ -28,7 +28,8 @@ Each 15 seconds of active time is credited to whatever is on screen:
 
 | On screen | Subject |
 |---|---|
-| A shop, a shift, the Sprint Track, a shift summary, or a math "Think it through" | Math |
+| A shop, a shift, a shift summary, or a math "Think it through" | Math |
+| The Sprint Track (Fact Sprint, times tables) | Fact Sprint (its own row, so slow times tables don't use up the plan's math minutes; the teacher's Math course and Ledger still count it as math) |
 | An English lesson, quiz or test (and its unit page) | English |
 | The Reading Log or a reading quiz | Reading Log |
 | Word Workshop | Word Workshop |

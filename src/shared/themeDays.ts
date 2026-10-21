@@ -1,6 +1,6 @@
 /* Theme days (docs/THEME-DAYS.md): a fun theme for the school day, announced right after the morning brain stretch
-   (or when the town first opens, if brain stretches are off). By default a theme day is earned: when the whole plan
-   was done the day before, a grown-up says yes with the grown-up PIN. Shared by the game (the question, the
+   (or when the town first opens, if brain stretches are off). By default a theme day is earned: every morning a
+   grown-up sees what wasn't finished the day before and says yes or no with the grown-up PIN. Shared by the game (the question, the
    announcement, the plan row) and the teacher app (class settings). */
 
 export interface ThemeDay {

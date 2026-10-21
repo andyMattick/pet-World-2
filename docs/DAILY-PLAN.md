@@ -18,7 +18,21 @@
   - practice in a unit: that many minutes in the unit today (the day log's time per lesson).
   - a quiz: a quiz in the unit passed today. The unit test: passed today or already passed.
   - a project: ✅ once a grown-up verifies it, ⏳ while it is sent and waiting, ⬜ otherwise (also when a revision was asked for).
-- **Carry-over:** "I'm done for today" saves the day's not-done items in the save (`S.planCarry`); the next days show them marked "(from before)" until a later "I'm done" replaces the list. An item that is already on the new day's plan isn't doubled.
+- **Carry-over:** "I'm done for today" saves the day's not-done items in the save (`S.planCarry`); the next days show them marked "(from before)" until a later "I'm done" replaces the list. An item that is already on the new day's plan isn't doubled. If she never tapped "I'm done" on her last school day, the next day works out what was left from that day (`ensureCarry`).
+- **Carried minutes don't add up:** a carried 30 math minutes and today's 30 are both done after 30 minutes of math.
+
+## Finish from before first
+
+- After the warm-up, carried time rows go to the top of the plan as **⏪ Finish first** and must be done before the rest of the plan. Until then, opening any other subject shows a card listing them (with Go buttons). Opening the same subject's units is allowed. Carried quizzes, unit tests and projects still show "(from before)" but don't hold up the day.
+- Brain stretches and stand-and-stretch breaks run as usual.
+- A grown-up can skip it for one day with the grown-up PIN (`S.carrySkipped`).
+
+## Wrap-it-up reminders
+
+- A banner at the top of the screen (not a pop-up, so it never interrupts a problem), each once a day (`S.nudges`):
+  - **3:00 PM:** finish what you're working on; then you **can** be done for the day, if that's what your teacher says.
+  - **30 minutes in a subject today** (math, English, reading, History, Biology, Word Workshop, Fact Sprint): finish what you're working on; then you **can** move on, if that's what your teacher says.
+- It only reminds. Nothing is locked or ended.
 - **Ledger:** the day's plan with each item's status goes into the Ledger day (`entry.plan`) and shows on the teacher's Ledger tab.
 
 ## Time goals were folded into the plan (October 2026)
