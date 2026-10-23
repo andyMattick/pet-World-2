@@ -256,7 +256,12 @@ function syncLanguageControls(){
   refreshLanguage();
   document.querySelectorAll('[data-language]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.language === S.practiceLanguage)));
 }
-function save(){ if (LOOK_ID) return; S.savedAt = Date.now(); try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){} if (Backend.me) Backend.saveSoon(S); }
+/* Save guard (docs/CLEARING-PROGRESS.md, "Oct 23"): every save is stamped with this number. The server refuses saves
+   without it (migration 20261023000000_save_guard.sql), so a tab still running code from before the guardrails can't
+   write to the server, and mergeWork() never merges a copy that code wrote. Raise it (and the number in a new
+   migration) only when a change must shut out every older tab. */
+const SAVE_CLIENT = 4;
+function save(){ if (LOOK_ID) return; S.savedAt = Date.now(); S.client = SAVE_CLIENT; try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){} if (Backend.me) Backend.saveSoon(S); }
 
 /* ---------- facts (times tables) ---------- */
 const fkey = (x,y) => Math.min(x,y) + 'x' + Math.max(x,y);
@@ -11232,6 +11237,12 @@ function mergeWork(base, other){
      older saves without a stamp are compared by name. */
   if ((base.owner && other.owner && base.owner !== other.owner) || (!(base.owner && other.owner) && base.name && other.name && base.name !== other.name)) {
     console.warn('[Pet World] not merging another student\'s town', base.owner || base.name, other.owner || other.name); return 0;
+  }
+  /* Oct 23: only merge a copy written by guarded code, stamped for this student. A copy from a tab running older code
+     (no stamp) is where the demo work kept coming back from; the town keeps its own copy and ignores that one. */
+  const owner = base.owner || Backend.me?.student_id;
+  if (!((Number(other.client) || 0) >= SAVE_CLIENT) || !other.owner || (owner && other.owner !== owner)) {
+    console.warn('[Pet World] not merging a copy from older code or without an owner stamp', other.client, other.owner); return 0;
   }
   let n = 0;
   const filled = obj => Object.values(obj || {}).filter(v => typeof v === 'string' && v.trim()).length;

@@ -46,3 +46,21 @@ Guardrails added:
 - `supabase/one-off/2026-10-21-clear-abigail-3.sql` repeats both Oct 20 clears as one new clear.
 
 To avoid it entirely: open the demo only in a private window or a separate Chrome profile, never in a browser a student uses.
+
+## Why Deliveries showed done (Oct 23, 2026)
+
+Before Abigail had started Deliveries (Café station 4), it showed done, with about 10 minutes already logged that day. Nobody had used the 👀 Look view to change anything: Look only never writes (`docs/LOOK-ONLY.md`).
+
+Two gaps let work she didn't do back in:
+- **Old tabs could still save.** The Oct 21 reload check only exists in tabs opened after Oct 21. A tab opened earlier keeps running its old code (no clears, no owner check, no reload) for as long as it stays open, and the server took its saves.
+- **Re-checked clears skip undated progress.** A clear that already ran is checked again only for dated records. Station order counts and skill mastery have no dates, so when an old copy merged them back in, the Oct 21 clear didn't take them out again. That's how Deliveries could look finished.
+
+Guardrails added:
+- **The game stamps every save** (`SAVE_CLIENT` in `src/game/game.js`, saved as `state.client`).
+- **The server refuses unstamped saves** and saves stamped for another student (migration `20261023000000_save_guard.sql`, trigger `saves_guard`). Old tabs can't write anymore, whatever code they run. The SQL editor and `demo_reset` aren't affected.
+- **`mergeWork()` only merges a copy that's stamped** (`client` at least `SAVE_CLIENT`) and stamped for this student. An old copy saved on a device by older code is ignored, never merged.
+- **Save log.** Every save that changes station progress, or comes from a different browser sign-in, gets a row in `save_log`: time, sign-in, browser, IP, stamp and station counts. If progress shows up that she didn't earn, the log says which browser sent it. Query: at the bottom of `supabase/one-off/2026-10-23-abigail-deliveries.sql`.
+
+Roll-out order: publish the game first, then run the migration. Open tabs on the new code reload within 10 minutes. If the migration runs first, open tabs can't save until they reload.
+
+`supabase/one-off/2026-10-23-abigail-deliveries.sql`: Part 1 shows who was in her town; Part 2 takes back Deliveries only (`clear:2026-10-23`, `station:cafe:4`).
