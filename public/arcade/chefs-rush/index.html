@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chef's Rush</title>
+<!-- Pet World: served at /arcade/chefs-rush/ (docs/CHEFS-RUSH.md). Played from the Café's Deliveries station (?from=cafe,
+     pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: every Pet World Café skill.
+     It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#FFF7EC; --card:#FFFFFF; --ink:#2B2118; --muted:#7A6A5A; --edge:#E9D8C2; --accent:#E2552E; --accent-ink:#FFFFFF;
+    --ok:#2E8B57; --bad:#C8372D; --warn:#E8A33A; --ticket:#FFFDF6; --slot:#FBEFDD; --line:#BFA98F;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1C1712; --card:#28211A; --ink:#F4EADF; --muted:#BBA894; --edge:#3D3226; --accent:#F07A4F; --accent-ink:#1C1712;
+      --ok:#5CC98A; --bad:#F06B60; --warn:#F2B957; --ticket:#2F271F; --slot:#352B21; --line:#7D6B58; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; min-height:100%}
+  body{background:var(--bg); color:var(--ink); font:16px/1.4 "Segoe UI", system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color:transparent}
+  button{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:860px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.9em; margin:6px 0 4px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:600}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:disabled{opacity:.5; cursor:default}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:14px}
+  /* start / end */
+  .hero{font-size:3.2em; line-height:1}
+  .how{margin:10px 0 16px; padding-left:20px}
+  .how li{margin:4px 0}
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+  .stats div{flex:1 1 120px; background:var(--slot); border-radius:12px; padding:10px; text-align:center}
+  .stats b{display:block; font-size:1.6em}
+  /* play */
+  .top{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+  .top .hearts{font-size:1.3em; letter-spacing:2px}
+  .top .pill{background:var(--slot); border-radius:999px; padding:3px 10px; font-weight:600}
+  .rail{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; min-height:84px}
+  .tk{flex:0 0 132px; background:var(--ticket); border:2px dashed var(--line); border-radius:10px; padding:6px 8px; text-align:left; position:relative}
+  .tk.on{border-style:solid; border-color:var(--accent); box-shadow:0 2px 0 var(--accent)}
+  .tk .who{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tk .what{font-size:.82em; color:var(--muted)}
+  .tk .bar{height:7px; border-radius:4px; background:var(--slot); margin-top:6px; overflow:hidden}
+  .tk .bar i{display:block; height:100%; background:var(--ok); transition:width .25s linear}
+  .tk.hurry .bar i{background:var(--warn)} .tk.panic .bar i{background:var(--bad)}
+  .tk.panic{animation:wobble .5s infinite}
+  @keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-1.5deg)}75%{transform:rotate(1.5deg)}}
+  .empty{color:var(--muted); align-self:center}
+  .order{margin-top:8px}
+  .order .who{font-size:1.15em; font-weight:700}
+  .order .ask{margin:6px 0}
+  .bell{display:inline-block; background:var(--accent); color:var(--accent-ink); border-radius:10px; padding:4px 12px; font-weight:800; font-size:1.25em; margin:4px 0}
+  .visual{margin:8px 0; overflow-x:auto}
+  .why{margin-top:8px; padding:8px 10px; border-radius:10px; background:var(--slot); border-left:5px solid var(--bad)}
+  .why.ok{border-left-color:var(--ok)}
+  .pantry{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin-top:10px}
+  .bin{background:var(--slot); border-radius:12px; padding:8px; text-align:center}
+  .bin .em{font-size:1.9em; line-height:1.1}
+  .bin .nm{font-size:.85em; color:var(--muted); min-height:2.4em}
+  .bin .ct{font-size:1.7em; font-weight:800}
+  .bin .row{display:flex; gap:6px; justify-content:center; margin-top:4px}
+  .bin .row button{min-width:44px; min-height:40px; border-radius:10px; border:2px solid var(--edge); background:var(--card); font-weight:700}
+  .plate{min-height:30px; font-size:1.1em; letter-spacing:1px; word-break:break-all; margin-top:4px}
+  .serve{display:flex; gap:8px; margin-top:10px}
+  .serve .go{flex:1; font-size:1.15em; padding:12px}
+  .toast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:8px 16px; border-radius:999px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:9}
+  .toast.show{opacity:1}
+  /* visuals */
+  .tape{display:grid; grid-template-columns:auto 1fr; gap:6px 10px; align-items:center}
+  .tape .boxes{display:flex; gap:3px}
+  .tape .boxes span{width:38px; height:30px; border:2px solid var(--line); border-radius:6px; display:grid; place-items:center; font-weight:700; background:var(--card)}
+  .group{display:inline-flex; gap:4px; padding:6px 10px; border:2px dashed var(--line); border-radius:12px; font-size:1.5em}
+  table.rt{border-collapse:collapse; background:var(--card)}
+  table.rt th, table.rt td{border:2px solid var(--line); padding:6px 14px; text-align:center; font-weight:600}
+  table.rt td.q{color:var(--accent)}
+  svg text{fill:var(--ink); font:600 13px system-ui, sans-serif}
+  svg .ax{stroke:var(--ink); stroke-width:2}
+  svg .gr{stroke:var(--edge); stroke-width:1}
+  svg .ln{stroke:var(--accent); stroke-width:2; stroke-dasharray:5 4}
+  svg .pt{fill:var(--accent)}
+  svg .q{fill:var(--accent); font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_CAFE = params.get('from') === 'cafe';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+let best = 0; try { best = +localStorage.getItem('chefs-rush:best') || 0; } catch(e){}
+
+/* ---------- the Café skills (names match Pet World's registry) ---------- */
+const SKILL_NAMES = {
+  basic:'Basic ratios', tape:'Tape diagrams', groups:'Equal groups', dnl:'Double number lines', dnlTable:'Double number lines and tables',
+  table:'Ratio tables', equiv:'Equivalent ratios (scaling a recipe)', word:'Ratio word problems', realworld:'Ratios in the real world',
+  understand:'Same-tasting mixes', coord:'Ratios on the coordinate plane', units:'Ratios and units', ppw:'Part-part-whole ratios'
+};
+/* ingredients: [emoji, one, many] */
+const PAIRS = [
+  [['🍓','strawberry','strawberries'],['🫐','blueberry','blueberries']], [['🥚','egg','eggs'],['🥛','cup of milk','cups of milk']],
+  [['🍫','chocolate chip','chocolate chips'],['🥜','peanut','peanuts']], [['🍋','lemon','lemons'],['🧊','ice cube','ice cubes']],
+  [['🥕','carrot','carrots'],['🍎','apple','apples']], [['🧈','stick of butter','sticks of butter'],['🌾','cup of flour','cups of flour']],
+  [['🍌','banana','bananas'],['🍒','cherry','cherries']], [['🍇','grape','grapes'],['🍈','melon cube','melon cubes']],
+  [['🍅','tomato','tomatoes'],['🧀','cheese slice','cheese slices']]
+];
+const SOLD = [['🧁','cupcake','cupcakes'],['🍪','cookie','cookies'],['🍩','donut','donuts'],['🥐','croissant','croissants'],['🥤','smoothie','smoothies']];
+const COIN = ['🪙','coin','coins'];
+const CUSTOMERS = [['🐻','Biscuit'],['🐶','Waffles'],['🐭','Pip'],['🐨','Koko'],['🦊','Rusty'],['🐰','Clover'],['🐼','Bamboo'],['🐸','Hops'],['🐱','Mochi'],['🦉','Professor Hoot'],['🐷','Truffle'],['🐯','Stripes']];
+const UNITS = [
+  {item:['🥛','pint of milk','pints of milk'], big:['quart','quarts'], small:['pint','pints'], f:2, what:' of milk', hold:'Your jug holds 1 pint'},
+  {item:['🧃','quart of juice','quarts of juice'], big:['gallon','gallons'], small:['quart','quarts'], f:4, what:' of juice', hold:'Your jug holds 1 quart'},
+  {item:['🌾','half-cup scoop of flour','half-cup scoops of flour'], big:['cup','cups'], small:['half-cup','half-cups'], f:2, what:' of flour', hold:'Your scoop holds 1 half-cup'},
+  {item:['🧈','quarter-pound stick of butter','quarter-pound sticks of butter'], big:['pound','pounds'], small:['quarter-pound stick','quarter-pound sticks'], f:4, what:' of butter', hold:'Butter comes in quarter-pound sticks'},
+  {item:['🥚','egg','eggs'], big:['dozen','dozen'], small:['egg','eggs'], f:12, maxK:2, what:' eggs', hold:'You plate eggs one at a time'}
+];
+const nm = (n, x) => n === 1 ? x[1] : x[2];                 // the word for n of an ingredient
+const q = (n, x) => `${n} ${nm(n, x)}`;                      // "3 lemons", "1 lemon"
+const w1 = (n, pair) => n === 1 ? pair[0] : pair[1];          // unit words: quart / quarts
+const item = (x, need) => ({e:x[0], n:x[2], need});
+
+/* parts a:b that get bigger with the level, never equal */
+function parts(level){
+  const top = Math.min(6, 2 + level);
+  let a, b; do { a = rnd(1, top); b = rnd(1, top + 1); } while (a === b || gcd(a, b) !== 1);
+  return [a, b];
+}
+const kFor = level => rnd(2, Math.min(7, 2 + level));
+const fits = (...n) => n.every(x => x >= 1 && x <= 30);
+
+/* each maker returns {skill, text, visual, items:[{e, n, need}], why} */
+const MAKERS = {
+  basic(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), flip = L > 1 && Math.random() < .5;
+    return {skill:'basic', text:flip ? `The ratio of <b>${esc(B[2])} to ${esc(A[2])}</b> is <b>${b} to ${a}</b>. Plate one cup.` : `<b>${esc(q(a, A))} for every ${esc(q(b, B))}</b>. Plate one cup.`,
+      items:[item(A, a), item(B, b)],
+      why:flip ? `"${B[2]} to ${A[2]}" puts ${B[2]} first: ${q(b, B)} and ${q(a, A)}. Watch which word comes first.` : `${a} for every ${b} means ${q(a, A)} and ${q(b, B)}.`};
+  },
+  tape(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = kFor(L), total = L > 1 && Math.random() < .5;
+    if (!fits(a * k, b * k)) return null;
+    const row = (n, x) => `<b>${x[0]} ${esc(x[2])}</b><div class="boxes">${Array.from({length:n}, () => `<span>${total ? '' : k}</span>`).join('')}</div>`;
+    return {skill:'tape', text:total ? `Use the tape diagram. There are <b>${(a + b) * k} pieces in all</b>.` : 'Use the tape diagram. Each box stands for the number in it.',
+      visual:`<div class="tape">${row(a, A)}${row(b, B)}</div>`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:total ? `There are ${a + b} boxes and ${(a + b) * k} pieces, so each box is ${(a + b) * k} ÷ ${a + b} = ${k}. Then ${a} × ${k} = ${a * k} and ${b} × ${k} = ${b * k}.` : `${a} ${a === 1 ? 'box' : 'boxes'} of ${k} is ${a * k}, and ${b} ${b === 1 ? 'box' : 'boxes'} of ${k} is ${b * k}.`};
+  },
+  groups(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = kFor(L);
+    if (!fits(a * k, b * k)) return null;
+    return {skill:'groups', text:`One snack bag looks like this. Make <b>${k} bags' worth</b> on one big plate.`,
+      visual:`<div class="group" aria-label="${esc(q(a, A))} and ${esc(q(b, B))}">${A[0].repeat(a)} ${B[0].repeat(b)}</div>`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:`${k} bags × ${a} = ${q(a * k, A)}, and ${k} bags × ${b} = ${q(b * k, B)}.`};
+  },
+  dnl(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = rnd(3, Math.min(7, 3 + L));
+    if (!fits(a * k, b * k)) return null;
+    const gap = 70, x0 = 20, w = x0 * 2 + gap * 4;
+    const ticks = [[0, 0], [a, b], [2 * a, 2 * b], [a * k, '?']].map(([top, bottom], i) => {
+      const x = x0 + gap * (i === 3 ? 4 : i), cls = i === 3 ? 'q' : '';
+      return `<line class="ax" x1="${x}" y1="38" x2="${x}" y2="50"/><line class="ax" x1="${x}" y1="88" x2="${x}" y2="100"/><text x="${x}" y="30" text-anchor="middle" class="${cls}">${top}</text><text x="${x}" y="118" text-anchor="middle" class="${cls}">${bottom}</text>`;
+    }).join('');
+    return {skill:'dnl', text:`Follow the double number line out to <b>${esc(q(a * k, A))}</b>. Plate that mix.`,
+      visual:`<svg viewBox="0 0 ${w} 130" width="${w}" height="130" role="img" aria-label="Double number line"><text x="0" y="12">${A[0]} ${esc(A[2])}</text><line class="ax" x1="${x0}" y1="44" x2="${w - 10}" y2="44"/><line class="ax" x1="${x0}" y1="94" x2="${w - 10}" y2="94"/><text x="${x0 + gap * 3}" y="70" text-anchor="middle">…</text>${ticks}<text x="0" y="76">${B[0]} ${esc(B[2])}</text></svg>`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:`Each step on the line adds ${q(a, A)} and ${q(b, B)}. ${a * k} ÷ ${a} = ${k} steps, so ${B[2]}: ${k} × ${b} = ${b * k}.`};
+  },
+  table(L, skill = 'table'){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = rnd(4, Math.min(8, 4 + L));
+    if (!fits(a * k, b * k)) return null;
+    const known = [1, 2, 3].map(m => `<tr><td>${m * a}</td><td>${m * b}</td></tr>`).join(''), askA = Math.random() < .5;
+    return {skill, text:`The ratio table is the recipe. Plate the last row.${skill === 'dnlTable' ? ' (It holds the same pairs as a double number line.)' : ''}`,
+      visual:`<table class="rt"><tr><th>${A[0]} ${esc(A[2])}</th><th>${B[0]} ${esc(B[2])}</th></tr>${known}<tr><td class="${askA ? 'q' : ''}">${askA ? '?' : a * k}</td><td class="${askA ? '' : 'q'}">${askA ? b * k : '?'}</td></tr></table>`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:askA ? `${b * k} ÷ ${b} = ${k}, so the last row is ${k} times the first row: ${k} × ${a} = ${a * k}.` : `${a * k} ÷ ${a} = ${k}, so the last row is ${k} times the first row: ${k} × ${b} = ${b * k}.`};
+  },
+  dnlTable(L){ return MAKERS.table(L, 'dnlTable'); },
+  equiv(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), m = rnd(2, 3);
+    let n; do { n = rnd(1, Math.min(8, 4 + L)); } while (n === m);
+    if (!fits(a * n, b * n)) return null;
+    return {skill:'equiv', text:`📇 Recipe card: makes <b>${m} servings</b> with ${esc(q(m * a, A))} and ${esc(q(m * b, B))}.<br><span class="bell">🔔 Serve ${n}!</span>`,
+      items:[item(A, a * n), item(B, b * n)],
+      why:`The card makes ${m} servings, so 1 serving is ${m * a} ÷ ${m} = ${q(a, A)} and ${m * b} ÷ ${m} = ${q(b, B)}. ${n} ${n === 1 ? 'serving' : 'servings'}: ${n} × ${a} = ${a * n} and ${n} × ${b} = ${b * n}.`};
+  },
+  word(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = kFor(L);
+    if (!fits(a * k, b * k)) return null;
+    return {skill:'word', text:`The house mix uses <b>${esc(q(a, A))} for every ${esc(q(b, B))}</b>. The cook already set out <b>${esc(q(a * k, A))}</b>. Plate the whole batch.`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:`${q(a * k, A)} is ${a * k} ÷ ${a} = ${k} times the mix, so ${B[2]}: ${k} × ${b} = ${b * k}.`};
+  },
+  realworld(L){
+    const A = pick(SOLD), a = rnd(2, 3), c = rnd(1, Math.min(3, 1 + L)), n = rnd(2, Math.min(9, 4 + L));
+    if (n === a || !fits(n, n * c)) return null;
+    return {skill:'realworld', text:`<b>${esc(q(a, A))} cost ${a * c} coins.</b> This customer buys <b>${esc(q(n, A))}</b>. Plate the food and the right number of coins.`,
+      items:[item(A, n), item(COIN, n * c)],
+      why:`${a} for ${a * c} coins is ${a * c} ÷ ${a} = ${q(c, COIN)} each. ${n} × ${c} = ${n * c} coins.`};
+  },
+  understand(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = kFor(L);
+    if (!fits(a * k, b * k)) return null;
+    return {skill:'understand', text:`This customer loves the taste of <b>${esc(q(a, A))} to ${esc(q(b, B))}</b>. Make a bigger mix that tastes <b>exactly the same</b>, using <b>${esc(q(b * k, B))}</b>.`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:`Same taste means an equivalent ratio. ${b * k} is ${k} × ${b}, so ${A[2]}: ${k} × ${a} = ${a * k}. Adding the same amount to both would change the taste.`};
+  },
+  coord(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(Math.min(L, 3)), k = rnd(3, 4);
+    const max = Math.max(a, b) * (k + 1); if (!fits(a * k, b * k) || max > 25) return null;
+    const S = 200, step = S / max, X = v => 34 + v * step, Y = v => 10 + S - v * step, every = Math.ceil(max / 10);
+    const grid = Array.from({length:max + 1}, (_, i) => i).filter(i => i % every === 0)
+      .map(i => `<line class="gr" x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(max)}"/><line class="gr" x1="${X(0)}" y1="${Y(i)}" x2="${X(max)}" y2="${Y(i)}"/><text x="${X(i)}" y="${Y(0) + 16}" text-anchor="middle">${i}</text><text x="${X(0) - 6}" y="${Y(i) + 4}" text-anchor="end">${i}</text>`).join('');
+    const pts = [1, 2].map(m => `<circle class="pt" cx="${X(m * a)}" cy="${Y(m * b)}" r="5"/><text x="${X(m * a) + 7}" y="${Y(m * b) - 6}">(${m * a}, ${m * b})</text>`).join('');
+    const end = max / Math.max(a, b);
+    return {skill:'coord', text:`The graph shows the recipe: ${A[0]} ${esc(A[2])} across, ${B[0]} ${esc(B[2])} up. Follow the line to the point where <b>${esc(A[2])} = ${a * k}</b> (▲). Plate that point.`,
+      visual:`<svg viewBox="0 0 ${S + 50} ${S + 40}" width="${S + 50}" height="${S + 40}" role="img" aria-label="Ratio graph">${grid}<line class="ax" x1="${X(0)}" y1="${Y(0)}" x2="${X(max)}" y2="${Y(0)}"/><line class="ax" x1="${X(0)}" y1="${Y(0)}" x2="${X(0)}" y2="${Y(max)}"/><line class="ln" x1="${X(0)}" y1="${Y(0)}" x2="${X(end * a)}" y2="${Y(end * b)}"/>${pts}<text class="q" x="${X(a * k)}" y="${Y(0) - 4}" text-anchor="middle">▲</text></svg>`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:`Every point on the line is a pair in the ratio ${a} to ${b}: going ${a} across goes ${b} up. ${a * k} across is ${k} steps, so ${k} × ${b} = ${b * k} up. The point is (${a * k}, ${b * k}).`};
+  },
+  units(L){
+    const u = pick(UNITS), [B] = pick(PAIRS.filter(p => p[0][0] !== u.item[0])), b = rnd(1, 3), k = rnd(1, u.maxK || Math.min(4, 1 + L));
+    if (!fits(k * u.f, k * b)) return null;
+    return {skill:'units', text:`Recipe: <b>1 ${u.big[0]}${u.what} for every ${esc(q(b, B))}</b>. Make <b>${k} ${k === 1 ? 'batch' : 'batches'}</b>. ${u.hold} (1 ${u.big[0]} = ${u.f} ${u.small[1]}).`,
+      items:[item(u.item, k * u.f), item(B, k * b)],
+      why:`${k} ${k === 1 ? 'batch needs' : 'batches need'} ${k} ${w1(k, u.big)}. 1 ${u.big[0]} = ${u.f} ${u.small[1]}, so ${k} × ${u.f} = ${q(k * u.f, u.item)}, and ${k} × ${b} = ${q(k * b, B)}.`};
+  },
+  ppw(L){
+    const [A, B] = pick(PAIRS), [a, b] = parts(L), k = kFor(L);
+    if (!fits(a * k, b * k)) return null;
+    return {skill:'ppw', text:`A party tray: <b>${esc(q(a, A))} for every ${esc(q(b, B))}</b>, with <b>${(a + b) * k} pieces in all</b>.`,
+      items:[item(A, a * k), item(B, b * k)],
+      why:`Each group has ${a} + ${b} = ${a + b} pieces. ${(a + b) * k} ÷ ${a + b} = ${k} groups, so ${k} × ${a} = ${a * k} and ${k} × ${b} = ${b * k}.`};
+  }
+};
+const SKILLS = Object.keys(MAKERS);
+
+/* ---------- the shift ---------- */
+let game = null, timer = null, lastTick = 0, ticketSeq = 0;
+const level = () => 1 + Math.floor(game.served / 5);
+const patience = () => Math.max(40, 80 - (level() - 1) * 7) * 1000;   // how long a customer waits
+const spawnGap = () => Math.max(9, 20 - (level() - 1) * 2) * 1000;   // time between new tickets
+
+function newTicket(){
+  /* skills come round in a shuffled deck, so every Café skill shows up before any repeats */
+  if (!game.deck.length) game.deck = [...SKILLS].sort(() => Math.random() - .5);
+  let t = null, tries = 0;
+  while (!t && tries++ < 40) t = MAKERS[game.deck[game.deck.length - 1]](level());
+  game.deck.pop();
+  if (!t) return;
+  const [ce, cn] = pick(CUSTOMERS);
+  t.id = ++ticketSeq; t.cust = `${ce} ${cn}`; t.left = t.total = patience(); t.counts = t.items.map(() => 0); t.wrong = 0; t.explain = t.why; t.why = '';
+  game.tickets.push(t);
+  if (!game.active) game.active = t.id;
+}
+function startShift(){
+  game = {served:0, perfect:0, lost:0, hearts:3, tickets:[], active:null, nextIn:0, started:Date.now(), missed:{}, deck:[]};
+  newTicket(); game.nextIn = 12000;
+  renderPlay();
+  lastTick = performance.now();
+  clearInterval(timer); timer = setInterval(tick, 250);
+}
+function tick(){
+  const now = performance.now(), dt = Math.min(1000, now - lastTick); lastTick = now;
+  if (!game || document.hidden) return;   // the clock waits while the page is hidden
+  game.nextIn -= dt;
+  if (game.nextIn <= 0) { if (game.tickets.length < 3) newTicket(); game.nextIn = spawnGap(); }
+  if (!game.tickets.length) { newTicket(); game.nextIn = spawnGap(); }
+  for (const t of [...game.tickets]) {
+    t.left -= dt;
+    if (t.left <= 0) {
+      game.tickets = game.tickets.filter(x => x !== t); game.hearts--; game.lost++;
+      game.missed[t.skill] = (game.missed[t.skill] || 0) + 1;
+      toast(`${t.cust.split(' ')[0]} got tired of waiting and left!`);
+      if (game.active === t.id) { game.active = game.tickets[0]?.id || null; renderPlay(); }
+      if (game.hearts <= 0) return endShift();
+      if (!game.active) renderPlay();
+    }
+  }
+  renderRail();
+}
+function serve(){
+  const t = current(); if (!t) return;
+  const right = t.items.every((it, i) => t.counts[i] === it.need);
+  if (right) {
+    game.served++; if (!t.wrong) game.perfect++;
+    game.tickets = game.tickets.filter(x => x !== t);
+    const before = level();
+    toast(t.wrong ? '✅ Served!' : ['✅ Perfect!', '🌟 Yum!', '✅ Order up!', '🎉 Happy customer!'][game.served % 4]);
+    if (level() > before) setTimeout(() => toast(`⭐ Level ${level()}: busier kitchen!`), 900);
+    if (!game.tickets.length) { newTicket(); game.nextIn = spawnGap(); }
+    game.active = game.tickets[0].id;
+  } else {
+    t.wrong++; t.left = Math.max(3000, t.left - 8000);
+    if (t.wrong === 1) game.missed[t.skill] = (game.missed[t.skill] || 0) + 1;
+    const off = t.items.map((it, i) => t.counts[i] === it.need ? null : `${it.e} you plated ${t.counts[i]}`).filter(Boolean).join(', ');
+    t.why = `Not quite (${off}). ${t.explain}`;
+    toast('🤔 Check the order');
+  }
+  renderPlay();
+}
+function current(){ return game?.tickets.find(t => t.id === game.active) || null; }
+function endShift(){
+  clearInterval(timer); timer = null;
+  const g = game; game = null;
+  const newBest = g.served > best;
+  if (newBest) { best = g.served; try { localStorage.setItem('chefs-rush:best', String(best)); } catch(e){} }
+  const result = {served:g.served, perfect:g.perfect, lost:g.lost, level:1 + Math.floor(g.served / 5), ms:Date.now() - g.started, missed:g.missed};
+  try {
+    if (window.parent !== window) {
+      if (FROM_CAFE) window.parent.postMessage({type:'chef:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'chefs-rush', runId:ARCADE_RUN, roundId:`shift-${g.started}`, score:g.served}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(g.missed).sort((x, y) => y[1] - x[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<div class="hero">🍳</div><h1>Kitchen closed!</h1>
+    <div class="stats"><div><b>${g.served}</b>orders served</div><div><b>${g.perfect}</b>perfect on the first try</div><div><b>${result.level}</b>level reached</div><div><b>${best}</b>best shift${newBest && g.served ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : `<p>${g.served ? 'Not one mistake. Chef of the day!' : ''}</p>`}
+    ${FROM_CAFE ? '<p class="muted">Each order served earns Pet World coins. Chef’s Rush doesn’t count toward station orders or quizzes.</p>' : ''}
+    <p><button class="btn go" id="again">Open the kitchen again</button></p>`;
+  document.getElementById('again').addEventListener('click', startShift);
+}
+
+/* ---------- drawing ---------- */
+function renderRail(){
+  const rail = document.getElementById('rail'); if (!rail || !game) return;
+  if (rail.childElementCount !== game.tickets.length || [...rail.children].some((el, i) => +el.dataset.id !== game.tickets[i]?.id)) {
+    rail.innerHTML = game.tickets.length ? game.tickets.map(t => `<button class="tk" data-id="${t.id}"><div class="who">${esc(t.cust)}</div><div class="what">${esc(SKILL_NAMES[t.skill].split(' (')[0])}</div><div class="bar"><i></i></div></button>`).join('') : '<span class="empty">Waiting for customers…</span>';
+  }
+  for (const el of rail.children) {
+    const t = game.tickets.find(x => x.id === +el.dataset.id); if (!t) continue;
+    const f = Math.max(0, t.left / t.total);
+    el.querySelector('i').style.width = `${f * 100}%`;
+    el.classList.toggle('on', t.id === game.active);
+    el.classList.toggle('hurry', f < .5); el.classList.toggle('panic', f < .2);
+  }
+  const top = document.getElementById('topline');
+  if (top) top.innerHTML = `<span class="hearts" aria-label="${game.hearts} hearts left">${'❤️'.repeat(game.hearts)}${'🤍'.repeat(3 - game.hearts)}</span><span class="pill">🍽️ ${game.served} served</span><span class="pill">⭐ Level ${level()}</span>`;
+}
+function renderPlay(){
+  if (!game) return;
+  const t = current();
+  app.innerHTML = `<div class="top" id="topline"></div><div class="rail" id="rail" aria-label="Order tickets"></div>
+    ${t ? `<div class="card order"><div class="who">${esc(t.cust)}</div><div class="ask">${t.text}</div>${t.visual ? `<div class="visual">${t.visual}</div>` : ''}
+      ${t.why ? `<div class="why">${esc(t.why)}</div>` : ''}
+      <div class="pantry">${t.items.map((it, i) => `<div class="bin"><div class="em">${it.e}</div><div class="nm">${esc(it.n)}</div><div class="ct" aria-live="polite">${t.counts[i]}</div>
+        <div class="row"><button data-add="${i}" data-n="-1" aria-label="Take one ${esc(it.n)} off">−1</button><button data-add="${i}" data-n="1" aria-label="Add one ${esc(it.n)}">+1</button><button data-add="${i}" data-n="5" aria-label="Add five ${esc(it.n)}">+5</button></div>
+        <div class="plate" aria-hidden="true">${t.counts[i] <= 30 ? it.e.repeat(t.counts[i]) : ''}</div></div>`).join('')}</div>
+      <div class="serve"><button class="btn" id="clear">Clear plate</button><button class="btn go" id="serve">🛎️ Serve</button></div></div>`
+    : '<p class="muted">Waiting for the next customer…</p>'}`;
+  renderRail();
+}
+app.addEventListener('click', e => {
+  if (!game) return;
+  const tk = e.target.closest('.tk'); if (tk) { game.active = +tk.dataset.id; renderPlay(); return; }
+  const add = e.target.closest('[data-add]'), t = current();
+  if (add && t) { const i = +add.dataset.add; t.counts[i] = Math.max(0, Math.min(60, t.counts[i] + +add.dataset.n)); renderPlay(); return; }
+  if (e.target.closest('#clear') && t) { t.counts = t.counts.map(() => 0); renderPlay(); return; }
+  if (e.target.closest('#serve')) serve();
+});
+let toastT = null;
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1600); }
+
+function renderStart(){
+  app.innerHTML = `<div class="hero">🍳🛵</div><h1>Chef's Rush</h1>
+    <p class="muted">The Pet Café is slammed! Read each ticket, plate exactly the right amounts, and serve before the customer gives up.</p>
+    <ol class="how">
+      <li>Tickets slide in at the top. Each one has a timer. Tap a ticket to work on it.</li>
+      <li>Read the order: a recipe to scale, a tape diagram, a ratio table, a graph, a party tray…</li>
+      <li>Tap <b>+1</b>, <b>+5</b> or <b>−1</b> on each ingredient, then <b>🛎️ Serve</b>.</li>
+      <li>A wrong plate costs time, and the ticket shows what went wrong. A customer who leaves takes a ❤️. Three gone and the kitchen closes.</li>
+      <li>Every 5 orders the kitchen gets busier.</li>
+    </ol>
+    ${best ? `<p>🏆 Best shift: <b>${best}</b> orders</p>` : ''}
+    <button class="btn go" id="start">Open the kitchen</button>`;
+  document.getElementById('start').addEventListener('click', startShift);
+}
+if (params.has('selftest')) window.__chef = {MAKERS, SKILLS, get game(){ return game; }};   // scripts check (no effect in play)
+renderStart();
+})();
+</script>
+</body>
+</html>

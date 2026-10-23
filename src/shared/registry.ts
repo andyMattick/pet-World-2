@@ -313,6 +313,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'triad-arcade', name: 'Triad Arcade', emoji: '🃏', description: 'Five card and memory games: Bingo War, Battleship, Bingo Duel, Casino War and Memory Matrix.', src: '/arcade/triad-arcade/', available: true },
   { id: 'mine-walker', name: 'Mine Walker', emoji: '💣', description: 'Use the number clues to walk a scout safely across a minefield, or see how many rows you can cross in Endless mode.', src: '/arcade/mine-walker/', available: true },
   { id: 'treasure-chase', name: 'The Great Treasure Chase', emoji: '🗺️', description: 'Track stolen artifacts around the world with geography and history clues.', src: '/arcade/treasure-chase/', available: true },
+  { id: 'chefs-rush', name: "Chef's Rush", emoji: '🍳', description: 'The Pet Café is slammed! Read each ticket, plate the right amounts with every Café ratio skill, and serve before customers leave.', src: '/arcade/chefs-rush/', available: true },
   { id: 'prep-recall', name: 'Name All 48 Prepositions', emoji: '🔗', description: 'Race the clock to type every preposition you can remember. (During English Unit 5 it is on Today’s plan instead.)', src: '/prep-recall/', available: true }
 ];
 

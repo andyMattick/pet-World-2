@@ -166,6 +166,8 @@ function normalize(raw){
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
+    s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
+      games:(Array.isArray(s.chefRush?.games) ? s.chefRush.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, served:Math.max(0, +g.served || 0), perfect:Math.max(0, +g.perfect || 0), level:Math.max(1, +g.level || 1), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🍳 Chef's Rush (docs/CHEFS-RUSH.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
@@ -5238,6 +5240,7 @@ function arcadeModuleMessage(event){
     run.highestScore = Math.max(run.highestScore, score);
     earned = Math.floor(run.highestScore / policy.corsairPointsPerTicket) - oldMilestones;
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
+  else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'mine-walker' && data.mode === 'endless') earned = Math.floor(score / policy.mineRowsPerTicket);
   else if (run.gameId === 'mine-walker') {
     // Each reward (a level clear or a medal, e.g. 'L3-flawless_run') pays once, ever. Rewards that don't fit under
@@ -6805,6 +6808,40 @@ window.addEventListener('message', e => {
   if (coins) { S.coins += coins; updateHeader(); }
   save();
   toast(completed ? `🔗 All 48 in ${fmtRecall(ms)}!${newBest ? ' A new best time!' : ''}${coins ? ` +${coins} 🪙` : ''}` : `🔗 ${found} of 48. Keep going tomorrow!`);
+});
+/* ---------- 🍳 Chef's Rush (public/arcade/chefs-rush, docs/CHEFS-RUSH.md) ----------
+   A kitchen game with every Café skill, opened from the Deliveries station (and also an Arcade game). Played from
+   Deliveries it pays Pet World coins: 1 per order served, up to CHEF_COINS_PER_DAY a day. It never counts toward station
+   orders, skill mastery, quizzes or unlocks, and it never writes the report tables. */
+const CHEF_COINS_PER_DAY = 20;
+function chefRushButtonHTML(){
+  const best = S.chefRush?.best || 0;
+  return `<button type="button" class="btn" data-chef-rush>🍳 Chef’s Rush${best ? ` · best ${best}` : ''}</button>`;
+}
+function openChefRush(){
+  if ($('#chefRushWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'chefRushWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Chef’s Rush');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🍳 Chef’s Rush</b><button type="button" class="btn small" data-chef-close>Done</button></div><iframe src="/arcade/chefs-rush/?from=cafe" title="Chef’s Rush"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-chef-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('cafe'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#chefRushWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'chef:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, served = Math.max(0, Math.min(500, Math.round(+r.served || 0))), perfect = Math.max(0, Math.min(served, Math.round(+r.perfect || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.chefRush, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = served > c.best;
+  c.games = [...c.games, {t:Date.now(), served, perfect, level:Math.max(1, Math.round(+r.level || 1)), missed}].slice(-30);
+  if (newBest) c.best = served;
+  const coins = Math.min(served, Math.max(0, CHEF_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'chef', s:served, title:`${served} orders served, ${perfect} perfect${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🍳 ${served} order${served === 1 ? '' : 's'} served!${newBest && served ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= CHEF_COINS_PER_DAY ? ' (Today’s Chef’s Rush coins are all earned.)' : ''}`);
 });
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
@@ -9494,10 +9531,11 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
+  if (e.target.closest('[data-chef-rush]')) { openChefRush(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
@@ -11089,6 +11127,7 @@ function logEvent(e){ const d = dayLogToday(), event = {t:Date.now(), ...e}; d.e
 function placeOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'recall';
+  if ($('#chefRushWrap')) return 'chef';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
   if (on('vocab')) return `vocab:${vocabRun?.mode || vocabTab}`;
@@ -11116,6 +11155,7 @@ function placeLabel(key){
   if (kind === 'scribe') return '✍️ Scribe School';
   if (kind === 'sim') return `🧪 ${simById(a)?.name || 'Science lab'}`;
   if (kind === 'recall') return '🔗 Name all 48 prepositions';
+  if (kind === 'chef') return '🍳 Chef’s Rush';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
@@ -11132,6 +11172,7 @@ function eventText(e){
   if (e.k === 'scribe') return `✍️ Scribe School · ${e.title}`;
   if (e.k === 'help') return `✋ Asked a question in ${e.title}: “${e.q || ''}”`;
   if (e.k === 'recall') return `🔗 Prep test: ${e.title}`;
+  if (e.k === 'chef') return `🍳 Chef’s Rush: ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
@@ -11214,6 +11255,7 @@ document.addEventListener('click', event => {
 function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'english';
+  if ($('#chefRushWrap')) return 'math';   // Chef's Rush is Café practice
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';
   if (on('vocab')) return 'words';
