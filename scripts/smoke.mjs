@@ -85,7 +85,7 @@ await scenario('First sign-in ever (nothing on the server or the device)', {},
 await scenario('Returning device: work on both copies is kept', {
   server: { v: 1, name: 'Ava', savedAt: now - 1000, scienceProjects: { bio1: { answers: {}, status: 'draft', submittedAt: 0 } },
     sessions: [{ start: now - 500000, end: now - 400000, active: 600 }] },
-  device: { key: 'pettown:v1:s1', state: { v: 1, name: 'Ava', savedAt: now - 60000, scienceProjects: { bio1: { answers: { choice: 'Clay cell' }, status: 'draft', submittedAt: 0 } },
+  device: { key: 'pettown:v1:s1', state: { v: 1, name: 'Ava', owner: 's1', client: 4, savedAt: now - 60000, scienceProjects: { bio1: { answers: { choice: 'Clay cell' }, status: 'draft', submittedAt: 0 } },
     sessions: [{ start: now - 900000, end: now - 800000, active: 300 }] } } },
   async page => {
     if (!(await shown(page, 'scr-home'))) return 'the town did not open';
@@ -93,6 +93,20 @@ await scenario('Returning device: work on both copies is kept', {
     const s = await serverState(page);
     if (s?.scienceProjects?.bio1?.answers?.choice !== 'Clay cell') return 'the project draft from the device was lost';
     if ((s.sessions || []).length !== 2) return `expected 2 practice sessions on the server, found ${(s.sessions || []).length}`;
+    return null;
+  });
+
+/* Oct 23 save guard (docs/CLEARING-PROGRESS.md): a copy written by code from before the guard (no client stamp) is never
+   merged; that's how a demo student's work kept coming back. The town still opens, from the newer copy. */
+await scenario('Returning device: an old copy without the save stamp is not merged', {
+  server: { v: 1, name: 'Ava', savedAt: now - 1000, scienceProjects: { bio1: { answers: {}, status: 'draft', submittedAt: 0 } } },
+  device: { key: 'pettown:v1:s1', state: { v: 1, name: 'Ava', savedAt: now - 60000, scienceProjects: { bio1: { answers: { choice: 'Clay cell' }, status: 'draft', submittedAt: 0 } } } } },
+  async page => {
+    if (!(await shown(page, 'scr-home'))) return 'the town did not open';
+    await page.waitForTimeout(2500);
+    const s = await serverState(page);
+    if (s?.scienceProjects?.bio1?.answers?.choice) return 'the unstamped old copy was merged';
+    if (s?.client !== 4 || s?.owner !== 's1') return 'the save on the server is missing its client or owner stamp';
     return null;
   });
 
