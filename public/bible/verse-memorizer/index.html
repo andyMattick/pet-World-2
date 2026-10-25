@@ -1,0 +1,714 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Verse Memorizer</title>
+<!-- Pet World: served at /bible/verse-memorizer/ (docs/BIBLE.md). Opened with ?pw=1 from the ✝️ Bible spot, it skips the
+     setup, practices this week's verse with today's number of blanks (or the whole verse), and posts each result to Pet World.
+     Opened on its own, it works exactly as before. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-top:#fffbeb; --bg-bottom:#f5f5f4;
+  --panel:#ffffff; --border:#e7e5e4;
+  --ink:#292524; --ink-soft:#78716c; --ink-faint:#a8a29e;
+  --amber:#f59e0b; --amber-dark:#b45309; --amber-tint:#fffbeb; --amber-border:#fde68a;
+  --green-bg:#f0fdf4; --green-border:#bbf7d0; --green-ink:#15803d; --green-chip-bg:#dcfce7; --green-chip-ink:#166534;
+  --rose-bg:#fff1f2; --rose-border:#fecdd3; --rose-ink:#be123c; --rose-chip-bg:#ffe4e6; --rose-chip-ink:#9f1239;
+  --radius:12px;
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0; min-height:100vh;
+  background: linear-gradient(to bottom, var(--bg-top), var(--bg-bottom));
+  color: var(--ink);
+  font-family:'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button, input, select, textarea{ font-family:inherit; }
+.wrap{ max-width:640px; margin:0 auto; padding:24px 16px 48px 16px; }
+.header{ text-align:center; margin-bottom:22px; padding-top:8px; }
+.header h1{ font-family:'Source Serif 4', serif; font-weight:700; font-size:26px; margin:0; color:#1c1917; }
+.header p{ color:var(--ink-soft); font-size:13.5px; margin:6px 0 0 0; }
+.card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:0 1px 2px rgba(28,25,23,0.04); }
+.card + .card{ margin-top:16px; }
+.tabs{ display:flex; gap:8px; margin-bottom:14px; }
+.tab-btn{
+  flex:1; padding:9px 10px; border-radius:9px; font-size:13.5px; font-weight:600;
+  border:1px solid var(--border); background:#fff; color:#57534e; cursor:pointer; transition:background .15s ease;
+}
+.tab-btn:hover{ background:#fafaf9; }
+.tab-btn.active{ background:var(--amber); border-color:var(--amber); color:#fff; }
+.field-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.field-row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+select, input[type="text"], input[type="number"], textarea{
+  width:100%; border:1px solid #d6d3d1; border-radius:9px; padding:9px 10px; font-size:13.5px; color:var(--ink); background:#fff;
+}
+select:focus, input:focus, textarea:focus{ outline:2px solid var(--amber); outline-offset:1px; border-color:var(--amber); }
+select:disabled, input:disabled{ opacity:.45; }
+.hint-link{ background:none; border:none; padding:0; color:var(--ink-faint); font-size:12px; text-decoration:underline; cursor:pointer; }
+.hint-link:hover{ color:#57534e; }
+label.field-label{ display:block; font-size:13px; font-weight:600; color:#44403c; margin-bottom:6px; }
+.small-note{ font-size:12px; color:var(--ink-faint); }
+.stack{ display:flex; flex-direction:column; gap:10px; }
+.row-inline{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+.btn{
+  border:1px solid #44403c; background:#292524; color:#fff; padding:10px 14px; border-radius:9px;
+  font-size:13.5px; font-weight:600; cursor:pointer; transition:background .15s ease;
+}
+.btn:hover{ background:#44403c; }
+.btn:disabled{ opacity:.4; cursor:default; }
+.btn.block{ width:100%; }
+.btn.subtle{ background:#fff; color:#44403c; border:1px solid #d6d3d1; }
+.btn.subtle:hover{ background:#fafaf9; }
+.btn.amber{ background:var(--amber); border-color:var(--amber); }
+.btn.amber:hover{ background:#d97706; }
+.btn.small{ padding:6px 10px; font-size:12.5px; border-radius:7px; }
+
+.saved-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+  background:var(--green-chip-bg); color:var(--green-chip-ink); padding:3px 9px; border-radius:999px;
+}
+.unsaved-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+  background:#f5f5f4; color:var(--ink-soft); padding:3px 9px; border-radius:999px;
+}
+
+.verse-box{ background:var(--amber-tint); border:1px solid var(--amber-border); border-radius:10px; padding:12px; }
+.verse-box .ref-label{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#92700f; font-weight:700; margin:0 0 8px 0; }
+.verse-box textarea{ font-family:'Source Serif 4', serif; font-size:15px; line-height:1.55; min-height:110px; resize:vertical; }
+
+.practice-text{ font-family:'Source Serif 4', serif; font-size:19px; line-height:1.9; color:#1c1917; }
+.blank-input{
+  display:inline-block; border:none; border-bottom:2px solid var(--amber); background:rgba(245,158,11,0.08);
+  text-align:center; margin:0 2px; padding:2px 4px; border-radius:4px 4px 0 0; font-size:16px; font-family:'Inter',sans-serif;
+}
+.blank-input:focus{ outline:none; background:rgba(245,158,11,0.18); }
+
+.result-banner{ border-radius:9px; padding:12px; text-align:center; font-weight:600; font-size:14px; }
+.result-banner.perfect{ background:var(--green-bg); border:1px solid var(--green-border); color:var(--green-ink); }
+.result-banner.mistakes{ background:var(--rose-bg); border:1px solid var(--rose-border); color:var(--rose-ink); }
+.tok-correct{ background:var(--green-chip-bg); color:var(--green-chip-ink); border-radius:5px; padding:0 3px; }
+.tok-wrong{ background:var(--rose-chip-bg); color:var(--rose-chip-ink); border-radius:5px; padding:0 3px; }
+.corrections{ font-size:12.5px; color:#57534e; background:#fafaf9; border-radius:9px; padding:10px 12px; }
+.corrections p{ margin:3px 0; }
+
+.top-actions{ display:flex; justify-content:flex-end; margin-bottom:10px; }
+</style>
+<div class="wrap">
+  <div class="header">
+    <h1>Verse Memorizer</h1>
+    <p>Add a verse, get quizzed, see how you did.</p>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+(function(){
+
+/* ---------- storage: Claude's window.storage when available, else localStorage ---------- */
+if(!window.storage){
+  const LS_PREFIX = 'verse-memorizer__';
+  function lsKey(key, shared){ return LS_PREFIX + (shared ? 'shared__' : 'personal__') + key; }
+  window.storage = {
+    async get(key, shared){
+      try{
+        const raw = localStorage.getItem(lsKey(key, shared));
+        if(raw === null) return null;
+        return { key, value: raw, shared: !!shared };
+      }catch(e){ return null; }
+    },
+    async set(key, value, shared){
+      try{ localStorage.setItem(lsKey(key, shared), value); return { key, value, shared: !!shared }; }
+      catch(e){ return null; }
+    }
+  };
+}
+
+const STORAGE_KEY = 'verse-memorizer-cache-v1';
+/* Pet World: ?pw=1 means the verse, version, mode and blanks come from Pet World (a 'verse:start' message) */
+const PW = new URLSearchParams(location.search).get('pw') === '1';
+let pwRef = '';
+function pwPost(msg){ try{ if(window.parent !== window) window.parent.postMessage(msg, location.origin); }catch(e){} }
+
+/* ---------- static book/chapter data (no lookups needed) ---------- */
+const BOOKS = [
+  {name:"Genesis",chapters:50},{name:"Exodus",chapters:40},{name:"Leviticus",chapters:27},
+  {name:"Numbers",chapters:36},{name:"Deuteronomy",chapters:34},{name:"Joshua",chapters:24},
+  {name:"Judges",chapters:21},{name:"Ruth",chapters:4},{name:"1 Samuel",chapters:31},
+  {name:"2 Samuel",chapters:24},{name:"1 Kings",chapters:22},{name:"2 Kings",chapters:25},
+  {name:"1 Chronicles",chapters:29},{name:"2 Chronicles",chapters:36},{name:"Ezra",chapters:10},
+  {name:"Nehemiah",chapters:13},{name:"Esther",chapters:10},{name:"Job",chapters:42},
+  {name:"Psalms",chapters:150},{name:"Proverbs",chapters:31},{name:"Ecclesiastes",chapters:12},
+  {name:"Song of Solomon",chapters:8},{name:"Isaiah",chapters:66},{name:"Jeremiah",chapters:52},
+  {name:"Lamentations",chapters:5},{name:"Ezekiel",chapters:48},{name:"Daniel",chapters:12},
+  {name:"Hosea",chapters:14},{name:"Joel",chapters:3},{name:"Amos",chapters:9},
+  {name:"Obadiah",chapters:1},{name:"Jonah",chapters:4},{name:"Micah",chapters:7},
+  {name:"Nahum",chapters:3},{name:"Habakkuk",chapters:3},{name:"Zephaniah",chapters:3},
+  {name:"Haggai",chapters:2},{name:"Zechariah",chapters:14},{name:"Malachi",chapters:4},
+  {name:"Matthew",chapters:28},{name:"Mark",chapters:16},{name:"Luke",chapters:24},
+  {name:"John",chapters:21},{name:"Acts",chapters:28},{name:"Romans",chapters:16},
+  {name:"1 Corinthians",chapters:16},{name:"2 Corinthians",chapters:13},{name:"Galatians",chapters:6},
+  {name:"Ephesians",chapters:6},{name:"Philippians",chapters:4},{name:"Colossians",chapters:4},
+  {name:"1 Thessalonians",chapters:5},{name:"2 Thessalonians",chapters:3},{name:"1 Timothy",chapters:6},
+  {name:"2 Timothy",chapters:4},{name:"Titus",chapters:3},{name:"Philemon",chapters:1},
+  {name:"Hebrews",chapters:13},{name:"James",chapters:5},{name:"1 Peter",chapters:5},
+  {name:"2 Peter",chapters:3},{name:"1 John",chapters:5},{name:"2 John",chapters:1},
+  {name:"3 John",chapters:1},{name:"Jude",chapters:1},{name:"Revelation",chapters:22}
+];
+
+const VERSIONS = [
+  { group:"English", options:["KJV","NIV","ESV","NASB","NKJV","NLT"] },
+  { group:"Español", options:["RVR1960","NVI","DHH"] }
+];
+const OTHER_VALUE = "__other__";
+
+/* ---------- helpers ---------- */
+
+// Unicode-aware so accented letters (á é í ó ú ñ ü ¿ ¡ etc.) split correctly.
+function splitWord(word){
+  const m = word.match(/^([^\p{L}\p{N}']*)([\p{L}\p{N}']+)([^\p{L}\p{N}']*)$/u);
+  if(!m) return ["", word, ""];
+  return [m[1], m[2], m[3]];
+}
+function normalizeAnswer(s){
+  return s.trim().toLowerCase().replace(/[’‘]/g, "'");
+}
+function normKey(s){
+  return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+function cacheKey(reference, version){
+  return normKey(reference) + "|" + normKey(version);
+}
+function escapeHtml(s){
+  return (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+/* ---------- state ---------- */
+let cache = {}; // key -> { text, reference, version, savedAt }
+let state = {
+  stage: "setup", // setup | blanks | full | results
+  useReference: true, // true = reference-based (cached), false = quick paste (not cached)
+
+  pickerMode: "dropdown", // dropdown | text
+  selectedBook: "", selectedChapter: "", verseFrom: "", verseTo: "",
+  refText: "",
+  version: "KJV", customVersion: "",
+  verseText: "",
+  saveTimer: null,
+
+  quickRef: "", quickText: "",
+
+  mode: "blanks", numBlanks: 5,
+  words: [], blankIndices: [], answers: {}, fullAnswer: "",
+  results: null
+};
+
+/* ---------- persistence ---------- */
+async function loadCache(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value) cache = JSON.parse(res.value) || {};
+  }catch(e){ /* start empty */ }
+  render();
+}
+function persistCache(){
+  window.storage.set(STORAGE_KEY, JSON.stringify(cache), false).catch(()=>{});
+}
+function scheduleSaveCurrent(){
+  clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(saveCurrentToCache, 450);
+}
+function currentVersionLabel(){
+  return state.version === OTHER_VALUE ? (state.customVersion.trim() || "Other") : state.version;
+}
+function currentReference(){
+  if(state.pickerMode === "text") return state.refText.trim();
+  if(!state.selectedBook || !state.selectedChapter || !state.verseFrom) return "";
+  const range = (state.verseTo && Number(state.verseTo) !== Number(state.verseFrom))
+    ? `${state.verseFrom}-${state.verseTo}` : `${state.verseFrom}`;
+  return `${state.selectedBook} ${state.selectedChapter}:${range}`;
+}
+function saveCurrentToCache(){
+  const ref = currentReference();
+  const version = currentVersionLabel();
+  const text = state.verseText.trim();
+  if(!ref || !version || !text) return;
+  cache[cacheKey(ref, version)] = { text, reference: ref, version, savedAt: Date.now() };
+  persistCache();
+  renderSetup(); // refresh saved-chip without a full teardown
+}
+function clearAllCache(){
+  cache = {};
+  persistCache();
+  render();
+}
+
+/* ---------- practice logic ---------- */
+function startPractice(text){
+  const raw = text.trim();
+  if(!raw) return;
+  const tokens = raw.split(/\s+/).map(splitWord);
+  state.words = tokens;
+  state.answers = {};
+  state.fullAnswer = "";
+  state.results = null;
+
+  if(state.mode === "blanks"){
+    const eligible = tokens.map((t,i)=>({i, core:t[1]})).filter(t => /[\p{L}\p{N}]/u.test(t.core));
+    const n = Math.min(state.numBlanks, eligible.length);
+    const shuffled = [...eligible].sort(()=>Math.random()-0.5);
+    const chosen = shuffled.slice(0,n).map(t=>t.i);
+    chosen.sort((a,b)=>a-b);
+    state.blankIndices = chosen;
+    state.stage = "blanks";
+  } else {
+    state.stage = "full";
+  }
+  render();
+}
+function checkBlanks(){
+  let mistakes = 0;
+  const details = state.blankIndices.map(idx=>{
+    const correctCore = state.words[idx][1];
+    const userVal = state.answers[idx] || "";
+    const isCorrect = normalizeAnswer(userVal) === normalizeAnswer(correctCore);
+    if(!isCorrect) mistakes++;
+    return { idx, correctCore, userVal, isCorrect };
+  });
+  state.results = { mistakes, total: state.blankIndices.length, details, kind:"blanks" };
+  state.stage = "results";
+  if(PW) pwPost({ type:'verse:result', kind:'blanks', mistakes, total: state.blankIndices.length });
+  render();
+}
+function checkFull(){
+  const userTokens = state.fullAnswer.trim() ? state.fullAnswer.trim().split(/\s+/).map(splitWord) : [];
+  const total = state.words.length;
+  let mistakes = 0;
+  const maxLen = Math.max(state.words.length, userTokens.length);
+  const details = [];
+  for(let i=0;i<maxLen;i++){
+    const correctCore = state.words[i] ? state.words[i][1] : "";
+    const userCore = userTokens[i] ? userTokens[i][1] : "";
+    const isCorrect = correctCore !== "" && normalizeAnswer(userCore) === normalizeAnswer(correctCore);
+    if(!isCorrect) mistakes++;
+    details.push({ idx:i, correctCore, userCore, isCorrect });
+  }
+  state.results = { mistakes, total, details, kind:"full" };
+  state.stage = "results";
+  if(PW) pwPost({ type:'verse:result', kind:'full', mistakes, total });
+  render();
+}
+
+/* ---------- rendering ---------- */
+const app = document.getElementById("app");
+
+function render(){
+  app.innerHTML = "";
+  if(state.stage === "setup") app.appendChild(renderSetupCard());
+  else if(state.stage === "blanks") app.appendChild(renderBlanksCard());
+  else if(state.stage === "full") app.appendChild(renderFullCard());
+  else if(state.stage === "results") app.appendChild(renderResultsCard());
+}
+function renderSetup(){
+  // lightweight refresh used after auto-save, only valid while on setup stage
+  if(state.stage === "setup") render();
+}
+
+function el(tag, attrs, children){
+  const e = document.createElement(tag);
+  if(attrs) for(const k in attrs){
+    if(k === "class") e.className = attrs[k];
+    else if(k === "text") e.textContent = attrs[k];
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  (children||[]).forEach(c => { if(c) e.appendChild(c); });
+  return e;
+}
+
+function renderSetupCard(){
+  const card = el("div", { class:"card stack" });
+
+  // tabs
+  const tabs = el("div", { class:"tabs" });
+  const tabRef = el("button", {
+    class: "tab-btn" + (state.useReference ? " active" : ""),
+    text: "Use a reference (saved for reuse)",
+    onclick: () => { state.useReference = true; render(); }
+  });
+  const tabQuick = el("button", {
+    class: "tab-btn" + (!state.useReference ? " active" : ""),
+    text: "Quick paste (one-time)",
+    onclick: () => { state.useReference = false; render(); }
+  });
+  tabs.appendChild(tabRef); tabs.appendChild(tabQuick);
+  card.appendChild(tabs);
+
+  if(state.useReference) card.appendChild(renderReferenceMode());
+  else card.appendChild(renderQuickMode());
+
+  // practice mode
+  const modeBlock = el("div");
+  modeBlock.appendChild(el("label", { class:"field-label", text:"Practice mode" }));
+  const modeRow = el("div", { class:"row-inline" });
+  const bBlanks = el("button", {
+    class:"tab-btn" + (state.mode==="blanks"?" active":""), text:"Fill in blanks",
+    onclick: ()=>{ state.mode="blanks"; render(); }
+  });
+  const bFull = el("button", {
+    class:"tab-btn" + (state.mode==="full"?" active":""), text:"Write whole verse",
+    onclick: ()=>{ state.mode="full"; render(); }
+  });
+  bBlanks.style.flex = "1"; bFull.style.flex = "1";
+  modeRow.appendChild(bBlanks); modeRow.appendChild(bFull);
+  modeBlock.appendChild(modeRow);
+  card.appendChild(modeBlock);
+
+  const activeText = state.useReference ? state.verseText : state.quickText;
+  const activeWordCount = activeText.trim() ? activeText.trim().split(/\s+/).length : 0;
+
+  if(state.mode === "blanks"){
+    const blanksBlock = el("div");
+    blanksBlock.appendChild(el("label", { class:"field-label", text:`Number of blanks: ${state.numBlanks}` }));
+    const range = el("input", {
+      type:"range", min:"1", max:String(Math.max(1, Math.min(30, activeWordCount || 30))), value:String(state.numBlanks),
+      oninput: (e)=>{ state.numBlanks = Number(e.target.value); render(); }
+    });
+    range.style.width = "100%"; range.style.accentColor = "#f59e0b";
+    blanksBlock.appendChild(range);
+    card.appendChild(blanksBlock);
+  }
+
+  const startBtn = el("button", {
+    class:"btn block", text:"Start",
+    onclick: ()=> startPractice(activeText)
+  });
+  if(!activeText.trim()) startBtn.disabled = true;
+  card.appendChild(startBtn);
+
+  return card;
+}
+
+function renderReferenceMode(){
+  const wrap = el("div", { class:"stack" });
+
+  if(state.pickerMode === "dropdown"){
+    const row = el("div", { class:"field-row" });
+
+    const bookSel = el("select", {
+      onchange: (e)=>{
+        state.selectedBook = e.target.value;
+        state.selectedChapter = ""; state.verseFrom = ""; state.verseTo = "";
+        state.verseText = "";
+        render();
+      }
+    });
+    bookSel.appendChild(el("option", { value:"", text:"Book..." }));
+    BOOKS.forEach(b => {
+      const o = el("option", { value:b.name, text:b.name });
+      if(b.name === state.selectedBook) o.selected = true;
+      bookSel.appendChild(o);
+    });
+    row.appendChild(bookSel);
+
+    const chapSel = el("select", {
+      onchange: (e)=>{
+        state.selectedChapter = e.target.value;
+        state.verseFrom = ""; state.verseTo = ""; state.verseText = "";
+        render();
+      }
+    });
+    chapSel.disabled = !state.selectedBook;
+    chapSel.appendChild(el("option", { value:"", text:"Chapter..." }));
+    if(state.selectedBook){
+      const b = BOOKS.find(x=>x.name===state.selectedBook);
+      for(let c=1; c<=b.chapters; c++){
+        const o = el("option", { value:String(c), text:String(c) });
+        if(String(c) === String(state.selectedChapter)) o.selected = true;
+        chapSel.appendChild(o);
+      }
+    }
+    row.appendChild(chapSel);
+    wrap.appendChild(row);
+
+    if(state.selectedChapter){
+      const vrow = el("div", { class:"field-row" });
+      const fromInput = el("input", {
+        type:"number", min:"1", max:"180", placeholder:"From verse",
+        value: state.verseFrom,
+        oninput: (e)=>{
+          state.verseFrom = e.target.value;
+          if(!state.verseTo || Number(state.verseTo) < Number(state.verseFrom)) state.verseTo = state.verseFrom;
+          loadCachedIntoBox();
+          render();
+        }
+      });
+      const toInput = el("input", {
+        type:"number", min:"1", max:"180", placeholder:"To verse",
+        value: state.verseTo,
+        oninput: (e)=>{ state.verseTo = e.target.value; loadCachedIntoBox(); render(); }
+      });
+      toInput.disabled = !state.verseFrom;
+      vrow.appendChild(fromInput); vrow.appendChild(toInput);
+      wrap.appendChild(vrow);
+    }
+
+    wrap.appendChild(el("button", {
+      class:"hint-link", text:"Type a reference instead (e.g. for a range that crosses chapters)",
+      onclick: ()=>{ state.pickerMode = "text"; render(); }
+    }));
+  } else {
+    wrap.appendChild(el("input", {
+      type:"text", placeholder:"e.g. Philippians 4:6-7 or Romans 8:38-9:1",
+      value: state.refText,
+      oninput: (e)=>{ state.refText = e.target.value; loadCachedIntoBox(); render(); }
+    }));
+    wrap.appendChild(el("button", {
+      class:"hint-link", text:"Use book/chapter/verse dropdowns instead",
+      onclick: ()=>{ state.pickerMode = "dropdown"; render(); }
+    }));
+  }
+
+  // version/language select
+  const verRow = el("div", { class: state.version === OTHER_VALUE ? "field-row" : "" });
+  const verSel = el("select", {
+    onchange: (e)=>{ state.version = e.target.value; loadCachedIntoBox(); render(); }
+  });
+  VERSIONS.forEach(group => {
+    const og = document.createElement("optgroup");
+    og.label = group.group;
+    group.options.forEach(v => {
+      const o = el("option", { value:v, text:v });
+      if(v === state.version) o.selected = true;
+      og.appendChild(o);
+    });
+    verSel.appendChild(og);
+  });
+  const otherOpt = el("option", { value:OTHER_VALUE, text:"Other / Otro..." });
+  if(state.version === OTHER_VALUE) otherOpt.selected = true;
+  verSel.appendChild(otherOpt);
+  verRow.appendChild(verSel);
+  if(state.version === OTHER_VALUE){
+    verRow.appendChild(el("input", {
+      type:"text", placeholder:"Version name (e.g. NVI, La Biblia de las Américas)",
+      value: state.customVersion,
+      oninput: (e)=>{ state.customVersion = e.target.value; loadCachedIntoBox(); render(); }
+    }));
+  }
+  wrap.appendChild(verRow);
+
+  const ref = currentReference();
+  const version = currentVersionLabel();
+  const key = ref && version ? cacheKey(ref, version) : null;
+  const isSaved = key && cache[key] && cache[key].text === state.verseText.trim() && state.verseText.trim();
+
+  if(ref){
+    const box = el("div", { class:"verse-box stack" });
+    box.appendChild(el("p", { class:"ref-label", text: `${ref} · ${version}` }));
+    const ta = el("textarea", {
+      placeholder: "Paste or type the verse text here (in any language or translation)...",
+      oninput: (e)=>{ state.verseText = e.target.value; scheduleSaveCurrent(); refreshChip(); }
+    });
+    ta.value = state.verseText;
+    box.appendChild(ta);
+    const chipRow = el("div", { id:"save-chip-row" });
+    chipRow.appendChild(buildChip(isSaved));
+    box.appendChild(chipRow);
+    wrap.appendChild(box);
+  }
+
+  wrap.appendChild(el("p", { class:"small-note", text:
+    "Paste in any language or translation — English, Spanish, or anything else. Once you save a verse under a reference and version, it's remembered here, so you won't have to retype it next time. A verse saved in Spanish and one saved in English for the same reference are kept separately, so both stay available." }));
+
+  const clearRow = el("div");
+  const count = Object.keys(cache).length;
+  if(count > 0){
+    clearRow.appendChild(el("button", {
+      class:"hint-link", text:`Clear all ${count} saved verse${count===1?"":"s"}`,
+      onclick: ()=>{ if(confirm("Remove every saved verse from this device?")) clearAllCache(); }
+    }));
+  }
+  wrap.appendChild(clearRow);
+
+  return wrap;
+}
+
+function buildChip(isSaved){
+  return isSaved
+    ? el("span", { class:"saved-chip", text:"✓ Saved — you won't need to retype this" })
+    : el("span", { class:"unsaved-chip", text:"Not saved yet — saving automatically..." });
+}
+function refreshChip(){
+  const row = document.getElementById("save-chip-row");
+  if(!row) return;
+  const ref = currentReference();
+  const version = currentVersionLabel();
+  const key = ref && version ? cacheKey(ref, version) : null;
+  const isSaved = key && cache[key] && cache[key].text === state.verseText.trim() && state.verseText.trim();
+  row.innerHTML = "";
+  row.appendChild(buildChip(isSaved));
+}
+
+function loadCachedIntoBox(){
+  const ref = currentReference();
+  const version = currentVersionLabel();
+  if(!ref || !version) { state.verseText = ""; return; }
+  const key = cacheKey(ref, version);
+  const hit = cache[key];
+  state.verseText = hit ? hit.text : "";
+}
+
+function renderQuickMode(){
+  const wrap = el("div", { class:"stack" });
+  wrap.appendChild(el("input", {
+    type:"text", placeholder:"Reference (optional), e.g. Philippians 4:6-7",
+    value: state.quickRef,
+    oninput: (e)=>{ state.quickRef = e.target.value; }
+  }));
+  const ta = el("textarea", {
+    placeholder:"Paste or type the verse here (any language)...", rows:"5",
+    oninput: (e)=>{ state.quickText = e.target.value; render(); }
+  });
+  ta.value = state.quickText;
+  ta.rows = 5;
+  wrap.appendChild(ta);
+  const wc = state.quickText.trim() ? state.quickText.trim().split(/\s+/).length : 0;
+  if(wc>0) wrap.appendChild(el("p", { class:"small-note", text:`${wc} words` }));
+  wrap.appendChild(el("p", { class:"small-note", text:"This won't be saved for later — switch to \"Use a reference\" if you want it remembered." }));
+  return wrap;
+}
+
+function renderBlanksCard(){
+  const card = el("div", { class:"card stack" });
+  const ref = PW ? pwRef : (state.useReference ? currentReference() : state.quickRef);
+  if(ref) card.appendChild(el("p", { class:"verse-box ref-label", text: ref }));
+
+  const p = el("div", { class:"practice-text" });
+  state.words.forEach((w, i) => {
+    const [lead, core, trail] = w;
+    if(state.blankIndices.includes(i)){
+      p.appendChild(document.createTextNode(lead));
+      const input = el("input", {
+        type:"text", class:"blank-input",
+        oninput: (e)=>{ state.answers[i] = e.target.value; }
+      });
+      input.style.width = Math.max(3, core.length + 1) + "ch";
+      input.value = state.answers[i] || "";
+      input.autocapitalize = "off"; input.autocomplete = "off"; input.spellcheck = false;
+      p.appendChild(input);
+      p.appendChild(document.createTextNode(trail + " "));
+    } else {
+      p.appendChild(document.createTextNode(lead + core + trail + " "));
+    }
+  });
+  card.appendChild(p);
+
+  const btnRow = el("div", { class:"row-inline" });
+  const back = el("button", { class:"btn subtle", text:"Back", onclick: ()=>{ state.stage="setup"; render(); } });
+  if(PW) back.hidden = true;
+  const check = el("button", { class:"btn", text:"Check answers", onclick: checkBlanks });
+  check.style.flex = "1";
+  btnRow.appendChild(back); btnRow.appendChild(check);
+  card.appendChild(btnRow);
+  return card;
+}
+
+function renderFullCard(){
+  const card = el("div", { class:"card stack" });
+  const ref = PW ? pwRef : (state.useReference ? currentReference() : state.quickRef);
+  if(ref) card.appendChild(el("p", { class:"verse-box ref-label", text: ref }));
+  card.appendChild(el("p", { class:"small-note", text:"Write the verse from memory below." }));
+  const ta = el("textarea", {
+    rows:"6", placeholder:"Type the verse from memory...",
+    oninput: (e)=>{ state.fullAnswer = e.target.value; }
+  });
+  ta.style.fontFamily = "'Source Serif 4', serif";
+  ta.autocapitalize = "off"; ta.spellcheck = false;
+  card.appendChild(ta);
+
+  const btnRow = el("div", { class:"row-inline" });
+  const back = el("button", { class:"btn subtle", text:"Back", onclick: ()=>{ state.stage="setup"; render(); } });
+  if(PW) back.hidden = true;
+  const check = el("button", { class:"btn", text:"Check answer", onclick: checkFull });
+  check.style.flex = "1";
+  btnRow.appendChild(back); btnRow.appendChild(check);
+  card.appendChild(btnRow);
+  return card;
+}
+
+function renderResultsCard(){
+  const card = el("div", { class:"card stack" });
+  const ref = PW ? pwRef : (state.useReference ? currentReference() : state.quickRef);
+  if(ref) card.appendChild(el("p", { class:"verse-box ref-label", text: ref }));
+
+  const r = state.results;
+  const banner = el("div", {
+    class: "result-banner " + (r.mistakes===0 ? "perfect" : "mistakes"),
+    text: r.mistakes===0 ? `Perfect! 0 mistakes out of ${r.total}.` : `${r.mistakes} mistake${r.mistakes===1?"":"s"} out of ${r.total}.`
+  });
+  card.appendChild(banner);
+
+  const p = el("div", { class:"practice-text" });
+  if(r.kind === "blanks"){
+    state.words.forEach((w,i) => {
+      const [lead, core, trail] = w;
+      const detail = r.details.find(d=>d.idx===i);
+      if(detail){
+        p.appendChild(document.createTextNode(lead));
+        const span = el("span", { class: detail.isCorrect ? "tok-correct" : "tok-wrong", text: core });
+        span.title = detail.isCorrect ? "Correct" : `You wrote: "${detail.userVal || "(blank)"}"`;
+        p.appendChild(span);
+        p.appendChild(document.createTextNode(trail + " "));
+      } else {
+        p.appendChild(document.createTextNode(lead+core+trail+" "));
+      }
+    });
+  } else {
+    r.details.forEach(d => {
+      const span = el("span", { class: d.isCorrect ? "tok-correct" : "tok-wrong", text: d.correctCore });
+      span.style.marginRight = "3px";
+      span.title = d.isCorrect ? "Correct" : `You wrote: "${d.userCore || "(missing)"}"`;
+      p.appendChild(span);
+    });
+  }
+  card.appendChild(p);
+
+  if(r.mistakes > 0){
+    const corr = el("div", { class:"corrections" });
+    corr.appendChild(el("p", { text:"Corrections:", style:"font-weight:600;color:#44403c;margin-bottom:4px;" }));
+    const list = r.kind === "blanks"
+      ? r.details.filter(d=>!d.isCorrect).map(d => `"${d.userVal||"(blank)"}" → ${d.correctCore}`)
+      : r.details.filter(d=>!d.isCorrect).map(d => `"${d.userCore||"(missing)"}" → ${d.correctCore||"(extra word)"}`);
+    list.forEach(line => corr.appendChild(el("p", { text: line })));
+    card.appendChild(corr);
+  }
+
+  const btnRow = el("div", { class:"row-inline" });
+  const newVerse = el("button", { class:"btn subtle", text:"New verse", onclick: ()=>{ state.stage="setup"; state.results=null; render(); } });
+  const again = el("button", { class:"btn", text:"Try again", onclick: ()=>{ if(PW){ startPractice(state.quickText); return; } state.stage="setup"; state.results=null; render(); } });
+  if(PW) newVerse.hidden = true;
+  newVerse.style.flex = "1"; again.style.flex = "1";
+  btnRow.appendChild(newVerse); btnRow.appendChild(again);
+  card.appendChild(btnRow);
+  return card;
+}
+
+if(PW){
+  /* Pet World sends this week's verse and today's practice; the setup screen is never shown */
+  document.querySelector('.header p').textContent = 'This week’s verse';
+  app.innerHTML = '<div class="card"><p class="small-note">Getting your verse…</p></div>';
+  window.addEventListener('message', e => {
+    if(e.origin !== location.origin || e.source !== window.parent || !e.data || e.data.type !== 'verse:start') return;
+    const d = e.data;
+    pwRef = [String(d.ref || ''), String(d.version || '')].filter(Boolean).join(' · ');
+    state.useReference = false; state.quickRef = String(d.ref || ''); state.quickText = String(d.text || '');
+    state.mode = d.mode === 'full' ? 'full' : 'blanks';
+    state.numBlanks = Math.max(1, Math.round(+d.blanks || 1));
+    startPractice(state.quickText);
+  });
+  pwPost({ type:'verse:ready' });
+} else loadCache();
+})();
+</script>
+
+</body></html>

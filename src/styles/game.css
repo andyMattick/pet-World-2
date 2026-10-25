@@ -1217,3 +1217,51 @@ a.btn{display:inline-block; text-decoration:none}
 .prep-recall{position:fixed; inset:0; z-index:65; display:flex; flex-direction:column; background:var(--bg)}
 .prep-recall-bar{padding:8px 12px; background:var(--surface); border-bottom:3px solid var(--edge); font-size:1.1em}
 .prep-recall iframe{flex:1; width:100%; border:0}
+/* ✝️ Bible (docs/BIBLE.md) */
+.bible-wrap .bible-body{flex:1; overflow:auto; width:100%; max-width:820px; margin:0 auto; padding:12px 16px 40px; box-sizing:border-box}
+.bible-wrap .card{margin-top:12px}
+.bible-tabs{gap:6px; flex-wrap:wrap}
+.bible-tabs .btn[aria-pressed="true"]{background:var(--butter)}
+.bible-journal{display:flex; flex-direction:column; gap:10px}
+.bible-journal label{display:flex; flex-direction:column; gap:4px; font-weight:700}
+.bible-journal input, .bible-journal textarea{font:inherit; font-weight:400; padding:8px 10px; border:2px solid var(--edge); border-radius:10px; background:var(--surface); color:var(--ink); width:100%; box-sizing:border-box}
+.bible-entry{border-top:2px dashed var(--dot); padding:8px 0}
+.bible-entry summary{cursor:pointer}
+.bible-week{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0}
+.bible-dot{display:flex; flex-direction:column; align-items:center; min-width:38px; padding:4px 6px; border:2px solid var(--edge); border-radius:10px; font-weight:700; font-size:.85em}
+.bible-dot.today{background:var(--butter)}
+.bible-dot b{min-height:1.2em}
+.bible-verse-text{font-size:1.15em; line-height:1.6; padding:8px 12px; border-left:5px solid var(--butter); background:var(--surface)}
+.bible-wrap .bible-verse-frame{flex:none; width:100%; min-height:520px; border:2px solid var(--edge); border-radius:14px; margin-top:8px; background:#fff}
+.bible-levels{display:flex; flex-direction:column; gap:8px}
+.bible-level{display:grid; grid-template-columns:1fr auto; gap:2px 10px; align-items:center; padding:8px 10px; border:2px solid var(--edge); border-radius:12px}
+.bible-level b{grid-column:1}
+.bible-level span.muted{grid-column:1}
+.bible-level .btn, .bible-level > span:last-child{grid-column:2; grid-row:1 / span 2}
+.bible-level.locked{opacity:.55}
+.bible-chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; min-height:44px}
+.bible-chip{font:inherit; font-weight:700; padding:8px 12px; border:3px solid var(--edge); border-radius:999px; background:var(--surface); color:var(--ink); cursor:grab; touch-action:none; user-select:none}
+.bible-chip.on{background:var(--butter); transform:translateY(-2px)}
+.bible-chip.dragging{opacity:.35}
+.bible-chip.shake{animation:shake .35s}
+.bible-ghost{position:fixed; z-index:200; pointer-events:none; transform:translate(-50%,-50%) rotate(-3deg); box-shadow:0 6px 14px rgba(0,0,0,.25)}
+.bible-bins{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px}
+.bible-bins.many{grid-template-columns:repeat(auto-fit, minmax(150px,1fr))}
+.bible-bin{min-height:110px; border:3px dashed var(--edge); border-radius:14px; padding:8px; cursor:pointer; background:var(--surface)}
+.bible-bin b{display:block; margin-bottom:6px}
+.bible-bin div{display:flex; flex-wrap:wrap; gap:4px}
+.bible-placed{font-size:.85em; padding:2px 8px; border-radius:999px; background:var(--mint); color:var(--mint-ink); font-weight:700}
+.bible-placed.missed{background:var(--bad); color:#3b0d18}
+.bible-slots{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0}
+.bible-slot{min-width:92px; padding:6px 10px; border:2px solid var(--edge); border-radius:10px; text-align:center; font-weight:700; color:var(--ink-soft)}
+.bible-slot.got{background:var(--mint); color:var(--mint-ink)}
+.bible-slot.shown{background:var(--butter); color:var(--ink)}
+.bible-slot.center{background:var(--berry); color:#fff; border-color:var(--berry-deep)}
+.bible-slots.neighbors{justify-content:center}
+.bible-type{gap:8px}
+.bible-type input{flex:1; min-width:0; font:inherit; font-size:1.1em; padding:10px 12px; border:3px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink)}
+.bible-msg{min-height:1.4em; margin:6px 0 0; font-weight:700}
+.bible-wrap .prep-recall-bar{display:flex; align-items:center; gap:8px}
+.bible-wrap .prep-recall-bar b{flex:1}
+.bible-slots.neighbors{flex-wrap:nowrap; gap:4px}
+.bible-slots.neighbors .bible-slot{min-width:0; flex:1 1 0; padding:6px 3px; font-size:.85em; overflow-wrap:anywhere}

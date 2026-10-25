@@ -1,4 +1,5 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
+import { renderBibleCard } from './bible';
 import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '../shared/questionTypes';
 import { LESSON_COURSES } from '../shared/questionBanks';
 import { subjectTimeTableHTML, GOAL_SUBJECTS, parseSubjectGoals } from '../shared/subjectTime';
@@ -41,6 +42,7 @@ export interface StudentReport {
   help?: HelpQuestion[];   // ✋ questions she asked (docs/QUESTIONS.md), from the save
   subjectTime?: Record<string, Record<string, number>>;
   dayLog?: Record<string, SaveDayLog>;   // the save's day log (src/teacher/ledger.ts)
+  bible?: unknown;   // ✝️ S.bible from the save: journal, books game, verse practice
   brain?: unknown; brainOn?: BrainSettings;   // brain stretches: S.brain from the save, and the class setting
   mathThink?: Record<string, { best?: number; tries?: number; passed?: boolean; lastScore?: number; questionCount?: number; lastMissed?: string[] }>;   // 🧠 Think it through sets, from the save   // active seconds per day and subject, from the student's save
 }
@@ -235,12 +237,12 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   h += '<div id="liveNowCard" class="noprint"></div>';   // 🔴 Right now (docs/LIVE.md)
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
-  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['brain', '🧠 Brain'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
+  const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['bible', '✝️ Bible'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['brain', '🧠 Brain'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
   if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
   const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
   h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
   h += panel('math', mathUnitsHTML(r) + `<h3>🧠 Think it through</h3>${thinkReportHTML(r.mathThink, reportThinkRequired)}`) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
-  h += panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>') + panel('brain', `<h3>🧠 Brain stretches</h3>${brainReportHTML(r.brain, r.brainOn)}`) + panel('ledger', '<div id="ledgerCard"></div>') + panel('courses', '<div id="coursesCard"></div>') + panel('transcript', '<div id="transcriptCard"></div>');
+  h += panel('bible', '<div id="bibleCard"></div>') + panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>') + panel('brain', `<h3>🧠 Brain stretches</h3>${brainReportHTML(r.brain, r.brainOn)}`) + panel('ledger', '<div id="ledgerCard"></div>') + panel('courses', '<div id="coursesCard"></div>') + panel('transcript', '<div id="transcriptCard"></div>');
   /* the Ledger (docs/LEDGER.md step 4) reads the database, so it loads the first time its tab opens;
      Grades (step 6) adds up again each time its tab opens, so Ledger changes show */
   let ledgerShown = false;
@@ -249,6 +251,8 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     if (detailSubject === 'courses' && courses) renderCourses(courses, r, () => overrides.courses, value => saveOverride('courses', value));
     const transcript = $('#transcriptCard');   // the transcript (step 7) also adds up again each time its tab opens
     if (detailSubject === 'transcript' && transcript) renderTranscript(transcript, r, () => overrides.courses, () => overrides.transcript, value => saveOverride('transcript', value));
+    const bible = $('#bibleCard');   // ✝️ Bible (docs/BIBLE.md): her settings, verse of the week and journal
+    if (detailSubject === 'bible' && bible) renderBibleCard(bible, r.n, r.bible, () => overrides.bible, value => saveOverride('bible', value));
     const el = $('#ledgerCard'); if (ledgerShown || detailSubject !== 'ledger' || !el) return; ledgerShown = true; renderLedger(el, r);
   };
   const loose = st.mis.filter(([id]) => !misShops(r, id).length);

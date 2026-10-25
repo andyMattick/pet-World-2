@@ -73,9 +73,9 @@ const dayName = (day: string) => new Date(`${day}T12:00:00`).toLocaleDateString(
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /* ---------- what she did, by subject, with every score (docs: LEDGER.md, "By subject") ---------- */
-const SUBJECT_ORDER: [string, string][] = [['math', '➗ Math'], ['english', '📚 English'], ['reading', '📖 Reading Log'], ['history', '🏛️ History'], ['science', '🦁 Science'], ['breaks', '🧠 Brain and movement breaks'], ['other', 'Other']];
+const SUBJECT_ORDER: [string, string][] = [['bible', '✝️ Bible'], ['math', '➗ Math'], ['english', '📚 English'], ['reading', '📖 Reading Log'], ['history', '🏛️ History'], ['science', '🦁 Science'], ['breaks', '🧠 Brain and movement breaks'], ['other', 'Other']];
 /* which subject an event belongs to; the time in each group comes from these time-by-subject ids */
-const GROUP_TIME: Record<string, string[]> = { math: ['math', 'facts'], english: ['english', 'words'], reading: ['reading'], history: ['history'], science: ['science'], breaks: ['brain'], other: [] };
+const GROUP_TIME: Record<string, string[]> = { bible: ['bible'], math: ['math', 'facts'], english: ['english', 'words'], reading: ['reading'], history: ['history'], science: ['science'], breaks: ['brain'], other: [] };
 function eventSubject(ev: LedgerEvent): string {
   const course = String(ev.course || '');
   switch (ev.k) {
@@ -87,6 +87,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'dig': case 'scribe': return 'history';
     case 'sim': return 'science';
     case 'ggame': case 'recall': return 'english';
+    case 'bible': return 'bible';
     case 'help': return 'other';
     case 'brain': case 'move': return 'breaks';
     case 'done': { const s = String(ev.subject || ''); return s === 'biology' ? 'science' : ['math', 'english', 'reading', 'history', 'science'].includes(s) ? s : 'other'; }
@@ -108,6 +109,7 @@ function placeSubject(key: string): string {
   if (k === 'shop' || k === 'sprint') return 'math';
   if (k === 'vocab') return 'english';
   if (k === 'reading') return 'reading';
+  if (k === 'bible') return 'bible';
   if (k === 'dig' || k === 'scribe') return 'history';
   if (k === 'sim') return 'science';
   if (k === 'project') return a.startsWith('bio') ? 'science' : 'history';

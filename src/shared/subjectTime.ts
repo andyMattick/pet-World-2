@@ -4,7 +4,7 @@
    Shared by the grown-ups' progress report (game) and the teacher's student page. */
 
 export const SUBJECT_TIME: [string, string][] = [
-  ['math', '➗ Math'], ['english', '📚 English'], ['reading', '📖 Reading Log'], ['words', '🔤 Word Workshop'], ['facts', '⚡ Fact Sprint'],
+  ['bible', '✝️ Bible'], ['math', '➗ Math'], ['english', '📚 English'], ['reading', '📖 Reading Log'], ['words', '🔤 Word Workshop'], ['facts', '⚡ Fact Sprint'],
   ['history', '🏛️ History'], ['science', '🦁 Science'], ['brain', '🧠 Brain stretch'], ['arcade', '🕹️ Arcade'], ['town', '🏠 Around town']
 ];
 export type SubjectTime = Record<string, Record<string, number>>;
@@ -54,7 +54,7 @@ export function mergeSubjectTime(base: SubjectTime, other: unknown): number {
 
 /* daily minute goals per subject (ROADMAP F8), set by a grown-up for one student and saved in quiz_overrides as
    "subjectGoals" = JSON {base:{math:20, ...}, days:{"2026-10-17":{math:0}}}. A day's value (0 too) replaces the every-day value. */
-export const GOAL_SUBJECTS = SUBJECT_TIME.filter(([id]) => id !== 'brain' && id !== 'arcade' && id !== 'town' && id !== 'facts');   // Fact Sprint time is set as a warm-up extra instead
+export const GOAL_SUBJECTS = SUBJECT_TIME.filter(([id]) => id !== 'bible' && id !== 'brain' && id !== 'arcade' && id !== 'town' && id !== 'facts');   // Fact Sprint time is set as a warm-up extra instead
 export interface SubjectGoals { base: Record<string, number>; days: Record<string, Record<string, number>> }
 const GOAL_IDS = new Set(GOAL_SUBJECTS.map(([id]) => id));
 function cleanGoals(row: unknown): Record<string, number> {

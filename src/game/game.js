@@ -10,6 +10,7 @@ import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTabl
 import { stageHTML, stageReact } from './stage';
 import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITIC, HIEROGLYPHS, HIEROGLYPH_NAMES, GREEK, GREEK_NAMES, ORACLE_SIGNS } from './historyData';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
+import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, verseForDay, dayOfWeek, VERSE_PLAN, versePractice, verseGood, VERSE_TRIES_FOR_DONE } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
@@ -168,6 +169,7 @@ function normalize(raw){
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
       games:(Array.isArray(s.chefRush?.games) ? s.chefRush.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, served:Math.max(0, +g.served || 0), perfect:Math.max(0, +g.perfect || 0), level:Math.max(1, +g.level || 1), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🍳 Chef's Rush (docs/CHEFS-RUSH.md)
+    s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
@@ -5120,6 +5122,7 @@ function show(id){
   window.scrollTo(0,0);
   if (brainRun && (id === 'join' || id === 'name' || id === 'loading')) closeBrainStretch(false);   // signed out: the stretch waits in the save
   if (moveRun && (id === 'join' || id === 'name' || id === 'loading')) closeMoveBreak();            // the same for a stand-and-stretch break
+  bibleCheck();
   brainCheck();
   moveCheck();
   themeCheck();
@@ -5369,6 +5372,7 @@ function newBrainStretch(kind, label, item){
 }
 function brainCheck(){
   if (LOOK_ID) return;   // look only: no pop-ups
+  if (bibleFirst()) return;   // ✝️ Bible comes first, before the morning brain stretch
   if (brainRun || moveRun || !S?.brain || !brainAllowed().length) return;
   const day = logDayKey(), stretched = S.brain.stretched[day] || (S.brain.stretched[day] = []);
   if (S.brain.active && brainStretch()?.day !== day) S.brain.active = '';   // left unfinished on an earlier day
@@ -5482,6 +5486,7 @@ function moveTrack(subject, seconds){
 }
 function moveCheck(){
   if (LOOK_ID) return;   // look only: no pop-ups
+  if (bibleFirst()) return;
   if (moveRun || brainRun || $('.theme-card') || !S?.move || !allowedMoves(movePolicy()).length) return;
   moveNewDay();
   const m = S.move, subject = subjectOnScreen();
@@ -5548,7 +5553,7 @@ const NUDGE_MINUTES = 30;
 /* the end of the school day (docs/DAILY-PLAN.md): set each morning at the theme question, else the last one picked, else 3:00 */
 function endOfDayAt(day = logDayKey()){ return S?.endOfDay?.day === day ? S.endOfDay.at : S?.endDefault || '15:00'; }
 const fmtClock = hm => { const [h, m] = hm.split(':').map(Number); return `${(h % 12) || 12}:${String(m).padStart(2, '0')}${h < 12 ? ' AM' : ' PM'}`; };
-const NUDGE_SUBJECT_NAME = {math:'math', english:'English', reading:'reading', history:'History', science:'Biology', words:'Word Workshop', facts:'Fact Sprint'};
+const NUDGE_SUBJECT_NAME = {bible:'Bible', math:'math', english:'English', reading:'reading', history:'History', science:'Biology', words:'Word Workshop', facts:'Fact Sprint'};
 function nudgeCheck(){
   if (LOOK_ID) return;   // look only: no pop-ups
   if (!S?.nudges || document.hidden || $('.nudge-banner')) return;
@@ -5654,6 +5659,7 @@ function themeCheck(){
   const day = logDayKey(), policy = themePolicy();
   if (policy.enabled) recordPlanDone(day);
   ensureCarry(day);   // what she didn't get to last time is on today's plan, even without "I'm done for today"
+  if (bibleFirst()) return;   // ✝️ Bible first, then the brain stretch, the theme question and the warm-up
   if (brainRun || moveRun || $('.theme-card')) return;
   if (brainAllowed().length && (S.brain.morning !== day || S.brain.active)) return;   // the morning brain stretch comes first
   if (!brainBreakNow()) return;
@@ -6843,6 +6849,386 @@ window.addEventListener('message', e => {
   save();
   toast(`🍳 ${served} order${served === 1 ? '' : 's'} served!${newBest && served ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= CHEF_COINS_PER_DAY ? ' (Today’s Chef’s Rush coins are all earned.)' : ''}`);
 });
+/* ---------- ✝️ Bible (docs/BIBLE.md) ----------
+   Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
+   every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
+   shows the "Bible comes first" card. Done for the day = a devotion journal entry, plus the verse of the week or a round
+   of the books game. A grown-up can skip it for one day with the grown-up PIN (logged).
+   S.bible: {journal:[{day, passage, learned, prayer, at, updatedAt}], books:{level, streak, done:{3:[], 4:[]}, n5, mastered,
+   rounds:[…]}, verse:{day:{week, ref, tries, mistakes, total, mode, blanks, done}}, skipped, shown, coinDay} */
+const bibleSettings = () => parseBibleSettings(Backend.me?.quiz_overrides?.bible);
+const bibleOn = () => !!Backend.me && !!S?.bible && bibleSettings().on;
+function normalizeBible(raw){
+  const b = raw && typeof raw === 'object' ? raw : {}, str = (v, n) => String(v ?? '').slice(0, n), isDay = d => /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const bk = b.books && typeof b.books === 'object' ? b.books : {}, ids = x => [...new Set((Array.isArray(x) ? x : []).filter(id => RECALL_SECTIONS.includes(id)))];
+  const verse = {};
+  Object.entries(b.verse && typeof b.verse === 'object' ? b.verse : {}).filter(([d, v]) => isDay(d) && v && typeof v === 'object').sort().slice(-60)
+    .forEach(([d, v]) => { verse[d] = {week:str(v.week, 10), ref:str(v.ref, 80), tries:Math.max(0, Math.round(+v.tries || 0)), mistakes:Math.max(0, Math.round(+v.mistakes || 0)), total:Math.max(0, Math.round(+v.total || 0)), mode:v.mode === 'full' ? 'full' : 'blanks', blanks:Math.max(0, Math.round(+v.blanks || 0)), done:!!v.done}; });
+  return {
+    journal:(Array.isArray(b.journal) ? b.journal : []).filter(j => j && isDay(j.day)).map(j => ({day:j.day, passage:str(j.passage, 200), learned:str(j.learned, 4000), prayer:str(j.prayer, 4000), at:+j.at || 0, updatedAt:+j.updatedAt || 0}))
+      .sort((x, y) => (x.day < y.day ? -1 : 1)).filter((j, i, all) => all.findIndex(k => k.day === j.day) === i).slice(-400),
+    books:{level:Math.max(1, Math.min(5, Math.round(+bk.level || 1))), streak:Math.max(0, Math.round(+bk.streak || 0)), n5:Math.max(0, Math.round(+bk.n5 || 0)), mastered:!!bk.mastered,
+      done:{3:ids(bk.done?.[3]), 4:ids(bk.done?.[4])},
+      rounds:(Array.isArray(bk.rounds) ? bk.rounds : []).filter(r => r && Number.isFinite(+r.t)).slice(-60).map(r => ({t:+r.t, level:Math.max(1, Math.min(5, Math.round(+r.level || 1))), right:Math.max(0, +r.right || 0), total:Math.max(0, +r.total || 0), perfect:!!r.perfect, section:str(r.section, 20)}))},
+    verse, skipped:str(b.skipped, 10), shown:str(b.shown, 10), coinDay:str(b.coinDay, 10)
+  };
+}
+/* two devices: each day's journal entry, the newer edit wins; the books game keeps the higher level and every round; each
+   verse day keeps the side that finished or tried more */
+function mergeBible(base, other){
+  if (!base || !other) return 0;
+  let n = 0;
+  for (const j of other.journal || []) {
+    const i = base.journal.findIndex(x => x.day === j.day);
+    if (i < 0) { base.journal.push(j); n++; } else if ((j.updatedAt || 0) > (base.journal[i].updatedAt || 0)) { base.journal[i] = j; n++; }
+  }
+  base.journal.sort((x, y) => (x.day < y.day ? -1 : 1));
+  const a = base.books, b = other.books || {};
+  if ((b.level || 1) > a.level) { a.level = b.level; a.streak = b.streak || 0; n++; }
+  if (b.mastered && !a.mastered) { a.mastered = true; n++; }
+  for (const lv of [3, 4]) for (const id of b.done?.[lv] || []) if (!a.done[lv].includes(id)) { a.done[lv].push(id); n++; }
+  const seen = new Set(a.rounds.map(r => r.t));
+  for (const r of b.rounds || []) if (!seen.has(r.t)) { a.rounds.push(r); n++; }
+  a.rounds = a.rounds.sort((x, y) => x.t - y.t).slice(-60);
+  for (const [d, v] of Object.entries(other.verse || {})) {
+    const mine = base.verse[d];
+    if (!mine || (v.done && !mine.done) || (v.done === mine.done && v.tries > mine.tries)) { base.verse[d] = v; n++; }
+  }
+  return n;
+}
+/* where today stands: the journal, the verse (null when there's no verse this week), a books round */
+function bibleStatus(day = logDayKey()){
+  const verse = verseForDay(bibleSettings(), day), journal = S.bible.journal.some(j => j.day === day && j.learned.trim());
+  const verseDone = !!(verse && S.bible.verse[day]?.done && S.bible.verse[day].week === verse.week);
+  const books = S.bible.books.rounds.some(r => logDayKey(new Date(r.t)) === day);
+  return {journal, verse, verseDone, books, done:journal && (verseDone || books)};
+}
+/* Bible holds up the day: on for her, not done today, not skipped by a grown-up today */
+const bibleFirst = () => !LOOK_ID && bibleOn() && S.bible.skipped !== logDayKey() && !bibleStatus().done;
+/* the first time Bible turns done today: the day log, and 5 coins */
+function bibleMaybeDone(){
+  const day = logDayKey(), st = bibleStatus(day);
+  if (!st.done || S.bible.coinDay === day) return;
+  S.bible.coinDay = day; S.coins += 5; updateHeader();
+  logEvent({k:'bible', title:'✅ Bible done for today'});
+  save(); sfx('good'); toast('✝️ Bible is done for today! +5 🪙 The rest of your day is open.');
+}
+function bibleRowsHTML(){
+  const st = bibleStatus(), mark = ok => (ok ? '✅' : '⬜');
+  return `<div class="row extras-row"><span style="flex:1">${mark(st.journal)} 📝 Devotion journal: what you read and what you learned</span><button type="button" class="btn small${st.journal ? '' : ' berry'}" data-bible-go="journal">${st.journal ? 'Open' : 'Write'}</button></div>
+    ${st.verse ? `<div class="row extras-row"><span style="flex:1">${mark(st.verseDone)} 💬 Verse of the week: ${esc(st.verse.ref)}</span><button type="button" class="btn small${st.verseDone ? '' : ' berry'}" data-bible-go="verse">Practice</button></div>` : ''}
+    <div class="row extras-row"><span style="flex:1">${mark(st.books)} 📚 Books of the Bible: one round${st.verse ? ' <small class="muted">(or the verse)</small>' : ''}</span><button type="button" class="btn small${st.books ? '' : ' berry'}" data-bible-go="books">Play</button></div>`;
+}
+/* the card that shows when she opens anything else before Bible is done */
+function openBibleFirstCard(){
+  if ($('.theme-card')) return;
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Bible comes first');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">First thing today</p><div class="theme-emoji" aria-hidden="true">✝️</div><h2>Bible comes first</h2>
+    <p>Write in your devotion journal, then practice the verse of the week${bibleStatus().verse ? ' or' : ' and'} play a round of the books game. Then the rest of your day opens up.</p>
+    ${bibleRowsHTML()}<button type="button" class="btn small" data-bible-close>Back to town</button>
+    <details class="warmup-skip"><summary>Grown-up: skip Bible today</summary><form class="theme-pin" data-bible-skip><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Skip for today</button></form></details></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', event => {
+    const go = event.target.closest('[data-bible-go]');
+    if (go) { el.remove(); openBible(go.dataset.bibleGo); return; }
+    if (event.target.closest('[data-bible-close]')) el.remove();
+  });
+  el.querySelector('[data-bible-skip]').addEventListener('submit', event => {
+    event.preventDefault();
+    const err = grownUpPinError(String(new FormData(event.target).get('pin') || '').trim());
+    if (err) { toast(err); return; }
+    S.bible.skipped = logDayKey(); logEvent({k:'gate', title:'🔐 Grown-up OK: Bible skipped today'});
+    save(); el.remove(); renderHome(); toast('Bible skipped for today.');
+    setTimeout(() => { brainCheck(); moveCheck(); themeCheck(); }, 300);
+  });
+}
+/* right after sign-in (and whenever the town is on screen), before the morning brain stretch */
+function bibleCheck(){
+  if (!bibleFirst() || brainRun || moveRun || $('.theme-card') || $('#bibleWrap') || $('#scr-home').hidden) return;
+  const day = logDayKey();
+  if (S.bible.shown !== day) { S.bible.shown = day; save(); openBibleFirstCard(); }
+}
+setInterval(() => { if (Backend.me) bibleCheck(); }, 15000);
+/* anything else she opens waits for Bible (the Bible spot, Town Hall, the Sticker Book and her Pet Room stay open) */
+const BIBLE_FREE = new Set(['bible', 'hall', 'book', 'shop', 'room']);
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-open], [data-extra-start], [data-arcade-start]');
+  if (!b || b.closest('.theme-card, #bibleWrap') || (b.dataset.open && BIBLE_FREE.has(b.dataset.open)) || !bibleFirst()) return;
+  e.preventDefault(); e.stopImmediatePropagation(); sfx('tick'); openBibleFirstCard();
+}, true);
+
+/* ---------- the Bible spot ---------- */
+let bibleTab = 'today', bibleRun = null;
+function openBible(tab = 'today'){
+  bibleTab = tab; bibleRun = null;
+  let el = $('#bibleWrap');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'bibleWrap'; el.className = 'prep-recall bible-wrap'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Bible');
+    el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">✝️ Bible</b><button type="button" class="btn small" data-bible-done>Done</button></div><div class="bible-body" id="bibleBody"></div>`;
+    document.body.appendChild(el);
+    el.querySelector('[data-bible-done]').addEventListener('click', closeBible);
+    el.addEventListener('click', bibleClick);
+    el.addEventListener('input', bibleInput);
+    el.addEventListener('keydown', bibleKey);
+    el.addEventListener('pointerdown', biblePointerDown);
+    el.addEventListener('submit', e => { if (e.target.id === 'bibleJournal') { e.preventDefault(); saveBibleJournal(e.target); } });
+  }
+  renderBible();
+}
+function closeBible(){
+  $('#bibleWrap')?.remove(); bibleRun = null;
+  if (!$('#scr-home').hidden) renderHome();
+  setTimeout(() => { bibleCheck(); brainCheck(); moveCheck(); themeCheck(); }, 300);
+}
+function renderBible(){
+  const body = $('#bibleBody'); if (!body) return;
+  const tabs = [['today', '☀️ Today'], ['journal', '📝 Journal'], ['verse', '💬 Verse'], ['books', '📚 Books']];
+  const nav = `<div class="row bible-tabs" role="group" aria-label="Bible">${tabs.map(([id, name]) => `<button type="button" class="btn small" data-bible-tab="${id}" aria-pressed="${bibleTab === id}">${name}</button>`).join('')}</div>`;
+  body.innerHTML = nav + (bibleTab === 'journal' ? bibleJournalHTML() : bibleTab === 'verse' ? bibleVerseHTML() : bibleTab === 'books' ? bibleBooksHTML() : bibleTodayHTML());
+  if (bibleTab === 'books' && bibleRun?.game?.typed) setTimeout(() => $('#bibleType')?.focus(), 30);
+}
+function bibleTodayHTML(){
+  const st = bibleStatus();
+  return `<div class="card"><h2>☀️ Today</h2>
+    <p class="muted" style="margin-top:0">${st.done ? '✅ Bible is done for today. The rest of your day is open!' : `Write in your journal, then ${st.verse ? 'practice the verse of the week or play a round of the books game' : 'play a round of the books game'}.`}</p>
+    ${bibleRowsHTML()}</div>`;
+}
+/* 📝 devotion journal: today's entry (she can change it all day), and the ones before */
+function bibleJournalHTML(){
+  const day = logDayKey(), today = S.bible.journal.find(j => j.day === day) || {passage:'', learned:'', prayer:''};
+  const past = S.bible.journal.filter(j => j.day !== day).slice().reverse();
+  const when = d => new Date(`${d}T12:00:00`).toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'});
+  return `<div class="card"><h2>📝 Devotion journal</h2><p class="muted" style="margin-top:0">${esc(when(day))}. Write about today’s devotion. Your teacher can read your journal.</p>
+    <form id="bibleJournal" class="bible-journal">
+      <label>What did you read or study? <small class="muted">(the passage or topic)</small><input name="passage" maxlength="200" value="${esc(today.passage)}" placeholder="Psalm 23, or “trusting God”"></label>
+      <label>What did you learn? <textarea name="learned" rows="5" maxlength="4000" required placeholder="Write it in your own words.">${esc(today.learned)}</textarea></label>
+      <label>Your thoughts or a prayer <small class="muted">(optional)</small><textarea name="prayer" rows="4" maxlength="4000">${esc(today.prayer)}</textarea></label>
+      <button type="submit" class="btn berry">${today.learned ? 'Save changes' : 'Save my journal'}</button></form></div>
+    ${past.length ? `<div class="card"><h2>Earlier entries</h2>${past.slice(0, 60).map(j => `<details class="bible-entry"><summary><b>${esc(when(j.day))}</b>${j.passage ? ` · ${esc(j.passage)}` : ''}</summary><p><b>What I learned:</b> ${esc(j.learned).replace(/\n/g, '<br>')}</p>${j.prayer ? `<p><b>Thoughts or prayer:</b> ${esc(j.prayer).replace(/\n/g, '<br>')}</p>` : ''}</details>`).join('')}</div>` : ''}`;
+}
+function saveBibleJournal(form){
+  const f = new FormData(form), learned = String(f.get('learned') || '').trim();
+  if (learned.split(/\s+/).filter(Boolean).length < 5) { toast('Write a little more about what you learned (a sentence or two).'); return; }
+  const day = logDayKey(), now = Date.now(), i = S.bible.journal.findIndex(j => j.day === day), first = i < 0;
+  const entry = {day, passage:String(f.get('passage') || '').trim().slice(0, 200), learned:learned.slice(0, 4000), prayer:String(f.get('prayer') || '').trim().slice(0, 4000), at:first ? now : S.bible.journal[i].at, updatedAt:now};
+  if (first) S.bible.journal.push(entry); else S.bible.journal[i] = entry;
+  if (first) logEvent({k:'bible', title:`📝 Journal: ${entry.passage || 'today’s devotion'}`});
+  save(); toast(first ? '📝 Journal saved!' : '📝 Changes saved.');
+  bibleMaybeDone();
+  bibleTab = 'today'; renderBible();
+}
+/* 💬 verse of the week: more blanks each day, the whole verse from Friday on, in the Verse Memorizer */
+function bibleVerseHTML(){
+  const day = logDayKey(), v = verseForDay(bibleSettings(), day);
+  if (!v) return `<div class="card"><h2>💬 Verse of the week</h2><p>There’s no verse for this week yet. A grown-up adds it in the teacher app (your page → ✝️ Bible).</p><p class="muted">Today, play a round of the books game instead.</p><button type="button" class="btn berry" data-bible-tab="books">📚 Books of the Bible</button></div>`;
+  const p = versePractice(v.text, day), rec = S.bible.verse[day], dow = dayOfWeek(day), monday = v.week;
+  const dots = VERSE_PLAN.map((plan, i) => { const d = new Date(`${monday}T12:00:00`); d.setDate(d.getDate() + i); const k = logDayKey(d), r = S.bible.verse[k];
+    return `<span class="bible-dot${i === dow ? ' today' : ''}" title="${esc(plan.name)}">${plan.name.slice(0, 2)}<b>${r?.done ? '✅' : i < dow ? '·' : ''}</b></span>`; }).join('');
+  const todayText = p.mode === 'full' ? 'Write the whole verse from memory.' : `Fill in ${p.blanks} blank${p.blanks === 1 ? '' : 's'}.`;
+  return `<div class="card"><h2>💬 ${esc(v.ref)}${v.version ? ` <small class="muted">${esc(v.version)}</small>` : ''}</h2>
+    <div class="bible-week">${dots}</div>
+    <p><b>Today (${esc(VERSE_PLAN[dow].name)}):</b> ${todayText} ${rec?.done ? '✅ Done for today. You can practice again any time.' : rec?.tries ? `Tries so far: ${rec.tries}. Almost every word right counts, or 3 tries.` : ''}</p>
+    <details class="bible-peek"${dow === 0 && !rec?.tries ? ' open' : ''}><summary>📖 Read the verse${dow > 0 ? ' (peek)' : ''}</summary><p class="bible-verse-text">${esc(v.text)}</p></details>
+    ${bibleRun?.verse ? '<iframe id="verseFrame" class="bible-verse-frame" src="/bible/verse-memorizer/?pw=1" title="Verse Memorizer"></iframe>' : `<button type="button" class="btn berry" data-verse-start>✍️ Practice now</button>`}</div>`;
+}
+window.addEventListener('message', e => {
+  const frame = $('#verseFrame');
+  if (!S?.bible || e.origin !== location.origin || !frame || e.source !== frame.contentWindow) return;
+  const day = logDayKey(), v = verseForDay(bibleSettings(), day); if (!v) return;
+  const p = versePractice(v.text, day);
+  if (e.data?.type === 'verse:ready') { frame.contentWindow.postMessage({type:'verse:start', ref:v.ref, version:v.version, text:v.text, mode:p.mode, blanks:p.blanks}, location.origin); return; }
+  if (e.data?.type !== 'verse:result') return;
+  const mistakes = Math.max(0, Math.round(+e.data.mistakes || 0)), total = Math.max(1, Math.round(+e.data.total || 1));
+  const old = S.bible.verse[day]?.week === v.week ? S.bible.verse[day] : null;
+  const rec = {week:v.week, ref:v.ref, tries:(old?.tries || 0) + 1, mistakes:old ? Math.min(old.mistakes, mistakes) : mistakes, total, mode:p.mode, blanks:p.blanks, done:!!old?.done};
+  const nowDone = !rec.done && (verseGood(mistakes, total) || rec.tries >= VERSE_TRIES_FOR_DONE);
+  if (nowDone) { rec.done = true; logEvent({k:'bible', title:`💬 Verse of the week (${v.ref}): ${p.mode === 'full' ? 'wrote the whole verse' : `${p.blanks} blanks`}, ${total - mistakes} of ${total} right`, s:total - mistakes, n:total}); }
+  S.bible.verse[day] = rec; save();
+  if (nowDone) { toast(verseGood(mistakes, total) ? '💬 Great job! Verse practice done for today.' : '💬 Good effort! Verse practice counts for today. Keep practicing!'); bibleMaybeDone(); }
+});
+
+/* 📚 the books game: 1 Old or New?, 2 Which section?, 3 Name them all, 4 In order, 5 Neighbors */
+const bibleShuffle = list => { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function bibleBooksHTML(){
+  const bk = S.bible.books;
+  if (bibleRun?.game) return bibleGameHTML();
+  const levelNote = n => n === 3 || n === 4 ? ` · ${bk.done[n].length} of ${RECALL_SECTIONS.length} sections` : n === 5 && bk.mastered ? ' · ⭐ mastered' : n < 3 && n === bk.level && bk.streak ? ` · ${bk.streak} of ${SORT_STREAK} perfect rounds` : '';
+  return `<div class="card"><h2>📚 Books of the Bible</h2><p class="muted" style="margin-top:0">Each level opens after the one before. Levels 1 and 2: ${SORT_STREAK} perfect rounds in a row. Levels 3 and 4: every section once with no hints.</p>
+    <div class="bible-levels">${BOOK_LEVELS.map(l => { const open = l.n <= bk.level;
+      return `<div class="bible-level${open ? '' : ' locked'}"><b>${l.n}. ${esc(l.name)}</b><span class="muted">${esc(l.what)}${open ? levelNote(l.n) : ''}</span>${open ? `<button type="button" class="btn small${l.n === bk.level ? ' berry' : ''}" data-books-level="${l.n}">Play</button>` : '<span class="muted">🔒</span>'}</div>`; }).join('')}</div></div>`;
+}
+function startBooks(level){
+  const bk = S.bible.books, pickSection = lv => { const left = RECALL_SECTIONS.filter(id => !bk.done[lv].includes(id)); return (left.length ? left : bibleShuffle(RECALL_SECTIONS))[0]; };
+  let game;
+  if (level === 1) game = {level, kind:'sort', bins:[['OT', TESTAMENTS.OT], ['NT', TESTAMENTS.NT]], left:bibleShuffle(BIBLE_BOOKS).slice(0, 8).map(b => ({name:b.name, bin:b.t, miss:0})), placed:[]};
+  else if (level === 2) { const t = Math.random() < .5 ? 'OT' : 'NT', pool = BIBLE_BOOKS.filter(b => b.t === t);
+    game = {level, kind:'sort', bins:BIBLE_SECTIONS.filter(s => s.t === t).map(s => [s.id, `${s.emoji} ${s.name.replace(/ \((Old|New) Testament\)/, '')}`]), testament:t, left:bibleShuffle(pool).slice(0, 8).map(b => ({name:b.name, bin:b.s, miss:0})), placed:[]}; }
+  else if (level === 3) { const s = pickSection(3); game = {level, kind:'recall', section:s, slots:booksIn(s).map(b => ({name:b.name, got:false, shown:false})), typed:true, msg:''}; }
+  else if (level === 4) { const s = pickSection(4); game = {level, kind:'order', section:s, answer:booksIn(s).map(b => b.name), chips:bibleShuffle(booksIn(s).map(b => b.name)), done:[], missedAt:[]}; }
+  else game = {level:5, kind:'neighbors', items:bibleShuffle(BIBLE_BOOKS).slice(0, NEIGHBOR_ROUND).map(b => { const nb = neighborsOf(b.name); return {name:b.name, slots:[...nb.before.map(x => ({name:x, got:false, shown:false})), null, ...nb.after.map(x => ({name:x, got:false, shown:false}))]}; }), at:0, typed:true, msg:''};
+  game.selected = ''; game.started = Date.now();
+  bibleRun = {game}; renderBible();
+}
+function bibleGameHTML(){
+  const g = bibleRun.game, head = `<div class="row" style="align-items:center"><b style="flex:1">${g.level}. ${esc(BOOK_LEVELS[g.level - 1].name)}</b><button type="button" class="btn small" data-books-quit>Stop</button></div>`;
+  if (g.kind === 'sort') {
+    const total = g.left.length + g.placed.length;
+    return `<div class="card bible-game">${head}<p class="muted">Drag each book to where it belongs, or tap a book and then tap the right box. ${g.placed.length} of ${total} placed.</p>
+      <div class="bible-chips">${g.left.map(b => `<button type="button" class="bible-chip${g.selected === b.name ? ' on' : ''}${b.shake ? ' shake' : ''}" data-book="${esc(b.name)}">${esc(b.name)}</button>`).join('') || '<span class="muted">All placed!</span>'}</div>
+      <div class="bible-bins${g.bins.length > 2 ? ' many' : ''}">${g.bins.map(([id, name]) => `<div class="bible-bin" data-bin="${esc(id)}" role="button" tabindex="0" aria-label="${esc(name)}"><b>${esc(name)}</b><div>${g.placed.filter(p => p.bin === id).map(p => `<span class="bible-placed${p.miss ? ' missed' : ''}">${esc(p.name)}</span>`).join('')}</div></div>`).join('')}</div></div>`;
+  }
+  if (g.kind === 'recall') {
+    const s = sectionOf(g.section), found = g.slots.filter(x => x.got || x.shown).length;
+    return `<div class="card bible-game">${head}<p><b>${s.emoji} ${esc(s.name)}</b> (${TESTAMENTS[s.t]}): type every book in this section. When a name is right, it fills in. ${found} of ${g.slots.length}.</p>
+      <div class="bible-slots">${g.slots.map(x => `<span class="bible-slot${x.got ? ' got' : x.shown ? ' shown' : ''}">${x.got || x.shown ? esc(x.name) : '&nbsp;'}</span>`).join('')}</div>
+      ${bibleTypeHTML(g)}</div>`;
+  }
+  if (g.kind === 'order') {
+    const s = sectionOf(g.section);
+    return `<div class="card bible-game">${head}<p><b>${s.emoji} ${esc(s.name)}</b>: tap the books in Bible order, first to last.</p>
+      <div class="bible-slots">${g.answer.map((name, i) => `<span class="bible-slot${i < g.done.length ? ' got' : ''}">${i < g.done.length ? esc(name) : i + 1}</span>`).join('')}</div>
+      <div class="bible-chips">${g.chips.filter(c => !g.done.includes(c)).map(c => `<button type="button" class="bible-chip${g.shake === c ? ' shake' : ''}" data-order="${esc(c)}">${esc(c)}</button>`).join('')}</div></div>`;
+  }
+  const item = g.items[g.at];
+  return `<div class="card bible-game">${head}<p>Book ${g.at + 1} of ${g.items.length}: type the <b>2 books before</b> and the <b>2 books after</b> it. When a name is right, it fills in.</p>
+    <div class="bible-slots neighbors">${item.slots.map(x => x ? `<span class="bible-slot${x.got ? ' got' : x.shown ? ' shown' : ''}">${x.got || x.shown ? esc(x.name) : '&nbsp;'}</span>` : `<span class="bible-slot center">${esc(item.name)}</span>`).join('')}</div>
+    ${item.slots[0] === null ? '<p class="muted" style="margin:0">It’s the very first book: nothing comes before it.</p>' : item.slots[item.slots.length - 1] === null ? '<p class="muted" style="margin:0">It’s the very last book: nothing comes after it.</p>' : ''}
+    ${bibleTypeHTML(g)}</div>`;
+}
+function bibleTypeHTML(g){
+  return `<div class="row bible-type"><input id="bibleType" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type a book…" aria-label="Type a book of the Bible"><button type="button" class="btn small" data-books-hint>Show me one</button></div>
+    <p class="bible-msg" role="status">${esc(g.msg || '')}</p>`;
+}
+/* the slots still to fill in a typing level */
+const typedSlots = g => (g.kind === 'recall' ? g.slots : g.items[g.at].slots.filter(Boolean));
+/* type a book: it fills in as soon as it's right, like the 48 prepositions game. A name that could still be the start of a
+   longer one ("Psalm" of "Psalms") waits a moment, or for Enter, so the last letters don't spill into the next try. */
+let bibleTypeTimer = null;
+function bibleTryFill(value){
+  const g = bibleRun?.game; if (!g?.typed) return false;
+  const name = bookFromTyped(value), slot = name && typedSlots(g).find(x => x.name === name && !x.got && !x.shown);
+  if (!slot) return false;
+  slot.got = true; g.msg = `✅ ${name}`; sfx('good');
+  if (!bibleTypedNext(g)) renderBible();
+  return true;
+}
+function bibleInput(e){
+  if (e.target.id !== 'bibleType' || !bibleRun?.game?.typed) return;
+  clearTimeout(bibleTypeTimer);
+  const value = e.target.value;
+  if (typedMayContinue(value)) { bibleTypeTimer = setTimeout(() => { if ($('#bibleType')?.value === value) bibleTryFill(value); }, 900); return; }
+  bibleTryFill(value);
+}
+function bibleKey(e){
+  if (e.target.id !== 'bibleType' || e.key !== 'Enter' || !bibleRun?.game?.typed) return;
+  e.preventDefault(); clearTimeout(bibleTypeTimer);
+  const g = bibleRun.game, raw = e.target.value.trim(), name = bookFromTyped(raw); if (!raw) return;
+  if (bibleTryFill(raw)) return;
+  const slots = typedSlots(g);
+  if (!name) g.msg = `“${raw}” isn’t a book of the Bible. Check the spelling.`;
+  else if (slots.some(x => x.name === name)) g.msg = `${name} is already filled in.`;
+  else if (g.kind === 'recall') { const b = BIBLE_BOOKS.find(x => x.name === name); g.msg = `${name} is a real book, but it’s in ${sectionOf(b.s).name}.`; }
+  else g.msg = `${name} is a real book, but it isn’t right next to ${g.items[g.at].name}.`;
+  g.misses = (g.misses || 0) + 1; sfx('bad'); renderBible();
+}
+/* after a typed answer or a hint: the next book (neighbors), or the end of the round. Returns true when it re-rendered. */
+function bibleTypedNext(g){
+  if (typedSlots(g).some(x => !x.got && !x.shown)) return false;
+  if (g.kind === 'neighbors' && g.at < g.items.length - 1) { g.at++; g.msg = '✅ All four! Next book.'; renderBible(); return true; }
+  const units = g.kind === 'recall' ? g.slots : g.items, clean = u => (u.slots ? u.slots.filter(Boolean).every(x => !x.shown) : !u.shown);
+  finishBooks(g, units.filter(clean).length, units.length);
+  return true;
+}
+function finishBooks(g, right, total){
+  const bk = S.bible.books, perfect = right === total, sec = g.section ? sectionOf(g.section) : null;
+  bk.rounds = [...bk.rounds, {t:Date.now(), level:g.level, right, total, perfect, section:g.section || ''}].slice(-60);
+  let note = '';
+  if (g.level <= 2 && g.level === bk.level) {
+    bk.streak = perfect ? bk.streak + 1 : 0;
+    if (bk.streak >= SORT_STREAK) { bk.level++; bk.streak = 0; note = ` 🎉 Level ${bk.level} is open: ${BOOK_LEVELS[bk.level - 1].name}!`; }
+  } else if ((g.level === 3 || g.level === 4) && perfect && !bk.done[g.level].includes(g.section)) {
+    bk.done[g.level].push(g.section);
+    if (g.level === bk.level && RECALL_SECTIONS.every(id => bk.done[g.level].includes(id))) { bk.level++; note = ` 🎉 Level ${bk.level} is open: ${BOOK_LEVELS[bk.level - 1].name}!`; }
+  } else if (g.level === 5) {
+    bk.n5 = perfect ? bk.n5 + 1 : 0;
+    if (bk.n5 >= SORT_STREAK && !bk.mastered) { bk.mastered = true; note = ' ⭐ You know the books of the Bible! Keep playing to stay sharp.'; }
+  }
+  logEvent({k:'bible', title:`📚 Books of the Bible, level ${g.level} (${BOOK_LEVELS[g.level - 1].name})${sec ? `, ${sec.name}` : ''}: ${right} of ${total}${perfect ? ' perfect' : ''}`, s:right, n:total});
+  save();
+  toast(`${perfect ? '🌟 Perfect round!' : `📚 ${right} of ${total} right.`}${note}`);
+  bibleMaybeDone();
+  bibleRun = {result:{level:g.level, right, total, perfect, note}};
+  renderBible();
+  const body = $('#bibleBody');
+  if (body) body.querySelector('.bible-tabs')?.insertAdjacentHTML('afterend', `<div class="card"><h2>${perfect ? '🌟 Perfect!' : '📚 Round done'}</h2><p>${right} of ${total}${g.level === 1 || g.level === 2 || g.level === 4 ? ' right on the first try' : ' without a hint'}.${esc(note)}</p><div class="row"><button type="button" class="btn berry" data-books-level="${S.bible.books.level >= g.level ? g.level : S.bible.books.level}">Play again</button>${bibleStatus().done ? '<button type="button" class="btn" data-bible-tab="today">Back to today</button>' : ''}</div></div>`);
+}
+/* sorting: drop a book in a box (by dragging, or tapping the book and then the box) */
+function bibleDrop(name, binId){
+  const g = bibleRun?.game; if (!g || g.kind !== 'sort') return;
+  const b = g.left.find(x => x.name === name); if (!b) return;
+  g.selected = '';
+  if (b.bin === binId) {
+    g.left = g.left.filter(x => x !== b); g.placed.push(b); sfx('good');
+    if (!g.left.length) { finishBooks(g, g.placed.filter(x => !x.miss).length, g.placed.length); return; }
+  } else {
+    b.miss++; sfx('bad');
+    if (b.miss >= 2) { const right = g.bins.find(([id]) => id === b.bin)?.[1] || ''; toast(`${b.name} goes in ${right.replace(/^\S+ /, '')}.`); }
+    else toast('Not that one. Try again!');
+    b.shake = true; setTimeout(() => { b.shake = false; }, 400);
+  }
+  renderBible();
+}
+let bibleDrag = null;
+function biblePointerDown(e){
+  const chip = e.target.closest('.bible-chip[data-book]'); if (!chip || e.button > 0) return;
+  bibleDrag = {name:chip.dataset.book, x:e.clientX, y:e.clientY, ghost:null, chip};
+  const move = ev => {
+    if (!bibleDrag) return;
+    if (!bibleDrag.ghost && Math.hypot(ev.clientX - bibleDrag.x, ev.clientY - bibleDrag.y) > 8) {
+      const ghost = chip.cloneNode(true); ghost.classList.add('bible-ghost'); document.body.appendChild(ghost); bibleDrag.ghost = ghost; chip.classList.add('dragging');
+    }
+    if (bibleDrag.ghost) { ev.preventDefault(); bibleDrag.ghost.style.left = `${ev.clientX}px`; bibleDrag.ghost.style.top = `${ev.clientY}px`; }
+  };
+  const up = ev => {
+    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+    const d = bibleDrag; bibleDrag = null; if (!d?.ghost) return;
+    d.ghost.remove(); d.chip.classList.remove('dragging');
+    const bin = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-bin]');
+    d.dragged = true; bibleDragJustEnded = Date.now();
+    if (bin) bibleDrop(d.name, bin.dataset.bin);
+  };
+  window.addEventListener('pointermove', move, {passive:false}); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+}
+let bibleDragJustEnded = 0;
+function bibleClick(e){
+  const tab = e.target.closest('[data-bible-tab]'); if (tab) { bibleTab = tab.dataset.bibleTab; if (bibleTab !== 'books' || !bibleRun?.game) bibleRun = null; renderBible(); return; }
+  const go = e.target.closest('[data-bible-go]'); if (go) { bibleTab = go.dataset.bibleGo; bibleRun = null; renderBible(); return; }
+  if (e.target.closest('[data-verse-start]')) { bibleRun = {verse:true}; renderBible(); return; }
+  const lv = e.target.closest('[data-books-level]'); if (lv) { startBooks(+lv.dataset.booksLevel); return; }
+  if (e.target.closest('[data-books-quit]')) { bibleRun = null; renderBible(); return; }
+  const g = bibleRun?.game; if (!g) return;
+  if (e.target.closest('[data-books-hint]') && g.typed) {
+    const slot = typedSlots(g).find(x => !x.got && !x.shown); if (!slot) return;
+    slot.shown = true; g.msg = `💡 ${slot.name}`;
+    if (!bibleTypedNext(g)) renderBible();
+    return;
+  }
+  if (g.kind === 'sort') {
+    if (Date.now() - bibleDragJustEnded < 300) return;   // the click that ends a drag
+    const chip = e.target.closest('[data-book]'); if (chip) { g.selected = g.selected === chip.dataset.book ? '' : chip.dataset.book; renderBible(); return; }
+    const bin = e.target.closest('[data-bin]'); if (bin && g.selected) bibleDrop(g.selected, bin.dataset.bin);
+    return;
+  }
+  if (g.kind === 'order') {
+    const chip = e.target.closest('[data-order]'); if (!chip) return;
+    if (chip.dataset.order === g.answer[g.done.length]) { g.done.push(chip.dataset.order); sfx('good'); if (g.done.length === g.answer.length) { finishBooks(g, g.answer.length - g.missedAt.length, g.answer.length); return; } }
+    else { if (!g.missedAt.includes(g.done.length)) g.missedAt.push(g.done.length); g.shake = chip.dataset.order; sfx('bad'); setTimeout(() => { if (bibleRun?.game === g) { g.shake = ''; } }, 400); }
+    renderBible();
+  }
+}
+
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -7157,7 +7543,8 @@ function planCardHTML(){
   ensureCarry();
   const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {}, first = carryFirst();
   const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0, helpHTML = helpPlanHTML();
-  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML) return '';
+  const bibleRow = bibleOn() ? (st => `<div class="row extras-row"><span style="flex:1">${st.done ? '✅' : S.bible.skipped === logDayKey() ? '⏭️' : '⬜'} <b>✝️ Bible first:</b> journal, then ${st.verse ? 'the verse or ' : ''}a books round${S.bible.skipped === logDayKey() && !st.done ? ' <small class="muted">(skipped today by a grown-up)</small>' : ''}</span>${st.done ? '' : `<button type="button" class="btn small berry" data-open="bible">Go</button>`}</div>`)(bibleStatus()) : '';
+  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow) return '';
   const extraRows = extras.map(x => {
     const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
@@ -7170,7 +7557,7 @@ function planCardHTML(){
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${rows.join('')}${outsideRowsHTML()}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -7205,6 +7592,7 @@ function renderHome(){
         : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
     });
   }
+  if (bibleOn()) { const st = bibleStatus(); h += `<button class="tile service" data-open="bible"><span class="te">✝️</span><span class="tn">Bible</span><span class="tu">${st.done ? '✅ Done today' : 'Journal, verse and books'}</span></button>`; }
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
   h += `<button class="tile service" data-open="vocab"><span class="te">🔤</span><span class="tn">Word Workshop</span><span class="tu">Vocabulary practice and sprint</span></button>`;
   h += `<button class="tile service" data-open="reading"><span class="te">📖</span><span class="tn">Reading Log</span><span class="tu">${S.readingBooks.length} book${S.readingBooks.length === 1 ? '' : 's'} · Reading Quizzes</span></button>`;
@@ -7580,6 +7968,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'hall') { renderHall(); show('hall'); }
   else if (id === 'arcade') void openArcade();
   else if (id === 'prepRecall') openPrepRecall();
+  else if (id === 'bible') openBible('today');
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
@@ -11128,6 +11517,7 @@ function placeOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'recall';
   if ($('#chefRushWrap')) return 'chef';
+  if ($('#bibleWrap')) return 'bible';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
   if (on('vocab')) return `vocab:${vocabRun?.mode || vocabTab}`;
@@ -11156,6 +11546,7 @@ function placeLabel(key){
   if (kind === 'sim') return `🧪 ${simById(a)?.name || 'Science lab'}`;
   if (kind === 'recall') return '🔗 Name all 48 prepositions';
   if (kind === 'chef') return '🍳 Chef’s Rush';
+  if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
@@ -11173,6 +11564,7 @@ function eventText(e){
   if (e.k === 'help') return `✋ Asked a question in ${e.title}: “${e.q || ''}”`;
   if (e.k === 'recall') return `🔗 Prep test: ${e.title}`;
   if (e.k === 'chef') return `🍳 Chef’s Rush: ${e.title}`;
+  if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
@@ -11256,6 +11648,7 @@ function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'english';
   if ($('#chefRushWrap')) return 'math';   // Chef's Rush is Café practice
+  if ($('#bibleWrap')) return 'bible';
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';
   if (on('vocab')) return 'words';
@@ -11364,6 +11757,7 @@ function mergeProgress(base, other){
     else if (dig.done && !mine.done) { mine.done = true; mine.best = Math.max(mine.best || 0, dig.best || 0); n++; }
   }
   for (const id of other.scribe?.done || []) if (!base.scribe.done.includes(id)) { base.scribe.done.push(id); n++; }
+  n += mergeBible(base.bible, other.bible);   // ✝️ journal, books game, verse practice
   return n;
 }
 /* ---------- 🧹 teacher clears (docs/CLEARING-PROGRESS.md) ----------
