@@ -83,43 +83,55 @@ export function typedMayContinue(raw: string): boolean {
   return !!key && BOOK_KEYS.some(k => k.length > key.length && k.startsWith(key));
 }
 
-/* ---------- the verse of the week (set by a grown-up in the teacher app) ---------- */
-export interface WeekVerse { week: string; ref: string; version: string; text: string }
-export interface BibleSettings { on: boolean; verses: WeekVerse[] }
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/* ---------- memory verses (a grown-up types them in the teacher app, in order) ----------
+   She works on one verse at a time: the first one in the list she hasn't learned yet. Each day she practices it 5 times in
+   the Verse Memorizer (fill in the blanks, then Check). The blanks start at 10% of the words. When her last 5 tries at a
+   step average 90% or better, the next day goes up a step: 10% → 20% → 35% → 50% → 70% → the whole verse. Writing the
+   whole verse with a 90% average over 5 tries means she's learned it, and the next verse in the list starts the next day.
+   There's no deadline: a verse carries on into the next week. When she's learned every verse, the grown-up gets an alert
+   to add the next one. */
+export interface MemoryVerse { id: string; ref: string; version: string; text: string }
+export interface BibleSettings { on: boolean; verses: MemoryVerse[] }
+export interface VerseTry { t: number; day: string; step: number; pct: number }
+export interface VerseProgress { step: number; up: string; tries: VerseTry[]; learned: string }
+export const VERSE_STEPS = [0.1, 0.2, 0.35, 0.5, 0.7, 1];
+export const FULL_STEP = VERSE_STEPS.length - 1;
+export const VERSE_TRIES_A_DAY = 5;
+export const VERSE_MOVE_UP = 90;   // average percent over the last 5 tries at a step
 export function parseBibleSettings(raw: unknown): BibleSettings {
   let v: unknown = raw;
   try { if (typeof raw === 'string') v = JSON.parse(raw); } catch { v = null; }
   const o = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {};
-  const verses = (Array.isArray(o.verses) ? o.verses : []).filter((x): x is WeekVerse => !!x && typeof x === 'object' && DAY.test(String((x as WeekVerse).week)) && !!String((x as WeekVerse).text || '').trim())
-    .map(x => ({ week: x.week, ref: String(x.ref || '').slice(0, 80), version: String(x.version || '').slice(0, 40), text: String(x.text).slice(0, 2000) }))
-    .sort((a, b) => (a.week < b.week ? -1 : 1));
+  const list = (Array.isArray(o.verses) ? o.verses : []).filter(x => x && typeof x === 'object' && String((x as MemoryVerse).text || '').trim()) as (MemoryVerse & { week?: string })[];
+  if (list.some(x => x.week) && !list.some(x => x.id)) list.sort((a, b) => String(a.week) < String(b.week) ? -1 : 1);   // the first version kept verses by week
+  const verses = list.map((x, i) => ({ id: String(x.id || x.week || `v${i}`).slice(0, 40), ref: String(x.ref || '').slice(0, 80), version: String(x.version || '').slice(0, 40), text: String(x.text).slice(0, 2000) }));
   return { on: o.on === true, verses };
 }
-/** The Monday that starts the week holding this day ("YYYY-MM-DD"). */
-export function weekOf(day: string): string {
-  const d = new Date(`${day}T12:00:00`), back = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - back);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export function normalizeVerseProgress(raw: unknown): VerseProgress {
+  const o = (raw && typeof raw === 'object' ? raw : {}) as Partial<VerseProgress>;
+  return {
+    step: Math.max(0, Math.min(FULL_STEP, Math.round(+(o.step || 0)) || 0)), up: typeof o.up === 'string' ? o.up.slice(0, 10) : '', learned: typeof o.learned === 'string' ? o.learned.slice(0, 10) : '',
+    tries: (Array.isArray(o.tries) ? o.tries : []).filter(t => t && Number.isFinite(+t.t)).slice(-60).map(t => ({ t: +t.t, day: String(t.day || '').slice(0, 10), step: Math.max(0, Math.min(FULL_STEP, Math.round(+t.step) || 0)), pct: Math.max(0, Math.min(100, Math.round(+t.pct) || 0)) }))
+  };
 }
-/** This week's verse, or null when the grown-up hasn't set one for this week. */
-export const verseForDay = (s: BibleSettings, day: string) => s.verses.find(v => v.week === weekOf(day)) || null;
-/** Days since the week's Monday: 0 on Monday … 6 on Sunday. */
-export const dayOfWeek = (day: string) => (new Date(`${day}T12:00:00`).getDay() + 6) % 7;
-
-/* How much of the verse is blank each day: Monday a fifth of the words, more each day, and from Friday on she writes the
-   whole verse from memory. */
-export const VERSE_PLAN: { blanks: number; full: boolean; name: string }[] = [
-  { blanks: 0.2, full: false, name: 'Monday' }, { blanks: 0.35, full: false, name: 'Tuesday' }, { blanks: 0.5, full: false, name: 'Wednesday' },
-  { blanks: 0.7, full: false, name: 'Thursday' }, { blanks: 1, full: true, name: 'Friday' }, { blanks: 1, full: true, name: 'Saturday' }, { blanks: 1, full: true, name: 'Sunday' }
-];
+/** The step to practice on this day: a move up earned on an earlier day applies from the next day on. */
+export const stepOn = (p: VerseProgress, day: string) => (p.up && p.up < day ? Math.min(FULL_STEP, p.step + 1) : p.step);
+/** The average percent of the last 5 tries at a step (null with fewer than 5). */
+export function lastFiveAverage(p: VerseProgress, step: number): number | null {
+  const last = p.tries.filter(t => t.step === step).slice(-VERSE_TRIES_A_DAY);
+  return last.length < VERSE_TRIES_A_DAY ? null : Math.round(last.reduce((a, t) => a + t.pct, 0) / last.length);
+}
+/** The verse she's learning: the first one in the list not learned yet (null when there are none, or all are learned). */
+export function currentVerse(s: BibleSettings, progress: Record<string, unknown> | undefined): MemoryVerse | null {
+  return s.verses.find(v => !normalizeVerseProgress(progress?.[v.id]).learned) || null;
+}
+/** She has learned every verse (or none was ever added): a grown-up should add the next one. */
+export const needsNewVerse = (s: BibleSettings, progress: Record<string, unknown> | undefined) => s.on && !currentVerse(s, progress);
 export const verseWords = (text: string) => String(text || '').trim().split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
-/** Today's practice: write the whole verse, or fill in this many blanks. */
-export function versePractice(text: string, day: string): { mode: 'blanks' | 'full'; blanks: number } {
-  const p = VERSE_PLAN[dayOfWeek(day)], words = verseWords(text);
-  if (p.full) return { mode: 'full', blanks: words };
-  return { mode: 'blanks', blanks: Math.max(1, Math.min(words, Math.round(words * p.blanks))) };
+/** A step's practice: this many blanks, or the whole verse. */
+export function verseStepPractice(text: string, step: number): { mode: 'blanks' | 'full'; blanks: number } {
+  const words = verseWords(text);
+  if (step >= FULL_STEP) return { mode: 'full', blanks: words };
+  return { mode: 'blanks', blanks: Math.max(1, Math.min(words, Math.round(words * VERSE_STEPS[step]))) };
 }
-/** A practice counts for the day when at most a tenth of it is wrong (rounded down), or after 3 tries. */
-export const verseGood = (mistakes: number, total: number) => mistakes <= Math.floor(total / 10);
-export const VERSE_TRIES_FOR_DONE = 3;
+export const stepName = (step: number) => (step >= FULL_STEP ? 'the whole verse' : `${Math.round(VERSE_STEPS[step] * 100)}% blanks`);

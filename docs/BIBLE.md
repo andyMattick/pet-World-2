@@ -1,22 +1,22 @@
 # ✝️ Bible
 
-A Bible spot in the student's town, first thing every day: a devotion journal, the books of the Bible, and the verse of the week. It's off unless a grown-up turns it on for that student.
+A Bible spot in the student's town, first thing every day: a devotion journal, the books of the Bible, and her memory verse. It's off unless a grown-up turns it on for that student.
 
-## Turning it on and setting the verse
+## Turning it on and adding verses
 
 Teacher app → class → the student's page → **✝️ Bible** tab:
 - **Bible first thing every day** turns it on for this student.
-- **Verse of the week**: pick the week (this week or the next three), type the reference, the translation and the verse, and **Save verse**. Any translation works, since you type it. The form shows how many blanks each day gets.
-- Below that: her verse practice for the last two weeks, her books-game level and recent rounds, and her **devotion journal** (newest first).
+- **Memory verses**: her list, in the order she learns them, each marked ⭐ learned, ▶️ learning now (with the blanks step and her last-5 average) or ⏳ up next. **Add a verse** puts one at the end (reference, translation, verse; any translation, since you type it). **Edit** changes or removes one, and ↑ moves one up the list.
+- Below that: her books-game level and recent rounds, and her **devotion journal** (newest first).
 
-Saved in `quiz_overrides` as `bible` (JSON `{on, verses:[{week, ref, version, text}]}`, where `week` is that week's Monday). Code: `src/teacher/bible.ts`, shared pieces in `src/shared/bible.ts`.
+Saved in `quiz_overrides` as `bible` (JSON `{on, verses:[{id, ref, version, text}]}`). Verses saved by the first version (with a `week`) still work, in week order. Code: `src/teacher/bible.ts`, shared pieces in `src/shared/bible.ts`.
 
 ## First thing each day
 
 When it's on and Bible isn't done today:
 - Right after sign-in, the **"Bible comes first"** card shows, before the morning brain stretch, the theme question and the warm-up (`bibleCheck`; `brainCheck`, `themeCheck` and `moveCheck` wait while `bibleFirst()` is true).
 - Opening anything else (a subject, the Fact Sprint, Word Workshop, the Arcade, Art Studio) shows the card instead. The Bible spot, Town Hall, the Sticker Book and the Pet Room stay open.
-- **Done for the day** = a journal entry **plus** the verse practice **or** a round of the books game. If no verse is set for this week, the books round is the second part. The first time it's done each day: 5 coins and "✅ Bible done for today" in the day log.
+- **Done for the day** = in order: a **journal entry**, then **one round of the books game**, then **5 tries at the memory verse**. The books game waits for the journal and the verse waits for the books round. With no verse to learn (none added yet, or every verse learned), the journal and the books round are enough. The first time it's done each day: 5 coins and "✅ Bible done for today" in the day log.
 - **Grown-up: skip Bible today** (on the card) takes the grown-up PIN and logs "🔐 Grown-up OK: Bible skipped today". There's no other skip.
 - Today's plan starts with a **✝️ Bible first** row, and the town has a ✝️ Bible tile.
 
@@ -42,29 +42,35 @@ Typing accepts `1 Kings`, `1st Kings`, `First Kings`, `I Kings` and `1kings` (th
 
 On a sorting level, a second wrong drop for the same book shows where it goes.
 
-## 💬 Verse of the week
+## 💬 Memory verse
 
-The verse for this week (Monday to Sunday) is practiced in the Verse Memorizer (`public/bible/verse-memorizer/`, opened with `?pw=1`):
+She learns one verse at a time: the first one on her list she hasn't learned. It's practiced in the Verse Memorizer (`public/bible/verse-memorizer/`, opened with `?pw=1`): she fills in the blanks, then presses **Check**, 5 tries a day (each try picks new blanks).
 
-| Day | Practice |
+| Step | Practice |
 |---|---|
-| Monday | a fifth of the words blank |
-| Tuesday | about a third |
-| Wednesday | half |
-| Thursday | about 70% |
-| Friday to Sunday | write the whole verse from memory |
+| 1 | 10% of the words blank |
+| 2 | 20% |
+| 3 | 35% |
+| 4 | 50% |
+| 5 | 70% |
+| 6 | write the whole verse from memory |
 
-The verse shows open on Monday and behind **📖 Read the verse (peek)** the rest of the week. A practice counts for the day when at most a tenth of it is wrong, or after 3 tries. Every try is kept (`S.bible.verse[day]`: tries, best, done).
+- **Moving up:** when her day's 5 tries are done and her **last 5 tries at that step average 90% or better**, the next day starts a step higher. Under 90%, she stays on the same step the next day.
+- **Learned:** at the whole-verse step, a 90% average over her last 5 tries means she's learned it. The next verse on her list starts the next day, and the learned verse moves to **⭐ Verses you know**.
+- **No deadline:** a verse carries into the next week (and the next) until she learns it.
+- **Alerts for the grown-up** (pop-ups in the teacher app, and a browser notification when 🔔 is on): when she moves up a step, and when she learns a verse, with the next verse's name or "She needs a new verse". The dashboard's **Waiting for a grown-up** card shows "✝️ needs a new memory verse" until you add one.
+
+The verse is open to read until her first try, and after that behind **📖 Read the verse (peek)** after that. Every try is kept (`S.bible.vp[verseId].tries`: day, step, percent right; the last 60).
 
 Opened on its own (no `?pw=1`), the Verse Memorizer works exactly as before.
 
 ## Saving
 
-`S.bible` in the student's save: `journal` (one entry a day), `books` (level, streaks, sections done, the last 60 rounds), `verse` (each day's practice), `skipped`, `shown`, `coinDay`. Two devices merge: the newer journal edit wins each day, the books game keeps the higher level and every round, and each verse day keeps the side that finished or tried more (`mergeBible`).
+`S.bible` in the student's save: `journal` (one entry a day), `books` (level, streaks, sections done, the last 60 rounds), `vp` (each memory verse: step, a move up earned for tomorrow, tries, the day it was learned), `skipped`, `shown`, `coinDay`. Two devices merge: the newer journal edit wins each day, the books game keeps the higher level and every round, and each memory verse keeps every try from both, the higher step, and learned if either learned it (`mergeBible`).
 
 ## Code
 
-- `src/shared/bible.ts`: the 66 books and their sections, the levels, typed-name matching, the verse settings and the blanks schedule.
+- `src/shared/bible.ts`: the 66 books and their sections, the levels, typed-name matching, the memory-verse list, steps and progress rules.
 - `src/game/game.js`: search for "✝️ Bible" (`bibleFirst`, `openBible`, `startBooks`, `finishBooks`, the verse messages).
 - `public/bible/verse-memorizer/index.html`: the Verse Memorizer with the Pet World hookup (search for "Pet World").
 - `src/teacher/bible.ts`, and the ✝️ Bible tab in `src/teacher/report.ts`.

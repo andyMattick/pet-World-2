@@ -71,6 +71,7 @@ function showToast(text: string) {
 /* what is worth an alert: a finished plan row, or a quiz or unit test passed */
 function alertText(name: string, ev: { k?: string; title?: string; text?: string; kind?: string; mode?: string; passed?: boolean; s?: number; n?: number }) {
   if (ev.k === 'help') return `✋ ${name} has a question (${ev.title || 'Pet World'}): “${String((ev as { q?: string }).q || '')}”`;
+  if (ev.k === 'bible' && (ev as { alert?: string }).alert) return `✝️ ${name}: ${ev.title || ''}`;   // memory verse: moved up, or learned (docs/BIBLE.md)
   if (ev.k === 'done') return `✅ ${name} finished ${ev.title || 'a plan item'}`;
   if (ev.k === 'outside') return `📎 ${name} added outside work: ${ev.title || ''}${ev.text && /photo/.test(String(ev.text)) ? ' (with photos to review)' : ''}`;
   const test = (ev.k === 'course' && (ev.kind === 'quiz' || ev.kind === 'final')) || (ev.k === 'assess' && (ev.mode === 'quiz' || ev.mode === 'test'));

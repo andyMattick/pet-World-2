@@ -1,5 +1,5 @@
 /* Renders the class dashboard from the per-student reports that class_report() returns. */
-import { renderBibleCard } from './bible';
+import { renderBibleCard, bibleVerseStatus } from './bible';
 import { writtenReview, reviewScore, encodeTeacherReview, TYPE_LABELS } from '../shared/questionTypes';
 import { LESSON_COURSES } from '../shared/questionBanks';
 import { subjectTimeTableHTML, GOAL_SUBJECTS, parseSubjectGoals } from '../shared/subjectTime';
@@ -251,7 +251,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     if (detailSubject === 'courses' && courses) renderCourses(courses, r, () => overrides.courses, value => saveOverride('courses', value));
     const transcript = $('#transcriptCard');   // the transcript (step 7) also adds up again each time its tab opens
     if (detailSubject === 'transcript' && transcript) renderTranscript(transcript, r, () => overrides.courses, () => overrides.transcript, value => saveOverride('transcript', value));
-    const bible = $('#bibleCard');   // ✝️ Bible (docs/BIBLE.md): her settings, verse of the week and journal
+    const bible = $('#bibleCard');   // ✝️ Bible (docs/BIBLE.md): her settings, memory verses and journal
     if (detailSubject === 'bible' && bible) renderBibleCard(bible, r.n, r.bible, () => overrides.bible, value => saveOverride('bible', value));
     const el = $('#ledgerCard'); if (ledgerShown || detailSubject !== 'ledger' || !el) return; ledgerShown = true; renderLedger(el, r);
   };
@@ -576,14 +576,14 @@ function readingWaiting(r: StudentReport) {
   return { chapters, essays };
 }
 function waitingHTML(list: StudentReport[]) {
-  const rows = list.map(r => ({ r, projects: projectsWaiting(r), ...readingWaiting(r), written: writtenWaiting(r).length }))
-    .map(x => ({ ...x, total: x.projects + x.chapters + x.essays + x.written })).filter(x => x.total).sort((a, b) => b.total - a.total || a.r.n.localeCompare(b.r.n));
+  const rows = list.map(r => ({ r, projects: projectsWaiting(r), ...readingWaiting(r), written: writtenWaiting(r).length, verse: bibleVerseStatus(r.qx?.bible, r.bible).needsVerse ? 1 : 0 }))
+    .map(x => ({ ...x, total: x.projects + x.chapters + x.essays + x.written + x.verse })).filter(x => x.total).sort((a, b) => b.total - a.total || a.r.n.localeCompare(b.r.n));
   const total = rows.reduce((sum, x) => sum + x.total, 0);
   const chip = (r: StudentReport, n: number, one: string, many: string, subject: string) => n ? `<button class="namebtn chip" data-id="${esc(r.id)}" data-subject="${subject}">${n} ${n === 1 ? one : many}</button>` : '';
-  return `<div class="card"><h2>🧑‍🏫 Waiting for a grown-up${total ? ` · ${total}` : ''}</h2><p class="muted" style="margin-top:0">Projects and labs, Reading Log chapters, reading-quiz essays, and written answers that nobody has checked yet. Tap one to open that student's page at the right tab. A parent's check at home counts as checked; you can still change it.</p>
-    ${rows.length ? `<table class="steptable"><thead><tr><th>Student</th><th>To check</th></tr></thead><tbody>${rows.map(x => `<tr><td><button class="namebtn" data-id="${esc(x.r.id)}" data-subject="${x.projects ? 'projects' : x.chapters || x.essays ? 'reading' : 'written'}">${esc(x.r.n)}</button></td><td>${[
+  return `<div class="card"><h2>🧑‍🏫 Waiting for a grown-up${total ? ` · ${total}` : ''}</h2><p class="muted" style="margin-top:0">Projects and labs, Reading Log chapters, reading-quiz essays, and written answers that nobody has checked yet, and students who need a new memory verse. Tap one to open that student's page at the right tab. A parent's check at home counts as checked; you can still change it.</p>
+    ${rows.length ? `<table class="steptable"><thead><tr><th>Student</th><th>To check</th></tr></thead><tbody>${rows.map(x => `<tr><td><button class="namebtn" data-id="${esc(x.r.id)}" data-subject="${x.projects ? 'projects' : x.chapters || x.essays ? 'reading' : x.written ? 'written' : 'bible'}">${esc(x.r.n)}</button></td><td>${[
       chip(x.r, x.projects, 'project or lab', 'projects or labs', 'projects'), chip(x.r, x.chapters, 'reading chapter', 'reading chapters', 'reading'),
-      chip(x.r, x.essays, 'reading essay', 'reading essays', 'reading'), chip(x.r, x.written, 'written answer', 'written answers', 'written')].filter(Boolean).join(' ')}</td></tr>`).join('')}</tbody></table>`
+      chip(x.r, x.essays, 'reading essay', 'reading essays', 'reading'), chip(x.r, x.written, 'written answer', 'written answers', 'written'), x.verse ? `<button class="namebtn chip" data-id="${esc(x.r.id)}" data-subject="bible">✝️ needs a new memory verse</button>` : ''].filter(Boolean).join(' ')}</td></tr>`).join('')}</tbody></table>`
       : '<p class="muted">Nothing is waiting. Everything students sent has been checked.</p>'}</div>`;
 }
 /* accepted work folds into a closed "✅ Accepted" section at the bottom of its tab, so the page shows only what still

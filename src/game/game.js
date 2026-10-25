@@ -10,7 +10,7 @@ import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTabl
 import { stageHTML, stageReact } from './stage';
 import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITIC, HIEROGLYPHS, HIEROGLYPH_NAMES, GREEK, GREEK_NAMES, ORACLE_SIGNS } from './historyData';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
-import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, verseForDay, dayOfWeek, VERSE_PLAN, versePractice, verseGood, VERSE_TRIES_FOR_DONE } from '../shared/bible';
+import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
@@ -6852,29 +6852,27 @@ window.addEventListener('message', e => {
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
    every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
-   shows the "Bible comes first" card. Done for the day = a devotion journal entry, plus the verse of the week or a round
-   of the books game. A grown-up can skip it for one day with the grown-up PIN (logged).
+   shows the "Bible comes first" card. Done for the day = in order: a devotion journal entry, a round of the books game,
+   and 5 tries at the memory verse (when there is one). A grown-up can skip it for one day with the grown-up PIN (logged).
    S.bible: {journal:[{day, passage, learned, prayer, at, updatedAt}], books:{level, streak, done:{3:[], 4:[]}, n5, mastered,
-   rounds:[…]}, verse:{day:{week, ref, tries, mistakes, total, mode, blanks, done}}, skipped, shown, coinDay} */
+   rounds:[…]}, vp:{verseId:{step, up, tries:[{t, day, step, pct}], learned}}, skipped, shown, coinDay} */
 const bibleSettings = () => parseBibleSettings(Backend.me?.quiz_overrides?.bible);
 const bibleOn = () => !!Backend.me && !!S?.bible && bibleSettings().on;
 function normalizeBible(raw){
   const b = raw && typeof raw === 'object' ? raw : {}, str = (v, n) => String(v ?? '').slice(0, n), isDay = d => /^\d{4}-\d{2}-\d{2}$/.test(d);
   const bk = b.books && typeof b.books === 'object' ? b.books : {}, ids = x => [...new Set((Array.isArray(x) ? x : []).filter(id => RECALL_SECTIONS.includes(id)))];
-  const verse = {};
-  Object.entries(b.verse && typeof b.verse === 'object' ? b.verse : {}).filter(([d, v]) => isDay(d) && v && typeof v === 'object').sort().slice(-60)
-    .forEach(([d, v]) => { verse[d] = {week:str(v.week, 10), ref:str(v.ref, 80), tries:Math.max(0, Math.round(+v.tries || 0)), mistakes:Math.max(0, Math.round(+v.mistakes || 0)), total:Math.max(0, Math.round(+v.total || 0)), mode:v.mode === 'full' ? 'full' : 'blanks', blanks:Math.max(0, Math.round(+v.blanks || 0)), done:!!v.done}; });
+  const vp = Object.fromEntries(Object.entries(b.vp && typeof b.vp === 'object' ? b.vp : {}).slice(-200).map(([id, v]) => [String(id).slice(0, 40), normalizeVerseProgress(v)]));
   return {
     journal:(Array.isArray(b.journal) ? b.journal : []).filter(j => j && isDay(j.day)).map(j => ({day:j.day, passage:str(j.passage, 200), learned:str(j.learned, 4000), prayer:str(j.prayer, 4000), at:+j.at || 0, updatedAt:+j.updatedAt || 0}))
       .sort((x, y) => (x.day < y.day ? -1 : 1)).filter((j, i, all) => all.findIndex(k => k.day === j.day) === i).slice(-400),
     books:{level:Math.max(1, Math.min(5, Math.round(+bk.level || 1))), streak:Math.max(0, Math.round(+bk.streak || 0)), n5:Math.max(0, Math.round(+bk.n5 || 0)), mastered:!!bk.mastered,
       done:{3:ids(bk.done?.[3]), 4:ids(bk.done?.[4])},
       rounds:(Array.isArray(bk.rounds) ? bk.rounds : []).filter(r => r && Number.isFinite(+r.t)).slice(-60).map(r => ({t:+r.t, level:Math.max(1, Math.min(5, Math.round(+r.level || 1))), right:Math.max(0, +r.right || 0), total:Math.max(0, +r.total || 0), perfect:!!r.perfect, section:str(r.section, 20)}))},
-    verse, skipped:str(b.skipped, 10), shown:str(b.shown, 10), coinDay:str(b.coinDay, 10)
+    vp, skipped:str(b.skipped, 10), shown:str(b.shown, 10), coinDay:str(b.coinDay, 10)
   };
 }
 /* two devices: each day's journal entry, the newer edit wins; the books game keeps the higher level and every round; each
-   verse day keeps the side that finished or tried more */
+   memory verse keeps every try from both, the higher step, and learned if either learned it */
 function mergeBible(base, other){
   if (!base || !other) return 0;
   let n = 0;
@@ -6890,18 +6888,31 @@ function mergeBible(base, other){
   const seen = new Set(a.rounds.map(r => r.t));
   for (const r of b.rounds || []) if (!seen.has(r.t)) { a.rounds.push(r); n++; }
   a.rounds = a.rounds.sort((x, y) => x.t - y.t).slice(-60);
-  for (const [d, v] of Object.entries(other.verse || {})) {
-    const mine = base.verse[d];
-    if (!mine || (v.done && !mine.done) || (v.done === mine.done && v.tries > mine.tries)) { base.verse[d] = v; n++; }
+  for (const [id, raw] of Object.entries(other.vp || {})) {
+    const v = normalizeVerseProgress(raw), mine = base.vp[id];
+    if (!mine) { base.vp[id] = v; n++; continue; }
+    const seenT = new Set(mine.tries.map(t => t.t)), add = v.tries.filter(t => !seenT.has(t.t));
+    if (add.length) { mine.tries = [...mine.tries, ...add].sort((x, y) => x.t - y.t).slice(-60); n++; }
+    if (v.step > mine.step || (v.step === mine.step && v.up && !mine.up)) { mine.step = v.step; mine.up = v.up; n++; }
+    if (v.learned && !mine.learned) { mine.learned = v.learned; n++; }
   }
   return n;
 }
-/* where today stands: the journal, the verse (null when there's no verse this week), a books round */
+/* the memory verse she's on, and her progress on it (a move up earned on an earlier day starts today) */
+function bibleVerseNow(day = logDayKey()){
+  const v = currentVerse(bibleSettings(), S.bible.vp); if (!v) return null;
+  const p = S.bible.vp[v.id] || (S.bible.vp[v.id] = normalizeVerseProgress(null)), step = stepOn(p, day);
+  if (step !== p.step) { p.step = step; p.up = ''; }
+  return {v, p, step, today:p.tries.filter(t => t.day === day).length};
+}
+/* where today stands, in order: the journal, a books round, then 5 tries at the verse. The verse part is done after 5
+   tries today, or when she learned a verse today; with no verse to learn (none added, or all learned) it isn't needed. */
 function bibleStatus(day = logDayKey()){
-  const verse = verseForDay(bibleSettings(), day), journal = S.bible.journal.some(j => j.day === day && j.learned.trim());
-  const verseDone = !!(verse && S.bible.verse[day]?.done && S.bible.verse[day].week === verse.week);
+  const journal = S.bible.journal.some(j => j.day === day && j.learned.trim());
   const books = S.bible.books.rounds.some(r => logDayKey(new Date(r.t)) === day);
-  return {journal, verse, verseDone, books, done:journal && (verseDone || books)};
+  const now = bibleVerseNow(day), learnedToday = Object.values(S.bible.vp).some(p => p.learned === day);
+  const verseDone = learnedToday || (!!now && now.today >= VERSE_TRIES_A_DAY);
+  return {journal, books, verse:now, verseDone, waiting:!now, done:journal && books && (verseDone || !now)};
 }
 /* Bible holds up the day: on for her, not done today, not skipped by a grown-up today */
 const bibleFirst = () => !LOOK_ID && bibleOn() && S.bible.skipped !== logDayKey() && !bibleStatus().done;
@@ -6914,10 +6925,14 @@ function bibleMaybeDone(){
   save(); sfx('good'); toast('✝️ Bible is done for today! +5 🪙 The rest of your day is open.');
 }
 function bibleRowsHTML(){
-  const st = bibleStatus(), mark = ok => (ok ? '✅' : '⬜');
-  return `<div class="row extras-row"><span style="flex:1">${mark(st.journal)} 📝 Devotion journal: what you read and what you learned</span><button type="button" class="btn small${st.journal ? '' : ' berry'}" data-bible-go="journal">${st.journal ? 'Open' : 'Write'}</button></div>
-    ${st.verse ? `<div class="row extras-row"><span style="flex:1">${mark(st.verseDone)} 💬 Verse of the week: ${esc(st.verse.ref)}</span><button type="button" class="btn small${st.verseDone ? '' : ' berry'}" data-bible-go="verse">Practice</button></div>` : ''}
-    <div class="row extras-row"><span style="flex:1">${mark(st.books)} 📚 Books of the Bible: one round${st.verse ? ' <small class="muted">(or the verse)</small>' : ''}</span><button type="button" class="btn small${st.books ? '' : ' berry'}" data-bible-go="books">Play</button></div>`;
+  const st = bibleStatus(), mark = ok => (ok ? '✅' : '⬜'), skip = S.bible.skipped === logDayKey();
+  const btn = (go, on, label, ok) => `<button type="button" class="btn small${ok || !on ? '' : ' berry'}" data-bible-go="${go}" ${on || ok || skip ? '' : 'disabled'}>${label}</button>`;
+  const learnedToday = bibleSettings().verses.find(v => S.bible.vp[v.id]?.learned === logDayKey());
+  const verseRow = learnedToday ? `<div class="row extras-row"><span style="flex:1">✅ 3. 💬 Memory verse: you learned ${esc(learnedToday.ref)} today! ⭐</span></div>` : st.verse ? `<div class="row extras-row"><span style="flex:1">${mark(st.verseDone)} 3. 💬 Memory verse: ${esc(st.verse.v.ref)} <small class="muted">(${Math.min(st.verse.today, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY} tries, ${esc(stepName(st.verse.step))})</small></span>${btn('verse', st.books, 'Practice', st.verseDone)}</div>`
+    : `<div class="row extras-row"><span style="flex:1">${st.verseDone ? '✅' : '➖'} 3. 💬 Memory verse: <small class="muted">${Object.values(S.bible.vp).some(p => p.learned) ? 'you learned every verse! A grown-up will add the next one.' : 'none yet. A grown-up adds it.'}</small></span></div>`;
+  return `<div class="row extras-row"><span style="flex:1">${mark(st.journal)} 1. 📝 Devotion journal: what you read and what you learned</span>${btn('journal', true, st.journal ? 'Open' : 'Write', st.journal)}</div>
+    <div class="row extras-row"><span style="flex:1">${mark(st.books)} 2. 📚 Books of the Bible: one round${st.journal || st.books ? '' : ' <small class="muted">(after the journal)</small>'}</span>${btn('books', st.journal, 'Play', st.books)}</div>
+    ${verseRow}`;
 }
 /* the card that shows when she opens anything else before Bible is done */
 function openBibleFirstCard(){
@@ -6925,7 +6940,7 @@ function openBibleFirstCard(){
   const el = document.createElement('div');
   el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Bible comes first');
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">First thing today</p><div class="theme-emoji" aria-hidden="true">✝️</div><h2>Bible comes first</h2>
-    <p>Write in your devotion journal, then practice the verse of the week${bibleStatus().verse ? ' or' : ' and'} play a round of the books game. Then the rest of your day opens up.</p>
+    <p>First your devotion journal, then a round of the books game${bibleStatus().verse ? ', then 5 tries at your memory verse' : ''}. Then the rest of your day opens up.</p>
     ${bibleRowsHTML()}<button type="button" class="btn small" data-bible-close>Back to town</button>
     <details class="warmup-skip"><summary>Grown-up: skip Bible today</summary><form class="theme-pin" data-bible-skip><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Skip for today</button></form></details></div>`;
   document.body.appendChild(el);
@@ -6992,7 +7007,7 @@ function renderBible(){
 function bibleTodayHTML(){
   const st = bibleStatus();
   return `<div class="card"><h2>☀️ Today</h2>
-    <p class="muted" style="margin-top:0">${st.done ? '✅ Bible is done for today. The rest of your day is open!' : `Write in your journal, then ${st.verse ? 'practice the verse of the week or play a round of the books game' : 'play a round of the books game'}.`}</p>
+    <p class="muted" style="margin-top:0">${st.done ? '✅ Bible is done for today. The rest of your day is open!' : `In order: your journal, a round of the books game${st.verse ? ', then 5 tries at your memory verse' : ''}.`}</p>
     ${bibleRowsHTML()}</div>`;
 }
 /* 📝 devotion journal: today's entry (she can change it all day), and the ones before */
@@ -7017,43 +7032,70 @@ function saveBibleJournal(form){
   if (first) logEvent({k:'bible', title:`📝 Journal: ${entry.passage || 'today’s devotion'}`});
   save(); toast(first ? '📝 Journal saved!' : '📝 Changes saved.');
   bibleMaybeDone();
-  bibleTab = 'today'; renderBible();
+  bibleTab = bibleStatus().books ? 'today' : 'books'; renderBible();
 }
-/* 💬 verse of the week: more blanks each day, the whole verse from Friday on, in the Verse Memorizer */
+/* 💬 memory verse: 5 tries a day in the Verse Memorizer. The blanks go up a step the next day when her last 5 tries
+   average 90% or better: 10% → 20% → 35% → 50% → 70% → the whole verse. The whole verse at 90% means she learned it. */
 function bibleVerseHTML(){
-  const day = logDayKey(), v = verseForDay(bibleSettings(), day);
-  if (!v) return `<div class="card"><h2>💬 Verse of the week</h2><p>There’s no verse for this week yet. A grown-up adds it in the teacher app (your page → ✝️ Bible).</p><p class="muted">Today, play a round of the books game instead.</p><button type="button" class="btn berry" data-bible-tab="books">📚 Books of the Bible</button></div>`;
-  const p = versePractice(v.text, day), rec = S.bible.verse[day], dow = dayOfWeek(day), monday = v.week;
-  const dots = VERSE_PLAN.map((plan, i) => { const d = new Date(`${monday}T12:00:00`); d.setDate(d.getDate() + i); const k = logDayKey(d), r = S.bible.verse[k];
-    return `<span class="bible-dot${i === dow ? ' today' : ''}" title="${esc(plan.name)}">${plan.name.slice(0, 2)}<b>${r?.done ? '✅' : i < dow ? '·' : ''}</b></span>`; }).join('');
-  const todayText = p.mode === 'full' ? 'Write the whole verse from memory.' : `Fill in ${p.blanks} blank${p.blanks === 1 ? '' : 's'}.`;
+  const st = bibleStatus(), now = st.verse, skip = S.bible.skipped === logDayKey(), learnedToday = bibleSettings().verses.find(v => S.bible.vp[v.id]?.learned === logDayKey());
+  if (learnedToday) return `<div class="card"><h2>⭐ You learned ${esc(learnedToday.ref)}!</h2><p>${now ? `Your next verse, <b>${esc(now.v.ref)}</b>, starts tomorrow.` : 'A grown-up will add your next verse.'}</p></div>${learnedVersesHTML()}`;
+  if (!now) return `<div class="card"><h2>💬 Memory verse</h2><p>${Object.values(S.bible.vp).some(p => p.learned) ? '🎉 You learned every verse so far! A grown-up will add your next one.' : 'There’s no memory verse yet. A grown-up adds it in the teacher app (your page → ✝️ Bible).'}</p>${learnedVersesHTML()}</div>`;
+  if (!st.books && !st.verseDone && !skip) return `<div class="card"><h2>💬 Memory verse</h2><p>First play a round of the books game, then practice your verse.</p><button type="button" class="btn berry" data-bible-tab="books">📚 Books of the Bible</button></div>`;
+  const {v, p, step, today} = now, practice = verseStepPractice(v.text, step), avg = lastFiveAverage(p, step);
+  const ladder = [0, 1, 2, 3, 4, FULL_STEP].map(i => `<span class="bible-dot${i === step ? ' today' : ''}" title="${esc(stepName(i))}">${i >= FULL_STEP ? 'All' : `${Math.round([10, 20, 35, 50, 70][i])}%`}<b>${i < step ? '✅' : ''}</b></span>`).join('');
+  const what = practice.mode === 'full' ? 'Write the whole verse from memory.' : `Fill in ${practice.blanks} blank${practice.blanks === 1 ? '' : 's'} (${esc(stepName(step))}).`;
+  const tries = Math.min(today, VERSE_TRIES_A_DAY), up = p.up === logDayKey();
   return `<div class="card"><h2>💬 ${esc(v.ref)}${v.version ? ` <small class="muted">${esc(v.version)}</small>` : ''}</h2>
-    <div class="bible-week">${dots}</div>
-    <p><b>Today (${esc(VERSE_PLAN[dow].name)}):</b> ${todayText} ${rec?.done ? '✅ Done for today. You can practice again any time.' : rec?.tries ? `Tries so far: ${rec.tries}. Almost every word right counts, or 3 tries.` : ''}</p>
-    <details class="bible-peek"${dow === 0 && !rec?.tries ? ' open' : ''}><summary>📖 Read the verse${dow > 0 ? ' (peek)' : ''}</summary><p class="bible-verse-text">${esc(v.text)}</p></details>
-    ${bibleRun?.verse ? '<iframe id="verseFrame" class="bible-verse-frame" src="/bible/verse-memorizer/?pw=1" title="Verse Memorizer"></iframe>' : `<button type="button" class="btn berry" data-verse-start>✍️ Practice now</button>`}</div>`;
+    <div class="bible-week">${ladder}</div>
+    <p><b>Today:</b> ${what} <b>Try ${Math.min(today + 1, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY}</b>${today >= VERSE_TRIES_A_DAY ? ' ✅ Done for today. Extra tries still count.' : ''}</p>
+    <p class="muted" style="margin:0 0 6px">${avg == null ? `After 5 tries, a 90% average moves you up to more blanks the next day.` : `Your last 5 tries: <b>${avg}%</b>. ${up ? `🎉 Tomorrow: ${esc(stepName(Math.min(FULL_STEP, step + 1)))}!` : avg >= VERSE_MOVE_UP ? 'Finish today’s 5 tries to move up tomorrow.' : `${VERSE_MOVE_UP}% moves you up.`}`}</p>
+    <details class="bible-peek"${step === 0 && !today ? ' open' : ''}><summary>📖 Read the verse${step > 0 || today ? ' (peek)' : ''}</summary><p class="bible-verse-text">${esc(v.text)}</p></details>
+    ${bibleRun?.verse ? '<iframe id="verseFrame" class="bible-verse-frame" src="/bible/verse-memorizer/?pw=1" title="Verse Memorizer"></iframe>' : `<button type="button" class="btn berry" data-verse-start>✍️ ${tries ? 'Keep practicing' : 'Practice now'}</button>`}</div>${learnedVersesHTML()}`;
+}
+function learnedVersesHTML(){
+  const s = bibleSettings(), learned = s.verses.filter(v => S.bible.vp[v.id]?.learned);
+  return learned.length ? `<div class="card"><h2>⭐ Verses you know</h2>${learned.slice().reverse().map(v => `<details class="bible-entry"><summary><b>${esc(v.ref)}</b> <small class="muted">learned ${esc(new Date(`${S.bible.vp[v.id].learned}T12:00:00`).toLocaleDateString([], {month:'short', day:'numeric'}))}</small></summary><p class="bible-verse-text">${esc(v.text)}</p></details>`).join('')}</div>` : '';
 }
 window.addEventListener('message', e => {
   const frame = $('#verseFrame');
   if (!S?.bible || e.origin !== location.origin || !frame || e.source !== frame.contentWindow) return;
-  const day = logDayKey(), v = verseForDay(bibleSettings(), day); if (!v) return;
-  const p = versePractice(v.text, day);
-  if (e.data?.type === 'verse:ready') { frame.contentWindow.postMessage({type:'verse:start', ref:v.ref, version:v.version, text:v.text, mode:p.mode, blanks:p.blanks}, location.origin); return; }
+  const day = logDayKey(), now = bibleVerseNow(day); if (!now) return;
+  const {v, p, step} = now, practice = verseStepPractice(v.text, step);
+  if (e.data?.type === 'verse:ready') { frame.contentWindow.postMessage({type:'verse:start', ref:v.ref, version:v.version, text:v.text, mode:practice.mode, blanks:practice.blanks}, location.origin); return; }
   if (e.data?.type !== 'verse:result') return;
-  const mistakes = Math.max(0, Math.round(+e.data.mistakes || 0)), total = Math.max(1, Math.round(+e.data.total || 1));
-  const old = S.bible.verse[day]?.week === v.week ? S.bible.verse[day] : null;
-  const rec = {week:v.week, ref:v.ref, tries:(old?.tries || 0) + 1, mistakes:old ? Math.min(old.mistakes, mistakes) : mistakes, total, mode:p.mode, blanks:p.blanks, done:!!old?.done};
-  const nowDone = !rec.done && (verseGood(mistakes, total) || rec.tries >= VERSE_TRIES_FOR_DONE);
-  if (nowDone) { rec.done = true; logEvent({k:'bible', title:`💬 Verse of the week (${v.ref}): ${p.mode === 'full' ? 'wrote the whole verse' : `${p.blanks} blanks`}, ${total - mistakes} of ${total} right`, s:total - mistakes, n:total}); }
-  S.bible.verse[day] = rec; save();
-  if (nowDone) { toast(verseGood(mistakes, total) ? '💬 Great job! Verse practice done for today.' : '💬 Good effort! Verse practice counts for today. Keep practicing!'); bibleMaybeDone(); }
+  const mistakes = Math.max(0, Math.round(+e.data.mistakes || 0)), total = Math.max(1, Math.round(+e.data.total || 1)), pct = Math.max(0, Math.round((total - mistakes) * 100 / total));
+  p.tries = [...p.tries, {t:Date.now(), day, step, pct}].slice(-60);
+  const today = p.tries.filter(t => t.day === day).length, avg = lastFiveAverage(p, step), name = S.name || 'She';
+  let msg = `💬 ${pct}% right. Try ${Math.min(today, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY}.`;
+  if (step >= FULL_STEP && avg != null && avg >= VERSE_MOVE_UP) {   // learned it
+    p.learned = day; const next = currentVerse(bibleSettings(), S.bible.vp);
+    logEvent({k:'bible', alert:'verse', title:`⭐ Learned the memory verse ${v.ref} (last 5 tries: ${avg}%).${next ? ` Next up: ${next.ref}.` : ' She needs a new verse: add it on her ✝️ Bible tab.'}`});
+    msg = `⭐ You know ${v.ref} by heart! ${next ? 'Your next verse starts tomorrow.' : 'A grown-up will add your next verse.'}`; sfx('good');
+  } else if (today === VERSE_TRIES_A_DAY) {   // today's 5 tries: move up tomorrow, or stay
+    if (avg != null && avg >= VERSE_MOVE_UP && step < FULL_STEP) { p.up = day; msg = `🎉 ${avg}% over your last 5 tries! Tomorrow: ${stepName(step + 1)}.`; }
+    else msg = `✅ 5 tries done for today. Your last 5: ${avg ?? pct}%. ${VERSE_MOVE_UP}% moves you up.`;
+    logEvent({k:'bible', alert:p.up === day ? 'verse' : '', title:`💬 Memory verse ${v.ref}: 5 tries at ${stepName(step)}, last 5 average ${avg ?? pct}%${p.up === day ? `; moves up to ${stepName(step + 1)} tomorrow` : ''}`, s:avg ?? pct, n:100});
+  }
+  save(); toast(msg);
+  bibleMaybeDone();
+  if (p.learned === day) { bibleRun = null; renderBible(); }   // the celebration, and the next verse waits for tomorrow
+  else if ($('#verseFrame')) renderBibleVerseHeader();
 });
+/* refresh the verse card's text (tries, average) without reloading the Verse Memorizer under it */
+function renderBibleVerseHeader(){
+  const frame = $('#verseFrame'), card = frame?.closest('.card'); if (!card) return;
+  const tmp = document.createElement('div'); tmp.innerHTML = bibleVerseHTML();
+  const fresh = tmp.querySelector('.card'); if (!fresh) return;
+  [...card.children].forEach(ch => { if (ch !== frame) ch.remove(); });
+  [...fresh.children].filter(ch => ch.tagName !== 'IFRAME').reverse().forEach(ch => card.prepend(ch));
+}
 
 /* 📚 the books game: 1 Old or New?, 2 Which section?, 3 Name them all, 4 In order, 5 Neighbors */
 const bibleShuffle = list => { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 function bibleBooksHTML(){
-  const bk = S.bible.books;
+  const bk = S.bible.books, st = bibleStatus();
   if (bibleRun?.game) return bibleGameHTML();
+  if (!st.journal && !st.books && S.bible.skipped !== logDayKey()) return `<div class="card"><h2>📚 Books of the Bible</h2><p>First write in your devotion journal, then play.</p><button type="button" class="btn berry" data-bible-tab="journal">📝 Journal</button></div>`;
   const levelNote = n => n === 3 || n === 4 ? ` · ${bk.done[n].length} of ${RECALL_SECTIONS.length} sections` : n === 5 && bk.mastered ? ' · ⭐ mastered' : n < 3 && n === bk.level && bk.streak ? ` · ${bk.streak} of ${SORT_STREAK} perfect rounds` : '';
   return `<div class="card"><h2>📚 Books of the Bible</h2><p class="muted" style="margin-top:0">Each level opens after the one before. Levels 1 and 2: ${SORT_STREAK} perfect rounds in a row. Levels 3 and 4: every section once with no hints.</p>
     <div class="bible-levels">${BOOK_LEVELS.map(l => { const open = l.n <= bk.level;
@@ -7162,7 +7204,7 @@ function finishBooks(g, right, total){
   bibleRun = {result:{level:g.level, right, total, perfect, note}};
   renderBible();
   const body = $('#bibleBody');
-  if (body) body.querySelector('.bible-tabs')?.insertAdjacentHTML('afterend', `<div class="card"><h2>${perfect ? '🌟 Perfect!' : '📚 Round done'}</h2><p>${right} of ${total}${g.level === 1 || g.level === 2 || g.level === 4 ? ' right on the first try' : ' without a hint'}.${esc(note)}</p><div class="row"><button type="button" class="btn berry" data-books-level="${S.bible.books.level >= g.level ? g.level : S.bible.books.level}">Play again</button>${bibleStatus().done ? '<button type="button" class="btn" data-bible-tab="today">Back to today</button>' : ''}</div></div>`);
+  if (body) body.querySelector('.bible-tabs')?.insertAdjacentHTML('afterend', `<div class="card"><h2>${perfect ? '🌟 Perfect!' : '📚 Round done'}</h2><p>${right} of ${total}${g.level === 1 || g.level === 2 || g.level === 4 ? ' right on the first try' : ' without a hint'}.${esc(note)}</p><div class="row"><button type="button" class="btn berry" data-books-level="${S.bible.books.level >= g.level ? g.level : S.bible.books.level}">Play again</button>${(st2 => st2.done ? '<button type="button" class="btn" data-bible-tab="today">Back to today</button>' : st2.verse && !st2.verseDone ? '<button type="button" class="btn berry" data-bible-tab="verse">💬 Next: memory verse</button>' : '')(bibleStatus())}</div></div>`);
 }
 /* sorting: drop a book in a box (by dragging, or tapping the book and then the box) */
 function bibleDrop(name, binId){

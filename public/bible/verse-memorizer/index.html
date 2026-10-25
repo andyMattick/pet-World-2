@@ -695,7 +695,7 @@ function renderResultsCard(){
 
 if(PW){
   /* Pet World sends this week's verse and today's practice; the setup screen is never shown */
-  document.querySelector('.header p').textContent = 'This week’s verse';
+  document.querySelector('.header p').textContent = 'Your memory verse';
   app.innerHTML = '<div class="card"><p class="small-note">Getting your verse…</p></div>';
   window.addEventListener('message', e => {
     if(e.origin !== location.origin || e.source !== window.parent || !e.data || e.data.type !== 'verse:start') return;
