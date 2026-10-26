@@ -79,7 +79,7 @@ const GROUP_TIME: Record<string, string[]> = { bible: ['bible'], math: ['math', 
 function eventSubject(ev: LedgerEvent): string {
   const course = String(ev.course || '');
   switch (ev.k) {
-    case 'assess': case 'sprint': case 'mastered': case 'chef': case 'surgery': case 'dash': case 'penguin': case 'detective': case 'carnival': case 'asteroids': case 'battleship': case 'parcel': return 'math';
+    case 'assess': case 'sprint': case 'mastered': case 'chef': case 'surgery': case 'dash': case 'penguin': case 'detective': case 'carnival': case 'asteroids': case 'battleship': case 'parcel': case 'petshow': return 'math';
     case 'vocab': return 'english';
     case 'reading': case 'readtime': return 'reading';
     case 'course': case 'review': return course === 'math' ? 'math' : course.startsWith('history') ? 'history' : course.startsWith('bio') ? 'science' : 'english';

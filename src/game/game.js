@@ -188,6 +188,8 @@ function normalize(raw){
       games:(Array.isArray(s.battleship?.games) ? s.battleship.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), sunk:Math.max(0, +g.sunk || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // ⚓ Harbor Battleship (docs/HARBOR-BATTLESHIP.md)
     s.parcel = {best:Math.max(0, Math.min(3, Math.round(+s.parcel?.best || 0))), day:typeof s.parcel?.day === 'string' ? s.parcel.day : '', coinsToday:Math.max(0, Math.round(+s.parcel?.coinsToday || 0)),
       games:(Array.isArray(s.parcel?.games) ? s.parcel.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), delivered:Math.max(0, +g.delivered || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 📮 Parcel Post (docs/PARCEL-POST.md)
+    s.petshow = {best:Math.max(0, Math.min(3, Math.round(+s.petshow?.best || 0))), day:typeof s.petshow?.day === 'string' ? s.petshow.day : '', coinsToday:Math.max(0, Math.round(+s.petshow?.coinsToday || 0)),
+      games:(Array.isArray(s.petshow?.games) ? s.petshow.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), ribbons:Math.max(0, +g.ribbons || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🏆 Pet Show Awards (docs/PET-SHOW-AWARDS.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -5490,19 +5492,19 @@ const STAT_QS = [
   ['How many carrots does each rabbit at the farm eat in a day?', 'What color is the tallest rabbit?'],
   ['What are the ages of the horses in the parade?', 'How old is the oldest horse in the parade?']];
 const SHOW_GEN = {
-  /* ----- station 1: Judges' Table (statistical questions, dot plots, histograms) ----- */
+  /* ----- station 1: Sign-In Desk (statQ, readDot) and station 2: Judges' Table (readHist); stations renumbered Oct 26, 2026 ----- */
   statQ(lvl){
     const [yes, no] = pick(STAT_QS);
     if (lvl === 3) {   // level 3: the reverse, find the one that is NOT statistical
       const yeses = shuffle(STAT_QS.filter(q => q[1] !== no)).slice(0, 3).map(q => q[0]);
-      return {title:"Judges' Table", ctx:`statQ not`, bubble:'Three of these are statistical questions. Which one is NOT?', helper:'A statistical question expects answers that vary. A question about one thing has one answer.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
+      return {title:'Sign-In Desk', ctx:`statQ not`, bubble:'Three of these are statistical questions. Which one is NOT?', helper:'A statistical question expects answers that vary. A question about one thing has one answer.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
         steps:[{name:'Not statistical', type:'concept', kind:'choice', prompt:'Which is NOT a statistical question?', options:choiceOf({text:no}, yeses.map(t => ({text:t, mis:'statQWrong'}))), hint:() => 'Look for the question about just one person, pet, or thing.'}]};
     }
     if (lvl === 1) { const ask = pick([yes, no]), isStat = ask === yes;
-      return {title:"Judges' Table", ctx:`statQ ${isStat}`, bubble:`Is this a statistical question? "${ask}"`, helper:'A statistical question expects answers that vary: it asks about a group, not one thing.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
+      return {title:'Sign-In Desk', ctx:`statQ ${isStat}`, bubble:`Is this a statistical question? "${ask}"`, helper:'A statistical question expects answers that vary: it asks about a group, not one thing.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
         steps:[{name:'Statistical?', type:'concept', kind:'choice', prompt:`"${ask}"`, options:choiceOf({text:isStat ? 'Yes, it is statistical' : 'No, it has one answer'}, [{text:isStat ? 'No, it has one answer' : 'Yes, it is statistical', mis:'statQWrong'}]), hint:() => 'Would different members of the group give different answers?'}]}; }
     const others = shuffle(STAT_QS.filter(q => q[0] !== yes)).slice(0, 2).map(q => q[1]);
-    return {title:"Judges' Table", ctx:`statQ pick`, bubble:'Which one is a statistical question?', helper:'A statistical question expects answers that vary.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
+    return {title:'Sign-In Desk', ctx:`statQ pick`, bubble:'Which one is a statistical question?', helper:'A statistical question expects answers that vary.', visual:'<div style="text-align:center; font-size:2rem">🏅❓</div>',
       steps:[{name:'Which one', type:'concept', kind:'choice', prompt:'Which is a statistical question?', options:choiceOf({text:yes}, [no, ...others].map(t => ({text:t, mis:'statQWrong'}))), hint:() => 'Look for the question about a whole group, where answers vary.'}]};
   },
   readDot(lvl){
@@ -5513,7 +5515,7 @@ const SHOW_GEN = {
       more:[`How many ${what} ${say(`more than ${cut}`)}?`, data.filter(v => v > cut).length, data.filter(v => v >= cut).length], atMost:[`How many ${what} ${say(`at most ${cut}`)}?`, data.filter(v => v <= cut).length, data.filter(v => v < cut).length],
       between:[`How many ${what} ${say(`from ${cut} to ${cut2}`)}, including both?`, data.filter(v => v >= cut && v <= cut2).length, data.filter(v => v > cut && v < cut2).length], atLeast:[`How many ${what} ${say(`at least ${cut}`)}?`, data.filter(v => v >= cut).length, data.filter(v => v > cut).length]}[kind];
     if (T[1] === 0) return SHOW_GEN.readDot(lvl);
-    return {title:"Judges' Table", ctx:`dot ${kind} ${cut}`, bubble:`The dot plot shows the ${label} of the ${what} at the pet show. ${T[0]}`, helper:'Each dot is one pet.', visual:dotPlotSVG(data, {lo, hi, label}),
+    return {title:'Sign-In Desk', ctx:`dot ${kind} ${cut}`, bubble:`The dot plot shows the ${label} of the ${what} at the pet show. ${T[0]}`, helper:'Each dot is one pet.', visual:dotPlotSVG(data, {lo, hi, label}),
       steps:[numStep('Count', 'concept', T[0], T[1], {mis:v => T[2] !== null && v === T[2] && T[2] !== T[1] ? 'boundaryCount' : null, hint:() => kind === 'more' ? `Do not count the ${cut}s.` : kind === 'atMost' || kind === 'atLeast' ? `Count the ${cut}s too.` : kind === 'between' ? `Count the ${cut}s and the ${cut2}s too.` : 'Count the dots.'})]};
   },
   readHist(lvl){
@@ -5564,9 +5566,9 @@ const SHOW_GEN = {
     const [e, what, label] = pick(PETS), n = lvl === 3 ? pick([6, 8, 10, 12]) : pick([5, 7, 9, 11]), lo = rand(1, 8); let data; do { data = dataSet(n, lo, lo + rand(5, 12)); } while (new Set(data).size < 3);
     const med = medianOf(data);
     const unsorted = n % 2 ? data[(n - 1) / 2] : (data[n / 2 - 1] + data[n / 2]) / 2, mean = sumOf(data) / n;
-    const showDot = lvl === 2;
-    return {title:'Score Cards', ctx:`median ${listTxt(data)}`, bubble:showDot ? `The dot plot shows the ${label} of the ${what}. What is the median?` : `The ${what} scored ${listTxt(data)}. What is the median score?`, helper:'Put the values in order. The median is the middle one (or halfway between the two middle ones).',
-      visual:showDot ? dotPlotSVG(data, {label}) : `<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(data)}</div>`,
+    const asTable = lvl === 2, vals = [...new Set(sortN(data))];   // Khan: data displays. Level 2 is a frequency table; levels 1 and 3 are dot plots (the plain list is medianCalc now)
+    return {title:'Score Cards', ctx:`median ${listTxt(data)}`, bubble:asTable ? `The frequency table shows the ${label} of the ${what}. What is the median?` : `The dot plot shows the ${label} of the ${what}. What is the median?`, helper:'Put the values in order. The median is the middle one (or halfway between the two middle ones).',
+      visual:asTable ? xyTable(vals, vals.map(v => data.filter(x => x === v).length), label, 'Frequency') : dotPlotSVG(data, {label}),
       steps:[{name:'In order', type:'concept', kind:'choice', prompt:'Which list is in order?', options:choiceOf({text:listTxt(sortN(data))}, [{text:listTxt(sortN(data).reverse())}, {text:listTxt(data), mis:'medianUnsorted'}, {text:listTxt([...sortN(data).slice(1), sortN(data)[0]])}]), hint:() => 'Smallest to largest.'},
         statStep('Median', `The median of ${listTxt(sortN(data))} = ?`, med, {mis:v => near2(v, unsorted) && unsorted !== med ? 'medianUnsorted' : near2(v, mean) && mean !== med ? 'meanMedianSwap' : null, hint:() => n % 2 ? `There are ${n} values: the middle one is number ${(n + 1) / 2}.` : `There are ${n} values: take halfway between numbers ${n / 2} and ${n / 2 + 1}.`})], answerSteps:[1]};
   },
@@ -5615,13 +5617,13 @@ const SHOW_GEN = {
     const mn = rand(2, 20), q1 = mn + rand(2, 8), md = q1 + rand(1, 8), q3 = md + rand(1, 8), mx = q3 + rand(2, 10), five = [mn, q1, md, q3, mx], [e, what] = pick(PETS);
     const kind = lvl === 1 ? 'median' : lvl === 2 ? pick(['iqr', 'range']) : pick(['above', 'below', 'between']);
     const vis = boxPlotSVG(five);
-    if (kind === 'median') return {title:'Box Seats', ctx:`box median ${five}`, bubble:`The box plot shows the scores of the ${what}. What is the median score?`, helper:'The line inside the box is the median.', visual:vis,
+    if (kind === 'median') return {title:'Ribbon Ranges', ctx:`box median ${five}`, bubble:`The box plot shows the scores of the ${what}. What is the median score?`, helper:'The line inside the box is the median.', visual:vis,
       steps:[numStep('Median', 'concept', 'Median = ?', md, {mis:v => v === q1 || v === q3 ? 'boxReadWrong' : v === Math.round((mn + mx) / 2) && v !== md ? 'boxReadWrong' : null})]};
     if (kind !== 'above' && kind !== 'below' && kind !== 'between') { const ans = kind === 'iqr' ? q3 - q1 : mx - mn;
-      return {title:'Box Seats', ctx:`box ${kind} ${five}`, bubble:`The box plot shows the scores of the ${what}. What is the ${kind === 'iqr' ? 'interquartile range' : 'range'}?`, helper:kind === 'iqr' ? 'IQR = the right edge of the box − the left edge (Q3 − Q1).' : 'Range = maximum − minimum (the ends of the whiskers).', visual:vis,
+      return {title:'Ribbon Ranges', ctx:`box ${kind} ${five}`, bubble:`The box plot shows the scores of the ${what}. What is the ${kind === 'iqr' ? 'interquartile range' : 'range'}?`, helper:kind === 'iqr' ? 'IQR = the right edge of the box − the left edge (Q3 − Q1).' : 'Range = maximum − minimum (the ends of the whiskers).', visual:vis,
         steps:[numStep(kind === 'iqr' ? 'IQR' : 'Range', 'compute', kind === 'iqr' ? `${q3} − ${q1} = ?` : `${mx} − ${mn} = ?`, ans, {mis:v => kind === 'iqr' && v === mx - mn ? 'rangeNotIqr' : kind === 'range' && v === q3 - q1 ? 'rangeNotIqr' : null})]}; }
     const Q = kind === 'above' ? [`What percent of the ${what} scored more than ${q3}?`, '25%'] : kind === 'below' ? [`What percent of the ${what} scored less than ${md}?`, '50%'] : [`What percent of the ${what} scored between ${q1} and ${q3}?`, '50%'];
-    return {title:'Box Seats', ctx:`box ${kind} ${five}`, bubble:`The box plot shows the scores of the ${what}. ${Q[0]}`, helper:'Each whisker and each half of the box holds about 25% of the data.', visual:vis,
+    return {title:'Ribbon Ranges', ctx:`box ${kind} ${five}`, bubble:`The box plot shows the scores of the ${what}. ${Q[0]}`, helper:'Each whisker and each half of the box holds about 25% of the data.', visual:vis,
       steps:[{name:'What percent', type:'concept', kind:'choice', prompt:Q[0], options:choiceOf({text:Q[1]}, ['25%', '50%', '75%', '100%'].map(t => ({text:t, mis:'boxReadWrong'}))), hint:() => 'The four parts (whisker, half box, half box, whisker) each hold a quarter of the data.'}]};
   },
   makeBox(lvl){
@@ -5632,7 +5634,7 @@ const SHOW_GEN = {
     const range = {lo:s[0] - 2, hi:s[n - 1] + 2};
     const pics = [[five, true, null], [wrongB, false, 'boxReadWrong'], [[s[0], s[1], md, s[n - 2], s[n - 1]], false, 'boxReadWrong']].filter((p, i, arr) => arr.findIndex(q => q[0].join() === p[0].join()) === i);
     const opts = shuffle(pics.map(([f, ok, mis], i) => ({html:boxPlotSVG(f, range), text:`box ${f.join(' ')}`, ok, mis})));
-    return {title:'Box Seats', ctx:`make box ${listTxt(data)}`, bubble:`Make a box plot of the ${pick(PETS)[1]}' scores: ${listTxt(data)}.`, helper:'Order the data and find the five numbers: minimum, Q1, median, Q3, maximum.',
+    return {title:'Ribbon Ranges', ctx:`make box ${listTxt(data)}`, bubble:`Make a box plot of the ${pick(PETS)[1]}' scores: ${listTxt(data)}.`, helper:'Order the data and find the five numbers: minimum, Q1, median, Q3, maximum.',
       visual:`<div style="text-align:center; font-size:1.3rem">📦 ${listTxt(data)}</div>`,
       steps:[statStep('Median', `Median of ${listTxt(s)} = ?`, md, {mis:v => near2(v, (s[0] + s[n - 1]) / 2) && md !== (s[0] + s[n - 1]) / 2 ? 'boxReadWrong' : null}), statStep('Q1', `Q1 (median of ${listTxt(s.slice(0, Math.floor(n / 2)))}) = ?`, q1, {}),
         statStep('Q3', `Q3 (median of ${listTxt(s.slice(Math.ceil(n / 2)))}) = ?`, q3, {}), ...(opts.length >= 2 ? [{name:'Pick the plot', type:'concept', kind:'choice', prompt:`Which box plot shows ${five.map(numTxt).join(', ')}?`, options:opts, hint:() => 'Whiskers at the minimum and maximum, the box from Q1 to Q3, and the line at the median.'}] : []),
@@ -5698,6 +5700,174 @@ const SHOW_GEN = {
     return {title:'Best in Show', ctx:`cmp both iqr ${listTxt(s)}`, bubble:`Both displays show the ${label} of the same ${what}. What is the interquartile range (IQR)?`, helper, visual:both,
       steps:[{name:'Which display', type:'concept', kind:'choice', prompt:'Which display shows Q1 and Q3 directly?', options:choiceOf({text:'The box plot'}, [{text:'The dot plot', mis:'displayWrong'}, {text:'Neither of them', mis:'displayWrong'}]), hint:() => 'The edges of the box are Q1 and Q3.'},
         statStep('IQR', `IQR = ${numTxt(q3)} − ${numTxt(q1)} = ?`, q3 - q1, {mis:v => near2(v, s[n - 1] - s[0]) ? 'rangeNotIqr' : null})], answerSteps:[1]};
+  },
+  /* ===== Pet Show skills added Oct 26, 2026 to match Khan unit 11 ===== */
+  /* ----- station 1: Sign-In Desk (statistical questions, frequency tables, dot plots) ----- */
+  /* creating frequency tables */
+  freqTable(lvl){
+    const [e, what, label] = pick(PETS);
+    if (lvl === 3) {   // group the values into intervals
+      const w = 5, start = rand(0, 2) * 5, data = dataSet(rand(12, 16), start, start + 14), bins = [0, 1, 2].map(i => [start + i * w, start + i * w + w - 1]);
+      const counts = bins.map(([a, b]) => data.filter(v => v >= a && v <= b).length);
+      if (counts.some(c => c === 0)) return SHOW_GEN.freqTable(lvl);
+      return {title:'Sign-In Desk', ctx:`freq bins ${listTxt(data)}`, bubble:`The ${what}’ ${label}: ${listTxt(data)}. Fill in the frequency table: how many ${what} are in each interval?`, helper:'Count the values that land in each interval. Every value goes in exactly one row.',
+        visual:xyTable(bins.map(([a, b]) => `${a}–${b}`), ['?', '?', '?'], label, 'Frequency'),
+        steps:bins.map(([a, b], i) => numStep(`${a}–${b}`, 'concept', `How many values from ${a} to ${b}?`, counts[i], {mis:v => v === data.filter(x => x > a && x < b).length && v !== counts[i] ? 'boundaryCount' : null, hint:() => `Include ${a} and ${b} themselves.`})), answerSteps:[2]};
+    }
+    const lo = rand(1, 5), span = lvl === 1 ? 3 : 4, data = dataSet(lvl === 1 ? rand(8, 10) : rand(11, 15), lo, lo + span), vals = Array.from({length:span + 1}, (_, i) => lo + i), counts = vals.map(v => data.filter(x => x === v).length);
+    const ask = shuffle(vals.map((v, i) => i)).slice(0, lvl === 1 ? 2 : 3).sort((a, b) => a - b);
+    return {title:'Sign-In Desk', ctx:`freq ${listTxt(data)}`, bubble:`The pet show sign-in sheet lists the ${label} of each of the ${what}: ${listTxt(data)}. Fill in the missing frequencies.`, helper:'The frequency of a value is how many times it shows up in the list. Cross each one off as you count it.',
+      visual:xyTable(vals, counts.map((c, i) => ask.includes(i) ? '?' : c), label, 'Frequency'),
+      steps:ask.map(i => numStep(`Frequency of ${vals[i]}`, 'concept', `How many times does ${vals[i]} appear?`, counts[i], {mis:v => v === counts[i] + 1 || v === counts[i] - 1 ? 'dotPlotWrong' : null})), answerSteps:[ask.length - 1]};
+  },
+  /* creating dot plots */
+  makeDot(lvl){
+    const [e, what, label] = pick(PETS), lo = rand(1, 6), hi = lo + rand(4, 6); let data;
+    do { data = dataSet(lvl === 3 ? rand(12, 15) : rand(7, 10), lo, hi); } while (new Set(data).size < 4);
+    const s = sortN(data), vals = [...new Set(s)], counts = Object.fromEntries(vals.map(v => [v, data.filter(x => x === v).length]));
+    const pic = (d, mis) => ({text:listTxt(sortN(d)), html:dotPlotSVG(d, {lo, hi, label}), mis});
+    const a = pick(vals), b = pick(vals.filter(v => v !== a && counts[v] !== counts[a]).concat([a])) ;
+    const moved = [...s]; const k = moved.indexOf(a); moved[k] = a < hi ? a + 1 : a - 1;
+    const missing = s.filter((v, i) => i !== s.indexOf(pick(vals)));
+    const swapped = b !== a ? s.map(v => v === a ? b : v === b ? a : v) : [...s, lo];
+    const wrongs = [pic(moved, 'dotPlotWrong'), pic(missing, 'dotPlotWrong'), pic(swapped, 'dotPlotWrong')];
+    const fromTable = lvl === 2, shown = fromTable ? xyTable(vals, vals.map(v => counts[v]), label, 'Frequency') : `<div style="text-align:center; font-size:1.3rem">${e} ${listTxt(data)}</div>`;
+    return {title:'Sign-In Desk', ctx:`make dot ${listTxt(s)}`, bubble:`${fromTable ? `The frequency table shows the ${label} of the ${what}.` : `The ${what}’ ${label}: ${listTxt(data)}.`} Which dot plot shows the data?`, helper:'Put one dot above the number line for each value. Stack dots for repeated values.',
+      visual:shown, steps:[{name:'The dot plot', type:'concept', kind:'choice', prompt:'Which dot plot is right?', options:picChoice(pic(s), wrongs), hint:() => `Count the dots: there should be ${data.length}. Then check each stack.`}]};
+  },
+
+  /* ----- station 2: Judges' Table (center from a dot plot, histograms) ----- */
+  /* estimate center using dot plots */
+  estCenter(lvl){
+    const [e, what, label] = pick(PETS);
+    if (lvl === 3) {   // skewed: is the mean more or less than the median?
+      const right = Math.random() < 0.5, base = right ? [1, 4, 6, 4, 2, 1, 1, 0, 0, 1, 1] : [1, 1, 0, 0, 1, 1, 2, 4, 6, 4, 1], lo = rand(1, 4), data = [];
+      base.forEach((c, i) => { for (let j = 0; j < c; j++) data.push(lo + i); });
+      const mean = sumOf(data) / data.length, med = medianOf(data);
+      const ans = mean > med ? 'The mean is greater than the median' : 'The mean is less than the median';
+      return {title:"Judges' Table", ctx:`center skew ${right ? 'R' : 'L'}`, bubble:`The dot plot shows the ${label} of the ${what}. How do the mean and the median compare?`, helper:'A long tail pulls the mean toward it. The median stays with the middle of the data.', visual:dotPlotSVG(data, {lo, hi:lo + 10, label}),
+        steps:[{name:'Mean vs. median', type:'concept', kind:'choice', prompt:'Which is true?', options:choiceOf({text:ans}, [{text:mean > med ? 'The mean is less than the median' : 'The mean is greater than the median', mis:'skewDirection'}, {text:'The mean and median are equal', mis:'meanMedianSwap'}]), hint:() => `Which way is the long tail? It pulls the mean that way.`}]};
+    }
+    let data, m;
+    for (let t = 0; t < 400; t++) { const lo = rand(1, 8); data = dataSet(rand(9, 13), lo, lo + rand(6, 9)); m = sumOf(data) / data.length; if (Math.abs(m - Math.round(m)) < 0.2) break; }
+    const ask = lvl === 1 ? 'median' : 'mean', c = ask === 'median' ? medianOf(data) : Math.round(m), s = sortN(data);
+    const opts = [...new Set([c, s[0], s[s.length - 1], c + (c + 3 <= s[s.length - 1] ? 3 : -3)])].filter(v => v === c || Math.abs(v - (ask === 'median' ? medianOf(data) : m)) >= 2.5);
+    if (opts.length < 3 || !Number.isInteger(c)) return SHOW_GEN.estCenter(lvl);
+    return {title:"Judges' Table", ctx:`est ${ask} ${listTxt(s)}`, bubble:`The dot plot shows the ${label} of the ${what}. Which value is closest to the ${ask}?`, helper:ask === 'median' ? 'The median splits the dots in half: as many dots on its left as on its right.' : 'The mean is the balance point: the dots on each side balance like a seesaw.',
+      visual:dotPlotSVG(data, {label}), steps:[{name:`About the ${ask}`, type:'concept', kind:'choice', prompt:`Closest to the ${ask}:`, options:choiceOf({text:String(c)}, opts.filter(v => v !== c).map(v => ({text:String(v)}))), hint:() => ask === 'median' ? `There are ${data.length} dots. Count in from both ends.` : 'Where would the number line balance?'}]};
+  },
+  /* create histograms */
+  makeHist(lvl){
+    const [e, what] = pick(PETS), w = pick([5, 10]), nb = lvl === 1 ? 3 : 4, start = w === 5 ? rand(0, 2) * 5 : rand(1, 3) * 10, label = w === 5 ? 'age (years)' : 'weight (pounds)';
+    const data = dataSet(rand(10, 14), start, start + nb * w - 1), bins = Array.from({length:nb}, (_, i) => [start + i * w, start + i * w + w - 1]), counts = bins.map(([a, b]) => data.filter(v => v >= a && v <= b).length);
+    if (counts.some(c => c === 0)) return SHOW_GEN.makeHist(lvl);
+    if (lvl === 3) {   // pick the histogram
+      const bars = cs => bins.map(([a, b], i) => [a, b, cs[i]]);
+      const shiftEdge = bins.map(([a, b]) => data.filter(v => v > a && v <= b + 1).length);   // boundary values put in the wrong bar
+      const swap = [...counts]; [swap[0], swap[nb - 1]] = [swap[nb - 1], swap[0]]; const off = counts.map((c, i) => i === 1 ? c + 1 : c);
+      const pic = (cs, mis) => ({text:cs.join(','), html:histSVG(bars(cs), label), mis});
+      return {title:"Judges' Table", ctx:`make hist ${listTxt(sortN(data))}`, bubble:`The ${what}’ ${label}: ${listTxt(data)}. Which histogram shows the data, in intervals of ${w}?`, helper:'Count how many values fall in each interval. That count is the height of the bar.',
+        visual:`<div style="text-align:center; font-size:1.2rem">${e} ${listTxt(data)}</div>`, steps:[{name:'The histogram', type:'concept', kind:'choice', prompt:'Which histogram is right?', options:picChoice(pic(counts), [pic(shiftEdge, 'binRead'), pic(swap, 'binRead'), pic(off, 'binRead')]), hint:() => `Count each interval. ${bins[0][0]}–${bins[0][1]} has ${counts[0]}.`}]};
+    }
+    return {title:"Judges' Table", ctx:`hist counts ${listTxt(sortN(data))}`, bubble:`The ${what}’ ${label}: ${listTxt(data)}. To make a histogram, how tall is each bar?`, helper:'Each bar counts the values in its interval, including both ends.',
+      visual:`<div style="text-align:center; font-size:1.2rem">${e} ${listTxt(data)}</div>` + xyTable(bins.map(([a, b]) => `${a}–${b}`), bins.map(() => '?'), label, 'Count'),
+      steps:bins.map(([a, b], i) => numStep(`${a}–${b}`, 'concept', `How many from ${a} to ${b}?`, counts[i], {mis:v => v === data.filter(x => x > a && x < b).length && v !== counts[i] ? 'binRead' : null})), answerSteps:[nb - 1]};
+  },
+
+  /* ----- station 3: Score Cards (mean and median) ----- */
+  /* calculating the median from a list */
+  medianCalc(lvl){
+    const [e, what] = pick(PETS), n = lvl === 1 ? pick([5, 7]) : lvl === 2 ? pick([6, 8]) : pick([9, 10, 11, 12]), lo = rand(1, 20); let data; do { data = dataSet(n, lo, lo + rand(8, 20)); } while (new Set(data).size < n - 1);
+    const s = sortN(data), med = medianOf(data), unsorted = n % 2 ? data[(n - 1) / 2] : (data[n / 2 - 1] + data[n / 2]) / 2, mean = sumOf(data) / n;
+    return {title:'Score Cards', ctx:`median ${listTxt(data)}`, bubble:`The ${what} got these scores: ${listTxt(data)}. What is the median score?`, helper:'Put the values in order. The median is the middle one, or halfway between the two middle ones.',
+      visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(data)}</div>`,
+      steps:[{name:'In order', type:'concept', kind:'choice', prompt:'Which list is in order?', options:choiceOf({text:listTxt(s)}, [{text:listTxt(data), mis:'medianUnsorted'}, {text:listTxt([...s].reverse().slice(0, n - 1).reverse().concat([s[0]]))}].filter(o => o.text !== listTxt(s))), hint:() => 'Smallest to largest.'},
+        statStep('Median', `The median of ${listTxt(s)} = ?`, med, {mis:v => near2(v, unsorted) && unsorted !== med ? 'medianUnsorted' : near2(v, mean) && mean !== med ? 'meanMedianSwap' : null, hint:() => n % 2 ? `${n} values: the middle one is number ${(n + 1) / 2}.` : `${n} values: halfway between number ${n / 2} and number ${n / 2 + 1}.`})], answerSteps:[1]};
+  },
+
+  /* ----- station 4: Tie Breakers (mean and median challenge problems) ----- */
+  /* missing value given the mean */
+  meanMissing(lvl){
+    const [e, what] = pick(PETS), n = lvl === 1 ? 4 : lvl === 2 ? pick([5, 6]) : pick([6, 8]), m = lvl === 3 ? rand(60, 95) : rand(5, 20); let known, miss;
+    for (let t = 0; t < 200; t++) { known = Array.from({length:n - 1}, () => m + rand(-Math.min(m - 1, lvl === 3 ? 12 : 5), lvl === 3 ? 12 : 5)); miss = m * n - sumOf(known); if (miss > 0 && miss <= (lvl === 3 ? 100 : 2 * m + 6) && (lvl < 3 || known.every(v => v <= 100))) break; }
+    if (!(miss > 0) || (lvl === 3 && (miss > 100 || known.some(v => v > 100)))) return SHOW_GEN.meanMissing(lvl);
+    const T = m * n, S = sumOf(known);
+    return {title:'Tie Breakers', ctx:`missing ${listTxt(known)} mean ${m}`, bubble:lvl === 3 ? `A pet needs a mean score of ${m} over ${n} events to win a ribbon. Its first ${n - 1} scores are ${listTxt(known)}. What score does it need in the last event?` : `${n} ${what} have a mean ${lvl === 1 ? 'weight' : 'score'} of ${m}. ${n - 1} of them are ${listTxt(known)}. What is the last one?`,
+      helper:'Mean × how many = the total. Then subtract the values you know.', visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(known)}, ?</div>`,
+      steps:[numStep('Total', 'compute', `${m} × ${n} = ?`, T, {fact:fx(m, n), mis:v => v === m ? 'meanMissingWrong' : null}), numStep('Known values', 'compute', `${known.join(' + ')} = ?`, S, {}),
+        numStep('Missing value', 'compute', `${T} − ${S} = ?`, miss, {mis:v => v === m ? 'meanMissingWrong' : null})], answerSteps:[2]};
+  },
+  /* effects of shifting, adding, and removing a data point */
+  shiftData(lvl){
+    const [e, what] = pick(PETS);
+    if (lvl === 1) {   // shift every value
+      const n = pick([4, 5]), m = rand(6, 15), k = rand(2, 6); let data;
+      do { data = Array.from({length:n - 1}, () => m + rand(-4, 4)); data.push(m * n - sumOf(data)); } while (data.some(v => v <= 0));
+      const md = medianOf(data), up = Math.random() < 0.6;
+      return {title:'Tie Breakers', ctx:`shift ${up ? '+' : '−'}${k} ${listTxt(data)}`, bubble:`The ${what}’ scores are ${listTxt(data)}. The mean is ${m} and the median is ${numTxt(md)}. A judge ${up ? `adds ${k} points to every score` : `takes ${k} points off every score`}. What are the new mean and median?`, helper:'What happens to each score? Then think: how does that change the total, and which pet is in the middle?',
+        visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(data)}</div>`,
+        steps:[numStep('New mean', 'compute', `New mean = ?`, up ? m + k : m - k, {mis:v => v === m ? 'shiftEffectWrong' : v === (up ? m + k * n : m - k * n) ? 'shiftEffectWrong' : null}), statStep('New median', 'New median = ?', up ? md + k : md - k, {mis:v => near2(v, md) ? 'shiftEffectWrong' : null})], answerSteps:[1]};
+    }
+    // add or remove one value; describe what happens (and on level 3 find the new mean)
+    const n = pick([5, 6, 7]); let data, m;
+    for (let t = 0; t < 200; t++) { const lo = rand(5, 15); data = dataSet(n, lo, lo + 8); if (sumOf(data) % n === 0) { m = sumOf(data) / n; break; } }
+    if (m === undefined) return SHOW_GEN.shiftData(lvl);
+    const s = sortN(data), md = medianOf(data), kind = pick(['add high', 'add low', 'remove high', 'remove low']);
+    let next, val;
+    if (kind === 'add high') { val = s[n - 1] + rand(10, 25); next = [...data, val]; } else if (kind === 'add low') { val = Math.max(0, s[0] - rand(5, 8)); next = [...data, val]; }
+    else if (kind === 'remove high') { val = s[n - 1]; next = s.slice(0, n - 1); } else { val = s[0]; next = s.slice(1); }
+    const m2 = sumOf(next) / next.length, md2 = medianOf(next), word = (a, b) => near2(a, b) ? 'stays the same' : b > a ? 'increases' : 'decreases';
+    const right = `The mean ${word(m, m2)} and the median ${word(md, md2)}`;
+    const all = ['increases', 'decreases', 'stays the same'].flatMap(a => ['increases', 'decreases', 'stays the same'].map(b => `The mean ${a} and the median ${b}`)).filter(t => t !== right);
+    const swapT = `The mean ${word(md, md2)} and the median ${word(m, m2)}`;
+    const wrongs = [...(swapT !== right ? [{text:swapT, mis:'meanMedianSwap'}] : []), ...shuffle(all.filter(t => t !== swapT)).slice(0, 3).map(t => ({text:t, mis:'shiftEffectWrong'}))].slice(0, 3);
+    const story = kind.startsWith('add') ? `A new ${what.replace(/s$/, '')} joins with a score of ${val}.` : `The ${what.replace(/s$/, '')} with the ${kind.endsWith('high') ? 'highest' : 'lowest'} score (${val}) leaves the show.`;
+    const steps = [{name:'What changes', type:'concept', kind:'choice', prompt:'What happens?', options:choiceOf({text:right}, wrongs), hint:() => 'A very high or low value pulls the mean a lot. The median only moves to the next middle value.'}];
+    if (lvl === 3) steps.push(statStep('New mean', `New mean = (${next.join(' + ')}) ÷ ${next.length} = ?`, m2, {mis:v => near2(v, m) ? 'shiftEffectWrong' : null}));
+    if (lvl === 3 && !Number.isInteger(m2 * 100)) return SHOW_GEN.shiftData(lvl);
+    return {title:'Tie Breakers', ctx:`${kind} ${listTxt(s)} ${val}`, bubble:`The ${what}’ scores are ${listTxt(s)}, with a mean of ${m} and a median of ${numTxt(md)}. ${story} How do the mean and median change?`, helper:'Find the new mean and median, or think about how far the new (or missing) value is from the middle.',
+      visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(s)}</div>`, steps, ...(lvl === 3 ? {answerSteps:[1]} : {})};
+  },
+
+  /* ----- station 5: Ribbon Ranges (IQR, box plots, MAD) ----- */
+  /* interpreting quartiles on box plots */
+  quartiles(lvl){
+    const [e, what, label] = pick(PETS), mn = rand(2, 20), q1 = mn + rand(2, 8), md = q1 + rand(2, 8), q3 = md + rand(2, 8), mx = q3 + rand(2, 10), five = [mn, q1, md, q3, mx];
+    const vis = boxPlotSVG(five);
+    if (lvl === 1) {
+      const Q = pick([[`Half of the ${what} scored more than what?`, md], [`A quarter of the ${what} scored ${'less'} than what?`, q1], [`The top quarter of the ${what} scored at least what?`, q3]]);
+      return {title:'Ribbon Ranges', ctx:`quart ${Q[0]} ${five}`, bubble:`The box plot shows the scores of the ${what}. ${Q[0]}`, helper:'The box plot splits the pets into 4 groups of about the same size: min to Q1, Q1 to the median, the median to Q3, Q3 to max.', visual:vis,
+        steps:[{name:'Which value', type:'concept', kind:'choice', prompt:Q[0], options:choiceOf({text:String(Q[1])}, five.filter(v => v !== Q[1]).map(v => ({text:String(v), mis:'boxReadWrong'})).slice(0, 3)), hint:() => 'Each part of the box plot holds about a quarter of the pets.'}]};
+    }
+    const N = pick([12, 16, 20, 24, 28, 40]), Q = pick([[`scored more than ${q3}`, 1], [`scored less than ${md}`, 2], [`scored between ${q1} and ${q3}`, 2], [`scored at least ${q1}`, 3], [`scored less than ${q1}`, 1]]);
+    if (lvl === 2) return {title:'Ribbon Ranges', ctx:`quart pct ${Q[0]}`, bubble:`The box plot shows the scores of the ${what}. About what percent of them ${Q[0]}?`, helper:'Each whisker and each half of the box holds about 25% of the data.', visual:vis,
+      steps:[{name:'Percent', type:'concept', kind:'choice', prompt:`About what percent ${Q[0]}?`, options:choiceOf({text:`${Q[1] * 25}%`}, ['25%', '50%', '75%', '100%'].filter(t => t !== `${Q[1] * 25}%`).map(t => ({text:t, mis:'boxReadWrong'}))), hint:() => 'Count how many of the 4 parts that is.'}]};
+    return {title:'Ribbon Ranges', ctx:`quart count ${N} ${Q[0]}`, bubble:`${N} ${what} entered the show, and the box plot shows their scores. About how many of them ${Q[0]}?`, helper:'Each of the 4 parts of a box plot holds about a quarter of the pets.', visual:vis,
+      steps:[numStep('How many', 'compute', `${Q[1]} × (${N} ÷ 4) = ?`, Q[1] * N / 4, {mis:v => v === Q[1] * 25 ? 'boxReadWrong' : null, hint:() => `A quarter of ${N} is ${N / 4}.`})]};
+  },
+
+  /* ----- station 6: Best in Show (displays, shape, clusters) ----- */
+  /* clusters, gaps, peaks and outliers */
+  clusters(lvl){
+    const [e, what, label] = pick(PETS), lo = 1, a = rand(2, 4), gap = rand(3, 4), b = a + 2 + gap + 1, data = [];
+    const bump = (c, w) => { [1, 3, 1].forEach((k, i) => { for (let j = 0; j < k + (i === 1 ? rand(0, 2) : rand(0, 1)); j++) data.push(c - 1 + i); }); };
+    bump(a + 1); bump(b + 1);
+    const out = lvl === 3 ? b + 3 + rand(3, 5) : null; if (out) data.push(out);
+    const hi = (out || b + 2) + 1, peakV = (() => { const c = {}; data.forEach(v => c[v] = (c[v] || 0) + 1); const top = Math.max(...Object.values(c)); const ks = Object.keys(c).filter(k => c[k] === top); return ks.length === 1 ? +ks[0] : null; })();
+    const gapFrom = a + 2, gapTo = b;   // no dots strictly between a+2 and b
+    if (lvl === 1) {
+      if (peakV === null) return SHOW_GEN.clusters(lvl);
+      return {title:'Best in Show', ctx:`peak ${peakV}`, bubble:`The dot plot shows the ${label} of the ${what}. Where is the highest peak?`, helper:'A peak is the value with the tallest stack of dots.', visual:dotPlotSVG(data, {lo, hi, label}),
+        steps:[{name:'Peak', type:'concept', kind:'choice', prompt:'The highest peak is at…', options:choiceOf({text:String(peakV)}, shuffle([...new Set(data)].filter(v => v !== peakV)).slice(0, 3).map(v => ({text:String(v), mis:'clusterWrong'}))), hint:() => 'Look for the tallest stack.'}]};
+    }
+    if (lvl === 2) {
+      const right = `Between ${gapFrom} and ${gapTo}`, wrongs = [`Between ${a} and ${a + 2}`, `Between ${b} and ${b + 2}`, `Between ${lo} and ${a}`].filter(t => t !== right);
+      return {title:'Best in Show', ctx:`gap ${gapFrom}-${gapTo}`, bubble:`The dot plot shows the ${label} of the ${what}. The data has two clusters. Where is the gap between them?`, helper:'A cluster is a group of dots close together. A gap is a stretch of the number line with no dots.', visual:dotPlotSVG(data, {lo, hi, label}),
+        steps:[{name:'Gap', type:'concept', kind:'choice', prompt:'The gap is…', options:choiceOf({text:right}, wrongs.map(t => ({text:t, mis:'clusterWrong'}))), hint:() => 'Find the empty part of the number line between the two groups.'}]};
+    }
+    return {title:'Best in Show', ctx:`outlier ${out}`, bubble:`The dot plot shows the ${label} of the ${what}. Which value is an outlier?`, helper:'An outlier is a value far away from the rest of the data.', visual:dotPlotSVG(data, {lo, hi, label}),
+      steps:[{name:'Outlier', type:'concept', kind:'choice', prompt:'The outlier is…', options:choiceOf({text:String(out)}, [a, b + 2, peakV ?? b + 1].filter((v, i, arr) => v !== out && arr.indexOf(v) === i).map(v => ({text:String(v), mis:'clusterWrong'}))), hint:() => 'Look for a dot sitting all by itself, far from the others.'},
+        {name:'Without it', type:'concept', kind:'choice', prompt:'If the outlier were left out, the mean would…', options:choiceOf({text:'go down'}, [{text:'go up', mis:'skewDirection'}, {text:'stay the same', mis:'shiftEffectWrong'}]), hint:() => 'The outlier is a big value. Taking it away lowers the total.'}], answerSteps:[0]};
   }
 };
 Object.assign(GEN, SHOW_GEN);
@@ -5985,6 +6155,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
+  else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
   else if (run.gameId === 'parcel-post') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/PARCEL-POST.md)
   else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
   else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
@@ -7880,6 +8051,42 @@ window.addEventListener('message', e => {
   logEvent({k:'parcel', s:right, n:tries, title:`${delivered} of 10 parcels delivered${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`📮 ${delivered} of 10 parcels delivered!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= PARCEL_COINS_PER_DAY ? ' (Today’s Parcel Post coins are all earned.)' : ''}`);
+});
+/* ---------- 🏆 Pet Show Awards (public/arcade/pet-show, docs/PET-SHOW-AWARDS.md) ----------
+   Six awards, each for the pet closest to a target (the mean, the median, a quartile, a lost score). She finds the
+   target from the pets' stats, then pins the ribbon on the winner. Opened from Best in Show (the last Pet Show station)
+   and also an Arcade game. Played from the Pet Show it pays Pet World coins: 1 per right answer, up to
+   PETSHOW_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const PETSHOW_COINS_PER_DAY = 20;
+function petShowButtonHTML(){
+  const best = S.petshow?.best || 0;
+  return `<button type="button" class="btn" data-petshow>🏆 Pet Show Awards${best ? ` · best ${'⭐'.repeat(best)}` : ''}</button>`;
+}
+function openPetShow(){
+  if ($('#petshowWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'petshowWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Pet Show Awards');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🏆 Pet Show Awards</b><button type="button" class="btn small" data-petshow-close>Done</button></div><iframe src="/arcade/pet-show/?from=show" title="Pet Show Awards"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-petshow-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('show'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#petshowWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'petshow:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), ribbons = Math.max(0, Math.min(6, Math.round(+r.ribbons || 0)));
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.petshow, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), stars, ribbons, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, PETSHOW_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'petshow', s:right, n:tries, title:`${ribbons} of 6 ribbons to the right pet, ${right} of ${tries} answers right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🏆 ${ribbons} ribbons pinned!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= PETSHOW_COINS_PER_DAY ? ' (Today’s Pet Show coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -11143,7 +11350,7 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}${open && config.id === 'post' && st.id === 4 ? parcelButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}${open && config.id === 'post' && st.id === 4 ? parcelButtonHTML() : ''}${open && config.id === 'show' && st.id === 6 ? petShowButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -11154,6 +11361,7 @@ $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-asteroids]')) { openAsteroids(); return; }
   if (e.target.closest('[data-battleship]')) { openBattleship(); return; }
   if (e.target.closest('[data-parcel]')) { openParcel(); return; }
+  if (e.target.closest('[data-petshow]')) { openPetShow(); return; }
   if (e.target.closest('[data-detective]')) { openDetective(); return; }
   if (e.target.closest('[data-carnival]')) { openCarnival(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
@@ -12754,6 +12962,7 @@ function placeOnScreen(){
   if ($('#asteroidsWrap')) return 'asteroids';
   if ($('#battleshipWrap')) return 'battleship';
   if ($('#parcelWrap')) return 'parcel';
+  if ($('#petshowWrap')) return 'petshow';
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -12792,6 +13001,7 @@ function placeLabel(key){
   if (kind === 'asteroids') return '☄️ Shape Asteroids';
   if (kind === 'battleship') return '⚓ Harbor Battleship';
   if (kind === 'parcel') return '📮 Parcel Post';
+  if (kind === 'petshow') return '🏆 Pet Show Awards';
   if (kind === 'detective') return '🔍 Potion Detective';
   if (kind === 'carnival') return '🎪 Carnival Midway';
   if (kind === 'bible') return '✝️ Bible';
@@ -12819,6 +13029,7 @@ function eventText(e){
   if (e.k === 'asteroids') return `☄️ Shape Asteroids: ${e.title}`;
   if (e.k === 'battleship') return `⚓ Harbor Battleship: ${e.title}`;
   if (e.k === 'parcel') return `📮 Parcel Post: ${e.title}`;
+  if (e.k === 'petshow') return `🏆 Pet Show Awards: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
@@ -12912,6 +13123,7 @@ function subjectOnScreen(){
   if ($('#asteroidsWrap')) return 'math';   // Shape Asteroids is Pet Houses practice
   if ($('#battleshipWrap')) return 'math';   // Harbor Battleship is Pet Harbor practice
   if ($('#parcelWrap')) return 'math';   // Parcel Post is Pet Post Office practice
+  if ($('#petshowWrap')) return 'math';   // Pet Show Awards is Pet Show practice
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

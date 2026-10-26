@@ -188,6 +188,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F56. ⚓ Harbor Battleship: battleship on a coordinate plane; in Pet Harbor (Shipyard) and the Arcade. See `HARBOR-BATTLESHIP.md`
 - [x] F57. 📮 Pet Post Office: Khan Unit 10 (volume and surface area) gets its own building, with 5 new skills and 3D shape pictures (`SOLID3D`). Pet Houses is Unit 8 only. See `POST.md`
 - [x] F58. 📮 Parcel Post: spin 3D parcels to sort, count, pack and wrap them; in the Post Office (Wrapping Desk) and the Arcade. See `PARCEL-POST.md`
+- [x] F59. 🏆 Pet Show rebuilt to match Khan Unit 11: 6 stations, 9 new skills, 1 link fix. Every 6th grade unit now matches Khan. See `SHOW.md`
+- [x] F60. 🏆 Pet Show Awards: find the mean, median or a quartile, then give the ribbon to the closest pet; at Best in Show and in the Arcade. See `PET-SHOW-AWARDS.md`
 
 ## Database files, in the order they were run
 

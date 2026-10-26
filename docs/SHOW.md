@@ -1,18 +1,44 @@
 # 6th grade, shop 8: the Pet Show
 
-**Status: built (all 5 stations). With it, 6th grade is complete.** Khan Academy 6th grade, Unit 11: Data and statistics. The generators are `SHOW_GEN` in `src/game/game.js` (stress-tested: 720,000 problems, 20,000 per skill and level; every mean, median, quartile, IQR, and MAD recomputed independently, every "in order" choice checked). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
+**Status: built (6 stations). Rebuilt to match Khan exactly on Oct 26, 2026: all 21 exercises, each linked, in Khan's order.** Khan Academy 6th grade, Unit 11: Data and statistics. The generators are `SHOW_GEN` in `src/game/game.js` (stress-tested: 720,000 problems, 20,000 per skill and level; every mean, median, quartile, IQR, and MAD recomputed independently, every "in order" choice checked). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
 
-The Pet Show opens after the Pet Houses Unit Test (or with the teacher's "Open the Pet Show for everyone").
+The Pet Show opens after the Pet Post Office Unit Test (or with the teacher's "Open the Pet Show for everyone").
 
 ## Stations and skills (Khan's order)
 
-| # | Station | Skills (ids) |
-|---|---|---|
-| 1 | 🏅 Judges' Table | Statistical questions (`statQ`), dot plots (`readDot`), histograms (`readHist`) |
-| 2 | 📋 Score Cards | Mean (`meanCalc`), mean from a dot plot (`meanDisplay`), median (`medianDisplay`) |
-| 3 | 🎀 Ribbon Ranges | Interquartile range (`iqr`), mean absolute deviation (`mad`) |
-| 4 | 📦 Box Seats | Reading box plots (`readBox`), creating box plots (`makeBox`) |
-| 5 | 🏆 Best in Show | Shape of distributions (`shapeDist`), comparing data displays (`cmpDisplays`) |
+| # | Station | Skills (ids) | Khan |
+|---|---|---|---|
+| 1 | 🖊️ Sign-In Desk | Statistical questions (`statQ`), **creating frequency tables (`freqTable`)**, **creating dot plots (`makeDot`)**, reading dot plots & frequency tables (`readDot`) | Quiz 1 |
+| 2 | 🏅 Judges' Table | **Estimate center using dot plots (`estCenter`)**, **create histograms (`makeHist`)**, read histograms (`readHist`) | Quiz 1 |
+| 3 | 📋 Score Cards | Calculating the mean (`meanCalc`), **calculating the median (`medianCalc`)**, the mean from data displays (`meanDisplay`), the median from data displays (`medianDisplay`) | Quiz 2 |
+| 4 | ⚖️ Tie Breakers | **Missing value given the mean (`meanMissing`)**, **effects of shifting, adding & removing a data point (`shiftData`)** | Quiz 2 |
+| 5 | 🎀 Ribbon Ranges | Interquartile range (`iqr`), reading box plots (`readBox`), creating box plots (`makeBox`), **interpreting quartiles (`quartiles`)**, mean absolute deviation (`mad`) | Quiz 3 |
+| 6 | 🏆 Best in Show | Comparing data displays (`cmpDisplays`), shape of distributions (`shapeDist`), **clusters, gaps & peaks (`clusters`)**. 🏆 Pet Show Awards is here. | Unit test |
+
+### The Oct 26, 2026 rebuild
+
+- **New skills** (in bold above):
+  - `freqTable`: count values from the sign-in list; level 3 counts intervals.
+  - `makeDot`: pick the right dot plot from a list or a frequency table. Wrong plots move a dot, drop one, or swap two stacks.
+  - `estCenter`: the value closest to the median or mean of a dot plot; level 3 compares the mean and median of skewed data.
+  - `makeHist`: bar heights for intervals; level 3 picks the right histogram.
+  - `medianCalc`: the median of a plain list.
+  - `meanMissing`: the missing value given the mean, then the total, then the difference.
+  - `shiftData`: shifting every score, or adding or removing a high or low score. She describes what happens to the mean and median, and level 3 also finds the new mean.
+  - `quartiles`: which value splits off half or a quarter of the pets, what percent, then about how many out of N.
+  - `clusters`: the highest peak, the gap between two clusters, and the outlier (with what leaving it out does to the mean).
+- **New mix-ups:** `dotPlotWrong`, `meanMissingWrong`, `shiftEffectWrong` and `clusterWrong`.
+- **Link fix:** `readDot` linked "Creating dot plots". It now links Khan's "Reading dot plots & frequency tables" and has that name.
+- **Changed skill:** `medianDisplay` is always a display now (a dot plot, or a frequency table on level 2). The plain list moved to `medianCalc`.
+- **Stations:** Box Seats is gone; box plots joined IQR and MAD in Ribbon Ranges, in Khan's lesson order.
+- **Think sets:**
+  - New: `show:2` (histograms and estimating the center) and `show:4` (missing value and changing the data).
+  - `show:3` is the old mean and median set.
+  - `show:5` combines the old IQR/MAD and box plot sets.
+  - `show:6` is the old shape set.
+- **Stress-tested** in the built game: 3,000 problems per skill and level for all 21 skills (189,000). Every choice question has one right choice and no repeats, and every answer is valid.
+
+**Game:** 🏆 Pet Show Awards (`PET-SHOW-AWARDS.md`), at Best in Show and in the Arcade.
 
 ## Pictures
 

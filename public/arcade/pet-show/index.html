@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pet Show Awards</title>
+<!-- Pet World: served at /arcade/pet-show/ (docs/PET-SHOW-AWARDS.md). Played from the Pet Show's Best in Show station
+     (?from=show, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: Khan 6th grade
+     unit 11 (data and statistics). Each award goes to the pet closest to a target value: she finds the target (mean,
+     median, quartile, a missing score) from the pets' stats, then pins the ribbon on the winner.
+     It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#FFF4F6; --card:#FFFFFF; --ink:#2E1520; --muted:#73505E; --edge:#F1CBD6; --accent:#B5122E; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --slot:#FCE4EA; --gold:#F2C94C; --dot:#B5122E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1D1015; --card:#2B1820; --ink:#F8E8EE; --muted:#C9A6B4; --edge:#4D2A38; --accent:#FF6B8A; --accent-ink:#1D1015;
+      --ok:#69DB7C; --bad:#FF8787; --slot:#3A2029; --gold:#F2C94C; --dot:#FF8FA8; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:760px; margin:0 auto; padding:10px 16px 28px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.1em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:focus-visible, .pet:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .hud{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0 6px}
+  .pill{background:var(--card); border:1px solid var(--edge); border-radius:999px; padding:3px 10px; font-weight:700; font-size:.92em}
+  .award{background:linear-gradient(135deg, var(--slot), var(--card)); border:3px solid var(--gold); border-radius:16px; padding:10px 12px; margin-top:8px}
+  .award h2{margin:0 0 2px; font-size:1.15em}
+  .stage{display:grid; grid-template-columns:repeat(auto-fill, minmax(98px, 1fr)); gap:8px; margin-top:10px}
+  .pet{position:relative; border:2px solid var(--edge); background:var(--card); border-radius:14px; padding:8px 4px; text-align:center}
+  .pet .e{font-size:2.1em; line-height:1.1} .pet .nm{font-weight:800} .pet .v{font-size:1.15em; font-weight:800; color:var(--accent)}
+  .pet .u{font-size:.8em; color:var(--muted)}
+  button.pet:hover{border-color:var(--accent)}
+  .pet.win{border-color:var(--gold); box-shadow:0 0 0 3px var(--gold)}
+  .pet.wrong{border-color:var(--bad)}
+  .pet .rib{position:absolute; top:-10px; right:-6px; font-size:1.6em}
+  .q{font-size:1.08em; font-weight:600; margin:8px 0 4px}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px}
+  .answer input{flex:1 1 110px; min-width:0; font-size:1.25em; padding:6px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .answer input:focus{outline:3px solid var(--gold); outline-offset:1px}
+  .fb{min-height:1.4em; margin:6px 0 0; font-weight:600}
+  .fb.bad{color:var(--bad)} .fb.ok{color:var(--ok)}
+  .explain{background:var(--slot); border-left:4px solid var(--accent); border-radius:8px; padding:8px 10px; margin-top:8px}
+  table.ft{border-collapse:collapse; margin:8px auto; font-size:1.05em}
+  table.ft th, table.ft td{border:2px solid var(--edge); padding:4px 9px; text-align:center}
+  .plot{display:block; width:100%; max-width:420px; height:auto; margin:6px auto}
+  .plot .ln{stroke:var(--ink); stroke-width:2} .plot .tx{fill:var(--ink); font-size:11px; text-anchor:middle} .plot .dt{fill:var(--dot)}
+  .plot .box{fill:var(--slot); stroke:var(--ink); stroke-width:2} .plot .md{stroke:var(--accent); stroke-width:3}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin:10px 0}
+  .stats div{background:var(--card); border:2px solid var(--edge); border-radius:12px; padding:8px; text-align:center}
+  .stats b{display:block; font-size:1.3em}
+  .ribbons{font-size:1.6em; letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_SHOW = params.get('from') === 'show';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const TRIES = 2;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sortN = a => [...a].sort((x, y) => x - y);
+const sum = a => a.reduce((x, y) => x + y, 0);
+const median = a => { const s = sortN(a), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+const quart = a => { const s = sortN(a), n = s.length; return [median(s.slice(0, Math.floor(n / 2))), median(s.slice(Math.ceil(n / 2)))]; };
+const num = x => String(parseFloat(x.toFixed(2)));
+const same = (a, b) => Math.abs(a - b) < 0.011;
+const list = a => a.join(', ');
+let best = 0; try { best = +localStorage.getItem('pet-show:best') || 0; } catch(e){}
+const SKILL_NAMES = {meanCalc:'Calculating the mean', medianCalc:'Calculating the median', medianDisplay:'Median from a data display', meanDisplay:'Mean from a data display', quartiles:'Quartiles', meanMissing:'Missing value given the mean'};
+
+const PETS = [['🐕', 'Biscuit'], ['🐈', 'Mittens'], ['🐇', 'Clover'], ['🐹', 'Peanut'], ['🦜', 'Kiwi'], ['🐶', 'Waffles'], ['🐱', 'Pepper'], ['🐰', 'Hopscotch'], ['🐩', 'Fifi'], ['🦔', 'Spike'], ['🐿️', 'Nutmeg'], ['🐢', 'Pebble'], ['🦎', 'Ziggy'], ['🐥', 'Sunny']];
+const STATS = [['weight', 'lb', 4, 30], ['height', 'in.', 6, 28], ['tail length', 'cm', 5, 30], ['jump', 'in.', 10, 40], ['speed', 'mph', 3, 25]];
+/* a stage of n pets with values from lo to hi, no repeated values */
+function lineup(n, lo, hi){ const vals = shuffle(Array.from({length:hi - lo + 1}, (_, i) => lo + i)).slice(0, n); return shuffle(PETS).slice(0, n).map(([e, nm], i) => ({e, nm, v:vals[i]})); }
+/* the pet whose value is closest to t; null when two tie (so stages use odd counts for medians and quartiles) */
+function closest(pets, t){ const d = pets.map(p => Math.abs(p.v - t)), m = Math.min(...d); return d.filter(x => Math.abs(x - m) < 1e-9).length === 1 ? pets[d.indexOf(m)] : null; }
+
+/* a dot plot (and a box plot) as SVG */
+function dotPlot(data, label){
+  const lo = Math.min(...data), hi = Math.max(...data), W = 320, L = 18, R = W - 18, X = v => L + (v - lo) * (R - L) / Math.max(1, hi - lo), c = {};
+  const maxC = Math.max(...Object.values(data.reduce((m, v) => (m[v] = (m[v] || 0) + 1, m), {}))), base = 14 + maxC * 13;
+  let g = `<line class="ln" x1="${L - 6}" y1="${base}" x2="${R + 6}" y2="${base}"/>`;
+  for (let v = lo; v <= hi; v++) g += `<line class="ln" x1="${X(v)}" y1="${base - 3}" x2="${X(v)}" y2="${base + 3}"/>${hi - lo <= 16 || (v - lo) % 2 === 0 ? `<text class="tx" x="${X(v)}" y="${base + 15}">${v}</text>` : ''}`;
+  data.forEach(v => { c[v] = (c[v] || 0) + 1; g += `<circle class="dt" cx="${X(v)}" cy="${base - 9 - (c[v] - 1) * 13}" r="5.5"/>`; });
+  return `<svg class="plot" viewBox="0 0 ${W} ${base + 30}" role="img" aria-label="dot plot of ${esc(label)}">${g}<text class="tx" x="${W / 2}" y="${base + 28}">${esc(label)}</text></svg>`;
+}
+const freqTable = (data, label) => { const vals = [...new Set(sortN(data))]; return `<table class="ft"><tr><th>${esc(label)}</th>${vals.map(v => `<td>${v}</td>`).join('')}</tr><tr><th>Pets</th>${vals.map(v => `<td>${data.filter(x => x === v).length}</td>`).join('')}</tr></table>`; };
+
+/* ---------- the six awards, easiest first. Each: {title, blurb, sk, pets, show (extra display), q, ans, unit, check(v), explain, pick (the winner) or none} ---------- */
+const AWARDS = [
+  function mostAverage(){   // mean of the pets on stage
+    for (;;) { const [st, u, lo, hi] = pick(STATS), pets = lineup(5, lo, hi), m = sum(pets.map(p => p.v)) / 5, w = closest(pets, m); if (!w || !Number.isInteger(m * 10)) continue;
+      const s = sum(pets.map(p => p.v));
+      return {title:`🎀 Most Average ${st[0].toUpperCase() + st.slice(1)}`, blurb:`The ribbon goes to the pet whose ${st} is closest to the <b>mean</b> ${st} of everyone on stage.`, sk:'meanCalc', pets, u, ans:m, q:`What is the mean ${st}?`,
+        check:v => same(v, s) ? 'That’s the total. Now divide by how many pets there are.' : same(v, median(pets.map(p => p.v))) ? 'That’s the median. The mean adds them all and divides.' : '', explain:`(${pets.map(p => p.v).join(' + ')}) ÷ 5 = ${s} ÷ 5 = ${num(m)} ${u}.`, winner:w}; }
+  },
+  function middleOfThePack(){   // median of the pets on stage
+    for (;;) { const [st, u, lo, hi] = pick(STATS), n = pick([5, 7]), pets = lineup(n, lo, hi), md = median(pets.map(p => p.v)), w = closest(pets, md); if (!w) continue;
+      const s = sortN(pets.map(p => p.v)), mean = sum(s) / n;
+      return {title:'🎀 Middle of the Pack', blurb:`The ribbon goes to the pet whose ${st} is closest to the <b>median</b> ${st}.`, sk:'medianCalc', pets, u, ans:md, q:`What is the median ${st}? (Put them in order first.)`,
+        check:v => same(v, pets[(n - 1) / 2].v) && !same(v, md) ? 'Put the values in order before finding the middle.' : same(v, mean) && !same(mean, md) ? 'That’s the mean. The median is the middle value in order.' : '',
+        explain:`In order: ${list(s)}. ${n % 2 ? `The middle one is ${md}.` : `The middle two are ${s[n / 2 - 1]} and ${s[n / 2]}, so the median is halfway: ${num(md)}.`}`, winner:w}; }
+  },
+  function crowdFavorite(){   // median from a frequency table of every entrant; finalists on stage
+    for (;;) { const lo = rnd(3, 6), data = Array.from({length:pick([11, 13, 15])}, () => rnd(lo, lo + 6)), md = median(data), pets = lineup(4, lo, lo + 6), w = closest(pets, md);
+      if (!w || pets.some(p => p.v === md) && Math.random() < .5) continue;
+      return {title:'🎀 Crowd Favorite', blurb:`${data.length} pets entered the tricks contest. The table shows how many tricks each one did. The finalist closest to the <b>median</b> number of tricks wins.`, sk:'medianDisplay', pets, u:'tricks', ans:md,
+        show:freqTable(data, 'Tricks'), q:'What is the median number of tricks for all the entrants?', check:v => same(v, median([...new Set(data)])) && !same(v, md) ? 'Count every pet in the table, not just each number once.' : '',
+        explain:`There are ${data.length} pets, so the median is pet number ${(data.length + 1) / 2} in order: ${md} tricks.`, winner:w}; }
+  },
+  function balancePoint(){   // mean from a dot plot of every entrant
+    for (;;) { const lo = rnd(2, 5), n = pick([8, 10]), data = Array.from({length:n}, () => rnd(lo, lo + 8)), m = sum(data) / n; if (!Number.isInteger(m * 10)) continue;
+      const pets = lineup(4, lo, lo + 8), w = closest(pets, m); if (!w) continue;
+      return {title:'🎀 Balance Point Award', blurb:`The dot plot shows how many carrots each of the ${n} rabbits ate. The finalist closest to the <b>mean</b> wins.`, sk:'meanDisplay', pets:pets.map(p => ({...p, e:pick(['🐇', '🐰'])})), u:'carrots', ans:m,
+        show:dotPlot(data, 'carrots eaten'), q:'What is the mean number of carrots?', check:v => same(v, sum(data)) ? 'That’s the total. Divide by the number of dots.' : same(v, sum([...new Set(data)]) / new Set(data).size) ? 'Each dot counts. A stack of 3 dots is that value 3 times.' : '',
+        explain:`Total: ${sum(data)} carrots for ${n} rabbits. ${sum(data)} ÷ ${n} = ${num(m)}.`, winner:w}; }
+  },
+  function topQuarter(){   // Q3 (or Q1) of the pets on stage
+    for (;;) { const [st, u, lo, hi] = pick(STATS.slice(2)), n = pick([7, 11]), pets = lineup(n, lo, hi), [q1, q3] = quart(pets.map(p => p.v)), up = Math.random() < .5, t = up ? q3 : q1, w = closest(pets, t); if (!w) continue;
+      const s = sortN(pets.map(p => p.v));
+      return {title:up ? '🎀 Top Quarter Award' : '🎀 Steady Starter Award', blurb:`The ribbon goes to the pet closest to the <b>${up ? 'third quartile (Q3)' : 'first quartile (Q1)'}</b> ${st}.`, sk:'quartiles', pets, u, ans:t, q:`What is ${up ? 'Q3' : 'Q1'}? (It’s the median of the ${up ? 'upper' : 'lower'} half.)`,
+        check:v => same(v, up ? q1 : q3) ? `That’s ${up ? 'Q1' : 'Q3'}. Use the ${up ? 'upper' : 'lower'} half.` : same(v, median(s)) ? 'That’s the median of everyone. Q1 and Q3 are the medians of each half.' : '',
+        explain:`In order: ${list(s)}. Leave out the middle value (${median(s)}). The ${up ? 'upper' : 'lower'} half is ${list(up ? s.slice(Math.ceil(n / 2)) : s.slice(0, Math.floor(n / 2)))}, and its median is ${num(t)}.`, winner:w}; }
+  },
+  function lostScoreCard(){   // missing value given the mean
+    const [e, nm] = pick(PETS), n = pick([4, 5]), m = rnd(6, 9); let known, miss;
+    do { known = Array.from({length:n - 1}, () => rnd(m - 3, Math.min(10, m + 2))); miss = m * n - sum(known); } while (miss < 1 || miss > 10);
+    return {title:'🎀 The Lost Score Card', blurb:`${e} ${nm} won Best in Show with a mean score of <b>${m}</b> from ${n} judges. One judge’s card blew away! The others gave ${list(known)}.`, sk:'meanMissing', pets:null, u:'points', ans:miss, q:'What score was on the lost card?',
+      check:v => same(v, m) ? 'The mean isn’t the missing card. Mean × judges = the total of all the cards.' : same(v, m * n) ? 'That’s the total of all the cards. Subtract the ones you know.' : '',
+      explain:`All ${n} cards add up to ${m} × ${n} = ${m * n}. The known cards make ${sum(known)}, so the lost card says ${m * n} − ${sum(known)} = ${miss}.`, winner:null, star:{e, nm}};
+  }
+];
+
+/* ---------- game state ---------- */
+let G = null;
+function newGame(){ G = {i:0, points:0, ribbons:0, right:0, tries:0, missed:{}, started:Date.now(), done:false}; nextAward(); }
+function nextAward(){
+  if (G.i >= AWARDS.length) return finish();
+  G.A = {...AWARDS[G.i](), phase:'target', triesLeft:TRIES, fb:'', fbKind:'', shown:false};
+  G.tries++; render(true);
+}
+function render(focus){
+  const A = G.A;
+  const petCard = p => { const win = A.phase === 'done' && A.winner?.nm === p.nm, wrong = A.wrongPick === p, tag = A.phase === 'pick' ? 'button' : 'div';
+    return `<${tag} ${tag === 'button' ? 'type="button" ' : ''}class="pet${win ? ' win' : ''}${wrong ? ' wrong' : ''}" ${tag === 'button' ? `data-pet="${esc(p.nm)}" aria-label="${esc(p.nm)}, ${p.v} ${esc(A.u)}"` : ''}>${win ? '<span class="rib">🎀</span>' : ''}<div class="e">${p.e}</div><div class="nm">${esc(p.nm)}</div><div class="v">${p.v}</div><div class="u">${esc(A.u)}</div></${tag}>`; };
+  let ask = '';
+  if (A.phase === 'target') ask = `<p class="q">${A.q}</p><form class="answer" id="f"><input id="an" inputmode="decimal" autocomplete="off" aria-label="Your answer"><span class="muted">${esc(A.u)}</span><button class="btn go" type="submit">Check</button></form>`;
+  else if (A.phase === 'pick') ask = `<p class="q">The target is <b>${num(A.ans)} ${esc(A.u)}</b>. Tap the pet closest to it to pin on the ribbon!</p>`;
+  else ask = `<div style="margin-top:8px"><button type="button" class="btn go" data-next>${G.i + 1 >= AWARDS.length ? 'See the results ▶' : 'Next award ▶'}</button></div>`;
+  app.innerHTML = `<div class="hud"><span class="pill">🏆 Award ${G.i + 1} of ${AWARDS.length}</span><span class="pill">⭐ ${G.points} points</span><span class="ribbons" aria-label="${G.ribbons} ribbons">${'🎀'.repeat(G.ribbons)}</span></div>
+    <div class="award"><h2>${A.title}</h2><div>${A.blurb}</div></div>
+    ${A.show || ''}
+    ${A.pets ? `<div class="stage">${A.pets.map(petCard).join('')}</div>` : `<div class="stage"><div class="pet win"><span class="rib">🏆</span><div class="e">${A.star.e}</div><div class="nm">${esc(A.star.nm)}</div><div class="u">Best in Show</div></div></div>`}
+    <div class="card">${ask}<p class="fb ${A.fbKind}" role="status">${esc(A.fb)}</p>${A.shown ? `<div class="explain">${esc(A.explain)}</div>` : ''}</div>`;
+  if (focus) (document.getElementById('an') || document.querySelector('[data-pet]') || document.querySelector('[data-next]'))?.focus();
+}
+function checkTarget(v){
+  const A = G.A;
+  if (same(v, A.ans)) { G.points++; G.right++; A.fb = `Yes! ${num(A.ans)} ${A.u}.`; A.fbKind = 'ok'; A.shown = true; return toPick(); }
+  A.triesLeft--; const why = A.check(v);
+  if (A.triesLeft > 0) { A.fb = why || 'Not quite. Check your work and try again.'; A.fbKind = 'bad'; return render(true); }
+  G.missed[A.sk] = (G.missed[A.sk] || 0) + 1;
+  A.fb = `Not quite${why ? `: ${why}` : '.'} The target is ${num(A.ans)} ${A.u}.`; A.fbKind = 'bad'; A.shown = true; toPick();
+}
+function toPick(){ const A = G.A; if (!A.pets || !A.winner) { A.phase = 'done'; if (A.fbKind === 'ok') { G.ribbons++; } return render(true); } A.phase = 'pick'; render(true); }
+function pickPet(nm){
+  const A = G.A, p = A.pets.find(x => x.nm === nm); if (!p || A.phase !== 'pick') return;
+  G.tries++;
+  if (p.nm === A.winner.nm) { G.points++; G.right++; G.ribbons++; A.fb = `🎀 ${p.nm} wins! ${p.v} is only ${num(Math.abs(p.v - A.ans))} away from ${num(A.ans)}.`; A.fbKind = 'ok'; }
+  else { A.wrongPick = p; A.fb = `${p.nm} is ${num(Math.abs(p.v - A.ans))} away, but ${A.winner.nm} (${A.winner.v}) is only ${num(Math.abs(A.winner.v - A.ans))} away. The ribbon goes to ${A.winner.nm}.`; A.fbKind = 'bad'; }
+  A.phase = 'done'; render(true);
+}
+app.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.matches('[data-start]')) return newGame();
+  if (!G || G.done) return;
+  if (b.matches('[data-pet]')) return pickPet(b.dataset.pet);
+  if (b.matches('[data-next]')) { G.i++; return nextAward(); }
+});
+app.addEventListener('submit', e => {
+  e.preventDefault(); if (!G?.A || G.A.phase !== 'target') return;
+  const raw = document.getElementById('an').value.trim().replace(/[^\d.]/g, ''), v = parseFloat(raw);
+  if (!raw || !Number.isFinite(v)) { G.A.fb = 'Type a number, like 12 or 12.5.'; G.A.fbKind = 'bad'; return render(true); }
+  checkTarget(v);
+});
+
+/* ---------- start and end ---------- */
+const MAX = AWARDS.length * 2 - 1;   // the lost score card has no pet to pick
+const starsFor = p => p >= MAX - 1 ? 3 : p >= Math.ceil(MAX * .65) ? 2 : p >= Math.ceil(MAX * .35) ? 1 : 0;
+function intro(){
+  G = null;
+  app.innerHTML = `<h1>🏆 Pet Show Awards</h1>
+    <p>You’re the head judge! Each ribbon goes to the pet whose stats are closest to a target, like the mean or the median.</p>
+    <div class="card"><h2>How to play</h2><ol class="how">
+      <li>Read the award. It tells you the target: the <b>mean</b>, the <b>median</b>, a <b>quartile</b>…</li>
+      <li>Find the target from the pets’ stats (or the table or dot plot). You get 2 tries.</li>
+      <li>Then tap the pet closest to the target to pin on the 🎀.</li>
+      <li>${AWARDS.length} awards, ${MAX} points. ${MAX - 1} or more is ⭐⭐⭐.</li></ol>
+      <p class="muted" style="margin:0">Mean: add and divide. Median: the middle value in order. Q1 and Q3: the medians of the lower and upper halves.</p>
+      ${FROM_SHOW ? '<p class="muted">Each right answer earns Pet World coins. The awards don’t count toward Pet Show orders or quizzes.</p>' : ''}</div>
+    <p style="margin-top:14px"><button type="button" class="btn go" data-start>🎀 Start judging</button>${best ? ` <span class="muted">Best: ${'⭐'.repeat(best)}</span>` : ''}</p>`;
+}
+function finish(){
+  if (!G || G.done) return; G.done = true;
+  const stars = starsFor(G.points);
+  const result = {stars, points:G.points, ribbons:G.ribbons, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('pet-show:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_SHOW) window.parent.postMessage({type:'petshow:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'pet-show', runId:ARCADE_RUN, roundId:`show-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>${stars === 3 ? '🏆 Judge of the Year!' : '🎀 The show is over'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${stars === 3 ? 'Every ribbon went to the right pet.' : 'Nice judging! Can you get every target next time?'}</p>
+    <div class="stats"><div><b>${G.points} of ${MAX}</b>points</div><div><b>${G.ribbons}</b>🎀 ribbons pinned</div><div><b>${'⭐'.repeat(best) || '—'}</b>best${newBest && stars ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    <p><button type="button" class="btn go" data-start>Judge another show</button></p>`;
+}
+window.__show = {AWARDS, get G(){ return G; }, closest, median, quart};   // for tests
+intro();
+})();
+</script>
+</body>
+</html>

@@ -10,6 +10,7 @@
 | 🐧 Penguin Push | Ice Rink → Weather Station (`openPenguin`) | `penguin-push`, `public/arcade/penguin-push/` | 1 per star, up to 3 a battle |
 | 🔍 Potion Detective | Potion Lab → Potion Shelf (`openDetective`) | `potion-detective`, `public/arcade/potion-detective/` | 1 per case solved, up to 3 |
 | 🎪 Carnival Midway | Pet Fair → Prize Counter (`openCarnival`) | `carnival`, `public/arcade/carnival/` | 1 per booth star, up to 3 a booth |
+| 🏆 Pet Show Awards | Pet Show → Best in Show (`openPetShow`) | `pet-show`, `public/arcade/pet-show/` | 1 per star, up to 3 a show |
 | 📮 Parcel Post | Pet Post Office → Wrapping Desk (`openParcel`) | `parcel-post`, `public/arcade/parcel-post/` | 1 per star, up to 3 a shift |
 | ⚓ Harbor Battleship | Pet Harbor → Shipyard (`openBattleship`) | `harbor-battleship`, `public/arcade/harbor-battleship/` | 1 per star, up to 3 a battle |
 | ☄️ Shape Asteroids | Pet Houses → Rooms (`openAsteroids`) | `shape-asteroids`, `public/arcade/shape-asteroids/` | 1 per wave survived, up to 3 |
