@@ -5,7 +5,7 @@
 | Game | In the unit | In the Arcade (`ARCADE_GAMES`) | Arcade tickets |
 |---|---|---|---|
 | 🍳 Chef's Rush | Café → Deliveries (`openChefRush`) | `chefs-rush`, `public/arcade/chefs-rush/` | 1 per 5 orders, up to 3 a shift |
-| 🩺 Dr. Paws' Surgery Center | Bakery → Bulk Orders (`openSurgery`) | `pet-surgery`, `public/arcade/pet-surgery/` | 1 per 3 patients, up to 3 a shift |
+| 🩺 Dr. Paws' Surgery Center | Bakery → Bulk Orders, and Clock Tower → Clock Face with secret formulas (`openSurgery`) | `pet-surgery`, `public/arcade/pet-surgery/` | 1 per 3 patients, up to 3 a shift |
 | 🛒 Supermarket Dash | Market → Discount Bin (`openDash`) | `supermarket-dash`, `public/arcade/supermarket-dash/` | 1 per checkout star, up to 3 a dash |
 | ⚡ Punctuation Power Lab | English Unit 6, a card under each block (`heroLabCardHTML`) | `power-lab`, `arcade/power-lab/index.html` | 1 per 2 first launches, up to 3 a pack |
 

@@ -172,6 +172,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F40. 🩺 Dr. Paws' Surgery Center: a Bakery game at Bulk Orders (and in the Arcade) with 3-step charts of decimals, fractions and long division, where each step uses the answer before it. Pays 1 coin a right step, up to 20 a day. See `PET-SURGERY.md`
 - [x] F41. 🕹️ Unit games are in the Arcade too (owner rule): the ⚡ Punctuation Power Lab joins Chef's Rush and the surgery game there. See `ARCADE-GAMES.md`
 - [x] F42. 🛒 Supermarket Dash: a Market game at the Discount Bin (and in the Arcade). $100, 4 minutes, six aisles of deals to price (unit rates, rates, percents off, fractions off, best buys); get as close to $100 as you can. See `SUPERMARKET-DASH.md`
+- [x] F43. 🩺 Dr. Paws' Surgery Center at the Clock Tower too: 📜 secret formulas (order of operations with exponents, fractions and decimals) where she taps the operation that comes next, then works it out. See `PET-SURGERY.md`
 
 ## Database files, in the order they were run
 

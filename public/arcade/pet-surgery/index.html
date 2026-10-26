@@ -61,6 +61,11 @@
   .chart li .res{font-weight:700; color:var(--ok)}
   .chart li .res.fixd{color:var(--bad)}
   .start{font-size:1.15em}
+  .formula{font-size:1.5em; line-height:2.1; margin:8px 0; word-spacing:2px}
+  .opb{font:inherit; font-weight:800; min-width:1.5em; padding:0 .25em; border:2px dashed var(--accent); border-radius:8px; background:var(--slot); color:var(--ink)}
+  .opb.sup{font-size:.62em; vertical-align:super; min-width:1.3em; padding:0 .15em}
+  .fsel{background:#FFE58A; color:#1E2B2A; border-radius:8px; padding:2px 4px}
+  .fsel .opb{background:#FFE58A; color:#1E2B2A}
   .q{font-size:1.25em; margin:10px 0 6px}
   .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   .answer input{flex:1 1 180px; min-width:0; font-size:1.3em; padding:10px 12px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
@@ -80,7 +85,10 @@
 (() => {
 'use strict';
 const params = new URLSearchParams(location.search);
-const FROM_BAKERY = params.get('from') === 'bakery';
+const FROM = params.get('from') || '';
+const FROM_BAKERY = FROM === 'bakery', FROM_CLOCK = FROM === 'clock', FROM_UNIT = FROM_BAKERY || FROM_CLOCK;
+/* Bakery: medicine, bandage and vitamin charts (Khan unit 2). Clock Tower: secret formulas (order of operations and
+   exponents, Khan unit 4). The Arcade mixes them all. */
 const ARCADE_RUN = params.get('arcadeRun') || '';
 const app = document.getElementById('app');
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -160,10 +168,87 @@ function wholeChart(){
     {skill:'mulDec', kind:'dec', text:`Mix with ${m} times as much water`, sym:`× ${m}`, want:r3}
   ]};
 }
+
+/* ---------- 📜 secret formulas: order of operations with exponents (Clock Tower, Khan unit 4) ----------
+   A formula is a little expression tree. She taps the operation that comes next (parentheses, then exponents, then
+   × and ÷, then + and −), works it out, and the formula shrinks, until one number is left. */
+let nid = 0;
+const Lf = v => ({id:nid++, v});
+const OP = (op, l, r, paren = false) => ({id:nid++, op, l, r, paren});
+const leaf = n => !n.op;
+const powF = (a, k) => { let r = F(1); for (let i = 0; i < k; i++) r = mul(r, a); return r; };
+function val(n){ if (leaf(n)) return n.v; const a = val(n.l), b = val(n.r); return n.op === '+' ? add(a, b) : n.op === '−' ? sub(a, b) : n.op === '×' ? mul(a, b) : n.op === '÷' ? div(a, b) : powF(a, b.n); }
+function allOps(n, out = []){ if (!leaf(n)) { out.push(n); allOps(n.l, out); allOps(n.r, out); } return out; }
+function readyOps(n, out = []){ if (leaf(n)) return out; if (leaf(n.l) && leaf(n.r)) out.push(n); else { readyOps(n.l, out); readyOps(n.r, out); } return out; }
+const RANK = n => n.paren ? 0 : n.op === '^' ? 1 : n.op === '×' || n.op === '÷' ? 2 : 3;
+/* the operations she may do next: ready ones of the most urgent kind (a chain like 8 − 3 + 2 is already left to right in the tree) */
+function nextOps(tree){ const r = readyOps(tree), top = Math.min(...r.map(RANK)); return r.filter(n => RANK(n) === top); }
+function swapIn(n, id, v){ if (n.id === id) return {...Lf(v)}; if (leaf(n)) return n; return {...n, l:swapIn(n.l, id, v), r:swapIn(n.r, id, v)}; }
+function leafText(n, kind, base){ const t = show(n.v, n.v.d === 1 ? 'whole' : kind); return base && n.v.d !== 1 && kind === 'frac' ? `(${t})` : t; }
+/* html: every operator is a button; the chosen operation is highlighted */
+function fHTML(n, kind, sel, base = false){
+  if (leaf(n)) return esc(leafText(n, kind, base));
+  const btn = (txt, sup) => `<button type="button" class="opb${sup ? ' sup' : ''}" data-op="${n.id}" aria-label="Do ${n.op === '^' ? 'the exponent' : n.op} here">${txt}</button>`;
+  const inner = n.op === '^' ? `${fHTML(n.l, kind, sel, true)}${btn(esc(show(n.r.v, 'whole')), true)}` : `${fHTML(n.l, kind, sel)} ${btn(n.op)} ${fHTML(n.r, kind, sel)}`;
+  const wrapped = n.paren ? `(${inner})` : inner;
+  return n.id === sel ? `<span class="fsel">${wrapped}</span>` : wrapped;
+}
+const SUP = {2:'²', 3:'³', 4:'⁴'};
+function fText(n, kind, base = false){
+  if (leaf(n)) return leafText(n, kind, base);
+  const inner = n.op === '^' ? `${fText(n.l, kind, true)}${SUP[n.r.v.n] || '^' + n.r.v.n}` : `${fText(n.l, kind)} ${n.op} ${fText(n.r, kind)}`;
+  return n.paren ? `(${inner})` : inner;
+}
+/* templates: [skill, kind, maker]; a maker returns a tree */
+const P = (b, k) => OP('^', Lf(F(b)), Lf(F(k)));
+const FORMULAS = [
+  ['orderNoExp', 'whole', () => OP('−', OP('+', Lf(F(rnd(2, 20))), OP('×', Lf(F(rnd(2, 9))), Lf(F(rnd(2, 9))))), Lf(F(rnd(1, 15))))],
+  ['orderNoExp', 'whole', () => { const d = rnd(2, 6); return OP('÷', OP('×', OP('+', Lf(F(rnd(1, 9))), Lf(F(rnd(1, 9))), true), Lf(F(d * rnd(1, 4)))), Lf(F(d))); }],
+  ['orderNoExp', 'whole', () => OP('+', OP('×', Lf(F(rnd(2, 9))), Lf(F(rnd(2, 9)))), OP('×', Lf(F(rnd(2, 9))), Lf(F(rnd(2, 9)))))],
+  ['orderNoExp', 'whole', () => { const c = rnd(2, 6); return OP('+', OP('−', Lf(F(rnd(20, 40))), OP('÷', Lf(F(c * rnd(2, 6))), Lf(F(c)))), Lf(F(rnd(1, 12)))); }],
+  ['orderOps', 'whole', () => OP('+', Lf(F(rnd(1, 20))), OP('×', Lf(F(rnd(2, 6))), P(rnd(2, 5), 2)))],
+  ['orderOps', 'whole', () => OP('−', OP('^', OP('+', Lf(F(rnd(1, 6))), Lf(F(rnd(1, 5))), true), Lf(F(2))), Lf(F(rnd(1, 20))))],
+  ['orderOps', 'whole', () => { const a = rnd(2, 5), k = pick([2, 3]), ds = [2, 4, 8, 3, 9, 5].filter(d => (a ** k) % d === 0 && d < a ** k); return ds.length ? OP('+', OP('÷', P(a, k), Lf(F(pick(ds)))), Lf(F(rnd(1, 15)))) : null; }],
+  ['orderOps', 'whole', () => OP('×', OP('−', Lf(F(rnd(6, 12))), Lf(F(rnd(1, 5))), true), P(rnd(2, 4), 2))],
+  ['orderOps', 'whole', () => OP('−', OP('×', Lf(F(rnd(4, 12))), Lf(F(rnd(4, 12)))), P(rnd(2, 6), 2))],
+  ['orderOps', 'whole', () => OP('+', P(2, rnd(3, 5)), OP('×', Lf(F(rnd(2, 9))), Lf(F(rnd(2, 9)))))],
+  ['orderFracExp', 'frac', () => { const q = rnd(2, 4), pp = rnd(1, q - 1); return OP('+', OP('×', OP('^', Lf(F(pp, q)), Lf(F(2))), Lf(F(q * q * rnd(1, 3)))), Lf(F(rnd(1, 9)))); }],
+  ['orderFracExp', 'frac', () => { const q = pick([2, 3, 4, 5]), a = rnd(1, q), b = rnd(1, q); return OP('×', Lf(F(rnd(2, 6))), OP('^', OP('+', Lf(F(a, q)), Lf(F(b, q)), true), Lf(F(2)))); }],
+  ['orderFracExp', 'frac', () => { const q = pick([2, 3, 4]); return OP('−', Lf(F(rnd(3, 9))), OP('×', OP('^', Lf(F(1, q)), Lf(F(pick([2, 3])))), Lf(F(rnd(2, 8))))); }],
+  ['orderFracExp', 'dec', () => OP('+', OP('×', OP('^', Lf(dec(`0.${rnd(1, 9)}`)), Lf(F(2))), Lf(F(pick([10, 100])))), Lf(F(rnd(1, 20))))],
+  ['orderFracExp', 'dec', () => OP('×', OP('^', Lf(dec(`1.${rnd(1, 5)}`)), Lf(F(2))), Lf(F(rnd(2, 5))))],
+  ['orderFracExp', 'dec', () => OP('−', Lf(F(rnd(2, 9))), OP('^', OP('−', Lf(dec(`${rnd(1, 2)}.${rnd(5, 9)}`)), Lf(dec(`0.${rnd(1, 4)}`)), true), Lf(F(2))))]
+];
+function formulaOK(tree, kind){
+  for (const n of allOps(tree)) {
+    const v = val(n);
+    if (v.n <= 0) return false;
+    if (kind === 'whole' && v.d !== 1) return false;
+    if (kind === 'dec' && (places(v) == null || places(v) > 4)) return false;
+    if (kind === 'frac' && v.d > 64) return false;
+    if (v.n / v.d > 1000) return false;
+  }
+  return true;
+}
+function formulaChart(level){
+  const pool = FORMULAS.filter(t => level <= 1 ? t[1] === 'whole' : level === 2 ? t[0] !== 'orderFracExp' || t[1] === 'dec' || Math.random() < .5 : true);
+  for (let i = 0; i < 60; i++) {
+    const [skill, kind, make] = pick(pool), tree = make();
+    if (tree && formulaOK(tree, kind)) { const ops = allOps(tree).length;
+      return {formula:true, tree, kind, skill, start:val(tree), startText:fText(tree, kind), steps:Array.from({length:ops}, () => null)}; }
+  }
+  return null;
+}
+/* the step she is on in a formula: the operation she picked, or (when Dr. Paws has to step in) the first one that's next */
+function formulaStep(p){
+  const n = (p.sel != null && allOps(p.tree).find(x => x.id === p.sel)) || nextOps(p.tree)[0], v = val(n);
+  return {node:n, want:v, kind:v.d === 1 ? 'whole' : p.kind, skill:n.op === '^' ? (val(n.l).d === 1 ? 'powWhole' : 'powFrac') : p.skill, text:fText(n, p.kind), sym:''};
+}
 function newPatient(level){
   let chart = null, tries = 0;
-  const makers = level <= 1 ? [decimalChart, fractionChart] : [decimalChart, fractionChart, wholeChart];
-  while (!chart && tries++ < 50) chart = pick(makers)();
+  const bakery = level <= 1 ? [decimalChart, fractionChart] : [decimalChart, fractionChart, wholeChart];
+  const makers = FROM_BAKERY ? bakery : FROM_CLOCK ? [formulaChart] : [...bakery, formulaChart, formulaChart];
+  while (!chart && tries++ < 50) { const m = pick(makers); chart = m === formulaChart ? formulaChart(level) : m(); }
   const i = rnd(0, PETS.length - 1);
   return {...chart, pet:PETS[i], name:NAMES[i], ails:chart.steps.map(() => pick(AILS)), at:0, results:[], wrong:0, time:Math.max(60, 120 - level * 10) * 1000, left:0};
 }
@@ -186,10 +271,15 @@ function tick(){
   }
   const mon = document.getElementById('monitor'); if (mon) { const f = Math.max(0, p.left / p.time); mon.className = `monitor${f < .2 ? ' panic' : f < .45 ? ' worry' : ''}`; mon.querySelector('.bar i').style.width = `${f * 100}%`; mon.querySelector('.secs').textContent = `${Math.ceil(Math.max(0, p.left) / 1000)}s`; }
 }
-function loseHeart(msg){
-  const p = shift.patient, s = p.steps[p.at];
-  shift.hearts--; shift.missed[s.skill] = (shift.missed[s.skill] || 0) + 1;
-  p.results[p.at] = {v:s.want, fixed:true}; p.wrong++; p.at++; p.left = Math.max(p.left, 20000);
+const curStep = p => (p.formula ? formulaStep(p) : p.steps[p.at]);
+function doStep(p, s, fixed){
+  if (p.formula) { p.steps[p.at] = s; p.tree = swapIn(p.tree, s.node.id, s.want); p.sel = null; }
+  p.results[p.at] = {v:s.want, fixed}; p.at++;
+}
+function loseHeart(msg, skill){
+  const p = shift.patient, s = curStep(p);
+  shift.hearts--; shift.missed[skill || s.skill] = (shift.missed[skill || s.skill] || 0) + 1;
+  doStep(p, s, true); p.wrong++; p.tried = false; p.left = Math.max(p.left, 20000);
   shift.msg = msg; shift.msgOk = false;
   if (shift.hearts <= 0) { endShift(); return; }
   afterStep(); renderPlay(true);
@@ -203,14 +293,14 @@ function afterStep(){
 }
 function submit(){
   const input = document.getElementById('ans'); if (!input || !shift) return;
-  const p = shift.patient, s = p.steps[p.at], got = parse(input.value);
+  const p = shift.patient, s = curStep(p), got = parse(input.value);
   if (!got) { shift.msg = 'Type a number, a decimal like 2.75, or a fraction like 3/4 or 1 1/2.'; shift.msgOk = false; renderPlay(); return; }
   shift.steps++;
   if (eq(got.v, s.want)) {
     if (s.kind === 'frac' && !(got.form === 'whole' || (got.form === 'mixed' && got.proper) || (got.form === 'frac' && got.proper))) {   // the right amount, not in simplest form
       shift.steps--; shift.msg = `Right amount! Doctors write it in simplest form${s.want.n > s.want.d ? ', as a mixed number' : ''}. Try writing it that way.`; shift.msgOk = false; renderPlay(); return;
     }
-    shift.stepsRight++; p.results[p.at] = {v:s.want}; p.at++;
+    shift.stepsRight++; doStep(p, s, false);
     shift.msg = pick(['✅ Steady hands!', '✅ Perfect cut!', '✅ Nice work, doctor!', '✅ Exactly right!']); shift.msgOk = true;
     afterStep(); renderPlay(true, 'fix');
   } else {
@@ -221,6 +311,15 @@ function submit(){
   }
   p.tried = false;
 }
+function chooseOp(id){
+  const p = shift?.patient; if (!p?.formula || p.sel != null) return;
+  if (nextOps(p.tree).some(n => n.id === id)) { p.sel = id; shift.msg = ''; renderPlay(true); return; }
+  shift.steps++;
+  const why = '⚡ Bzzt! That’s not next. Parentheses first, then exponents, then × and ÷, then + and −.';
+  if (!p.tried) { p.tried = true; shift.missed[p.skill] = (shift.missed[p.skill] || 0) + 1; p.wrong++; shift.msg = `${why} One more try.`; shift.msgOk = false; renderPlay(false, 'zap'); return; }
+  const s = formulaStep(p);
+  loseHeart(`${why} Dr. Paws did ${s.text} = ${show(s.want, s.kind)} first.`, p.skill);
+}
 function endShift(){
   clearInterval(timer); timer = null;
   const g = shift; shift = null;
@@ -229,16 +328,16 @@ function endShift(){
   const result = {healed:g.healed, perfect:g.perfect, steps:g.steps, right:g.stepsRight, ms:Date.now() - g.started, missed:g.missed};
   try {
     if (window.parent !== window) {
-      if (FROM_BAKERY) window.parent.postMessage({type:'surgery:result', result}, location.origin);
+      if (FROM_UNIT) window.parent.postMessage({type:'surgery:result', result:{...result, shop:FROM}}, location.origin);
       else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'pet-surgery', runId:ARCADE_RUN, roundId:`shift-${g.started}`, score:g.healed}, location.origin);
     }
   } catch(e){}
-  const NAMES_SK = {addDec:'Adding decimals', subDec:'Subtracting decimals', mulDec:'Multiplying decimals', divToDec:'Dividing to get a decimal', divDec2:'Dividing by a decimal', fracDivWhole:'Dividing a fraction by a whole number', fracDiv:'Dividing by a fraction', wholeDivFrac:'Dividing a whole number by a fraction', mixedDiv:'Dividing by a mixed number', div2:'Dividing by a 2-digit number'};
+  const NAMES_SK = {orderNoExp:'Order of operations', orderOps:'Order of operations with exponents', orderFracExp:'Order of operations with fractions and decimals', powWhole:'Powers of whole numbers', powFrac:'Powers of fractions and decimals', addDec:'Adding decimals', subDec:'Subtracting decimals', mulDec:'Multiplying decimals', divToDec:'Dividing to get a decimal', divDec2:'Dividing by a decimal', fracDivWhole:'Dividing a fraction by a whole number', fracDiv:'Dividing by a fraction', wholeDivFrac:'Dividing a whole number by a fraction', mixedDiv:'Dividing by a mixed number', div2:'Dividing by a 2-digit number'};
   const practice = Object.entries(g.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(NAMES_SK[s] || s)} (${n})</li>`).join('');
   app.innerHTML = `<h1>🏥 Shift over!</h1>
     <div class="stats"><div><b>${g.healed}</b>patients healed</div><div><b>${g.perfect}</b>perfect surgeries</div><div><b>${g.stepsRight} of ${g.steps}</b>steps right</div><div><b>${best}</b>best shift${newBest && g.healed ? ' 🎉' : ''}</div></div>
     ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
-    ${FROM_BAKERY ? '<p class="muted">Each step done right earns Pet World coins. Surgery shifts don’t count toward Bakery orders or quizzes.</p>' : ''}
+    ${FROM_UNIT ? `<p class="muted">Each step done right earns Pet World coins. Surgery shifts don’t count toward ${FROM_CLOCK ? 'Clock Tower' : 'Bakery'} orders or quizzes.</p>` : ''}
     <p><button class="btn go" id="again">Start another shift</button></p>`;
   document.getElementById('again').addEventListener('click', startShift);
 }
@@ -246,14 +345,13 @@ function endShift(){
 /* ---------- drawing ---------- */
 function renderPlay(focus = true, fx = ''){
   if (!shift) return;
-  const p = shift.patient, s = p.steps[p.at];
-  const ails = p.ails.map((a, i) => `<span class="ail${i < p.at ? ' fixed' : i === p.at ? ' now' : ''}" style="left:${18 + i * 26}%; top:${i % 2 ? 62 : 14}%">${a}</span>`).join('');
+  const p = shift.patient;
+  if (p.formula) { renderFormula(p, focus, fx); return; }
+  const s = p.steps[p.at];
   const chart = p.steps.map((st, i) => `<li class="${i < p.at ? 'done' : i === p.at ? 'now' : ''}">${esc(st.text)} <span class="muted">(${esc(st.sym)})</span>${p.results[i] ? ` → <span class="res${p.results[i].fixed ? ' fixd' : ''}">${esc(show(p.results[i].v, st.kind === 'whole' ? 'whole' : st.kind))}</span>` : ''}</li>`).join('');
   const prev = p.at ? p.results[p.at - 1].v : p.start, prevKind = p.at ? p.steps[p.at - 1].kind : (p.kind === 'frac' ? 'frac' : p.kind === 'dec' ? 'dec' : 'whole');
   const hint = s.kind === 'frac' ? 'Answer as a fraction or mixed number in simplest form, like 3/4 or 2 1/3.' : s.kind === 'dec' ? 'Answer as a decimal, like 3.125.' : 'Answer with a whole number.';
-  app.innerHTML = `<div class="top"><span class="hearts" aria-label="${shift.hearts} hearts left">${'❤️'.repeat(shift.hearts)}${'🤍'.repeat(3 - shift.hearts)}</span><span class="pill">🏥 ${shift.healed} healed</span><span class="pill">⭐ Level ${level()}</span></div>
-    <div class="card table${fx === 'zap' ? ' zap' : ''}"><div class="patient" aria-label="${esc(p.name)} on the operating table"><span class="pet">${p.pet}</span>${ails}</div>
-      <div class="monitor" id="monitor"><div>♥ <span class="secs"></span></div><svg viewBox="0 0 120 40" aria-hidden="true"><polyline class="line" points="0,22 30,22 38,22 44,6 50,36 56,14 62,22 120,22"/></svg><div class="bar"><i></i></div></div></div>
+  app.innerHTML = `${topHTML()}${tableHTML(p, fx)}
     <div class="card chart"><b>📋 ${esc(p.name)}’s chart.</b> Start: <span class="start">${esc(p.startText)}</span><ol>${chart}</ol></div>
     <div class="card"><p class="q">Step ${p.at + 1}: ${esc(show(prev, prevKind))} <b>${esc(s.sym)}</b> = ?</p>
       <div class="answer"><input id="ans" inputmode="text" autocomplete="off" aria-label="Your answer" placeholder="Your answer"><button class="btn go" id="go">🩺 Operate</button></div>
@@ -263,13 +361,35 @@ function renderPlay(focus = true, fx = ''){
   if (focus) document.getElementById('ans').focus();
   tick();
 }
+function topHTML(){ return `<div class="top"><span class="hearts" aria-label="${shift.hearts} hearts left">${'❤️'.repeat(shift.hearts)}${'🤍'.repeat(3 - shift.hearts)}</span><span class="pill">🏥 ${shift.healed} healed</span><span class="pill">⭐ Level ${level()}</span></div>`; }
+function tableHTML(p, fx){
+  const ails = p.ails.map((a, i) => `<span class="ail${i < p.at ? ' fixed' : i === p.at ? ' now' : ''}" style="left:${12 + (i % 4) * 22}%; top:${i % 2 ? 62 : 14}%">${a}</span>`).join('');
+  return `<div class="card table${fx === 'zap' ? ' zap' : ''}"><div class="patient" aria-label="${esc(p.name)} on the operating table"><span class="pet">${p.pet}</span>${ails}</div>
+    <div class="monitor" id="monitor"><div>♥ <span class="secs"></span></div><svg viewBox="0 0 120 40" aria-hidden="true"><polyline class="line" points="0,22 30,22 38,22 44,6 50,36 56,14 62,22 120,22"/></svg><div class="bar"><i></i></div></div></div>`;
+}
+function renderFormula(p, focus, fx){
+  const done = p.steps.slice(0, p.at).map((st, i) => `<li class="done">${esc(st.text)} = <span class="res${p.results[i].fixed ? ' fixd' : ''}">${esc(show(st.want, st.kind))}</span></li>`).join('');
+  const s = p.sel != null ? formulaStep(p) : null;
+  const ask = s
+    ? `<p class="q">Step ${p.at + 1}: ${esc(s.text)} = ?</p>
+      <div class="answer"><input id="ans" inputmode="text" autocomplete="off" aria-label="Your answer" placeholder="Your answer"><button class="btn go" id="go">🩺 Operate</button></div>
+      <p class="muted tip">${p.kind === 'frac' ? 'Fractions in simplest form, like 3/4 or 2 1/3.' : p.kind === 'dec' ? 'Answer as a decimal, like 0.09.' : 'Answer with a whole number.'}</p>`
+    : `<p class="q">Step ${p.at + 1}: tap the operation Dr. Paws does next.</p><p class="muted tip">Parentheses, then exponents, then × and ÷, then + and −.</p>`;
+  app.innerHTML = `${topHTML()}${tableHTML(p, fx)}
+    <div class="card chart"><b>📜 ${esc(p.name)}’s secret formula.</b> Work it out one operation at a time.
+      <p class="formula">${fHTML(p.tree, p.kind, p.sel)}</p>${done ? `<ol>${done}</ol>` : ''}</div>
+    <div class="card">${ask}<p class="msg${shift.msgOk ? ' ok' : shift.msg ? ' bad' : ''}" role="status">${shift.msg}</p></div>`;
+  app.querySelectorAll('[data-op]').forEach(b => b.addEventListener('click', () => chooseOp(+b.dataset.op)));
+  if (s) { document.getElementById('go').addEventListener('click', submit); document.getElementById('ans').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); }); if (focus) document.getElementById('ans').focus(); }
+  tick();
+}
 let toastT = null;
 function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1800); }
 function renderStart(){
   app.innerHTML = `<h1>🏥 Dr. Paws’ Surgery Center</h1>
-    <p class="muted">Patients are lining up! Each pet’s chart lists 3 steps of medicine math. Every step uses the answer from the step before, so do them in order, and do them carefully.</p>
+    <p class="muted">${FROM_CLOCK ? 'Patients are lining up, and each one needs a secret formula worked out in the right order. Do the operations one at a time, in the order of operations.' : 'Patients are lining up! Each pet’s chart lists steps of medicine math. Every step uses the answer from the step before, so do them in order, and do them carefully.'}</p>
     <ol class="how">
-      <li>Read the chart: medicine in mL (decimals), bandages in inches (fractions), or vitamin crumbs (long division).</li>
+      ${FROM_CLOCK ? '<li>📜 Tap the operation that comes next: parentheses, then exponents, then × and ÷, then + and −. Then work it out.</li>' : `<li>Read the chart: medicine in mL (decimals), bandages in inches (fractions), or vitamin crumbs (long division).${FROM_BAKERY ? '' : ' Some patients need a 📜 secret formula: tap the operation that comes next (parentheses, exponents, × and ÷, then + and −), then work it out.'}</li>`}
       <li>Work out each step and press <b>🩺 Operate</b>. Watch the heart monitor: it’s your timer.</li>
       <li>Wrong answer? <b>Bzzt!</b> The patient wiggles, and you get one more try. Miss twice, or run out of time, and you lose a ❤️. Dr. Paws finishes that step so you can keep going.</li>
       <li>Fractions go in simplest form, as mixed numbers when they’re more than 1 (like 2 1/4).</li>
@@ -279,7 +399,7 @@ function renderStart(){
     <button class="btn go" id="start">Start my shift</button>`;
   document.getElementById('start').addEventListener('click', startShift);
 }
-if (params.has('selftest')) window.__surgery = {newPatient, parse, show, F, eq, get shift(){ return shift; }};
+if (params.has('selftest')) window.__surgery = {newPatient, parse, show, F, eq, val, nextOps, formulaStep, allOps, fText, get shift(){ return shift; }};
 renderStart();
 })();
 </script>

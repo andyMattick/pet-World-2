@@ -1,10 +1,11 @@
 # 🩺 Dr. Paws' Surgery Center
 
-A Bakery practice game (Khan 6th grade Unit 2, arithmetic with rational numbers). File: `public/arcade/pet-surgery/index.html`.
+A Bakery and Clock Tower practice game (Khan 6th grade Unit 2, arithmetic with rational numbers, and Unit 4, exponents and order of operations). File: `public/arcade/pet-surgery/index.html`.
 
 ## Where it opens
 
 - **Bakery → 🚚 Bulk Orders station** (the last Bakery station): the "🩺 Dr. Paws' Surgery" button. It opens as `?from=bakery` in an overlay (`openSurgery` in `src/game/game.js`). It pays Pet World coins: 1 for each step done right, up to `SURGERY_COINS_PER_DAY` (20) a day.
+- **Clock Tower → 🕰️ Clock Face station** (the last Clock Tower station): the same button opens it as `?from=clock`, with only 📜 secret formulas (below). Coins and the daily cap are shared with the Bakery.
 - **Arcade**: `pet-surgery` in `ARCADE_GAMES` (`src/shared/registry.ts`). It pays 1 ticket per 3 patients healed, up to 3 a shift (`arcadeModuleMessage`).
 
 It never counts toward station orders, skill mastery, quizzes, unit tests or unlocks.
@@ -26,6 +27,14 @@ Each patient has a chart with 3 steps. Each step uses the answer from the step b
 - Wrong answer: "Bzzt!" and one more try. A second miss, or running out of time on the heart monitor, costs a ❤️. Dr. Paws then shows the right value so she can keep going. Lose 3 ❤️ and the shift ends.
 - Every 3 patients the level goes up, which means less time per patient (120 s at first, never under 60 s).
 - The end screen lists the skills she missed most ("Worth another look").
+
+## 📜 Secret formulas (Clock Tower)
+
+A patient's chart is a formula like `(6 + 2)² − 17` or `(3/4)² × 32 + 6`, kept as a small expression tree. She taps the operation that comes next, works it out, and the formula shrinks, until one number is left (2 or 3 operations).
+- What counts as next: ready operations (both sides are numbers) of the most urgent kind: parentheses, then exponents, then × and ÷, then + and −. When two are equally urgent (`4 × 5 + 3 × 2`), either is fine; a chain like `37 − 9 + 11` is already left to right in the tree.
+- A wrong tap: "Bzzt! That's not next", one more try; a second wrong tap costs a ❤️ and Dr. Paws does the right operation. Wrong values work like the other charts.
+- Skills: `orderNoExp` (no exponents, level 1 on), `orderOps` (whole-number exponents), `orderFracExp` (fraction and decimal bases, level 2 on), and each exponent step counts as `powWhole` or `powFrac`.
+- From the Clock Tower she gets only formulas; in the Arcade, formulas mix with the Bakery charts; from the Bakery, no formulas.
 
 ## Saved state and reports
 

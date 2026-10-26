@@ -6863,17 +6863,17 @@ window.addEventListener('message', e => {
    (and also an Arcade game). Played from the Bakery it pays Pet World coins: 1 per step done right, up to
    SURGERY_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
 const SURGERY_COINS_PER_DAY = 20;
-function surgeryButtonHTML(){
+function surgeryButtonHTML(shop = 'bakery'){
   const best = S.surgery?.best || 0;
-  return `<button type="button" class="btn" data-surgery>🩺 Dr. Paws’ Surgery${best ? ` · best ${best}` : ''}</button>`;
+  return `<button type="button" class="btn" data-surgery="${shop}">🩺 Dr. Paws’ Surgery${best ? ` · best ${best}` : ''}</button>`;
 }
-function openSurgery(){
+function openSurgery(shop = 'bakery'){   // the Bakery's charts, or the Clock Tower's secret formulas (order of operations)
   if ($('#surgeryWrap')) return;
   const el = document.createElement('div');
   el.id = 'surgeryWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Dr. Paws’ Surgery Center');
-  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🩺 Dr. Paws’ Surgery Center</b><button type="button" class="btn small" data-surgery-close>Done</button></div><iframe src="/arcade/pet-surgery/?from=bakery" title="Dr. Paws’ Surgery Center"></iframe>`;
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🩺 Dr. Paws’ Surgery Center</b><button type="button" class="btn small" data-surgery-close>Done</button></div><iframe src="/arcade/pet-surgery/?from=${shop === 'clock' ? 'clock' : 'bakery'}" title="Dr. Paws’ Surgery Center"></iframe>`;
   document.body.appendChild(el);
-  el.querySelector('[data-surgery-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('bakery'); });
+  el.querySelector('[data-surgery-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor(shop === 'clock' ? 'clock' : 'bakery'); });
 }
 window.addEventListener('message', e => {
   const frame = $('#surgeryWrap iframe');
@@ -6889,7 +6889,7 @@ window.addEventListener('message', e => {
   const coins = Math.min(right, Math.max(0, SURGERY_COINS_PER_DAY - c.coinsToday));
   if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
   const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
-  logEvent({k:'surgery', s:healed, title:`${healed} patients healed, ${right} of ${steps} steps right${practice ? `; missed: ${practice}` : ''}`});
+  logEvent({k:'surgery', s:healed, title:`${r.shop === 'clock' ? 'Clock Tower formulas: ' : ''}${healed} patients healed, ${right} of ${steps} steps right${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🩺 ${healed} patient${healed === 1 ? '' : 's'} healed!${newBest && healed ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= SURGERY_COINS_PER_DAY ? ' (Today’s surgery coins are all earned.)' : ''}`);
 });
@@ -10129,12 +10129,12 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML() : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-chef-rush]')) { openChefRush(); return; }
-  if (e.target.closest('[data-surgery]')) { openSurgery(); return; }
+  if (e.target.closest('[data-surgery]')) { openSurgery(e.target.closest('[data-surgery]').dataset.surgery); return; }
   if (e.target.closest('[data-dash]')) { openDash(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
