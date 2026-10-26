@@ -190,6 +190,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F58. 📮 Parcel Post: spin 3D parcels to sort, count, pack and wrap them; in the Post Office (Wrapping Desk) and the Arcade. See `PARCEL-POST.md`
 - [x] F59. 🏆 Pet Show rebuilt to match Khan Unit 11: 6 stations, 9 new skills, 1 link fix. Every 6th grade unit now matches Khan. See `SHOW.md`
 - [x] F60. 🏆 Pet Show Awards: find the mean, median or a quartile, then give the ribbon to the closest pet; at Best in Show and in the Arcade. See `PET-SHOW-AWARDS.md`
+- [x] F61. ✅ Math check: independent solvers for all 153 6th grade skills (`npm run check-math`), no worked steps on quizzes and tests (`testPrompt`), build-a-dot-plot/histogram and typed points, and a blind review with 142 fixes. See `MATH-CHECK.md` and `math-review.md`
 
 ## Database files, in the order they were run
 

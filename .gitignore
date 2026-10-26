@@ -12,3 +12,4 @@ ledger-backup*.json
 
 # lesson videos are built here and uploaded to YouTube, never committed (LESSON-VIDEOS.md); public/videos/ holds the demo videos and is committed
 /videos/
+dist-mathcheck

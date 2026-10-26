@@ -1311,3 +1311,16 @@ a.btn{display:inline-block; text-decoration:none}
 .s3-hiV{fill:#E03131; stroke:#FFFFFF; stroke-width:2}
 .s3-dash{stroke:#E64980; stroke-width:2.5; stroke-dasharray:5 4}
 .s3-lbl{fill:currentColor; font-size:15px; font-weight:700}
+/* build a dot plot or histogram (step kind 'counts', Oct 26, 2026) */
+.counts{display:flex; gap:2px; justify-content:center; flex-wrap:nowrap; align-items:flex-end; overflow-x:auto; max-width:100%}
+.counts .cnt-col{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:34px}
+.counts .cnt-stack{height:118px; display:flex; flex-direction:column-reverse; align-items:center; justify-content:flex-start; border-bottom:3px solid var(--chalk, currentColor); width:100%}
+.counts.dots .cnt-stack b{display:block; width:13px; height:13px; border-radius:50%; background:var(--butter); margin:1px 0}
+.counts.bars .cnt-stack i{display:block; width:34px; background:var(--butter); border:2px solid var(--chalk, currentColor); border-bottom:0}
+.counts .cnt-n{font-weight:800; font-size:1.1rem}
+.counts .cnt-lbl{font-size:.85rem; white-space:nowrap}
+.counts .cnt-btn{min-width:32px; padding:2px 6px}
+/* a typed point (step kind 'pair') stays on one line on a phone */
+.pair-in{display:inline-flex; align-items:center; gap:4px; flex-wrap:nowrap}
+.pair-in input{width:3.6em; min-width:0}
+.pair-in .neg-btn{min-width:34px; padding:2px 6px}

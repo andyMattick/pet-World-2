@@ -43,4 +43,4 @@ Every new piece of learning content in Pet World follows these rules: a new less
 3. Deliver a small script in `docs/` that checks the file first, changes nothing if any check fails, and does nothing if run twice. Deliver a patch instead when code changes too.
 4. Deliver a **review list** (`docs/*-review.md`) with every question and the right answer in **bold**, so the teacher reads it before applying.
 5. **Keep ids stable.** A question's id comes from its prompt and right answer. Fix wrong answers freely, but change a prompt or a right answer only for accuracy, and say which ids change.
-6. Run `node scripts/check-content.mjs && node scripts/check-typed.mjs && npm run verify` before handing it over.
+6. Run `node scripts/check-content.mjs && node scripts/check-typed.mjs && npm run verify` before handing it over. For math generators, also run `npm run check-math`, and give every new skill an independent solver in `scripts/math-oracles/` (docs/MATH-CHECK.md).

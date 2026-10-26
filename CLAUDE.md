@@ -58,6 +58,7 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 
 1. Run `npm run verify`. It checks that the protected pieces above still exist. **If it fails, do not commit.** Undo the change that broke it.
 2. Run `npm run typecheck` and `npm run build`.
+   If the change touches a math generator, also run `npm run check-math` (docs/MATH-CHECK.md): every answer key against an independent solver, and what quizzes and tests show (`testPrompt`).
    If the change touches signing in, saving, or `mergeWork` (in `src/game/game.js`) or `src/lib/studentBackend.ts`, also run `npm run smoke`. It opens the game in a headless browser and checks 6 sign-in situations, including a brand-new device and two devices at once. The first time, run `npx playwright install chromium`.
 3. Run `git diff --stat` and read it. If any protected file lost more than about 20 lines and the task didn't ask for a removal, stop and ask the owner.
 4. If the change affects anything a student sees, check it in device mode at iPhone SE size.

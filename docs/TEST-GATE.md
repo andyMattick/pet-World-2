@@ -24,3 +24,7 @@ The grown-up PIN (the same as the progress report and the theme question). If th
 ## Code
 
 `askGrownUp()` (the PIN card), `gatedTestReview`, `gatedPetWorldTest`, `gatedKhanTest`, `gatedUnitReview`, `gatedUnitTest`, `markTestReady` / `useTestReady`, and `MATH_KHAN_UNITS` in `src/game/game.js`.
+
+## What a quiz or test step shows
+
+Quizzes and tests show only the answer steps (`answerStepsFor`), with no helper or Hint. Their prompts go through `testPrompt` in `game.js`: a prompt that works part of the problem (like "42 ÷ 7 = ?") becomes "Your answer = ?" or the step's own `test:` wording, so a test never does a step for her. See `MATH-CHECK.md`.

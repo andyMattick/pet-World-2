@@ -45,7 +45,7 @@ const RECIPES = [
   {name:'Carrot cupcakes', items:[['🥕','carrots'],['🥚','eggs']]},
   {name:'Honey tea', items:[['🍯','spoons of honey'],['🫖','cups of tea']]},
   {name:'Cheesy pizza', items:[['🧀','cups of cheese'],['🍅','tomatoes']]},
-  {name:'Acorn cookies', items:[['🌰','acorns'],['🍪','cups of flour']]},
+  {name:'Acorn cookies', items:[['🌰','acorns'],['🌾','cups of flour']]},
   {name:'Fishy tacos', items:[['🐟','fish'],['🌮','taco shells']]},
   {name:'Banana pancakes', items:[['🍌','bananas'],['🥞','scoops of batter']]},
   {name:'Hot cocoa', items:[['🍫','cocoa squares'],['☕','mugs of milk']]},
@@ -628,12 +628,14 @@ function gridSVG(max, xl, yl, star){
 
 const divisorsOf = n => { const d = []; for (let i = 2; i <= n; i++) if (n % i === 0) d.push(i); return d; };
 /* extra step for GEN.basic: only when the ratio can be simplified */
+/* "1 apples" → "1 apple", "1 cups of flour" → "1 cup of flour" (Oct 26, 2026) */
+const nOf = (n, w) => `${n} ${n === 1 ? String(w).replace(/^(\S+?)(ies|es|s)\b/, (m, a, e) => e === 'ies' ? a + (/^(cook|brown|smooth|kidd)$/.test(a) ? 'ie' : 'y') : /(ch|sh|x)$/.test(a) ? a : a + (e === 'es' ? 'e' : '')) : w}`;
 function simplestStep(target, labels){
   const g = gcd(target[0], target[1]);
   if (g < 2) return null;
   const s = [target[0] / g, target[1] / g];
   return {name:'Simplest form', type:'concept', kind:'ratio', labels,
-    prompt:`Now write ${target[0]} : ${target[1]} in simplest form.`, answer:s,
+    prompt:`Now write ${target[0]} : ${target[1]} in simplest form.`, test:'Now write your ratio in simplest form.', answer:s,
     eq:v => Array.isArray(v) && v[0] === s[0] && v[1] === s[1],
     fact:{x:g, y:s[0] > 1 ? s[0] : s[1], div:true},
     mis:v => !Array.isArray(v) ? null
@@ -725,6 +727,21 @@ function reviewCredit(S, skill, perfect){       // call after every practice pro
 }
 const reviewDone = (S, key) => !S.review[key] || Object.values(S.review[key]).every(v => v <= 0);
 const HELPER_STEP = /multiplier|divisor|jump/i;
+/* In a station quiz or unit test only the answer steps show (answerStepsFor). A step prompt that works part of the
+   problem ("42 ÷ 7 = ?", "112 + 48 + 42 = ?") would hand her the hidden steps, so on assessments a worked prompt
+   becomes a plain "Your answer = ?" line, keeping its unit. The story (bubble) and picture carry every given number;
+   scripts/check-tests.mjs checks that for every 6th grade skill (Oct 26, 2026). */
+const PROCESS_NAME = /^(add|add them|divide|multiply|subtract|solve|simplify|work it out|the answer|answer|compute)$/i;
+function testPrompt(st, shown, idx = 0){
+  if (st.test) return st.test;   // a step can say exactly what a test shows
+  const p = String(st.prompt || ''), worked = /[\d)]\s*[+\-−×÷·]\s*[\d($]/.test(p);   // a calculation between numbers, like "42 ÷ 7" or "2 × 4"
+  if (!worked) return p;   // a plain question ("When x = 1, y = ?") stays as it is
+  if (st.kind === 'choice') return 'Choose your answer.';
+  let unit = (p.split('?').pop() || '').replace(/^[\s.,:;]+|[\s.]+$/g, '');
+  if (!/^[A-Za-z%$ ]{1,24}$/.test(unit)) unit = '';
+  const label = shown < 2 || PROCESS_NAME.test(st.name) ? 'Your answer' : st.name;
+  return `${label}${unit ? ` (${unit})` : ''} = ?`;
+}
 function answerStepsFor(p){
   const s = p.steps;
   if (Array.isArray(p.answerSteps) && p.answerSteps.length) return p.answerSteps.map(i => s[i]).filter(Boolean);
@@ -963,7 +980,7 @@ basic(lvl){
 /* ---------- Station 2 ---------- */
 tape(lvl){
   const [A, B] = twoCountables();
-  const [a, b] = coprimePair(lvl === 1 ? 3 : 5, lvl === 1 ? 3 : 5);
+  const [a, b] = coprimePair(lvl === 1 ? 3 : lvl === 2 ? 5 : 7, lvl === 1 ? 3 : lvl === 2 ? 5 : 7);   // level 3: bigger ratios (Oct 26, 2026)
   const n = a + b, u = pickK(n, 2, kTop(lvl)), T = n*u;
   const askB = Math.random() < 0.5;
   const askE = askB ? B : A, askN = askB ? b : a, othE = askB ? A : B, othN = askB ? a : b;
@@ -994,7 +1011,7 @@ tape(lvl){
     helper:'Every box in the tape diagram is worth the same amount.',
     visual: tapeHTML(rows, ''),
     steps:[
-      {name:'Value of one box', type:'compute', kind:'num', prompt:`The ${othE[0]} row has ${othN} boxes that hold ${G}. How much is each box worth?`, answer:u, fact:{x:othN, y:u, div:true}, fill,
+      {name:'Value of one box', type:'compute', kind:'num', prompt:`The ${othE[0]} row has ${nOf(othN, 'boxes')} that ${othN === 1 ? 'holds' : 'hold'} ${G}. How much is each box worth?`, answer:u, fact:{x:othN, y:u, div:true}, fill,
         mis:v => (G % n === 0 && v === G/n) ? 'divideWrong' : null, hint:() => `${G} ÷ ${othN} = ?`},
       {name:'Find the part', type:'compute', kind:'num', prompt:`How many ${askE[0]} ${askE[1]} are there?`, answer:askN*u, fact:{x:askN, y:u},
         mis:v => v === u ? 'oneBox' : v === G ? 'wrongPart' : (v === G + (askN - othN)) ? 'additive' : null, hint:() => `The ${askE[0]} row has ${askN} boxes of ${u}.`}
@@ -1008,7 +1025,7 @@ groups(lvl){
   const g = pickK(a, 2, kTop(lvl)), TX = a*g;
   return {
     title:'Treat boxes', ctx:`${a} ${X[1]} + ${b} ${Y[1]} per box, ${TX} ${X[1]}`,
-    bubble:`Every box gets ${a} ${X[1]} and ${b} ${Y[1]}. We baked ${TX} ${X[1]}. How many ${Y[1]} do we need?`,
+    bubble:`Every box gets ${nOf(a, X[1])} and ${nOf(b, Y[1])}. We have ${TX} ${X[1]}. How many ${Y[1]} do we need?`,
     helper:'Every box is packed exactly the same way.',
     visual:`<div style="text-align:center"><div class="tray" style="max-width:220px">${`<span>${X[0]}</span>`.repeat(a)}${`<span>${Y[0]}</span>`.repeat(b)}</div><div style="margin-top:6px">One box. We have ${TX} ${X[0]}.</div></div>`,
     steps:[
@@ -1037,7 +1054,7 @@ dnlCreate(lvl){
   }
   return {
     title:`${r.name} number line`, ctx:`${a}:${b}`,
-    bubble:`My ${r.name.toLowerCase()} uses ${a} ${A[1]} for every ${b} ${B[1]}. Can you finish my double number line?`,
+    bubble:`My ${r.name.toLowerCase()} recipe uses ${a} ${A[1]} for every ${b} ${B[1]}. Can you finish my double number line?`,
     helper:'Each line counts by its own number.',
     visual: dnlHTML(A[0], B[0], ticks, false), steps
   };
@@ -1130,7 +1147,7 @@ equiv(lvl){
   const chosen = [cands[0], ...shuffle(cands.slice(1)).slice(0, lvl === 1 ? 2 : 3)];
   const opts = shuffle(chosen).map(o => ({html:`${o.v[0]} ${A[0]} : ${o.v[1]} ${B[0]}`, text:`${o.v[0]}:${o.v[1]}`, ok:o.ok, mis:o.mis}));
   return {title:'Same taste?', ctx:`${a}:${b}`,
-    bubble:`My ${r.name.toLowerCase()} is ${a} ${A[1]} to ${b} ${B[1]}. Which bigger batch tastes exactly the same?`,
+    bubble:`My ${r.name.toLowerCase()} recipe is ${a} ${A[1]} to ${b} ${B[1]}. Which bigger batch tastes exactly the same?`,
     helper:'Equivalent ratios multiply both amounts by the same number.',
     visual:`<div style="text-align:center; font-size:1.8rem">${a} ${A[0]} : ${b} ${B[0]}</div>`,
     steps:[
@@ -1188,12 +1205,12 @@ understand(lvl){
   if (lvl === 3) {   // level 3: spot the one batch that is NOT equivalent (made by adding instead of multiplying)
     const ks = shuffle([2, 3, 4, 5, 6]).slice(0, 3), add = rand(2, 6);
     opts = shuffle([{html:`${a + add} ${A[0]} and ${b + add} ${B[0]}`, ok:true, mis:null}, ...ks.map(m => ({html:`${a * m} ${A[0]} and ${b * m} ${B[0]}`, ok:false, mis:'missedEquivalent'}))]).map(o => Object.assign(o, {text:o.html}));
-    return {title:'Think it through', ctx:`${a}:${b}, not equivalent +${add}`, bubble:`My ${r.name.toLowerCase()} uses ${a} ${A[1]} for every ${b} ${B[1]}. Three of these batches taste exactly the same. Which batch tastes different?`, helper:'Equivalent ratios multiply both amounts by the same number. Adding the same number changes the taste.',
+    return {title:'Think it through', ctx:`${a}:${b}, not equivalent +${add}`, bubble:`My ${r.name.toLowerCase()} recipe uses ${a} ${A[1]} for every ${b} ${B[1]}. Three of these batches taste exactly the same. Which batch tastes different?`, helper:'Equivalent ratios multiply both amounts by the same number. Adding the same number changes the taste.',
       visual:`<div style="text-align:center; font-size:1.8rem">${a} ${A[0]} : ${b} ${B[0]}</div>`,
       steps:[{name:'Explain equivalence', type:'concept', kind:'choice', prompt:'Which batch tastes different?', options:opts, hint:() => `For each batch, is there one number that multiplies ${a} and ${b}?`}]};
   }
   if (Math.random() < 0.5) {
-    bubble = `My ${r.name.toLowerCase()} uses ${a} ${A[1]} for every ${b} ${B[1]}. I want to make more. Which change keeps the taste exactly the same?`;
+    bubble = `My ${r.name.toLowerCase()} recipe uses ${a} ${A[1]} for every ${b} ${B[1]}. I want to make more. Which change keeps the taste exactly the same?`;
     prompt = 'Which change keeps the taste the same?';
     opts = [
       {html:`Use ${k} times as much of both`, ok:true, mis:null},
@@ -1208,7 +1225,7 @@ understand(lvl){
       {html:`Both amounts were multiplied by ${k}`, ok:true, mis:null},
       {html:`Both amounts went up by the same number`, ok:false, mis:'additive'},
       {html:`There is more ${A[0]} than before`, ok:false, mis:'oneSideOnly'},
-      {html:`Bigger batches always taste the same`, ok:false, mis:'missedEquivalent'}
+      {html:`Bigger batches taste the same as smaller ones`, ok:false, mis:'missedEquivalent'}
     ];
   }
   opts = shuffle(opts).slice(0).map(o => Object.assign(o, {text:o.html}));
@@ -1221,8 +1238,8 @@ understand(lvl){
 /* ---------- Station 4 ---------- */
 coord(lvl){
   const r = pick(RECIPES), [A, B] = r.items;
-  const lim = lvl === 1 ? 3 : 4;
-  let a = rand(1, lim), b = rand(1, lim); if (a === b) b = b === 1 ? 2 : b - 1;
+  const lim = lvl === 1 ? 3 : lvl === 2 ? 4 : 5;
+  let a = rand(lvl === 1 ? 1 : 2, lim), b = rand(1, lim); if (a === b) b = b === 1 ? 2 : b - 1;
   const max = 12, kMaxHere = Math.floor(max / Math.max(a,b));
   const K = Math.min(kMaxHere, rand(4, Math.max(4, kMaxHere)));
   const plotKs = [2, 3];
@@ -1244,7 +1261,7 @@ coord(lvl){
 
 units(lvl){
   const CONV = [['cups','quart',4],['cups','pint',2],['teaspoons','tablespoon',3],['quarts','gallon',4],['inches','foot',12],['feet','yard',3],['ounces','pound',16],['minutes','hour',60]];
-  const pool = lvl === 1 ? CONV.slice(0,4) : lvl === 2 ? CONV.slice(0,6) : CONV;
+  const pool = lvl === 1 ? CONV.slice(0,4) : lvl === 2 ? CONV.slice(0,6) : CONV.slice(4);   // level 3: the bigger factors (12, 3 for yards, 16, 60)
   const [small, big, f] = pick(pool);
   const n = pickK(f <= 12 ? f : 2, 2, f > 12 ? 6 : kTop(lvl));
   const bigToSmall = Math.random() < 0.5;
@@ -1294,7 +1311,7 @@ ppw(lvl){
       {name:'Value of one part', type:'compute', kind:'num', prompt:`${G} ${askE[0]} fill ${askN} parts. How many in each part?`, answer:u, fact:{x:askN, y:u, div:true}, hint:() => `${G} ÷ ${askN} = ?`},
       {name:'Count total parts', type:'concept', kind:'num', prompt:'How many parts make up the whole platter?', answer:n, drill:{type:'story', key:'ratio'},
         mis:v => (v === a || v === b) ? 'partsCount' : null, hint:() => `${a} + ${b}.`},
-      {name:'Find the whole', type:'compute', kind:'num', prompt:'How many treats on the whole platter?', answer:T, fact:{x:n, y:u},
+      {name:'Find the whole', type:'compute', kind:'num', prompt:'How many treats are on the whole platter?', answer:T, fact:{x:n, y:u},
         mis:v => v === G + othN ? 'additive' : v === othN*u ? 'wrongPart' : null, hint:() => `${n} parts × ${u} each.`}
     ]};
 }
@@ -1857,7 +1874,7 @@ function bulkDecimal(skill, lvl){
   const [e, item] = pick(BULK_ITEMS), whole = !b.includes('.');
   return {title:'Bulk Orders', ctx:`${a} ÷ ${b}`,
     bubble: whole ? `We have ${a} kg of ${item} to share equally among ${b} batches. How many kilograms go in each?`
-                  : `We have ${a} kg of ${item}. Each bag holds ${b} kg. How many bags can we fill?`,
+                  : `We have ${a} kg of ${item}. Each bag holds ${b} kg. How many bags can we fill?${Number.isInteger(+a / +b) ? '' : ' (Part of a bag counts too.)'}`,
     helper: whole ? 'Divide as usual, and put the point straight up from the dividend\'s point.' : 'Make the divisor a whole number first: move both points the same number of places.',
     visual:`<div style="text-align:center; font-size:1.6rem">${e} ${a} ÷ ${b}</div>`,
     steps:r.steps, answerSteps:[r.steps.length - 1]};
@@ -3355,9 +3372,9 @@ const MARKET_GEN = {
     const [e2, what2] = pick(BY_EACH), r = pick([2, 4, 5, 10]), k = rand(2, 9), items = r * k, each = 100 / r;   // r items per dollar, so each costs 100/r cents
     return {title:'Price Tags', ctx:`${items} ${what2} for $${k}`, bubble:`${items} ${what2} cost $${k}. How many ${what2} do you get for $1? What is the price of 1?`,
       helper:'There are two unit rates: items per dollar and dollars per item.', visual:`<div style="text-align:center; font-size:1.6rem">${e2} ${items} for $${k}</div>`,
-      steps:[numStep(`${what2} per dollar`, 'compute', `${items} ÷ ${k} = ?`, r, {fact:fx(k, r, true), mis:v => near(v, k / items) ? 'rateUpsideDown' : null, hint:() => `Share the ${items} ${what2} among the $${k}.`}),
-        moneyStep('Price of 1', `$${k} ÷ ${items} = ?`, each, {mis:v => near(v, r) || near(v, items / k) ? 'rateUpsideDown' : null, hint:() => `$1 buys ${r}, so each one is $1 ÷ ${r}.`})],
-      answerSteps:[1]};
+      steps:[numStep(`${what2} per dollar`, 'compute', `${items} ÷ ${k} = ?`, r, {test:`How many ${what2} do you get for $1?`, fact:fx(k, r, true), mis:v => near(v, k / items) ? 'rateUpsideDown' : null, hint:() => `Share the ${items} ${what2} among the $${k}.`}),
+        moneyStep('Price of 1', `$${k} ÷ ${items} = ?`, each, {test:'What is the price of 1?', mis:v => near(v, r) || near(v, items / k) ? 'rateUpsideDown' : null, hint:() => `$1 buys ${r}, so each one is $1 ÷ ${r}.`})],
+      answerSteps:[0, 1]};   // the story asks both, so a test asks both (Oct 26, 2026)
   },
   rateProblems(lvl){
     const [e, what, unit] = pick(PRODUCE), n = rand(2, 6), per = lvl === 1 ? rand(2, 9) * 100 : rand(6, 45) * 10, total = n * per;
@@ -3411,8 +3428,8 @@ const MARKET_GEN = {
       steps:[numStep('Percent shaded', 'concept', `${n} out of 100 = ?%`, n, {mis:v => v === 100 - n ? 'percentComplement' : null, hint:() => 'Count the shaded squares. Full rows are 10 each.'})]};
     if (lvl === 2) return {title:'Percent Signs', ctx:`${n} of 100, not shaded`, bubble:`Of 100 ${what} in the crate, ${n} are ripe. What percent are ripe? What percent are not ripe?`, helper:'The whole crate is 100%.',
       visual:`<div class="frac-pics">${hundredGridSVG(n)}</div>`,
-      steps:[numStep('Percent ripe', 'concept', `${n} out of 100 = ?%`, n, {mis:v => v === 100 - n ? 'percentComplement' : null}),
-        numStep('Percent not ripe', 'compute', `100% − ${n}% = ?%`, 100 - n, {mis:v => v === n ? 'percentComplement' : null, hint:() => 'The whole is 100%. Take away the ripe part.'})], answerSteps:[1]};
+      steps:[numStep('Percent ripe', 'concept', `${n} out of 100 = ?%`, n, {test:'What percent are ripe? (%)', mis:v => v === 100 - n ? 'percentComplement' : null}),
+        numStep('Percent not ripe', 'compute', `100% − ${n}% = ?%`, 100 - n, {test:'What percent are not ripe? (%)', mis:v => v === n ? 'percentComplement' : null, hint:() => 'The whole is 100%. Take away the ripe part.'})], answerSteps:[0, 1]};
     const d = pick([10, 20, 25, 50]), k = rand(1, d - 1), p = k * 100 / d;
     return {title:'Percent Signs', ctx:`${k} of ${d}`, bubble:`${k} of the ${d} ${what} on the table are on sale. What percent is that?`, helper:'Make it "out of 100": multiply the top and bottom by the same number.',
       visual:`<div style="text-align:center; font-size:1.6rem">${e} ${k} out of ${d}</div>`,
@@ -3463,7 +3480,7 @@ const MARKET_GEN = {
         steps:[numStep(`${P}%`, 'compute', `${P}% of ${N} = ?`, part, {fact:div <= 12 && part <= 12 ? fx(div, part, true) : undefined, mis:v => v === N * P || near(v, N / P) && P !== div ? 'percentAsNumber' : v === N - part ? 'percentComplement' : null,
           hint:() => P === 100 ? 'All of it.' : `Split ${N} into ${div} equal parts.`})]};
     }
-    const [base, div, times, P] = pick([[10, 10, 3, 30], [10, 10, 7, 70], [25, 4, 3, 75], [20, 5, 3, 60], [10, 10, 4, 40], [5, 20, 3, 15], [20, 5, 4, 80]]), unit = rand(2, 15), N = unit * div;
+    const [base, div, times, P] = pick([[10, 10, 3, 30], [10, 10, 7, 70], [25, 4, 3, 75], [20, 5, 3, 60], [10, 10, 9, 90], [5, 20, 3, 15], [20, 5, 4, 80], [5, 20, 7, 35]]), unit = rand(3, 25), N = unit * div;
     return {title:'Sale Signs', ctx:`${P}% of ${N}`, bubble:`What is ${P}% of ${N}? Use ${base}% to help.`, helper:`${P}% is ${times} groups of ${base}%.`, visual:`<div style="text-align:center; font-size:1.8rem">🧺 ${P}% of ${N}</div>`,
       steps:[numStep(`${base}%`, 'compute', `${base}% of ${N} = ?`, unit, {fact:div <= 12 && unit <= 12 ? fx(div, unit, true) : undefined, mis:v => near(v, N / base) && base !== div ? 'percentAsNumber' : null}),
         numStep(`${P}%`, 'compute', `${times} × ${unit} = ?`, unit * times, {fact:unit <= 12 ? fx(times, unit) : undefined, mis:v => v === N - unit * times ? 'percentComplement' : null})], answerSteps:[1]};
@@ -3472,8 +3489,8 @@ const MARKET_GEN = {
     const P = lvl === 1 ? rand(1, 9) * 10 : lvl === 2 ? rand(1, 19) * 5 : rand(21, 50) * 5, u = P % 10 === 0 ? 10 : 20, N = rand(2, lvl === 1 ? 9 : 12) * u, part = P * N / 100;   // level 3: more than 100%
     const [fn, fd] = FRAC.red(P, 100), dec = XD.fmt(P, 2);
     const right = pick([`${dec} × ${N}`, `${fn}/${fd} × ${N}`, `${N} ÷ 100 × ${P}`]);
-    const wrongs = shuffle([{text:`${P} × ${N}`, mis:'percentAsNumber', val:P * N}, {text:`${N} ÷ ${P}`, mis:'percentAsNumber', val:N / P}, {text:`${XD.fmt(P, 3)} × ${N}`, mis:'percentShift', val:P * N / 1000}, {text:`${XD.fmt(P, 1)} × ${N}`, mis:'percentShift', val:P * N / 10}])
-      .filter(w => Math.abs(w.val - part) > 1e-9).slice(0, 3);   // 10% of 80 is also 80 ÷ 10, so that one can't be a wrong answer
+    const wrongs = shuffle([{text:`${N} ÷ 10 × ${P}`, mis:'percentShift', val:N * P / 10}, {text:`${P} × ${N}`, mis:'percentAsNumber', val:P * N}, {text:`${N} ÷ ${P}`, mis:'percentAsNumber', val:N / P}, {text:`${XD.fmt(P, 3)} × ${N}`, mis:'percentShift', val:P * N / 1000}, {text:`${XD.fmt(P, 1)} × ${N}`, mis:'percentShift', val:P * N / 10}])
+      .sort((x, y) => (y.text.includes('÷ 10 ×') ? 1 : 0) - (x.text.includes('÷ 10 ×') ? 1 : 0)).filter(w => Math.abs(w.val - part) > 1e-9).slice(0, 3);   // keep the long wrong choice, so the right one isn't the longest; 10% of 80 is also 80 ÷ 10, so that one can't be a wrong answer
     const steps = [{name:'Same as', type:'concept', kind:'choice', prompt:`Which is the same as ${P}% of ${N}?`, options:choiceOf({text:right}, wrongs), hint:() => `${P}% = ${dec} = ${fn}/${fd}.`}];
     if (lvl >= 2) steps.push(numStep('Find it', 'compute', `${P}% of ${N} = ?`, part, {mis:v => v === P * N ? 'percentAsNumber' : v === N - part ? 'percentComplement' : null, hint:() => `${N} ÷ 100 × ${P}, or 10% is ${N / 10}.`}));
     return {title:'Sale Signs', ctx:`${P}% of ${N}: ${right}`, bubble:P > 100 ? `This year the farm picked ${P}% of last year's ${N} baskets. Which math finds how many baskets the farm picked this year? Then find it.` : `A sign says ${P}% of the ${N} baskets are sold. Which math finds how many baskets are sold?${lvl >= 2 ? ' Then find it.' : ''}`,
@@ -3482,7 +3499,7 @@ const MARKET_GEN = {
 
   /* ----- find percents visually (station 2 since Oct 26, 2026, Khan's order) ----- */
   pctVisual(lvl){
-    const seg = pick([4, 5]), stepP = 100 / seg, u = rand(2, 12) * (lvl === 3 ? 1 : 1), W = u * seg, j = rand(lvl === 3 ? 1 : 2, seg - 1), [e, what] = pick(BY_EACH);
+    const seg = lvl === 3 ? pick([5, 10]) : pick([4, 5]), stepP = 100 / seg, u = rand(2, 12), W = u * seg, j = rand(2, seg - 1), [e, what] = pick(BY_EACH);
     const ticks = Array.from({length:seg + 1}, (_, i) => ({t:`${i * stepP}%`, b:''}));
     if (lvl === 1) {
       ticks[0].b = 0; ticks[seg].b = W; ticks[j].b = '?';
@@ -3681,7 +3698,7 @@ const CLOCK_GEN = {
     const b = rand(2, 9), e = rand(b === 2 ? 3 : 2, b >= 6 ? 3 : b >= 4 ? 4 : 5);   // 2² = 2 × 2 = 4 leaves no wrong answers
     if (lvl === 1) {
       const long = Array(e).fill(b).join(' × ');
-      return {title:'Chimes', ctx:`${long} as a power`, bubble:`The bell rings ${b} times, and it does that ${e} times over: ${long}. Write it as a power.`, helper:'The base is the number being multiplied. The exponent counts how many times.',
+      return {title:'Chimes', ctx:`${long} as a power`, bubble:`A chime starts with ${b} bells. Each round, every bell sets off ${b} more, for ${e} rounds in all: ${long}. Write it as a power.`, helper:'The base is the number being multiplied. The exponent counts how many times.',
         visual:`<div style="text-align:center; font-size:1.6rem">🔔 ${long}</div>`,
         steps:[{name:'As a power', type:'concept', kind:'choice', prompt:`${long} = ?`, options:choiceOf({text:`${b}${SUP(e)}`}, [{text:`${e}${SUP(b)}`, mis:'baseExpSwap', v:Math.pow(e, b)}, {text:`${b} × ${e}`, mis:'expTimesBase', v:b * e}].filter(w => w.v !== Math.pow(b, e))),
           hint:() => `${b} is multiplied ${e} times.`}]};
@@ -3707,7 +3724,7 @@ const CLOCK_GEN = {
       steps:[numStep('Exponent', 'concept', `${bb} to the power ? = ${val}`, ee, {mis:v => v * bb === val ? 'expTimesBase' : null, hint:() => `${bb}, ${bb * bb}, ${bb * bb * bb}, … count the ${bb}s.`})]};
   },
   powWhole(lvl){
-    const [b, e] = lvl === 1 ? pick([[rand(2, 12), 2], [rand(2, 5), 3]]) : lvl === 2 ? pick([[rand(2, 4), rand(3, 5)], [rand(2, 9), 3], [10, rand(2, 6)]]) : pick([[rand(2, 3), rand(5, 7)], [rand(4, 6), 4], [rand(11, 15), 2], [rand(6, 9), 3]]);
+    const [b, e] = lvl === 1 ? pick([[rand(2, 12), 2], [rand(2, 5), 3]]) : lvl === 2 ? pick([[rand(2, 4), rand(3, 5)], [rand(2, 9), 3], [10, rand(2, 6)]]) : pick([[rand(2, 3), rand(5, 8)], [rand(4, 6), 4], [rand(11, 15), 2], [rand(7, 9), 4]]);   // level 3: every one is past level 2's
     const val = Math.pow(b, e), steps = [];
     if (lvl === 1 || b === 10) steps.push(numStep('Value', 'compute', `${b}${SUP(e)} = ?`, val, {fact:e === 2 ? fx(b, b) : undefined, mis:v => v === b * e ? 'expTimesBase' : v === Math.pow(e, b) ? 'baseExpSwap' : null,
       hint:() => b === 10 ? `1 followed by ${e} zeros.` : `${Array(e).fill(b).join(' × ')}.`}));
@@ -3789,7 +3806,7 @@ const ICE_CONTEXTS = [
   ['The elevator went down # floors.', -1, 'staying on the same floor'], ['The skater climbed # steps up the bleachers.', 1, 'staying put'],
   ['The ice rink lost # visitors since last week.', -1, 'no change'], ['The rink earned $# from skate rentals.', 1, 'no money']];
 const opposite = s => s.replace('below', '§').replace('above', 'below').replace('§', 'above').replace('Mia owes her brother $#', 'Mia\'s brother owes her $#').replace('put $# into', 'took $# out of')
-  .replace('lost # points', 'gained # points').replace('gained # yards', 'lost # yards').replace('went down', 'went up').replace('climbed # steps up', 'climbed # steps down').replace('lost # visitors', 'gained # visitors').replace('earned $# from', 'spent $# on');
+  .replace('lost # points', 'gained # points').replace('gained # yards', 'lost # yards').replace('went down', 'went up').replace('climbed # steps up', 'climbed # steps down').replace('lost # visitors', 'gained # visitors').replace('earned $# from skate rentals', 'spent $# on new skates');
 const RINK_GEN = {
   /* ----- station 1: Thermometer (what negative numbers mean) ----- */
   negIntro(lvl){
@@ -3799,15 +3816,15 @@ const RINK_GEN = {
       steps:[negStep('As a number', 'concept', 'Write it as a positive or negative number.', val, {mis:v => v === -val ? 'signWrong' : null, hint:() => `Is it ${s < 0 ? 'below' : 'above'} ${zero}? That makes it ${s < 0 ? 'negative' : 'positive'}.`})]};
     if (lvl === 2) {
       const pool = shuffle(ICE_CONTEXTS.filter(c => c[0] !== txt)), same = pool.find(c => c[1] === s);
-      const right = story, wrong1 = opposite(txt).replace('#', n), wrong2 = same[0].replace('#', n + rand(1, 5));
-      const opts = choiceOf({text:right}, [{text:wrong1, mis:'signWrong'}, {text:wrong2}]);
+      const right = story, wrong1 = opposite(txt).replace('#', n), wrong2 = opposite(same[0]).replace('#', n);
+      const opts = choiceOf({text:right}, [{text:wrong1, mis:'signWrong'}, {text:wrong2, mis:'signWrong'}]);
       return {title:'Thermometer', ctx:`${sgn(val)} means`, bubble:`Which one does ${sgn(val)} describe?`, helper:'The sign tells the direction. The number tells how far from 0.', visual:`<div style="text-align:center; font-size:2rem">🌡️ ${sgn(val)}</div>`,
         steps:[{name:'Which story', type:'concept', kind:'choice', prompt:`Which situation is ${sgn(val)}?`, options:opts, hint:() => `${sgn(val)} is ${n} ${s < 0 ? 'below' : 'above'} zero.`}]};
     }
     const opp = opposite(txt).replace('#', n);
     return {title:'Thermometer', ctx:`${story} / opposite`, bubble:`${story} Write that as a number. Then write the number for the opposite situation: ${opp}`,
       helper:'Opposite situations have opposite numbers: the same distance from 0 on the other side.', visual:`<div style="text-align:center; font-size:1.6rem">🌡️ ${n} ↔ ${n}</div>`,
-      steps:[negStep('As a number', 'concept', story, val, {mis:v => v === -val ? 'signWrong' : null}), negStep('The opposite', 'concept', opp, -val, {mis:v => v === val ? 'signWrong' : null, hint:() => 'Same number, other sign.'})], answerSteps:[1]};
+      steps:[negStep('As a number', 'concept', story, val, {mis:v => v === -val ? 'signWrong' : null}), negStep('The opposite', 'concept', opp, -val, {test:`Write the opposite situation as a number: ${opp}`, mis:v => v === val ? 'signWrong' : null, hint:() => 'Same number, other sign.'})], answerSteps:[1]};
   },
   negLine(lvl){
     const [den, lo, hi, lab] = lvl === 1 ? [1, -10, 10, 5] : lvl === 2 ? [1, -20, 20, 10] : [1, -12, 12, 4];
@@ -3827,7 +3844,7 @@ const RINK_GEN = {
   opposites(lvl){
     const n = rand(1, lvl === 1 ? 20 : 99), x = pick([n, -n]);
     if (lvl === 1) return {title:'Thermometer', ctx:`opposite of ${sgn(x)}`, bubble:`What is the opposite of ${sgn(x)}?`, helper:'The opposite is the same distance from 0 on the other side.',
-      visual:iceLineSVG(-10, 10, 1, {labelEvery:5, dots:Math.abs(x) <= 10 ? [{t:x}] : []}),
+      visual:(() => { const lim = Math.max(10, Math.ceil(Math.abs(x) / 5) * 5); return iceLineSVG(-lim, lim, 1, {labelEvery:5, dots:[{t:x}]}); })(),
       steps:[negStep('Opposite', 'concept', `The opposite of ${sgn(x)} is ?`, -x, {mis:v => v === x ? 'signWrong' : null})]};
     const k = lvl === 2 ? 2 : pick([2, 3]), expr = Array(k).fill(`${MINUS}(`).join('') + sgn(x) + ')'.repeat(k), val = k % 2 ? -x : x;
     const steps = [];
@@ -3874,7 +3891,7 @@ const RINK_GEN = {
   negFracLine(lvl){
     const den = lvl === 1 ? pick([2, 4]) : lvl === 2 ? pick([3, 4, 6, 8]) : pick([2, 3, 4]), W = lvl === 3 ? 3 : 1, lo = -W * den, hi = W * den;
     let t; do { t = rand(lo + 1, hi - 1); } while (t % den === 0 || t > 0 && Math.random() < 0.7);
-    const right = sgnF(t, den), wrongs = [{text:sgnF(-t, den), mis:'signWrong'}, {text:sgnF(t + (t < 0 ? 1 : -1), den)}, {text:sgnF(t < 0 ? t - 1 : t + 1, den)}];
+    const right = sgnF(t, den), wrongs = [{text:sgnF(-t, den), mis:'signWrong'}, {text:sgnF(t + (t < 0 ? 1 : -1), den)}, {text:sgnF(t < 0 ? t - 1 : t + 1, den)}, ...(Math.abs(t) + den < hi ? [{text:sgnF(t < 0 ? t - den : t + den, den)}] : [])].filter(w => w.text !== '0').slice(0, 3);
     return {title:'Rink Lines', ctx:`dot at ${right}`, bubble:'The skate blade is at the dot. What number is it?', helper:`Each whole is cut into ${den} equal parts.`,
       visual:iceLineSVG(lo, hi, den, {labelEvery:den, dots:[{t}]}),
       steps:[{name:'Read the line', type:'concept', kind:'choice', prompt:'What number is at the dot?', options:choiceOf({text:right}, wrongs), hint:() => `Count the ${FRAC.part(den, true)} from 0. Left of 0 is negative.`}]};
@@ -3915,10 +3932,10 @@ const RINK_GEN = {
   },
   /* ordering small negative numbers (Khan unit 5, added Oct 26, 2026): integers from −9 to 9 */
   orderSmallNeg(lvl){
-    const n = lvl === 1 ? 4 : 5, pool = new Set(); while (pool.size < n) pool.add(rand(-9, 9));
+    const n = lvl === 1 ? 4 : lvl === 2 ? 5 : 6, pool = new Set(); while (pool.size < n) pool.add(rand(-9, 9));
     const vals = [...pool]; if (vals.filter(v => v < 0).length < 2) return RINK_GEN.orderSmallNeg(lvl);
     const up = [...vals].sort((x, y) => x - y), T = arr => arr.map(sgn).join(', ');
-    if (lvl === 3) {
+    if (lvl === 3 && Math.random() < 0.3) {   // mostly level 3 orders 6 numbers; sometimes it's the least or greatest
       const least = Math.random() < 0.5, ans = least ? up[0] : up[up.length - 1], trap = least ? [...vals].sort((x, y) => Math.abs(x) - Math.abs(y))[0] : vals.filter(v => v < 0).sort((x, y) => x - y)[0];
       return {title:'Podium', ctx:`${least ? 'least' : 'greatest'} of ${T(vals)}`, bubble:`Which number is the ${least ? 'least' : 'greatest'}: ${T(shuffle(vals))}?`, helper:'Picture the number line. Least is farthest left; greatest is farthest right.', visual:`<div style="text-align:center; font-size:1.4rem">🏆 ${T(vals)}</div>`,
         steps:[negStep(least ? 'Least' : 'Greatest', 'concept', `The ${least ? 'least' : 'greatest'} number is ?`, ans, {mis:w => w === trap && trap !== ans ? 'negCompare' : null, hint:() => least ? 'The negative number farthest from 0 is the least.' : 'Any positive number is greater than every negative number.'})]};
@@ -3966,7 +3983,7 @@ const RINK_GEN = {
   /* meaning of absolute value (Khan unit 5, added Oct 26, 2026): the distance from 0 */
   absMeaning(lvl){
     const n = rand(2, 9), x = Math.random() < 0.7 ? -n : n;
-    if (lvl === 1) return {title:'Ice Depth', ctx:`distance of ${sgn(x)}`, bubble:`How far is the dot from 0? That distance is |${sgn(x)}|.`, helper:'Count the ticks from 0 to the dot. A distance is never negative.',
+    if (lvl === 1) return {title:'Ice Depth', ctx:`distance of ${sgn(x)}`, bubble:'How far is the dot from 0? (That distance is the absolute value of the number.)', helper:'Count the ticks from 0 to the dot. A distance is never negative.',
       visual:iceLineSVG(-10, 10, 1, {labelEvery:5, dots:[{t:x}]}),
       steps:[negStep('Distance from 0', 'concept', 'How many units from 0 is the dot?', n, {mis:w => w === -n ? 'absNegative' : null, hint:() => `Count from 0 to the dot.`})]};
     if (lvl === 2) {
@@ -4117,7 +4134,7 @@ const POTION_GEN = {
   },
   evalOne(lvl){
     return tryGen(() => {
-      const a = rand(2, 9), b = rand(1, 12), x = lvl === 3 ? pick([RQ.of(1, 2), RQ.of(3, 4), RQ.of(1, 3), RQ.of(2, 5), [rand(2, 9), 1]]) : [rand(2, lvl === 1 ? 10 : 12), 1];
+      const a = rand(2, 9), b = rand(1, 12), x = lvl === 3 ? pick([RQ.of(1, 2), RQ.of(3, 4), RQ.of(1, 3), RQ.of(2, 5), RQ.of(3, 2)]) : [rand(2, lvl === 1 ? 10 : 12), 1];
       const srcs = lvl === 1 ? [`${a} × x`, `x + ${b}`, `${a} × x + ${b}`, `x − ${b}`] : [`${a} × x + ${b}`, `${a} × ( x + ${b} )`, `${a} × x − ${b}`, `x ÷ ${a} + ${b}`, `${b} + ${a} × x`];
       let src = pick(srcs);
       if (src.startsWith('x ÷') && x[1] === 1 && x[0] % a) src = `${a} × x + ${b}`;
@@ -4220,13 +4237,14 @@ const POTION_GEN = {
       return {title:'Recipe Cards', ctx:`words for ${right.text}`, bubble:`The recipe card says the number of ${g[1]} is ${right.text}. Which words mean the same thing? Then find its value when ${v} = ${val}.`, helper:'More, sum, added: +. Less, difference, decreased: −. Times, product: ×. Divided, quotient: ÷.',
         visual:`<div style="text-align:center; font-size:1.6rem">${g[0]} ${right.text}</div>`,
         steps:[{name:'Words', type:'concept', kind:'choice', prompt:`Which words mean ${right.text}?`, options:choiceOf({text:words}, wrongWords), hint:() => /−|÷/.test(right.text) ? 'Careful with order: "5 less than n" means n − 5.' : 'Find the operation, then check the order.'},
-          ...(out >= 0 && Number.isInteger(out) ? [numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {})] : [])], answerSteps:[0]};
+          ...(out >= 0 && Number.isInteger(out) ? [numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {test:`Its value when ${v} = ${val}:`})] : [])], answerSteps:out >= 0 && Number.isInteger(out) ? [0, 1] : [0]};
     }
     const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:`Which expression means "${words}"?`, options:exprChoice(right, wrongs.map(w => ({...w, mis:w.mis || null}))),
       hint:() => /less than|subtracted from/.test(words) ? 'Careful with order: "5 less than n" starts with n and takes 5 away.' : 'Find the operation word, then put the numbers in order.'}];
-    if (lvl >= 2) { const val = rand(2, 12) * (words.includes('divided') ? n : 1), out = right.f(val); if (out >= 0 && Number.isInteger(out)) steps.push(numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {})); }
-    return {title:'Recipe Cards', ctx:`"${words}"`, bubble:`The recipe card says the number of ${g[1]} is "${words}." Which expression matches?${steps.length > 1 ? ' Then find its value.' : ''}`, helper:'More, sum, added: +. Less, difference, decreased: −. Times, product: ×. Divided, quotient: ÷.',
-      visual:`<div style="text-align:center; font-size:1.6rem">${g[0]} "${words}"</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0]} : {})};
+    let valNote = '';
+    if (lvl >= 2) { const val = rand(2, 12) * (words.includes('divided') ? n : 1), out = right.f(val); if (out >= 0 && Number.isInteger(out)) { steps.push(numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {test:`Its value when ${v} = ${val}:`})); valNote = ` Then find its value when ${v} = ${val}.`; } }
+    return {title:'Recipe Cards', ctx:`"${words}"`, bubble:`The recipe card says the number of ${g[1]} is "${words}." Which expression matches?${valNote}`, helper:'More, sum, added: +. Less, difference, decreased: −. Times, product: ×. Divided, quotient: ÷.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${g[0]} "${words}"</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};
   },
   writeExpr(lvl){
     const a = rand(2, 9), b = rand(2, 12), v = 'n';
@@ -4243,18 +4261,19 @@ const POTION_GEN = {
         [`${a} times the sum of ${v} and ${b}`, x => a * (x + b)], [`${a} times ${v}, plus ${b}`, x => a * x + b], [`${b} less than ${a} times ${v}`, x => a * x - b], [`${a} times the difference of ${v} and ${b}`, x => a * (x - b)],
         [`the sum of ${v} and ${b}, divided by ${a}`, x => (x + b) / a], [`${b} more than the quotient of ${v} and ${a}`, x => x / a + b], [`${a} more than ${b} times ${v}`, x => b * x + a]];
       const wrongWords = shuffle(pool.filter(([t, f]) => !sameFn(f, right.f))).slice(0, 3).map(([t, f]) => ({text:t, mis:wrongs.some(w => w.mis === 'missingParens' && sameFn(w.f, f)) ? 'missingParens' : null}));
-      return {title:'Recipe Cards', ctx:`words for ${right.text}`, bubble:`The spell book says ${right.text}. Which words mean the same thing? Then find its value.`, helper:'Parentheses group two things first: "times the sum of" or "the sum of …, divided by".',
+      let v3 = rand(b + 1, 20); if (words.includes('quotient') || words.includes('divided')) { v3 = a * rand(2, 8) - (words.includes('sum') ? b : 0); if (v3 <= 0) v3 += a * 3; }
+      const o3 = right.f(v3), has3 = o3 >= 0 && Number.isInteger(o3);
+      return {title:'Recipe Cards', ctx:`words for ${right.text}`, bubble:`The spell book says ${right.text}. Which words mean the same thing?${has3 ? ` Then find its value when n = ${v3}.` : ''}`, helper:'Parentheses group two things first: "times the sum of" or "the sum of …, divided by".',
         visual:`<div style="text-align:center; font-size:1.6rem">📜 ${right.text}</div>`,
         steps:[{name:'Words', type:'concept', kind:'choice', prompt:`Which words mean ${right.text}?`, options:choiceOf({text:words.replace(`the product of ${a} and ${v}, plus ${b}`, `${a} times ${v}, plus ${b}`)}, wrongWords), hint:() => right.text.includes('(') ? 'The part in parentheses happens first: look for "the sum of" or "the difference of".' : 'With no parentheses, multiply or divide first.'},
-          ...(() => { let val = rand(b + 1, 20); if (words.includes('quotient') || words.includes('divided')) { val = a * rand(2, 8) - (words.includes('sum') ? b : 0); if (val <= 0) val += a * 3; } const out = right.f(val);
-            return out >= 0 && Number.isInteger(out) ? [numStep('Value', 'compute', `${right.text} when n = ${val}`, out, {slowOK:true})] : []; })()], answerSteps:[0]};
+          ...(has3 ? [numStep('Value', 'compute', `${right.text} when n = ${v3}`, o3, {slowOK:true, test:`Its value when n = ${v3}:`})] : [])], answerSteps:has3 ? [0, 1] : [0]};
     }
     const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:`Which expression means "${words}"?`, options:exprChoice(right, wrongs.map(w => ({...w, mis:w.mis || null}))),
       hint:() => /sum of|difference of/.test(words) && /times/.test(words) ? '"Times the sum" means the whole sum is multiplied: use parentheses.' : 'Decide what happens first and what happens last.'}];
     if (lvl >= 2) { let val = rand(b + 1, 20); if (words.includes('quotient') || words.includes('divided')) { val = a * rand(2, 8) - (words.includes('sum') ? b : 0); if (val <= 0) val += a * 3; } const out = right.f(val);
-      if (out >= 0 && Number.isInteger(out)) steps.push(numStep('Value', 'compute', `${right.text} when n = ${val}`, out, {slowOK:true})); }
-    return {title:'Recipe Cards', ctx:`"${words}"`, bubble:`The spell book says: "${words}". Which expression matches?${steps.length > 1 ? ' Then find its value.' : ''}`, helper:'Words like "the sum of" and "the difference of" group two things together: use parentheses.',
-      visual:`<div style="text-align:center; font-size:1.5rem">📜 "${words}"</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0]} : {})};
+      if (out >= 0 && Number.isInteger(out)) { steps.push(numStep('Value', 'compute', `${right.text} when n = ${val}`, out, {slowOK:true, test:`Its value when n = ${val}:`})); steps.valNote = ` Then find its value when n = ${val}.`; } }
+    return {title:'Recipe Cards', ctx:`"${words}"`, bubble:`The spell book says: "${words}". Which expression matches?${steps.valNote || ''}`, helper:'Words like "the sum of" and "the difference of" group two things together: use parentheses.',
+      visual:`<div style="text-align:center; font-size:1.5rem">📜 "${words}"</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};
   },
   writeWord(lvl){
     const [e, n] = pick(LEMON_KIDS), g = pick(POTION_WORDS), a = rand(2, 9), b = rand(10, 40);
@@ -4271,9 +4290,10 @@ const POTION_GEN = {
       [`${n} brews b bottles a day for ${a} days, then gives away ${b} bottles.`, 'b', EX(`${a}b − ${b}`, x => a * x - b), [{...EX(`${a}(b − ${b})`, x => a * (x - b)), mis:'missingParens'}, {...EX(`${b} − ${a}b`, x => b - a * x), mis:'lessThanOrder'}]]] : [])]);
     const [story, v, right, wrongs] = T;
     const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:'Which expression matches the story?', options:exprChoice(right, wrongs), drill:{type:'story', key:'addSub'}, hint:() => 'What happens to the starting amount? What changes with the letter?'}];
-    if (lvl >= 2) { let val, out; for (let t = 0; t < 20; t++) { val = rand(2, 9); out = right.f(val); if (out >= 0 && Number.isInteger(out)) break; } if (out >= 0 && Number.isInteger(out)) steps.push(numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {slowOK:true})); }
-    return {title:'Recipe Cards', ctx:story, bubble:`${story} Which expression shows how many?${steps.length > 1 ? ' Then find its value.' : ''}`, helper:'The letter stands for the number that can change.',
-      visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]}</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0]} : {})};
+    let valNote = '';
+    if (lvl >= 2) { let val, out; for (let t = 0; t < 20; t++) { val = rand(2, 9); out = right.f(val); if (out >= 0 && Number.isInteger(out)) break; } if (out >= 0 && Number.isInteger(out)) { steps.push(numStep('Value', 'compute', `${right.text} when ${v} = ${val}`, out, {slowOK:true, test:`Its value when ${v} = ${val}:`})); valNote = ` Then find its value when ${v} = ${val}.`; } }
+    return {title:'Recipe Cards', ctx:story, bubble:`${story} Which expression matches the story?${valNote}`, helper:'The letter stands for the number that can change.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]}</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};   // a test asks for the value too (Oct 26, 2026)
   },
 
   /* ----- station 4: Mixing Bowl (LCM and GCF) ----- */
@@ -4321,8 +4341,8 @@ const POTION_GEN = {
     return {title:'Mixing Bowl', ctx:`${useG ? 'GCF' : 'LCM'} ${a}, ${b}`, bubble:follow ? `${S[0]} Then: ${S[1]}` : S[0], helper:'Splitting into equal groups: GCF. Things lining up again, or buying equal amounts: LCM.',
       visual:`<div style="text-align:center; font-size:1.8rem">${e} ${a} and ${b}</div>`,
       steps:[{name:'GCF or LCM?', type:'concept', kind:'choice', prompt:'Which one answers the question?', options:opts, drill:{type:'story', key:'ratio'}, hint:() => useG ? 'You are splitting into the most equal groups.' : 'You need a number both of them reach.'},
-        numStep(useG ? 'GCF' : 'LCM', 'compute', `${useG ? 'GCF' : 'LCM'} of ${a} and ${b} = ?`, ans, {mis:v => useG ? (v === L ? 'gcfLcmSwap' : null) : (v === G ? 'gcfLcmSwap' : v === a * b && G > 1 ? 'notLeast' : null)}),
-        ...(follow ? [numStep('Then', 'compute', S[1], S[2], {slowOK:true, hint:() => `Use your ${useG ? 'GCF' : 'LCM'}, ${ans}.`})] : [])], answerSteps:[1]};
+        numStep(useG ? 'GCF' : 'LCM', 'compute', `${useG ? 'GCF' : 'LCM'} of ${a} and ${b} = ?`, ans, {test:(S[0].match(/[^.?!]*\?$/) || [''])[0].trim() || undefined, mis:v => useG ? (v === L ? 'gcfLcmSwap' : null) : (v === G ? 'gcfLcmSwap' : v === a * b && G > 1 ? 'notLeast' : null)}),
+        ...(follow ? [numStep('Then', 'compute', S[1], S[2], {slowOK:true, hint:() => `Use your ${useG ? 'GCF' : 'LCM'}, ${ans}.`})] : [])], answerSteps:follow ? [1, 2] : [1]};
   },
 
   /* ----- factoring with numbers (station 4, Mixing Bowl, since Oct 26, 2026: Khan teaches it with the GCF) ----- */
@@ -4366,7 +4386,7 @@ const POTION_GEN = {
     const ks = [...Array(G).keys()].map(i => i + 1).filter(d => d > 1 && G % d === 0);
     const f = lvl === 1 ? G : pick(ks), text = `${term(G * m, v)} + ${G * k}`, p = G * m / f, q = G * k / f;
     if (lvl < 3) return {title:'Cauldron', ctx:`${text} = ${f}(?${v} + ?)`, bubble:`Fill in the blanks: ${text} = ${f}( __${v} + __ ).`, helper:`Divide each term by ${f}.`, visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${text} = ${f}(▢${v} + ▢)</div>`,
-      steps:[numStep(`${term(G * m, v)} ÷ ${f}`, 'compute', `${G * m} ÷ ${f} = ?`, p, {fact:fx(f, p, true), mis:w => w === G * m ? 'distributeWrong' : null}), numStep(`${G * k} ÷ ${f}`, 'compute', `${G * k} ÷ ${f} = ?`, q, {fact:fx(f, q, true), mis:w => w === G * k ? 'distributeWrong' : null})], answerSteps:[0, 1]};
+      steps:[numStep(`${term(G * m, v)} ÷ ${f}`, 'compute', `${G * m} ÷ ${f} = ?`, p, {test:`First blank: ${f}( ?${v} + __ )`, fact:fx(f, p, true), mis:w => w === G * m ? 'distributeWrong' : null}), numStep(`${G * k} ÷ ${f}`, 'compute', `${G * k} ÷ ${f} = ?`, q, {test:`Second blank: ${f}( __${v} + ? )`, fact:fx(f, q, true), mis:w => w === G * k ? 'distributeWrong' : null})], answerSteps:[0, 1]};
     /* level 3: which factored form is equivalent (more than one factor works, but only one choice is right) */
     const right = EX(`${f}(${term(p, v)} + ${q})`, x => f * (p * x + q));
     const wrongs = [{...EX(`${f}(${term(G * m, v)} + ${q})`, x => f * (G * m * x + q)), mis:'distributeWrong'}, {...EX(`${f}(${term(p, v)} + ${G * k})`, x => f * (p * x + G * k)), mis:'distributeWrong'}, EX(`${term(p, v)} + ${q}`, x => p * x + q)];
@@ -4466,7 +4486,7 @@ function ineqSVG(op, c, {lo = c - 5, hi = c + 5, w = 280} = {}){
   for (let t = lo; t <= hi; t++) { g += `<line x1="${X(t)}" y1="${y - 6}" x2="${X(t)}" y2="${y + 6}" class="nl-line"/>`; if ((t - lo) % 2 === 0 || t === c) g += `<text x="${X(t)}" y="${y + 22}" class="nl-text nl-small">${sgn(t)}</text>`; }
   g += `<line x1="${X(c)}" y1="${y}" x2="${right ? R + 6 : L - 6}" y2="${y}" class="nl-ray"/><path d="${right ? `M${R + 10} ${y} l-10 -7 v14 z` : `M${L - 10} ${y} l10 -7 v14 z`}" class="nl-ray-head"/>`;
   g += `<circle cx="${X(c)}" cy="${y}" r="7" class="${closed ? 'nl-dot' : 'nl-open'}"/>`;
-  return `<svg class="num-line ineq" viewBox="0 0 ${w} 56" width="${w}" role="img" aria-label="x ${op} ${c}">${g}</svg>`;
+  return `<svg class="num-line ineq" viewBox="0 0 ${w} 56" width="${w}" role="img" aria-label="x ${esc(op)} ${c}">${g}</svg>`;
 }
 const FAIR_WORDS = [['🎈', 'balloons'], ['🍿', 'bags of popcorn'], ['🎟️', 'ride tickets'], ['🧸', 'prize bears'], ['🍭', 'lollipops'], ['🎯', 'darts']];
 const INEQ_FLIP = {'>':'<', '<':'>', '≥':'≤', '≤':'≥'}, INEQ_OPEN = {'>':'≥', '≥':'>', '<':'≤', '≤':'<'};
@@ -4537,7 +4557,7 @@ const POTION2_GEN = {
           work:form === 'sub' ? barModelSVG([{label:rhs, w:Math.max(1, x - a), on:true}, {label:a, w:Math.max(1, a)}], {total:'x'}) : barModelSVG([{label:'x', w:Math.max(1, x), on:true}, {label:a, w:Math.max(1, a)}], {total:rhs})})], answerSteps:[1]};   // bar model: the parts and the whole
   },
   oneStepMult(lvl){
-    if (lvl < 3 && Math.random() < 0.25) {   // read the picture: which bar model matches the equation?
+    if (lvl === 1 && Math.random() < 0.35) {   // read the picture: which bar model matches the equation? (level 1 only)
       const a = rand(3, 6), x = rand(2, 9), rhs = a * x, boxes = (n, lbl, total) => barModelSVG(Array.from({length:n}, () => ({label:lbl, on:true})), {total, w:240});
       const opts = picChoice({html:boxes(a, 'x', rhs), text:`${a} boxes of x make ${rhs}`},
         [{html:barModelSVG([{label:'x', w:rhs - a, on:true}, {label:a, w:a}], {total:rhs, w:240}), text:`x and ${a} make ${rhs}`, mis:'inverseWrong'}, {html:boxes(a, rhs, 'x'), text:`${a} boxes of ${rhs} make x`, mis:'inverseWrong'}]);
@@ -4582,7 +4602,7 @@ const POTION2_GEN = {
     if (Math.random() < 0.5) {                                             // is this one value a solution?
       const v = c + pick([-3, -1, 0, 0, 1, 3]), yes = ineqTrue(v, op, c);
       return {title:'Ride Line', ctx:`x ${op} ${sgn(c)}, x = ${sgn(v)}`, bubble:`Is x = ${sgn(v)} a solution of x ${op} ${sgn(c)}?`, helper, visual,
-        steps:[{name:'True?', type:'concept', kind:'choice', prompt:`Is ${sgn(v)} ${op} ${sgn(c)} true?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes', mis:v === c ? 'boundaryWrong' : null}]),
+        steps:[{name:'True?', type:'concept', kind:'choice', prompt:`Is ${sgn(v)} ${op} ${sgn(c)} true?`, test:`Is x = ${sgn(v)} a solution of x ${op} ${sgn(c)}?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes', mis:v === c ? 'boundaryWrong' : null}]),
           hint:() => `Where is ${sgn(v)} compared with ${sgn(c)} on a number line?`}]};
     }
     const right = !strict && Math.random() < 0.4 ? c : c + side * rand(1, 3);
@@ -4595,7 +4615,7 @@ const POTION2_GEN = {
   graphIneq(lvl){
     const op = pick(['>', '<', '≥', '≤']), c = lvl === 1 ? rand(1, 8) : rand(-6, 6);
     const words = {'>':'more than', '<':'less than', '≥':'at least', '≤':'at most'}[op];
-    const ask = lvl === 3 ? `The ice cream cart must stay at ${words} ${sgn(c)} degrees. Which graph shows the temperatures that work?` : `Which graph shows x ${op} ${sgn(c)}?`;
+    const ask = lvl === 3 ? `The ice cream cart works when it is ${words} ${sgn(c)} degrees. Which graph shows the temperatures that work?` : `Which graph shows x ${op} ${sgn(c)}?`;
     const opts = shuffle([[op, null], [INEQ_FLIP[op], 'ineqDirection'], [INEQ_OPEN[op], 'circleWrong']]).map(([o, mis]) => ({html:ineqSVG(o, c), text:`x ${o} ${sgn(c)}`, ok:o === op, mis}));
     return {title:'Ride Line', ctx:`graph x ${op} ${sgn(c)}`, bubble:ask, helper:'Open circle: the number is not included (< or >). Filled circle: it is included (≤ or ≥). The arrow points to the numbers that work.',
       visual:`<div style="text-align:center; font-size:2rem">🚦 ${lvl === 3 ? words + ' ' + sgn(c) : `x ${op} ${sgn(c)}`}</div>`,
@@ -4631,8 +4651,8 @@ const POTION2_GEN = {
     else if (f === 'sub') { pic = barModelSVG([{label:x, w:Math.max(2, x), on:true}, {label:a, w:Math.max(2, a)}], {total:'x'}); right = `x ${MINUS} ${a} = ${x}`; ans = x + a; wrongs = [{text:`x + ${a} = ${x}`, mis:'inverseWrong'}, {text:`${a} ${MINUS} x = ${x}`}, {text:`${a}x = ${x}`, mis:'wrongOperation'}]; }
     else { const k = rand(2, 5); pic = barModelSVG(Array.from({length:k}, () => ({label:x, on:true})), {total:'x'}); right = `x ÷ ${k} = ${x}`; ans = k * x; wrongs = [{text:`${k}x = ${x}`, mis:'inverseWrong'}, {text:`x + ${k} = ${x}`, mis:'wrongOperation'}, {text:`${x} ÷ ${k} = x`}]; }
     const steps = [{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the tape diagram?', options:choiceOf({text:right}, wrongs), hint:() => 'The whole bar is on top. The pieces underneath add up to it.'}];
-    if (lvl === 3) steps.push(numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true}));
-    return {title:'Ticket Booth', ctx:`tape ${right}`, bubble:'The ticket stubs make a tape diagram. Which equation does it show?', helper:'The number over the brace is the whole. The boxes are the parts.', visual:pic, steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
+    if (lvl === 3) steps.push(numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true, test:'Now solve it. What is x?'}));
+    return {title:'Ticket Booth', ctx:`tape ${right}`, bubble:`The ticket stubs make a tape diagram. Which equation does it show?${lvl === 3 ? ' Then solve it.' : ''}`, helper:'The number over the brace is the whole. The boxes are the parts.', visual:pic, steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};
   },
   /* identify equations from hanger diagrams */
   hangerEq(lvl){
@@ -4647,7 +4667,7 @@ const POTION2_GEN = {
     let k, c, x; do { k = lvl === 1 ? 1 : lvl === 2 ? rand(2, 4) : rand(2, 3); c = lvl === 2 ? 0 : rand(1, 5); x = rand(1, 4); } while (k * x + c > 16);
     const n = k * x + c, steps = [];
     if (c) steps.push(numStep(`Take off ${c}`, 'compute', `Take ${c} 🟣 off both sides. How many 🟣 are left on the right?`, n - c, {mis:v => v === n + c ? 'inverseWrong' : null}));
-    steps.push(numStep('One square', 'compute', k > 1 ? `Split ${n - c} 🟣 into ${k} equal groups, one for each 🟧. What is one 🟧 worth?` : 'What is one 🟧 worth?', x, {mis:v => v === n - c && k > 1 ? 'inverseWrong' : null}));
+    steps.push(numStep('One square', 'compute', k > 1 ? `Split ${n - c} 🟣 into ${k} equal groups, one for each 🟧. What is one 🟧 worth?` : 'What is one 🟧 worth?', x, {test:'What is one 🟧 worth?', mis:v => v === n - c && k > 1 ? 'inverseWrong' : null}));
     return {title:'Ticket Booth', ctx:`solve hanger ${k}x+${c}=${n}`, bubble:'Keep the hanger balanced. What is one square worth?', helper:'Whatever you take off one side, take off the other. Then share what is left equally.', visual:hangerHTML(k, c, n), steps, answerSteps:[steps.length - 1]};
   },
   /* one-step + and − equations with decimals and fractions */
@@ -4698,13 +4718,13 @@ const POTION2_GEN = {
   },
   /* find the mistake in one-step equations */
   eqMistake(lvl){
-    const a = rand(2, 9), x = rand(2, 12), f = pick(lvl === 1 ? ['add', 'sub'] : ['add', 'sub', 'mul', 'div']);
+    const a = rand(2, lvl === 3 ? 12 : 9), x = rand(2, lvl === 3 ? 15 : 12), f = pick(lvl === 1 ? ['add', 'sub'] : lvl === 2 ? ['add', 'sub', 'mul', 'div'] : ['mul', 'div', 'sub']);   // level 3: bigger numbers, mostly × and ÷
     const [eq, inv, wrongInv, rhs] = f === 'add' ? [`x + ${a} = ${x + a}`, `${MINUS} ${a}`, `+ ${a}`, x + a] : f === 'sub' ? [`x ${MINUS} ${a} = ${x}`, `+ ${a}`, `${MINUS} ${a}`, x]
       : f === 'mul' ? [`${a}x = ${a * x}`, `÷ ${a}`, `× ${a}`, a * x] : [`x ÷ ${a} = ${x}`, `× ${a}`, `÷ ${a}`, x];
     /* the sub form: x − a = x, so the solution is x + a */
     const sol = f === 'add' ? x : f === 'sub' ? x + a : f === 'mul' ? x : x * a;
     const lhs = eq.split(' = ')[0];
-    let kind = pick(lvl === 1 ? ['op', 'math', 'none'] : ['op', 'math', 'side', 'none']);
+    let kind = pick(lvl === 1 ? ['op', 'math', 'none'] : lvl === 2 ? ['op', 'math', 'side', 'none'] : ['op', 'math', 'side']);
     if (kind === 'op' && f === 'div' && rhs % a) kind = 'math';   // the wrong operation must still give a whole number
     const wrongVal = kind === 'op' ? (f === 'add' ? rhs + a : f === 'sub' ? rhs - a : f === 'mul' ? rhs * a : rhs / a) : kind === 'math' ? sol + pick([-1, 1, 2]) : kind === 'side' ? rhs : sol;
     const step1 = kind === 'op' ? `${lhs} ${wrongInv} = ${rhs} ${wrongInv}` : kind === 'side' ? `${lhs} ${inv} = ${rhs}` : `${lhs} ${inv} = ${rhs} ${inv}`;
@@ -4713,8 +4733,8 @@ const POTION2_GEN = {
     const work = `<div style="font-size:1.15rem; line-height:1.9; text-align:left; max-width:320px; margin:0 auto"><div>Start: <b>${esc(eq)}</b></div><div>Step 1: ${esc(step1)}</div><div>Step 2: ${esc(step2)}</div></div>`;
     const steps = [{name:'Find the mistake', type:'concept', kind:'choice', prompt:'Which step has a mistake?', options:choiceOf({text:answer}, ['Step 1', 'Step 2', 'There is no mistake'].filter(o => o !== answer).map(o => ({text:o, mis:o === 'There is no mistake' ? null : null}))),
       hint:() => 'Check step 1: is the same thing done to both sides, and is it the opposite operation? Check step 2: is the arithmetic right?'}];
-    if (lvl >= 2) steps.push(numStep('Right answer', 'compute', `What is the right solution of ${eq}?`, sol, {slowOK:true, mis:v => v === wrongVal && kind !== 'none' ? 'inverseWrong' : null}));
-    return {title:'Story Tent', ctx:`mistake ${eq} (${kind})`, bubble:'A fair worker solved this equation. Did they make a mistake? Where?', helper:'Undo with the opposite operation, and do the same thing to both sides.', visual:work, steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
+    if (lvl >= 2) steps.push(numStep('Right answer', 'compute', `What is the right solution of ${eq}?`, sol, {slowOK:true, test:`What is the right solution of ${eq}? x =`, mis:v => v === wrongVal && kind !== 'none' ? 'inverseWrong' : null}));
+    return {title:'Story Tent', ctx:`mistake ${eq} (${kind})`, bubble:`A fair worker solved this equation. Did they make a mistake? Where?${lvl >= 2 ? ' Then find the right solution.' : ''}`, helper:'Undo with the opposite operation, and do the same thing to both sides.', visual:work, steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};
   },
   /* translate one-step equations from words, then solve */
   translateEq(lvl){
@@ -4744,7 +4764,7 @@ const POTION2_GEN = {
   /* plotting inequalities: build the graph (where the circle goes, open or filled, which way) */
   plotIneq(lvl){
     const op = pick(['>', '<', '≥', '≤']), c = lvl === 1 ? rand(1, 8) : rand(-6, 6), words = {'>':'more than', '<':'less than', '≥':'at least', '≤':'at most'}[op];
-    const ask = lvl === 3 ? `The snow-cone machine works at ${words} ${sgn(c)} degrees. Plot the temperatures that work.` : `Plot x ${op} ${sgn(c)} on a number line.`, right = op === '>' || op === '≥', closed = op === '≥' || op === '≤';
+    const ask = lvl === 3 ? `The snow-cone machine works when it is ${words} ${sgn(c)} degrees. Plot the temperatures that work.` : `Plot x ${op} ${sgn(c)} on a number line.`, right = op === '>' || op === '≥', closed = op === '≥' || op === '≤';
     return {title:'Ride Line', ctx:`plot x ${op} ${sgn(c)}`, bubble:ask, helper:'Put the circle at the number. Fill it if the number counts (≤, ≥, at least, at most). Point the arrow toward the numbers that work.',
       visual:`<div style="text-align:center; font-size:2rem">🎢 ${lvl === 3 ? `${words} ${sgn(c)}` : `x ${op} ${sgn(c)}`}</div>`,
       steps:[negStep('The circle', 'concept', 'Where does the circle go?', c, {hint:() => 'At the number in the inequality.'}),
@@ -4903,9 +4923,9 @@ const HOUSES_GEN = {
     const pic = shapeSVG([[A, B, C]], [[A, 'A', 'end'], [B, 'B', 'start'], [C, 'C', 'start'], [D, 'D', 'start']], dash);
     const opts = choiceOf({text:'CD'}, [{text:'AC', mis:'slantHeight'}, {text:'BC', mis:'slantHeight'}]);
     const steps = [{name:'The height', type:'concept', kind:'choice', prompt:'If AB is the base, which segment is the height?', options:opts, hint:() => 'The height goes from the opposite corner straight to the base (or the line the base is on), making a right angle.'}];
-    if (lvl >= 2) steps.push(halfAreaStep('Area', `AB is ${b} and CD is ${h}. Area = ½ × ${b} × ${h} = ?`, b * h, {mis:v => v === b * h ? 'halfWrong' : null}));
-    return {title:'Roof Lines', ctx:`base/height ${lvl === 2 ? 'outside' : turn ? `turned ${turn}` : 'inside'}`, bubble:`The roof truss is triangle ABC.${lvl === 2 ? ' The height falls outside the triangle, on the line the base is on.' : ''}${turn ? ' The triangle is turned, so the base isn’t at the bottom. Turn the picture if it helps!' : ''} If AB is the base, which segment is the height?`,
-      helper:'A height always makes a right angle with the base. It doesn’t have to be inside the triangle.', visual:turnable(pic), steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
+    if (lvl >= 2) steps.push(halfAreaStep('Area', `Area = ½ × ${b} × ${h} = ? square feet`, b * h, {mis:v => v === b * h ? 'halfWrong' : null}));
+    return {title:'Roof Lines', ctx:`base/height ${lvl === 2 ? 'outside' : turn ? `turned ${turn}` : 'inside'}`, bubble:`The roof truss is triangle ABC.${lvl === 2 ? ' The height falls outside the triangle, on the line the base is on.' : ''}${turn ? ' The triangle is turned, so the base isn’t at the bottom. Turn the picture if it helps!' : ''} If AB is the base, which segment is the height?${lvl >= 2 ? ` AB is ${b} ft and CD is ${h} ft. What is the area?` : ''}`,
+      helper:'A height always makes a right angle with the base. It doesn’t have to be inside the triangle.', visual:turnable(pic), steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};
   },
   areaRightTri(lvl){
     if (lvl === 3) {   // level 3: find a missing leg from the area
@@ -4923,7 +4943,7 @@ const HOUSES_GEN = {
         halfAreaStep('Half of it', `${A2} ÷ 2 = ? square cm`, A2, {mis:v => v === A2 ? 'halfWrong' : null, hint:() => 'The triangle is half the rectangle.'})], answerSteps:[1]};
   },
   areaTri(lvl){
-    const b = rand(4, 14), h = rand(2, 10), off = lvl === 1 ? rand(1, b - 1) : lvl === 2 ? rand(1, b - 1) : pick([-rand(1, 3), b + rand(1, 3)]), A2 = b * h;
+    const b = lvl === 3 ? rand(9, 24) : rand(4, 14), h = lvl === 3 ? rand(7, 18) : rand(2, 10), off = lvl === 1 ? rand(1, b - 1) : lvl === 2 ? rand(1, b - 1) : pick([-rand(1, 3), b + rand(1, 3)]), A2 = b * h;   // level 3: the height outside, with bigger numbers
     const poly = [[0, 0], [b, 0], [off, h]], dash = [[off, 0], [off, h]];
     const extra = off < 0 || off > b ? [[[off, 0], [off < 0 ? 0 : b, 0]]] : [];
     return {title:'Roof Lines', ctx:`triangle b ${b} h ${h}`, bubble:`The roof window is a triangle with base ${b} in. and height ${h} in.${off < 0 || off > b ? ' The height is drawn outside the triangle.' : ''} What is its area?`, helper:'Area of a triangle = ½ × base × height.',
@@ -4933,11 +4953,11 @@ const HOUSES_GEN = {
 
   /* find a missing length when given the area of a triangle (Khan unit 8, added Oct 26, 2026) */
   triMissing(lvl){
-    const b = rand(3, 14), h = rand(2, 12), A2 = b * h, findH = lvl === 1 ? true : Math.random() < 0.5, off = rand(1, b - 1);
+    const b = lvl === 3 ? rand(8, 20) : rand(3, 12), h = lvl === 3 ? rand(6, 16) : rand(2, 9), A2 = b * h, findH = lvl === 1 ? true : Math.random() < 0.5, off = rand(1, b - 1);
     if (lvl === 1 && A2 % 2) return HOUSES_GEN.triMissing(lvl);   // level 1 keeps the area a whole number
     const ans = findH ? h : b, known = findH ? b : h, poly = [[0, 0], [b, 0], [off, h]];
     const labels = [[[b / 2, -0.9], findH ? `${b}` : '?'], [[off + 0.3, h / 2], findH ? '?' : `${h}`, 'start']];
-    return {title:'Roof Lines', ctx:`triangle A ${half(A2)} find ${findH ? 'h' : 'b'}`, bubble:`The attic window is a triangle with an area of ${half(A2)} square feet. Its ${findH ? 'base' : 'height'} is ${known} ft. What is its ${findH ? 'height' : 'base'}?`, helper:'Area = ½ × base × height. Double the area first, then divide.',
+    return {title:'Roof Lines', ctx:`triangle A ${half(A2)} find ${findH ? 'h' : 'b'}`, bubble:`The triangle at the top of the barn wall (the gable) has an area of ${half(A2)} square feet. Its ${findH ? 'base' : 'height'} is ${known} ft. What is its ${findH ? 'height' : 'base'}?`, helper:'Area = ½ × base × height. Double the area first, then divide.',
       visual:turnable(shapeSVG([poly], labels, [[[off, 0], [off, h]]])),
       steps:[numStep('Double the area', 'compute', `2 × ${half(A2)} = ?`, A2, {mis:v => Math.abs(v * 2 - A2) < 1e-9 ? 'halfWrong' : null, hint:() => 'A triangle is half of a parallelogram with the same base and height.'}),
         numStep(findH ? 'Height' : 'Base', 'compute', `${A2} ÷ ${known} = ? feet`, ans, {fact:fx(known, ans, true), mis:v => Math.abs(v * 2 - ans) < 1e-9 ? 'halfWrong' : null})], answerSteps:[1]};
@@ -4970,14 +4990,18 @@ const HOUSES_GEN = {
     const W = rand(4, 12), H = rand(3, 9), r = rand(2, 6), rect = W * H, tri2 = W * r;
     if (lvl < 3) {
       const poly = [[0, 0], [W, 0], [W, H], [W / 2, H + r], [0, H]];
-      return {title:'Rooms', ctx:`house ${W}×${H} roof ${r}`, bubble:`The dog house front is a ${W} ft by ${H} ft rectangle with a triangle roof ${r} ft tall. What is the area of the whole front?`, helper:'Rectangle + triangle. The triangle is ½ × base × height.',
-        visual:shapeSVG([poly], [[[W / 2, -0.9], `${W}`], [[-0.4, H / 2], `${H}`, 'end'], [[W / 2 + 0.3, H + r / 2], `${r}`, 'start']], [[[0, H], [W, H]], [[W / 2, H], [W / 2, H + r]]]),
-        steps:[numStep('Rectangle', 'compute', `${W} × ${H} = ?`, rect, {fact:fx(W, H)}), halfAreaStep('Roof triangle', `½ × ${W} × ${r} = ?`, tri2, {mis:v => v === tri2 ? 'halfWrong' : null}),
-          halfAreaStep('Total', `${rect} + ${half(tri2)} = ? square feet`, 2 * rect + tri2, {mis:v => Math.abs(v - (rect + tri2)) < 1e-9 ? 'halfWrong' : null})], answerSteps:[2]};
+      const whole = lvl === 2;   // level 2: the picture gives the whole height, so the roof's height comes first (Oct 26, 2026)
+      const story = whole ? `The dog house front is ${W} ft wide. Its walls are ${H} ft tall, and the whole front, up to the tip of the roof, is ${H + r} ft tall. What is the area of the whole front?`
+        : `The dog house front is a rectangle ${W} ft wide and ${H} ft tall, with a triangle roof ${r} ft tall on top. What is the area of the whole front?`;
+      const labels = [[[W / 2, -0.9], `${W}`], [[-0.4, H / 2], `${H}`, 'end'], ...(whole ? [[[W + 0.4, (H + r) / 2], `${H + r}`, 'start']] : [[[W / 2 + 0.3, H + r / 2], `${r}`, 'start']])];
+      return {title:'Rooms', ctx:`house ${W}×${H} roof ${r}${whole ? ' (whole height)' : ''}`, bubble:story, helper:'Rectangle + triangle. The triangle is ½ × base × height.',
+        visual:shapeSVG([poly], labels, [[[0, H], [W, H]], [[W / 2, H], [W / 2, H + r]], ...(whole ? [[[W + 0.2, 0], [W + 0.2, H + r]]] : [])]),
+        steps:[...(whole ? [numStep('Roof height', 'compute', `${H + r} − ${H} = ?`, r, {})] : []), numStep('Rectangle', 'compute', `${W} × ${H} = ?`, rect, {fact:fx(W, H)}), halfAreaStep('Roof triangle', `½ × ${W} × ${r} = ?`, tri2, {mis:v => v === tri2 ? 'halfWrong' : null}),
+          halfAreaStep('Total', `${rect} + ${half(tri2)} = ? square feet`, 2 * rect + tri2, {mis:v => Math.abs(v - (rect + tri2)) < 1e-9 ? 'halfWrong' : Math.abs(v - (rect + W * (H + r) / 2)) < 1e-9 ? 'compositeWrong' : null})], answerSteps:[whole ? 3 : 2]};
     }
     const t = rand(1, 4), top = rand(3, 9), bot = top + 2 * t, h = rand(3, 9);          // trapezoid = rectangle + two right triangles
     const poly = [[0, 0], [bot, 0], [bot - t, h], [t, h]];
-    return {title:'Rooms', ctx:`trapezoid ${top}/${bot} h ${h}`, bubble:`The ramp side is a trapezoid: ${top} ft across the top, ${bot} ft across the bottom, and ${h} ft tall. Split it into a rectangle and two triangles.`, helper:'Each triangle has a base of (bottom − top) ÷ 2.',
+    return {title:'Rooms', ctx:`trapezoid ${top}/${bot} h ${h}`, bubble:`The ramp side is a trapezoid: ${top} ft across the top, ${bot} ft across the bottom, and ${h} ft tall. Split it into a rectangle and two triangles. What is its area?`, helper:'Each triangle has a base of (bottom − top) ÷ 2.',
       visual:shapeSVG([poly], [[[bot / 2, -0.9], `${bot}`], [[bot / 2, h + 0.4], `${top}`], [[t + 0.3, h / 2], `${h}`, 'start']], [[[t, 0], [t, h]], [[bot - t, 0], [bot - t, h]]]),
       steps:[numStep('Rectangle', 'compute', `${top} × ${h} = ?`, top * h, {fact:fx(top, h)}), halfAreaStep('Both triangles', `2 × ½ × ${t} × ${h} = ?`, 2 * t * h, {mis:v => v === 2 * t * h ? 'halfWrong' : null}),
         numStep('Total', 'compute', `${top * h} + ${t * h} = ? square feet`, top * h + t * h, {mis:v => v === top * h + 2 * t * h ? 'halfWrong' : null})], answerSteps:[2]};
@@ -5071,9 +5095,9 @@ const HARBOR_GEN = {
     if (lvl === 1) {   // which picture shows the polygon with these corners?
       let x1, x2, y1, y2; do { x1 = rand(-5, 3); x2 = rand(x1 + 2, 5); y1 = rand(-5, 3); y2 = rand(y1 + 2, 5); } while (!(x1 < 0 && x2 > 0) && !(y1 < 0 && y2 > 0));
       const C = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]], k = rand(0, 3), names = ['A', 'B', 'C', 'D'];
-      const pic = (pts, mis) => ({text:pts.map(p => pt(...p)).join(' '), html:planeSVG(R, pts.map(([x, y]) => ({x, y})), pts), mis});
+      const pic = (pts, mis) => ({text:pts.map(p => pt(...p)).join(' '), html:planeSVG(R, pts.map(([x, y]) => ({x, y})), pts), mis, pts});
       const swap = C.map((p, i) => i === k ? [p[1], p[0]] : p), flipX = C.map((p, i) => i === k ? [-p[0], p[1]] : p), flipY = C.map((p, i) => i === k ? [p[0], -p[1]] : p), allSwap = C.map(([x, y]) => [y, x]);
-      const wrongs = [pic(swap, 'coordSwap'), pic(flipX, 'signWrong'), pic(flipY, 'signWrong'), pic(allSwap, 'coordSwap')].filter(w => w.text !== pic(C).text);
+      const shapeKey = pts => pts.map(q => q.join(',')).sort().join(' '), wrongs = [pic(swap, 'coordSwap'), pic(flipX, 'signWrong'), pic(flipY, 'signWrong'), pic(allSwap, 'coordSwap')].filter(w => shapeKey(w.pts) !== shapeKey(C));
       return {title:'Shipyard', ctx:`rect ${pt(x1, y1)} ${pt(x2, y2)}`, bubble:`The new dock is a polygon with corners ${C.map((p, i) => `${names[i]}${pt(...p)}`).join(', ')}. Which picture shows it?`, helper:'Plot each corner: x first (left or right), then y (up or down). Then connect them in order.',
         visual:'<div style="text-align:center; font-size:2rem">⚓ 🛠️</div>', steps:[{name:'The dock', type:'concept', kind:'choice', prompt:'Which picture shows the dock?', options:picChoice(pic(C), wrongs), hint:() => `Find ${names[k]}${pt(...C[k])}: ${C[k][0] > 0 ? 'right' : C[k][0] < 0 ? 'left' : 'stay at 0'} ${Math.abs(C[k][0])}, then ${C[k][1] > 0 ? 'up' : C[k][1] < 0 ? 'down' : 'stay at 0'} ${Math.abs(C[k][1])}.`}]};
     }
@@ -5082,20 +5106,21 @@ const HARBOR_GEN = {
       const C = shuffle([[x1, y1], [x2, y1], [x2, y2], [x1, y2]]), [A, B, D, miss] = [C[0], C[1], C[2], C[3]];
       const wrongs = [{text:pt(miss[1], miss[0]), mis:'coordSwap'}, {text:pt(-miss[0], miss[1]), mis:'signWrong'}, {text:pt(miss[0], -miss[1]), mis:'signWrong'}, {text:pt(miss[0] + 1, miss[1])}].filter(w => ![A, B, D].some(p => pt(...p) === w.text));
       return {title:'Shipyard', ctx:`4th corner ${pt(...miss)}`, bubble:`A rectangular sail has three corners at ${pt(...A)}, ${pt(...B)} and ${pt(...D)}. Where is the fourth corner?`, helper:'A rectangle’s sides go straight across and straight up and down. The missing corner shares its x with one corner and its y with another.',
-        visual:planeSVG(R, [A, B, D].map(([x, y]) => ({x, y}))), steps:[{name:'Fourth corner', type:'concept', kind:'choice', prompt:'The fourth corner is at…', options:choiceOf({text:pt(...miss)}, wrongs.slice(0, 3)), hint:() => 'Which x shows up only once? Which y shows up only once? The missing corner uses both.'}]};
+        visual:planeSVG(R, [A, B, D].map(([x, y]) => ({x, y}))), steps:[{name:'Fourth corner', type:'concept', kind:'pair', prompt:'Type the fourth corner (x, y).', answer:miss, eq:v => Array.isArray(v) && v[0] === miss[0] && v[1] === miss[1],
+          mis:v => Array.isArray(v) && v[0] === miss[1] && v[1] === miss[0] ? 'coordSwap' : Array.isArray(v) && Math.abs(v[0]) === Math.abs(miss[0]) && Math.abs(v[1]) === Math.abs(miss[1]) ? 'signWrong' : null, hint:() => 'Which x shows up only once? Which y shows up only once? The missing corner uses both.'}]};   // typed, like plotting it (Oct 26, 2026)
     }
     // level 3: plot the corners in your head (or on paper) and name the shape
     const kinds = ['rectangle', 'right triangle', 'parallelogram', 'trapezoid'], kind = pick(kinds); let P;
     const x0 = rand(-5, 0), y0 = rand(-5, 0);
     if (kind === 'rectangle') { const w = rand(2, 5); let h; do { h = rand(2, 5); } while (h === w); P = [[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]]; }
-    else if (kind === 'right triangle') { const w = rand(2, 5), h = rand(2, 5); P = [[x0, y0], [x0 + w, y0], [x0, y0 + h]]; }
+    else if (kind === 'right triangle') { const w = rand(2, 5); let h; do { h = rand(2, 5); } while (h === w); P = [[x0, y0], [x0 + w, y0], [x0, y0 + h]]; }
     else if (kind === 'parallelogram') { const w = rand(2, 4), h = rand(2, 5), r = rand(1, 2); P = [[x0, y0], [x0 + w, y0], [x0 + w + r, y0 + h], [x0 + r, y0 + h]]; }
     else { const w = rand(4, 5), h = rand(2, 5); P = [[x0, y0], [x0 + w, y0], [x0 + w - 1, y0 + h], [x0 + 1, y0 + h]]; }
     // only names that are wrong: a rectangle is also a parallelogram, so those never share a question
-    const WRONG = {'rectangle':['square', 'right triangle', 'pentagon'], 'right triangle':['rectangle', 'trapezoid', 'parallelogram'], 'parallelogram':['rectangle', 'square', 'right triangle'], 'trapezoid':['parallelogram', 'rectangle', 'right triangle']};
+    const WRONG = {'rectangle':['square', 'right triangle', 'pentagon'], 'right triangle':['acute triangle', 'obtuse triangle', 'rectangle'], 'parallelogram':['rectangle', 'square', 'right triangle'], 'trapezoid':['parallelogram', 'rectangle', 'right triangle']};
     const wrongs = WRONG[kind].map(k => ({text:k, mis:null}));
     const names = ['A', 'B', 'C', 'D'];
-    return {title:'Shipyard', ctx:`shape ${kind}`, bubble:`Plot the corners ${P.map((p, i) => `${names[i]}${pt(...p)}`).join(', ')} and connect them in order. What is the best name for the shape the boat builder makes?`, helper:'Plot each point, then connect A to B to C and back. Look at the side lengths and which sides are straight across or up and down.',
+    return {title:'Shipyard', ctx:`shape ${kind}`, bubble:`Plot the corners ${P.map((p, i) => `${names[i]}${pt(...p)}`).join(', ')} and connect them in order. What is the best name for the shape?`, helper:'Plot each point, then connect A to B to C and back. Look at the side lengths and which sides are straight across or up and down.',
       visual:planeSVG(R, []), steps:[{name:'The shape', type:'concept', kind:'choice', prompt:'What is the best name for it?', options:choiceOf({text:kind}, wrongs), hint:() => P.length === 3 ? 'How many corners are there?' : 'Are both pairs of opposite sides parallel? Are the corners square corners? A trapezoid has only one pair of parallel sides.'}]};
   },
   /* quadrilateral problems on the coordinate plane */
@@ -5105,7 +5130,7 @@ const HARBOR_GEN = {
     if (lvl === 1) {   // the fourth corner, then a side length
       return {title:'Shipyard', ctx:`rect ${pt(x1, y1)} ${pt(x2, y2)} side`, bubble:`A boat ramp is a rectangle with corners at ${pt(x1, y1)}, ${pt(x2, y1)} and ${pt(x2, y2)}. Each unit is 1 meter. Find the fourth corner, then the length of the top side.`, helper:'The missing corner shares its x with one corner and its y with another. For a side’s length, count across, through 0 if needed.',
         visual:planeSVG(8, [[x1, y1], [x2, y1], [x2, y2]].map(([x, y]) => ({x, y}))),
-        steps:[{name:'Fourth corner', type:'concept', kind:'choice', prompt:'The fourth corner is at…', options:choiceOf({text:pt(x1, y2)}, [{text:pt(y2, x1), mis:'coordSwap'}, {text:pt(-x1, y2), mis:'signWrong'}, {text:pt(x1, -y2), mis:'signWrong'}, {text:pt(x1 - 1, y2)}, {text:pt(x1, y2 + 1)}].filter(o => o.text !== pt(x1, y2) && o.text !== pt(x2, y2) && o.text !== pt(x1, y1) && o.text !== pt(x2, y1)).filter((o, i, arr) => arr.findIndex(u => u.text === o.text) === i).slice(0, 3)), hint:() => 'It is straight above one corner and straight across from another.'},
+        steps:[{name:'Fourth corner', type:'concept', kind:'pair', prompt:'Type the fourth corner (x, y).', answer:[x1, y2], eq:v => Array.isArray(v) && v[0] === x1 && v[1] === y2, mis:v => Array.isArray(v) && v[0] === y2 && v[1] === x1 ? 'coordSwap' : Array.isArray(v) && Math.abs(v[0]) === Math.abs(x1) && Math.abs(v[1]) === Math.abs(y2) ? 'signWrong' : null, hint:() => 'It is straight above one corner and straight across from another.'},
           numStep('Top side', 'compute', `From ${pt(x1, y2)} to ${pt(x2, y2)} = ? meters`, w, {mis:v => v === Math.abs(Math.abs(x2) - Math.abs(x1)) && v !== w ? 'negDistance' : null, hint:() => `${Math.abs(x1)} to 0, then ${x2} more.`})], answerSteps:[1]};
     }
     if (lvl === 2) {   // a word problem: rope around the swimming area, and the cost
@@ -5260,12 +5285,17 @@ const HOUSES2_GEN = {
     return {title:'Sorting Room', ctx:`${kind} ${asks.join('+')}`, bubble:`This parcel is a ${kind}. Count its ${asks.map(a => NAMES[a]).join(' and its ')}. The dashed lines are edges on the back.`, helper,
       visual:SOLID3D.svg(kind, {yaw, pitch}),
       steps:asks.map(a => numStep(a[0].toUpperCase() + a.slice(1), 'compute', `How many ${NAMES[a]}?`, C[a], {mis:mis(a), hint:() => a === 'faces' ? (kind.includes('pyramid') ? 'Count the base, then the triangles around it.' : 'Count the 2 bases, then the faces around the sides.') : a === 'edges' ? (kind.includes('pyramid') ? 'The edges around the base, plus one going up to the point from each corner.' : 'The edges around the top, around the bottom, and the ones going up.') : (kind.includes('pyramid') ? 'The corners of the base, plus the point on top.' : 'The corners on top plus the corners on the bottom.')})),
-      ...(asks.length > 1 ? {answerSteps:[1]} : {})};
+      ...(asks.length > 1 ? {answerSteps:[0, 1]} : {})};
   },
   /* identify geometric solids */
   solidId(lvl){
     if (lvl === 3) {   // from a description, no picture
       const D = [['cube', '6 faces, and every face is a square'], ['rectangular prism', '6 rectangle faces, and they are not all squares'], ['triangular prism', '2 triangle bases and 3 rectangle faces'], ['pentagonal prism', '2 pentagon bases and 5 rectangle faces'], ['square pyramid', '1 square base and 4 triangle faces that meet at a point'], ['triangular pyramid', '4 faces, and every face is a triangle'], ['hexagonal pyramid', '1 hexagon base and 6 triangle faces'], ['cylinder', '2 circle bases and one curved surface'], ['cone', '1 circle base and a curved surface that comes to a point']];
+      if (Math.random() < 0.6) {   // harder: only the numbers of faces, edges and vertices (Oct 26, 2026)
+        const POLY = ['cube', 'triangular prism', 'square pyramid', 'triangular pyramid', 'pentagonal prism', 'pentagonal pyramid', 'hexagonal prism', 'hexagonal pyramid'], kind = pick(POLY), C = SOLID3D.counts(kind);
+        return {title:'Sorting Room', ctx:`FEV ${kind}`, bubble:`A label on a parcel says: “I have ${C.faces} faces, ${C.edges} edges and ${C.vertices} vertices.” What shape is the parcel?`, helper:'Prisms have 2 matching bases joined by rectangles. Pyramids have 1 base and triangles that meet at a point. Count the faces, edges and vertices of each choice.',
+          visual:'<div style="text-align:center; font-size:2rem">📦 🏷️</div>', steps:[{name:'Which shape', type:'concept', kind:'choice', prompt:'The parcel is a…', options:choiceOf({text:kind}, shuffle(POLY.filter(k => k !== kind)).slice(0, 3).map(t => ({text:t, mis:'solidWrong'}))), hint:() => 'A prism with an n-sided base has n + 2 faces. A pyramid with an n-sided base has n + 1 faces.'}]};
+      }
       const [kind, text] = pick(D), wrongs = shuffle(D.map(d => d[0]).filter(k => k !== kind && !(kind === 'cube' && k === 'rectangular prism'))).slice(0, 3);
       return {title:'Sorting Room', ctx:`describe ${kind}`, bubble:`A label on a parcel says: “I have ${text}.” What shape is the parcel?`, helper:'Prisms have 2 matching bases joined by rectangles. Pyramids have 1 base and triangles that meet at a point. Cylinders and cones are curved.',
         visual:'<div style="text-align:center; font-size:2rem">📦 🏷️</div>', steps:[{name:'Which shape', type:'concept', kind:'choice', prompt:'The parcel is a…', options:choiceOf({text:kind}, wrongs.map(t => ({text:t, mis:'solidWrong'}))), hint:() => 'How many bases? What shape are they? Do the sides come to a point?'}]};
@@ -5314,7 +5344,7 @@ const HOUSES2_GEN = {
     const edges = n.map(x => RQ.of(x, k)), cubes = n[0] * n[1] * n[2], V = RQ.of(cubes, k * k * k);
     return {title:'Packing Room', ctx:`cubes 1/${k} in ${edges.map(qt).join('×')}`, bubble:`A treat box is ${edges.map(e => qt(e)).join(' in. by ')} in. It is packed with cubes that are 1/${k} in. on each side. How many cubes fit? What is the volume?`,
       helper:`Each cube is 1/${k} × 1/${k} × 1/${k} = 1/${k * k * k} cubic inch.`, visual:boxSVG(`${qt(edges[0])} in.`, `${qt(edges[1])} in.`, `${qt(edges[2])} in.`, {l:n[0], w:n[1], h:n[2]}),
-      steps:[numStep('Cubes along each edge', 'compute', `${n[0]} × ${n[1]} × ${n[2]} = ?`, cubes, {hint:() => `${qt(edges[0])} in. holds ${n[0]} cubes of 1/${k} in.`}),
+      steps:[numStep('Number of cubes', 'compute', `${n[0]} × ${n[1]} × ${n[2]} = ?`, cubes, {hint:() => `${qt(edges[0])} in. holds ${n[0]} cubes of 1/${k} in.`}),
         rqStep('Volume', `${cubes} × 1/${k * k * k} = ? cubic inches`, V, {simplest:true, mis:w => w[1] === 1 && w[0] === cubes ? 'fracVolumeWrong' : null})], answerSteps:[1]};
   },
   volWord(lvl){
@@ -5390,14 +5420,17 @@ const HOUSES2_GEN = {
   saExpr(lvl){
     if (lvl === 1) {
       const l = rand(3, 9), w = rand(2, 7), h = rand(2, 6);
-      const right = `2(${l} × ${w}) + 2(${l} × ${h}) + 2(${w} × ${h})`, wrongs = [{text:`${l} × ${w} + ${l} × ${h} + ${w} × ${h}`, mis:'surfaceMissingFaces'}, {text:`${l} × ${w} × ${h}`, mis:'volumeAddWrong'}, {text:`2(${l} + ${w} + ${h})`, mis:'volumeAddWrong'}];
+      if (l * w * h === 2 * (l * w + l * h + w * h)) return HOUSES2_GEN.saExpr(lvl);   // a 6 × 6 × 6 cube: its volume equals its surface area
+      const SA = 2 * (l * w + l * h + w * h), right = `2(${l} × ${w}) + 2(${l} × ${h}) + 2(${w} × ${h})`;
+      const wrongs = [[`2(${l} × ${w}) + 2(${l} × ${h}) + 2(${w} + ${h})`, 2 * (l * w + l * h + w + h), null], [`2(${l} × ${w}) + 2(${l} × ${h}) + 2(${l} × ${h})`, 2 * (l * w + 2 * l * h), 'surfaceMissingFaces'], [`${l} × ${w} + ${l} × ${h} + ${w} × ${h}`, SA / 2, 'surfaceMissingFaces'], [`${l} × ${w} × ${h}`, l * w * h, 'volumeAddWrong']]
+        .filter(([, v]) => v !== SA).slice(0, 3).map(([text, , mis]) => ({text, mis}));   // never a wrong choice that also equals the surface area
       return {title:'Wrapping Desk', ctx:`SA expr box ${l}×${w}×${h}`, bubble:`Which expression gives the surface area of a box ${l} cm long, ${w} cm wide and ${h} cm tall?`, helper:'A box has 6 faces in 3 matching pairs: top and bottom, front and back, left and right.',
         visual:SOLID3D.svg('rectangular prism', {d:{l:l / 4, w:w / 4, h:h / 4}, labels:[{edge:[0, 1], text:`${l} cm`, parallel:true}, {edge:[1, 2], text:`${w} cm`, parallel:true}, {edge:[1, 5], text:`${h} cm`, parallel:true}]}),
         steps:[{name:'Expression', type:'concept', kind:'choice', prompt:'Surface area =', options:choiceOf({text:right}, wrongs), hint:() => 'Count the faces: there are 6, so you need 3 pairs.'}]};
     }
     if (lvl === 2) {
       const sd = rand(2, 8), t = rand(sd, sd + 6), val = sd * sd + 2 * sd * t;
-      const right = `${sd} × ${sd} + 4(½ × ${sd} × ${t})`, wrongs = [{text:`4(½ × ${sd} × ${t})`, mis:'surfaceMissingFaces'}, {text:`${sd} × ${sd} + 4(${sd} × ${t})`, mis:'halfWrong'}, {text:`${sd} × ${sd} + ½ × ${sd} × ${t}`, mis:'surfaceMissingFaces'}];
+      const right = `${sd} × ${sd} + 4(½ × ${sd} × ${t})`, wrongs = [{text:`4(${sd} × ${sd}) + 4(½ × ${sd} × ${t})`}, {text:`${sd} × ${sd} + 4(${sd} × ${t})`, mis:'halfWrong'}, {text:`${sd} × ${sd} + ½ × ${sd} × ${t}`, mis:'surfaceMissingFaces'}];
       return {title:'Wrapping Desk', ctx:`SA expr pyramid ${sd} ${t}`, bubble:`A square pyramid has a base ${sd} in. on each side, and each triangle face is ${t} in. tall. Which expression gives its surface area? Then find it.`, helper:'1 square base + 4 triangles. Each triangle is ½ × base × height.',
         visual:SOLID3D.svg('square pyramid', {slant:true, slantText:`${t} in.`, labels:[{edge:'base', text:`${sd} in.`}]}),
         steps:[{name:'Expression', type:'concept', kind:'choice', prompt:'Surface area =', options:choiceOf({text:right}, wrongs), hint:() => 'Don’t forget the square on the bottom, and the ½ for each triangle.'},
@@ -5421,7 +5454,7 @@ const HOUSES2_GEN = {
         steps:[numStep('One face', 'compute', `${s} × ${s} = ?`, s * s, {fact:fx(s, s)}), numStep('Six faces', 'compute', `6 × ${s * s} = ? square inches`, 6 * s * s, {fact:fx(6, s * s), mis:v => v === s * s * s ? 'volumeAddWrong' : v === 4 * s * s ? 'surfaceMissingFaces' : null})], answerSteps:[1]};
     }
     if (lvl === 2) {   // paint everything but the bottom
-      const l = rand(3, 8), w = rand(2, 6), h = rand(2, 6), top = l * w, fb = 2 * l * h, lr = 2 * w * h, ans = top + fb + lr;
+      const l = rand(4, 8), w = rand(2, l - 1), h = rand(2, 6), top = l * w, fb = 2 * l * h, lr = 2 * w * h, ans = top + fb + lr;
       return {title:'Wrapping Desk', ctx:`paint no bottom ${l}×${w}×${h}`, bubble:`${n} paints a toy chest that is ${l} ft long, ${w} ft wide and ${h} ft tall. The bottom sits on the floor and doesn’t get painted. How many square feet get paint?`, helper:'Paint the top, the front and back, and the two ends: 5 faces.',
         visual:SOLID3D.svg('rectangular prism', {d:{l:l / 4, w:w / 4, h:h / 4}, labels:[{edge:[0, 1], text:`${l} ft`, parallel:true}, {edge:[1, 2], text:`${w} ft`, parallel:true}, {edge:[1, 5], text:`${h} ft`, parallel:true}]}),
         steps:[numStep('Top', 'compute', `${l} × ${w} = ?`, top, {fact:fx(l, w)}), numStep('Front and back', 'compute', `2 × ${l} × ${h} = ?`, fb, {mis:v => v === l * h ? 'surfaceMissingFaces' : null}), numStep('The two ends', 'compute', `2 × ${w} × ${h} = ?`, lr, {mis:v => v === w * h ? 'surfaceMissingFaces' : null}),
@@ -5476,10 +5509,14 @@ function boxPlotSVG([mn, q1, md, q3, mx], {lo = mn - 2, hi = mx + 2} = {}){
     + `<rect x="${X(q1)}" y="${y - 14}" width="${X(q3) - X(q1)}" height="28" class="box-rect"/><line x1="${X(md)}" y1="${y - 14}" x2="${X(md)}" y2="${y + 14}" class="box-med"/>`
     + `<line x1="${X(mn)}" y1="${y - 8}" x2="${X(mn)}" y2="${y + 8}" class="nl-line"/><line x1="${X(mx)}" y1="${y - 8}" x2="${X(mx)}" y2="${y + 8}" class="nl-line"/>`
     + `<line x1="${L}" y1="${y + 30}" x2="${R}" y2="${y + 30}" class="nl-line"/>`;
+  if (span <= 60) for (let v = Math.ceil(lo); v <= hi; v++) if (v % step) g += `<line x1="${X(v)}" y1="${y + 28}" x2="${X(v)}" y2="${y + 32}" class="nl-line"/>`;   // small ticks at every whole number, so values can be read exactly (Oct 26, 2026)
   for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) g += `<line x1="${X(v)}" y1="${y + 26}" x2="${X(v)}" y2="${y + 34}" class="nl-line"/><text x="${X(v)}" y="${y + 48}" class="nl-text nl-small">${v}</text>`;
   return `<svg class="num-line stat-pic" viewBox="0 0 ${w} ${y + 56}" width="${w}" role="img" aria-label="box plot">${g}</svg>`;
 }
 /* [emoji, pets, what the dot plot measures, how to say a value in a question] */
+/* how to say "the data" for each pet in a sentence ("the weights of the dogs, in pounds"; Oct 26, 2026) */
+const STAT_PHRASE = {'weight (pounds)':w => `the weights of the ${w}, in pounds`, 'age (years)':w => `the ages of the ${w}, in years`, 'age (months)':w => `the ages of the ${w}, in months`, 'carrots eaten':w => `how many carrots each of the ${w} ate`, 'wheel laps (hundreds)':w => `how many hundred laps each of the ${w} ran`, 'songs sung':w => `how many songs each of the ${w} sang`};
+const statOf = (what, label) => (STAT_PHRASE[label] || (w => `the ${label} of the ${w}`))(what);
 const PETS = [['🐕', 'dogs', 'weight (pounds)', n => `weigh ${n} pounds`], ['🐈', 'cats', 'age (years)', n => `are ${n} years old`], ['🐇', 'rabbits', 'carrots eaten', n => `ate ${n} carrots`], ['🐹', 'hamsters', 'wheel laps (hundreds)', n => `ran ${n} hundred laps`], ['🐦', 'birds', 'songs sung', n => `sang ${n} songs`]];
 const listTxt = a => a.join(', ');
 /* a data set of n values from lo to hi */
@@ -5515,26 +5552,26 @@ const SHOW_GEN = {
       more:[`How many ${what} ${say(`more than ${cut}`)}?`, data.filter(v => v > cut).length, data.filter(v => v >= cut).length], atMost:[`How many ${what} ${say(`at most ${cut}`)}?`, data.filter(v => v <= cut).length, data.filter(v => v < cut).length],
       between:[`How many ${what} ${say(`from ${cut} to ${cut2}`)}, including both?`, data.filter(v => v >= cut && v <= cut2).length, data.filter(v => v > cut && v < cut2).length], atLeast:[`How many ${what} ${say(`at least ${cut}`)}?`, data.filter(v => v >= cut).length, data.filter(v => v > cut).length]}[kind];
     if (T[1] === 0) return SHOW_GEN.readDot(lvl);
-    return {title:'Sign-In Desk', ctx:`dot ${kind} ${cut}`, bubble:`The dot plot shows the ${label} of the ${what} at the pet show. ${T[0]}`, helper:'Each dot is one pet.', visual:dotPlotSVG(data, {lo, hi, label}),
+    return {title:'Sign-In Desk', ctx:`dot ${kind} ${cut}`, bubble:`The dot plot shows ${statOf(what, label)} at the pet show. ${T[0]}`, helper:'Each dot is one pet.', visual:dotPlotSVG(data, {lo, hi, label}),
       steps:[numStep('Count', 'concept', T[0], T[1], {mis:v => T[2] !== null && v === T[2] && T[2] !== T[1] ? 'boundaryCount' : null, hint:() => kind === 'more' ? `Do not count the ${cut}s.` : kind === 'atMost' || kind === 'atLeast' ? `Count the ${cut}s too.` : kind === 'between' ? `Count the ${cut}s and the ${cut2}s too.` : 'Count the dots.'})]};
   },
   readHist(lvl){
-    const [e, what] = pick(PETS), w = pick([5, 10]), start = w === 5 ? 0 : 10, bins = Array.from({length:rand(4, 6)}, (_, i) => [start + i * w, start + i * w + w - 1, rand(1, 9)]);   // [from, to, count]
-    const label = w === 5 ? 'age (years)' : 'weight (pounds)', k = rand(1, bins.length - 2), from = bins[k][0];
+    const w = pick([5, 10]), [e, what] = w === 5 ? pick([['🐶', 'puppies'], ['🐱', 'kittens']]) : ['🐕', 'dogs'], start = w === 5 ? 0 : 10, bins = Array.from({length:rand(4, 6)}, (_, i) => [start + i * w, start + i * w + w - 1, rand(1, 9)]);   // [from, to, count]; ages in months and dog weights stay realistic
+    const label = w === 5 ? 'age (months)' : 'weight (pounds)', unitW = w === 5 ? 'months old' : 'pounds', k = rand(1, bins.length - 2), from = bins[k][0];
     if (lvl === 1) {
       const top = Math.max(...bins.map(b => b[2])); if (bins.filter(b => b[2] === top).length > 1) return SHOW_GEN.readHist(lvl);
       const best = bins.find(b => b[2] === top);
-      return {title:"Judges' Table", ctx:`hist most`, bubble:`The histogram shows the ${label} of the ${what}. Which interval has the most ${what}?`, helper:'The tallest bar has the most.', visual:histSVG(bins, label),
+      return {title:"Judges' Table", ctx:`hist most`, bubble:`The histogram shows ${statOf(what, label)}. Which interval has the most ${what}?`, helper:'The tallest bar has the most.', visual:histSVG(bins, label),
         steps:[{name:'Tallest bar', type:'concept', kind:'choice', prompt:'Which interval has the most?', options:choiceOf({text:`${best[0]}–${best[1]}`}, shuffle(bins.filter(b => b !== best)).slice(0, 3).map(b => ({text:`${b[0]}–${b[1]}`, mis:'binRead'}))), hint:() => 'Find the tallest bar, then read the interval under it.'}]};
     }
     const ans = sumOf(bins.slice(k).map(b => b[2])), inBin = bins[k][2];
     if (lvl === 3) {   // level 3: find the total first, then how many are below an interval
       const total = sumOf(bins.map(b => b[2])), below = total - ans;
-      return {title:"Judges' Table", ctx:`hist < ${from}`, bubble:`The histogram shows the ${label} of the ${what}. How many ${what} are there in all? How many are less than ${from}?`, helper:'Add all the bars for the total. "Less than" means only the bars to the left of that interval.', visual:histSVG(bins, label),
+      return {title:"Judges' Table", ctx:`hist < ${from}`, bubble:`The histogram shows ${statOf(what, label)}. How many ${what} are there in all? How many are less than ${from} ${unitW}?`, helper:'Add all the bars for the total. "Less than" means only the bars to the left of that interval.', visual:histSVG(bins, label),
         steps:[numStep('In all', 'compute', `${bins.map(b => b[2]).join(' + ')} = ?`, total, {mis:v => v === bins.length ? 'binRead' : null}),
-          numStep('Less than', 'compute', `How many are less than ${from}?`, below, {mis:v => v === below + inBin ? 'binRead' : v === ans ? 'binRead' : null, hint:() => `Add the bars before ${from}: ${bins.slice(0, k).map(b => b[2]).join(' + ')}.`})], answerSteps:[1]};
+          numStep('Less than', 'compute', `How many are less than ${from}?`, below, {mis:v => v === below + inBin ? 'binRead' : v === ans ? 'binRead' : null, hint:() => `Add the bars before ${from}: ${bins.slice(0, k).map(b => b[2]).join(' + ')}.`})], answerSteps:[0, 1]};
     }
-    return {title:"Judges' Table", ctx:`hist ≥ ${from}`, bubble:`The histogram shows the ${label} of the ${what}. How many ${what} are ${from} or more?`, helper:'Add the heights of every bar from that interval on.', visual:histSVG(bins, label),
+    return {title:"Judges' Table", ctx:`hist ≥ ${from}`, bubble:`The histogram shows ${statOf(what, label)}. How many ${what} are ${from} ${unitW} or more?`, helper:'Add the heights of every bar from that interval on.', visual:histSVG(bins, label),
       steps:[numStep('Add the bars', 'compute', `${bins.slice(k).map(b => b[2]).join(' + ')} = ?`, ans, {mis:v => v === inBin && bins.length - k > 1 ? 'binRead' : v === bins.slice(k).length ? 'binRead' : null, hint:() => `The bars from ${from} on are ${bins.slice(k).map(b => b[2]).join(', ')}.`})]};
   },
 
@@ -5554,11 +5591,11 @@ const SHOW_GEN = {
     const S = sumOf(data), n = data.length, parts = vals.map(v => counts[v] > 1 ? `${counts[v]} × ${v}` : `${v}`);
     if (lvl === 3) {   // level 3: work backward, a new pet raises the mean by 1
       const newScore = (m + 1) * (n + 1) - S;
-      return {title:'Score Cards', ctx:`mean dot add ${listTxt(sortN(data))}`, bubble:`The dot plot shows the ${label} of the ${what}. Its mean is ${m}. One more pet joins, and the mean goes up to ${m + 1}. What is the new pet's value?`, helper:'Mean × how many = total. Compare the total before and after the new pet joins.', visual:dotPlotSVG(data, {label}),
+      return {title:'Score Cards', ctx:`mean dot add ${listTxt(sortN(data))}`, bubble:`The dot plot shows ${statOf(what, label)}. Its mean is ${m}. One more pet joins, and the mean goes up to ${m + 1}. How much does the new pet score?`, helper:'Mean × how many = total. Compare the total before and after the new pet joins.', visual:dotPlotSVG(data, {label}),
         steps:[numStep('Total now', 'compute', `${m} × ${n} = ?`, S, {fact:fx(m, n)}), numStep('Total after', 'compute', `${m + 1} × ${n + 1} = ?`, (m + 1) * (n + 1), {fact:fx(m + 1, n + 1)}),
           numStep('New pet', 'compute', `${(m + 1) * (n + 1)} − ${S} = ?`, newScore, {hint:() => `The new pet adds ${(m + 1) * (n + 1)} − ${S} to the total.`})], answerSteps:[2]};
     }
-    return {title:'Score Cards', ctx:`mean dot ${listTxt(sortN(data))}`, bubble:`The dot plot shows the ${label} of the ${what}. What is the mean?`, helper:'Several dots on one number means that value several times.', visual:dotPlotSVG(data, {label}),
+    return {title:'Score Cards', ctx:`mean dot ${listTxt(sortN(data))}`, bubble:`The dot plot shows ${statOf(what, label)}. What is the mean?`, helper:'Several dots on one number means that value several times.', visual:dotPlotSVG(data, {label}),
       steps:[numStep('How many', 'concept', 'How many dots are there?', n, {}), numStep('Total', 'compute', `${parts.join(' + ')} = ?`, S, {mis:v => v === sumOf(vals) ? 'meanNoDivide' : null, hint:() => 'Multiply each value by its number of dots, then add.'}),
         numStep('Mean', 'compute', `${S} ÷ ${n} = ?`, m, {fact:fx(n, m, true), mis:v => v === S ? 'meanNoDivide' : v === medianOf(data) && v !== m ? 'meanMedianSwap' : null})], answerSteps:[2]};
   },
@@ -5567,7 +5604,7 @@ const SHOW_GEN = {
     const med = medianOf(data);
     const unsorted = n % 2 ? data[(n - 1) / 2] : (data[n / 2 - 1] + data[n / 2]) / 2, mean = sumOf(data) / n;
     const asTable = lvl === 2, vals = [...new Set(sortN(data))];   // Khan: data displays. Level 2 is a frequency table; levels 1 and 3 are dot plots (the plain list is medianCalc now)
-    return {title:'Score Cards', ctx:`median ${listTxt(data)}`, bubble:asTable ? `The frequency table shows the ${label} of the ${what}. What is the median?` : `The dot plot shows the ${label} of the ${what}. What is the median?`, helper:'Put the values in order. The median is the middle one (or halfway between the two middle ones).',
+    return {title:'Score Cards', ctx:`median ${listTxt(data)}`, bubble:asTable ? `The frequency table shows ${statOf(what, label)}. What is the median?` : `The dot plot shows ${statOf(what, label)}. What is the median?`, helper:'Put the values in order. The median is the middle one (or halfway between the two middle ones).',
       visual:asTable ? xyTable(vals, vals.map(v => data.filter(x => x === v).length), label, 'Frequency') : dotPlotSVG(data, {label}),
       steps:[{name:'In order', type:'concept', kind:'choice', prompt:'Which list is in order?', options:choiceOf({text:listTxt(sortN(data))}, [{text:listTxt(sortN(data).reverse())}, {text:listTxt(data), mis:'medianUnsorted'}, {text:listTxt([...sortN(data).slice(1), sortN(data)[0]])}]), hint:() => 'Smallest to largest.'},
         statStep('Median', `The median of ${listTxt(sortN(data))} = ?`, med, {mis:v => near2(v, unsorted) && unsorted !== med ? 'medianUnsorted' : near2(v, mean) && mean !== med ? 'meanMedianSwap' : null, hint:() => n % 2 ? `There are ${n} values: the middle one is number ${(n + 1) / 2}.` : `There are ${n} values: take halfway between numbers ${n / 2} and ${n / 2 + 1}.`})], answerSteps:[1]};
@@ -5576,8 +5613,8 @@ const SHOW_GEN = {
   /* ----- station 3: Ribbon Ranges (IQR and MAD) ----- */
   iqr(lvl){
     if (lvl === 3) {   // level 3: compare the IQRs of two groups
-      const mk = () => { const lo = rand(1, 20); return dataSet(8, lo, lo + rand(10, 30)); }; let A, B, iA, iB;
-      do { A = mk(); B = mk(); const [a1, a3] = quartiles(A), [b1, b3] = quartiles(B); iA = a3 - a1; iB = b3 - b1; } while (Math.abs(iA - iB) < 1);
+      const mk = () => { const lo = rand(1, 20); return dataSet(8, lo, lo + rand(15, 20)); }; let A, B, iA, iB;
+      do { A = mk(); B = mk(); const [a1, a3] = quartiles(A), [b1, b3] = quartiles(B); iA = a3 - a1; iB = b3 - b1; } while (Math.abs(iA - iB) < 1 || Math.abs(iA - iB) > 5 || Math.abs((Math.max(...A) - Math.min(...A)) - (Math.max(...B) - Math.min(...B))) > 4);   // close enough that she has to work out both IQRs
       const [pa, pb] = shuffle(PETS).slice(0, 2), sa = sortN(A), sb = sortN(B), big = iA > iB ? pa[1] : pb[1];
       return {title:'Ribbon Ranges', ctx:`iqr compare ${listTxt(A)} | ${listTxt(B)}`, bubble:`Jump distances (inches). The ${pa[1]}: ${listTxt(sa)}. The ${pb[1]}: ${listTxt(sb)}. Which group's middle half is more spread out?`, helper:'IQR = Q3 − Q1 for each group. The bigger IQR means the middle half is more spread out.',
         visual:`<div style="text-align:center; font-size:1.2rem">${pa[0]} ${listTxt(sa)}<br>${pb[0]} ${listTxt(sb)}</div>`,
@@ -5622,7 +5659,7 @@ const SHOW_GEN = {
     if (kind !== 'above' && kind !== 'below' && kind !== 'between') { const ans = kind === 'iqr' ? q3 - q1 : mx - mn;
       return {title:'Ribbon Ranges', ctx:`box ${kind} ${five}`, bubble:`The box plot shows the scores of the ${what}. What is the ${kind === 'iqr' ? 'interquartile range' : 'range'}?`, helper:kind === 'iqr' ? 'IQR = the right edge of the box − the left edge (Q3 − Q1).' : 'Range = maximum − minimum (the ends of the whiskers).', visual:vis,
         steps:[numStep(kind === 'iqr' ? 'IQR' : 'Range', 'compute', kind === 'iqr' ? `${q3} − ${q1} = ?` : `${mx} − ${mn} = ?`, ans, {mis:v => kind === 'iqr' && v === mx - mn ? 'rangeNotIqr' : kind === 'range' && v === q3 - q1 ? 'rangeNotIqr' : null})]}; }
-    const Q = kind === 'above' ? [`What percent of the ${what} scored more than ${q3}?`, '25%'] : kind === 'below' ? [`What percent of the ${what} scored less than ${md}?`, '50%'] : [`What percent of the ${what} scored between ${q1} and ${q3}?`, '50%'];
+    const Q = kind === 'above' ? [`About what percent of the ${what} scored more than ${q3}?`, '25%'] : kind === 'below' ? [`About what percent of the ${what} scored less than ${md}?`, '50%'] : [`About what percent of the ${what} scored between ${q1} and ${q3}?`, '50%'];
     return {title:'Ribbon Ranges', ctx:`box ${kind} ${five}`, bubble:`The box plot shows the scores of the ${what}. ${Q[0]}`, helper:'Each whisker and each half of the box holds about 25% of the data.', visual:vis,
       steps:[{name:'What percent', type:'concept', kind:'choice', prompt:Q[0], options:choiceOf({text:Q[1]}, ['25%', '50%', '75%', '100%'].map(t => ({text:t, mis:'boxReadWrong'}))), hint:() => 'The four parts (whisker, half box, half box, whisker) each hold a quarter of the data.'}]};
   },
@@ -5637,7 +5674,7 @@ const SHOW_GEN = {
     return {title:'Ribbon Ranges', ctx:`make box ${listTxt(data)}`, bubble:`Make a box plot of the ${pick(PETS)[1]}' scores: ${listTxt(data)}.`, helper:'Order the data and find the five numbers: minimum, Q1, median, Q3, maximum.',
       visual:`<div style="text-align:center; font-size:1.3rem">📦 ${listTxt(data)}</div>`,
       steps:[statStep('Median', `Median of ${listTxt(s)} = ?`, md, {mis:v => near2(v, (s[0] + s[n - 1]) / 2) && md !== (s[0] + s[n - 1]) / 2 ? 'boxReadWrong' : null}), statStep('Q1', `Q1 (median of ${listTxt(s.slice(0, Math.floor(n / 2)))}) = ?`, q1, {}),
-        statStep('Q3', `Q3 (median of ${listTxt(s.slice(Math.ceil(n / 2)))}) = ?`, q3, {}), ...(opts.length >= 2 ? [{name:'Pick the plot', type:'concept', kind:'choice', prompt:`Which box plot shows ${five.map(numTxt).join(', ')}?`, options:opts, hint:() => 'Whiskers at the minimum and maximum, the box from Q1 to Q3, and the line at the median.'}] : []),
+        statStep('Q3', `Q3 (median of ${listTxt(s.slice(Math.ceil(n / 2)))}) = ?`, q3, {}), ...(opts.length >= 2 ? [{name:'Pick the plot', type:'concept', kind:'choice', prompt:`Which box plot shows ${five.map(numTxt).join(', ')}?`, test:'Which box plot shows the scores?', options:opts, hint:() => 'Whiskers at the minimum and maximum, the box from Q1 to Q3, and the line at the median.'}] : []),
         ...(lvl === 3 ? [statStep('IQR', `From your box plot, IQR = ${numTxt(q3)} − ${numTxt(q1)} = ?`, q3 - q1, {mis:v => near2(v, s[n - 1] - s[0]) ? 'rangeNotIqr' : null})] : [])],   // level 3: read the IQR off the plot too
       answerSteps:[opts.length >= 2 ? 3 : 0]};
   },
@@ -5650,7 +5687,7 @@ const SHOW_GEN = {
     const tail = {symmetric:'The data are about the same on both sides of the middle.', 'skewed right':'The data pile up on the left and trail off to the right.', 'skewed left':'The data pile up on the right and trail off to the left.'};
     return {title:'Best in Show', ctx:`shape ${shape}`, bubble:`What is the shape of this data?`, helper:'Skewed means a long tail. The tail\'s side names the skew: a tail to the right is skewed right.', visual:dotPlotSVG(data, {lo, hi, label:'score'}),
       steps:[{name:'Shape', type:'concept', kind:'choice', prompt:'Which describes the shape?', options:choiceOf({text:tail[shape]}, Object.entries(tail).filter(([k]) => k !== shape).map(([k, t]) => ({text:t, mis:(k === 'skewed left' && shape === 'skewed right') || (k === 'skewed right' && shape === 'skewed left') ? 'skewDirection' : null}))), hint:() => 'Where is the tall pile? Which way does the thin tail go?'},
-        ...(lvl === 3 ? [{name:'Best center', type:'concept', kind:'choice', prompt:'Which measure of center describes a typical value best?', options:choiceOf({text:shape === 'symmetric' ? 'The mean (or the median: they are close)' : 'The median, because the tail pulls the mean'}, [{text:shape === 'symmetric' ? 'Only the median, because of the tail' : 'The mean, because it uses every value', mis:'meanMedianSwap'}, {text:'The range'}]), hint:() => 'A long tail pulls the mean toward it. The median stays in the middle.'}] : [])],   // level 3: which center fits the shape
+        ...(lvl === 3 ? [{name:'Best center', type:'concept', kind:'choice', prompt:'Which measure of center describes a typical value best?', options:choiceOf({text:shape === 'symmetric' ? 'The mean (or the median: they are close)' : 'The median, because the tail pulls the mean'}, [{text:shape === 'symmetric' ? 'The median, because the tail pulls the mean' : 'The mean, because it uses every value', mis:'meanMedianSwap'}, {text:'The range'}]), hint:() => 'A long tail pulls the mean toward it. The median stays in the middle.'}] : [])],   // level 3: which center fits the shape
       ...(lvl === 3 ? {answerSteps:[0]} : {})};
   },
   cmpDisplays(lvl){
@@ -5664,7 +5701,7 @@ const SHOW_GEN = {
         ['Which display makes the mode easiest to see?', 'Dot plot', ['Box plot', 'Histogram']],
         ['Which display works best for a very large data set with many different values?', 'Histogram', ['Dot plot', 'Box plot']],
         ['Which display does NOT show how many values are in the data set?', 'Box plot', ['Dot plot', 'Histogram']]]);
-      return {title:'Best in Show', ctx:Q[0], bubble:Q[0], helper:'Dot plots show each value. Histograms show counts in intervals. Box plots show the five-number summary.', visual:'<div style="text-align:center; font-size:2rem">📊 🟢 📦</div>',
+      return {title:'Best in Show', ctx:Q[0], bubble:Q[0], helper:'Dot plots show each value. Histograms show counts in intervals. Box plots show the five-number summary.', visual:'<div style="text-align:center; font-size:2rem">📊 ❓</div>',
         steps:[{name:'Which display', type:'concept', kind:'choice', prompt:Q[0], options:choiceOf({text:Q[1]}, Q[2].map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'Think about what you can and can\'t see in each one.'}]};
     }
     /* levels 2 and 3: real displays of one pet show's data, as on Khan's "comparing data displays" */
@@ -5677,7 +5714,7 @@ const SHOW_GEN = {
       if (show === 'box') {
         const right = pick(['What is the median?', 'What is the interquartile range (IQR)?', 'What is the greatest value?']);
         const wrongs = [`How many ${what} are in the show?`, `How many ${what} ${say(`exactly ${exact}`)}?`, 'What is the mean?'];
-        return {title:'Best in Show', ctx:`cmp box ${five}`, bubble:`The box plot shows the ${label} of the ${what} at the pet show. Which question can you answer from this box plot alone?`, helper, visual:boxPlotSVG(five, range),
+        return {title:'Best in Show', ctx:`cmp box ${five}`, bubble:`The box plot shows ${statOf(what, label)} at the pet show. Which question can you answer from this box plot alone?`, helper, visual:boxPlotSVG(five, range),
           steps:[{name:'What it shows', type:'concept', kind:'choice', prompt:'Which question can the box plot answer?', options:choiceOf({text:right}, wrongs.map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'A box plot shows only five numbers: minimum, Q1, median, Q3 and maximum.'}]};
       }
       const start = Math.floor(lo / 5) * 5, bins = [];
@@ -5685,7 +5722,7 @@ const SHOW_GEN = {
       const full = bins.filter(b => b[2] > 0), bin = pick(full);
       const right = pick([`How many ${what} are in the ${bin[0]}–${bin[1]} interval?`, `How many ${what} are in the show?`]);
       const wrongs = ['What is the exact median?', `How many ${what} ${say(`exactly ${exact}`)}?`, 'What is the greatest value?'];
-      return {title:'Best in Show', ctx:`cmp hist ${bins.map(b => b[2])}`, bubble:`The histogram shows the ${label} of the ${what} at the pet show. Which question can you answer from this histogram alone?`, helper, visual:histSVG(bins, label),
+      return {title:'Best in Show', ctx:`cmp hist ${bins.map(b => b[2])}`, bubble:`The histogram shows ${statOf(what, label)} at the pet show. Which question can you answer from this histogram alone?`, helper, visual:histSVG(bins, label),
         steps:[{name:'What it shows', type:'concept', kind:'choice', prompt:'Which question can the histogram answer?', options:choiceOf({text:right}, wrongs.map(t => ({text:t, mis:'displayWrong'}))), hint:() => 'A histogram shows how many values fall in each interval, not the exact values.'}]};
     }
     /* level 3: the same data as a dot plot and a box plot; choose the display, then use it */
@@ -5710,7 +5747,7 @@ const SHOW_GEN = {
       const w = 5, start = rand(0, 2) * 5, data = dataSet(rand(12, 16), start, start + 14), bins = [0, 1, 2].map(i => [start + i * w, start + i * w + w - 1]);
       const counts = bins.map(([a, b]) => data.filter(v => v >= a && v <= b).length);
       if (counts.some(c => c === 0)) return SHOW_GEN.freqTable(lvl);
-      return {title:'Sign-In Desk', ctx:`freq bins ${listTxt(data)}`, bubble:`The ${what}’ ${label}: ${listTxt(data)}. Fill in the frequency table: how many ${what} are in each interval?`, helper:'Count the values that land in each interval. Every value goes in exactly one row.',
+      return {title:'Sign-In Desk', ctx:`freq bins ${listTxt(data)}`, bubble:`Here are ${statOf(what, label)}: ${listTxt(data)}. Fill in the frequency table: how many ${what} are in each interval?`, helper:'Count the values that land in each interval. Every value goes in exactly one row.',
         visual:xyTable(bins.map(([a, b]) => `${a}–${b}`), ['?', '?', '?'], label, 'Frequency'),
         steps:bins.map(([a, b], i) => numStep(`${a}–${b}`, 'concept', `How many values from ${a} to ${b}?`, counts[i], {mis:v => v === data.filter(x => x > a && x < b).length && v !== counts[i] ? 'boundaryCount' : null, hint:() => `Include ${a} and ${b} themselves.`})), answerSteps:[2]};
     }
@@ -5731,8 +5768,15 @@ const SHOW_GEN = {
     const missing = s.filter((v, i) => i !== s.indexOf(pick(vals)));
     const swapped = b !== a ? s.map(v => v === a ? b : v === b ? a : v) : [...s, lo];
     const wrongs = [pic(moved, 'dotPlotWrong'), pic(missing, 'dotPlotWrong'), pic(swapped, 'dotPlotWrong')];
-    const fromTable = lvl === 2, shown = fromTable ? xyTable(vals, vals.map(v => counts[v]), label, 'Frequency') : `<div style="text-align:center; font-size:1.3rem">${e} ${listTxt(data)}</div>`;
-    return {title:'Sign-In Desk', ctx:`make dot ${listTxt(s)}`, bubble:`${fromTable ? `The frequency table shows the ${label} of the ${what}.` : `The ${what}’ ${label}: ${listTxt(data)}.`} Which dot plot shows the data?`, helper:'Put one dot above the number line for each value. Stack dots for repeated values.',
+    if (lvl >= 2) {   // build it, like Khan's: a stack of dots over each value (Oct 26, 2026)
+      const labels = Array.from({length:hi - lo + 1}, (_, i) => lo + i), want = labels.map(v => counts[v] || 0);
+      return {title:'Sign-In Desk', ctx:`build dot ${listTxt(s)}`, bubble:`Here are ${statOf(what, label)}: ${listTxt(data)}. Make a dot plot: tap + to stack one dot over the number for each pet.`, helper:'Cross off each value as you add its dot. Repeated values stack up.',
+        visual:`<div style="text-align:center; font-size:1.3rem">${e} ${listTxt(data)}</div>`,
+        steps:[{name:'Build the dot plot', type:'concept', kind:'counts', look:'dots', labels, max:8, prompt:`Stack a dot for each of the ${data.length} ${what}.`, answer:want, eq:v => Array.isArray(v) && v.every((c, k) => c === want[k]),
+          mis:() => 'dotPlotWrong', hint:() => `There should be ${data.length} dots in all. ${labels[0]} gets ${want[0]}.`}]};
+    }
+    const fromTable = false, shown = `<div style="text-align:center; font-size:1.3rem">${e} ${listTxt(data)}</div>`;
+    return {title:'Sign-In Desk', ctx:`make dot ${listTxt(s)}`, bubble:`${fromTable ? `The frequency table shows ${statOf(what, label)}.` : `Here are ${statOf(what, label)}: ${listTxt(data)}.`} Which dot plot shows the data?`, helper:'Put one dot above the number line for each value. Stack dots for repeated values.',
       visual:shown, steps:[{name:'The dot plot', type:'concept', kind:'choice', prompt:'Which dot plot is right?', options:picChoice(pic(s), wrongs), hint:() => `Count the dots: there should be ${data.length}. Then check each stack.`}]};
   },
 
@@ -5745,7 +5789,7 @@ const SHOW_GEN = {
       base.forEach((c, i) => { for (let j = 0; j < c; j++) data.push(lo + i); });
       const mean = sumOf(data) / data.length, med = medianOf(data);
       const ans = mean > med ? 'The mean is greater than the median' : 'The mean is less than the median';
-      return {title:"Judges' Table", ctx:`center skew ${right ? 'R' : 'L'}`, bubble:`The dot plot shows the ${label} of the ${what}. How do the mean and the median compare?`, helper:'A long tail pulls the mean toward it. The median stays with the middle of the data.', visual:dotPlotSVG(data, {lo, hi:lo + 10, label}),
+      return {title:"Judges' Table", ctx:`center skew ${right ? 'R' : 'L'}`, bubble:`The dot plot shows ${statOf(what, label)}. How do the mean and the median compare?`, helper:'A long tail pulls the mean toward it. The median stays with the middle of the data.', visual:dotPlotSVG(data, {lo, hi:lo + 10, label}),
         steps:[{name:'Mean vs. median', type:'concept', kind:'choice', prompt:'Which is true?', options:choiceOf({text:ans}, [{text:mean > med ? 'The mean is less than the median' : 'The mean is greater than the median', mis:'skewDirection'}, {text:'The mean and median are equal', mis:'meanMedianSwap'}]), hint:() => `Which way is the long tail? It pulls the mean that way.`}]};
     }
     let data, m;
@@ -5753,23 +5797,29 @@ const SHOW_GEN = {
     const ask = lvl === 1 ? 'median' : 'mean', c = ask === 'median' ? medianOf(data) : Math.round(m), s = sortN(data);
     const opts = [...new Set([c, s[0], s[s.length - 1], c + (c + 3 <= s[s.length - 1] ? 3 : -3)])].filter(v => v === c || Math.abs(v - (ask === 'median' ? medianOf(data) : m)) >= 2.5);
     if (opts.length < 3 || !Number.isInteger(c)) return SHOW_GEN.estCenter(lvl);
-    return {title:"Judges' Table", ctx:`est ${ask} ${listTxt(s)}`, bubble:`The dot plot shows the ${label} of the ${what}. Which value is closest to the ${ask}?`, helper:ask === 'median' ? 'The median splits the dots in half: as many dots on its left as on its right.' : 'The mean is the balance point: the dots on each side balance like a seesaw.',
+    return {title:"Judges' Table", ctx:`est ${ask} ${listTxt(s)}`, bubble:`The dot plot shows ${statOf(what, label)}. Which value is closest to the ${ask}?`, helper:ask === 'median' ? 'The median splits the dots in half: as many dots on its left as on its right.' : 'The mean is the balance point: the dots on each side balance like a seesaw.',
       visual:dotPlotSVG(data, {label}), steps:[{name:`About the ${ask}`, type:'concept', kind:'choice', prompt:`Closest to the ${ask}:`, options:choiceOf({text:String(c)}, opts.filter(v => v !== c).map(v => ({text:String(v)}))), hint:() => ask === 'median' ? `There are ${data.length} dots. Count in from both ends.` : 'Where would the number line balance?'}]};
   },
   /* create histograms */
   makeHist(lvl){
-    const [e, what] = pick(PETS), w = pick([5, 10]), nb = lvl === 1 ? 3 : 4, start = w === 5 ? rand(0, 2) * 5 : rand(1, 3) * 10, label = w === 5 ? 'age (years)' : 'weight (pounds)';
+    const w = pick([5, 10]), [e, what] = w === 5 ? pick([['🐶', 'puppies'], ['🐱', 'kittens']]) : ['🐕', 'dogs'], nb = lvl === 1 ? 3 : lvl === 2 ? 4 : 5, start = w === 5 ? rand(0, 2) * 5 : rand(1, 3) * 10, label = w === 5 ? 'age (months)' : 'weight (pounds)';
     const data = dataSet(rand(10, 14), start, start + nb * w - 1), bins = Array.from({length:nb}, (_, i) => [start + i * w, start + i * w + w - 1]), counts = bins.map(([a, b]) => data.filter(v => v >= a && v <= b).length);
     if (counts.some(c => c === 0)) return SHOW_GEN.makeHist(lvl);
-    if (lvl === 3) {   // pick the histogram
+    if (lvl >= 2) {   // build it, like Khan's: drag each bar to its height (Oct 26, 2026)
+      return {title:"Judges' Table", ctx:`build hist ${listTxt(sortN(data))}`, bubble:`Here are ${statOf(what, label)}: ${listTxt(data)}. Make a histogram with the intervals ${bins.map(([a, b]) => `${a}–${b}`).join(', ')}: tap + to raise each bar to its count.`, helper:'Count how many values fall in each interval, including both ends. That count is the height of the bar.',
+        visual:`<div style="text-align:center; font-size:1.2rem">${e} ${listTxt(data)}</div>`,
+        steps:[{name:'Build the histogram', type:'concept', kind:'counts', look:'bars', labels:bins.map(([a, b]) => `${a}–${b}`), max:Math.max(8, ...counts), prompt:'Make each bar as tall as its count.', answer:counts, eq:v => Array.isArray(v) && v.every((c, k) => c === counts[k]),
+          mis:v => Array.isArray(v) && bins.some(([a, b], k) => v[k] === data.filter(x => x > a && x < b).length && v[k] !== counts[k]) ? 'boundaryCount' : 'binRead', hint:() => `${bins[0][0]}–${bins[0][1]} has ${counts[0]}.`}]};
+    }
+    if (lvl === 3) {   // pick the histogram (not used since Oct 26, 2026: levels 2 and 3 build it)
       const bars = cs => bins.map(([a, b], i) => [a, b, cs[i]]);
       const shiftEdge = bins.map(([a, b]) => data.filter(v => v > a && v <= b + 1).length);   // boundary values put in the wrong bar
       const swap = [...counts]; [swap[0], swap[nb - 1]] = [swap[nb - 1], swap[0]]; const off = counts.map((c, i) => i === 1 ? c + 1 : c);
       const pic = (cs, mis) => ({text:cs.join(','), html:histSVG(bars(cs), label), mis});
-      return {title:"Judges' Table", ctx:`make hist ${listTxt(sortN(data))}`, bubble:`The ${what}’ ${label}: ${listTxt(data)}. Which histogram shows the data, in intervals of ${w}?`, helper:'Count how many values fall in each interval. That count is the height of the bar.',
+      return {title:"Judges' Table", ctx:`make hist ${listTxt(sortN(data))}`, bubble:`Here are ${statOf(what, label)}: ${listTxt(data)}. Which histogram shows the data, with the intervals ${bins.map(([a, b]) => `${a}–${b}`).join(', ')}?`, helper:'Count how many values fall in each interval. That count is the height of the bar.',
         visual:`<div style="text-align:center; font-size:1.2rem">${e} ${listTxt(data)}</div>`, steps:[{name:'The histogram', type:'concept', kind:'choice', prompt:'Which histogram is right?', options:picChoice(pic(counts), [pic(shiftEdge, 'binRead'), pic(swap, 'binRead'), pic(off, 'binRead')]), hint:() => `Count each interval. ${bins[0][0]}–${bins[0][1]} has ${counts[0]}.`}]};
     }
-    return {title:"Judges' Table", ctx:`hist counts ${listTxt(sortN(data))}`, bubble:`The ${what}’ ${label}: ${listTxt(data)}. To make a histogram, how tall is each bar?`, helper:'Each bar counts the values in its interval, including both ends.',
+    return {title:"Judges' Table", ctx:`hist counts ${listTxt(sortN(data))}`, bubble:`Here are ${statOf(what, label)}: ${listTxt(data)}. To make a histogram, how tall is each bar?`, helper:'Each bar counts the values in its interval, including both ends.',
       visual:`<div style="text-align:center; font-size:1.2rem">${e} ${listTxt(data)}</div>` + xyTable(bins.map(([a, b]) => `${a}–${b}`), bins.map(() => '?'), label, 'Count'),
       steps:bins.map(([a, b], i) => numStep(`${a}–${b}`, 'concept', `How many from ${a} to ${b}?`, counts[i], {mis:v => v === data.filter(x => x > a && x < b).length && v !== counts[i] ? 'binRead' : null})), answerSteps:[nb - 1]};
   },
@@ -5806,7 +5856,7 @@ const SHOW_GEN = {
       const md = medianOf(data), up = Math.random() < 0.6;
       return {title:'Tie Breakers', ctx:`shift ${up ? '+' : '−'}${k} ${listTxt(data)}`, bubble:`The ${what}’ scores are ${listTxt(data)}. The mean is ${m} and the median is ${numTxt(md)}. A judge ${up ? `adds ${k} points to every score` : `takes ${k} points off every score`}. What are the new mean and median?`, helper:'What happens to each score? Then think: how does that change the total, and which pet is in the middle?',
         visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(data)}</div>`,
-        steps:[numStep('New mean', 'compute', `New mean = ?`, up ? m + k : m - k, {mis:v => v === m ? 'shiftEffectWrong' : v === (up ? m + k * n : m - k * n) ? 'shiftEffectWrong' : null}), statStep('New median', 'New median = ?', up ? md + k : md - k, {mis:v => near2(v, md) ? 'shiftEffectWrong' : null})], answerSteps:[1]};
+        steps:[numStep('New mean', 'compute', `New mean = ?`, up ? m + k : m - k, {mis:v => v === m ? 'shiftEffectWrong' : v === (up ? m + k * n : m - k * n) ? 'shiftEffectWrong' : null}), statStep('New median', 'New median = ?', up ? md + k : md - k, {mis:v => near2(v, md) ? 'shiftEffectWrong' : null})], answerSteps:[0, 1]};
     }
     // add or remove one value; describe what happens (and on level 3 find the new mean)
     const n = pick([5, 6, 7]); let data, m;
@@ -5826,7 +5876,7 @@ const SHOW_GEN = {
     if (lvl === 3) steps.push(statStep('New mean', `New mean = (${next.join(' + ')}) ÷ ${next.length} = ?`, m2, {mis:v => near2(v, m) ? 'shiftEffectWrong' : null}));
     if (lvl === 3 && !Number.isInteger(m2 * 100)) return SHOW_GEN.shiftData(lvl);
     return {title:'Tie Breakers', ctx:`${kind} ${listTxt(s)} ${val}`, bubble:`The ${what}’ scores are ${listTxt(s)}, with a mean of ${m} and a median of ${numTxt(md)}. ${story} How do the mean and median change?`, helper:'Find the new mean and median, or think about how far the new (or missing) value is from the middle.',
-      visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(s)}</div>`, steps, ...(lvl === 3 ? {answerSteps:[1]} : {})};
+      visual:`<div style="text-align:center; font-size:1.4rem">${e} ${listTxt(s)}</div>`, steps, ...(lvl === 3 ? {answerSteps:[0, 1]} : {})};
   },
 
   /* ----- station 5: Ribbon Ranges (IQR, box plots, MAD) ----- */
@@ -5857,15 +5907,15 @@ const SHOW_GEN = {
     const gapFrom = a + 2, gapTo = b;   // no dots strictly between a+2 and b
     if (lvl === 1) {
       if (peakV === null) return SHOW_GEN.clusters(lvl);
-      return {title:'Best in Show', ctx:`peak ${peakV}`, bubble:`The dot plot shows the ${label} of the ${what}. Where is the highest peak?`, helper:'A peak is the value with the tallest stack of dots.', visual:dotPlotSVG(data, {lo, hi, label}),
+      return {title:'Best in Show', ctx:`peak ${peakV}`, bubble:`The dot plot shows ${statOf(what, label)}. Where is the highest peak?`, helper:'A peak is the value with the tallest stack of dots.', visual:dotPlotSVG(data, {lo, hi, label}),
         steps:[{name:'Peak', type:'concept', kind:'choice', prompt:'The highest peak is at…', options:choiceOf({text:String(peakV)}, shuffle([...new Set(data)].filter(v => v !== peakV)).slice(0, 3).map(v => ({text:String(v), mis:'clusterWrong'}))), hint:() => 'Look for the tallest stack.'}]};
     }
     if (lvl === 2) {
       const right = `Between ${gapFrom} and ${gapTo}`, wrongs = [`Between ${a} and ${a + 2}`, `Between ${b} and ${b + 2}`, `Between ${lo} and ${a}`].filter(t => t !== right);
-      return {title:'Best in Show', ctx:`gap ${gapFrom}-${gapTo}`, bubble:`The dot plot shows the ${label} of the ${what}. The data has two clusters. Where is the gap between them?`, helper:'A cluster is a group of dots close together. A gap is a stretch of the number line with no dots.', visual:dotPlotSVG(data, {lo, hi, label}),
+      return {title:'Best in Show', ctx:`gap ${gapFrom}-${gapTo}`, bubble:`The dot plot shows ${statOf(what, label)}. The data has two clusters. Where is the gap between them?`, helper:'A cluster is a group of dots close together. A gap is a stretch of the number line with no dots.', visual:dotPlotSVG(data, {lo, hi, label}),
         steps:[{name:'Gap', type:'concept', kind:'choice', prompt:'The gap is…', options:choiceOf({text:right}, wrongs.map(t => ({text:t, mis:'clusterWrong'}))), hint:() => 'Find the empty part of the number line between the two groups.'}]};
     }
-    return {title:'Best in Show', ctx:`outlier ${out}`, bubble:`The dot plot shows the ${label} of the ${what}. Which value is an outlier?`, helper:'An outlier is a value far away from the rest of the data.', visual:dotPlotSVG(data, {lo, hi, label}),
+    return {title:'Best in Show', ctx:`outlier ${out}`, bubble:`The dot plot shows ${statOf(what, label)}. Which value is an outlier?`, helper:'An outlier is a value far away from the rest of the data.', visual:dotPlotSVG(data, {lo, hi, label}),
       steps:[{name:'Outlier', type:'concept', kind:'choice', prompt:'The outlier is…', options:choiceOf({text:String(out)}, [a, b + 2, peakV ?? b + 1].filter((v, i, arr) => v !== out && arr.indexOf(v) === i).map(v => ({text:String(v), mis:'clusterWrong'}))), hint:() => 'Look for a dot sitting all by itself, far from the others.'},
         {name:'Without it', type:'concept', kind:'choice', prompt:'If the outlier were left out, the mean would…', options:choiceOf({text:'go down'}, [{text:'go up', mis:'skewDirection'}, {text:'stay the same', mis:'shiftEffectWrong'}]), hint:() => 'The outlier is a big value. Taking it away lowers the total.'}], answerSteps:[0]};
   }
@@ -11602,11 +11652,12 @@ function numberPad(input, onSubmit, {decimal = false} = {}){
 function activateStep(i){
   order.i = i; const st = order.p.steps[i]; st.t0 = performance.now();
   $$('#plan .chip').forEach((chip, index) => chip.classList.toggle('now', index === i));
-  $('#stepPrompt').innerHTML = `<span class="stepnum">Step ${i+1} of ${order.p.steps.length}</span>${esc(st.prompt)}`;
+  const hiddenWork = shift && (shift.mode === 'quiz' || shift.mode === 'test') && !shift.showSteps, prompt = hiddenWork ? testPrompt(st, order.p.steps.length, i) : st.prompt;
+  $('#stepPrompt').innerHTML = `<span class="stepnum">Step ${i+1} of ${order.p.steps.length}</span>${esc(prompt)}`;
   const box = $('#stepInput'); box.innerHTML = '';
   $('#checkBtn').hidden = st.kind === 'choice';
   if (st.kind === 'num') {
-    const html = numInput('cur', st.prompt) + (st.neg ? '<button type="button" class="btn small neg-btn" id="negBtn" aria-label="Switch between positive and negative">±</button>' : '');
+    const html = numInput('cur', prompt) + (st.neg ? '<button type="button" class="btn small neg-btn" id="negBtn" aria-label="Switch between positive and negative">±</button>' : '');
     if (st.slot) { const sl = slotEl(st.slot); sl.classList.add('active'); sl.innerHTML = html; } else box.innerHTML = (st.work ? `<div class="step-work">${st.work}</div>` : '') + html;
     const inp = $('#cur'); wireNum(inp, checkCurrent, {neg:!!st.neg}); setTimeout(() => inp.focus(), 40);
     $('#negBtn')?.addEventListener('click', () => { inp.value = inp.value.startsWith('-') ? inp.value.slice(1) : '-' + inp.value; inp.classList.remove('wrong'); inp.focus(); });   // phone keypads have no minus key
@@ -11623,6 +11674,23 @@ function activateStep(i){
   } else if (st.kind === 'grid') {
     box.innerHTML = `<span style="font-size:1.1rem">Or type it: (</span>${numInput('gx','x')}<span>,</span>${numInput('gy','y')}<span>)</span>`;
     wireNum($('#gx'), () => $('#gy').focus()); wireNum($('#gy'), checkCurrent);
+  } else if (st.kind === 'counts') {
+    /* build a dot plot or a histogram: + and − under each value (Khan's "create" exercises; Oct 26, 2026) */
+    order.counts = st.labels.map(() => 0);
+    box.innerHTML = `<div class="counts ${st.look === 'bars' ? 'bars' : 'dots'}" role="group" aria-label="${esc(st.look === 'bars' ? 'Bars to build' : 'Dot plot to build')}">${st.labels.map((l, k) => `<div class="cnt-col"><button type="button" class="btn small cnt-btn" data-cnt="${k}" data-d="1" aria-label="One more at ${esc(l)}">+</button><div class="cnt-stack" data-stack="${k}" aria-hidden="true"></div><div class="cnt-n" data-n="${k}">0</div><button type="button" class="btn small cnt-btn" data-cnt="${k}" data-d="-1" aria-label="One less at ${esc(l)}">−</button><div class="cnt-lbl">${esc(l)}</div></div>`).join('')}</div>`;
+    const max = st.max || 10;
+    box.querySelectorAll('[data-cnt]').forEach(b => b.addEventListener('click', () => {
+      const k = +b.dataset.cnt, c = order.counts; c[k] = Math.max(0, Math.min(max, c[k] + +b.dataset.d));
+      box.querySelector(`[data-n="${k}"]`).textContent = c[k];
+      box.querySelector(`[data-stack="${k}"]`).innerHTML = st.look === 'bars' ? `<i style="height:${Math.round(c[k] * 110 / max)}px"></i>` : '<b></b>'.repeat(c[k]);
+    }));
+    setTimeout(() => box.querySelector('.cnt-btn')?.focus(), 40);
+  } else if (st.kind === 'pair') {
+    /* a typed point (x, y) that can be negative, with ± buttons for phone keypads */
+    box.innerHTML = `<span class="pair-in"><span style="font-size:1.2rem">(</span>${numInput('px', 'x-coordinate')}<button type="button" class="btn small neg-btn" data-neg="px" aria-label="Switch x between positive and negative">±</button><span style="font-size:1.2rem">,</span>${numInput('py', 'y-coordinate')}<button type="button" class="btn small neg-btn" data-neg="py" aria-label="Switch y between positive and negative">±</button><span style="font-size:1.2rem">)</span></span>`;
+    wireNum($('#px'), () => $('#py').focus(), {neg:true}); wireNum($('#py'), checkCurrent, {neg:true});
+    box.querySelectorAll('[data-neg]').forEach(b => b.addEventListener('click', () => { const inp = $('#' + b.dataset.neg); inp.value = inp.value.startsWith('-') ? inp.value.slice(1) : '-' + inp.value; inp.classList.remove('wrong'); inp.focus(); }));
+    setTimeout(() => $('#px').focus(), 40);
   } else if (st.kind === 'digits') {
     box.innerHTML = digitBoxesHTML(st.dig);
     const digs = $$('#stepInput input.dig'), move = (inp, dir) => { const k = digs.indexOf(inp) + dir; if (digs[k]) { digs[k].focus(); digs[k].select(); } };
@@ -11662,6 +11730,8 @@ function readCurrent(st){
   if (st.kind === 'num') return num('#cur');
   if (st.kind === 'ratio') { const a = num('#curA'), b = num('#curB'); return (a === null || b === null) ? null : [a, b]; }
   if (st.kind === 'grid') { const x = num('#gx'), y = num('#gy'); return (x === null || y === null) ? null : [x, y]; }
+  if (st.kind === 'pair') { const x = num('#px'), y = num('#py'); return (x === null || y === null) ? null : [x, y]; }
+  if (st.kind === 'counts') return order.counts && order.counts.some(c => c > 0) ? [...order.counts] : null;
   if (st.kind === 'digits') {
     const val = p => ($(`#stepInput input.dig[data-p="${p}"]`) || {}).value || '';
     let w = ''; for (let i = st.dig.W - 1; i >= 0; i--) { const c = val('i' + i); if (!c && w) return null; w += c; }
@@ -11680,10 +11750,10 @@ function readCurrent(st){
 function checkCurrent(){
   if (!order || order.done || pr) return;
   const st = order.p.steps[order.i], v = readCurrent(st);
-  if (v === null) { const f = $('#cur') || $('#curA') || $('#gx') || ['#qrQ', '#qrR'].map(id => $(id)).find(el => el && !el.value) || ['#fracN', '#fracD'].map(id => $(id)).find(el => el && !el.value) || $$('#stepInput input.dig').reverse().find(el => !el.value); if (f) f.focus(); return; }
+  if (v === null) { const f = $('#cur') || $('#curA') || $('#gx') || $('#px') || $('#stepInput .cnt-btn') || ['#qrQ', '#qrR'].map(id => $(id)).find(el => el && !el.value) || ['#fracN', '#fracD'].map(id => $(id)).find(el => el && !el.value) || $$('#stepInput input.dig').reverse().find(el => !el.value); if (f) f.focus(); return; }
   submit(v);
 }
-const fmtV = (v, st) => st.kind === 'frac' ? FRAC.fmt(v) : st.kind === 'qr' && Array.isArray(v) ? `${v[0]} R ${v[1]}` : st.kind === 'choice' ? (st.options[v] ? st.options[v].text : '?') : Array.isArray(v) ? (st.kind === 'grid' ? `(${v[0]}, ${v[1]})` : `${v[0]}:${v[1]}`) : String(v);
+const fmtV = (v, st) => st.kind === 'counts' && Array.isArray(v) ? st.labels.map((l, k) => `${l}: ${v[k]}`).join(', ') : st.kind === 'pair' && Array.isArray(v) ? `(${sgnD(v[0])}, ${sgnD(v[1])})` : st.kind === 'frac' ? FRAC.fmt(v) : st.kind === 'qr' && Array.isArray(v) ? `${v[0]} R ${v[1]}` : st.kind === 'choice' ? (st.options[v] ? st.options[v].text : '?') : Array.isArray(v) ? (st.kind === 'grid' ? `(${v[0]}, ${v[1]})` : `${v[0]}:${v[1]}`) : String(v);
 function gridXY(x, y){
   const svg = $('#gridsvg'); const max = +svg.dataset.max, pad = +svg.dataset.pad, top = +svg.dataset.top, W = 330, sz = (W - pad - top) / max;
   return [pad + x*sz, W - pad - y*sz];
@@ -13415,3 +13485,6 @@ if (new URLSearchParams(location.search).has('videoSlides')) window.PetTownDraw 
   blocks:blocksHTML, rectangle:rectSVG, grid:gridSVG, hundredGrid:hundredGridSVG, jumps:jumpsLineSVG, iceLine:iceLineSVG, inequality:ineqSVG,
   shape:shapeSVG, plane:planeSVG, box:boxSVG, net:netSVG, dotPlot:dotPlotSVG, histogram:histSVG, boxPlot:boxPlotSVG
 };
+/* scripts/check-math.mjs opens the game with ?mathcheck to test every generator: answer keys against independent
+   solvers (scripts/math-oracles/), choices, and what quizzes and tests show (testPrompt). */
+if (new URLSearchParams(location.search).has('mathcheck')) window.PetWorldMath = {GEN, SKILLS, SHOPS, answerStepsFor, testPrompt};
