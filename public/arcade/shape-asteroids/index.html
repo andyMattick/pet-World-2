@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shape Asteroids</title>
+<!-- Pet World: served at /arcade/shape-asteroids/ (docs/SHAPE-ASTEROIDS.md). Played from Pet Houses' Rooms station
+     (?from=houses, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: Khan 6th grade
+     unit 8 (plane figures: area of parallelograms, triangles and composite shapes). Tapping an asteroid freezes space
+     while she works the problem (60 seconds, 2 tries), and she can turn the shape a quarter turn at a time.
+     It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --space:#0B1026; --space2:#151C3F; --card:#1C2450; --ink:#EEF1FF; --muted:#A9B2D9; --edge:#34407A; --accent:#FFB84D; --accent-ink:#1A1300;
+    --ok:#69DB7C; --bad:#FF8787; --rock:#F2C38B; --rock2:#C98B4F; --laser:#7CF7FF; --dash:#FF6FB1;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--space); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; min-height:100vh}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:860px; margin:0 auto; padding:10px 16px 28px; position:relative}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.15em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:focus-visible{outline:3px solid var(--laser); outline-offset:2px}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .hud{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:4px 0 8px}
+  .pill{background:var(--space2); border:1px solid var(--edge); border-radius:999px; padding:3px 10px; font-weight:700}
+  canvas{display:block; width:100%; border-radius:16px; border:2px solid var(--edge); background:radial-gradient(ellipse at 50% 60%, #1B2557 0%, var(--space) 75%); touch-action:manipulation}
+  .tip{margin:6px 0 0; text-align:center}
+  /* the work panel: space is frozen behind it */
+  .panel{position:fixed; inset:0; background:rgba(5,8,22,.78); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:10px 12px 24px; z-index:5}
+  .panel .card{width:100%; max-width:560px; margin-top:4px}
+  .timer{height:10px; border-radius:999px; background:var(--space2); overflow:hidden; margin:6px 0}
+  .timer i{display:block; height:100%; background:var(--accent); transition:width .25s linear}
+  .timer.low i{background:var(--bad)}
+  .pic{background:var(--space2); border-radius:12px; padding:6px; display:flex; flex-direction:column; align-items:center; gap:6px}
+  .pic svg{width:100%; max-width:420px; height:auto; display:block; overflow:visible}
+  .pic .row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center}
+  .q{font-size:1.12em; font-weight:600; margin:8px 0 4px}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px}
+  .answer input{flex:1 1 120px; min-width:0; font-size:1.25em; padding:8px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--space2)}
+  .answer input:focus{outline:3px solid var(--laser); outline-offset:1px}
+  .opts{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px}
+  .opts button{border:2px solid var(--edge); background:var(--space2); border-radius:12px; padding:8px 18px; font-weight:800; font-size:1.15em}
+  .fb{min-height:1.4em; margin:6px 0 0; font-weight:600}
+  .fb.bad{color:var(--bad)} .fb.ok{color:var(--ok)}
+  .explain{background:var(--space2); border-left:4px solid var(--accent); border-radius:8px; padding:8px 10px; margin-top:8px}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin:10px 0}
+  .stats div{background:var(--card); border:2px solid var(--edge); border-radius:12px; padding:8px; text-align:center}
+  .stats b{display:block; font-size:1.3em}
+  @media (prefers-reduced-motion: reduce){ .timer i{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_HOUSES = params.get('from') === 'houses';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const WAVES = [3, 4, 5], SHIELDS = 3, SOLVE_MS = 60000, TRIES = 2;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const fmt = n => String(Math.round(n * 100) / 100);
+const same = (a, b) => Math.abs(a - b) < 1e-6;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let best = 0; try { best = +localStorage.getItem('shape-asteroids:best') || 0; } catch(e){}
+
+const SKILL_NAMES = {areaPara:'Area of parallelograms', paraMissing:'Missing side of a parallelogram', triBaseHeight:'Base and height on a triangle', areaRightTri:'Area of right triangles', areaTri:'Area of triangles', triMissing:'Missing side of a triangle', decompTri:'Shapes split into triangles', areaComposite:'Area of composite shapes'};
+const WAVE_SKILLS = [['areaPara', 'paraMissing', 'areaRightTri'], ['triBaseHeight', 'areaTri', 'triMissing', 'areaRightTri'], ['decompTri', 'areaComposite', 'areaTri', 'paraMissing', 'triMissing']];
+const TRIPLES = [[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 6, 10], [4, 3, 5]];
+
+/* ---------- the problems (Khan 6th grade unit 8). Lengths are in units; every shape is drawn to scale. ----------
+   A problem: {sk, polys, labels:[[x, y, text]], dashes:[[p, q]], q, unit, ans (a number) or choices, check(v) → a
+   mix-up message or '', explain}. */
+const GEN = {
+  areaPara(){
+    const b = rnd(4, 12), [run, h, s] = Math.random() < .5 ? pick(TRIPLES) : [rnd(1, 3), rnd(3, 9), 0];
+    const labels = [[b / 2, -1, `${b} ft`], [run + .35, h / 2, `${h} ft`, 'start']]; if (s) labels.push([run / 2 - .5, h / 2, `${s} ft`, 'end']);
+    return {sk:'areaPara', polys:[[[0, 0], [b, 0], [b + run, h], [run, h]]], labels, dashes:[[[run, 0], [run, h]]], q:'What is the area of this parallelogram?', unit:'square feet', ans:b * h,
+      check:v => s && same(v, b * s) ? 'That used the slanted side. The height is the dashed line, straight up from the base.' : same(v, b * h / 2) ? 'A parallelogram isn’t cut in half. Only triangles get the ½.' : same(v, 2 * (b + (s || h))) || same(v, b + h) ? 'Adding the sides finds the distance around. Area multiplies base × height.' : '',
+      explain:`Area = base × height = ${b} × ${h} = ${b * h} square feet. The dashed height makes a right angle with the base${s ? `; the slanted ${s} ft side isn’t the height` : ''}.`};
+  },
+  paraMissing(){
+    const b = rnd(3, 12), h = rnd(2, 10), run = rnd(1, 3), A = b * h, findH = Math.random() < .6;
+    return {sk:'paraMissing', polys:[[[0, 0], [b, 0], [b + run, h], [run, h]]], labels:[[b / 2, -1, findH ? `${b} m` : '?'], [run + .35, h / 2, findH ? '?' : `${h} m`, 'start']], dashes:[[[run, 0], [run, h]]],
+      q:`The area is ${A} square meters. What is the ${findH ? 'height' : 'base'}?`, unit:'meters', ans:findH ? h : b,
+      check:v => same(v, A * (findH ? b : h)) ? 'Multiplying makes it bigger. Area = base × height, so divide the area by the side you know.' : same(v, A - (findH ? b : h)) ? 'Subtracting doesn’t undo multiplying. Divide instead.' : same(v * 2, findH ? h : b) ? 'A parallelogram isn’t halved. Just divide the area by the side you know.' : '',
+      explain:`Area = base × height, so the ${findH ? 'height' : 'base'} = ${A} ÷ ${findH ? b : h} = ${findH ? h : b} meters.`};
+  },
+  triBaseHeight(){
+    const b = rnd(5, 10), h = rnd(3, 7), out = Math.random() < .4, off = out ? b + rnd(1, 3) : rnd(1, b - 1);
+    const A = [0, 0], B = [b, 0], C = [off, h], D = [off, 0];
+    const dashes = [[C, D]]; if (out) dashes.push([B, D]);
+    return {sk:'triBaseHeight', polys:[[A, B, C]], labels:[[...A, 'A', 'corner'], [...B, 'B', 'corner'], [...C, 'C', 'corner'], [...D, 'D', 'corner']], dashes, letters:true,
+      q:`If AB is the base, which segment is the height?${out ? ' (Look outside the triangle too.)' : ''}`, choices:shuffle([{t:'CD', ok:true}, {t:'AC'}, {t:'BC'}]),
+      check:t => t === 'AC' || t === 'BC' ? `${t} is a side of the triangle, and it’s slanted. The height meets the base’s line at a right angle.` : '',
+      explain:`The height goes from C, the corner across from AB, straight to the line AB is on, making a right angle: CD.${out ? ' Here the height lands outside the triangle, so AB’s line is stretched out to D.' : ''} Turn the shape so AB is at the bottom to see it.`};
+  },
+  areaRightTri(){
+    const [a, b, c] = Math.random() < .5 ? pick(TRIPLES) : [rnd(2, 10), rnd(2, 10), 0];
+    const labels = [[a / 2, -1, `${a} cm`], [-.4, b / 2, `${b} cm`, 'end']]; if (c) labels.push([a / 2 + .5, b / 2 + .5, `${c} cm`, 'start']);
+    return {sk:'areaRightTri', polys:[[[0, 0], [a, 0], [0, b]]], labels, dashes:[], q:'What is the area of this right triangle?', unit:'square cm', ans:a * b / 2,
+      check:v => same(v, a * b) ? 'That’s the whole rectangle. A right triangle is half of it: ½ × base × height.' : c && (same(v, a * c / 2) || same(v, b * c / 2) || same(v, a * c) || same(v, b * c)) ? 'The long slanted side isn’t a height. Use the two legs that make the square corner.' : '',
+      explain:`A right triangle is half a rectangle: ½ × ${a} × ${b} = ${fmt(a * b / 2)} square cm. The two legs are the base and height.`};
+  },
+  areaTri(){
+    const b = rnd(4, 12), h = rnd(2, 10), where = pick(['in', 'in', 'out']), off = where === 'in' ? rnd(1, b - 1) : pick([-rnd(1, 3), b + rnd(1, 3)]);
+    const dashes = [[[off, 0], [off, h]]]; if (off < 0) dashes.push([[off, 0], [0, 0]]); if (off > b) dashes.push([[b, 0], [off, 0]]);
+    return {sk:'areaTri', polys:[[[0, 0], [b, 0], [off, h]]], labels:[[b / 2, -1, `${b} in`], [off + .35, h / 2, `${h} in`, 'start']], dashes, q:'What is the area of this triangle?', unit:'square inches', ans:b * h / 2,
+      check:v => same(v, b * h) ? 'That’s the whole parallelogram. Take ½ of it for the triangle.' : same(v, b + h) || same(v, (b + h) / 2) ? 'Area multiplies: ½ × base × height.' : '',
+      explain:`Area = ½ × base × height = ½ × ${b} × ${h} = ${fmt(b * h / 2)} square inches.${where === 'out' ? ' The height can sit outside the triangle; it still counts.' : ''}`};
+  },
+  triMissing(){
+    const b = rnd(3, 12), h = rnd(2, 10), off = rnd(1, b - 1), A = b * h / 2, findH = Math.random() < .6;
+    return {sk:'triMissing', polys:[[[0, 0], [b, 0], [off, h]]], labels:[[b / 2, -1, findH ? `${b} ft` : '?'], [off + .35, h / 2, findH ? '?' : `${h} ft`, 'start']], dashes:[[[off, 0], [off, h]]],
+      q:`The area is ${fmt(A)} square feet. What is the ${findH ? 'height' : 'base'}?`, unit:'feet', ans:findH ? h : b,
+      check:v => same(v, A / (findH ? b : h)) ? 'Close! Double the area first (a triangle is half), then divide.' : same(v, A * (findH ? b : h)) ? 'Multiplying makes it bigger. Double the area, then divide by the side you know.' : '',
+      explain:`Area = ½ × base × height. Double the area: 2 × ${fmt(A)} = ${b * h}. Then ${b * h} ÷ ${findH ? b : h} = ${findH ? h : b} feet.`};
+  },
+  decompTri(){
+    const w = rnd(4, 10), hr = rnd(3, 7), t = rnd(2, 5);
+    return {sk:'decompTri', polys:[[[0, 0], [w, 0], [w, hr], [0, hr]], [[0, hr], [w, hr], [w / 2, hr + t]]], labels:[[w / 2, -1, `${w} ft`], [-.4, hr / 2, `${hr} ft`, 'end'], [w / 2 + .35, hr + t / 2, `${t} ft`, 'start']], dashes:[[[w / 2, hr], [w / 2, hr + t]]],
+      q:'This dog house is a rectangle with a triangle roof. What is its whole area?', unit:'square feet', ans:w * hr + w * t / 2,
+      check:v => same(v, w * hr + w * t) ? 'The roof is a triangle, so it gets the ½.' : same(v, w * hr) ? 'That’s only the rectangle. Add the roof triangle.' : same(v, w * t / 2) ? 'That’s only the roof. Add the rectangle.' : '',
+      explain:`Rectangle: ${w} × ${hr} = ${w * hr}. Roof: ½ × ${w} × ${t} = ${fmt(w * t / 2)}. Total: ${w * hr} + ${fmt(w * t / 2)} = ${fmt(w * hr + w * t / 2)} square feet.`};
+  },
+  areaComposite(){
+    const W = rnd(6, 12), H = rnd(5, 10), cw = rnd(2, W - 3), ch = rnd(2, H - 2);
+    const pts = [[0, 0], [W, 0], [W, H - ch], [W - cw, H - ch], [W - cw, H], [0, H]];
+    return {sk:'areaComposite', polys:[pts], labels:[[W / 2, -1, `${W} m`], [-.4, H / 2, `${H} m`, 'end'], [W - cw / 2, H - ch + .9, `${cw} m`], [W - cw - .35, H - ch / 2, `${ch} m`, 'end']], dashes:[[[W - cw, H - ch], [W - cw, H]], [[W - cw, H], [W, H]], [[W, H], [W, H - ch]]], ghost:true,
+      q:'This room is a big rectangle with a corner cut out (the dashed part). What is its area?', unit:'square meters', ans:W * H - cw * ch,
+      check:v => same(v, W * H) ? 'That’s the whole big rectangle. Take away the cut-out corner.' : same(v, 2 * (W + H)) ? 'That’s the distance around. Area covers the inside.' : same(v, W * H + cw * ch) ? 'The corner is missing, so subtract it instead of adding.' : '',
+      explain:`Big rectangle: ${W} × ${H} = ${W * H}. Cut-out corner: ${cw} × ${ch} = ${cw * ch}. Area: ${W * H} − ${cw * ch} = ${W * H - cw * ch} square meters. (Splitting it into two rectangles works too.)`};
+  }
+};
+
+/* ---------- drawing a shape (work panel SVG and the asteroid on the canvas). Points are turned by `ang` around the
+   shape's middle; labels stay upright so the numbers are always easy to read. ---------- */
+function shapeBox(p){ const all = p.polys.flat().concat(p.dashes.flat()); const xs = all.map(q => q[0]), ys = all.map(q => q[1]); return {cx:(Math.min(...xs) + Math.max(...xs)) / 2, cy:(Math.min(...ys) + Math.max(...ys)) / 2}; }
+function turnPt([x, y], ang, c){ const r = ang * Math.PI / 180, dx = x - c.cx, dy = y - c.cy; return [dx * Math.cos(r) - dy * Math.sin(r), dx * Math.sin(r) + dy * Math.cos(r)]; }
+function labelPt(p, L, ang, c){
+  if (L[3] === 'corner') {   // a corner letter: push it out from the middle of the triangle
+    const all = p.polys[0], mx = all.reduce((s, q) => s + q[0], 0) / all.length, my = all.reduce((s, q) => s + q[1], 0) / all.length;
+    const dx = L[0] - mx, dy = L[1] - my, d = Math.hypot(dx, dy) || 1, k = 0.9;
+    return turnPt([L[0] + dx / d * k, L[1] + dy / d * k], ang, c);
+  }
+  return turnPt([L[0], L[1]], ang, c);
+}
+function shapeSVG(p, ang){
+  const c = shapeBox(p), T = q => turnPt(q, ang, c);
+  const polys = p.polys.map(poly => poly.map(T)), dashes = p.dashes.map(([a, b]) => [T(a), T(b)]), labels = p.labels.map(L => [labelPt(p, L, ang, c), L[2], L[3]]);
+  const all = polys.flat().concat(dashes.flat()), xs = all.map(q => q[0]), ys = all.map(q => q[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const W = 320, H = 230, pad = 52, k = Math.min((W - 2 * pad) / Math.max(maxX - minX, 1), (H - 2 * pad) / Math.max(maxY - minY, 1));
+  const X = x => (pad + (x - minX) * k + ((W - 2 * pad) - (maxX - minX) * k) / 2), Y = y => (H - pad - (y - minY) * k - ((H - 2 * pad) - (maxY - minY) * k) / 2);
+  const poly = (q, i) => `<polygon points="${q.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ')}" fill="${i ? '#F7D9A8' : 'var(--rock)'}" stroke="#FFF4E0" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const dash = ([a, b]) => `<line x1="${X(a[0]).toFixed(1)}" y1="${Y(a[1]).toFixed(1)}" x2="${X(b[0]).toFixed(1)}" y2="${Y(b[1]).toFixed(1)}" stroke="var(--dash)" stroke-width="2.5" stroke-dasharray="6 5"/>`;
+  const lbl = ([q, t, how]) => { let anchor = how === 'start' || how === 'end' ? how : 'middle', x = X(q[0]), y = Y(q[1]);
+    if (ang % 360 && how !== 'corner') {   // turned: push the label away from the middle of the shape so upright text doesn't sit on a line
+      const vx = x - X(0), vy = y - Y(0), d = Math.hypot(vx, vy) || 1;
+      x += vx / d * 12; y += vy / d * 12; anchor = Math.abs(vx) > d * .35 ? (vx > 0 ? 'start' : 'end') : 'middle';
+    }
+    return `<text x="${x.toFixed(1)}" y="${(y + 5).toFixed(1)}" text-anchor="${anchor}" font-size="${how === 'corner' ? 17 : 16}" font-weight="800" fill="#FFFFFF" stroke="#0B1026" stroke-width="3" paint-order="stroke">${esc(t)}</text>`; };
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="The shape, with its measurements">${polys.map(poly).join('')}${dashes.map(dash).join('')}${labels.map(lbl).join('')}</svg>`;
+}
+
+/* ---------- game state ---------- */
+let G = null, cv = null, ctx = null, raf = 0, last = 0, timerT = 0;
+function newGame(){
+  G = {wave:0, shields:SHIELDS, blasted:0, right:0, tries:0, missed:{}, started:Date.now(), rocks:[], queue:[], booms:[], laser:null, spawnIn:0.6, paused:false, over:false, msg:'', stars:0, panel:null, wavesCleared:0};
+  startWave(0);
+}
+function startWave(i){
+  G.wave = i; const skills = WAVE_SKILLS[i];
+  G.queue = shuffle(Array.from({length:WAVES[i]}, (_, k) => skills[k % skills.length]));
+  G.spawnIn = 1.2; G.msg = `Wave ${i + 1}! Tap an asteroid to freeze it and solve it.`; G.msgT = 3;
+}
+const maxLive = () => G.wave === 0 ? 2 : 2;
+const travelSec = () => [34, 30, 26][G.wave];
+
+function spawn(){
+  const sk = G.queue.shift(), p = GEN[sk](), W = cv.clientWidth, H = cv.clientHeight;
+  const side = rnd(0, 3), t = Math.random(), r = Math.max(30, Math.min(50, W * .11));
+  const [x, y] = side === 0 ? [t * W, -r] : side === 1 ? [W + r, t * H] : side === 2 ? [t * W, H + r] : [-r, t * H];
+  const tx = W / 2 + (Math.random() - .5) * 40, ty = H / 2 + (Math.random() - .5) * 40, d = Math.hypot(tx - x, ty - y), sp = d / travelSec();
+  G.rocks.push({p, x, y, vx:(tx - x) / d * sp, vy:(ty - y) / d * sp, r, ang:rnd(0, 359), spin:(Math.random() < .5 ? -1 : 1) * rnd(8, 18)});
+}
+
+/* ---------- the canvas ---------- */
+function sizeCanvas(){
+  if (!cv) return; const w = cv.parentElement.clientWidth, h = Math.max(300, Math.min(520, Math.round(w * (w < 500 ? 1.05 : .62))));
+  const dpr = window.devicePixelRatio || 1; cv.style.height = h + 'px'; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const STARS = Array.from({length:70}, () => [Math.random(), Math.random(), Math.random() * 1.4 + .3]);
+function draw(){
+  const W = cv.clientWidth, H = cv.clientHeight; ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,255,255,.75)'; for (const [a, b, s] of STARS) { ctx.beginPath(); ctx.arc(a * W, b * H, s, 0, 7); ctx.fill(); }
+  for (const R of G.rocks) drawRock(R);
+  // the ship and its shields
+  const cx = W / 2, cy = H / 2, aim = G.aim ?? -Math.PI / 2;
+  for (let i = 0; i < G.shields; i++) { ctx.beginPath(); ctx.strokeStyle = `rgba(124,247,255,${.55 - i * .12})`; ctx.lineWidth = 2.5; ctx.arc(cx, cy, 30 + i * 7, 0, 7); ctx.stroke(); }
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(aim + Math.PI / 2);
+  ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(13, 14); ctx.lineTo(0, 8); ctx.lineTo(-13, 14); ctx.closePath(); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.strokeStyle = '#7CF7FF'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+  ctx.font = '16px system-ui'; ctx.textAlign = 'center'; ctx.fillText('🐱', cx, cy + 6);
+  if (G.laser) { ctx.strokeStyle = 'rgba(124,247,255,' + Math.min(1, G.laser.t * 4) + ')'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(G.laser.x, G.laser.y); ctx.stroke(); }
+  for (const b of G.booms) for (const q of b.parts) { ctx.fillStyle = `rgba(${b.crash ? '255,135,135' : '255,200,120'},${Math.max(0, b.t)})`; ctx.beginPath(); ctx.arc(q.x, q.y, q.s, 0, 7); ctx.fill(); }
+  if (G.msg && G.msgT > 0) { ctx.font = '700 15px system-ui'; ctx.fillStyle = '#FFE8C2'; ctx.textAlign = 'center'; ctx.fillText(G.msg, W / 2, H - 14); }
+}
+function drawRock(R){
+  const p = R.p, c = shapeBox(p), pts = p.polys.flat(), k0 = (() => { const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]); return (R.r * 1.7) / Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 1); })();
+  const S = q => { const [x, y] = turnPt(q, R.ang, c); return [R.x + x * k0, R.y - y * k0]; };
+  ctx.save(); ctx.shadowColor = R.hot ? '#FFB84D' : 'rgba(0,0,0,0)'; ctx.shadowBlur = R.hot ? 16 : 0;
+  p.polys.forEach((poly, i) => { ctx.beginPath(); poly.map(S).forEach(([x, y], j) => j ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fillStyle = i ? '#E8B57A' : '#D9A066'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#FFE8C2'; ctx.stroke(); });
+  ctx.restore();
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = '#FF6FB1'; ctx.lineWidth = 1.6;
+  for (const [a, b] of p.dashes) { const A = S(a), B = S(b); ctx.beginPath(); ctx.moveTo(...A); ctx.lineTo(...B); ctx.stroke(); }
+  ctx.setLineDash([]);
+  ctx.font = '700 11px system-ui'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = '#0B1026'; ctx.fillStyle = '#FFFFFF';
+  for (const L of p.labels) { if (L[3] === 'area') continue; const q = labelPt(p, L, R.ang, c), x = R.x + q[0] * k0, y = R.y - q[1] * k0 + 4; ctx.strokeText(L[2], x, y); ctx.fillText(L[2], x, y); }
+}
+function step(dt){
+  const W = cv.clientWidth, H = cv.clientHeight, cx = W / 2, cy = H / 2;
+  if (G.msgT > 0) G.msgT -= dt;
+  if (G.laser) { G.laser.t -= dt; if (G.laser.t <= 0) G.laser = null; }
+  for (const b of G.booms) { b.t -= dt * 1.2; for (const q of b.parts) { q.x += q.vx * dt; q.y += q.vy * dt; } }
+  G.booms = G.booms.filter(b => b.t > 0);
+  for (const R of G.rocks) { R.x += R.vx * dt; R.y += R.vy * dt; R.ang = (R.ang + R.spin * dt + 360) % 360; }
+  for (const R of [...G.rocks]) if (Math.hypot(R.x - cx, R.y - cy) < R.r * .55 + 26) { removeRock(R, true); hitShield('Crash! Tap an asteroid before it reaches you.'); if (G.over) return; }
+  if (G.queue.length && G.rocks.length < maxLive()) { G.spawnIn -= dt; if (G.spawnIn <= 0) { spawn(); G.spawnIn = 4 + Math.random() * 2; } }
+  if (!G.queue.length && !G.rocks.length && !G.booms.length && !G.laser) waveDone();
+}
+function boom(x, y, crash){ const parts = Array.from({length:REDUCED ? 6 : 22}, () => { const a = Math.random() * 7, s = 40 + Math.random() * 120; return {x, y, vx:Math.cos(a) * s, vy:Math.sin(a) * s, s:1.5 + Math.random() * 3}; }); G.booms.push({t:1, parts, crash}); }
+function removeRock(R, crash){ G.rocks = G.rocks.filter(q => q !== R); boom(R.x, R.y, crash); }
+function hitShield(msg){
+  G.shields--; G.msg = msg; G.msgT = 3;
+  if (G.shields <= 0) { G.over = true; setTimeout(finish, 900); }
+}
+function waveDone(){
+  if (G.over) return; G.wavesCleared = G.wave + 1;
+  if (G.wave + 1 >= WAVES.length) { G.over = true; setTimeout(finish, 500); return; }
+  startWave(G.wave + 1);
+}
+function loop(t){
+  raf = requestAnimationFrame(loop); if (!G) return;
+  const dt = Math.min(.05, (t - (last || t)) / 1000); last = t;
+  if (!G.paused && !G.over) step(dt); else if (G.over) { for (const b of G.booms) { b.t -= dt; for (const q of b.parts) { q.x += q.vx * dt; q.y += q.vy * dt; } } }
+  draw();
+}
+
+/* ---------- the work panel: space is frozen while she solves ---------- */
+function openRock(R){
+  if (G.paused || G.over) return;
+  G.paused = true; R.hot = true; G.aim = Math.atan2(R.y - cv.clientHeight / 2, R.x - cv.clientWidth / 2);
+  G.panel = {R, ang:Math.round(R.ang / 90) * 90 % 360, left:SOLVE_MS, triesLeft:TRIES, fb:'', fbKind:'', done:false, counted:false};
+  G.tries++;
+  renderPanel(true);
+  const started = Date.now(), total = SOLVE_MS;
+  clearInterval(timerT);
+  timerT = setInterval(() => {
+    const P = G.panel; if (!P || P.done) { clearInterval(timerT); return; }
+    P.left = Math.max(0, total - (Date.now() - started));
+    const bar = document.querySelector('.timer'), fill = bar?.querySelector('i'), sec = document.getElementById('secs');
+    if (fill) fill.style.width = (P.left / total * 100) + '%'; if (bar) bar.classList.toggle('low', P.left < 15000); if (sec) sec.textContent = Math.ceil(P.left / 1000);
+    if (P.left <= 0) miss('Time’s up!');
+  }, 250);
+}
+function renderPanel(focus){
+  const P = G.panel, p = P.R.p;
+  let el = document.getElementById('panel'); if (!el) { el = document.createElement('div'); el.id = 'panel'; el.className = 'panel'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Solve the asteroid'); document.body.appendChild(el); }
+  const answerUI = P.done ? '' : p.choices
+    ? `<div class="opts">${p.choices.map(c => `<button type="button" data-choice="${esc(c.t)}">${esc(c.t)}</button>`).join('')}</div>`
+    : `<form class="answer" id="ansForm"><input id="ans" inputmode="decimal" autocomplete="off" aria-label="Your answer" placeholder="answer"><span class="muted">${esc(p.unit)}</span><button class="btn go" type="submit">🔫 Fire!</button></form>`;
+  el.innerHTML = `<div class="card">
+    <div class="hud"><span class="pill">⏸ Space is frozen</span><span class="pill">⏱ <span id="secs">${Math.ceil(P.left / 1000)}</span> s</span><span class="pill">${P.triesLeft} ${P.triesLeft === 1 ? 'try' : 'tries'} left</span></div>
+    <div class="timer"><i style="width:${P.left / SOLVE_MS * 100}%"></i></div>
+    <div class="pic">${shapeSVG(p, P.ang)}<div class="row"><button type="button" class="btn" data-turn aria-label="Turn the shape a quarter turn">⟳ Turn it</button>${P.ang % 360 ? '<button type="button" class="btn" data-straight>↺ Straighten</button>' : ''}</div></div>
+    <p class="q">${esc(p.q)}</p>
+    ${answerUI}
+    <p class="fb ${P.fbKind}" role="status">${esc(P.fb)}</p>
+    ${P.done ? `<div class="explain">${esc(p.explain)}</div><div style="margin-top:10px"><button type="button" class="btn go" data-continue>Back to space ▶</button></div>` : ''}
+  </div>`;
+  if (focus) (el.querySelector('#ans') || el.querySelector('[data-choice]') || el.querySelector('[data-continue]'))?.focus();
+}
+function turnTo(target){
+  const P = G.panel; if (!P) return;
+  if (REDUCED) { P.ang = (target + 360) % 360; return keepAnswer(() => renderPanel(false)); }
+  const from = P.ang, to = target < from && target === 0 ? 0 : target, t0 = performance.now();
+  const go = now => { const k = Math.min(1, (now - t0) / 280), e = k * (2 - k); P.ang = from + (to - from) * e; swapSVG(); if (k < 1) requestAnimationFrame(go); else { P.ang = (to + 360) % 360; keepAnswer(() => renderPanel(false)); document.querySelector('[data-turn]')?.focus(); } };
+  requestAnimationFrame(go);
+}
+function swapSVG(){ const pic = document.querySelector('#panel .pic svg'); if (pic) pic.outerHTML = shapeSVG(G.panel.R.p, G.panel.ang); }
+function keepAnswer(fn){ const v = document.getElementById('ans')?.value || ''; fn(); const box = document.getElementById('ans'); if (box) box.value = v; }
+
+function parseNum(s){
+  s = String(s).trim().replace(/[^\d./\s-]/g, '').trim(); if (!s) return NaN;
+  let m = s.match(/^(\d+)\s+(\d+)\/(\d+)$/); if (m) return +m[1] + +m[2] / +m[3];
+  m = s.match(/^(\d+)\/(\d+)$/); if (m) return +m[1] / +m[2];
+  return /^\d*\.?\d+$|^\d+\.$/.test(s) ? parseFloat(s) : NaN;
+}
+function tryAnswer(v){
+  const P = G.panel, p = P.R.p; if (!P || P.done) return;
+  const ok = p.choices ? !!p.choices.find(c => c.t === v)?.ok : same(v, p.ans);
+  if (ok) return hit();
+  P.triesLeft--;
+  const why = p.check(v);
+  if (P.triesLeft <= 0) return miss(why ? `Not quite. ${why}` : 'Not quite.');
+  P.fb = why || 'Not quite. Check your numbers and try once more.'; P.fbKind = 'bad';
+  if (p.choices) p.choices = p.choices.filter(c => c.t !== v);
+  renderPanel(true);
+}
+function hit(){
+  const P = G.panel; P.done = true; clearInterval(timerT); G.right++; G.blasted++;
+  closePanel();
+  const R = P.R; G.laser = {x:R.x, y:R.y, t:.35}; G.msg = pick(['Direct hit!', 'Blasted!', 'Nice shot!', 'Boom! Perfect math.']); G.msgT = 2;
+  setTimeout(() => { if (G) removeRock(R, false); }, 120);
+}
+function miss(msg){
+  const P = G.panel; if (!P || P.done) return; P.done = true; clearInterval(timerT);
+  G.missed[P.R.p.sk] = (G.missed[P.R.p.sk] || 0) + 1;
+  P.fb = `${msg} The asteroid hits your shield.`; P.fbKind = 'bad';
+  renderPanel(true);
+}
+function closePanel(){ document.getElementById('panel')?.remove(); G.paused = false; last = 0; if (G.panel) G.panel.R.hot = false; }
+function continueAfterMiss(){
+  const R = G.panel.R; closePanel(); G.panel = null;
+  removeRock(R, true); hitShield('Shield hit! Keep going.');
+}
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.matches('[data-start]')) return play();
+  if (!G || !G.panel) return;
+  if (t.matches('[data-turn]')) return turnTo(Math.round(G.panel.ang) + 90);
+  if (t.matches('[data-straight]')) return turnTo(0);
+  if (t.matches('[data-choice]')) return tryAnswer(t.dataset.choice);
+  if (t.matches('[data-continue]')) return continueAfterMiss();
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'ansForm') return; e.preventDefault();
+  const box = document.getElementById('ans'), v = parseNum(box.value);
+  if (!Number.isFinite(v)) { G.panel.fb = 'Type a number, like 24 or 17.5.'; G.panel.fbKind = 'bad'; const fb = document.querySelector('#panel .fb'); if (fb) { fb.textContent = G.panel.fb; fb.className = 'fb bad'; } box.focus(); return; }
+  tryAnswer(v);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && G?.panel?.done) continueAfterMiss(); });
+
+/* ---------- screens ---------- */
+function intro(){
+  cancelAnimationFrame(raf); G = null;
+  app.innerHTML = `<h1>☄️ Shape Asteroids</h1>
+    <p>Shape asteroids are flying at Captain Whiskers’ ship! Each one has its measurements on it.</p>
+    <div class="card"><h2>How to play</h2><ol class="how">
+      <li><b>Tap an asteroid.</b> Space freezes while you work, so there’s no rush.</li>
+      <li>Find the area, the missing side, or the height. Tap <b>⟳ Turn it</b> to look at the shape from any side.</li>
+      <li>You have <b>1 minute</b> and <b>2 tries</b>. Get it right and your laser blasts it!</li>
+      <li>A miss, or an asteroid you didn’t tap in time, hits your shield. You have ${SHIELDS} shields.</li>
+      <li>Survive ${WAVES.length} waves to save the ship. Each wave you survive is a ⭐.</li></ol>
+      <p class="muted" style="margin:0">Area of a parallelogram = base × height. Area of a triangle = ½ × base × height. The height always makes a right angle with the base.</p>
+      ${FROM_HOUSES ? '<p class="muted">Each asteroid you blast earns Pet World coins. Asteroid games don’t count toward Pet Houses orders or quizzes.</p>' : ''}</div>
+    <p style="margin-top:14px"><button type="button" class="btn go" data-start>🚀 Launch</button>${best ? ` <span class="muted">Best: ${'⭐'.repeat(best)}</span>` : ''}</p>`;
+}
+function play(){
+  newGame();
+  app.innerHTML = `<div class="hud" id="hud"></div><canvas id="cv" aria-label="Space. Shape asteroids fly toward your ship in the middle. Tap one to solve it."></canvas><p class="tip muted">Tap an asteroid to freeze space and solve it.</p>`;
+  cv = document.getElementById('cv'); ctx = cv.getContext('2d'); sizeCanvas();
+  cv.addEventListener('pointerdown', e => {
+    if (!G || G.paused || G.over) return; const b = cv.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+    const R = G.rocks.map(R => [R, Math.hypot(R.x - x, R.y - y)]).filter(([R, d]) => d < R.r + 14).sort((a, b) => a[1] - b[1])[0]?.[0];
+    if (R) openRock(R);
+  });
+  // keyboard: Space or Enter freezes the asteroid closest to the ship
+  cv.tabIndex = 0;
+  cv.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && G && !G.paused && G.rocks.length) { e.preventDefault(); const W = cv.clientWidth / 2, H = cv.clientHeight / 2; openRock([...G.rocks].sort((a, b) => Math.hypot(a.x - W, a.y - H) - Math.hypot(b.x - W, b.y - H))[0]); } });
+  last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  hud();
+}
+function hud(){
+  const el = document.getElementById('hud'); if (!el || !G) return;
+  el.innerHTML = `<span class="pill">🛡️ ${'●'.repeat(Math.max(0, G.shields))}${'○'.repeat(SHIELDS - Math.max(0, G.shields))}</span><span class="pill">🌊 Wave ${G.wave + 1} of ${WAVES.length}</span><span class="pill">💥 ${G.blasted} blasted</span>`;
+  if (!G.over) setTimeout(hud, 300);
+}
+function finish(){
+  if (!G || G.done) return; G.done = true; cancelAnimationFrame(raf); clearInterval(timerT); document.getElementById('panel')?.remove();
+  const stars = Math.min(3, G.wavesCleared), won = G.wavesCleared >= WAVES.length;
+  const result = {won, stars, waves:G.wavesCleared, blasted:G.blasted, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('shape-asteroids:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_HOUSES) window.parent.postMessage({type:'asteroids:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'shape-asteroids', runId:ARCADE_RUN, roundId:`waves-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>${won ? '🚀 The ship is safe!' : '💫 Shields down'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${won ? 'You cleared every wave. Captain Whiskers salutes you!' : stars ? 'Great flying. Can you clear all three waves next time?' : 'Those asteroids were tough. Try again, and remember you can turn the shapes!'}</p>
+    <div class="stats"><div><b>${stars} of 3</b>waves cleared</div><div><b>${G.blasted}</b>asteroids blasted</div><div><b>${G.right} of ${G.tries}</b>solved</div><div><b>${'⭐'.repeat(best) || '—'}</b>best${newBest && stars ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    <p><button type="button" class="btn go" data-start>Play again</button></p>`;
+  G.over = true;
+}
+addEventListener('resize', () => { if (cv && document.body.contains(cv)) sizeCanvas(); });
+window.__asteroids = {GEN, shapeSVG, get G(){ return G; }, openRock:() => G && G.rocks[0] && openRock(G.rocks[0]), spawn:() => spawn()};   // for tests
+intro();
+})();
+</script>
+</body>
+</html>

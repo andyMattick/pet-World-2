@@ -182,6 +182,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F50. 💬 Messages with a grown-up: write to her from her page in the teacher app; a 💬 button and a note pop up in her town, labeled with your name, and she can write back. See `CHAT.md`
 - [x] F51. 🔗 The English Unit 5 games (Pet Hide-and-Seek, Cross It Out, Comic Strip Studio) are in the Arcade too, as Link Library Games. See `ARCADE-GAMES.md`
 - [x] F52. 💬 Messages moved to the class Dashboard: every student is a button with a count of new replies; tap one to open the conversation. See `CHAT.md`
+- [x] F53. 🏡 Pet Houses Unit 8 rebuilt to match Khan: 3 new skills (`paraMissing`, `triBaseHeight`, `triMissing`), a new 🔺 Roof Lines station, Khan's order, ⟳ Turn it on shape pictures. See `HOUSES.md`
+- [x] F54. ☄️ Shape Asteroids: tap a shape asteroid to freeze space and solve it in a minute; in Pet Houses (Rooms) and the Arcade. See `SHAPE-ASTEROIDS.md`
 
 ## Database files, in the order they were run
 

@@ -182,6 +182,8 @@ function normalize(raw){
     s.carnival = {best:Object.fromEntries(Object.entries(s.carnival?.best && typeof s.carnival.best === 'object' ? s.carnival.best : {}).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && Number.isFinite(+v)).map(([k, v]) => [k, Math.max(0, Math.min(3, Math.round(+v)))])),
       day:typeof s.carnival?.day === 'string' ? s.carnival.day : '', coinsToday:Math.max(0, Math.round(+s.carnival?.coinsToday || 0)),
       games:(Array.isArray(s.carnival?.games) ? s.carnival.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-40).map(g => ({t:+g.t, booth:String(g.booth || '').slice(0, 12), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🎪 Carnival Midway (docs/CARNIVAL.md)
+    s.asteroids = {best:Math.max(0, Math.min(3, Math.round(+s.asteroids?.best || 0))), day:typeof s.asteroids?.day === 'string' ? s.asteroids.day : '', coinsToday:Math.max(0, Math.round(+s.asteroids?.coinsToday || 0)),
+      games:(Array.isArray(s.asteroids?.games) ? s.asteroids.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), blasted:Math.max(0, +g.blasted || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // ☄️ Shape Asteroids (docs/SHAPE-ASTEROIDS.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -4817,6 +4819,17 @@ const half = n => n % 2 ? `${Math.floor(n / 2)}.5` : String(n / 2);
 /* a typed area answer that may end in .5 */
 const halfAreaStep = (name, prompt, v2, extra = {}) => ({name, type:'compute', kind:'num', prompt, answer:half(v2), eq:v => typeof v === 'number' && Math.abs(v * 2 - v2) < 1e-9, decimal:v2 % 2 === 1, slowOK:true, ...extra,
   ...(extra.mis ? {mis:v => typeof v === 'number' && Math.abs(v * 2 - v2) < 1e-9 ? null : extra.mis(v)} : {})});
+/* turn a shape's points by deg around the origin (for pictures where the base isn't at the bottom) */
+const turnPts = (pts, deg) => { const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return pts.map(([x, y]) => [Math.round((x * c - y * s) * 1000) / 1000, Math.round((x * s + y * c) * 1000) / 1000]); };
+/* a shape picture with a ⟳ button that turns it a quarter turn at a time, so she can look at it from any side (Pet Houses, Oct 26, 2026) */
+const turnable = svg => `<div class="turnable"><div class="turn-svg" data-turn-angle="0">${svg}</div><button type="button" class="btn small" data-turn aria-label="Turn the shape a quarter turn">⟳ Turn it</button></div>`;
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-turn]'); if (!b) return;
+  const box = b.parentElement?.querySelector('.turn-svg'); if (!box) return;
+  const a = (+box.dataset.turnAngle + 90) % 360; box.dataset.turnAngle = a;
+  const w = box.clientWidth || 1, h = box.clientHeight || 1, k = a % 180 ? Math.min(w, h) / Math.max(w, h) : 1;   // sideways: shrink so it still fits its space
+  box.style.transform = `rotate(${a}deg) scale(${k.toFixed(3)})`;
+});
 /* draw shapes given in units; fits them into 280 × 170 with labels */
 function shapeSVG(polys, labels = [], dashes = []){
   const pts = polys.flat(), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
@@ -4860,18 +4873,46 @@ const HOUSES_GEN = {
       visual:shapeSVG([poly], labels, [[[run, 0], [run, h]]]),
       steps:[halfAreaStep('Area', `${b} × ${h} = ? square meters`, 2 * A, {fact:fx(b, h), mis:v => sl && v === b * sl ? 'slantHeight' : v === 2 * (b + (sl || h)) ? 'areaPerimeterSwap' : Math.abs(v * 2 - A) < 1e-9 ? 'halfWrong' : null})]};
   },
+  /* find a missing length when given the area of a parallelogram (Khan unit 8, added Oct 26, 2026) */
+  paraMissing(lvl){
+    const findBase = lvl === 1 || (lvl === 3 && Math.random() < 0.5), [run, h0, sl] = lvl === 1 ? [rand(1, 3), rand(2, 9), null] : pick(TRIPLES);
+    let b = rand(3, 14), h = h0, A = b * h;
+    if (lvl === 3 && Math.random() < 0.5) { b = rand(3, 9) + 0.5; h = h0 * 2; A = b * h; }   // level 3: a half-unit side, so the area ends in .5 or not
+    const poly = [[0, 0], [b, 0], [b + run, h], [run, h]], ask = findBase ? 'base' : 'height', ans = findBase ? b : h, known = findBase ? h : b;
+    const labels = [[[b / 2, -0.9], findBase ? '?' : `${sgnD(b)}`], [[run + 0.25, h / 2], findBase ? `${sgnD(h)}` : '?', 'start']]; if (sl && h === h0) labels.push([[run / 2 - 0.6, h / 2], `${sl}`, 'end']);
+    return {title:'Floor Plans', ctx:`parallelogram A ${A} find ${ask}`, bubble:`The dog run is a parallelogram with an area of ${sgnD(A)} square meters. Its ${findBase ? 'height' : 'base'} is ${sgnD(known)} m. What is its ${ask}?`, helper:`Area = base × height, so the ${ask} = area ÷ ${findBase ? 'height' : 'base'}.`,
+      visual:turnable(shapeSVG([poly], labels, [[[run, 0], [run, h]]])),
+      steps:[numStep(ask === 'base' ? 'Base' : 'Height', 'compute', `${sgnD(A)} ÷ ${sgnD(known)} = ? meters`, ans, {decimal:!Number.isInteger(ans), eq:v => typeof v === 'number' && Math.abs(v - ans) < 1e-9, fact:Number.isInteger(ans) && Number.isInteger(known) ? fx(known, ans, true) : undefined,
+        mis:v => sl && h === h0 && v === sl ? 'slantHeight' : Math.abs(v - 2 * ans) < 1e-9 || Math.abs(v * 2 - ans) < 1e-9 ? 'halfWrong' : Math.abs(v - A * known) < 1e-9 ? 'wrongOperation' : null, hint:() => `What number times ${sgnD(known)} makes ${sgnD(A)}?`})]};
+  },
+
+  /* ----- station 2: Roof Lines (triangles) ----- */
+  /* find base and height on a triangle: the height meets the base at a right angle (Khan unit 8, added Oct 26, 2026) */
+  triBaseHeight(lvl){
+    const b = rand(5, 10), h = rand(3, 7), off = lvl === 2 ? b + rand(1, 3) : rand(1, b - 1), turn = lvl === 3 ? pick([90, 180, 270, 45, 135]) : 0;
+    const raw = [[0, 0], [b, 0], [off, h], [off, 0]], [A, B, C, D] = turnPts(raw, turn);
+    const dash = [[C, D], ...(off > b ? [[B, D]] : [])];
+    const sl = Math.round(Math.hypot(off, h) * 10) / 10;
+    const names = {base:'AB', height:'CD', side1:'AC', side2:'BC'};
+    const pic = shapeSVG([[A, B, C]], [[A, 'A', 'end'], [B, 'B', 'start'], [C, 'C', 'start'], [D, 'D', 'start']], dash);
+    const opts = choiceOf({text:'CD'}, [{text:'AC', mis:'slantHeight'}, {text:'BC', mis:'slantHeight'}]);
+    const steps = [{name:'The height', type:'concept', kind:'choice', prompt:'If AB is the base, which segment is the height?', options:opts, hint:() => 'The height goes from the opposite corner straight to the base (or the line the base is on), making a right angle.'}];
+    if (lvl >= 2) steps.push(halfAreaStep('Area', `AB is ${b} and CD is ${h}. Area = ½ × ${b} × ${h} = ?`, b * h, {mis:v => v === b * h ? 'halfWrong' : null}));
+    return {title:'Roof Lines', ctx:`base/height ${lvl === 2 ? 'outside' : turn ? `turned ${turn}` : 'inside'}`, bubble:`The roof truss is triangle ABC.${lvl === 2 ? ' The height falls outside the triangle, on the line the base is on.' : ''}${turn ? ' The triangle is turned, so the base isn’t at the bottom. Turn the picture if it helps!' : ''} If AB is the base, which segment is the height?`,
+      helper:'A height always makes a right angle with the base. It doesn’t have to be inside the triangle.', visual:turnable(pic), steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
+  },
   areaRightTri(lvl){
     if (lvl === 3) {   // level 3: find a missing leg from the area
       const [a, b, c] = pick(TRIPLES), A2 = a * b;
-      return {title:'Floor Plans', ctx:`right triangle A ${half(A2)} leg ${a} find ${b}`, bubble:`A corner of the cat's bed is a right triangle with an area of ${half(A2)} square cm. One leg is ${a} cm and the long side is ${c} cm. How long is the other leg?`, helper:'Area = ½ × leg × leg. Double the area to get the rectangle, then divide by the leg you know.',
-        visual:shapeSVG([[[0, 0], [a, 0], [0, b]]], [[[a / 2, -0.9], `${a}`], [[-0.4, b / 2], '?', 'end'], [[a / 2 + 0.5, b / 2 + 0.5], `${c}`, 'start']]),
+      return {title:'Roof Lines', ctx:`right triangle A ${half(A2)} leg ${a} find ${b}`, bubble:`A corner of the cat's bed is a right triangle with an area of ${half(A2)} square cm. One leg is ${a} cm and the long side is ${c} cm. How long is the other leg?`, helper:'Area = ½ × leg × leg. Double the area to get the rectangle, then divide by the leg you know.',
+        visual:turnable(shapeSVG([[[0, 0], [a, 0], [0, b]]], [[[a / 2, -0.9], `${a}`], [[-0.4, b / 2], '?', 'end'], [[a / 2 + 0.5, b / 2 + 0.5], `${c}`, 'start']])),
         steps:[numStep('Double the area', 'compute', `2 × ${half(A2)} = ?`, A2, {mis:v => Math.abs(v * 2 - A2) < 1e-9 ? 'halfWrong' : null}),
           numStep('Other leg', 'compute', `${A2} ÷ ${a} = ? cm`, b, {fact:fx(a, b, true), mis:v => v === c ? 'slantHeight' : Math.abs(v * 2 - b) < 1e-9 ? 'halfWrong' : null})], answerSteps:[1]};
     }
     const [a, b, c] = lvl === 1 ? [rand(2, 10), rand(2, 10), null] : pick(TRIPLES), A2 = a * b;
     const labels = [[[a / 2, -0.9], `${a}`], [[-0.4, b / 2], `${b}`, 'end']]; if (c) labels.push([[a / 2 + 0.5, b / 2 + 0.5], `${c}`, 'start']);
-    return {title:'Floor Plans', ctx:`right triangle ${a} × ${b}`, bubble:`A corner of the cat's bed is a right triangle with legs ${a} cm and ${b} cm${c ? ` (the long side is ${c} cm)` : ''}. What is its area?`, helper:'A right triangle is half of a rectangle: ½ × base × height.',
-      visual:shapeSVG([[[0, 0], [a, 0], [0, b]]], labels),
+    return {title:'Roof Lines', ctx:`right triangle ${a} × ${b}`, bubble:`A corner of the cat's bed is a right triangle with legs ${a} cm and ${b} cm${c ? ` (the long side is ${c} cm)` : ''}. What is its area?`, helper:'A right triangle is half of a rectangle: ½ × base × height.',
+      visual:turnable(shapeSVG([[[0, 0], [a, 0], [0, b]]], labels)),
       steps:[numStep('Rectangle', 'compute', `${a} × ${b} = ?`, A2, {fact:fx(a, b), mis:v => c && (v === a * c || v === b * c) ? 'slantHeight' : null}),
         halfAreaStep('Half of it', `${A2} ÷ 2 = ? square cm`, A2, {mis:v => v === A2 ? 'halfWrong' : null, hint:() => 'The triangle is half the rectangle.'})], answerSteps:[1]};
   },
@@ -4879,12 +4920,24 @@ const HOUSES_GEN = {
     const b = rand(4, 14), h = rand(2, 10), off = lvl === 1 ? rand(1, b - 1) : lvl === 2 ? rand(1, b - 1) : pick([-rand(1, 3), b + rand(1, 3)]), A2 = b * h;
     const poly = [[0, 0], [b, 0], [off, h]], dash = [[off, 0], [off, h]];
     const extra = off < 0 || off > b ? [[[off, 0], [off < 0 ? 0 : b, 0]]] : [];
-    return {title:'Floor Plans', ctx:`triangle b ${b} h ${h}`, bubble:`The roof window is a triangle with base ${b} in. and height ${h} in.${off < 0 || off > b ? ' The height is drawn outside the triangle.' : ''} What is its area?`, helper:'Area of a triangle = ½ × base × height.',
-      visual:shapeSVG([poly], [[[b / 2, -0.9], `${b}`], [[off + 0.3, h / 2], `${h}`, 'start']], [dash, ...extra]),
+    return {title:'Roof Lines', ctx:`triangle b ${b} h ${h}`, bubble:`The roof window is a triangle with base ${b} in. and height ${h} in.${off < 0 || off > b ? ' The height is drawn outside the triangle.' : ''} What is its area?`, helper:'Area of a triangle = ½ × base × height.',
+      visual:turnable(shapeSVG([poly], [[[b / 2, -0.9], `${b}`], [[off + 0.3, h / 2], `${h}`, 'start']], [dash, ...extra])),
       steps:[halfAreaStep('Area', `½ × ${b} × ${h} = ? square inches`, A2, {mis:v => v === A2 ? 'halfWrong' : null, hint:() => `${b} × ${h} = ${A2}, then half of that.`})]};
   },
 
-  /* ----- station 2: Rooms (composite shapes) ----- */
+  /* find a missing length when given the area of a triangle (Khan unit 8, added Oct 26, 2026) */
+  triMissing(lvl){
+    const b = rand(3, 14), h = rand(2, 12), A2 = b * h, findH = lvl === 1 ? true : Math.random() < 0.5, off = rand(1, b - 1);
+    if (lvl === 1 && A2 % 2) return HOUSES_GEN.triMissing(lvl);   // level 1 keeps the area a whole number
+    const ans = findH ? h : b, known = findH ? b : h, poly = [[0, 0], [b, 0], [off, h]];
+    const labels = [[[b / 2, -0.9], findH ? `${b}` : '?'], [[off + 0.3, h / 2], findH ? '?' : `${h}`, 'start']];
+    return {title:'Roof Lines', ctx:`triangle A ${half(A2)} find ${findH ? 'h' : 'b'}`, bubble:`The attic window is a triangle with an area of ${half(A2)} square feet. Its ${findH ? 'base' : 'height'} is ${known} ft. What is its ${findH ? 'height' : 'base'}?`, helper:'Area = ½ × base × height. Double the area first, then divide.',
+      visual:turnable(shapeSVG([poly], labels, [[[off, 0], [off, h]]])),
+      steps:[numStep('Double the area', 'compute', `2 × ${half(A2)} = ?`, A2, {mis:v => Math.abs(v * 2 - A2) < 1e-9 ? 'halfWrong' : null, hint:() => 'A triangle is half of a parallelogram with the same base and height.'}),
+        numStep(findH ? 'Height' : 'Base', 'compute', `${A2} ÷ ${known} = ? feet`, ans, {fact:fx(known, ans, true), mis:v => Math.abs(v * 2 - ans) < 1e-9 ? 'halfWrong' : null})], answerSteps:[1]};
+  },
+
+  /* ----- station 3: Rooms (composite shapes) ----- */
   areaComposite(lvl){
     const W = rand(6, 14), H = rand(5, 12), w = rand(2, W - 2), h = rand(2, H - 2), big = W * H, cut = w * h;
     if (lvl === 3) {   // level 3: the notch's sides are not labeled; find them from the other sides first
@@ -4924,7 +4977,7 @@ const HOUSES_GEN = {
         numStep('Total', 'compute', `${top * h} + ${t * h} = ? square feet`, top * h + t * h, {mis:v => v === top * h + 2 * t * h ? 'halfWrong' : null})], answerSteps:[2]};
   },
 
-  /* ----- station 3: Yard Map (points and quadrants) ----- */
+  /* ----- station 4: Yard Map (points and quadrants) ----- */
   pointsId(lvl){
     const R = lvl === 1 ? 6 : 8; let x, y; do { x = lvl === 1 ? rand(1, R) * pick([1, -1]) : nz(R); y = nz(R); } while (Math.abs(x) === Math.abs(y));
     if (lvl === 3 && Math.random() < 0.5) { if (Math.random() < 0.5) x = 0; else y = 0; }   // level 3: half the points sit on an axis
@@ -5659,6 +5712,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
+  else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
   else if (run.gameId === 'potion-detective') earned = Math.max(0, Math.min(3, score));   // 1 ticket per case solved, up to 3 (docs/POTION-DETECTIVE.md)
   else if (run.gameId === 'penguin-push') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/PENGUIN-PUSH.md)
   else if (run.gameId === 'supermarket-dash') earned = Math.max(0, Math.min(3, score));   // 1 ticket per checkout star, up to 3 a dash (docs/SUPERMARKET-DASH.md)
@@ -7443,6 +7497,42 @@ window.addEventListener('message', e => {
   logEvent({k:'carnival', s:right, n:tries, title:`${CARNIVAL_BOOTHS[booth]}: ${right} of ${tries} right${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🎪 ${CARNIVAL_BOOTHS[booth]}: ${right} of ${tries}!${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= CARNIVAL_COINS_PER_DAY ? ' (Today’s carnival coins are all earned.)' : ''}`);
+});
+/* ---------- ☄️ Shape Asteroids (public/arcade/shape-asteroids, docs/SHAPE-ASTEROIDS.md) ----------
+   Shapes with their measurements fly at the ship; tapping one freezes space for a 60-second Unit 8 area problem she can
+   turn and look at. Opened from Rooms (the last Unit 8 station in Pet Houses) and also an Arcade game. Played from Pet
+   Houses it pays Pet World coins: 1 per asteroid blasted, up to ASTEROIDS_COINS_PER_DAY a day. It never counts toward
+   station orders, skill mastery, quizzes or unlocks. */
+const ASTEROIDS_COINS_PER_DAY = 20;
+function asteroidsButtonHTML(){
+  const best = S.asteroids?.best || 0;
+  return `<button type="button" class="btn" data-asteroids>☄️ Shape Asteroids${best ? ` · best ${'⭐'.repeat(best)}` : ''}</button>`;
+}
+function openAsteroids(){
+  if ($('#asteroidsWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'asteroidsWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Shape Asteroids');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">☄️ Shape Asteroids</b><button type="button" class="btn small" data-asteroids-close>Done</button></div><iframe src="/arcade/shape-asteroids/?from=houses" title="Shape Asteroids"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-asteroids-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('houses'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#asteroidsWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'asteroids:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), won = !!r.won;
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0))), blasted = right;
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.asteroids, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), won, stars, blasted, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, ASTEROIDS_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'asteroids', s:right, n:tries, title:`${stars} of 3 waves cleared, ${right} of ${tries} asteroids solved${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`☄️ ${won ? 'The ship is safe!' : `${stars} of 3 waves cleared!`}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= ASTEROIDS_COINS_PER_DAY ? ' (Today’s asteroid coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10704,7 +10794,7 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -10712,6 +10802,7 @@ $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-surgery]')) { openSurgery(e.target.closest('[data-surgery]').dataset.surgery); return; }
   if (e.target.closest('[data-dash]')) { openDash(); return; }
   if (e.target.closest('[data-penguin]')) { openPenguin(); return; }
+  if (e.target.closest('[data-asteroids]')) { openAsteroids(); return; }
   if (e.target.closest('[data-detective]')) { openDetective(); return; }
   if (e.target.closest('[data-carnival]')) { openCarnival(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
@@ -12309,6 +12400,7 @@ function placeOnScreen(){
   if ($('#surgeryWrap')) return 'surgery';
   if ($('#dashWrap')) return 'dash';
   if ($('#penguinWrap')) return 'penguin';
+  if ($('#asteroidsWrap')) return 'asteroids';
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -12344,6 +12436,7 @@ function placeLabel(key){
   if (kind === 'surgery') return '🩺 Dr. Paws’ Surgery Center';
   if (kind === 'dash') return '🛒 Supermarket Dash';
   if (kind === 'penguin') return '🐧 Penguin Push';
+  if (kind === 'asteroids') return '☄️ Shape Asteroids';
   if (kind === 'detective') return '🔍 Potion Detective';
   if (kind === 'carnival') return '🎪 Carnival Midway';
   if (kind === 'bible') return '✝️ Bible';
@@ -12368,6 +12461,7 @@ function eventText(e){
   if (e.k === 'surgery') return `🩺 Dr. Paws’ Surgery: ${e.title}`;
   if (e.k === 'dash') return `🛒 Supermarket Dash: ${e.title}`;
   if (e.k === 'penguin') return `🐧 Penguin Push: ${e.title}`;
+  if (e.k === 'asteroids') return `☄️ Shape Asteroids: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
@@ -12458,6 +12552,7 @@ function subjectOnScreen(){
   if ($('#surgeryWrap')) return 'math';   // the surgery game is Bakery practice
   if ($('#dashWrap')) return 'math';   // Supermarket Dash is Market practice
   if ($('#penguinWrap')) return 'math';   // Penguin Push is Ice Rink practice
+  if ($('#asteroidsWrap')) return 'math';   // Shape Asteroids is Pet Houses practice
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';
