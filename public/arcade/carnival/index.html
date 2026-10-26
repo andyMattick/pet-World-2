@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carnival Midway</title>
+<!-- Pet World: served at /arcade/carnival/ (docs/CARNIVAL.md). Six carnival booths, one for each Pet Fair station (Khan 6th
+     grade unit 7, equations and inequalities). Played from the Pet Fair's Prize Counter (?from=fair, pays Pet World coins)
+     and from the Arcade (?arcadeRun=…, pays arcade tickets). It never counts toward station orders, mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#FFF4E0; --card:#FFFFFF; --ink:#33201A; --muted:#7A6255; --edge:#F0CFA8; --accent:#E8590C; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --slot:#FFE8CC; --red:#E03131; --yellow:#FFD43B;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1F1612; --card:#2B1F19; --ink:#F8EBDD; --muted:#C9B3A3; --edge:#4A3328; --accent:#FF922B; --accent-ink:#1F1612;
+      --ok:#69DB7C; --bad:#FF8787; --slot:#3A2A21; --red:#FA5252; --yellow:#E8B400; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:860px; margin:0 auto; padding:0 16px 32px}
+  .awning{height:22px; background:repeating-linear-gradient(90deg, var(--red) 0 28px, var(--yellow) 28px 56px); border-radius:0 0 14px 14px; margin:0 -16px 10px}
+  h1{font-size:1.8em; margin:6px 0 4px} h2{font-size:1.2em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .top{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .pill{background:var(--slot); border-radius:999px; padding:4px 10px; font-weight:700}
+  .booths{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; margin-top:10px}
+  .booth{text-align:left; border:2px solid var(--edge); background:var(--card); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center}
+  .booth .e{font-size:2.4em}
+  .booth b{display:block; font-size:1.1em}
+  .prompt{font-size:1.2em; font-weight:600; margin:6px 0}
+  .visual{margin:8px 0; text-align:center}
+  .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:10px 0}
+  .opt{border:3px solid var(--edge); background:var(--card); border-radius:14px; padding:10px 14px; font-weight:700; font-size:1.1em; min-width:72px}
+  .opt.picked{outline:4px solid var(--accent); outline-offset:1px}
+  .opt.right{border-color:var(--ok); background:#D3F9D8; color:#1B4D2B}
+  .opt.wrong{border-color:var(--bad); background:#FFE3E3; color:#6B1414}
+  /* booth looks */
+  .b-balloon .opt{border-radius:50% 50% 46% 46%; min-width:96px; min-height:96px; background:radial-gradient(circle at 35% 30%, #fff8 0 12%, transparent 13%), var(--c, #FF8787); color:#2B1B10; border-color:#0002}
+  .b-ring .opt{border-radius:12px 12px 6px 6px; min-height:96px; background:linear-gradient(#0000 0 25%, #74C0FC 25%); color:#10263A; display:flex; align-items:flex-end; justify-content:center}
+  .b-fortune .opt{border-radius:10px; background:#3B2B5C; color:#F3E8FF; border-color:#B197FC}
+  .b-height .opt{border-radius:12px; min-width:96px}
+  .b-wheel .opt{border-radius:50%; min-width:90px; min-height:90px; background:#FFF3BF; color:#4A3500}
+  .b-duck .opt{border-radius:40% 40% 14px 14px; background:#FFE066; color:#3D2E00}
+  .answer{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0}
+  .answer input{flex:0 1 180px; min-width:0; font-size:1.3em; padding:8px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .msg{min-height:1.4em; font-weight:700; margin:8px 0 0; text-align:center}
+  .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .burst{font-size:2.2em; text-align:center; animation:pop .6s}
+  @keyframes pop{0%{transform:scale(.3); opacity:0}60%{transform:scale(1.3); opacity:1}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion: reduce){ .burst{animation:none} }
+  .tape{display:flex; max-width:300px; margin:0 auto; border:2px solid var(--ink); border-radius:6px; overflow:hidden}
+  .tape div{flex:1; padding:8px 4px; border-right:2px solid var(--ink); font-weight:700; background:var(--slot)}
+  .tape div:last-child{border-right:none}
+  .tape-total{max-width:300px; margin:0 auto 2px; border-top:3px solid var(--ink); padding-top:2px; font-weight:700}
+  .hanger{max-width:300px; margin:0 auto}
+  .hanger .pans{display:flex; gap:10px}
+  .hanger .pan{flex:1; min-height:52px; border:2px solid currentColor; border-radius:10px; padding:6px; display:flex; flex-wrap:wrap; gap:3px; justify-content:center; align-items:center; font-size:1.3em}
+  .work{display:inline-block; text-align:left; font-size:1.1em; line-height:1.9}
+  table.xy{border-collapse:collapse; margin:0 auto} table.xy td, table.xy th{border:2px solid var(--edge); padding:4px 10px; text-align:center}
+  .sign{display:inline-block; background:var(--yellow); color:#3D2E00; border:3px solid #3D2E00; border-radius:10px; padding:6px 14px; font-weight:800; font-size:1.2em}
+  svg .ln{stroke:currentColor; stroke-width:2} svg .tx{fill:currentColor; font-size:11px; text-anchor:middle} svg .ray{stroke:var(--accent); stroke-width:5} svg .dot{fill:var(--accent)} svg .open{fill:var(--card); stroke:var(--accent); stroke-width:3}
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+  .stats div{flex:1 1 120px; background:var(--slot); border-radius:12px; padding:10px; text-align:center}
+  .stats b{display:block; font-size:1.5em}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="awning" aria-hidden="true"></div><div id="app"></div></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_FAIR = params.get('from') === 'fair';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const ROUNDS = 5;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const M = '−', sg = x => (x < 0 ? M : '') + Math.abs(x);
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
+const fr = (n, d) => { const g = gcd(n, d); n /= g; d /= g; if (d === 1) return String(n); const w = Math.floor(n / d), r = n % d; return w ? `${w} ${r}/${d}` : `${r}/${d}`; };
+let best = {}; try { best = JSON.parse(localStorage.getItem('carnival:best') || '{}') || {}; } catch(e){}
+
+/* ---------- pictures ---------- */
+const tapeHTML = (parts, total) => `<div class="tape-total">${esc(total)}</div><div class="tape">${parts.map(p => `<div>${esc(p)}</div>`).join('')}</div>`;
+const hangerHTML = (k, c, n) => `<div class="hanger"><div style="font-size:1.3em">🪝</div><div style="border-top:4px solid currentColor; margin:2px 8px 6px"></div><div class="pans"><div class="pan">${'🟧'.repeat(k)}${'🟣'.repeat(c)}</div><div class="pan">${'🟣'.repeat(n)}</div></div><div class="muted" style="font-size:.9em">🟧 = x · 🟣 = 1 · balanced</div></div>`;
+function ineqSVG(op, c, w = 230){
+  const lo = c - 5, hi = c + 5, L = 14, R = w - 14, y = 22, X = t => L + (t - lo) * (R - L) / (hi - lo), right = op === '>' || op === '≥', closed = op === '≥' || op === '≤';
+  let g = `<line x1="${L - 6}" y1="${y}" x2="${R + 6}" y2="${y}" class="ln"/>`;
+  for (let t = lo; t <= hi; t++) { g += `<line x1="${X(t)}" y1="${y - 5}" x2="${X(t)}" y2="${y + 5}" class="ln"/>`; if ((t - lo) % 2 === 1 || t === c) g += `<text x="${X(t)}" y="${y + 19}" class="tx">${sg(t)}</text>`; }
+  g += `<line x1="${X(c)}" y1="${y}" x2="${right ? R + 4 : L - 4}" y2="${y}" class="ray"/><circle cx="${X(c)}" cy="${y}" r="6" class="${closed ? 'dot' : 'open'}"/>`;
+  return `<svg viewBox="0 0 ${w} 46" width="${w}" role="img" aria-label="x ${op} ${c}">${g}</svg>`;
+}
+const FLIP = {'>':'<', '<':'>', '≥':'≤', '≤':'≥'}, OPEN = {'>':'≥', '≥':'>', '<':'≤', '≤':'<'};
+const holds = (x, op, c) => op === '>' ? x > c : op === '<' ? x < c : op === '≥' ? x >= c : x <= c;
+const C = (right, wrongs) => shuffle([{html:esc(right), ok:true}, ...[...new Set(wrongs.map(String))].filter(w => w !== String(right)).slice(0, 3).map(w => ({html:esc(w), ok:false}))]);
+
+/* ---------- the booths: each round is {skill, prompt, visual, type, options | answer, explain} ---------- */
+const BOOTHS = [
+  {id:'balloon', emoji:'🎈', name:'Balloon Pop', station:'🎟️ Ticket Booth', look:'b-balloon', verb:'Pop the balloon', win:'💥', skills:{
+    testSol:() => { const a = rnd(2, 6), x = rnd(2, 9), b = rnd(1, 12), t = a * x + b; return {prompt:`Pop the balloon with the x that makes ${a}x + ${b} = ${t} true.`, options:C(`x = ${x}`, [`x = ${x + 1}`, `x = ${t - b}`, `x = ${t}`]), explain:`${a} × ${x} + ${b} = ${t}.`}; },
+    tapeEq:() => { const a = rnd(2, 9), x = rnd(2, 12); return Math.random() < .5 ? {prompt:'Pop the balloon with the equation the tape shows.', visual:tapeHTML(['x', a], x + a), options:C(`x + ${a} = ${x + a}`, [`${a}x = ${x + a}`, `x ${M} ${a} = ${x + a}`, `x + ${x + a} = ${a}`]), explain:`x and ${a} together make ${x + a}.`}
+      : (() => { const k = rnd(2, 4); return {prompt:'Pop the balloon with the equation the tape shows.', visual:tapeHTML(Array(k).fill('x'), k * x), options:C(`${k}x = ${k * x}`, [`x + ${k} = ${k * x}`, `x ÷ ${k} = ${k * x}`, `${k * x}x = ${k}`]), explain:`${k} equal parts of x make ${k * x}.`}; })(); },
+    hangerEq:() => { const k = rnd(1, 3), c = rnd(1, 4), x = rnd(1, 3), n = k * x + c, L = `${k === 1 ? '' : k}x + ${c}`; return {prompt:'Pop the balloon with the equation the hanger shows.', visual:hangerHTML(k, c, n), options:C(`${L} = ${n}`, [`${k === 1 ? c : k}x = ${n}`, `${L} = ${n + c}`, `${k === 1 ? '' : k}x = ${n + c}`]), explain:`Left: ${k} 🟧 and ${c} 🟣. Right: ${n} 🟣.`}; },
+    visualSolve:() => { const k = rnd(1, 3), c = rnd(0, 4), x = rnd(1, 4), n = k * x + c; return {prompt:'What is one 🟧 worth? Pop that balloon.', visual:hangerHTML(k, c, n), options:C(x, [n, n - c, x + 1, c]), explain:`Take ${c} 🟣 off both sides: ${n - c} left${k > 1 ? `, shared by ${k} 🟧` : ''}. One 🟧 = ${x}.`}; }}},
+  {id:'ring', emoji:'🎯', name:'Ring Toss', station:'🎯 Ring Toss', look:'b-ring', verb:'Toss a ring on the bottle', win:'⭕', skills:{
+    oneStepAdd:() => { const a = rnd(3, 30), x = rnd(2, 40), sub = Math.random() < .5; return sub ? {prompt:`Toss a ring on x: x ${M} ${a} = ${x}`, options:C(x + a, [x - a > 0 ? x - a : x + 1, a, x]), explain:`Add ${a} to both sides: x = ${x + a}.`} : {prompt:`Toss a ring on x: x + ${a} = ${x + a}`, options:C(x, [x + 2 * a, a, x + a]), explain:`Subtract ${a} from both sides: x = ${x}.`}; },
+    oneStepAddFrac:() => { const d = pick([4, 6, 8]), p = rnd(1, d - 1), q = rnd(1, d - 1); return Math.random() < .5 ? {prompt:`Toss a ring on x: x + ${fr(p, d)} = ${fr(p + q, d)}`, options:C(fr(q, d), [fr(2 * p + q, d), fr(p, d), fr(p + q, d)]), explain:`${fr(p + q, d)} ${M} ${fr(p, d)} = ${fr(q, d)}.`}
+      : (() => { const a = rnd(11, 49) / 10, x = rnd(11, 49) / 10, t = Math.round((a + x) * 10) / 10; return {prompt:`Toss a ring on x: x + ${a} = ${t}`, options:C(x, [Math.round((t + a) * 10) / 10, a, t]), explain:`${t} ${M} ${a} = ${x}.`}; })(); },
+    oneStepMult:() => { const a = rnd(2, 9), x = rnd(2, 12); return Math.random() < .5 ? {prompt:`Toss a ring on x: ${a}x = ${a * x}`, options:C(x, [a * a * x, a * x - a, a * x]), explain:`Divide both sides by ${a}: x = ${x}.`} : {prompt:`Toss a ring on x: x ÷ ${a} = ${x}`, options:C(a * x, [x, a + x, x * a + a]), explain:`Multiply both sides by ${a}: x = ${a * x}.`}; },
+    oneStepMultFrac:() => { const [p, q] = pick([[1, 2], [2, 3], [3, 4], [2, 5]]), k = rnd(2, 6); return Math.random() < .5 ? {prompt:`Toss a ring on x: (${p}/${q})x = ${p * k}`, options:C(q * k, [p * p * k, k, p * k + q]), explain:`Multiply by ${p === 1 ? q : `${q}/${p}`}: x = ${q * k}.`}
+      : (() => { const c = pick([0.5, 0.2, 0.25]), x = rnd(2, 12), t = c * x; return {prompt:`Toss a ring on x: ${c}x = ${t}`, options:C(x, [Math.round(t * c * 100) / 100, t, x + 1]), explain:`${t} ÷ ${c} = ${x}.`}; })(); }}},
+  {id:'fortune', emoji:'🔮', name:'Fortune Teller', station:'🎪 Story Tent', look:'b-fortune', verb:'Pick a card', win:'✨', skills:{
+    eqMistake:() => { const a = rnd(2, 9), x = rnd(3, 12), kind = pick(['op', 'math', 'none']); const s1 = kind === 'op' ? `x + ${a} + ${a} = ${x + a} + ${a}` : `x + ${a} ${M} ${a} = ${x + a} ${M} ${a}`, s2 = `x = ${kind === 'op' ? x + 2 * a : kind === 'math' ? x + 1 : x}`;
+      return {prompt:'The fortune teller solved x + ' + a + ' = ' + (x + a) + '. Where is the mistake?', visual:`<div class="work"><div>Step 1: ${esc(s1)}</div><div>Step 2: ${esc(s2)}</div></div>`, options:C(kind === 'op' ? 'Step 1' : kind === 'math' ? 'Step 2' : 'No mistake', ['Step 1', 'Step 2', 'No mistake']), explain:`The right steps: subtract ${a} from both sides, so x = ${x}.`}; },
+    translateEq:() => { const a = rnd(2, 12), x = rnd(2, 15); return pick([{prompt:`“${a} less than a number is ${x}.” Which equation?`, options:C(`x ${M} ${a} = ${x}`, [`${a} ${M} x = ${x}`, `x + ${a} = ${x}`, `${a}x = ${x}`]), explain:`“${a} less than x” is x ${M} ${a}.`},
+      {prompt:`“The product of ${a} and a number is ${a * x}.” Which equation?`, options:C(`${a}x = ${a * x}`, [`x + ${a} = ${a * x}`, `x ÷ ${a} = ${a * x}`, `${a} ÷ x = ${a * x}`]), explain:'Product means multiply.'},
+      {prompt:`“A number divided by ${a} is ${x}.” What is the number?`, options:C(a * x, [x, a, x + a]), explain:`x ÷ ${a} = ${x}, so x = ${a * x}.`}]); },
+    eqWrite:() => { const a = rnd(2, 9), x = rnd(2, 12); return pick([{prompt:`Bo had some tickets, won ${a} more, and now has ${x + a}. Which equation?`, options:C(`x + ${a} = ${x + a}`, [`x ${M} ${a} = ${x + a}`, `${a}x = ${x + a}`]), explain:'Some tickets plus the ones he won make the total.'},
+      {prompt:`Each bag holds ${a} lollipops. ${a * x} lollipops fill some bags. Which equation?`, options:C(`${a}x = ${a * x}`, [`x + ${a} = ${a * x}`, `x ÷ ${a} = ${a * x}`]), explain:`${a} in each of x bags.`}]); },
+    eqModel:() => { const a = rnd(2, 9), x = rnd(2, 12); return pick([{prompt:`Mia rode some rides, then ${a} more. She rode ${x + a} in all. How many at first?`, options:C(x, [x + 2 * a, a, x + a]), explain:`x + ${a} = ${x + a}, so x = ${x}.`},
+      {prompt:`${a} friends share some popcorn bags equally. Each gets ${x}. How many bags?`, options:C(a * x, [x, a + x, a]), explain:`x ÷ ${a} = ${x}, so x = ${a * x}.`}]); }}},
+  {id:'height', emoji:'📏', name:'Height Check', station:'🎢 Ride Line', look:'b-height', verb:'Check the riders', win:'🎢', skills:{
+    testIneq:() => { const op = pick(['>', '≥', '<', '≤']), c = rnd(40, 52), hs = shuffle([c, c + rnd(1, 4), c - rnd(1, 4), c + rnd(5, 8), c - rnd(5, 8)]).slice(0, 4);
+      const pets = ['🐶', '🐱', '🐰', '🦊', '🐼'];
+      if (hs.every(h => holds(h, op, c)) || hs.every(h => !holds(h, op, c))) return BOOTHS[3].skills.testIneq();   // at least one rider and one who waits
+      return {type:'multi', prompt:`The sign says h ${op} ${c}. Tap every pet who can ride, then press Done.`, visual:`<span class="sign">h ${op} ${c} inches</span>`, options:hs.map((h, i) => ({html:`${pets[i]}<br>${h} in`, ok:holds(h, op, c)})), explain:`Riders need h ${op} ${c}${op.includes('≥') || op.includes('≤') ? ` (${c} counts)` : ` (${c} doesn’t count)`}.`}; },
+    graphIneq:() => { const op = pick(['>', '≥', '<', '≤']), c = rnd(-4, 6); return {prompt:`Which graph shows x ${op} ${sg(c)}?`, options:shuffle([[op, true], [FLIP[op], false], [OPEN[op], false]]).map(([o, ok]) => ({html:ineqSVG(o, c, 200), ok})), explain:`${op.includes('≥') || op.includes('≤') ? 'Filled' : 'Open'} circle, arrow ${op === '>' || op === '≥' ? 'right' : 'left'}.`}; },
+    ineqFromGraph:() => { const op = pick(['>', '≥', '<', '≤']), c = rnd(-4, 6); return {prompt:'Which sign matches the graph?', visual:ineqSVG(op, c), options:C(`x ${op} ${sg(c)}`, [`x ${FLIP[op]} ${sg(c)}`, `x ${OPEN[op]} ${sg(c)}`]), explain:`${op.includes('≥') || op.includes('≤') ? 'A filled circle includes' : 'An open circle leaves out'} ${sg(c)}; the arrow points ${op === '>' || op === '≥' ? 'right' : 'left'}.`}; },
+    plotIneq:() => { const op = pick(['>', '≥', '<', '≤']), c = rnd(1, 9), right = op === '>' || op === '≥', closed = op === '≥' || op === '≤', T = (f, r) => `${f ? 'Filled' : 'Open'} circle at ${c}, arrow ${r ? 'right' : 'left'}`;
+      return {prompt:`How do you plot x ${op} ${c}?`, options:C(T(closed, right), [T(!closed, right), T(closed, !right), T(!closed, !right)]), explain:`${closed ? 'Filled' : 'Open'} because ${c} ${closed ? 'counts' : 'doesn’t count'}; ${right ? 'greater is right' : 'less is left'}.`}; },
+    ineqWord:() => { const [v, op, n, s] = pick([['h', '≥', rnd(42, 54), n => `You must be at least ${n} inches tall to ride.`], ['r', '<', rnd(12, 30), n => `Fewer than ${n} riders fit in the boat.`], ['w', '≤', rnd(8, 20), n => `The prize bag holds at most ${n} pounds.`], ['t', '>', rnd(4, 12), n => `You need more than ${n} tickets for the big bear.`]]);
+      return {prompt:s(n) + ' Which inequality?', options:C(`${v} ${op} ${n}`, [`${v} ${FLIP[op]} ${n}`, `${v} ${OPEN[op]} ${n}`]), explain:'At least: ≥. At most: ≤. More than: >. Fewer than: <.'}; }}},
+  {id:'wheel', emoji:'🎡', name:'Ferris Wheel', station:'🎡 Ferris Wheel', look:'b-wheel', verb:'Fill the car', win:'🎡', skills:{
+    tableEq:() => { const a = rnd(2, 5), b = rnd(1, 9), x = rnd(3, 8); return {type:'type', prompt:`Every car follows y = ${a}x + ${b}. Car x = ${x} needs its y. Type it.`, visual:`<table class="xy"><tr><th>x</th><td>1</td><td>2</td><td>${x}</td></tr><tr><th>y</th><td>${a + b}</td><td>${2 * a + b}</td><td>?</td></tr></table>`, answer:a * x + b, explain:`${a} × ${x} + ${b} = ${a * x + b}.`}; },
+    depIndep:() => { const [s, dep, ind] = pick([['Each ride costs 3 tickets.', 'the tickets used', 'the number of rides'], ['The wheel turns 2 times every minute.', 'the number of turns', 'the minutes'], ['Each popcorn bag costs $4.', 'the money spent', 'the number of bags']]); return {prompt:`${s} Which is the dependent variable?`, options:C(dep, [ind]), explain:`${dep[0].toUpperCase() + dep.slice(1)} depends on ${ind}.`}; },
+    graphEq:() => { const a = rnd(2, 4), pts = [1, 2, 3].map(x => `(${x}, ${a * x})`).join(', '); return {prompt:`The wheel’s cars sit at ${pts}. Which equation fits every point?`, options:C(`y = ${a}x`, [`y = x + ${a}`, `x = ${a}y`, `y = ${a + 1}x`]), explain:`Each y is ${a} times its x.`}; }}},
+  {id:'duck', emoji:'🦆', name:'Duck Pond', station:'🏆 Prize Counter', look:'b-duck', verb:'Pick a duck', win:'🏆', skills:{
+    relQuant:() => { const k = rnd(2, 9), b = rnd(2, 10); return pick([{prompt:`Each game costs $${k}. Let g be games and c be the cost. Which duck has the equation?`, options:C(`c = ${k}g`, [`g = ${k}c`, `c = g + ${k}`]), explain:`$${k} for each game: c = ${k}g.`},
+      {prompt:`Entry is $${b} plus $${k} per ride. Let r be rides and c be the cost. Which duck?`, options:C(`c = ${k}r + ${b}`, [`c = ${b}r + ${k}`, `c = ${k + b}r`]), explain:`${k} for each ride, plus ${b} once.`}]); },
+    analyzeRel:() => { const k = rnd(2, 6), b = rnd(0, 6), f = x => k * x + b, rule = b ? `y = ${k}x + ${b}` : `y = ${k}x`;
+      return Math.random() < .5 ? {prompt:'Which duck has the rule for the table?', visual:`<table class="xy"><tr><th>x</th><td>1</td><td>2</td><td>3</td></tr><tr><th>y</th><td>${f(1)}</td><td>${f(2)}</td><td>${f(3)}</td></tr></table>`, options:C(rule, [`y = x + ${f(1) - 1}`, `y = ${k + b}x`, `y = ${k}x + ${b + 1}`]), explain:`y goes up ${k} each time${b ? `, starting from ${b} at x = 0` : ''}.`}
+        : {type:'type', prompt:`The table follows ${rule}. What is y when x = 10?`, visual:`<table class="xy"><tr><th>x</th><td>1</td><td>2</td><td>3</td></tr><tr><th>y</th><td>${f(1)}</td><td>${f(2)}</td><td>${f(3)}</td></tr></table>`, answer:f(10), explain:`${k} × 10${b ? ` + ${b}` : ''} = ${f(10)}.`}; }}}
+];
+const SKILL_NAMES = {testSol:'Testing solutions', tapeEq:'Tape diagrams', hangerEq:'Hanger diagrams', visualSolve:'Solving with a hanger', oneStepAdd:'One-step + and −', oneStepAddFrac:'+ and − with fractions and decimals', oneStepMult:'One-step × and ÷', oneStepMultFrac:'× and ÷ with fractions and decimals', eqMistake:'Finding the mistake', translateEq:'Words to equations', eqWrite:'Story to equation', eqModel:'Story problems', testIneq:'Testing inequalities', graphIneq:'Graphing inequalities', ineqFromGraph:'Inequality from a graph', plotIneq:'Plotting inequalities', ineqWord:'Inequality stories', tableEq:'Tables from equations', depIndep:'Dependent and independent', graphEq:'Equations and graphs', relQuant:'Equations from stories', analyzeRel:'Analyzing relationships'};
+const COLORS = ['#FF8787', '#74C0FC', '#FFD43B', '#8CE99A', '#E599F7'];
+
+/* ---------- play ---------- */
+let run = null, tickets = 0;
+function newRound(b){
+  const skill = run.order[run.i % run.order.length], r = b.skills[skill]();
+  return {...r, skill, type:r.type || 'choice', picked:new Set(), done:false, ok:false};
+}
+function startBooth(id){ const b = BOOTHS.find(x => x.id === id); run = {b, i:0, right:0, missed:{}, started:Date.now(), order:shuffle(Object.keys(b.skills))}; run.r = newRound(b); render(); }   // every skill of the booth comes up
+function finishRound(ok){
+  const r = run.r; r.done = true; r.ok = ok;
+  if (ok) { run.right++; tickets++; } else run.missed[r.skill] = (run.missed[r.skill] || 0) + 1;
+  render();
+}
+function next(){
+  run.i++;
+  if (run.i >= ROUNDS) return finishBooth();
+  run.r = newRound(run.b); render();
+}
+function finishBooth(){
+  const b = run.b, stars = run.right >= 5 ? 3 : run.right >= 4 ? 2 : run.right >= 3 ? 1 : 0;
+  best[b.id] = Math.max(best[b.id] || 0, stars); try { localStorage.setItem('carnival:best', JSON.stringify(best)); } catch(e){}
+  const result = {booth:b.id, right:run.right, tries:ROUNDS, stars, missed:run.missed, ms:Date.now() - run.started};
+  try {
+    if (window.parent !== window) {
+      if (FROM_FAIR) window.parent.postMessage({type:'carnival:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'carnival', runId:ARCADE_RUN, roundId:`${b.id}-${run.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(run.missed).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>${b.emoji} ${esc(b.name)}: ${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</h1>
+    <div class="stats"><div><b>${run.right} of ${ROUNDS}</b>right</div><div><b>🎟️ ${tickets}</b>tickets today</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : '<p>Perfect! Every throw hit. 🎉</p>'}
+    ${FROM_FAIR ? '<p class="muted">Each right answer earns Pet World coins. Carnival games don’t count toward Pet Fair orders or quizzes.</p>' : ''}
+    <div class="top"><button class="btn go" data-booth="${b.id}">Play again</button><button class="btn" data-midway>Back to the midway</button></div>`;
+  run = null;
+}
+function render(){
+  if (!run) return renderMidway();
+  const b = run.b, r = run.r;
+  let body;
+  if (r.type === 'type') body = `<div class="answer"><input id="ans" inputmode="numeric" autocomplete="off" aria-label="Your answer" ${r.done ? 'disabled' : ''}><button class="btn go" data-submit ${r.done ? 'disabled' : ''}>Ride!</button></div>`;
+  else body = `<div class="opts ${b.look}">${r.options.map((o, i) => { const cls = r.done ? (o.ok ? ' right' : r.picked.has(i) ? ' wrong' : '') : r.picked.has(i) ? ' picked' : '';
+      return `<button class="opt${cls}" data-opt="${i}" style="--c:${COLORS[i % COLORS.length]}" ${r.done ? 'disabled' : ''}>${o.html}</button>`; }).join('')}</div>${r.type === 'multi' && !r.done ? '<div class="top" style="justify-content:center"><button class="btn go" data-done>Done</button></div>' : ''}`;
+  const res = r.done ? `<div class="burst">${r.ok ? b.win : '💨'}</div><p class="msg ${r.ok ? 'ok' : 'bad'}" role="status">${r.ok ? '✅ A hit! +1 🎟️' : `Missed! ${esc(r.explain)}`}</p><div class="top" style="justify-content:center"><button class="btn go" data-next>${run.i + 1 < ROUNDS ? 'Next throw' : 'See my prize'}</button></div>` : '';
+  app.innerHTML = `<div class="top"><span class="pill">${b.emoji} ${esc(b.name)}</span><span class="pill">Throw ${run.i + 1} of ${ROUNDS}</span><span class="pill">✅ ${run.right}</span><span class="pill">🎟️ ${tickets}</span><button class="btn" data-midway style="margin-left:auto">Midway</button></div>
+    <div class="card"><p class="prompt">${esc(r.prompt)}</p>${r.visual ? `<div class="visual">${r.visual}</div>` : ''}${body}${res}</div>`;
+  document.getElementById('ans')?.focus();
+}
+function renderMidway(){
+  app.innerHTML = `<h1>🎪 Carnival Midway</h1>
+    <p class="muted">Six booths, one for each part of the Pet Fair. Every booth gives you ${ROUNDS} throws, and every right answer wins a 🎟️. One throw per question, so think first!</p>
+    ${tickets ? `<p class="pill" style="display:inline-block">🎟️ ${tickets} tickets today</p>` : ''}
+    <div class="booths">${BOOTHS.map(b => `<button class="booth" data-booth="${b.id}"><span class="e">${b.emoji}</span><span><b>${esc(b.name)}</b><span class="muted">${esc(b.station)} · ${best[b.id] ? '⭐'.repeat(best[b.id]) + '☆'.repeat(3 - best[b.id]) : 'Not played yet'}</span></span></button>`).join('')}</div>`;
+}
+app.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.booth) { startBooth(btn.dataset.booth); return; }
+  if (btn.hasAttribute('data-midway')) { run = null; renderMidway(); return; }
+  if (!run) return;
+  const r = run.r;
+  if (btn.hasAttribute('data-next')) { next(); return; }
+  if (r.done) return;
+  if (btn.dataset.opt != null) {
+    const i = +btn.dataset.opt;
+    if (r.type === 'multi') { r.picked.has(i) ? r.picked.delete(i) : r.picked.add(i); render(); return; }
+    r.picked.add(i); finishRound(!!r.options[i].ok); return;
+  }
+  if (btn.hasAttribute('data-done')) { const ok = r.options.every((o, i) => !!o.ok === r.picked.has(i)); finishRound(ok); return; }
+  if (btn.hasAttribute('data-submit')) submitTyped();
+});
+function submitTyped(){ const r = run?.r; if (!r || r.done) return; const v = document.getElementById('ans').value.trim(); if (!/^\d+$/.test(v)) return; finishRound(+v === r.answer); }
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'ans') submitTyped(); });
+if (params.has('selftest')) window.__carn = {BOOTHS, holds};
+renderMidway();
+})();
+</script>
+</body>
+</html>

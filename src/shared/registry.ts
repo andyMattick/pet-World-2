@@ -344,6 +344,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'supermarket-dash', name: 'Supermarket Dash', emoji: '🛒', description: 'You have $100 and 4 minutes! Work out every deal (unit prices, percents off, best buys) and fill your cart as close to $100 as you can.', src: '/arcade/supermarket-dash/', available: true },
   { id: 'penguin-push', name: 'Penguin Push', emoji: '🐧', description: 'Three walruses want your ice floe! Follow orders like “slide to the opposite of 4” on a number line, and bump every walrus into the water.', src: '/arcade/penguin-push/', available: true },
   { id: 'potion-detective', name: 'Potion Detective', emoji: '🔍', description: 'Someone keeps stealing potions! Solve expression clues to gather evidence, rule out suspects, and catch the thief.', src: '/arcade/potion-detective/', available: true },
+  { id: 'carnival', name: 'Carnival Midway', emoji: '🎪', description: 'Six carnival booths: pop balloons, toss rings, check riders’ heights and more, with equations and inequalities.', src: '/arcade/carnival/', available: true },
   { id: 'power-lab', name: 'Punctuation Power Lab', emoji: '⚡', description: 'Tap the glowing spots to change the punctuation and watch your superhero change. Build the hero each mission needs!', src: '/arcade/power-lab/', available: true },
   { id: 'prep-recall', name: 'Name All 48 Prepositions', emoji: '🔗', description: 'Race the clock to type every preposition you can remember. (During English Unit 5 it is on Today’s plan instead.)', src: '/prep-recall/', available: true }
 ];

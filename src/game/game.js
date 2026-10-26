@@ -179,6 +179,9 @@ function normalize(raw){
       games:(Array.isArray(s.penguin?.games) ? s.penguin.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), dunked:Math.max(0, +g.dunked || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🐧 Penguin Push (docs/PENGUIN-PUSH.md)
     s.detective = {best:Math.max(0, Math.min(3, Math.round(+s.detective?.best || 0))), day:typeof s.detective?.day === 'string' ? s.detective.day : '', coinsToday:Math.max(0, Math.round(+s.detective?.coinsToday || 0)),
       games:(Array.isArray(s.detective?.games) ? s.detective.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, solved:Math.max(0, Math.min(3, +g.solved || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🔍 Potion Detective (docs/POTION-DETECTIVE.md)
+    s.carnival = {best:Object.fromEntries(Object.entries(s.carnival?.best && typeof s.carnival.best === 'object' ? s.carnival.best : {}).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && Number.isFinite(+v)).map(([k, v]) => [k, Math.max(0, Math.min(3, Math.round(+v)))])),
+      day:typeof s.carnival?.day === 'string' ? s.carnival.day : '', coinsToday:Math.max(0, Math.round(+s.carnival?.coinsToday || 0)),
+      games:(Array.isArray(s.carnival?.games) ? s.carnival.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-40).map(g => ({t:+g.t, booth:String(g.booth || '').slice(0, 12), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🎪 Carnival Midway (docs/CARNIVAL.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
@@ -5653,6 +5656,7 @@ function arcadeModuleMessage(event){
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'potion-detective') earned = Math.max(0, Math.min(3, score));   // 1 ticket per case solved, up to 3 (docs/POTION-DETECTIVE.md)
   else if (run.gameId === 'penguin-push') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/PENGUIN-PUSH.md)
   else if (run.gameId === 'supermarket-dash') earned = Math.max(0, Math.min(3, score));   // 1 ticket per checkout star, up to 3 a dash (docs/SUPERMARKET-DASH.md)
@@ -7401,6 +7405,42 @@ window.addEventListener('message', e => {
   logEvent({k:'detective', s:right, n:tries, title:`${solved} of 3 cases solved, ${right} of ${tries} clues solved${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🔍 ${solved} of 3 cases solved!${newBest && solved ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= DETECTIVE_COINS_PER_DAY ? ' (Today’s detective coins are all earned.)' : ''}`);
+});
+/* ---------- 🎪 Carnival Midway (public/arcade/carnival, docs/CARNIVAL.md) ----------
+   Six carnival booths, one for each Pet Fair station, opened from the Prize Counter (the last Pet Fair station) and also an
+   Arcade game. Played from the Pet Fair it pays Pet World coins: 1 per right answer, up to CARNIVAL_COINS_PER_DAY a day.
+   It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const CARNIVAL_COINS_PER_DAY = 20, CARNIVAL_BOOTHS = {balloon:'🎈 Balloon Pop', ring:'🎯 Ring Toss', fortune:'🔮 Fortune Teller', height:'📏 Height Check', wheel:'🎡 Ferris Wheel', duck:'🦆 Duck Pond'};
+function carnivalButtonHTML(){
+  const stars = Object.values(S.carnival?.best || {}).reduce((t, v) => t + v, 0);
+  return `<button type="button" class="btn" data-carnival>🎪 Carnival Midway${stars ? ` · ${stars} ⭐` : ''}</button>`;
+}
+function openCarnival(){
+  if ($('#carnivalWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'carnivalWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Carnival Midway');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🎪 Carnival Midway</b><button type="button" class="btn small" data-carnival-close>Done</button></div><iframe src="/arcade/carnival/?from=fair" title="Carnival Midway"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-carnival-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('fair'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#carnivalWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'carnival:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, booth = CARNIVAL_BOOTHS[r.booth] ? r.booth : '';
+  if (!booth) return;
+  const tries = Math.max(0, Math.min(10, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0))), stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 10).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.carnival, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > (c.best[booth] || 0);
+  c.games = [...c.games, {t:Date.now(), booth, right, tries, stars, missed}].slice(-40);
+  if (newBest) c.best[booth] = stars;
+  const coins = Math.min(right, Math.max(0, CARNIVAL_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'carnival', s:right, n:tries, title:`${CARNIVAL_BOOTHS[booth]}: ${right} of ${tries} right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🎪 ${CARNIVAL_BOOTHS[booth]}: ${right} of ${tries}!${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= CARNIVAL_COINS_PER_DAY ? ' (Today’s carnival coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10604,7 +10644,7 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -10613,6 +10653,7 @@ $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-dash]')) { openDash(); return; }
   if (e.target.closest('[data-penguin]')) { openPenguin(); return; }
   if (e.target.closest('[data-detective]')) { openDetective(); return; }
+  if (e.target.closest('[data-carnival]')) { openCarnival(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
@@ -12209,6 +12250,7 @@ function placeOnScreen(){
   if ($('#dashWrap')) return 'dash';
   if ($('#penguinWrap')) return 'penguin';
   if ($('#detectiveWrap')) return 'detective';
+  if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
@@ -12243,6 +12285,7 @@ function placeLabel(key){
   if (kind === 'dash') return '🛒 Supermarket Dash';
   if (kind === 'penguin') return '🐧 Penguin Push';
   if (kind === 'detective') return '🔍 Potion Detective';
+  if (kind === 'carnival') return '🎪 Carnival Midway';
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
@@ -12266,6 +12309,7 @@ function eventText(e){
   if (e.k === 'dash') return `🛒 Supermarket Dash: ${e.title}`;
   if (e.k === 'penguin') return `🐧 Penguin Push: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
+  if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
@@ -12355,6 +12399,7 @@ function subjectOnScreen(){
   if ($('#dashWrap')) return 'math';   // Supermarket Dash is Market practice
   if ($('#penguinWrap')) return 'math';   // Penguin Push is Ice Rink practice
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
+  if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';

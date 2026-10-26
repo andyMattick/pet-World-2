@@ -178,6 +178,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F46. 🧪 Potion Lab, Unit 6 in Khan's order: all 18 Khan exercises across 6 stations (new: two letters with fractions, expression value intuition, formulas in stories, equivalent expressions by factoring, factoring with variables, combining like terms); fixed 3 links; Unit 7's stations are now 7 and 8. See `POTION.md`
 - [x] F47. 🔍 Potion Detective: a Unit 6 mystery at the Potion Shelf (and in the Arcade). Each clue is a problem whose answer is the thief's evidence; right answers rule out suspects. See `POTION-DETECTIVE.md`
 - [x] F48. 🎡 The Pet Fair: Khan Unit 7 (equations and inequalities) gets its own building between the Potion Lab and Pet Houses. All 22 Khan exercises across 6 stations (15 new skills), its own rewards set and Khan unit test link. See `FAIR.md`
+- [x] F49. 🎪 Carnival Midway: six carnival booths testing every Pet Fair skill, at the Prize Counter and in the Arcade. See `CARNIVAL.md`
 
 ## Database files, in the order they were run
 
