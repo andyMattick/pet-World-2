@@ -76,6 +76,7 @@ These units don't have skills yet. Until each one is built, its items use only `
 | Clock Tower (`clock`) | 🦉 Hoot the owl, 🦇 Midnight the bat, 🐿️ Acorn the chipmunk, 🦅 Soar the eagle, 🐉 Ember the dragon | 🕯️ Candles, 🔔 Tower bell, ⏳ Hourglass, 🌙 Moon banner, 🕰️ Golden clock |
 | Ice Rink (`rink`) | 🦌 Frost the reindeer, 🐺 Howl the wolf, 🐋 Splash the whale, 🦈 Finn the shark, 🦢 Crystal the swan | ⛸️ Skates, 🧣 Scarf rack, ☃️ Snowman, 🏒 Hockey sticks, 🥇 Gold medal |
 | Potion Lab (`potion`) | 🐸 Fizz the frog, 🐍 Noodle the snake, 🦎 Zap the lizard, 🐙 Inky the octopus, 🦋 Glimmer the butterfly | 🧪 Flasks, 🔮 Crystal ball, 📜 Spell scroll, 🕸️ Cobwebs, ⚗️ Golden cauldron |
+| Pet Fair (`fair`) | 🦘 Bounce the kangaroo, 🦩 Flo the flamingo, 🦭 Bubbles the seal, 🐯 Taffy the tiger, 🐨 Gumdrop the koala | 🎈 Balloon bunch, 🍭 Lollipop stand, 🎯 Ring toss, 🎢 Roller coaster, 🎡 Golden Ferris wheel |
 | Pet Houses (`houses`) | 🐌 Shelly the snail, 🐞 Dot the ladybug, 🐝 Buzz the bee, 🦡 Digger the badger, 🦚 Jewel the peacock | 🌻 Sunflower patch, 🧱 Brick pile, 🏕️ Camp tent, 🏠 Tiny house, 🏰 Castle |
 | Pet Show (`show`) | 🐩 Fifi the poodle, 🐈 Duchess the show cat, 🦒 Tallulah the giraffe, 🦓 Stripes the zebra, 🦁 King the lion | 🎀 Ribbons, 📊 Score board, 🎪 Show tent, 🎺 Trumpet, 🏆 Grand trophy |
 

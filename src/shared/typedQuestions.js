@@ -730,15 +730,35 @@ export const TYPED_QUESTIONS = {
       {"type": "fill", "difficulty": 2, "prompt": "Combine like terms: 9n + 4 − 2n − 1 = ___n + 3. Type the missing number.", "accept": ["7"]},
       {"type": "short", "prompt": "Explain why 4x + 3 is not equal to 7x.", "rubric": ["Says 4x and 3 are not like terms (3 has no x), so they can’t be combined", "Tests a value or explains 7x would need 3 more x’s, not 3 ones"], "model": "4x and 3 are not like terms because 3 has no x. You can only combine terms with the same letter. If x = 2, 4x + 3 = 11 but 7x = 14.", "minWords": 10},
     ],
-    "potion:7": [
+    "fair:1": [
       {"type": "sort", "difficulty": 1, "prompt": "Is x = 6 a solution?", "groups": ["Yes", "No"], "items": [["x + 4 = 10", 0], ["3x = 18", 0], ["x ÷ 2 = 3", 0], ["x − 6 = 1", 1], ["2x = 8", 1], ["x + 1 = 6", 1]]},
+      {"type": "fill", "difficulty": 2, "prompt": "A hanger has 3 squares and 2 circles on the left and 11 circles on the right. Each circle is 1. What is one square worth? Type the number.", "accept": ["3"]},
+      {"type": "short", "prompt": "Explain how a balanced hanger with 2 squares on one side and 8 circles on the other shows that one square is worth 4.", "rubric": ["Says the sides are equal because the hanger is balanced (2x = 8)", "Splits 8 into 2 equal groups (or divides 8 by 2) to get 4"], "model": "The hanger is balanced, so 2 squares weigh the same as 8 circles: 2x = 8. Splitting the 8 circles into 2 equal groups gives 4 for each square.", "minWords": 10},
+    ],
+    "fair:2": [
       {"type": "two", "difficulty": 2, "prompt": "Part A: Solve x/4 = 9.", "options": ["x = 36", "x = 13", "x = 2.25"], "answer": 0, "partB": {"prompt": "Part B: Which step solves it?", "options": ["Multiply both sides by 4.", "Divide both sides by 4.", "Add 4 to both sides."], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "Solve x + 3/8 = 7/8. Type x as a fraction in simplest form.", "accept": ["1/2", "4/8"]},
+      {"type": "short", "prompt": "Explain how to solve 0.5x = 6, and check your answer.", "rubric": ["Divides both sides by 0.5 (or multiplies by 2)", "Gets x = 12", "Checks: 0.5 × 12 = 6"], "model": "Divide both sides by 0.5, which is the same as multiplying by 2: x = 12. Check: 0.5 × 12 = 6.", "minWords": 8},
+    ],
+    "fair:3": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Sam solved x − 4 = 10 like this: x − 4 − 4 = 10 − 4, so x = 6. What went wrong?", "options": ["He subtracted 4 when he needed to add 4", "He made a mistake in 10 − 4", "There is no mistake"], "answer": 0, "partB": {"prompt": "Part B: What is the right solution?", "options": ["x = 14", "x = 6", "x = 40"], "answer": 0}},
+      {"type": "fill", "difficulty": 1, "prompt": "“A number divided by 3 is 7.” Solve for the number.", "accept": ["21"]},
       {"type": "short", "prompt": "Write a story that the equation n + 7 = 20 could describe, then solve it.", "rubric": ["Writes a story where an unknown amount plus 7 makes 20", "Solves n = 13 with a label"], "model": "I had some stickers and got 7 more. Now I have 20. How many did I have? n = 20 − 7 = 13 stickers.", "minWords": 8},
     ],
-    "potion:8": [
+    "fair:4": [
       {"type": "multi", "difficulty": 2, "prompt": "Select every value that is a solution of x > 4.", "options": ["5", "4.1", "10", "4", "3", "−5"], "answers": [0, 1, 2]},
-      {"type": "two", "difficulty": 2, "prompt": "Part A: Plants grow taller when they get more hours of sunlight. Which is the dependent variable?", "options": ["Plant height", "Hours of sunlight", "The kind of plant"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["It changes because of the other variable.", "It is the bigger number.", "You choose it before the experiment."], "answer": 0}},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: You must be at least 48 inches tall to ride. Which inequality shows the heights h that can ride?", "options": ["h ≥ 48", "h > 48", "h ≤ 48"], "answer": 0, "partB": {"prompt": "Part B: Can a rider who is exactly 48 inches tall ride?", "options": ["Yes, because “at least” includes 48", "No, because 48 is not more than 48", "Only with a grown-up"], "answer": 0}},
       {"type": "short", "prompt": "Explain the difference between x < 3 and x ≤ 3, and how each looks on a number line.", "rubric": ["Says ≤ includes 3 and < does not", "Says < uses an open circle and ≤ a closed (filled) circle at 3, with the arrow pointing left"], "model": "x < 3 means numbers less than 3, not 3 itself: an open circle at 3 with an arrow to the left. x ≤ 3 includes 3: a filled circle at 3 with an arrow to the left.", "minWords": 8},
+    ],
+    "fair:5": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: Plants grow taller when they get more hours of sunlight. Which is the dependent variable?", "options": ["Plant height", "Hours of sunlight", "The kind of plant"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["It changes because of the other variable.", "It is the bigger number.", "You choose it before the experiment."], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "The rule is y = 3x + 1. What is y when x = 4?", "accept": ["13"]},
+      {"type": "short", "prompt": "Each ride costs 2 tickets. Explain which variable is independent and which is dependent: the number of rides or the number of tickets.", "rubric": ["Says the number of rides is independent (you choose it)", "Says the number of tickets is dependent (it depends on the rides)"], "model": "The number of rides is the independent variable because you choose it. The number of tickets is dependent because it depends on how many rides you take: tickets = 2 × rides.", "minWords": 10},
+    ],
+    "fair:6": [
+      {"type": "multi", "difficulty": 2, "prompt": "A popcorn bucket costs $3. Let b be the buckets and c be the cost. Select every true statement.", "options": ["c = 3b", "For each extra bucket, c goes up by 3", "b = 3c", "5 buckets cost $15", "c = b + 3"], "answers": [0, 1, 3]},
+      {"type": "fill", "difficulty": 3, "prompt": "A table shows x = 1, 2, 3, 4 and y = 7, 12, 17, 22. What is y when x = 10?", "accept": ["52"]},
+      {"type": "short", "prompt": "The fair costs $5 to enter plus $2 for each ride. Write an equation for the total cost c for r rides, and explain each part.", "rubric": ["Writes c = 2r + 5 (or an equivalent)", "Explains 2r is the rides and 5 is the entry fee"], "model": "c = 2r + 5. The 2r is $2 for each of the r rides, and the 5 is the $5 to get in.", "minWords": 10},
     ],
     "houses:1": [
       {"type": "two", "difficulty": 2, "prompt": "Part A: A triangle has a base of 10 cm and a height of 6 cm. What is its area?", "options": ["30 square cm", "60 square cm", "16 square cm"], "answer": 0, "partB": {"prompt": "Part B: Why do you divide by 2?", "options": ["A triangle is half of a parallelogram with the same base and height.", "Triangles have 2 equal sides.", "You always divide area by 2."], "answer": 0}},

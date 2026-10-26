@@ -4404,7 +4404,7 @@ const POTION_GEN = {
 const factorsOf = n => [...Array(n).keys()].map(i => i + 1).filter(d => n % d === 0);
 Object.assign(GEN, POTION_GEN);
 
-/* ===== 6th grade, Potion Lab part 2 (Khan unit 7): equations and inequalities ===== */
+/* ===== 6th grade, Pet Fair (Khan unit 7): equations and inequalities (POTION2_GEN; it was the Potion Lab's part 2 until Oct 26, 2026) ===== */
 const balanceHTML = (left, right) => `<div class="balance"><span class="pan-l">${esc(left)}</span><span class="beam">⚖️</span><span class="pan-r">${esc(right)}</span></div>`;
 /* ===== grade 6 pictures (docs: MARKET.md, POTION.md, RINK.md): bar models for equations and percents, and distance number lines ===== */
 /* a bar model: parts [{label, w, on}] side by side (w = relative width, on = shaded), with an optional label over the whole bar */
@@ -4456,7 +4456,26 @@ function ineqSVG(op, c, {lo = c - 5, hi = c + 5, w = 280} = {}){
   g += `<circle cx="${X(c)}" cy="${y}" r="7" class="${closed ? 'nl-dot' : 'nl-open'}"/>`;
   return `<svg class="num-line ineq" viewBox="0 0 ${w} 56" width="${w}" role="img" aria-label="x ${op} ${c}">${g}</svg>`;
 }
+const FAIR_WORDS = [['🎈', 'balloons'], ['🍿', 'bags of popcorn'], ['🎟️', 'ride tickets'], ['🧸', 'prize bears'], ['🍭', 'lollipops'], ['🎯', 'darts']];
 const INEQ_FLIP = {'>':'<', '<':'>', '≥':'≤', '≤':'≥'}, INEQ_OPEN = {'>':'≥', '≥':'>', '<':'≤', '≤':'<'};
+/* a hanger diagram: k squares (x) and c circles (1) on the left, n circles on the right */
+function hangerHTML(k, c, n){
+  const side = (sq, dots) => `<div style="flex:1; min-height:56px; border:2px solid currentColor; border-radius:10px; padding:6px; display:flex; flex-wrap:wrap; gap:3px; justify-content:center; align-items:center; font-size:1.3rem">${'🟧'.repeat(sq)}${'🟣'.repeat(dots)}</div>`;
+  return `<div style="max-width:320px; margin:0 auto; text-align:center"><div style="font-size:1.4rem; line-height:1">🪝</div><div style="border-top:4px solid currentColor; margin:2px 8px 6px"></div>
+    <div style="display:flex; gap:10px">${side(k, c)}${side(0, n)}</div><div style="font-size:.9rem; margin-top:4px; opacity:.9">🟧 = x &nbsp; 🟣 = 1 &nbsp; The hanger is balanced.</div></div>`;
+}
+/* a first-quadrant graph from 0 to max with dots (and an optional line through them) */
+function q1GraphSVG(pts, max = 10, {line = true} = {}){
+  const w = 260, L = 26, B = w - 22, s = (w - 40) / max, P = (x, y) => [L + x * s, B - y * s];
+  let g = '';
+  for (let i = 0; i <= max; i++) { const [x] = P(i, 0), [, y] = P(0, i); g += `<line x1="${x}" y1="${B}" x2="${x}" y2="${B - max * s}" class="grid-line"/><line x1="${L}" y1="${y}" x2="${L + max * s}" y2="${y}" class="grid-line"/>`;
+    if (i % (max > 10 ? 4 : 2) === 0) g += `<text x="${x}" y="${B + 14}" class="grid-num">${i}</text><text x="${L - 6}" y="${y + 4}" class="grid-num" text-anchor="end">${i}</text>`; }
+  g += `<line x1="${L}" y1="${B}" x2="${L + max * s + 6}" y2="${B}" class="axis-line"/><line x1="${L}" y1="${B}" x2="${L}" y2="${B - max * s - 6}" class="axis-line"/>`;
+  if (line && pts.length > 1) { const [a, b] = [pts[0], pts[pts.length - 1]].map(p => P(p.x, p.y)); g += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="nl-ray"/>`; }
+  pts.forEach(p => { const [x, y] = P(p.x, p.y); g += `<circle cx="${x}" cy="${y}" r="5" class="nl-dot"/>`; });
+  return `<svg class="plane-pic" viewBox="0 0 ${w} ${w}" width="${w}" role="img" aria-label="graph of points ${pts.map(p => `(${p.x}, ${p.y})`).join(', ')}">${g}</svg>`;
+}
+const xyTable = (xs, ys, xl = 'x', yl = 'y') => `<table class="xy-table"><tr><th>${esc(xl)}</th>${xs.map(x => `<td>${x}</td>`).join('')}</tr><tr><th>${esc(yl)}</th>${ys.map(y => `<td>${y}</td>`).join('')}</tr></table>`;
 const ineqTrue = (x, op, c) => op === '>' ? x > c : op === '<' ? x < c : op === '≥' ? x >= c : x <= c;
 /* one-step equation shapes: [text, solve, inverse words, the answer you get by doing the wrong thing] */
 const EQ_FORMS = {
@@ -4467,7 +4486,7 @@ const EQ_FORMS = {
   div: (a, x) => [`x ÷ ${a} = ${x / a}`, `Multiply both sides by ${a}`, `Divide both sides by ${a}`, x / (a * a)]
 };
 const POTION2_GEN = {
-  /* ----- station 7: Balance Scale (one-step equations) ----- */
+  /* ----- station 1: Ticket Booth (testing solutions, equations from pictures) ----- */
   testSol(lvl){
     const a = rand(2, 9), b = rand(1, 15), kind = pick(lvl === 1 ? ['add', 'mul'] : lvl === 2 ? ['lin', 'lin', 'mul', 'sub'] : ['paren', 'paren', 'div', 'sub']), x = kind === 'div' ? a * rand(1, 8) : rand(1, 10);   // level 3: parentheses and division
     const [text, f] = kind === 'add' ? [`x + ${b} = ${x + b}`, v => v + b] : kind === 'mul' ? [`${a}x = ${a * x}`, v => a * v] : kind === 'sub' ? [`${a}x ${MINUS} ${b} = ${a * x - b}`, v => a * v - b]
@@ -4477,29 +4496,30 @@ const POTION2_GEN = {
     if (lvl === 1) {
       const tryV = Math.random() < 0.5 ? x : x + pick([-1, 1, 2]) || x + 1, out = f(tryV), yes = out === target;
       const lhs = text.split(' = ')[0].replace(/(\d+)x/, `$1(${tryV})`).replace(/^x/, String(tryV));
-      return {title:'Balance Scale', ctx:`${text}, x = ${tryV}`, bubble:`Is x = ${tryV} a solution of ${text}?`, helper:'Put the number in for x. If both sides are equal, it is a solution.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+      return {title:'Ticket Booth', ctx:`${text}, x = ${tryV}`, bubble:`Is x = ${tryV} a solution of ${text}?`, helper:'Put the number in for x. If both sides are equal, it is a solution.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
         steps:[numStep('Put it in', 'compute', `${lhs} = ?`, out, {hint:() => `Replace x with ${tryV}.`}),
           {name:'Solution?', type:'concept', kind:'choice', prompt:`Is x = ${tryV} a solution?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes'}]), hint:() => `Does ${out} equal ${target}?`}], answerSteps:[1]};
     }
     const cands = shuffle([...new Set([x, x + 1, x - 1, x + 2, target, Math.max(0, x - 2), ...(kind === 'paren' ? [target / a - b > 0 && Number.isInteger(target / a) ? target / a : x + 3] : kind === 'div' ? [(target - b), x + a] : [])])].filter(v => v >= 0 && (v === x || f(v) !== target))).slice(0, 3);
     if (!cands.includes(x)) cands[0] = x;
     const opts = shuffle(cands).map(v => ({html:`x = ${v}`, text:`x = ${v}`, ok:v === x, mis:v === target && v !== x ? 'solutionIsTotal' : null}));
-    return {title:'Balance Scale', ctx:`${text}: which x`, bubble:`Which value of x makes ${text} true?`, helper:'Try each value in the equation.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+    return {title:'Ticket Booth', ctx:`${text}: which x`, bubble:`Which value of x makes ${text} true?`, helper:'Try each value in the equation.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
       steps:[{name:'Which value', type:'concept', kind:'choice', prompt:`Which one is a solution of ${text}?`, options:opts, hint:() => `Put each value in for x and check if the left side is ${target}.`}]};
   },
+  /* ----- station 2: Ring Toss (one-step equations) ----- */
   oneStepAdd(lvl){
     if (lvl === 3) {
       const a = rand(11, 99) / 10, x = rand(11, 99) / 10, sub = Math.random() < 0.5, A = sgnD(a), rhs = sub ? x - a : x + a;
       if (rhs <= 0) return POTION2_GEN.oneStepAdd(lvl);
       const text = sub ? `x ${MINUS} ${A} = ${sgnD(rhs)}` : `x + ${A} = ${sgnD(rhs)}`, xi = Math.round(x * 10);
-      return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:'Do the opposite operation to both sides.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+      return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:'Do the opposite operation to both sides.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
         steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:sub ? `Add ${A}` : `Subtract ${A}`}, [{text:sub ? `Subtract ${A}` : `Add ${A}`, mis:'inverseWrong'}]), hint:() => sub ? `x had ${A} taken away. Add it back.` : `${A} was added to x. Take it away.`},
           {name:'Solve', type:'compute', kind:'num', prompt:`x = ${sgnD(rhs)} ${sub ? '+' : MINUS} ${A} = ?`, answer:sgnD(x), eq:XD.eq(xi, 1), decimal:true, mis:v => XD.eq(xi, 1)(v) ? null : Math.abs(v - (sub ? rhs - a : rhs + a)) < 1e-9 ? 'inverseWrong' : null}], answerSteps:[1]};
     }
     const form = pick(['add', 'addL', 'sub']), a = rand(2, lvl === 1 ? 15 : 60), x = rand(lvl === 1 ? 1 : 10, lvl === 1 ? 20 : 90);
     if (form === 'sub' && x - a < 0) return POTION2_GEN.oneStepAdd(lvl);
     const [text, right, wrong, wrongX] = EQ_FORMS[form](a, x), rhs = text.split(' = ')[1];
-    return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:'Keep the scale balanced: whatever you do to one side, do to the other.', visual:balanceHTML(text.split(' = ')[0], rhs),
+    return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:'Keep the scale balanced: whatever you do to one side, do to the other.', visual:balanceHTML(text.split(' = ')[0], rhs),
       steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:right}, [{text:wrong, mis:'inverseWrong'}]), hint:() => form === 'sub' ? `x had ${a} taken away. Add it back.` : `${a} was added to x. Take it away.`},
         numStep('Solve', 'compute', `x = ${rhs} ${form === 'sub' ? '+' : MINUS} ${a} = ?`, x, {mis:v => v === wrongX ? 'inverseWrong' : null,
           work:form === 'sub' ? barModelSVG([{label:rhs, w:Math.max(1, x - a), on:true}, {label:a, w:Math.max(1, a)}], {total:'x'}) : barModelSVG([{label:'x', w:Math.max(1, x), on:true}, {label:a, w:Math.max(1, a)}], {total:rhs})})], answerSteps:[1]};   // bar model: the parts and the whole
@@ -4509,25 +4529,26 @@ const POTION2_GEN = {
       const a = rand(3, 6), x = rand(2, 9), rhs = a * x, boxes = (n, lbl, total) => barModelSVG(Array.from({length:n}, () => ({label:lbl, on:true})), {total, w:240});
       const opts = picChoice({html:boxes(a, 'x', rhs), text:`${a} boxes of x make ${rhs}`},
         [{html:barModelSVG([{label:'x', w:rhs - a, on:true}, {label:a, w:a}], {total:rhs, w:240}), text:`x and ${a} make ${rhs}`, mis:'inverseWrong'}, {html:boxes(a, rhs, 'x'), text:`${a} boxes of ${rhs} make x`, mis:'inverseWrong'}]);
-      return {title:'Balance Scale', ctx:`bar model for ${a}x = ${rhs}`, bubble:`Which bar model shows ${a}x = ${rhs}?`, helper:`${a}x means ${a} groups of x.`, visual:balanceHTML(`${a}x`, String(rhs)),
+      return {title:'Ring Toss', ctx:`bar model for ${a}x = ${rhs}`, bubble:`Which bar model shows ${a}x = ${rhs}?`, helper:`${a}x means ${a} groups of x.`, visual:balanceHTML(`${a}x`, String(rhs)),
         steps:[{name:'Read the picture', type:'concept', kind:'choice', prompt:`Which bar model shows ${a}x = ${rhs}?`, options:opts, hint:() => `Look for ${a} equal boxes that add up to ${rhs}.`}]};
     }
     if (lvl === 3 && Math.random() < 0.6) {
       const [p, q] = pick([[1, 2], [2, 3], [3, 4], [1, 3], [3, 5], [2, 5]]), k = rand(2, 9), x = q * k, rhs = p * k;
       const text = `(${p}/${q})x = ${rhs}`;
-      return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:`Undo multiplying by ${p}/${q}: divide by ${p}/${q}, which is the same as multiplying by ${q}/${p}.`, visual:balanceHTML(`${p}/${q} × x`, String(rhs)),
-        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:`Multiply by ${q}/${p}`}, [{text:`Multiply by ${p}/${q}`, mis:'inverseWrong'}, {text:`Subtract ${p}/${q}`, mis:'inverseWrong'}]), drill:{type:'reciprocal', key:'flip'}, hint:() => `${q}/${p} is the reciprocal of ${p}/${q}.`},
-          numStep('Solve', 'compute', `x = ${rhs} × ${q}/${p} = ?`, x, {mis:v => Math.abs(v - rhs * p / q) < 1e-9 ? 'inverseWrong' : null, hint:() => `${rhs} ÷ ${p} × ${q}.`})], answerSteps:[1]};
+      return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:`Undo multiplying by ${p}/${q}: divide by ${p}/${q}, which is the same as multiplying by ${q}/${p}.`, visual:balanceHTML(`${p}/${q} × x`, String(rhs)),
+        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:`Multiply by ${p === 1 ? q : `${q}/${p}`}`}, [{text:`Multiply by ${p}/${q}`, mis:'inverseWrong'}, {text:`Subtract ${p}/${q}`, mis:'inverseWrong'}]), drill:{type:'reciprocal', key:'flip'}, hint:() => `${p === 1 ? q : `${q}/${p}`} is the reciprocal of ${p}/${q}.`},
+          numStep('Solve', 'compute', `x = ${rhs} × ${p === 1 ? q : `${q}/${p}`} = ?`, x, {mis:v => Math.abs(v - rhs * p / q) < 1e-9 ? 'inverseWrong' : null, hint:() => `${rhs} ÷ ${p} × ${q}.`})], answerSteps:[1]};
     }
     const form = pick(['mul', 'mul', 'div']), a = rand(2, lvl === 1 ? 9 : 12), x = form === 'div' ? a * rand(1, lvl === 1 ? 9 : 12) : rand(1, lvl === 1 ? 10 : 25);
     const [text, right, wrong, wrongX] = EQ_FORMS[form](a, x), rhs = text.split(' = ')[1];
-    return {title:'Balance Scale', ctx:text, bubble:`Solve ${text}.`, helper:form === 'mul' ? `${a}x means ${a} times x. Divide both sides by ${a}.` : `x was divided by ${a}. Multiply both sides by ${a}.`, visual:balanceHTML(text.split(' = ')[0], rhs),
+    return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:form === 'mul' ? `${a}x means ${a} times x. Divide both sides by ${a}.` : `x was divided by ${a}. Multiply both sides by ${a}.`, visual:balanceHTML(text.split(' = ')[0], rhs),
       steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:right}, [{text:wrong, mis:'inverseWrong'}, {text:form === 'mul' ? `Subtract ${a} from both sides` : `Add ${a} to both sides`, mis:'inverseWrong'}]), hint:() => 'Do the opposite operation.'},
         numStep('Solve', 'compute', `x = ${rhs} ${form === 'mul' ? '÷' : '×'} ${a} = ?`, x, {work:barModelSVG(Array.from({length:a}, (_, i) => ({label:form === 'mul' ? 'x' : rhs, on:form === 'mul' ? true : i === 0})), {total:form === 'mul' ? rhs : 'x'}),
           fact:form === 'mul' ? fx(a, x, true) : fx(a, x / a), mis:v => v === wrongX ? 'inverseWrong' : form === 'mul' && v === Number(rhs) - a ? 'inverseWrong' : null})], answerSteps:[1]};
   },
+  /* ----- station 3: Story Tent (mistakes and word problems) ----- */
   eqModel(lvl){
-    const [e, n] = pick(LEMON_KIDS), g = pick(POTION_WORDS), a = rand(2, 9), x = rand(2, 12);
+    const [e, n] = pick(LEMON_KIDS), g = pick(FAIR_WORDS), a = rand(2, 9), x = rand(2, 12);
     const T = pick([
       [`${n} had some ${g[1]}. ${n} made ${a + 3} more and now has ${x + a + 3}. How many did ${n} have at first?`, `x + ${a + 3} = ${x + a + 3}`, [`x ${MINUS} ${a + 3} = ${x + a + 3}`, `${a + 3}x = ${x + a + 3}`], x],
       [`Each crate holds ${a} bottles. ${n} filled some crates with ${a * x} bottles. How many crates?`, `${a}x = ${a * x}`, [`x + ${a} = ${a * x}`, `x ÷ ${a} = ${a * x}`], x],
@@ -4537,57 +4558,253 @@ const POTION2_GEN = {
       [`${n} has ${a * x} ${g[1]}. That is ${a} times as many as Tia has. How many does Tia have?`, `${a}x = ${a * x}`, [`x ÷ ${a} = ${a * x}`, `x + ${a} = ${a * x}`], x],
       [`Each bottle costs $${a}.50. ${n} spent $${((a + 0.5) * x).toFixed(2)} on bottles. How many bottles did ${n} buy?`, `${a}.5x = ${String((a + 0.5) * x)}`, [`x + ${a}.5 = ${String((a + 0.5) * x)}`, `x ÷ ${a}.5 = ${String((a + 0.5) * x)}`], x]] : [])]);
     const [story, right, wrongs, ans] = T;
-    return {title:'Balance Scale', ctx:right, bubble:story, helper:'Let x be the unknown amount. What happened to it?', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]} x = ?</div>`,
+    return {title:'Story Tent', ctx:right, bubble:story, helper:'Let x be the unknown amount. What happened to it?', visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]} x = ?</div>`,
       steps:[{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the story?', options:choiceOf({text:right}, wrongs.map(w => ({text:w, mis:'wrongOperation'}))), drill:{type:'story', key:'addSub'}, hint:() => 'Start with x and do what the story does to it.'},
         numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true, mis:v => v !== ans && (v === Number(right.split(' = ')[1]) - a || v === Number(right.split(' = ')[1]) + a) && lvl > 0 ? 'inverseWrong' : null})], answerSteps:[1]};
   },
 
-  /* ----- station 8: Potion Limits (inequalities, dependent and independent variables) ----- */
+  /* ----- station 4: Ride Line (inequalities) ----- */
   testIneq(lvl){
     const op = pick(lvl === 1 ? ['>', '<'] : ['>', '<', '≥', '≤']), c = lvl === 3 ? rand(-6, 6) : rand(2, 15), side = op === '>' || op === '≥' ? 1 : -1, strict = op === '>' || op === '<';
     const visual = `<div style="text-align:center; font-size:2rem">🚦 x ${op} ${sgn(c)}</div>`, helper = strict ? 'Without the line under the sign, the number itself does not count.' : 'The line under the sign means the number itself counts too.';
     if (Math.random() < 0.5) {                                             // is this one value a solution?
       const v = c + pick([-3, -1, 0, 0, 1, 3]), yes = ineqTrue(v, op, c);
-      return {title:'Potion Limits', ctx:`x ${op} ${sgn(c)}, x = ${sgn(v)}`, bubble:`Is x = ${sgn(v)} a solution of x ${op} ${sgn(c)}?`, helper, visual,
+      return {title:'Ride Line', ctx:`x ${op} ${sgn(c)}, x = ${sgn(v)}`, bubble:`Is x = ${sgn(v)} a solution of x ${op} ${sgn(c)}?`, helper, visual,
         steps:[{name:'True?', type:'concept', kind:'choice', prompt:`Is ${sgn(v)} ${op} ${sgn(c)} true?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes', mis:v === c ? 'boundaryWrong' : null}]),
           hint:() => `Where is ${sgn(v)} compared with ${sgn(c)} on a number line?`}]};
     }
     const right = !strict && Math.random() < 0.4 ? c : c + side * rand(1, 3);
     const wrongs = [{v:c - side * rand(1, 3), mis:'ineqDirection'}, strict ? {v:c, mis:'boundaryWrong'} : {v:c - side * rand(4, 5), mis:'ineqDirection'}];
     const opts = choiceOf({text:`x = ${sgn(right)}`}, wrongs.map(w => ({text:`x = ${sgn(w.v)}`, mis:w.mis})));
-    return {title:'Potion Limits', ctx:`x ${op} ${sgn(c)}: pick`, bubble:`The potion works when x ${op} ${sgn(c)}. Which value makes it true?`, helper, visual,
+    return {title:'Ride Line', ctx:`x ${op} ${sgn(c)}: pick`, bubble:`The ride’s sign says x ${op} ${sgn(c)}. Which value makes it true?`, helper, visual,
       steps:[{name:'Which value', type:'concept', kind:'choice', prompt:`Which makes x ${op} ${sgn(c)} true?`, options:opts, hint:() => `Is it ${side > 0 ? 'more' : 'less'} than ${sgn(c)}${strict ? '' : ', or equal'}?`}]};
   },
-  plotIneq(lvl){
+  /* graphing basic inequalities: pick the graph (Khan "Graphing basic inequalities"; this was plotIneq until Oct 26, 2026) */
+  graphIneq(lvl){
     const op = pick(['>', '<', '≥', '≤']), c = lvl === 1 ? rand(1, 8) : rand(-6, 6);
     const words = {'>':'more than', '<':'less than', '≥':'at least', '≤':'at most'}[op];
-    const ask = lvl === 3 ? `The potion must be kept at ${words} ${sgn(c)} degrees. Which graph shows the temperatures that work?` : `Which graph shows x ${op} ${sgn(c)}?`;
+    const ask = lvl === 3 ? `The ice cream cart must stay at ${words} ${sgn(c)} degrees. Which graph shows the temperatures that work?` : `Which graph shows x ${op} ${sgn(c)}?`;
     const opts = shuffle([[op, null], [INEQ_FLIP[op], 'ineqDirection'], [INEQ_OPEN[op], 'circleWrong']]).map(([o, mis]) => ({html:ineqSVG(o, c), text:`x ${o} ${sgn(c)}`, ok:o === op, mis}));
-    return {title:'Potion Limits', ctx:`graph x ${op} ${sgn(c)}`, bubble:ask, helper:'Open circle: the number is not included (< or >). Filled circle: it is included (≤ or ≥). The arrow points to the numbers that work.',
+    return {title:'Ride Line', ctx:`graph x ${op} ${sgn(c)}`, bubble:ask, helper:'Open circle: the number is not included (< or >). Filled circle: it is included (≤ or ≥). The arrow points to the numbers that work.',
       visual:`<div style="text-align:center; font-size:2rem">🚦 ${lvl === 3 ? words + ' ' + sgn(c) : `x ${op} ${sgn(c)}`}</div>`,
       steps:[{name:'Pick the graph', type:'concept', kind:'choice', prompt:lvl === 3 ? `Which graph shows "${words} ${sgn(c)}"?` : `Which graph shows x ${op} ${sgn(c)}?`, options:opts,
         hint:() => `${op === '>' || op === '≥' ? 'Greater: the arrow points right.' : 'Less: the arrow points left.'} ${op.includes('≥') || op.includes('≤') ? 'The circle is filled.' : 'The circle is open.'}`}]};
   },
+  /* ----- station 5: Ferris Wheel (dependent and independent variables) ----- */
   depIndep(lvl){
     const [e, n] = pick(LEMON_KIDS), k = rand(2, 9), b = rand(2, 12);
     const S = pick([
-      {story:`${n} earns $${k} for every potion sold.`, ind:'the number of potions sold', dep:'the money earned', f:x => k * x, rule:`y = ${k}x`, wrongRule:[`y = x + ${k}`, `x = ${k}y`], xs:'potions', ys:'dollars'},
-      {story:`A cauldron heats up ${k} degrees every minute, starting at ${b} degrees.`, ind:'the minutes', dep:'the temperature', f:x => k * x + b, rule:`y = ${k}x + ${b}`, wrongRule:[`y = ${b}x + ${k}`, `y = ${k + b}x`], xs:'minutes', ys:'degrees'},
-      {story:`Each bag holds ${k} crystals.`, ind:'the number of bags', dep:'the number of crystals', f:x => k * x, rule:`y = ${k}x`, wrongRule:[`y = x + ${k}`, `y = x ÷ ${k}`], xs:'bags', ys:'crystals'},
+      {story:`${n} earns $${k} for every ride ticket sold.`, ind:'the number of tickets sold', dep:'the money earned', f:x => k * x, rule:`y = ${k}x`, wrongRule:[`y = x + ${k}`, `x = ${k}y`], xs:'tickets', ys:'dollars'},
+      {story:`A hot-air balloon rises ${k} feet every minute, starting at ${b} feet.`, ind:'the minutes', dep:'the height', f:x => k * x + b, rule:`y = ${k}x + ${b}`, wrongRule:[`y = ${b}x + ${k}`, `y = ${k + b}x`], xs:'minutes', ys:'feet'},
+      {story:`Each bag holds ${k} lollipops.`, ind:'the number of bags', dep:'the number of lollipops', f:x => k * x, rule:`y = ${k}x`, wrongRule:[`y = x + ${k}`, `y = x ÷ ${k}`], xs:'bags', ys:'lollipops'},
       {story:`${n} is ${b} years older than a little cousin.`, ind:"the cousin's age", dep:`${n}'s age`, f:x => x + b, rule:`y = x + ${b}`, wrongRule:[`y = ${b}x`, `x = y + ${b}`], xs:'cousin', ys:n}]);
-    if (lvl === 1) return {title:'Potion Limits', ctx:`${S.story} dep?`, bubble:`${S.story} Which is the dependent variable?`, helper:'The dependent variable depends on the other one. It is what you find out.',
-      visual:`<div style="text-align:center; font-size:1.6rem">${e} 🧪</div>`,
+    if (lvl === 1) return {title:'Ferris Wheel', ctx:`${S.story} dep?`, bubble:`${S.story} Which is the dependent variable?`, helper:'The dependent variable depends on the other one. It is what you find out.',
+      visual:`<div style="text-align:center; font-size:1.6rem">${e} 🎡</div>`,
       steps:[{name:'Dependent', type:'concept', kind:'choice', prompt:'Which one depends on the other?', options:choiceOf({text:S.dep}, [{text:S.ind, mis:'depIndepSwap'}]), hint:() => `Does ${S.dep} change because of ${S.ind}, or the other way around?`}]};
     const xs = [1, 2, 3, 4, 5].map(i => i + (lvl === 3 ? rand(0, 1) * 0 : 0)), miss = rand(2, 4);
     const table = `<table class="xy-table"><tr><th>${esc(S.xs)} (x)</th>${xs.map(x => `<td>${x}</td>`).join('')}</tr><tr><th>${esc(S.ys)} (y)</th>${xs.map((x, i) => `<td>${lvl === 2 && i === miss ? '?' : S.f(x)}</td>`).join('')}</tr></table>`;
-    if (lvl === 2) return {title:'Potion Limits', ctx:`${S.rule} table`, bubble:`${S.story} Fill in the missing number in the table.`, helper:'Find the pattern from x to y, then use it.', visual:table,
+    if (lvl === 2) return {title:'Ferris Wheel', ctx:`${S.rule} table`, bubble:`${S.story} Fill in the missing number in the table.`, helper:'Find the pattern from x to y, then use it.', visual:table,
       steps:[numStep('Missing y', 'compute', `When x = ${xs[miss]}, y = ?`, S.f(xs[miss]), {mis:v => v === S.f(xs[miss - 1]) + 1 ? 'patternWrongRule' : null, hint:() => `When x = 1, y = ${S.f(1)}. When x = 2, y = ${S.f(2)}.`})]};
-    return {title:'Potion Limits', ctx:`${S.rule} rule`, bubble:`${S.story} Which equation matches the table?`, helper:'Check the rule with every column of the table.', visual:table,
+    return {title:'Ferris Wheel', ctx:`${S.rule} rule`, bubble:`${S.story} Which equation matches the table?`, helper:'Check the rule with every column of the table.', visual:table,
       steps:[{name:'Independent', type:'concept', kind:'choice', prompt:'Which is the independent variable (x)?', options:choiceOf({text:S.ind}, [{text:S.dep, mis:'depIndepSwap'}]), hint:() => 'The independent variable is the one you choose or that changes on its own.'},
         {name:'The rule', type:'concept', kind:'choice', prompt:'Which equation matches?', options:choiceOf({text:S.rule}, S.wrongRule.map(t => ({text:t, mis:t.startsWith('x') ? 'depIndepSwap' : 'patternWrongRule'}))), hint:() => `Try x = 1: y should be ${S.f(1)}. Try x = 2: y should be ${S.f(2)}.`}], answerSteps:[1]};
+  },
+  /* ===== Pet Fair skills added Oct 26, 2026 to match Khan unit 7 ===== */
+  /* identify equations from tape diagrams */
+  tapeEq(lvl){
+    const forms = lvl === 1 ? ['add', 'mul'] : ['add', 'mul', 'sub', 'div'], f = pick(forms), a = rand(2, 9), x = rand(2, 12);
+    let pic, right, wrongs, ans = x;
+    if (f === 'add') { pic = barModelSVG([{label:'x', w:Math.max(2, x), on:true}, {label:a, w:Math.max(2, a)}], {total:x + a}); right = `x + ${a} = ${x + a}`; wrongs = [{text:`${a}x = ${x + a}`, mis:'wrongOperation'}, {text:`x ${MINUS} ${a} = ${x + a}`, mis:'inverseWrong'}, {text:`x + ${x + a} = ${a}`}]; }
+    else if (f === 'mul') { const k = rand(2, 5); pic = barModelSVG(Array.from({length:k}, () => ({label:'x', on:true})), {total:k * x}); right = `${k}x = ${k * x}`; wrongs = [{text:`x + ${k} = ${k * x}`, mis:'wrongOperation'}, {text:`x ÷ ${k} = ${k * x}`, mis:'inverseWrong'}, {text:`${k * x}x = ${k}`}]; }
+    else if (f === 'sub') { pic = barModelSVG([{label:x, w:Math.max(2, x), on:true}, {label:a, w:Math.max(2, a)}], {total:'x'}); right = `x ${MINUS} ${a} = ${x}`; ans = x + a; wrongs = [{text:`x + ${a} = ${x}`, mis:'inverseWrong'}, {text:`${a} ${MINUS} x = ${x}`}, {text:`${a}x = ${x}`, mis:'wrongOperation'}]; }
+    else { const k = rand(2, 5); pic = barModelSVG(Array.from({length:k}, () => ({label:x, on:true})), {total:'x'}); right = `x ÷ ${k} = ${x}`; ans = k * x; wrongs = [{text:`${k}x = ${x}`, mis:'inverseWrong'}, {text:`x + ${k} = ${x}`, mis:'wrongOperation'}, {text:`${x} ÷ ${k} = x`}]; }
+    const steps = [{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the tape diagram?', options:choiceOf({text:right}, wrongs), hint:() => 'The whole bar is on top. The pieces underneath add up to it.'}];
+    if (lvl === 3) steps.push(numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true}));
+    return {title:'Ticket Booth', ctx:`tape ${right}`, bubble:'The ticket stubs make a tape diagram. Which equation does it show?', helper:'The number over the brace is the whole. The boxes are the parts.', visual:pic, steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
+  },
+  /* identify equations from hanger diagrams */
+  hangerEq(lvl){
+    let k, c, x; do { k = lvl === 1 ? pick([1, rand(2, 4)]) : rand(2, 4); c = lvl === 1 ? (k === 1 ? rand(1, 6) : 0) : rand(1, 5); x = rand(1, 4); } while (k * x + c > 16 || (lvl === 1 && k > 1 && c > 0));
+    const n = k * x + c, lhs = c ? `${k === 1 ? 'x' : `${k}x`} + ${c}` : `${k}x`, right = `${lhs} = ${n}`;
+    const wrongs = [{text:`${k === 1 ? `${c}x` : `x + ${k}`}${c && k > 1 ? ` + ${c}` : ''} = ${n}`, mis:'wrongOperation'}, {text:`${lhs} = ${n + c}`}, {text:c ? `${k === 1 ? 'x' : `${k}x`} = ${n + c}` : `x = ${n + k}`, mis:'inverseWrong'}];
+    return {title:'Ticket Booth', ctx:`hanger ${right}`, bubble:'Which equation matches the hanger?', helper:'Count the squares (x) and circles (1) on each side. Balanced means the two sides are equal.', visual:hangerHTML(k, c, n),
+      steps:[{name:'Pick the equation', type:'concept', kind:'choice', prompt:'Which equation matches the hanger?', options:choiceOf({text:right}, wrongs), hint:() => `Left: ${k} square${k > 1 ? 's' : ''}${c ? ` and ${c} circle${c > 1 ? 's' : ''}` : ''}. Right: ${n} circles.`}]};
+  },
+  /* solve equations from visual models: take the same off both sides, then split into equal groups */
+  visualSolve(lvl){
+    let k, c, x; do { k = lvl === 1 ? 1 : lvl === 2 ? rand(2, 4) : rand(2, 3); c = lvl === 2 ? 0 : rand(1, 5); x = rand(1, 4); } while (k * x + c > 16);
+    const n = k * x + c, steps = [];
+    if (c) steps.push(numStep(`Take off ${c}`, 'compute', `Take ${c} 🟣 off both sides. How many 🟣 are left on the right?`, n - c, {mis:v => v === n + c ? 'inverseWrong' : null}));
+    steps.push(numStep('One square', 'compute', k > 1 ? `Split ${n - c} 🟣 into ${k} equal groups, one for each 🟧. What is one 🟧 worth?` : 'What is one 🟧 worth?', x, {mis:v => v === n - c && k > 1 ? 'inverseWrong' : null}));
+    return {title:'Ticket Booth', ctx:`solve hanger ${k}x+${c}=${n}`, bubble:'Keep the hanger balanced. What is one square worth?', helper:'Whatever you take off one side, take off the other. Then share what is left equally.', visual:hangerHTML(k, c, n), steps, answerSteps:[steps.length - 1]};
+  },
+  /* one-step + and − equations with decimals and fractions */
+  oneStepAddFrac(lvl){
+    if (lvl === 1) {
+      const a = rand(11, 99) / 10, x = rand(11, 99) / 10, sub = Math.random() < 0.5, A = sgnD(a), rhs = sub ? x - a : x + a;
+      if (rhs <= 0) return POTION2_GEN.oneStepAddFrac(lvl);
+      const text = sub ? `x ${MINUS} ${A} = ${sgnD(rhs)}` : `x + ${A} = ${sgnD(rhs)}`, xi = Math.round(x * 10);
+      return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:'Do the opposite operation to both sides. Line up the decimal points.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:sub ? `Add ${A}` : `Subtract ${A}`}, [{text:sub ? `Subtract ${A}` : `Add ${A}`, mis:'inverseWrong'}]), hint:() => sub ? `x had ${A} taken away. Add it back.` : `${A} was added to x. Take it away.`},
+          {name:'Solve', type:'compute', kind:'num', prompt:`x = ${sgnD(rhs)} ${sub ? '+' : MINUS} ${A} = ?`, answer:sgnD(x), eq:XD.eq(xi, 1), decimal:true, mis:v => XD.eq(xi, 1)(v) ? null : Math.abs(v - (sub ? rhs - a : rhs + a)) < 1e-9 ? 'inverseWrong' : null}], answerSteps:[1]};
+    }
+    let a, x, rhs, sub;
+    for (let t = 0; t < 50; t++) {
+      const d1 = lvl === 2 ? pick([4, 5, 6, 8, 10]) : pick([2, 3, 4, 6]), d2 = lvl === 2 ? d1 : pick([2, 3, 4, 5, 6, 8].filter(d => d !== d1));
+      a = RQ.of(rand(1, d1 - 1), d1); x = RQ.of(rand(1, 2 * d2), d2); sub = Math.random() < 0.5; rhs = sub ? RQ.sub(x, a) : RQ.add(x, a);
+      if (rhs[0] > 0 && x[1] > 1 && rhs[1] <= 24) break;
+    }
+    const A = RQ.txt(a), text = `x ${sub ? MINUS : '+'} ${A} = ${RQ.txt(rhs)}`;
+    return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:lvl === 3 ? 'Undo it with the opposite operation. Use a common denominator.' : 'Undo it with the opposite operation.', visual:balanceHTML(text.split(' = ')[0], text.split(' = ')[1]),
+      steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:sub ? `Add ${A}` : `Subtract ${A}`}, [{text:sub ? `Subtract ${A}` : `Add ${A}`, mis:'inverseWrong'}]), hint:() => 'Do the opposite of what was done to x.'},
+        rqStep('Solve', `x = ${RQ.txt(rhs)} ${sub ? '+' : MINUS} ${A} = ?`, x, {simplest:true, mis:w => { const wrong = sub ? RQ.sub(rhs, a) : RQ.add(rhs, a); return w[0] * wrong[1] === wrong[0] * w[1] ? 'inverseWrong' : null; }})], answerSteps:[1]};
+  },
+  /* one-step × and ÷ equations with decimals and fractions */
+  oneStepMultFrac(lvl){
+    if (lvl === 1) {
+      const [c, cTxt] = pick([[0.5, '0.5'], [0.2, '0.2'], [1.5, '1.5'], [0.25, '0.25'], [2.5, '2.5'], [0.4, '0.4']]);
+      let x; do { x = rand(2, 20); } while (Math.abs(c * x * 100 - Math.round(c * x * 100)) > 1e-9);
+      const rhs = sgnD(c * x), text = `${cTxt}x = ${rhs}`;
+      return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:`${cTxt}x means ${cTxt} times x. Divide both sides by ${cTxt}.`, visual:balanceHTML(`${cTxt}x`, rhs),
+        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:`Divide both sides by ${cTxt}`}, [{text:`Multiply both sides by ${cTxt}`, mis:'inverseWrong'}, {text:`Subtract ${cTxt} from both sides`, mis:'inverseWrong'}]), hint:() => 'Do the opposite operation.'},
+          numStep('Solve', 'compute', `x = ${rhs} ÷ ${cTxt} = ?`, x, {slowOK:true, mis:v => Math.abs(v - c * c * x) < 1e-9 ? 'inverseWrong' : null, hint:() => `Move both decimal points to make it easier: ${rhs} ÷ ${cTxt}.`})], answerSteps:[1]};
+    }
+    if (lvl === 2) {
+      const [p, q] = pick([[1, 2], [2, 3], [3, 4], [1, 3], [3, 5], [2, 5], [5, 6]]), k = rand(2, 9), x = q * k, rhs = p * k, text = `(${p}/${q})x = ${rhs}`;
+      return {title:'Ring Toss', ctx:text, bubble:`Solve ${text}.`, helper:`Undo multiplying by ${p}/${q}: multiply by its reciprocal, ${p === 1 ? q : `${q}/${p}`}.`, visual:balanceHTML(`${p}/${q} × x`, String(rhs)),
+        steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:`Multiply by ${p === 1 ? q : `${q}/${p}`}`}, [{text:`Multiply by ${p}/${q}`, mis:'inverseWrong'}, {text:`Subtract ${p}/${q}`, mis:'inverseWrong'}]), drill:{type:'reciprocal', key:'flip'}, hint:() => `${p === 1 ? q : `${q}/${p}`} is the reciprocal of ${p}/${q}.`},
+          numStep('Solve', 'compute', `x = ${rhs} × ${p === 1 ? q : `${q}/${p}`} = ?`, x, {mis:v => Math.abs(v - rhs * p / q) < 1e-9 ? 'inverseWrong' : null, hint:() => `${rhs} ÷ ${p} × ${q}.`})], answerSteps:[1]};
+    }
+    /* level 3: the answer is a fraction */
+    const T = pick([
+      () => { const [p, q] = pick([[3, 4], [2, 3], [2, 5], [3, 5], [4, 5]]), r = pick([RQ.of(1, 2), RQ.of(1, 3), RQ.of(3, 4), RQ.of(2, 3)]); return {text:`(${p}/${q})x = ${RQ.txt(r)}`, how:`Multiply by ${q}/${p}`, wrong:`Multiply by ${p}/${q}`, x:RQ.mul(r, RQ.of(q, p)), bad:RQ.mul(r, RQ.of(p, q)), work:`x = ${RQ.txt(r)} × ${q}/${p} = ?`}; },
+      () => { const k = rand(2, 9), r = pick([RQ.of(1, 2), RQ.of(2, 3), RQ.of(3, 4), RQ.of(3, 5), RQ.of(5, 6)]); return {text:`${k}x = ${RQ.txt(r)}`, how:`Divide both sides by ${k}`, wrong:`Multiply both sides by ${k}`, x:RQ.div(r, [k, 1]), bad:RQ.mul(r, [k, 1]), work:`x = ${RQ.txt(r)} ÷ ${k} = ?`}; },
+      () => { const k = rand(2, 6), r = pick([RQ.of(1, 2), RQ.of(2, 3), RQ.of(3, 4), RQ.of(2, 5)]); return {text:`x ÷ ${k} = ${RQ.txt(r)}`, how:`Multiply both sides by ${k}`, wrong:`Divide both sides by ${k}`, x:RQ.mul(r, [k, 1]), bad:RQ.div(r, [k, 1]), work:`x = ${RQ.txt(r)} × ${k} = ?`}; }])();
+    return {title:'Ring Toss', ctx:T.text, bubble:`Solve ${T.text}.`, helper:'Do the opposite operation. Keep your answer in simplest form.', visual:balanceHTML(T.text.split(' = ')[0], T.text.split(' = ')[1]),
+      steps:[{name:'Undo it', type:'concept', kind:'choice', prompt:'What do you do to both sides?', options:choiceOf({text:T.how}, [{text:T.wrong, mis:'inverseWrong'}]), hint:() => 'Do the opposite of what was done to x.'},
+        rqStep('Solve', T.work, T.x, {simplest:true, mis:w => w[0] * T.bad[1] === T.bad[0] * w[1] ? 'inverseWrong' : null})], answerSteps:[1]};
+  },
+  /* find the mistake in one-step equations */
+  eqMistake(lvl){
+    const a = rand(2, 9), x = rand(2, 12), f = pick(lvl === 1 ? ['add', 'sub'] : ['add', 'sub', 'mul', 'div']);
+    const [eq, inv, wrongInv, rhs] = f === 'add' ? [`x + ${a} = ${x + a}`, `${MINUS} ${a}`, `+ ${a}`, x + a] : f === 'sub' ? [`x ${MINUS} ${a} = ${x}`, `+ ${a}`, `${MINUS} ${a}`, x]
+      : f === 'mul' ? [`${a}x = ${a * x}`, `÷ ${a}`, `× ${a}`, a * x] : [`x ÷ ${a} = ${x}`, `× ${a}`, `÷ ${a}`, x];
+    /* the sub form: x − a = x, so the solution is x + a */
+    const sol = f === 'add' ? x : f === 'sub' ? x + a : f === 'mul' ? x : x * a;
+    const lhs = eq.split(' = ')[0];
+    let kind = pick(lvl === 1 ? ['op', 'math', 'none'] : ['op', 'math', 'side', 'none']);
+    if (kind === 'op' && f === 'div' && rhs % a) kind = 'math';   // the wrong operation must still give a whole number
+    const wrongVal = kind === 'op' ? (f === 'add' ? rhs + a : f === 'sub' ? rhs - a : f === 'mul' ? rhs * a : rhs / a) : kind === 'math' ? sol + pick([-1, 1, 2]) : kind === 'side' ? rhs : sol;
+    const step1 = kind === 'op' ? `${lhs} ${wrongInv} = ${rhs} ${wrongInv}` : kind === 'side' ? `${lhs} ${inv} = ${rhs}` : `${lhs} ${inv} = ${rhs} ${inv}`;
+    const step2 = `x = ${sgnD(kind === 'none' ? sol : wrongVal)}`;
+    const answer = kind === 'op' || kind === 'side' ? 'Step 1' : kind === 'math' ? 'Step 2' : 'There is no mistake';
+    const work = `<div style="font-size:1.15rem; line-height:1.9; text-align:left; max-width:320px; margin:0 auto"><div>Start: <b>${esc(eq)}</b></div><div>Step 1: ${esc(step1)}</div><div>Step 2: ${esc(step2)}</div></div>`;
+    const steps = [{name:'Find the mistake', type:'concept', kind:'choice', prompt:'Which step has a mistake?', options:choiceOf({text:answer}, ['Step 1', 'Step 2', 'There is no mistake'].filter(o => o !== answer).map(o => ({text:o, mis:o === 'There is no mistake' ? null : null}))),
+      hint:() => 'Check step 1: is the same thing done to both sides, and is it the opposite operation? Check step 2: is the arithmetic right?'}];
+    if (lvl >= 2) steps.push(numStep('Right answer', 'compute', `What is the right solution of ${eq}?`, sol, {slowOK:true, mis:v => v === wrongVal && kind !== 'none' ? 'inverseWrong' : null}));
+    return {title:'Story Tent', ctx:`mistake ${eq} (${kind})`, bubble:'A fair worker solved this equation. Did they make a mistake? Where?', helper:'Undo with the opposite operation, and do the same thing to both sides.', visual:work, steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
+  },
+  /* translate one-step equations from words, then solve */
+  translateEq(lvl){
+    const a = rand(2, lvl === 1 ? 9 : 15), x = rand(2, lvl === 1 ? 12 : 20);
+    const T = pick([
+      [`${a} more than a number is ${x + a}.`, `x + ${a} = ${x + a}`, [{text:`${a}x = ${x + a}`, mis:'wrongOperation'}, {text:`x ${MINUS} ${a} = ${x + a}`, mis:'inverseWrong'}], x],
+      [`A number decreased by ${a} is ${x}.`, `x ${MINUS} ${a} = ${x}`, [{text:`${a} ${MINUS} x = ${x}`, mis:'lessThanOrder'}, {text:`x + ${a} = ${x}`, mis:'inverseWrong'}], x + a],
+      [`The product of ${a} and a number is ${a * x}.`, `${a}x = ${a * x}`, [{text:`x + ${a} = ${a * x}`, mis:'wrongOperation'}, {text:`x ÷ ${a} = ${a * x}`, mis:'inverseWrong'}], x],
+      [`A number divided by ${a} is ${x}.`, `x ÷ ${a} = ${x}`, [{text:`${a} ÷ x = ${x}`, mis:'lessThanOrder'}, {text:`${a}x = ${x}`, mis:'inverseWrong'}], a * x],
+      [`${a} less than a number is ${x}.`, `x ${MINUS} ${a} = ${x}`, [{text:`${a} ${MINUS} x = ${x}`, mis:'lessThanOrder'}, {text:`x + ${a} = ${x}`, mis:'inverseWrong'}], x + a]]);
+    const [words, right, wrongs, ans] = T;
+    return {title:'Story Tent', ctx:right, bubble:`The fortune teller says: “${words}” Which equation matches? Then solve it.`, helper:'Let x be the number. More, plus: +. Less, decreased: −. Product: ×. Divided: ÷.', visual:`<div style="text-align:center; font-size:1.5rem">🔮 “${esc(words)}”</div>`,
+      steps:[{name:'Write it', type:'concept', kind:'choice', prompt:'Which equation matches?', options:choiceOf({text:right}, wrongs), hint:() => 'Careful with order: "5 less than a number" is x − 5.'}, numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true})], answerSteps:[1]};
+  },
+  /* model with one-step equations: pick the equation for the story (no solving) */
+  eqWrite(lvl){
+    const q = POTION2_GEN.eqModel(lvl);
+    return {...q, title:'Story Tent', steps:[q.steps[0]], answerSteps:undefined};
+  },
+  /* inequality from graph */
+  ineqFromGraph(lvl){
+    const op = pick(lvl === 1 ? ['>', '<'] : ['>', '<', '≥', '≤']), c = lvl === 1 ? rand(1, 8) : rand(-6, 6), v = pick(['x', 'h', 't']);
+    const opts = choiceOf({text:`${v} ${op} ${sgn(c)}`}, [{text:`${v} ${INEQ_FLIP[op]} ${sgn(c)}`, mis:'ineqDirection'}, {text:`${v} ${INEQ_OPEN[op]} ${sgn(c)}`, mis:'circleWrong'}]);
+    return {title:'Ride Line', ctx:`graph → ${v} ${op} ${sgn(c)}`, bubble:'Which inequality does the graph show?', helper:'Open circle: < or >. Filled circle: ≤ or ≥. The arrow points to the numbers that work.', visual:ineqSVG(op, c),
+      steps:[{name:'Read the graph', type:'concept', kind:'choice', prompt:'The graph shows…', options:opts, hint:() => `The arrow points ${op === '>' || op === '≥' ? 'right (greater)' : 'left (less)'}, and the circle is ${op === '≥' || op === '≤' ? 'filled' : 'open'}.`}]};
+  },
+  /* plotting inequalities: build the graph (where the circle goes, open or filled, which way) */
+  plotIneq(lvl){
+    const op = pick(['>', '<', '≥', '≤']), c = lvl === 1 ? rand(1, 8) : rand(-6, 6), words = {'>':'more than', '<':'less than', '≥':'at least', '≤':'at most'}[op];
+    const ask = lvl === 3 ? `The snow-cone machine works at ${words} ${sgn(c)} degrees. Plot the temperatures that work.` : `Plot x ${op} ${sgn(c)} on a number line.`, right = op === '>' || op === '≥', closed = op === '≥' || op === '≤';
+    return {title:'Ride Line', ctx:`plot x ${op} ${sgn(c)}`, bubble:ask, helper:'Put the circle at the number. Fill it if the number counts (≤, ≥, at least, at most). Point the arrow toward the numbers that work.',
+      visual:`<div style="text-align:center; font-size:2rem">🎢 ${lvl === 3 ? `${words} ${sgn(c)}` : `x ${op} ${sgn(c)}`}</div>`,
+      steps:[negStep('The circle', 'concept', 'Where does the circle go?', c, {hint:() => 'At the number in the inequality.'}),
+        {name:'Open or filled', type:'concept', kind:'choice', prompt:'Is the circle open or filled?', options:choiceOf({text:closed ? 'Filled' : 'Open'}, [{text:closed ? 'Open' : 'Filled', mis:'circleWrong'}]), hint:() => closed ? 'The number itself counts, so fill it in.' : 'The number itself does not count, so leave it open.'},
+        {name:'Which way', type:'concept', kind:'choice', prompt:'Which way does the arrow point?', options:choiceOf({text:right ? 'Right' : 'Left'}, [{text:right ? 'Left' : 'Right', mis:'ineqDirection'}]), hint:() => right ? 'Greater numbers are to the right.' : 'Smaller numbers are to the left.'},
+        {name:'The graph', type:'concept', kind:'choice', prompt:'So which graph is it?', options:shuffle([[op, null], [INEQ_FLIP[op], 'ineqDirection'], [INEQ_OPEN[op], 'circleWrong']]).map(([o, mis]) => ({html:ineqSVG(o, c), text:`x ${o} ${sgn(c)}`, ok:o === op, mis})), hint:() => 'Put your three answers together.'}], answerSteps:[3]};
+  },
+  /* inequalities word problems */
+  ineqWord(lvl){
+    const S = pick([
+      ['h', 'height in inches', rand(40, 54), '≥', n => `You must be at least ${n} inches tall to ride the Loop-de-Loop.`],
+      ['r', 'number of riders', rand(12, 40), '<', n => `Fewer than ${n} riders fit on the log ride.`],
+      ['w', 'weight in pounds', rand(8, 30), '≤', n => `A prize bag can hold at most ${n} pounds.`],
+      ['t', 'number of tickets', rand(3, 15), '>', n => `You need more than ${n} tickets to win the giant panda.`],
+      ['a', 'age in years', rand(5, 12), '≥', n => `Kids ${n} years old and up can drive the bumper cars.`],
+      ['m', 'minutes', rand(10, 45), '≤', n => `The Ferris wheel ride lasts no more than ${n} minutes.`]]);
+    const [v, what, n, op, say] = S, story = say(n), right = `${v} ${op} ${n}`;
+    const steps = [{name:'Write it', type:'concept', kind:'choice', prompt:`Which inequality shows the ${what} (${v})?`, options:choiceOf({text:right}, [{text:`${v} ${INEQ_FLIP[op]} ${n}`, mis:'ineqDirection'}, {text:`${v} ${INEQ_OPEN[op]} ${n}`, mis:'boundaryWrong'}]), hint:() => 'At least: ≥. At most, no more than: ≤. More than: >. Fewer than: <.'}];
+    if (lvl === 2) { const tryV = pick([n, n + 1, n - 1]), yes = ineqTrue(tryV, op, n);
+      steps.push({name:'Does it work?', type:'concept', kind:'choice', prompt:`Does ${v} = ${tryV} work?`, options:choiceOf({text:yes ? 'Yes' : 'No'}, [{text:yes ? 'No' : 'Yes', mis:tryV === n ? 'boundaryWrong' : null}]), hint:() => `Is ${tryV} ${op} ${n} true?`}); }
+    if (lvl === 3) steps.push({name:'The graph', type:'concept', kind:'choice', prompt:'Which graph shows it?', options:shuffle([[op, null], [INEQ_FLIP[op], 'ineqDirection'], [INEQ_OPEN[op], 'circleWrong']]).map(([o, mis]) => ({html:ineqSVG(o, n, {lo:n - 5, hi:n + 5}), text:`${v} ${o} ${n}`, ok:o === op, mis})), hint:() => 'Circle at the number, filled if it counts; the arrow toward the numbers that work.'});
+    return {title:'Ride Line', ctx:right, bubble:story, helper:'Find the number, then decide which side of it works and whether the number itself counts.', visual:`<div style="text-align:center; font-size:1.6rem">🎢 ${esc(what)}: ${v}</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0, 1]} : {})};
+  },
+  /* tables from equations with two variables */
+  tableEq(lvl){
+    const a = rand(2, 6), b = rand(1, 9), [rule, f] = lvl === 1 ? pick([[`y = ${a}x`, x => a * x], [`y = x + ${b}`, x => x + b]]) : lvl === 2 ? [`y = ${a}x + ${b}`, x => a * x + b] : pick([[`y = ${a}x ${MINUS} ${b}`, x => a * x - b], [`y = ${a}(x + ${b})`, x => a * (x + b)]]);
+    const s0 = rand(1, 4); let xs = lvl === 3 ? [rand(2, 4), rand(5, 7), rand(8, 10)] : lvl === 2 ? [s0, s0 + 1, s0 + 2] : [1, 2, 3];
+    if (xs.some(x => f(x) < 0)) return POTION2_GEN.tableEq(lvl);   // no negative y's in 6th grade tables
+    return {title:'Ferris Wheel', ctx:`${rule} table`, bubble:`Each Ferris wheel car follows the rule ${rule}. Fill in the table.`, helper:'Put each x into the rule to find its y.', visual:xyTable(xs, xs.map(() => '?')),
+      steps:xs.map((x, i) => numStep(`x = ${x}`, 'compute', `When x = ${x}, y = ?`, f(x), {slowOK:true, mis:v => lvl > 1 && v === a * (x + b) && f(x) !== v ? 'leftToRight' : null, hint:() => `${rule.replace(/x/g, `(${x})`)}`})), answerSteps:[0, 1, 2]};
+  },
+  /* match equations to points on a graph */
+  graphEq(lvl){
+    const a = rand(2, 4), b = rand(1, 4), [rule, f, wrongs] = pick([[`y = ${a}x`, x => a * x, [`y = x + ${a}`, `y = ${a + 1}x`, `x = ${a}y`]], [`y = x + ${b}`, x => x + b, [`y = ${b}x`, `y = x ${MINUS} ${b}`, `y = ${b + 1}x`]]]);
+    const xs = [1, 2, 3].filter(x => f(x) <= 10), pts = xs.map(x => ({x, y:f(x)}));
+    if (lvl < 3) return {title:'Ferris Wheel', ctx:`graph → ${rule}`, bubble:'The graph shows how many tickets each ride costs. Which equation matches the points?', helper:'Read each point (x, y), then check it in each equation.', visual:q1GraphSVG(pts, 10),
+      steps:[...(lvl === 1 ? [numStep('Read a point', 'concept', `The point above x = ${xs[0]} has y = ?`, pts[0].y, {})] : []),
+        {name:'The equation', type:'concept', kind:'choice', prompt:'Which equation matches every point?', options:choiceOf({text:rule}, wrongs.map(t => ({text:t, mis:t.startsWith('x') ? 'depIndepSwap' : 'patternWrongRule'}))), hint:() => pts.map(p => `(${p.x}, ${p.y})`).join(', ')}], ...(lvl === 1 ? {answerSteps:[1]} : {})};
+    const px = rand(2, 4), on = {x:px, y:f(px)}, offs = [{x:px, y:f(px) + 1}, {x:on.y, y:on.x}, {x:px + 1, y:f(px)}].filter(p => p.y !== f(p.x) && p.y <= 12);
+    return {title:'Ferris Wheel', ctx:`point on ${rule}`, bubble:`Which point is on the graph of ${rule}?`, helper:'Put the x in the rule. Does it give the y?', visual:`<div style="text-align:center; font-size:1.6rem">🎡 ${rule}</div>`,
+      steps:[{name:'Which point', type:'concept', kind:'choice', prompt:`Which point fits ${rule}?`, options:choiceOf({text:`(${on.x}, ${on.y})`}, offs.map(p => ({text:`(${p.x}, ${p.y})`, mis:p.x === on.y && p.y === on.x ? 'depIndepSwap' : null}))), hint:() => `When x = ${px}, y = ${f(px)}.`}]};
+  },
+
+  /* ----- station 6: Prize Counter (relationships between quantities) ----- */
+  relQuant(lvl){
+    const k = rand(2, 9), b = rand(2, 12), [e, n] = pick(LEMON_KIDS);
+    const S = lvl === 1 ? pick([
+      {story:`Each ride ticket costs $${k}. Let t be the number of tickets and c be the total cost in dollars.`, right:`c = ${k}t`, wrongs:[{text:`t = ${k}c`, mis:'depIndepSwap'}, {text:`c = t + ${k}`, mis:'patternWrongRule'}]},
+      {story:`${n} wins ${k} prize points for every ring that lands. Let r be the rings and p be the points.`, right:`p = ${k}r`, wrongs:[{text:`r = ${k}p`, mis:'depIndepSwap'}, {text:`p = r + ${k}`, mis:'patternWrongRule'}]}])
+      : lvl === 2 ? pick([
+      {story:`Fair entry is $${b}, plus $${k} for each ride. Let r be the rides and c be the total cost.`, right:`c = ${k}r + ${b}`, wrongs:[{text:`c = ${b}r + ${k}`, mis:'patternWrongRule'}, {text:`c = ${k + b}r`, mis:'patternWrongRule'}]},
+      {story:`A balloon starts ${b} feet up and rises ${k} feet every second. Let s be the seconds and h be the height.`, right:`h = ${k}s + ${b}`, wrongs:[{text:`h = ${b}s + ${k}`, mis:'patternWrongRule'}, {text:`s = ${k}h + ${b}`, mis:'depIndepSwap'}]}])
+      : pick([
+      {story:`${n} is ${b} years older than a cousin. Let a be ${n}’s age and c be the cousin’s age.`, right:`a = c + ${b}`, wrongs:[{text:`c = a + ${b}`, mis:'depIndepSwap'}, {text:`a = ${b}c`, mis:'patternWrongRule'}]},
+      {story:`The cotton candy stand shares w pounds of sugar equally into ${k} batches. Let s be the pounds in each batch.`, right:`s = w ÷ ${k}`, wrongs:[{text:`s = ${k}w`, mis:'inverseWrong'}, {text:`w = s ÷ ${k}`, mis:'depIndepSwap'}]}]);
+    return {title:'Prize Counter', ctx:S.right, bubble:`${S.story} Which equation shows the relationship?`, helper:'The dependent variable goes alone on one side. Check your equation with a number.', visual:`<div style="text-align:center; font-size:1.6rem">🏆 ${e}</div>`,
+      steps:[{name:'The equation', type:'concept', kind:'choice', prompt:'Which equation fits?', options:choiceOf({text:S.right}, S.wrongs), hint:() => 'Try a small number for the independent variable and see if the equation gives the right answer.'}]};
+  },
+  /* analyze relationships between variables: read a table, say how y changes, use the rule */
+  analyzeRel(lvl){
+    const k = rand(2, 9), b = lvl === 1 ? 0 : rand(1, 10), f = x => k * x + b, xs = [1, 2, 3, 4], [xl, yl, unit] = pick([['hours', 'miles', 'miles'], ['rides', 'tickets', 'tickets'], ['games', 'points', 'points'], ['minutes', 'feet', 'feet']]);
+    const table = xyTable(xs, xs.map(f), `${xl} (x)`, `${yl} (y)`);
+    if (lvl === 1) return {title:'Prize Counter', ctx:`+${k} per ${xl}`, bubble:`How do the ${yl} change for each extra ${xl.replace(/s$/, '')}?`, helper:'Look from one column to the next.', visual:table,
+      steps:[{name:'How it changes', type:'concept', kind:'choice', prompt:`For each extra ${xl.replace(/s$/, '')}…`, options:choiceOf({text:`the ${yl} go up by ${k}`}, [{text:`the ${yl} go up by 1`, mis:'patternWrongRule'}, {text:`the ${yl} go up by ${k + 1}`}, {text:`the ${yl} stay at ${k}`}]), hint:() => `${f(1)} → ${f(2)} → ${f(3)}.`}]};
+    const rule = b ? `y = ${k}x + ${b}` : `y = ${k}x`, X = rand(10, 20);
+    const steps = [{name:'The rule', type:'concept', kind:'choice', prompt:'Which equation fits the table?', options:choiceOf({text:rule}, [{text:`y = x + ${f(1) - 1}`, mis:'patternWrongRule'}, {text:`y = ${k + b}x`, mis:'patternWrongRule'}, {text:`x = ${k}y${b ? ` + ${b}` : ''}`, mis:'depIndepSwap'}]), hint:() => `Check every column: when x = 2, y should be ${f(2)}.`}];
+    if (lvl === 3) steps.push(numStep('Predict', 'compute', `How many ${yl} for ${X} ${xl}?`, f(X), {slowOK:true, mis:v => v === X + f(1) - 1 ? 'patternWrongRule' : null}));
+    return {title:'Prize Counter', ctx:`${rule} analyze`, bubble:lvl === 3 ? `Find the rule for the table, then predict the ${yl} for ${X} ${xl}.` : 'Which equation describes the table?', helper:'Find how much y goes up each time, and what y would be when x = 0.', visual:table, steps, ...(steps.length > 1 ? {answerSteps:[1]} : {})};
   }
 };
 Object.assign(GEN, POTION2_GEN);
+
 
 /* ===== 6th grade, Pet Houses part 1 (Khan units 8 and 9): area of plane figures, the coordinate plane ===== */
 /* whole-number side lengths with a whole slant: [run, rise, slant] */
@@ -8728,7 +8945,8 @@ const MATH_KHAN_UNITS = {
   market:[['Rates and percentages', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-rates-and-percentages`]],
   clock:[['Exponents and order of operations', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-exponents-and-order-of-operations`]],
   rink:[['Negative numbers', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-negative-number-topic`]],
-  potion:[['Variables and expressions', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-expressions-and-variables`], ['Equations and inequalities', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-equations-and-inequalities`]],
+  potion:[['Variables and expressions', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-expressions-and-variables`]],
+  fair:[['Equations and inequalities', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-equations-and-inequalities`]],
   houses:[['Plane figures', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-plane-figures`], ['Coordinate plane', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:coordinate-plane`], ['Volume and surface area', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-geometry-topic`]],
   show:[['Data and statistics', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-data-statistics`]]
 };

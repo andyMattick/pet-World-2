@@ -20,6 +20,8 @@ const ROOMS = {
            props:['🌲','⛄','🏒','⛸️','🧣','🌲'], hero:'❄️', float:['❄️'], motion:'fall'},
   potion: {wall:'#3A2A4D', wall2:'#2A1E39', pattern:'bricks', floor:'#4B4256', floor2:'#3A3245', floorKind:'stone', frame:'#5E8C3A', awning:['#6A3D9A','#A6E35A'],
            props:['🍄','🧪','📜','⚗️','🔮','🕯️','🍄'], hero:'🔮', float:['🫧','✨'], motion:'rise', dark:true},
+  fair:   {wall:'#FFF3D6', wall2:'#FFD8E4', pattern:'stripes', floor:'#C9B28E', floor2:'#B39B76', floorKind:'planks', frame:'#E8590C', awning:['#E03131','#FFD43B'],
+           props:['🎈','🎡','🍿','🎠','🎯','🎈'], hero:'🎡', float:['🎈','🎉'], motion:'rise'},
   houses: {wall:'#CDEBFA', wall2:'#FFFFFF', pattern:'sky', floor:'#8CCB6E', floor2:'#74B758', floorKind:'grass', frame:'#A0522D', awning:['#D9534F','#FFFFFF'],
            props:['🌳','🏡','🌻','🧱','🐝','🌳'], hero:'☀️', float:['☁️'], motion:'drift'},
   show:   {wall:'#9E1B32', wall2:'#7A1226', pattern:'drapes', floor:'#B07A4A', floor2:'#9A6638', floorKind:'planks', frame:'#C9A227', awning:['#B5122E','#F2C94C'],

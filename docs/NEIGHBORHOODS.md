@@ -18,7 +18,7 @@ Pet World is **one town per student**, with **one neighborhood per grade**. Each
 |---|---|---|
 | 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅, Pizza Parlor ✅, Garden Center (stations 1 and 2) | building |
 | 5th grade | Khan 5th grade | later |
-| **6th grade** | Math: Café ✅, Bakery ✅, Market ✅, Clock Tower ✅, Ice Rink ✅, Potion Lab ✅, Pet Houses ✅, Pet Show ✅; History, Biology, English classes planned | building |
+| **6th grade** | Math: Café ✅, Bakery ✅, Market ✅, Clock Tower ✅, Ice Rink ✅, Potion Lab ✅, Pet Fair ✅, Pet Houses ✅, Pet Show ✅; History, Biology, English classes planned | building |
 | 7th grade | Khan 7th grade (needed for next school year) | next year |
 | 8th grade | Khan 8th grade | later |
 | Algebra 1 | Khan Algebra 1 | later |
@@ -60,7 +60,7 @@ Big reviews are the quick, rote-memory skills that sit under many problems (like
 | **Order of operations** | 5 to 7 | with the Clock Tower |
 | Squares, cubes, and square roots | 6 to 8 | with the Clock Tower |
 | Integer rules (adding, subtracting, multiplying negatives) | 6 to 7 | with the Ice Rink |
-| Inverse operations and one-step equations | 6 to 7 | with the Potion Lab |
+| Inverse operations and one-step equations | 6 to 7 | with the Pet Fair |
 | Unit conversions | 4 to 6 | with 4th grade (Garden Center) |
 | Distributing and combining like terms | 7 to Algebra 1 | 7th grade |
 | Exponent rules, slope from two points, factoring x² + bx + c | 8 to Algebra 2 | later |
