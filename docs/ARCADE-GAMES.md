@@ -8,11 +8,12 @@
 | 🩺 Dr. Paws' Surgery Center | Bakery → Bulk Orders, and Clock Tower → Clock Face with secret formulas (`openSurgery`) | `pet-surgery`, `public/arcade/pet-surgery/` | 1 per 3 patients, up to 3 a shift |
 | 🛒 Supermarket Dash | Market → Discount Bin (`openDash`) | `supermarket-dash`, `public/arcade/supermarket-dash/` | 1 per checkout star, up to 3 a dash |
 | 🐧 Penguin Push | Ice Rink → Weather Station (`openPenguin`) | `penguin-push`, `public/arcade/penguin-push/` | 1 per star, up to 3 a battle |
+| 🔍 Potion Detective | Potion Lab → Potion Shelf (`openDetective`) | `potion-detective`, `public/arcade/potion-detective/` | 1 per case solved, up to 3 |
 | ⚡ Punctuation Power Lab | English Unit 6, a card under each block (`heroLabCardHTML`) | `power-lab`, `arcade/power-lab/index.html` | 1 per 2 first launches, up to 3 a pack |
 
 ## Two ways to build the Arcade copy
 
-1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game, Supermarket Dash, Penguin Push). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
+1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game, Supermarket Dash, Penguin Push, Potion Detective). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
 2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
 
 Either way:

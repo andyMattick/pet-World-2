@@ -175,6 +175,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F43. 🩺 Dr. Paws' Surgery Center at the Clock Tower too: 📜 secret formulas (order of operations with exponents, fractions and decimals) where she taps the operation that comes next, then works it out. See `PET-SURGERY.md`
 - [x] F44. ⛸️ The Ice Rink rebuilt in Khan's order: 6 stations, all 16 Khan exercises (new: negative symbol as opposite, ordering small negative numbers, meaning of absolute value, comparing absolute values challenge). See `RINK.md`
 - [x] F45. 🐧 Penguin Push: an Ice Rink game at the Weather Station (and in the Arcade). Follow number-line orders to slide penguins and bump walruses off an ice floe from −7 to 7. See `PENGUIN-PUSH.md`
+- [x] F46. 🧪 Potion Lab, Unit 6 in Khan's order: all 18 Khan exercises across 6 stations (new: two letters with fractions, expression value intuition, formulas in stories, equivalent expressions by factoring, factoring with variables, combining like terms); fixed 3 links; Unit 7's stations are now 7 and 8. See `POTION.md`
+- [x] F47. 🔍 Potion Detective: a Unit 6 mystery at the Potion Shelf (and in the Arcade). Each clue is a problem whose answer is the thief's evidence; right answers rule out suspects. See `POTION-DETECTIVE.md`
 
 ## Database files, in the order they were run
 

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Potion Detective</title>
+<!-- Pet World: served at /arcade/potion-detective/ (docs/POTION-DETECTIVE.md). Played from the Potion Lab's Potion Shelf
+     (?from=potion, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: Khan 6th grade
+     unit 6 (variables and expressions). It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#F4F0FA; --card:#FFFFFF; --ink:#2A1F3D; --muted:#6B5E80; --edge:#D8CDE8; --accent:#7048E8; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --slot:#ECE5F7; --paper:#FFF8E1; --out:#BBB;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#17121F; --card:#221A2E; --ink:#EDE6F7; --muted:#B3A6C6; --edge:#3B2F4E; --accent:#9775FA; --accent-ink:#17121F;
+      --ok:#69DB7C; --bad:#FF8787; --slot:#2D2340; --paper:#2E2818; --out:#555; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:860px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.8em; margin:6px 0 4px} h2{font-size:1.15em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn.warn{border-color:var(--bad); color:var(--bad)}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .top{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .pill{background:var(--slot); border-radius:999px; padding:4px 10px; font-weight:700}
+  .clue{background:var(--paper); border:2px dashed var(--edge); border-radius:14px; padding:12px 14px}
+  .clue .q{font-size:1.15em; font-weight:600; margin:4px 0}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px}
+  .answer input{flex:1 1 140px; min-width:0; font-size:1.2em; padding:8px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .answer input:focus{outline:3px solid var(--accent); outline-offset:1px}
+  .opts{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+  .opts button{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700; font-size:1.1em}
+  .suspects{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-top:10px}
+  .sus{position:relative; text-align:left; border:2px solid var(--edge); background:var(--card); border-radius:14px; padding:8px 10px}
+  .sus .e{font-size:1.8em; line-height:1}
+  .sus ul{list-style:none; margin:4px 0 0; padding:0; font-size:.92em}
+  .sus li{display:flex; gap:6px; justify-content:space-between}
+  .sus li b{white-space:nowrap}
+  .sus li.match b{color:var(--ok)} .sus li.miss b{color:var(--bad); text-decoration:line-through}
+  .sus.out{opacity:.45}
+  .sus.out::after{content:"✗"; position:absolute; top:4px; right:10px; font-size:1.6em; color:var(--bad)}
+  .sus.accuse{cursor:pointer; border-color:var(--accent)}
+  .sus.accuse:hover{background:var(--slot)}
+  .evidence{list-style:none; padding:0; margin:6px 0 0}
+  .evidence li{padding:3px 0}
+  .msg{min-height:1.4em; font-weight:700; margin:8px 0 0}
+  .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+  .stats div{flex:1 1 120px; background:var(--slot); border-radius:12px; padding:10px; text-align:center}
+  .stats b{display:block; font-size:1.5em}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_POTION = params.get('from') === 'potion';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const CASES = 3;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+const SUP = {2:'²', 3:'³'};
+let best = 0; try { best = +localStorage.getItem('potion-detective:best') || 0; } catch(e){}
+
+/* ---------- clues: each one is a Unit 6 problem whose answer is a piece of the thief's evidence ----------
+   {skill, ask, answer, decoys} — decoys are mistakes a student really makes; innocent suspects carry them. */
+const T = (c, v) => (c === 1 ? v : `${c}${v}`);
+const ATTRS = [
+  {id:'locker', icon:'🔐', name:'Locker', makers:[
+    () => { const a = rnd(2, 6), x = rnd(3, 8), b = rnd(1, 9); return {skill:'evalOne', ask:`The thief’s locker number is the value of ${a}x + ${b} when x = ${x}.`, answer:a * x + b, decoys:[a * (x + b), +`${a}${x}` + b, a + x + b]}; },
+    () => { const a = rnd(2, 5), x = rnd(2, 7), y = rnd(2, 9); return {skill:'evalMulti', ask:`The thief’s locker number is ${a}x + y when x = ${x} and y = ${y}.`, answer:a * x + y, decoys:[a * (x + y), a + x + y, a * x * y]}; },
+    () => { let a, b; do { a = rnd(3, 9); b = rnd(4, 12); } while (a === b || a % b === 0 || b % a === 0 || a * b / gcd(a, b) > 60 || a * b / gcd(a, b) < 10); const L = a * b / gcd(a, b); return {skill:'lcm', ask:`The thief’s locker number is the least common multiple of ${a} and ${b}.`, answer:L, decoys:[a * b, L * 2, gcd(a, b) > 1 ? gcd(a, b) : L + a].filter(v => v <= 99)}; }]},
+  {id:'paw', icon:'🐾', name:'Paw print', makers:[
+    () => { const x = rnd(2, 4), b = rnd(1, 9); return {skill:'evalExp', ask:`The paw print is x² + ${b} centimeters wide, when x = ${x}.`, answer:x * x + b, decoys:[2 * x + b, x + 2 + b, (x + b) * (x + b)]}; },
+    () => { const G = rnd(3, 9); let m, k; do { m = rnd(2, 5); k = rnd(2, 5); } while (gcd(m, k) !== 1 || m === k); const d = [2, 3].find(p => G % p === 0 && p < G); return {skill:'gcf', ask:`The paw print is as many centimeters wide as the greatest common factor of ${G * m} and ${G * k}.`, answer:G, decoys:[d || G + 1, G * m * k, Math.max(m, k)]}; },
+    () => { const p = pick([2, 3, 4]), w = rnd(3, 8), y = p * w; return {skill:'evalMultiFrac', ask:`The paw print is xy centimeters wide, when x = 1/${p} and y = ${y}.`, answer:w, decoys:[y * p, y + p, y - p].filter(v => v >= 2 && v <= 40)}; }]},
+  {id:'time', icon:'🕐', name:'Arrived at', unit:' o’clock', makers:[
+    () => { const a = rnd(2, 3), t = rnd(2, 4), c = a * t + rnd(1, 8); return {skill:'evalWord', ask:`A guard’s log says the thief arrived at h o’clock, where h = ${c} − ${a}t and t = ${t}.`, answer:c - a * t, decoys:[(c - a) * t, c - a + t, c + a * t].filter(v => v >= 1 && v <= 12)}; },
+    () => { const a = rnd(2, 6), b = rnd(1, 12 - a - 1 > 0 ? 12 - a - 1 : 1), c = rnd(2, 9); return b + a <= 12 ? {skill:'combineLike', ask:`The thief arrived at the number of h’s in ${T(a, 'h')} + ${c} + ${T(b, 'h')}, combined. (What number goes in front of h?)`, answer:a + b, decoys:[a + b + c, a * b, a + c].filter(v => v >= 1 && v <= 12)} : null; },
+    () => { const a = rnd(2, 3), b = rnd(1, 2), x = rnd(1, Math.floor(12 / a) - b); return {skill:'evalOne', ask:`The thief arrived at ${a}(x + ${b}) o’clock, when x = ${x}.`, answer:a * (x + b), decoys:[a * x + b, a + x + b, a * x * b].filter(v => v >= 1 && v <= 12)}; }]},
+  {id:'buttons', icon:'🧥', name:'Coat buttons', makers:[
+    () => { const a = rnd(2, 9), b = rnd(2, 9), c = rnd(2, 9); const ask = pick(['terms', 'coef', 'const']);
+      return ask === 'terms' ? {skill:'exprParts', ask:`The thief’s coat has as many buttons as there are terms in ${T(a, 'x')} + ${T(b, 'y')} + ${c}.`, answer:3, decoys:[2, 4, a]}
+        : ask === 'coef' ? {skill:'exprParts', ask:`The thief’s coat has as many buttons as the coefficient of y in ${T(a, 'x')} + ${T(b, 'y')} + ${c}.`, answer:b, decoys:[a, c, b + 1].filter(v => v !== b)}
+        : {skill:'exprParts', ask:`The thief’s coat has as many buttons as the constant term in ${T(a, 'x')} + ${T(b, 'y')} + ${c}.`, answer:c, decoys:[a, b, c + 1].filter(v => v !== c)}; },
+    () => { const G = rnd(2, 6); let p, q; do { p = rnd(2, 9); q = rnd(2, 9); } while (gcd(p, q) !== 1 || p === q); return {skill:'factorDist', ask:`${G * p} + ${G * q} = ${G}(${p} + ▢). The thief’s coat has ▢ buttons.`, answer:q, decoys:[G * q, p, q + G]}; },
+    () => { const k = pick([2, 4, 5]), y = k * rnd(1, 3); return {skill:'evalMultiFrac', ask:`The thief’s coat has x × y buttons, when x = 1/${k} and y = ${y * 2}.`, answer:y * 2 / k, decoys:[y * 2 * k, y * 2 + k, y * 2 - 1].filter(v => v >= 1 && v <= 20)}; }]},
+  {id:'note', icon:'📜', name:'Note', expr:true, makers:[
+    () => { const n = rnd(2, 9), v = pick(['n', 'x', 'p']); const [w, r, d] = pick([
+      [`${n} less than ${v}`, `${v} − ${n}`, [`${n} − ${v}`, `${v} + ${n}`, `${n}${v}`]],
+      [`${n} more than ${v}`, `${v} + ${n}`, [`${n}${v}`, `${v} − ${n}`, `${n} − ${v}`]],
+      [`the product of ${n} and ${v}`, `${n}${v}`, [`${n} + ${v}`, `${v} ÷ ${n}`, `${v} − ${n}`]],
+      [`${v} divided by ${n}`, `${v} ÷ ${n}`, [`${n} ÷ ${v}`, `${n}${v}`, `${v} − ${n}`]]]);
+      return {skill:'writeBasic', ask:`A torn note says “${w}”. The thief’s note shows that as an expression. Which one?`, answer:r, decoys:d}; },
+    () => { const a = rnd(2, 9), b = rnd(2, 9), v = pick(['n', 'x']); return {skill:'writeExpr', ask:`The note says “${a} times the sum of ${v} and ${b}”. Which expression is on the thief’s note?`, answer:`${a}(${v} + ${b})`, decoys:[`${a}${v} + ${b}`, `${a} + ${v} + ${b}`, `${a}(${v} − ${b})`]}; },
+    () => { const a = rnd(2, 9), b = rnd(2, 9), v = pick(['x', 'm']); return {skill:'distVar', ask:`The thief’s note shows an expression equivalent to ${a}(${v} + ${b}), with no parentheses. Which one?`, answer:`${T(a, v)} + ${a * b}`, decoys:[`${T(a, v)} + ${b}`, `${v} + ${a * b}`, `${T(a + b, v)}`]}; },
+    () => { const G = rnd(2, 6); let m, k; do { m = rnd(2, 7); k = rnd(1, 7); } while (gcd(m, k) !== 1); const v = pick(['x', 'y']);
+      return {skill:'factorVar', ask:`The thief’s note shows ${T(G * m, v)} + ${G * k} factored with its greatest common factor. Which one?`, answer:`${G}(${T(m, v)} + ${k})`, decoys:[`${G}(${T(G * m, v)} + ${G * k})`, `${G}(${T(m, v)} + ${G * k})`, `${T(m, v)} + ${k}`]}; },
+    () => { const a = rnd(2, 7), b = rnd(2, 7), c = rnd(1, 9), v = pick(['m', 'n']); return {skill:'combineLike', ask:`The note shows ${T(a, v)} + ${c} + ${T(b, v)} with like terms combined. Which one?`, answer:`${T(a + b, v)} + ${c}`, decoys:[`${T(a + b + c, v)}`, `${T(a * b, v)} + ${c}`, `${T(a + b, v)} + ${c + 1}`]}; }]}
+];
+const SKILL_NAMES = {evalOne:'Evaluating with one variable', evalMulti:'Evaluating with two variables', evalExp:'Expressions with exponents', evalMultiFrac:'Evaluating with fractions', evalWord:'Formulas in stories', lcm:'Least common multiple', gcf:'Greatest common factor', exprParts:'Parts of expressions', factorDist:'Factoring numbers', writeBasic:'Writing expressions', writeExpr:'Writing expressions', distVar:'Distributive property', factorVar:'Factoring with variables', combineLike:'Combining like terms'};
+
+const PEOPLE = [['🦊', 'Professor Fox'], ['🐱', 'Lady Whiskers'], ['🐻', 'Chef Bruno'], ['🦉', 'Dr. Hoot'], ['🐰', 'Bunny Bloom'], ['🐸', 'Sir Ribbit'], ['🐼', 'Panda Pip'], ['🦝', 'Rocky Raccoon'], ['🐹', 'Hazel Hamster'], ['🐨', 'Kip Koala']];
+const STOLEN = ['the Golden Potion', 'the Moonbeam Elixir', 'the Giggle Tonic', 'the Rainbow Brew', 'the Invisible Ink', 'the Dragon Dew'];
+function makeCase(){
+  for (let tries = 0; tries < 50; tries++) {
+    const clues = ATTRS.map(at => { let c = null; for (let i = 0; i < 20 && !c; i++) c = pick(at.makers)(); return c && {...c, attr:at.id}; });
+    if (clues.some(c => !c)) continue;
+    clues.forEach(c => { c.decoys = [...new Set(c.decoys.filter(d => String(d) !== String(c.answer)))]; });
+    if (clues.some(c => !c.expr && !ATTRS.find(a => a.id === c.attr).expr && c.decoys.length < 1)) continue;
+    const people = shuffle(PEOPLE).slice(0, 6), thiefAt = rnd(0, 5);
+    const suspects = people.map(([emoji, name], i) => ({emoji, name, thief:i === thiefAt, vals:{}}));
+    /* every innocent shares the thief's evidence on 2 to 4 clues, never all 5, so every clue counts */
+    suspects.forEach(s => { s.shares = s.thief ? new Set(ATTRS.map(a => a.id)) : new Set(shuffle(ATTRS.map(a => a.id)).slice(0, rnd(2, 4))); });
+    for (const c of clues) {
+      const extra = ATTRS.find(a => a.id === c.attr).expr ? [] : [c.answer + 1, c.answer - 1, c.answer + 2].filter(v => v > 0 && (c.attr !== 'time' || v <= 12));
+      const pool = shuffle([...c.decoys, ...extra].filter(d => String(d) !== String(c.answer)));
+      let k = 0; suspects.forEach(s => { s.vals[c.attr] = s.shares.has(c.attr) ? c.answer : pool[k++ % pool.length]; });
+    }
+    return {clues, suspects, stolen:pick(STOLEN), at:0, results:[], msg:'', ok:false, accused:null, solved:false};
+  }
+}
+const fits = (s, c) => String(s.vals[c.attr]) === String(c.answer);
+
+/* ---------- the game: 3 cases, 5 clues each ---------- */
+let G = null;
+function newGame(){ G = {caseNo:1, solved:0, right:0, tries:0, missed:{}, started:Date.now(), cs:makeCase()}; render(); }
+function answerClue(raw, picked){
+  const cs = G.cs, c = cs.clues[cs.at]; if (!c) return;
+  let ok;
+  if (picked != null) ok = picked === c.answer;
+  else { const v = String(raw).trim().replace(/\s+/g, ''); if (!/^\d+$/.test(v)) { cs.msg = 'Type a whole number.'; cs.ok = false; render(); return; } ok = +v === c.answer; }
+  G.tries++;
+  if (ok) { G.right++; cs.results[cs.at] = 'right'; cs.ok = true; cs.msg = `✅ Evidence logged: ${ATTRS.find(a => a.id === c.attr).name} ${c.answer}${ATTRS.find(a => a.id === c.attr).unit || ''}.`; }
+  else { G.missed[c.skill] = (G.missed[c.skill] || 0) + 1; cs.results[cs.at] = 'smudged'; cs.ok = false; cs.msg = '🌫️ Hmm, that doesn’t match the lab records. This clue is smudged, so it can’t rule anyone out.'; }
+  cs.at++;
+  render();
+}
+function accuse(i){
+  const cs = G.cs, s = cs.suspects[i]; if (cs.accused != null) return;
+  cs.accused = i; cs.solved = s.thief; if (s.thief) G.solved++;
+  render();
+}
+function nextCase(){
+  if (G.caseNo >= CASES) return finish();
+  G.caseNo++; G.cs = makeCase(); render();
+}
+function finish(){
+  const result = {solved:G.solved, cases:CASES, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  const newBest = G.solved > best; if (newBest) { best = G.solved; try { localStorage.setItem('potion-detective:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_POTION) window.parent.postMessage({type:'detective:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'potion-detective', runId:ARCADE_RUN, roundId:`cases-${G.started}`, score:G.solved}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>🕵️ Case files closed</h1>
+    <p><b>${'⭐'.repeat(G.solved)}${'☆'.repeat(CASES - G.solved)}</b> ${G.solved === CASES ? 'Every thief caught. The Potion Lab is safe!' : G.solved ? 'Nice detective work. Can you crack every case next time?' : 'The thieves got away this time. More evidence makes better guesses!'}</p>
+    <div class="stats"><div><b>${G.solved} of ${CASES}</b>cases solved</div><div><b>${G.right} of ${G.tries}</b>clues solved</div><div><b>${best}</b>best${newBest && G.solved ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    ${FROM_POTION ? '<p class="muted">Each clue you solve earns Pet World coins. Detective cases don’t count toward Potion Lab orders or quizzes.</p>' : ''}
+    <p><button class="btn go" data-start>🔍 New cases</button></p>`;
+}
+function suspectHTML(s, i){
+  const cs = G.cs, known = cs.clues.filter((c, k) => cs.results[k] === 'right'), out = known.some(c => !fits(s, c));
+  const rows = ATTRS.map(a => { const c = cs.clues.find(x => x.attr === a.id), k = cs.clues.indexOf(c), cls = cs.results[k] === 'right' ? (fits(s, c) ? 'match' : 'miss') : '';
+    return `<li class="${cls}"><span>${a.icon} ${a.name}</span><b>${esc(s.vals[a.id])}${a.unit && cs.results[k] ? '' : ''}</b></li>`; }).join('');
+  const canAccuse = cs.accused == null && cs.at > 0;
+  const reveal = cs.accused != null ? (s.thief ? ' 🦹 THE THIEF' : i === cs.accused ? ' ❌ innocent' : '') : '';
+  return `<${canAccuse ? 'button' : 'div'} class="sus${out && cs.accused == null ? ' out' : ''}${canAccuse ? ' accuse' : ''}" ${canAccuse ? `data-accuse="${i}" aria-label="Accuse ${esc(s.name)}"` : ''}><div class="e">${s.emoji}</div><b>${esc(s.name)}${reveal}</b><ul>${rows}</ul></${canAccuse ? 'button' : 'div'}>`;
+}
+function render(){
+  const cs = G.cs, c = cs.clues[cs.at], left = cs.suspects.filter(s => !cs.clues.some((cl, k) => cs.results[k] === 'right' && !fits(s, cl))).length;
+  const ev = cs.clues.map((cl, k) => cs.results[k] ? `<li>${cs.results[k] === 'right' ? '✅' : '🌫️'} ${ATTRS.find(a => a.id === cl.attr).icon} ${cs.results[k] === 'right' ? `${ATTRS.find(a => a.id === cl.attr).name}: <b>${esc(cl.answer)}</b>` : 'Smudged clue'}</li>` : '').join('');
+  let main;
+  if (cs.accused != null) {
+    const thief = cs.suspects.find(s => s.thief);
+    main = `<div class="card"><h2>${cs.solved ? `🎉 Case closed! ${esc(thief.name)} took ${cs.stolen}!` : `😮 Not this time. ${esc(thief.name)} was the thief.`}</h2>
+      <p class="muted">The clues, solved:</p><ul class="evidence">${cs.clues.map(cl => `<li>${ATTRS.find(a => a.id === cl.attr).icon} ${esc(cl.ask)} <b>→ ${esc(cl.answer)}</b></li>`).join('')}</ul>
+      <p><button class="btn go" data-next>${G.caseNo < CASES ? 'Next case ➜' : 'See my results'}</button></p></div>`;
+  } else if (c) {
+    const at = ATTRS.find(a => a.id === c.attr);
+    const opts = at.expr ? shuffle([...new Set(cs.suspects.map(s => s.vals.note).concat(c.answer))]) : null;
+    main = `<div class="clue"><b>📁 Clue ${cs.at + 1} of 5</b> <span class="muted">· ${at.icon} ${at.name}</span><p class="q">${esc(c.ask)}</p>
+      ${at.expr ? `<div class="opts">${opts.map(o => `<button data-pick="${esc(o)}">${esc(o)}</button>`).join('')}</div>`
+        : `<div class="answer"><input id="ans" inputmode="numeric" autocomplete="off" aria-label="Your answer" placeholder="Your answer"><button class="btn go" data-solve>🔍 Check the clue</button></div>`}
+      <p class="muted" style="margin:6px 0 0">One try per clue. A right answer rules out suspects; a wrong one smudges the clue.</p></div>
+      ${cs.at > 0 ? `<p class="muted">Sure already? Tap a suspect to name the thief, or keep investigating.</p>` : ''}`;
+  } else {
+    main = `<div class="clue"><b>🕵️ All the clues are in.</b> <p class="q">Tap the suspect you think stole ${esc(cs.stolen)}.</p><p class="muted">${left === 1 ? 'Only one suspect fits every clue you solved.' : `${left} suspects still fit what you know. Make your best guess!`}</p></div>`;
+  }
+  app.innerHTML = `<div class="top"><span class="pill">📂 Case ${G.caseNo} of ${CASES}</span><span class="pill">⭐ ${G.solved} solved</span><span class="pill">🔎 ${left} suspect${left === 1 ? '' : 's'} left</span></div>
+    <div class="card"><h2>🧪 Who stole ${esc(cs.stolen)}?</h2>${main}
+      <p class="msg ${cs.ok ? 'ok' : cs.msg ? 'bad' : ''}" role="status">${cs.msg}</p>${ev ? `<ul class="evidence">${ev}</ul>` : ''}</div>
+    <div class="suspects">${cs.suspects.map(suspectHTML).join('')}</div>`;
+  document.getElementById('ans')?.focus();
+}
+function renderStart(){
+  app.innerHTML = `<h1>🔍 Potion Detective</h1>
+    <p class="muted">Someone keeps stealing potions from the Potion Lab! Six suspects, five clues, and only you can crack the case.</p>
+    <ol class="how">
+      <li>Every clue is a math problem. Its answer is a piece of evidence: the thief’s locker, paw print, arrival time, coat buttons, or the note they dropped.</li>
+      <li>Solve a clue and the suspects who don’t match are ruled out. Get it wrong and the clue is smudged: it can’t rule anyone out.</li>
+      <li>Careful: a wrong answer might match an innocent suspect!</li>
+      <li>Name the thief whenever you’re sure. The more clues you solve, the better your guess.</li>
+      <li>Solve ${CASES} cases. ⭐ for every thief you catch.</li>
+    </ol>
+    ${best ? `<p>🏆 Best: <b>${best} of ${CASES}</b> cases solved</p>` : ''}
+    <button class="btn go" data-start>🔍 Open the case files</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-start')) { newGame(); return; }
+  if (!G) return;
+  if (b.hasAttribute('data-solve')) { answerClue(document.getElementById('ans').value); return; }
+  if (b.dataset.pick != null) { answerClue(null, b.dataset.pick); return; }
+  if (b.dataset.accuse != null) { accuse(+b.dataset.accuse); return; }
+  if (b.hasAttribute('data-next')) nextCase();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'ans') answerClue(e.target.value); });
+if (params.has('selftest')) window.__det = {makeCase, ATTRS, fits, newGame, answerClue, accuse, get G(){ return G; }};
+renderStart();
+})();
+</script>
+</body>
+</html>

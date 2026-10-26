@@ -1,19 +1,34 @@
 # 6th grade, shop 6: the Potion Lab
 
-**Status: built (all 6 stations).** Stations 1 to 4 are Khan unit 6 (`POTION_GEN`); stations 5 and 6 are unit 7 (`POTION2_GEN`, stress-tested: 420,000 problems; every solution checked by putting it back in the equation, every inequality choice tested). Khan Academy 6th grade, Units 6 and 7. The generators are `POTION_GEN` in `src/game/game.js` (stress-tested: 780,000 problems, 20,000 per skill and level; every evaluation checked against an independent calculation, every GCF and LCM, and every expression choice evaluated at several values so exactly one option is equivalent). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
+**Status: built (8 stations).** Stations 1 to 6 are Khan unit 6 (`POTION_GEN`, rebuilt Oct 26, 2026 to match Khan's unit page: all 18 exercises); stations 7 and 8 are unit 7 (`POTION2_GEN`, stress-tested: 420,000 problems; every solution checked by putting it back in the equation, every inequality choice tested). Khan Academy 6th grade, Units 6 and 7. The generators are `POTION_GEN` in `src/game/game.js` (stress-tested: 780,000 problems, 20,000 per skill and level; every evaluation checked against an independent calculation, every GCF and LCM, and every expression choice evaluated at several values so exactly one option is equivalent). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
 
 The Potion Lab opens after the Ice Rink Unit Test (or with the teacher's "Open the Potion Lab for everyone").
 
 ## Stations and skills (Khan's order)
 
-| # | Station | Skills (ids) |
-|---|---|---|
-| 1 | 🧴 Ingredients | Parts of algebraic expressions (`exprParts`), evaluating with one variable (`evalOne`), with exponents (`evalExp`), with two variables (`evalMulti`) |
-| 2 | 📜 Recipe Cards | Writing basic expressions (`writeBasic`), writing expressions with parentheses (`writeExpr`), expression word problems (`writeWord`) |
-| 3 | 🥣 Mixing Bowl | Greatest common factor (`gcf`), least common multiple (`lcm`), GCF and LCM word problems (`gcfLcmWord`) |
-| 4 | 🫕 Cauldron | Factoring with the distributive property (`factorDist`), distributive property with variables (`distVar`), equivalent expressions (`equivExpr`) |
-| 5 | ⚖️ Balance Scale | Testing solutions to equations (`testSol`), one-step + and − equations (`oneStepAdd`), one-step × and ÷ equations (`oneStepMult`), modeling with one-step equations (`eqModel`) |
-| 6 | 🚦 Potion Limits | Testing solutions to inequalities (`testIneq`), plotting inequalities (`plotIneq`), dependent and independent variables (`depIndep`) |
+| # | Station | Skills (ids) | Khan |
+|---|---|---|---|
+| 1 | 🧴 Ingredients | Parts of algebraic expressions (`exprParts`), evaluating with one variable (`evalOne`), with exponents (`evalExp`) | Unit 6, Quiz 1 |
+| 2 | 🧪 Test Tubes | Two variables (`evalMulti`), two variables with fractions (`evalMultiFrac`), expression value intuition (`exprIntuition`), formulas in word problems (`evalWord`) | Unit 6, Quiz 1 |
+| 3 | 📜 Recipe Cards | Writing basic expressions (`writeBasic`), writing expressions with parentheses (`writeExpr`), expression word problems (`writeWord`) | Unit 6, Quiz 2 |
+| 4 | 🥣 Mixing Bowl | Least common multiple (`lcm`), greatest common factor (`gcf`), GCF and LCM word problems (`gcfLcmWord`, an extra: Khan's 6th grade unit no longer has it), factoring with the distributive property, no variables (`factorDist`) | Unit 6, Quiz 3 |
+| 5 | 🫕 Cauldron | Distributive property with variables (`distVar`), equivalent expressions by factoring (`factorEquiv`), factoring with variables (`factorVar`) | Unit 6, Quiz 3 |
+| 6 | 🍶 Potion Shelf | Combining like terms (`combineLike`), equivalent expressions (`equivExpr`) | Unit 6, Quiz 3 |
+| 7 | ⚖️ Balance Scale | Testing solutions to equations (`testSol`), one-step + and − equations (`oneStepAdd`), one-step × and ÷ equations (`oneStepMult`), modeling with one-step equations (`eqModel`) | Unit 7 |
+| 8 | 🚦 Potion Limits | Testing solutions to inequalities (`testIneq`), plotting inequalities (`plotIneq`), dependent and independent variables (`depIndep`) | Unit 7 |
+
+**Oct 26, 2026 rebuild (Unit 6):** six new skills, three fixed links (`evalOne` and `writeWord` pointed at other courses, and `gcf` at an old path), and two new stations (Test Tubes and Potion Shelf), so Unit 7's stations moved from 5 and 6 to 7 and 8. Unit 7 is next to check against Khan.
+
+- **Two variables with fractions** (`evalMultiFrac`): x and y are fractions or mixed numbers (level 1: x + y, xy, x − y; then 3x + y, x ÷ y, 4(x + y)), worked step by step with `evalProblem`.
+- **Expression value intuition** (`exprIntuition`): "which is greater, x ÷ 3 or x ÷ 5?", "0.8 × 45 or 45?", and level 3 "if x gets bigger, what happens to 30 − x?"
+- **Formulas in stories** (`evalWord`): a cost, a recipe, drops left after d days, then perimeter 4s, area s², Celsius to Fahrenheit, and tickets with two letters.
+- **Equivalent expressions by factoring** (`factorEquiv`): 30y + 24 = 6(▢y + ▢) with a given factor that isn't always the GCF; level 3 picks the equivalent factored form.
+- **Factoring with variables** (`factorVar`): find the GCF, then pick the factored form; level 3 has three terms (20x + 20y + 8).
+- **Combining like terms** (`combineLike`): 5n + 3n, then 2x + 8 + 5x + 10, then subtraction (9n + 10 − 2n − 4).
+
+Each new generator was stress-tested in the built game (3,000 problems per level: one right choice, no repeated choices, every answer whole or a fraction).
+
+The 🔍 Potion Detective game is at the Potion Shelf: see `POTION-DETECTIVE.md`.
 
 ## What students get
 
@@ -21,8 +36,8 @@ The Potion Lab opens after the Ice Rink Unit Test (or with the teacher's "Open t
 - **Evaluating** (`evalProblem`): the expression is written the algebra way (3x², 5(x + y)), and each step shows the substituted expression with the part being worked on highlighted (the Clock Tower's `ooEval`). Level 3 uses fractions for x and y. A wrong final answer is checked against 3x read as 35, x² as 2x, 3x² as (3x)², and working left to right.
 - **Writing:** "5 less than n", "the product of 4 and n", "3 times the sum of n and 2", and stories with a letter for the amount that changes. Levels 2 and 3 also find the value. Quizzes ask for the expression.
 - **GCF and LCM:** numbers up to 120, with the factors listed in the hint, and word problems that first ask GCF or LCM.
-- **Equations (station 5):** a balance picture (`balanceHTML`), "what do you do to both sides?" before solving, decimals on level 3 of + and −, fraction coefficients like (2/3)x = 8 on level 3 of × and ÷ (with the reciprocal pop-up), and stories that pick the equation first.
-- **Inequalities (station 6):** testing values (is 5 a solution of x > 5?), picking the graph (`ineqSVG`: open circle for < and >, filled for ≤ and ≥, and an arrow), temperature stories with "at least" and "at most", and dependent vs. independent variables with an x–y table (fill in a missing value, then pick the rule).
+- **Equations (station 7):** a balance picture (`balanceHTML`), "what do you do to both sides?" before solving, decimals on level 3 of + and −, fraction coefficients like (2/3)x = 8 on level 3 of × and ÷ (with the reciprocal pop-up), and stories that pick the equation first.
+- **Inequalities (station 8):** testing values (is 5 a solution of x > 5?), picking the graph (`ineqSVG`: open circle for < and >, filled for ≤ and ≥, and an arrow), temperature stories with "at least" and "at most", and dependent vs. independent variables with an x–y table (fill in a missing value, then pick the rule).
 - **Distributive property:** 24 + 36 = 12(2 + 3), 3(x + 4) = 3x + 12, 6x + 9 = 3(2x + 3), and combining like terms. Every wrong choice is tested at several values of x (`exprChoice`, `sameFn`) so it is never secretly equivalent to the right one.
 - **Bar models on the Solve step** (`barModelSVG`):
   - **One-step addition and subtraction** (`oneStepAdd`, levels 1 and 2): x and the number side by side under the total.
@@ -32,7 +47,7 @@ The Potion Lab opens after the Ice Rink Unit Test (or with the teacher's "Open t
 
 ## Mix-ups
 
-New: `termCount`, `coefConstant`, `coefOne`, `exprStructure`, `coefDigits`, `coefInsidePower`, `lessThanOrder`, `missingParens`, `gcfLcmSwap`, `notGreatest`, `notLeast`, `likeTermsWrong`. Reused: `expTimesBase`, `leftToRight`, `wrongOperation`, `distributeWrong`, `notSimplest`, `notMixed`. Stations 5 and 6 add `solutionIsTotal`, `inverseWrong`, `boundaryWrong`, `ineqDirection`, `circleWrong`, `depIndepSwap` (and reuse `patternWrongRule`).
+New: `termCount`, `coefConstant`, `coefOne`, `exprStructure`, `coefDigits`, `coefInsidePower`, `lessThanOrder`, `missingParens`, `gcfLcmSwap`, `notGreatest`, `notLeast`, `likeTermsWrong`. Reused: `expTimesBase`, `leftToRight`, `wrongOperation`, `distributeWrong`, `notSimplest`, `notMixed`. Stations 7 and 8 add `solutionIsTotal`, `inverseWrong`, `boundaryWrong`, `ineqDirection`, `circleWrong`, `depIndepSwap` (and reuse `patternWrongRule`).
 
 ## Rewards
 

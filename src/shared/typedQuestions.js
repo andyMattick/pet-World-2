@@ -706,26 +706,36 @@ export const TYPED_QUESTIONS = {
       {"type": "short", "prompt": "In the expression 5n + 3, explain what 5 and 3 are called and what each one does.", "rubric": ["Says 5 is the coefficient (it multiplies n)", "Says 3 is a constant (a number that doesn’t change)"], "model": "5 is the coefficient: it multiplies n. 3 is the constant: it stays 3 no matter what n is.", "minWords": 8},
     ],
     "potion:2": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: What is 3a + b when a = 4 and b = 5?", "options": ["17", "39", "12"], "answer": 0, "partB": {"prompt": "Part B: Which step comes first?", "options": ["Multiply 3 × 4 = 12, then add 5", "Write 3 and 4 side by side to make 34", "Add 3 + 4, then multiply by 5"], "answer": 0}},
+      {"type": "fill", "difficulty": 3, "prompt": "What is xy when x = 1/2 and y = 3/4? Type it as a fraction.", "accept": ["3/8"]},
+      {"type": "short", "prompt": "n is a number greater than 1. Without working anything out, explain which is greater: 30 ÷ n or 30.", "rubric": ["Says 30 is greater", "Explains that dividing by a number greater than 1 splits 30 into more than one part, so each part is less than 30"], "model": "30 is greater. Dividing 30 by a number bigger than 1 splits it into more than one equal part, so each part is less than 30.", "minWords": 10},
+    ],
+    "potion:3": [
       {"type": "multi", "difficulty": 2, "prompt": "Select every expression that means “5 less than a number n.”", "options": ["n − 5", "n + (−5)", "5 − n", "5n", "n ÷ 5"], "answers": [0, 1]},
       {"type": "two", "difficulty": 1, "prompt": "Part A: Pens cost $3 each. Which expression gives the cost of p pens?", "options": ["3p", "p + 3", "p ÷ 3"], "answer": 0, "partB": {"prompt": "Part B: What does 3p mean?", "options": ["3 times the number of pens", "3 more than the number of pens", "The number of pens split into 3"], "answer": 0}},
       {"type": "short", "prompt": "Write an expression for “twice a number, plus 4,” and explain each part.", "rubric": ["Writes 2n + 4 (any letter)", "Explains 2n is twice the number and + 4 adds four"], "model": "2n + 4. The 2n means 2 times the number, and the + 4 adds four more.", "minWords": 8},
     ],
-    "potion:3": [
+    "potion:4": [
       {"type": "two", "difficulty": 2, "prompt": "Part A: What is the greatest common factor of 18 and 24?", "options": ["6", "3", "72"], "answer": 0, "partB": {"prompt": "Part B: When would you use it?", "options": ["To split two groups into the most equal teams with nothing left over", "To find when two schedules line up again", "To find the total of both numbers"], "answer": 0}},
       {"type": "fill", "difficulty": 1, "prompt": "What is the least common multiple of 4 and 6? Type the number.", "accept": ["12"]},
       {"type": "short", "prompt": "Hot dogs come in packs of 8 and buns in packs of 6. Explain how to find the fewest of each you can buy to have the same number of hot dogs and buns.", "rubric": ["Uses multiples or the least common multiple", "Finds 24 (3 packs of hot dogs and 4 packs of buns)"], "model": "List multiples: 8, 16, 24 and 6, 12, 18, 24. The LCM is 24, so buy 3 packs of hot dogs and 4 packs of buns.", "minWords": 8},
     ],
-    "potion:4": [
+    "potion:5": [
       {"type": "multi", "difficulty": 2, "prompt": "Select every expression equivalent to 3(x + 2).", "options": ["3x + 6", "x + 2 + x + 2 + x + 2", "3x + 3 × 2", "3x + 2", "x + 6", "3x + 5"], "answers": [0, 1, 2]},
-      {"type": "fill", "difficulty": 2, "prompt": "Use the distributive property: 24 + 36 = 12( ___ + 3). Type the missing number.", "accept": ["2"]},
+      {"type": "fill", "difficulty": 2, "prompt": "Factor: 6x + 9 = 3( ___x + 3). Type the missing number.", "accept": ["2"]},
       {"type": "short", "prompt": "Explain why 4(n + 5) is not equal to 4n + 5.", "rubric": ["Says the 4 multiplies both n and 5", "Shows 4(n + 5) = 4n + 20 (or tests a value)"], "model": "The 4 multiplies everything in the parentheses, so 4(n + 5) = 4n + 20, not 4n + 5. For n = 1: 4 × 6 = 24 but 4 + 5 = 9.", "minWords": 8},
     ],
-    "potion:5": [
+    "potion:6": [
+      {"type": "multi", "difficulty": 2, "prompt": "Select every expression equivalent to 5m + 2 + 3m.", "options": ["8m + 2", "2 + 8m", "5m + 3m + 2", "10m", "15m + 2", "8m + 5"], "answers": [0, 1, 2]},
+      {"type": "fill", "difficulty": 2, "prompt": "Combine like terms: 9n + 4 − 2n − 1 = ___n + 3. Type the missing number.", "accept": ["7"]},
+      {"type": "short", "prompt": "Explain why 4x + 3 is not equal to 7x.", "rubric": ["Says 4x and 3 are not like terms (3 has no x), so they can’t be combined", "Tests a value or explains 7x would need 3 more x’s, not 3 ones"], "model": "4x and 3 are not like terms because 3 has no x. You can only combine terms with the same letter. If x = 2, 4x + 3 = 11 but 7x = 14.", "minWords": 10},
+    ],
+    "potion:7": [
       {"type": "sort", "difficulty": 1, "prompt": "Is x = 6 a solution?", "groups": ["Yes", "No"], "items": [["x + 4 = 10", 0], ["3x = 18", 0], ["x ÷ 2 = 3", 0], ["x − 6 = 1", 1], ["2x = 8", 1], ["x + 1 = 6", 1]]},
       {"type": "two", "difficulty": 2, "prompt": "Part A: Solve x/4 = 9.", "options": ["x = 36", "x = 13", "x = 2.25"], "answer": 0, "partB": {"prompt": "Part B: Which step solves it?", "options": ["Multiply both sides by 4.", "Divide both sides by 4.", "Add 4 to both sides."], "answer": 0}},
       {"type": "short", "prompt": "Write a story that the equation n + 7 = 20 could describe, then solve it.", "rubric": ["Writes a story where an unknown amount plus 7 makes 20", "Solves n = 13 with a label"], "model": "I had some stickers and got 7 more. Now I have 20. How many did I have? n = 20 − 7 = 13 stickers.", "minWords": 8},
     ],
-    "potion:6": [
+    "potion:8": [
       {"type": "multi", "difficulty": 2, "prompt": "Select every value that is a solution of x > 4.", "options": ["5", "4.1", "10", "4", "3", "−5"], "answers": [0, 1, 2]},
       {"type": "two", "difficulty": 2, "prompt": "Part A: Plants grow taller when they get more hours of sunlight. Which is the dependent variable?", "options": ["Plant height", "Hours of sunlight", "The kind of plant"], "answer": 0, "partB": {"prompt": "Part B: Why?", "options": ["It changes because of the other variable.", "It is the bigger number.", "You choose it before the experiment."], "answer": 0}},
       {"type": "short", "prompt": "Explain the difference between x < 3 and x ≤ 3, and how each looks on a number line.", "rubric": ["Says ≤ includes 3 and < does not", "Says < uses an open circle and ≤ a closed (filled) circle at 3, with the arrow pointing left"], "model": "x < 3 means numbers less than 3, not 3 itself: an open circle at 3 with an arrow to the left. x ≤ 3 includes 3: a filled circle at 3 with an arrow to the left.", "minWords": 8},

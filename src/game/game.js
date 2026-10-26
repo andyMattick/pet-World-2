@@ -177,6 +177,8 @@ function normalize(raw){
       games:(Array.isArray(s.dash?.games) ? s.dash.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, total:Math.max(0, +g.total || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🛒 Supermarket Dash (docs/SUPERMARKET-DASH.md)
     s.penguin = {best:Math.max(0, Math.min(3, Math.round(+s.penguin?.best || 0))), day:typeof s.penguin?.day === 'string' ? s.penguin.day : '', coinsToday:Math.max(0, Math.round(+s.penguin?.coinsToday || 0)),
       games:(Array.isArray(s.penguin?.games) ? s.penguin.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), dunked:Math.max(0, +g.dunked || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🐧 Penguin Push (docs/PENGUIN-PUSH.md)
+    s.detective = {best:Math.max(0, Math.min(3, Math.round(+s.detective?.best || 0))), day:typeof s.detective?.day === 'string' ? s.detective.day : '', coinsToday:Math.max(0, Math.round(+s.detective?.coinsToday || 0)),
+      games:(Array.isArray(s.detective?.games) ? s.detective.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, solved:Math.max(0, Math.min(3, +g.solved || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🔍 Potion Detective (docs/POTION-DETECTIVE.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
@@ -4124,11 +4126,68 @@ const POTION_GEN = {
       const x = lvl === 3 ? pick([RQ.of(1, 2), RQ.of(3, 4), RQ.of(2, 3), [rand(2, 9), 1]]) : [rand(2, 12), 1], y = lvl === 3 ? pick([RQ.of(1, 4), RQ.of(1, 2), [rand(2, 6), 1]]) : [rand(2, 12), 1];
       const srcs = lvl === 1 ? ['x + y', 'x × y', `${a} × x + y`, 'x − y'] : [`${a} × x + ${b} × y`, `x × y − ${a}`, `${a} × x − y`, `x ÷ y + ${a}`, `${a} × ( x + y )`];
       const src = pick(srcs); if (src.includes('x ÷ y') && (x[1] !== 1 || y[1] !== 1 || x[0] % y[0])) return null;
-      return evalProblem(src, {x, y}, {title:'Ingredients'});
+      return evalProblem(src, {x, y}, {title:'Test Tubes'});
+    });
+  },
+  /* ----- station 2: Test Tubes (more evaluating; added Oct 26, 2026 to match Khan unit 6) ----- */
+  /* evaluating with two variables: fractions and mixed numbers (Khan: "fractions & decimals") */
+  evalMultiFrac(lvl){
+    return tryGen(() => {
+      const a = rand(2, 6), b = rand(2, 5), F1 = [RQ.of(1, 2), RQ.of(1, 4), RQ.of(3, 4), RQ.of(1, 3), RQ.of(2, 3)], F2 = [...F1, RQ.of(3, 2), RQ.of(5, 2), RQ.of(5, 4), [rand(2, 6), 1]];
+      const x = pick(lvl === 1 ? F1 : F2), y = pick(lvl === 1 ? F1 : F2);
+      if ((x[1] === 1 && y[1] === 1) || (x[0] === y[0] && x[1] === y[1])) return null;
+      const srcs = lvl === 1 ? ['x + y', 'x × y', 'x − y'] : lvl === 2 ? [`${a} × x + y`, `x × y + ${a}`, 'x ÷ y', `${a} × y − x`] : [`${a} × x − ${b} × y`, `${a} × ( x + y )`, 'x × y ÷ x', `x ÷ y + ${a}`, `${a} × x × y`];
+      return evalProblem(pick(srcs), {x, y}, {title:'Test Tubes', helper:'Put each fraction in for its letter, then use the order of operations. Keep the answer in simplest form.'});
+    });
+  },
+  /* expression value intuition: which is greater, or what happens when the letter grows, without working it all out */
+  exprIntuition(lvl){
+    const n = rand(2, 9), m = rand(12, 60), d1 = rand(2, 5), d2 = d1 + rand(1, 4), v = pick(['x', 'n', 'y']);
+    const grow = ['It gets bigger', 'It gets smaller', 'It stays the same'];
+    const T = lvl === 1 ? pick([
+      [`${v} is a positive number. Which is greater: ${v} + ${n} or ${v} − ${n}?`, `${v} + ${n}`, [`${v} − ${n}`, 'They are always equal'], 'Adding makes a number bigger; subtracting makes it smaller.'],
+      [`${v} is a number greater than 1. Which is greater: ${n}${v} or ${v}?`, `${n}${v}`, [v, 'They are always equal'], `${n}${v} means ${n} groups of ${v}.`],
+      [`${v} is a number greater than 1. Which is greater: ${v} ÷ ${n} or ${v}?`, v, [`${v} ÷ ${n}`, 'They are always equal'], `Dividing ${v} into ${n} equal parts makes each part smaller than ${v}.`]])
+    : lvl === 2 ? pick([
+      [`${v} is a positive number. Which is greater: ${v} ÷ ${d1} or ${v} ÷ ${d2}?`, `${v} ÷ ${d1}`, [`${v} ÷ ${d2}`, 'They are always equal'], `Splitting into ${d1} parts gives bigger parts than splitting into ${d2}.`],
+      (() => { const dd = `0.${rand(2, 9)}`; return [`Without working it out, which is greater: ${dd} × ${m} or ${m}?`, `${m}`, [`${dd} × ${m}`, 'They are equal'], 'Multiplying by a number less than 1 makes it smaller.']; })(),
+      [`${v} is a number greater than 1. Which is greater: ${m} ÷ ${v} or ${m}?`, `${m}`, [`${m} ÷ ${v}`, 'They are always equal'], `Dividing ${m} by a number bigger than 1 makes it smaller.`]])
+    : pick([
+      [`If ${v} gets bigger, what happens to ${m} − ${v}?`, grow[1], [grow[0], grow[2]], `You take away more, so less is left.`],
+      [`If ${v} gets bigger (and stays positive), what happens to ${m} ÷ ${v}?`, grow[1], [grow[0], grow[2]], `Sharing ${m} among more groups makes each group smaller.`],
+      [`If ${v} gets bigger, what happens to ${n}${v} + ${rand(1, 9)}?`, grow[0], [grow[1], grow[2]], `${n} times a bigger number is bigger.`],
+      [`If ${v} gets bigger, what happens to ${v} ÷ ${n}?`, grow[0], [grow[1], grow[2]], `A bigger amount split into ${n} parts gives bigger parts.`],
+      [`If ${v} gets bigger, what happens to ${m} − ${n}${v}?`, grow[1], [grow[0], grow[2]], `${n}${v} grows, and you take it away from ${m}.`]]);
+    const [ask, right, wrongs, why] = T;
+    const opts = choiceOf({text:right}, wrongs.map(w => ({text:w, mis:null})));
+    return {title:'Test Tubes', ctx:ask, bubble:ask, helper:'Think about what each operation does to a number. You don’t have to work it out.', visual:'',
+      steps:[{name:'Think it through', type:'concept', kind:'choice', prompt:lvl === 3 ? 'What happens?' : 'Which is greater?', options:opts, hint:() => why}]};
+  },
+  /* evaluating expressions in word problems: a formula from a story */
+  evalWord(lvl){
+    return tryGen(() => {
+      const a = rand(2, 9), b = rand(2, 15), [e, nm] = pick(LEMON_KIDS);
+      const T = pick(lvl === 1 ? [
+        [`${a} × p + ${b}`, 'p', rand(2, 10), `A potion kit costs ${b} dollars, plus ${a} dollars for each potion p inside. How many dollars is a kit with ? potions?`],
+        [`${a} × h`, 'h', rand(2, 12), `${nm} brews ${a} bottles every hour. The expression ${a}h gives the bottles after h hours. How many bottles after ? hours?`],
+        [`c ÷ ${a}`, 'c', a * rand(2, 9), `${nm} shares c crystals equally among ${a} jars. How many crystals go in each jar when c = ??`]]
+      : lvl === 2 ? [
+        [`${b} + ${a} × m`, 'm', rand(2, 12), `A broomstick ride costs ${b} dollars plus ${a} dollars per mile. The expression ${b} + ${a}m gives the cost for m miles. How much for ? miles?`],
+        [`${a} × ( w + ${b} )`, 'w', rand(2, 10), `Each of ${a} cauldrons holds w cups of water and ${b} cups of dew, so the total is ${a}(w + ${b}) cups. How many cups when w = ??`],
+        [`${b * a} − ${a} × d`, 'd', b > 2 ? rand(2, b - 1) : 1, `${nm} starts with ${b * a} drops and uses ${a} drops each day, so ${b * a} − ${a}d drops are left after d days. How many are left after ? days?`]]
+      : [
+        [`4 × s`, 's', rand(3, 15), `The perimeter of a square spell circle is 4s, where s is a side length in feet. What is the perimeter when s = ? feet?`],
+        [`s ^ 2`, 's', rand(3, 12), `The area of a square potion rug is s², where s is the side length in feet. What is the area when s = ? feet?`],
+        [`( 9 × c ) ÷ 5 + 32`, 'c', 5 * rand(1, 8), `To change Celsius to Fahrenheit, use 9c ÷ 5 + 32. The cauldron is ? degrees Celsius. How hot is it in Fahrenheit?`],
+        [`${a} × t + ${b} × r`, 't', rand(2, 6), `Tickets cost ${a} dollars for each child t and ${b} dollars for each grown-up r. What is the cost for ? children and ${'R'} grown-ups?`]]);
+      const [src, letter, val, story] = T;
+      if (val < 2) return null;   // "after 1 days" reads wrong
+      if (src.includes('r')) { const r = rand(1, 4); return evalProblem(src, {t:[val, 1], r:[r, 1]}, {title:'Test Tubes', bubble:story.replace('?', val).replace('R', r), helper:'Put the numbers in for the letters, then work it out.'}); }
+      return evalProblem(src, {[letter]:[val, 1]}, {title:'Test Tubes', bubble:story.replace('?', val), helper:'Find the letter in the formula, put the number in for it, then work it out.'});
     });
   },
 
-  /* ----- station 2: Recipe Cards (writing expressions) ----- */
+  /* ----- station 3: Recipe Cards (writing expressions) ----- */
   writeBasic(lvl){
     const n = rand(2, 12), v = pick(['n', 'x', 'p']);
     const T = pick([
@@ -4205,7 +4264,7 @@ const POTION_GEN = {
       visual:`<div style="text-align:center; font-size:1.6rem">${e} ${g[0]}</div>`, steps, ...(steps.length > 1 ? {answerSteps:[0]} : {})};
   },
 
-  /* ----- station 3: Mixing Bowl (GCF and LCM) ----- */
+  /* ----- station 4: Mixing Bowl (LCM and GCF) ----- */
   gcf(lvl){
     let a, b, G; do { G = rand(2, lvl === 1 ? 6 : lvl === 2 ? 12 : 15); const m = rand(2, lvl === 1 ? 5 : 8); let k; do { k = rand(2, lvl === 1 ? 5 : 8); } while (gcd(m, k) !== 1 || k === m); a = G * m; b = G * k; } while (a > (lvl === 3 ? 120 : 60) || b > (lvl === 3 ? 120 : 60));
     const L = a * b / G, smaller = [...Array(G).keys()].map(i => i + 1).filter(d => G % d === 0 && d < G && d > 1);
@@ -4254,13 +4313,13 @@ const POTION_GEN = {
         ...(follow ? [numStep('Then', 'compute', S[1], S[2], {slowOK:true, hint:() => `Use your ${useG ? 'GCF' : 'LCM'}, ${ans}.`})] : [])], answerSteps:[1]};
   },
 
-  /* ----- station 4: Cauldron (distributive property, equivalent expressions) ----- */
+  /* ----- factoring with numbers (station 4, Mixing Bowl, since Oct 26, 2026: Khan teaches it with the GCF) ----- */
   factorDist(lvl){
     if (lvl === 3) {   // level 3: three numbers share the GCF
       let G, m; do { G = rand(2, 9); m = shuffle([2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3); } while (m.reduce((x, y) => gcd(x, y)) !== 1 || m.some(k => G * k > 100));
       const [a, b, c] = m.map(k => G * k), d = [...Array(G).keys()].map(i => i + 1).find(x => x > 1 && x < G && G % x === 0), right = `${G}(${m.join(' + ')})`;
       const wrongs = [{text:`${G}(${a} + ${b} + ${c})`, mis:'distributeWrong'}, {text:`${G}(${m[0]} + ${m[1]} + ${c})`, mis:'distributeWrong'}, ...(d ? [{text:`${d}(${a / d} + ${b / d} + ${c / d})`, mis:'notGreatest'}] : [])];
-      return {title:'Cauldron', ctx:`${a} + ${b} + ${c} = ${right}`, bubble:`Write ${a} + ${b} + ${c} as the GCF times a sum.`, helper:'Find the GCF of all three numbers, then divide each one by it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${a} + ${b} + ${c}</div>`,
+      return {title:'Mixing Bowl', ctx:`${a} + ${b} + ${c} = ${right}`, bubble:`Write ${a} + ${b} + ${c} as the GCF times a sum.`, helper:'Find the GCF of all three numbers, then divide each one by it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${a} + ${b} + ${c}</div>`,
         steps:[numStep('GCF', 'compute', `GCF of ${a}, ${b}, and ${c} = ?`, G, {mis:v => d && G % v === 0 && v < G && v > 1 ? 'notGreatest' : null}),
           {name:'Factored', type:'concept', kind:'choice', prompt:`${a} + ${b} + ${c} = ?`, options:choiceOf({text:right}, wrongs), hint:() => `${a} ÷ ${G} = ${m[0]}, ${b} ÷ ${G} = ${m[1]}, ${c} ÷ ${G} = ${m[2]}.`}], answerSteps:[1]};
     }
@@ -4268,10 +4327,11 @@ const POTION_GEN = {
     const [p, q] = [a / G, b / G], d = [...Array(G).keys()].map(i => i + 1).find(x => x > 1 && x < G && G % x === 0);
     const right = `${G}(${p} + ${q})`, wrongs = [{text:`${G}(${a} + ${b})`, mis:'distributeWrong'}, {text:`${G}(${p} + ${b})`, mis:'distributeWrong'}];
     if (d) wrongs.push({text:`${d}(${a / d} + ${b / d})`, mis:'notGreatest'});
-    return {title:'Cauldron', ctx:`${a} + ${b} = ${right}`, bubble:`Write ${a} + ${b} as the GCF times a sum.`, helper:'Find the GCF, then divide each number by it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${a} + ${b}</div>`,
+    return {title:'Mixing Bowl', ctx:`${a} + ${b} = ${right}`, bubble:`Write ${a} + ${b} as the GCF times a sum.`, helper:'Find the GCF, then divide each number by it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${a} + ${b}</div>`,
       steps:[numStep('GCF', 'compute', `GCF of ${a} and ${b} = ?`, G, {mis:v => d && G % v === 0 && v < G && v > 1 ? 'notGreatest' : null}), numStep(`${a} ÷ ${G}`, 'compute', `${a} ÷ ${G} = ?`, p, {fact:fx(G, p, true)}), numStep(`${b} ÷ ${G}`, 'compute', `${b} ÷ ${G} = ?`, q, {fact:fx(G, q, true)}),
         {name:'Factored', type:'concept', kind:'choice', prompt:`${a} + ${b} = ?`, options:choiceOf({text:right}, wrongs), hint:() => `${G} × ${p} = ${a} and ${G} × ${q} = ${b}.`}], answerSteps:[3]};
   },
+  /* ----- station 5: Cauldron (distributive property with variables, factoring) ----- */
   distVar(lvl){
     const a = rand(2, 9), b = rand(1, 9), c = rand(2, 5), v = pick(['x', 'n', 'y']);
     if (lvl === 3) {
@@ -4288,13 +4348,56 @@ const POTION_GEN = {
       steps:[numStep(`${a} × ${term(cv, v)}`, 'compute', `${a} × ${term(cv, v)} = ?${v}`, a * cv, {fact:fx(a, cv)}), numStep(`${a} × ${b}`, 'compute', `${a} × ${b} = ?`, a * b, {fact:fx(a, b)}),
         {name:'Expanded', type:'concept', kind:'choice', prompt:`${text} = ?`, options:exprChoice(right, wrongs), hint:() => `${a} × ${term(cv, v)} and ${a} × ${b}.`}], answerSteps:[2]};
   },
+  /* create equivalent expressions by factoring: the factor is given, and it isn't always the GCF */
+  factorEquiv(lvl){
+    const v = pick(['x', 'n', 'y']), G = rand(2, 6), m = rand(2, 6), k = rand(1, 7);
+    const ks = [...Array(G).keys()].map(i => i + 1).filter(d => d > 1 && G % d === 0);
+    const f = lvl === 1 ? G : pick(ks), text = `${term(G * m, v)} + ${G * k}`, p = G * m / f, q = G * k / f;
+    if (lvl < 3) return {title:'Cauldron', ctx:`${text} = ${f}(?${v} + ?)`, bubble:`Fill in the blanks: ${text} = ${f}( __${v} + __ ).`, helper:`Divide each term by ${f}.`, visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${text} = ${f}(▢${v} + ▢)</div>`,
+      steps:[numStep(`${term(G * m, v)} ÷ ${f}`, 'compute', `${G * m} ÷ ${f} = ?`, p, {fact:fx(f, p, true), mis:w => w === G * m ? 'distributeWrong' : null}), numStep(`${G * k} ÷ ${f}`, 'compute', `${G * k} ÷ ${f} = ?`, q, {fact:fx(f, q, true), mis:w => w === G * k ? 'distributeWrong' : null})], answerSteps:[0, 1]};
+    /* level 3: which factored form is equivalent (more than one factor works, but only one choice is right) */
+    const right = EX(`${f}(${term(p, v)} + ${q})`, x => f * (p * x + q));
+    const wrongs = [{...EX(`${f}(${term(G * m, v)} + ${q})`, x => f * (G * m * x + q)), mis:'distributeWrong'}, {...EX(`${f}(${term(p, v)} + ${G * k})`, x => f * (p * x + G * k)), mis:'distributeWrong'}, EX(`${term(p, v)} + ${q}`, x => p * x + q)];
+    return {title:'Cauldron', ctx:`equiv factor ${text}`, bubble:`Which expression is equivalent to ${text}?`, helper:'Multiply the factored form back out to check it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${text}</div>`,
+      steps:[{name:'Equivalent', type:'concept', kind:'choice', prompt:`${text} = ?`, options:exprChoice(right, wrongs), hint:() => `Check: ${f} × ${term(p, v)} = ${term(G * m, v)} and ${f} × ${q} = ${G * k}.`}]};
+  },
+  /* factor with the distributive property (variables): pull out the GCF */
+  factorVar(lvl){
+    const v = pick(['x', 'n', 'y']);
+    let G, m, k, c3; do { G = rand(2, lvl === 1 ? 5 : 9); m = rand(1, 7); k = rand(1, 9); c3 = lvl === 3 ? rand(1, 7) : null; } while (gcd(gcd(m, k), c3 || 0) !== 1 || (lvl === 1 && m === 1));
+    const terms = lvl === 3 ? [term(G * m, 'x'), term(G * c3, 'y'), String(G * k)] : [term(G * m, v), String(G * k)], text = terms.join(' + ');
+    const inside = lvl === 3 ? `${term(m, 'x')} + ${term(c3, 'y')} + ${k}` : `${term(m, v)} + ${k}`, right = `${G}(${inside})`;
+    const d = [...Array(G).keys()].map(i => i + 1).find(x => x > 1 && x < G && G % x === 0);
+    const wrongs = [{text:`${G}(${terms.join(' + ')})`, mis:'distributeWrong'}, {text:lvl === 3 ? `${G}(${term(m, 'x')} + ${term(c3, 'y')} + ${G * k})` : `${G}(${term(m, v)} + ${G * k})`, mis:'distributeWrong'},
+      ...(d ? [{text:`${d}(${lvl === 3 ? `${term(G * m / d, 'x')} + ${term(G * c3 / d, 'y')} + ${G * k / d}` : `${term(G * m / d, v)} + ${G * k / d}`})`, mis:'notGreatest'}] : [])];
+    const nums = lvl === 3 ? [G * m, G * c3, G * k] : [G * m, G * k];
+    return {title:'Cauldron', ctx:`factor ${text}`, bubble:`Factor ${text} using the greatest common factor.`, helper:'Find the GCF of the numbers, then divide every term by it.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${text}</div>`,
+      steps:[numStep('GCF', 'compute', `GCF of ${nums.join(' and ')} = ?`, G, {mis:w => w > 1 && G % w === 0 && w < G ? 'notGreatest' : null}), {name:'Factored', type:'concept', kind:'choice', prompt:`${text} = ?`, options:choiceOf({text:right}, wrongs), hint:() => `Divide each term by ${G}.`}], answerSteps:[1]};
+  },
+
+  /* ----- station 6: Potion Shelf (combining like terms, equivalent expressions; added Oct 26, 2026) ----- */
+  combineLike(lvl){
+    const v = pick(['x', 'n', 'm']), a = rand(2, 9), b = rand(2, 9), c = rand(1, 12), d = rand(1, 12);
+    if (lvl === 1) { const text = `${term(a, v)} + ${term(b, v)}`;
+      return {title:'Potion Shelf', ctx:`${text}`, bubble:`Combine like terms: ${text} = ?${v}`, helper:`${term(a, v)} is ${a} ${v}'s, and ${term(b, v)} is ${b} more.`.replace("'", '’'), visual:`<div style="text-align:center; font-size:1.8rem">🍶 ${text}</div>`,
+        steps:[numStep(`${v}-terms`, 'compute', `${text} = ?${v}`, a + b, {mis:w => w === a * b ? 'likeTermsWrong' : null})]}; }
+    if (lvl === 2) { const text = `${term(a, v)} + ${c} + ${term(b, v)} + ${d}`;
+      return {title:'Potion Shelf', ctx:text, bubble:`Combine like terms: ${text}`, helper:'Add the terms with the letter together, and the plain numbers together.', visual:`<div style="text-align:center; font-size:1.8rem">🍶 ${text}</div>`,
+        steps:[numStep(`${v}-terms`, 'compute', `${term(a, v)} + ${term(b, v)} = ?${v}`, a + b, {mis:w => w === a + b + c + d || w === a * b ? 'likeTermsWrong' : null}), numStep('Numbers', 'compute', `${c} + ${d} = ?`, c + d, {}),
+          {name:'Combined', type:'concept', kind:'choice', prompt:`${text} = ?`, options:choiceOf({text:`${term(a + b, v)} + ${c + d}`}, [{text:term(a + b + c + d, v), mis:'likeTermsWrong'}, {text:`${term(a * b, v)} + ${c + d}`, mis:'likeTermsWrong'}]), hint:() => 'Letter terms with letter terms, numbers with numbers.'}], answerSteps:[2]}; }
+    let big, small; do { big = rand(5, 12); small = rand(1, big - 1); } while (big - small === 1 && Math.random() < 0.5);
+    const e = rand(2, 9), text = `${term(big, v)} + ${c + e} − ${term(small, v)} − ${e}`;
+    return {title:'Potion Shelf', ctx:text, bubble:`Combine like terms: ${text}`, helper:'Keep each sign with the term after it: − ' + term(small, v) + ' takes away ' + small + ' ' + v + '’s.', visual:`<div style="text-align:center; font-size:1.8rem">🍶 ${text}</div>`,
+      steps:[numStep(`${v}-terms`, 'compute', `${term(big, v)} − ${term(small, v)} = ?${v}`, big - small, {mis:w => w === big + small ? 'likeTermsWrong' : null}), numStep('Numbers', 'compute', `${c + e} − ${e} = ?`, c, {}),
+        {name:'Combined', type:'concept', kind:'choice', prompt:`${text} = ?`, options:choiceOf({text:`${term(big - small, v)} + ${c}`}, [{text:`${term(big + small, v)} + ${c}`, mis:'likeTermsWrong'}, {text:term(big - small + c, v), mis:'likeTermsWrong'}, {text:`${term(big - small, v)} + ${c + 2 * e}`}]), hint:() => 'Subtracting a term takes it away.'}], answerSteps:[2]};
+  },
   equivExpr(lvl){
     const a = rand(2, 7), b = rand(2, 7), c = rand(1, 9), k = rand(2, 5);
     const T = lvl === 1 ? [`${term(a, 'x')} + ${term(b, 'x')}`, EX(`${term(a + b, 'x')}`, x => (a + b) * x), [{...EX(`${term(a * b, 'x')}`, x => a * b * x), mis:'likeTermsWrong'}, {...EX(`${a + b}x²`, x => (a + b) * x * x), mis:'likeTermsWrong'}, EX(`${term(a + b + 1, 'x')}`, x => (a + b + 1) * x)]]
       : lvl === 2 ? [`${term(a, 'x')} + ${c} + ${term(b, 'x')}`, EX(`${term(a + b, 'x')} + ${c}`, x => (a + b) * x + c), [{...EX(`${term(a + b + c, 'x')}`, x => (a + b + c) * x), mis:'likeTermsWrong'}, {...EX(`${term(a * b, 'x')} + ${c}`, x => a * b * x + c), mis:'likeTermsWrong'}, EX(`${term(a + b, 'x')} + ${c + 1}`, x => (a + b) * x + c + 1)]]
       : [`${k}(x + ${c}) + ${term(a, 'x')}`, EX(`${term(k + a, 'x')} + ${k * c}`, x => (k + a) * x + k * c), [{...EX(`${term(k + a, 'x')} + ${c}`, x => (k + a) * x + c), mis:'distributeWrong'}, {...EX(`${term(a + 1, 'x')} + ${k * c}`, x => (a + 1) * x + k * c), mis:'distributeWrong'}, {...EX(`${term(k + a + k * c, 'x')}`, x => (k + a + k * c) * x), mis:'likeTermsWrong'}]];
     const [text, right, wrongs] = T;
-    return {title:'Cauldron', ctx:`equiv ${text}`, bubble:`Which expression is equivalent to ${text}?`, helper:'Combine like terms: x-terms with x-terms, numbers with numbers.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${text}</div>`,
+    return {title:'Potion Shelf', ctx:`equiv ${text}`, bubble:`Which expression is equivalent to ${text}?`, helper:'Combine like terms: x-terms with x-terms, numbers with numbers.', visual:`<div style="text-align:center; font-size:1.8rem">🫕 ${text}</div>`,
       steps:[{name:'Equivalent', type:'concept', kind:'choice', prompt:`${text} = ?`, options:exprChoice(right, wrongs), hint:() => lvl === 3 ? 'Distribute first, then combine the x-terms.' : 'Only terms with the same letter can be combined.'}]};
   }
 };
@@ -4364,7 +4467,7 @@ const EQ_FORMS = {
   div: (a, x) => [`x ÷ ${a} = ${x / a}`, `Multiply both sides by ${a}`, `Divide both sides by ${a}`, x / (a * a)]
 };
 const POTION2_GEN = {
-  /* ----- station 5: Balance Scale (one-step equations) ----- */
+  /* ----- station 7: Balance Scale (one-step equations) ----- */
   testSol(lvl){
     const a = rand(2, 9), b = rand(1, 15), kind = pick(lvl === 1 ? ['add', 'mul'] : lvl === 2 ? ['lin', 'lin', 'mul', 'sub'] : ['paren', 'paren', 'div', 'sub']), x = kind === 'div' ? a * rand(1, 8) : rand(1, 10);   // level 3: parentheses and division
     const [text, f] = kind === 'add' ? [`x + ${b} = ${x + b}`, v => v + b] : kind === 'mul' ? [`${a}x = ${a * x}`, v => a * v] : kind === 'sub' ? [`${a}x ${MINUS} ${b} = ${a * x - b}`, v => a * v - b]
@@ -4439,7 +4542,7 @@ const POTION2_GEN = {
         numStep('Solve', 'compute', `${right}, x = ?`, ans, {slowOK:true, mis:v => v !== ans && (v === Number(right.split(' = ')[1]) - a || v === Number(right.split(' = ')[1]) + a) && lvl > 0 ? 'inverseWrong' : null})], answerSteps:[1]};
   },
 
-  /* ----- station 6: Potion Limits (inequalities, dependent and independent variables) ----- */
+  /* ----- station 8: Potion Limits (inequalities, dependent and independent variables) ----- */
   testIneq(lvl){
     const op = pick(lvl === 1 ? ['>', '<'] : ['>', '<', '≥', '≤']), c = lvl === 3 ? rand(-6, 6) : rand(2, 15), side = op === '>' || op === '≥' ? 1 : -1, strict = op === '>' || op === '<';
     const visual = `<div style="text-align:center; font-size:2rem">🚦 x ${op} ${sgn(c)}</div>`, helper = strict ? 'Without the line under the sign, the number itself does not count.' : 'The line under the sign means the number itself counts too.';
@@ -5333,6 +5436,7 @@ function arcadeModuleMessage(event){
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'potion-detective') earned = Math.max(0, Math.min(3, score));   // 1 ticket per case solved, up to 3 (docs/POTION-DETECTIVE.md)
   else if (run.gameId === 'penguin-push') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/PENGUIN-PUSH.md)
   else if (run.gameId === 'supermarket-dash') earned = Math.max(0, Math.min(3, score));   // 1 ticket per checkout star, up to 3 a dash (docs/SUPERMARKET-DASH.md)
   else if (run.gameId === 'pet-surgery') earned = Math.min(3, Math.floor(score / 3));   // 1 ticket per 3 patients healed, up to 3 a shift (docs/PET-SURGERY.md)
@@ -7045,6 +7149,41 @@ window.addEventListener('message', e => {
   logEvent({k:'penguin', s:right, n:tries, title:`${r.won ? 'won' : 'battle over'}, ${dunked} walrus${dunked === 1 ? '' : 'es'} dunked, ${right} of ${tries} orders right${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🐧 ${r.won ? 'You won the floe!' : `${dunked} walrus${dunked === 1 ? '' : 'es'} dunked!`}${stars ? ` ${'⭐'.repeat(stars)}` : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= PENGUIN_COINS_PER_DAY ? ' (Today’s Penguin Push coins are all earned.)' : ''}`);
+});
+/* ---------- 🔍 Potion Detective (public/arcade/potion-detective, docs/POTION-DETECTIVE.md) ----------
+   A mystery: every clue is a Unit 6 problem whose answer is the thief's evidence. Opened from the Potion Shelf (the last
+   Unit 6 station) and also an Arcade game. Played from the Potion Lab it pays Pet World coins: 1 per clue solved, up to
+   DETECTIVE_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const DETECTIVE_COINS_PER_DAY = 20;
+function detectiveButtonHTML(){
+  const best = S.detective?.best || 0;
+  return `<button type="button" class="btn" data-detective>🔍 Potion Detective${best ? ` · best ${best} of 3` : ''}</button>`;
+}
+function openDetective(){
+  if ($('#detectiveWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'detectiveWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Potion Detective');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🔍 Potion Detective</b><button type="button" class="btn small" data-detective-close>Done</button></div><iframe src="/arcade/potion-detective/?from=potion" title="Potion Detective"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-detective-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('potion'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#detectiveWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'detective:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, solved = Math.max(0, Math.min(3, Math.round(+r.solved || 0)));
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.detective, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = solved > c.best;
+  c.games = [...c.games, {t:Date.now(), solved, right, tries, missed}].slice(-30);
+  if (newBest) c.best = solved;
+  const coins = Math.min(right, Math.max(0, DETECTIVE_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'detective', s:right, n:tries, title:`${solved} of 3 cases solved, ${right} of ${tries} clues solved${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🔍 ${solved} of 3 cases solved!${newBest && solved ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= DETECTIVE_COINS_PER_DAY ? ' (Today’s detective coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10247,7 +10386,7 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -10255,6 +10394,7 @@ $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-surgery]')) { openSurgery(e.target.closest('[data-surgery]').dataset.surgery); return; }
   if (e.target.closest('[data-dash]')) { openDash(); return; }
   if (e.target.closest('[data-penguin]')) { openPenguin(); return; }
+  if (e.target.closest('[data-detective]')) { openDetective(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
@@ -11850,6 +11990,7 @@ function placeOnScreen(){
   if ($('#surgeryWrap')) return 'surgery';
   if ($('#dashWrap')) return 'dash';
   if ($('#penguinWrap')) return 'penguin';
+  if ($('#detectiveWrap')) return 'detective';
   if ($('#bibleWrap')) return 'bible';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
@@ -11883,6 +12024,7 @@ function placeLabel(key){
   if (kind === 'surgery') return '🩺 Dr. Paws’ Surgery Center';
   if (kind === 'dash') return '🛒 Supermarket Dash';
   if (kind === 'penguin') return '🐧 Penguin Push';
+  if (kind === 'detective') return '🔍 Potion Detective';
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
@@ -11905,6 +12047,7 @@ function eventText(e){
   if (e.k === 'surgery') return `🩺 Dr. Paws’ Surgery: ${e.title}`;
   if (e.k === 'dash') return `🛒 Supermarket Dash: ${e.title}`;
   if (e.k === 'penguin') return `🐧 Penguin Push: ${e.title}`;
+  if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
@@ -11993,6 +12136,7 @@ function subjectOnScreen(){
   if ($('#surgeryWrap')) return 'math';   // the surgery game is Bakery practice
   if ($('#dashWrap')) return 'math';   // Supermarket Dash is Market practice
   if ($('#penguinWrap')) return 'math';   // Penguin Push is Ice Rink practice
+  if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#bibleWrap')) return 'bible';
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';
