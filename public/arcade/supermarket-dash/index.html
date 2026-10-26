@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supermarket Dash</title>
+<!-- Pet World: served at /arcade/supermarket-dash/ (docs/SUPERMARKET-DASH.md). Played from the Market Stall's Discount Bin
+     (?from=market, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: the Market skills
+     (Khan 6th grade unit 3, rates and percentages). It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#FFF6E8; --card:#FFFFFF; --ink:#2B2118; --muted:#6E5E4E; --edge:#E5D3B8; --accent:#D9480F; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --slot:#FFEBD0; --tag:#FFE066;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1D1712; --card:#2A211A; --ink:#F6EBDD; --muted:#C4B29C; --edge:#45372A; --accent:#FF8A4C; --accent-ink:#1D1712;
+      --ok:#69DB7C; --bad:#FF8787; --slot:#3A2C1F; --tag:#8A6D00; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:900px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.8em; margin:6px 0 4px} h2{font-size:1.15em; margin:0 0 8px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:disabled{opacity:.5; cursor:default}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .top{position:sticky; top:0; z-index:3; background:var(--bg); padding:6px 0 8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .pill{background:var(--slot); border-radius:999px; padding:4px 10px; font-weight:700}
+  .pill.warn{background:var(--bad); color:#fff}
+  .budget{flex:1 1 100%; height:14px; background:var(--slot); border-radius:7px; overflow:hidden; position:relative}
+  .budget i{display:block; height:100%; background:var(--ok); transition:width .3s}
+  .budget.over i{background:var(--bad)}
+  .aisles{display:flex; gap:6px; overflow-x:auto; padding-bottom:4px}
+  .aisles button{flex:0 0 auto; border:2px solid var(--edge); background:var(--card); border-radius:999px; padding:6px 12px; font-weight:700}
+  .aisles button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .shelf{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin-top:8px}
+  .item{text-align:left; border:2px solid var(--edge); background:var(--card); border-radius:14px; padding:8px 10px; display:flex; flex-direction:column; gap:2px; min-height:110px}
+  .item .e{font-size:1.8em; line-height:1}
+  .item .deal{background:var(--tag); border-radius:6px; padding:1px 6px; font-weight:700; font-size:.9em; align-self:flex-start}
+  .item.in{opacity:.55}
+  .cart{margin-top:10px}
+  .cart ul{list-style:none; margin:0; padding:0}
+  .cart li{display:flex; gap:8px; align-items:center; padding:4px 0; border-bottom:1px dashed var(--edge)}
+  .cart li span{flex:1}
+  .cart li b{font-variant-numeric:tabular-nums}
+  .x{border:none; background:none; font-size:1.1em; padding:2px 6px}
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:16px; z-index:9}
+  .modal .card{max-width:440px; width:100%; margin:0}
+  .modal .e{font-size:2.6em}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px}
+  .answer input{flex:1 1 140px; min-width:0; font-size:1.3em; padding:8px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .answer input:focus{outline:3px solid var(--accent); outline-offset:1px}
+  .sizes{display:grid; gap:8px; margin-top:8px}
+  .sizes button{text-align:left; border:2px solid var(--edge); background:var(--slot); border-radius:12px; padding:8px 12px}
+  .msg{min-height:1.4em; font-weight:700; margin:8px 0 0}
+  .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+  .stats div{flex:1 1 120px; background:var(--slot); border-radius:12px; padding:10px; text-align:center}
+  .stats b{display:block; font-size:1.5em}
+  .receipt{font-family:ui-monospace, monospace; background:var(--card); border:2px dashed var(--edge); border-radius:8px; padding:10px 12px; max-width:380px}
+  .receipt div{display:flex; justify-content:space-between; gap:8px}
+  .toast{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:8px 16px; border-radius:999px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:10}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="modal"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_MARKET = params.get('from') === 'market';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const BUDGET = 10000, TIME = 240;   // cents, seconds
+const app = document.getElementById('app'), modal = document.getElementById('modal');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const $$ = c => `$${(c / 100).toFixed(2)}`;
+let best = 0; try { best = +localStorage.getItem('supermarket-dash:best') || 0; } catch(e){}
+
+/* ---------- the store: 6 aisles, 12 to 16 items each, a new deal on every item each dash ---------- */
+const STOCK = {
+  '🥦 Produce':[['🍎','Apples','lb'],['🍌','Bananas','lb'],['🥕','Carrots','lb'],['🍇','Grapes','lb'],['🥦','Broccoli','head'],['🍓','Strawberries','box'],['🥑','Avocados','avocado'],['🍋','Lemons','lemon'],['🍉','Watermelon','melon'],['🥔','Potatoes','lb'],['🍅','Tomatoes','lb'],['🌽','Corn','ear'],['🥒','Cucumbers','cucumber'],['🍍','Pineapple','pineapple'],['🍐','Pears','lb'],['🥬','Lettuce','head']],
+  '🥖 Bakery':[['🥖','Baguette','loaf'],['🍞','Bread','loaf'],['🥐','Croissants','croissant'],['🧁','Cupcakes','cupcake'],['🍩','Donuts','donut'],['🥯','Bagels','bagel'],['🍪','Cookies','cookie'],['🎂','Birthday cake','cake'],['🥧','Apple pie','pie'],['🫓','Pita bread','pack'],['🥨','Pretzels','pretzel'],['🍰','Cheesecake','slice'],['🧇','Waffles','box']],
+  '🧀 Dairy':[['🥛','Milk','gallon'],['🧀','Cheese','block'],['🥚','Eggs','dozen'],['🧈','Butter','pack'],['🍦','Yogurt cups','cup'],['🥤','Smoothies','bottle'],['🍶','Cream','carton'],['🧃','Juice boxes','box'],['🫕','Cream cheese','tub'],['🥛','Chocolate milk','bottle'],['🍮','Pudding cups','cup'],['🧀','String cheese','stick']],
+  '🥫 Pantry':[['🥫','Soup','can'],['🍝','Spaghetti','box'],['🍚','Rice','bag'],['🥜','Peanut butter','jar'],['🍯','Honey','jar'],['🫘','Beans','can'],['🥣','Cereal','box'],['🧂','Salt','box'],['🫒','Olive oil','bottle'],['🍅','Pasta sauce','jar'],['🥞','Pancake mix','box'],['🍫','Cocoa mix','box'],['🥫','Tuna','can'],['🍜','Ramen','pack']],
+  '🍿 Snacks':[['🍿','Popcorn','bag'],['🥨','Pretzel bag','bag'],['🍫','Chocolate bars','bar'],['🍬','Candy','bag'],['🥜','Trail mix','bag'],['🍘','Rice crackers','pack'],['🧃','Fruit snacks','box'],['🍪','Granola bars','bar'],['🥔','Chips','bag'],['🍭','Lollipops','lollipop'],['🫐','Dried fruit','bag'],['🧀','Cheese crackers','box'],['🥤','Lemonade','bottle'],['🍦','Ice pops','box']],
+  '🧊 Frozen':[['🍕','Frozen pizza','pizza'],['🍦','Ice cream','tub'],['🥟','Dumplings','bag'],['🍟','Fries','bag'],['🧇','Frozen waffles','box'],['🍗','Chicken nuggets','bag'],['🫛','Frozen peas','bag'],['🌯','Burritos','burrito'],['🍨','Ice cream bars','box'],['🥧','Pot pies','pie'],['🍤','Shrimp','bag'],['🥦','Veggie mix','bag']]
+};
+/* every deal returns {text, cents, skill, ...}; all prices are whole cents */
+const DEALS = [
+  // unit rates: n for $X, buy 1
+  () => { const n = pick([2, 3, 4, 5, 6, 8, 10]), each = rnd(25, 300); return {skill:'unitRate', text:`${n} for ${$$(n * each)}`, ask:'Buy 1. What does 1 cost?', cents:each}; },
+  // rate problems: per pound, buy k pounds / k at a price each
+  it => { const per = rnd(60, 450), k = pick([2, 3, 4, 5]); return it[2] === 'lb'
+    ? {skill:'rateProblems', text:`${$$(per)} per lb`, ask:`You need ${k} pounds. What do ${k} pounds cost?`, cents:per * k}
+    : {skill:'rateProblems', text:`${$$(per)} each`, ask:`You need ${k}. What do ${k} cost?`, cents:per * k}; },
+  // a rate scaled: n for $X, buy m
+  () => { const n = pick([2, 3, 4, 5]), each = rnd(30, 250), m = n * pick([2, 3]); return {skill:'rateProblems', text:`${n} for ${$$(n * each)}`, ask:`Buy ${m}. What do ${m} cost?`, cents:each * m}; },
+  // percent off (benchmark and finding percents)
+  () => { const pct = pick([10, 20, 25, 50, 75]), was = pick([4, 6, 8, 10, 12, 16, 20, 24]) * 100; return {skill:pct === 10 || pct === 50 || pct === 25 ? 'benchmarkPct' : 'findingPct', text:`Was ${$$(was)} · ${pct}% off`, ask:'What is the sale price?', cents:was * (100 - pct) / 100}; },
+  () => { const pct = pick([5, 15, 30, 40, 60]), was = pick([2, 4, 5, 6, 8, 10, 12, 15, 20]) * 100; return {skill:'findingPct', text:`Was ${$$(was)} · ${pct}% off`, ask:'What is the sale price?', cents:was * (100 - pct) / 100}; },
+  // pay a percent of the price (percent word problems)
+  () => { const pct = pick([40, 60, 70, 80, 90]), was = pick([3, 5, 6, 8, 10, 12, 15]) * 100; return {skill:'pctWord', text:`Coupon: pay ${pct}% of ${$$(was)}`, ask:'What do you pay?', cents:was * pct / 100}; },
+  // a fraction or decimal off (equivalent representations, percents from fraction models)
+  () => { const [f, d] = pick([['1/2', 2], ['1/4', 4], ['1/5', 5], ['1/10', 10]]), was = d * rnd(1, 6) * 100; return {skill:'pctEquivalent', text:`Was ${$$(was)} · take ${f} off`, ask:'What is the sale price?', cents:was - was / d}; },
+  () => { const [dc, p] = pick([['0.5', 50], ['0.25', 25], ['0.1', 10], ['0.2', 20]]), was = pick([4, 8, 12, 20]) * 100; return {skill:'pctEquivalent', text:`Was ${$$(was)} · save ${dc} of the price`, ask:'What is the sale price?', cents:was * (100 - p) / 100}; },
+  // comparing rates: two sizes, the better buy earns a star
+  it => { const sign = () => (Math.random() < .5 ? 1 : -1);
+    if (it[2] === 'lb') { const sb = pick([2, 3]), pa = rnd(150, 400), pb = sb * pa + sign() * rnd(20, 90);
+      return {skill:'compareRates', text:'2 sizes', sizes:[{label:`1 lb for ${$$(pa)}`, cents:pa, per:pa}, {label:`${sb} lb for ${$$(pb)}`, cents:pb, per:pb / sb}]}; }
+    const a = pick([8, 10, 12, 16]), b = a * pick([2, 3]), ua = rnd(15, 60), ub = ua + sign() * rnd(2, 8);
+    return {skill:'compareRates', text:'2 sizes', sizes:[{label:`${a} oz for ${$$(a * ua)}`, cents:a * ua, per:ua}, {label:`${b} oz for ${$$(b * ub)}`, cents:b * ub, per:ub}]}; }
+];
+const SKILL_NAMES = {unitRate:'Unit rates', rateProblems:'Rate problems', compareRates:'Comparing rates', benchmarkPct:'Benchmark percents', findingPct:'Finding percents', pctWord:'Percent word problems', pctEquivalent:'Percents, fractions and decimals'};
+function stockStore(){
+  const store = {};
+  for (const [aisle, items] of Object.entries(STOCK)) {
+    store[aisle] = shuffle(items).slice(0, Math.min(items.length, rnd(12, 16))).map((it, i) => {
+      let d = null, guard = 0;
+      while (!d && guard++ < 20) { const x = pick(DEALS)(it); if (x.sizes ? x.sizes.every(s => s.cents > 50 && s.cents < 2500) && x.sizes[0].per !== x.sizes[1].per : Number.isInteger(x.cents) && x.cents >= 25 && x.cents <= 2500) d = x; }
+      return {id:`${aisle}-${i}`, emoji:it[0], name:it[1], ...d};
+    });
+  }
+  return store;
+}
+/* what she typed: "7.2", "$7.20", "7" */
+function cents(raw){
+  const s = String(raw).trim().replace(/[$,\s]/g, '');
+  if (!/^\d*\.?\d{0,2}$/.test(s) || !/\d/.test(s)) return null;
+  const [w, f = ''] = s.split('.'); return +(w || 0) * 100 + +(f.padEnd(2, '0') || 0);
+}
+
+/* ---------- the dash ---------- */
+let g = null, timer = null;
+function startDash(){
+  g = {store:stockStore(), aisle:Object.keys(STOCK)[0], cart:[], right:0, tries:0, missed:{}, bestBuys:0, left:TIME, started:Date.now(), open:null};
+  clearInterval(timer); timer = setInterval(() => { if (document.hidden || !g) return; g.left--; if (g.left <= 0) checkout(true); else drawTop(); }, 1000);
+  render();
+}
+const total = () => g.cart.reduce((s, c) => s + c.cents, 0);
+function drawTop(){
+  const t = total(), over = t > BUDGET, el = document.getElementById('top'); if (!el) return;
+  const m = Math.floor(g.left / 60), s = String(g.left % 60).padStart(2, '0');
+  el.innerHTML = `<span class="pill${g.left <= 30 ? ' warn' : ''}">⏱️ ${m}:${s}</span><span class="pill${over ? ' warn' : ''}">🛒 ${$$(t)} of ${$$(BUDGET)}</span><span class="pill">✅ ${g.right} priced right</span>
+    <button class="btn go" data-checkout style="margin-left:auto">🧾 Check out</button>
+    <div class="budget${over ? ' over' : ''}" aria-hidden="true"><i style="width:${Math.min(100, t / BUDGET * 100)}%"></i></div>`;
+}
+function render(){
+  if (!g) return;
+  const items = g.store[g.aisle];
+  app.innerHTML = `<div class="top" id="top"></div>
+    <div class="aisles" role="tablist">${Object.keys(g.store).map(a => `<button role="tab" aria-selected="${a === g.aisle}" class="${a === g.aisle ? 'on' : ''}" data-aisle="${esc(a)}">${esc(a)}</button>`).join('')}</div>
+    <div class="shelf">${items.map(it => { const inCart = g.cart.some(c => c.id === it.id);
+      return `<button class="item${inCart ? ' in' : ''}" data-item="${esc(it.id)}" ${inCart ? 'disabled' : ''}><span class="e">${it.emoji}</span><b>${esc(it.name)}</b><span class="deal">${esc(it.text)}</span>${inCart ? '<small>In your cart</small>' : ''}</button>`; }).join('')}</div>
+    <div class="card cart"><h2>🛒 Your cart (${g.cart.length})</h2>${g.cart.length ? `<ul>${g.cart.map((c, i) => `<li><span>${c.emoji} ${esc(c.name)}${c.star ? ' ⭐' : ''}</span><b>${$$(c.cents)}</b><button class="x" data-remove="${i}" aria-label="Put back ${esc(c.name)}">✕</button></li>`).join('')}</ul>` : '<p class="muted">Tap an item to work out its price and put it in your cart.</p>'}</div>`;
+  drawTop();
+}
+function findItem(id){ for (const list of Object.values(g.store)) { const it = list.find(x => x.id === id); if (it) return it; } return null; }
+function openItem(id){
+  const it = findItem(id); if (!it) return;
+  g.open = {it, tries:0, msg:'', ok:false};
+  drawModal();
+}
+function drawModal(){
+  const o = g?.open; if (!o) { modal.innerHTML = ''; return; }
+  const it = o.it;
+  const body = it.sizes
+    ? `<p><b>Which size is the better buy?</b> Pick it, and a ⭐ goes on your receipt if it costs less per ${it.sizes[0].label.includes(' lb') ? 'pound' : 'ounce'}.</p><div class="sizes">${it.sizes.map((s, i) => `<button data-size="${i}">${esc(s.label)}</button>`).join('')}</div>`
+    : `<p class="deal" style="font-size:1.1em"><b>${esc(it.text)}</b></p><p>${esc(it.ask)}</p>
+      <div class="answer"><input id="price" inputmode="decimal" autocomplete="off" placeholder="$0.00" aria-label="Price in dollars"><button class="btn go" data-pay>Add to cart</button></div>`;
+  modal.innerHTML = `<div class="modal" role="dialog" aria-label="${esc(it.name)}"><div class="card"><div class="e">${it.emoji}</div><h2>${esc(it.name)}</h2>${body}
+    <p class="msg ${o.ok ? 'ok' : o.msg ? 'bad' : ''}" role="status">${o.msg}</p><button class="btn" data-close>Back to the aisle</button></div></div>`;
+  document.getElementById('price')?.focus();
+}
+function pay(){
+  const o = g.open, it = o.it, got = cents(document.getElementById('price').value);
+  if (got == null) { o.msg = 'Type a price, like 7.20'; drawModal(); return; }
+  o.tries++;
+  if (got === it.cents) { if (o.tries === 1) g.right++; g.tries++; addToCart(it, it.cents); toast(`✅ ${it.name}: ${$$(it.cents)}`); return; }
+  if (o.tries === 1) { o.msg = '🔔 Beep! The register says that’s not right. Try once more.'; drawModal(); return; }
+  g.tries++; g.missed[it.skill] = (g.missed[it.skill] || 0) + 1;
+  addToCart(it, it.cents); toast(`🔔 The cashier rang it up: ${$$(it.cents)}`);
+}
+function pickSize(i){
+  const it = g.open.it, s = it.sizes[i], other = it.sizes[1 - i], better = s.per < other.per;
+  g.tries++;
+  if (better) { g.right++; g.bestBuys++; } else g.missed.compareRates = (g.missed.compareRates || 0) + 1;
+  addToCart({...it, name:`${it.name} (${s.label.split(' for ')[0]})`}, s.cents, better);
+  toast(better ? `⭐ Best buy! ${s.label}` : `The other size was the better buy: ${other.label}`);
+}
+function addToCart(it, c, star = false){ g.cart.push({id:it.id, emoji:it.emoji, name:it.name, cents:c, star}); g.open = null; drawModal(); render(); }
+function starsFor(t){ return t > BUDGET ? 0 : t >= BUDGET - 200 ? 3 : t >= BUDGET - 500 ? 2 : t >= BUDGET - 1000 ? 1 : 0; }
+function checkout(timeUp){
+  const t = total();
+  if (!timeUp && t > BUDGET) { toast(`🚫 ${$$(t - BUDGET)} over! Put something back first.`); return; }
+  clearInterval(timer); timer = null; modal.innerHTML = '';
+  const d = g; g = null;
+  const stars = starsFor(t), off = BUDGET - t;
+  const score = t <= BUDGET ? t : 0, newBest = score > best;
+  if (newBest) { best = score; try { localStorage.setItem('supermarket-dash:best', String(best)); } catch(e){} }
+  const result = {total:t, stars, right:d.right, tries:d.tries, items:d.cart.length, bestBuys:d.bestBuys, missed:d.missed, ms:Date.now() - d.started};
+  try {
+    if (window.parent !== window) {
+      if (FROM_MARKET) window.parent.postMessage({type:'dash:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'supermarket-dash', runId:ARCADE_RUN, roundId:`dash-${d.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(d.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  const verdict = t > BUDGET ? `🚫 Time ran out ${$$(t - BUDGET)} over budget, so the cart doesn’t count.` : stars === 3 ? '🏆 Amazing! Within $2 of $100!' : stars === 2 ? 'Great shopping! Within $5 of $100.' : stars === 1 ? 'Nice! Within $10 of $100. Can you get closer?' : `You had ${$$(off)} left over. Try to get within $10 of $100.`;
+  app.innerHTML = `<h1>🧾 Checkout</h1><p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${verdict}</p>
+    <div class="receipt">${d.cart.map(c => `<div><span>${c.emoji} ${esc(c.name)}${c.star ? ' ⭐' : ''}</span><span>${$$(c.cents)}</span></div>`).join('')}<hr><div><b>TOTAL</b><b>${$$(t)}</b></div><div><span>Budget</span><span>${$$(BUDGET)}</span></div><div><span>${t > BUDGET ? 'Over by' : 'Left over'}</span><span>${$$(Math.abs(off))}</span></div></div>
+    <div class="stats"><div><b>${d.right} of ${d.tries}</b>priced right the first time</div><div><b>${d.bestBuys}</b>best buys ⭐</div><div><b>${best ? $$(best) : '—'}</b>best cart${newBest && score ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    ${FROM_MARKET ? '<p class="muted">Each price you work out right the first time earns Pet World coins. Dashes don’t count toward Market orders or quizzes.</p>' : ''}
+    <p><button class="btn go" data-start>🛒 Dash again</button></p>`;
+}
+let toastT = null;
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1800); }
+function renderStart(){
+  app.innerHTML = `<h1>🛒 Supermarket Dash</h1>
+    <p class="muted">You have <b>$100</b> and <b>4 minutes</b>. Fill your cart as close to $100 as you can without going over!</p>
+    <ol class="how">
+      <li>Every item has a deal: “4 for $6.00”, “$2.40 per lb”, “25% off”, “take 1/4 off”. Tap it and work out what you’ll pay.</li>
+      <li>Right price? Into the cart! Wrong twice? The cashier rings it up for you, but it doesn’t count as priced right.</li>
+      <li>Some items come in two sizes. Pick the better buy (the lower price per ounce or pound) for a ⭐.</li>
+      <li>Watch your total. Put things back with ✕ if you go over. You can’t check out over $100.</li>
+      <li>⭐⭐⭐ within $2 of $100 · ⭐⭐ within $5 · ⭐ within $10.</li>
+    </ol>
+    ${best ? `<p>🏆 Best cart: <b>${$$(best)}</b></p>` : ''}
+    <button class="btn go" data-start>🛒 Start the dash</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-start')) { startDash(); return; }
+  if (!g) return;
+  if (b.dataset.aisle) { g.aisle = b.dataset.aisle; render(); return; }
+  if (b.dataset.item) { openItem(b.dataset.item); return; }
+  if (b.dataset.remove != null) { g.cart.splice(+b.dataset.remove, 1); render(); return; }
+  if (b.hasAttribute('data-checkout')) { checkout(false); return; }
+  if (b.hasAttribute('data-close')) { g.open = null; drawModal(); return; }
+  if (b.hasAttribute('data-pay')) { pay(); return; }
+  if (b.dataset.size != null) { pickSize(+b.dataset.size); }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'price') pay(); if (e.key === 'Escape' && g?.open) { g.open = null; drawModal(); } });
+if (params.has('selftest')) window.__dash = {stockStore, cents, get g(){ return g; }};
+renderStart();
+})();
+</script>
+</body>
+</html>

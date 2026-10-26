@@ -6,11 +6,12 @@
 |---|---|---|---|
 | 🍳 Chef's Rush | Café → Deliveries (`openChefRush`) | `chefs-rush`, `public/arcade/chefs-rush/` | 1 per 5 orders, up to 3 a shift |
 | 🩺 Dr. Paws' Surgery Center | Bakery → Bulk Orders (`openSurgery`) | `pet-surgery`, `public/arcade/pet-surgery/` | 1 per 3 patients, up to 3 a shift |
+| 🛒 Supermarket Dash | Market → Discount Bin (`openDash`) | `supermarket-dash`, `public/arcade/supermarket-dash/` | 1 per checkout star, up to 3 a dash |
 | ⚡ Punctuation Power Lab | English Unit 6, a card under each block (`heroLabCardHTML`) | `power-lab`, `arcade/power-lab/index.html` | 1 per 2 first launches, up to 3 a pack |
 
 ## Two ways to build the Arcade copy
 
-1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
+1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game, Supermarket Dash). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
 2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
 
 Either way:

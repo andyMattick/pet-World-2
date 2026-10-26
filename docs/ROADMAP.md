@@ -171,6 +171,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F39. 🦸 English Unit 6 at the Superhero Factory (Punctuation: end marks, commas, apostrophes; Khan Grammar): 13 lessons in 5 blocks with 5 quizzes, a 13-question test and paragraph, review flashcards, and the ⚡ Punctuation Power Lab (5 packs of 6 missions where the hero changes with the punctuation, plus Factory Hero). See `ENGLISH-UNIT6.md`
 - [x] F40. 🩺 Dr. Paws' Surgery Center: a Bakery game at Bulk Orders (and in the Arcade) with 3-step charts of decimals, fractions and long division, where each step uses the answer before it. Pays 1 coin a right step, up to 20 a day. See `PET-SURGERY.md`
 - [x] F41. 🕹️ Unit games are in the Arcade too (owner rule): the ⚡ Punctuation Power Lab joins Chef's Rush and the surgery game there. See `ARCADE-GAMES.md`
+- [x] F42. 🛒 Supermarket Dash: a Market game at the Discount Bin (and in the Arcade). $100, 4 minutes, six aisles of deals to price (unit rates, rates, percents off, fractions off, best buys); get as close to $100 as you can. See `SUPERMARKET-DASH.md`
 
 ## Database files, in the order they were run
 

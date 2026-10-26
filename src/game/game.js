@@ -173,6 +173,8 @@ function normalize(raw){
       games:(Array.isArray(s.chefRush?.games) ? s.chefRush.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, served:Math.max(0, +g.served || 0), perfect:Math.max(0, +g.perfect || 0), level:Math.max(1, +g.level || 1), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🍳 Chef's Rush (docs/CHEFS-RUSH.md)
     s.surgery = {best:Math.max(0, Math.round(+s.surgery?.best || 0)), day:typeof s.surgery?.day === 'string' ? s.surgery.day : '', coinsToday:Math.max(0, Math.round(+s.surgery?.coinsToday || 0)),
       games:(Array.isArray(s.surgery?.games) ? s.surgery.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, healed:Math.max(0, +g.healed || 0), perfect:Math.max(0, +g.perfect || 0), steps:Math.max(0, +g.steps || 0), right:Math.max(0, +g.right || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🩺 Dr. Paws' Surgery Center (docs/PET-SURGERY.md)
+    s.dash = {best:Math.max(0, Math.round(+s.dash?.best || 0)), day:typeof s.dash?.day === 'string' ? s.dash.day : '', coinsToday:Math.max(0, Math.round(+s.dash?.coinsToday || 0)),
+      games:(Array.isArray(s.dash?.games) ? s.dash.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, total:Math.max(0, +g.total || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🛒 Supermarket Dash (docs/SUPERMARKET-DASH.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
@@ -5249,6 +5251,7 @@ function arcadeModuleMessage(event){
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'supermarket-dash') earned = Math.max(0, Math.min(3, score));   // 1 ticket per checkout star, up to 3 a dash (docs/SUPERMARKET-DASH.md)
   else if (run.gameId === 'pet-surgery') earned = Math.min(3, Math.floor(score / 3));   // 1 ticket per 3 patients healed, up to 3 a shift (docs/PET-SURGERY.md)
   else if (run.gameId === 'mine-walker' && data.mode === 'endless') earned = Math.floor(score / policy.mineRowsPerTicket);
   else if (run.gameId === 'mine-walker') {
@@ -6889,6 +6892,41 @@ window.addEventListener('message', e => {
   logEvent({k:'surgery', s:healed, title:`${healed} patients healed, ${right} of ${steps} steps right${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🩺 ${healed} patient${healed === 1 ? '' : 's'} healed!${newBest && healed ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= SURGERY_COINS_PER_DAY ? ' (Today’s surgery coins are all earned.)' : ''}`);
+});
+/* ---------- 🛒 Supermarket Dash (public/arcade/supermarket-dash, docs/SUPERMARKET-DASH.md) ----------
+   Fill a cart as close to $100 as you can by pricing deals with every Market skill, opened from the Discount Bin station
+   (and also an Arcade game). Played from the Market it pays Pet World coins: 1 per price worked out right the first time,
+   up to DASH_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const DASH_COINS_PER_DAY = 20;
+function dashButtonHTML(){
+  const best = S.dash?.best || 0;
+  return `<button type="button" class="btn" data-dash>🛒 Supermarket Dash${best ? ` · best $${(best / 100).toFixed(2)}` : ''}</button>`;
+}
+function openDash(){
+  if ($('#dashWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'dashWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Supermarket Dash');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🛒 Supermarket Dash</b><button type="button" class="btn small" data-dash-close>Done</button></div><iframe src="/arcade/supermarket-dash/?from=market" title="Supermarket Dash"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-dash-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('market'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#dashWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'dash:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, total = Math.max(0, Math.min(100000, Math.round(+r.total || 0))), stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0)));
+  const tries = Math.max(0, Math.min(500, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.dash, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const counted = total <= 10000 ? total : 0, newBest = counted > c.best;
+  c.games = [...c.games, {t:Date.now(), total, stars, right, tries, missed}].slice(-30);
+  if (newBest) c.best = counted;
+  const coins = Math.min(right, Math.max(0, DASH_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'dash', s:right, n:tries, title:`cart $${(total / 100).toFixed(2)} of $100, ${'⭐'.repeat(stars) || 'no stars'}, ${right} of ${tries} priced right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🛒 Cart: $${(total / 100).toFixed(2)}${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= DASH_COINS_PER_DAY ? ' (Today’s dash coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10091,12 +10129,13 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML() : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-chef-rush]')) { openChefRush(); return; }
   if (e.target.closest('[data-surgery]')) { openSurgery(); return; }
+  if (e.target.closest('[data-dash]')) { openDash(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
@@ -11690,6 +11729,7 @@ function placeOnScreen(){
   if ($('#prepRecallWrap')) return 'recall';
   if ($('#chefRushWrap')) return 'chef';
   if ($('#surgeryWrap')) return 'surgery';
+  if ($('#dashWrap')) return 'dash';
   if ($('#bibleWrap')) return 'bible';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
@@ -11721,6 +11761,7 @@ function placeLabel(key){
   if (kind === 'recall') return '🔗 Name all 48 prepositions';
   if (kind === 'chef') return '🍳 Chef’s Rush';
   if (kind === 'surgery') return '🩺 Dr. Paws’ Surgery Center';
+  if (kind === 'dash') return '🛒 Supermarket Dash';
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
@@ -11741,6 +11782,7 @@ function eventText(e){
   if (e.k === 'recall') return `🔗 Prep test: ${e.title}`;
   if (e.k === 'chef') return `🍳 Chef’s Rush: ${e.title}`;
   if (e.k === 'surgery') return `🩺 Dr. Paws’ Surgery: ${e.title}`;
+  if (e.k === 'dash') return `🛒 Supermarket Dash: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
@@ -11827,6 +11869,7 @@ function subjectOnScreen(){
   if ($('#prepRecallWrap')) return 'english';
   if ($('#chefRushWrap')) return 'math';   // Chef's Rush is Café practice
   if ($('#surgeryWrap')) return 'math';   // the surgery game is Bakery practice
+  if ($('#dashWrap')) return 'math';   // Supermarket Dash is Market practice
   if ($('#bibleWrap')) return 'bible';
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';
