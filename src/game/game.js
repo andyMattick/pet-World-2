@@ -213,6 +213,7 @@ function normalize(raw){
   s.nudges = s.nudges && typeof s.nudges.day === 'string' && Array.isArray(s.nudges.shown) ? {day:s.nudges.day, shown:s.nudges.shown.filter(x => typeof x === 'string').slice(0, 20)} : {day:'', shown:[]};   // today's "wrap it up" reminders already shown   // the last day a grown-up let her skip "Finish from before first"
   s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;
   s.testReady = Object.fromEntries(Object.entries(s.testReady && typeof s.testReady === 'object' ? s.testReady : {}).filter(([k, v]) => typeof k === 'string' && Number.isFinite(+v)).slice(-60));   // "<course or shop>:pw|khan": the review is done for the next test (docs/TEST-GATE.md)
+  s.reviewDone = Object.fromEntries(Object.entries(s.reviewDone && typeof s.reviewDone === 'object' ? s.reviewDone : {}).filter(([k, v]) => typeof k === 'string' && v && Number.isFinite(+v.t) && Number.isInteger(v.total) && v.total > 0).map(([k, v]) => [k, {t:+v.t, total:v.total, right:Math.max(0, Math.min(v.total, Math.round(+v.right || 0))), fixed:Math.max(0, Math.round(+v.fixed || 0))}]).slice(-60));   // the last finished test review per test: all its mixed questions done, how many right the first time, lessons fixed after
   s.endOfDay = s.endOfDay && typeof s.endOfDay.day === 'string' && /^\d{2}:\d{2}$/.test(s.endOfDay.at) ? {day:s.endOfDay.day, at:s.endOfDay.at} : null;   // today's end of the school day, set at the theme question
   s.endDefault = /^\d{2}:\d{2}$/.test(s.endDefault) ? s.endDefault : '15:00';   // the end of day the grown-up picked last
   s.readTimer = s.readTimer && Number.isFinite(+s.readTimer.start) ? {start:+s.readTimer.start} : null;   // a running Reading Log timer (wall clock: keeps going while the screen sleeps)   // earned theme days so far (the rotation's place)
@@ -6060,7 +6061,7 @@ $('#unlockShop').addEventListener('click', () => closeUnlock('shop'));
 $('#unlockKeep').addEventListener('click', () => closeUnlock(false));
 
 let bookUnit = 'cafe';
-let currentShop = 'cafe';
+let currentShop = 'cafe', summaryShop = '';   // summaryShop: the shop whose summary is on screen ('' for Fact Sprint's)
 const SCREENS = ['loading','join','name','home','room','artstudio','cafe','shift','sprint','book','library','summary','shop','hall','parent','arcade','vocab'];
 function show(id){
   if (id !== 'room' && roomDrag) finishRoomDrag();
@@ -7830,7 +7831,7 @@ function surgeryButtonHTML(shop = 'bakery'){
 function openSurgery(shop = 'bakery'){   // the Bakery's charts, or the Clock Tower's secret formulas (order of operations)
   if ($('#surgeryWrap')) return;
   const el = document.createElement('div');
-  el.id = 'surgeryWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Dr. Paws’ Surgery Center');
+  el.id = 'surgeryWrap'; el.dataset.shop = shop === 'clock' ? 'clock' : 'bakery'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Dr. Paws’ Surgery Center');
   el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🩺 Dr. Paws’ Surgery Center</b><button type="button" class="btn small" data-surgery-close>Done</button></div><iframe src="/arcade/pet-surgery/?from=${shop === 'clock' ? 'clock' : 'bakery'}" title="Dr. Paws’ Surgery Center"></iframe>`;
   document.body.appendChild(el);
   el.querySelector('[data-surgery-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor(shop === 'clock' ? 'clock' : 'bakery'); });
@@ -8894,9 +8895,10 @@ function nextUnit(subject){
   const built = BUILDINGS.filter(b => b.subject === subject && b.open && (SHOPS[b.id] || unitCourse(b.id))), here = built.filter(b => b.hood === currentHood()), list = here.length ? here : built;
   return list.find(b => unitOpen(b.id) && !unitTestPassed(b.id)) || list.filter(b => unitOpen(b.id)).pop() || null;
 }
+const GAME_PLACE_SHOP = {chef:'cafe', 'surgery:bakery':'bakery', 'surgery:clock':'clock', surgery:'bakery', dash:'market', penguin:'rink', detective:'potion', carnival:'fair', asteroids:'houses', battleship:'harbor', parcel:'post', petshow:'show'};   // each unit's own game counts for its unit
 function unitSecs(unit, day){
   const d = S.dayLog[day], c = unitCourse(unit); if (!d) return 0;
-  return Object.entries(d.places).filter(([k]) => (SHOPS[unit] ? k.startsWith(`shop:${unit}:`) : !!c && (k === `course:${c}` || k.startsWith(`course:${c}:`)))).reduce((a, [, s]) => a + s, 0);
+  return Object.entries(d.places).filter(([k]) => (SHOPS[unit] ? k === `shop:${unit}` || k.startsWith(`shop:${unit}:`) || GAME_PLACE_SHOP[k] === unit : !!c && (k === `course:${c}` || k.startsWith(`course:${c}:`)))).reduce((a, [, s]) => a + s, 0);
 }
 function unitPassedOn(unit, what, day){
   const d = S.dayLog[day], c = unitCourse(unit); if (!d) return false;
@@ -8912,7 +8914,11 @@ function planItemInfo(x, day = logDayKey()){
     return {label:`${PLAN_SUBJECT_NAME[x.subject]}: ${mins} min${unit ? ` in the ${unit.name}` : ''}`, open:x.subject === 'reading' ? 'reading' : unit?.id || '', status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`};
   }
   if (x.kind === 'unit') {
-    if (x.what !== 'quiz' && x.what !== 'test') { const mins = minutes(), secs = unitSecs(x.unit, day); return {label:`Practice in the ${unitName(x.unit)}: ${mins} min`, open:x.unit, status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`}; }
+    if (x.what !== 'quiz' && x.what !== 'test') {
+      const mins = minutes(), secs = unitSecs(x.unit, day), subj = BUILDINGS.find(u => u.id === x.unit)?.subject, all = (S.subjectTime?.[day] || {})[PLAN_SUBJECT_TIME[subj] || subj] || 0;
+      const more = Math.floor(all / 60) > Math.floor(secs / 60) ? ` · ${Math.floor(all / 60)} min of ${PLAN_SUBJECT_NAME[subj]?.replace(/^\S+\s/, '') || subj} today` : '';   // she sees all her time in the subject, not only this unit's
+      return {label:`Practice in the ${unitName(x.unit)}: ${mins} min`, open:x.unit, status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min here${more}`};
+    }
     const test = x.what === 'test', done = unitPassedOn(x.unit, x.what, day) || (test && unitTestPassed(x.unit));
     return {label:`${test ? 'Pass the unit test' : 'Pass a quiz'} in the ${unitName(x.unit)}`, open:x.unit, status:done ? 'done' : 'todo', progress:''};
   }
@@ -9775,9 +9781,16 @@ const cardStatKey = (courseId, term) => `${courseId}:${term}`.slice(0, 80);
 const testReady = key => !!S.testReady?.[key];
 function markTestReady(key){ S.testReady = {...S.testReady, [key]:Date.now()}; save(); }
 function useTestReady(key){ if (S.testReady?.[key]) { delete S.testReady[key]; save(); } }
+/* she sees that she went all the way through the review, not just "review again" (S.reviewDone[key], kept after the test uses the review up) */
+function markReviewDone(key, right, total, fixed = 0){ S.reviewDone = {...S.reviewDone, [key]:{t:Date.now(), right, total, fixed}}; }
+function reviewDoneHTML(key, what = 'mixed questions'){
+  const r = S.reviewDone?.[key]; if (!r) return '';
+  const day = new Date(r.t), when = logDayKey(day) === logDayKey() ? 'today' : day.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
+  return `<span class="review-done">✅ Review finished ${esc(when)}: all ${r.total} ${what}, ${r.right} right the first time${r.fixed ? `, then went back over the ${r.fixed === 1 ? 'one' : r.fixed} you missed` : ''}.</span>`;
+}
 function testReviewButtonHTML(courseId, khan = false){
   const ready = testReady(`${courseId}:${khan ? 'khan' : 'pw'}`);
-  return `<button type="button" class="btn small${ready ? '' : ' berry'}" data-test-review data-ela-course="${courseId}"${khan ? ' data-khan' : ''}>${ready ? '✅ Reviewed · review again' : '📇 Review first (needed)'}</button>`;
+  return `${reviewDoneHTML(`${courseId}:${khan ? 'khan' : 'pw'}`)}<button type="button" class="btn small${ready ? '' : ' berry'}" data-test-review data-ela-course="${courseId}"${khan ? ' data-khan' : ''}>${ready ? '📇 Do the review again' : '📇 Review first (needed)'}</button>`;
 }
 async function gatedTestReview(courseId, khan){
   const course = englishCourse(courseId);
@@ -9887,6 +9900,7 @@ function testReviewResult(run){
     const missedIds = [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))];
     if (missedIds.length && startReviewFixup(run, missedIds)) return;   // teach what she missed before the test
   }
+  markReviewDone(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`, run.fixup ? run.first.score : run.score, run.fixup ? run.first.total : run.questions.length, run.fixup ? run.first.missed.length : 0);
   markTestReady(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`);   // the review is done: the next test can start (with a grown-up's PIN)
   if (run.fixup) run = {...run, score:run.first.score, passMark:6, questions:run.questions.slice(0, run.first.total), outcomes:[], fixedAll:run.outcomes.every(Boolean)};
   const course = englishCourse(run.courseId), ready = run.score >= run.passMark;
@@ -11433,7 +11447,7 @@ $('#stations').addEventListener('click', e => {
    Khan test. A grown-up's PIN starts it, and again starts the test. */
 function unitReviewButtonHTML(shop, khan = false){
   const ready = testReady(`${shop}:${khan ? 'khan' : 'pw'}`);
-  return `<button class="btn${ready ? '' : ' berry'}" data-unit-review data-shop="${shop}"${khan ? ' data-khan' : ''}>${ready ? '✅ Reviewed · review again' : '📇 Review first (needed)'}</button>`;
+  return `${reviewDoneHTML(`${shop}:${khan ? 'khan' : 'pw'}`, 'review orders')}<button class="btn${ready ? '' : ' berry'}" data-unit-review data-shop="${shop}"${khan ? ' data-khan' : ''}>${ready ? '📇 Do the review again' : '📇 Review first (needed)'}</button>`;
 }
 function mathKhanCardHTML(shop){
   const units = mathKhanUnits(shop); if (!units.length || !khanOn()) return '';
@@ -11560,7 +11574,7 @@ function ticketHTML(text){
 function nextCustomer(){
   if (shift.mode === 'practice' && shift.reviewKey && reviewComplete(shift.reviewKey)) { endShift(); return; }
   if (shift.unitReview && shift.n >= shift.total && shift.unitReview.needs?.length && (shift.unitReview.extra || 0) < 10) {   // fix what she missed before the review counts
-    const ur = shift.unitReview; if (!ur.fixing) { ur.fixing = true; toast('Now let’s fix the ones you missed. 📘'); }
+    const ur = shift.unitReview; if (!ur.fixing) { ur.fixing = true; ur.firstPerfect = shift.perfect; toast('Now let’s fix the ones you missed. 📘'); }
     ur.extra = (ur.extra || 0) + 1; shift.total++;
   }
   if (shift.n >= shift.total) { endShift(); return; }
@@ -11817,7 +11831,7 @@ function finishAssessment(){
   $('#summaryCard').innerHTML = `<div class="big-emoji">${result.passed ? '✅' : '📝'}</div><h2>${finished.mode === 'test' ? 'Unit Test' : 'Station Quiz'} ${result.passed ? 'passed' : 'complete'}</h2>
     <p>Score: <b>${result.score} of ${result.total} (${percent}%)</b></p><p>${result.passed ? `You earned ${payout} 🪙.` : `You earned ${payout} 🪙. Practice the missed skills before your retake.`}</p>
     <ul class="list">${skillRows}</ul><div class="row">${reviewButton}${retakeButton}<button class="btn" id="backToAssessmentShop">Back to the shop</button></div>`;
-  shift = null; order = null; currentShop = shop;
+  shift = null; order = null; currentShop = shop; summaryShop = shop;
   show('summary');
   if (finished.mode === 'test' && result.passed) setTimeout(showNextUnlock, 0);
   if (!result.passed && !reviewComplete(key)) $('#reviewAssessment').addEventListener('click', () => { void startShift(shop, reviewStation, key); });
@@ -12003,16 +12017,16 @@ function endShift(){
   const miss = [...new Set(shift.missed)];
   const shop = shift.shop, config = SHOPS[shop];
   const reviewKey = shift.reviewKey, reviewFinished = !!reviewKey && reviewComplete(reviewKey), unitReview = shift.unitReview && shift.n >= shift.total ? shift.unitReview : null;   // finished: all 8, then the fix-ups
-  if (unitReview) { markTestReady(`${shop}:${unitReview.khan ? 'khan' : 'pw'}`); logEvent({k:'gate', title:`📇 Finished the ${unitReview.khan ? 'Khan' : 'Unit'} Test review: ${config.name}`}); }
+  if (unitReview) { markReviewDone(`${shop}:${unitReview.khan ? 'khan' : 'pw'}`, unitReview.firstPerfect ?? shift.perfect, shift.total - (unitReview.extra || 0), unitReview.extra || 0); markTestReady(`${shop}:${unitReview.khan ? 'khan' : 'pw'}`); logEvent({k:'gate', title:`📇 Finished the ${unitReview.khan ? 'Khan' : 'Unit'} Test review: ${config.name}`}); }
   const retakeStation = reviewKey?.endsWith(':test') ? null : Number(reviewKey?.slice(reviewKey.lastIndexOf(':') + 1));
   const retakeLabel = reviewKey?.endsWith(':test') ? 'Retake unit test' : 'Retake quiz';
   $('#summaryCard').innerHTML = `<div class="big-emoji">🌙</div><h2>${config.name} closed for the day</h2>
     <p>You earned <b>${shift.earned}</b> coins${pw > 1 ? ` with a ×${fmtPow(pw)} sprint boost` : ''}.</p>
     <p>Perfect orders: <b>${shift.perfect}</b> of ${shift.total}</p>
     ${miss.length ? `<p class="muted">Keep practicing</p><div class="factchips">${miss.map(m => `<span>${esc(m)}</span>`).join('')}</div>` : '<p>No mistakes today. Amazing!</p>'}
-    ${unitReview ? `<p><b>📇 Review done.</b>${unitReview.extra ? ` You went back over ${unitReview.extra} order${unitReview.extra === 1 ? '' : 's'} on the skills you missed${unitReview.needs?.length ? '; keep practicing those at their stations' : ''}.` : ''} Next, a grown-up enters the PIN to start the ${unitReview.khan ? 'Khan' : 'Unit'} Test.</p>` : ''}
+    ${unitReview ? `<p><b>📇 Review done: all ${shift.total - (unitReview.extra || 0)} review orders finished, ${unitReview.firstPerfect ?? shift.perfect} perfect the first time.</b>${unitReview.extra ? ` You went back over ${unitReview.extra} order${unitReview.extra === 1 ? '' : 's'} on the skills you missed${unitReview.needs?.length ? '; keep practicing those at their stations' : ''}.` : ''} Next, a grown-up enters the PIN to start the ${unitReview.khan ? 'Khan' : 'Unit'} Test.</p>` : ''}
     <div class="row">${unitReview ? `<button class="btn berry" id="sumUnitTest">🔐 ${unitReview.khan ? 'Back to the shop for the Khan test' : 'Start the Unit Test'}</button>` : reviewFinished ? `<button class="btn berry" id="sumRetakeQuiz">${retakeLabel}</button>` : '<button class="btn berry" id="sumAgain">Another shift</button>'}<button class="btn" data-go="home">Back to town</button></div>`;
-  const station = shift.station, nextButton = unitReview ? '#sumUnitTest' : reviewFinished ? '#sumRetakeQuiz' : '#sumAgain'; shift = null; currentShop = shop;
+  const station = shift.station, nextButton = unitReview ? '#sumUnitTest' : reviewFinished ? '#sumRetakeQuiz' : '#sumAgain'; shift = null; currentShop = shop; summaryShop = shop;
   show('summary');
   if (unitReview) $('#sumUnitTest').addEventListener('click', () => { if (unitReview.khan) show('cafe'); else void gatedUnitTest(shop); });
   else if (reviewFinished) $('#sumRetakeQuiz').addEventListener('click', () => { void startAssessment(shop, retakeStation); });
@@ -12637,7 +12651,7 @@ function endSprint(){
     <p>Your tips are powered up <b>×${fmtPow(S.power)}</b> for your next café shift.</p>
     ${chips.length ? `<p class="muted">Tricky ones</p><div class="factchips">${chips.join('')}</div>` : ''}
     <div class="row"><button class="btn berry" data-go="cafe" id="sumCafe">Go to the café</button><button class="btn" data-go="home">Back to town</button></div>`;
-  show('summary'); sfx('coin'); setTimeout(() => $('#sumCafe').focus(), 60);
+  summaryShop = ''; show('summary'); sfx('coin'); setTimeout(() => $('#sumCafe').focus(), 60);
   const trouble = run.missed.concat(run.slow);
   if (trouble.length) {
     const count = {}; trouble.forEach(entry => { if (Array.isArray(entry)) { count[`times:${entry[0]}`] = (count[`times:${entry[0]}`]||0) + 1; if (entry[1] !== entry[0]) count[`times:${entry[1]}`] = (count[`times:${entry[1]}`]||0) + 1; } else { const id = `${entry.type}:${entry.key}`; count[id] = (count[id]||0) + 1; } });
@@ -13026,7 +13040,7 @@ function placeOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'recall';
   if ($('#chefRushWrap')) return 'chef';
-  if ($('#surgeryWrap')) return 'surgery';
+  if ($('#surgeryWrap')) return `surgery:${$('#surgeryWrap').dataset.shop || 'bakery'}`;
   if ($('#dashWrap')) return 'dash';
   if ($('#penguinWrap')) return 'penguin';
   if ($('#asteroidsWrap')) return 'asteroids';
@@ -13036,7 +13050,8 @@ function placeOnScreen(){
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
-  if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
+  if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : `shop:${currentShop}`;   // the shop floor counts for its unit
+  if (on('summary') && summaryShop) return `shop:${summaryShop}`;   // a shift's or quiz's summary, not Fact Sprint's
   if (on('sprint') || on('summary')) return 'sprint';
   if (on('vocab')) return `vocab:${vocabRun?.mode || vocabTab}`;
   if (on('arcade')) return 'arcade';
@@ -13048,12 +13063,13 @@ function placeOnScreen(){
   if ($('#ggWrap') && ggRun) return `ggame:${ggRun.id}`;
   if ($('#hlWrap') && hlRun) return `hero:${hlRun.pack}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
+  if (englishRun?.retryType === 'think' && englishRun.shop && $('#libraryWrap .ela-question')) return `shop:${englishRun.progressKey}:think`;   // Think it through counts for its unit
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
   return `course:${activeEnglishCourse}`;
 }
 const stationLabel = (shop, station, mode = '') => {
   const s = SHOPS[shop], st = s?.stations.find(x => x.id === +station);
-  return `${s?.emoji || ''} ${s?.name || shop}${mode === 'test' ? ' · Unit Test' : st ? ` · ${st.name}${mode === 'quiz' ? ' quiz' : ''}` : ''}`;
+  return `${s?.emoji || ''} ${s?.name || shop}${mode === 'test' ? ' · Unit Test' : st ? ` · ${st.name}${mode === 'quiz' ? ' quiz' : mode === 'think' ? ': Think it through' : ''}` : ''}`;
 };
 function placeLabel(key){
   const [kind, a, b, c] = key.split(':');

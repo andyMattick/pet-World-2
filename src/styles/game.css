@@ -1324,3 +1324,4 @@ a.btn{display:inline-block; text-decoration:none}
 .pair-in{display:inline-flex; align-items:center; gap:4px; flex-wrap:nowrap}
 .pair-in input{width:3.6em; min-width:0}
 .pair-in .neg-btn{min-width:34px; padding:2px 6px}
+.review-done{display:block; margin:4px 0; font-size:.9rem; color:var(--ink-soft)}

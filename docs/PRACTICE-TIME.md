@@ -43,6 +43,12 @@ Each 15 seconds of active time is credited to whatever is on screen:
 - **Teacher:** the student page's Practice time section has the same table, read from the student's save. The minutes above it come from the database, so the two can differ by a minute or two.
 - Code: `src/shared/subjectTime.ts` (storing, merging, the table), `subjectOnScreen()` in `src/game/game.js`, and the `onActive` callback of `ActivityTracker` in `src/lib/studentBackend.ts`.
 
+### Fixes (Oct 26, 2026): time she wasn't getting credit for
+
+- **Unit games and the Arcade:** taps inside a game frame (Pet Show Awards, Shape Asteroids, every unit game and Arcade game) didn't reach the page, so the clock stopped a minute into a game. `ActivityTracker` now listens inside same-origin frames too.
+- **Practice in a unit (daily plan):** the row counted only time at the unit's stations. It now also counts the shop floor (`shop:<id>`), the shift or quiz summary, 🧠 Think it through (`shop:<id>:<station>:think`) and the unit's own game (`GAME_PLACE_SHOP`). The row also shows all of today's minutes in that subject ("2 of 15 min here · 12 min of Math today"), so she sees all of her time.
+- Dr. Paws' Surgery Center logs as `surgery:bakery` or `surgery:clock`.
+
 ## What the database file does (tested on real PostgreSQL 16)
 
 - Adds `practice_sessions`. Students can't read or write it directly; they only go through `session_start()` and `session_ping()`, which only touch their own session. Teachers can read their own classes' sessions.

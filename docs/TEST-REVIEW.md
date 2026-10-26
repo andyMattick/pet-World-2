@@ -18,6 +18,10 @@ A **📇 Review first** button sits next to each English unit test, both the Pet
 - The results screen lists the lessons she missed as **practice** buttons, then **Start the Pet World test** (or **Open the Khan test** if she came from the Khan card) and **8 more questions**.
 - The answers count toward the per-question miss rates and the lesson's practice history. They don't count toward any grade.
 
+## She sees that she finished it (Oct 26, 2026)
+
+After she finishes a review, the unit page says so next to the button. For example: "✅ Review finished today: all 8 mixed questions, 6 right the first time, then went back over the 2 you missed." The button then reads "📇 Do the review again" (before, it read "✅ Reviewed · review again", which looked like she hadn't finished). The line stays after the test uses up the review, so she can see when she last finished one. Math unit reviews show the same line ("all 8 review orders"). Saved as `S.reviewDone["<course or shop>:pw" or ":khan"]` = `{t, right, total, fixed}` (`markReviewDone`, `reviewDoneHTML`).
+
 ## What the teacher sees
 
 On the Ledger, under English: "📇 English Unit 2: Verbs: test review flashcards · 15 of 18 known on the first try", plus the mixed questions as "(test review) · 6 of 8".

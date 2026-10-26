@@ -31,6 +31,11 @@ export class ActivityTracker {
   private reporting = false;
   private readonly onInput = () => { this.lastInput = Date.now(); };
   private readonly onVisibility = () => { if (document.hidden) void this.report(); };
+  /* taps inside a same-origin game frame (the unit games, the Arcade) count too: they don't reach this document */
+  private readonly onFrameLoad = (e: Event) => { if (e.target instanceof HTMLIFrameElement) this.watchFrame(e.target); };
+  private watchFrame(frame: HTMLIFrameElement) {
+    try { const d = frame.contentDocument; if (d) for (const type of ['pointerdown', 'keydown', 'touchstart']) d.addEventListener(type, this.onInput, { passive: true }); } catch { /* another site's frame: can't listen */ }
+  }
 
   /** onActive (optional) hears about each 15 active seconds as they're counted, e.g. to credit them to a subject. */
   constructor(private readonly onReport: (seconds: number) => Promise<boolean> | boolean, private readonly onActive?: (seconds: number) => void) {}
@@ -40,6 +45,8 @@ export class ActivityTracker {
     this.lastInput = Date.now();
     for (const type of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(type, this.onInput, { passive: true });
     document.addEventListener('visibilitychange', this.onVisibility);
+    document.addEventListener('load', this.onFrameLoad, true);   // load doesn't bubble, so listen in the capture phase
+    document.querySelectorAll('iframe').forEach(f => this.watchFrame(f));
     this.tickTimer = setInterval(() => {
       if (!document.hidden && Date.now() - this.lastInput < 60000) { this.pending += 15; try { this.onActive?.(15); } catch { /* never stop the clock */ } }
     }, 15000);
@@ -63,6 +70,7 @@ export class ActivityTracker {
     this.tickTimer = this.reportTimer = null;
     for (const type of ['pointerdown', 'keydown', 'touchstart']) document.removeEventListener(type, this.onInput);
     document.removeEventListener('visibilitychange', this.onVisibility);
+    document.removeEventListener('load', this.onFrameLoad, true);
   }
 }
 
