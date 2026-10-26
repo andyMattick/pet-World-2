@@ -9,7 +9,8 @@ export default defineConfig({
       input: {
         game: resolve(__dirname, 'index.html'),
         teacher: resolve(__dirname, 'teacher.html'),
-        powerLab: resolve(__dirname, 'arcade/power-lab/index.html')
+        powerLab: resolve(__dirname, 'arcade/power-lab/index.html'),
+        linkGames: resolve(__dirname, 'arcade/link-games/index.html')
       }
     }
   }

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link Library Games</title>
+<!-- Pet World Arcade copy of the English Unit 5 games (docs/ENGLISH-UNIT5.md, docs/ARCADE-GAMES.md): Pet Hide-and-Seek,
+     Cross It Out and the Comic Strip Studio. A Vite page (vite.config.ts) that uses the unit's own rounds from
+     src/game/grammarGames.js. In the Arcade (?arcadeRun=…) it pays tickets; it never pays coins or changes her unit stars. -->
+<style>
+  :root{ --bg:#FDE8EE; --surface:#FFFFFF; --ink:#4A2E2A; --ink-soft:#7A5A55; --edge:#4A2E2A; --berry:#E4577A; --berry-deep:#B83659; --butter:#FFD76A; --mint:#7FD1B9; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#2A1B24; --surface:#3B2833; --ink:#FBE9F0; --ink-soft:#D8B9C6; --edge:#120A0F; --berry:#EE7394; --berry-deep:#FF9DB6; --butter:#6B5520; --mint:#3E8E78; } }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,select{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:820px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.25em; margin:0} h3{margin:6px 0}
+  .muted{color:var(--ink-soft)}
+  .card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .btn{border:3px solid var(--edge); background:var(--surface); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.small{padding:5px 10px; font-size:.92em}
+  .btn.berry{background:var(--berry); color:#fff; border-color:var(--berry-deep)}
+  .btn.mint{background:var(--mint); color:#10302A}
+  .btn:disabled{opacity:.5; cursor:default}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 0}
+  .games{display:grid; gap:10px}
+  .game{display:flex; gap:12px; align-items:center; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); border-radius:14px; padding:10px 12px}
+  .game .e{font-size:2em} .game b{display:block}
+  .dig-hint{color:#a3271c; font-weight:700}
+  .sim-news{padding:8px 10px; border-radius:10px; background:color-mix(in srgb, var(--surface) 88%, #5BA8E0)}
+  .gg-ask{font-size:1.15em; margin:8px 0}
+  .hs-room{position:relative; width:100%; max-width:760px; aspect-ratio:16/10; margin:8px 0; border-radius:16px; overflow:hidden; border:3px solid var(--edge);
+    background:linear-gradient(#F6E7C8 0 68%, #C99A6E 68% 100%); container-type:inline-size}
+  .hs-item{position:absolute; transform:translate(-50%,-50%); line-height:1; z-index:2; font-size:4em; user-select:none}
+  .hs-room .hs-item{font-size:clamp(28px, 9cqw, 72px)}
+  .hs-shelf{background:#8B5E3C; border-radius:6px; padding:2px 6px 30cqh; box-shadow:inset 0 -8px 0 #6E4A2E}
+  .hs-table{position:absolute; transform:translate(-50%,-50%); width:22%; height:24%; z-index:2;
+    background:linear-gradient(#8B5E3C 0 18%, transparent 18%), linear-gradient(90deg, transparent 6%, #8B5E3C 6% 12%, transparent 12% 88%, #8B5E3C 88% 94%, transparent 94%)}
+  .hs-rug{position:absolute; transform:translate(-50%,-50%); width:30%; height:9%; border-radius:50%; background:repeating-radial-gradient(#C0392B 0 6px, #E8C07A 6px 12px); z-index:1}
+  .hs-pet{position:absolute; transform:translate(-50%,-50%); font-size:clamp(30px, 8cqw, 64px); filter:drop-shadow(0 2px 2px #0005); z-index:4; animation:hsPop .4s ease-out}
+  .hs-pet.behind{z-index:1}
+  @keyframes hsPop{from{transform:translate(-50%,-30%) scale(.4); opacity:0} to{transform:translate(-50%,-50%) scale(1); opacity:1}}
+  .hs-spot{position:absolute; transform:translate(-50%,-50%); width:11%; aspect-ratio:1; border-radius:50%; border:3px dashed rgba(74,46,42,.45); background:rgba(255,255,255,.18); z-index:5; cursor:pointer}
+  .hs-spot:hover{background:rgba(255,216,77,.45); border-color:var(--edge)}
+  .hs-tell{flex-wrap:wrap; align-items:center; font-size:1.1em; gap:8px}
+  .hs-tell select{font:inherit; padding:6px 8px; border-radius:10px}
+  .cx-sentence{font-size:1.4em; line-height:2.1; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+  .cx-word{font:inherit; border:2px solid transparent; background:var(--surface); border-radius:10px; padding:2px 8px; cursor:pointer; color:var(--ink)}
+  .cx-word:hover{border-color:var(--edge)}
+  .cx-word.crossed{text-decoration:line-through 3px #C0392B; opacity:.55}
+  .cx-word.subject{background:#FFD84D; font-weight:800}
+  .cx-word:disabled{cursor:default}
+  .cx-blank{border-bottom:3px solid var(--edge); padding:0 6px; min-width:3em; text-align:center}
+  .comic-strip{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin:8px 0}
+  .comic-panel{border:3px solid var(--edge); border-radius:10px; background:#fff; color:#222; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:120px}
+  .comic-scene{font-size:2em; text-align:center; letter-spacing:4px}
+  .comic-scene.big{font-size:3.2em}
+  .comic-bubble{background:#fff; border:2px solid #222; border-radius:14px; padding:4px 8px; font:700 1em Patrick Hand, Grandstander, system-ui, sans-serif; position:relative}
+  .comic-words{flex-wrap:wrap; gap:6px}
+  .comic-preview{font:700 1.4em Patrick Hand, Grandstander, system-ui, sans-serif; min-height:1.5em}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from '../../src/game/grammarGames.js';
+const params = new URLSearchParams(location.search), ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PET = ['🐶', '🐱', '🐰', '🦊', '🐼', '🐹'][Math.floor(Math.random() * 6)], petEmoji = () => PET;
+let best = {}; try { best = JSON.parse(localStorage.getItem('link-games:best') || '{}') || {}; } catch(e){}
+let ggRun = null;
+const totalOf = id => id === 'hide' ? HIDE_ROUNDS : id === 'cross' ? CROSS_SENTENCES.length : COMIC_PANELS.length;
+function ggStart(id){
+  if (id === 'hide') ggRun = {id, rounds:newHideRounds(), i:0, first:0, tries:0, msg:'', done:false, prep:'', obj:''};
+  if (id === 'cross') ggRun = {id, i:0, first:0, tries:0, msg:'', done:false, crossed:[], step:'cross', missed:false};
+  if (id === 'comic') ggRun = {id, i:0, first:0, tries:0, msg:'', done:false, word:'', mark:'', lines:[], missed:false};
+  render();
+}
+function ggFinish(total){
+  const stars = starsFor(ggRun.first, total); ggRun.done = true; ggRun.stars = stars;
+  best[ggRun.id] = Math.max(best[ggRun.id] || 0, stars); try { localStorage.setItem('link-games:best', JSON.stringify(best)); } catch(e){}
+  try { if (ARCADE_RUN && window.parent !== window) window.parent.postMessage({type:'arcade:round-complete', gameId:'link-games', runId:ARCADE_RUN, roundId:`${ggRun.id}-${Date.now()}`, score:stars}, location.origin); } catch(e){}
+}
+function doneHTML(total){
+  return `<section class="card"><h3>🏁 ${'⭐'.repeat(ggRun.stars)}${'☆'.repeat(3 - ggRun.stars)} ${ggRun.first} of ${total} right on the first try</h3>
+    <p>${ggRun.stars === 3 ? 'Perfect detective work!' : ggRun.stars === 2 ? 'So close to three stars. Try again?' : 'Every round makes you sharper. Try again for more stars!'}</p>
+    <div class="row"><button type="button" class="btn berry" data-again>🔁 Play again</button><button type="button" class="btn" data-menu>Pick another game</button></div></section>`;
+}
+/* 🐾 */
+function hideHTML(){
+  const r = ggRun.rounds[ggRun.i], spot = spotById(r.spot), pet = petEmoji();
+  const furniture = ROOM.map(f => f.table ? `<div class="hs-table" style="left:${f.x}%;top:${f.y}%"></div>`
+    : f.rug ? `<div class="hs-rug" style="left:${f.x}%;top:${f.y}%"></div>`
+    : `<span class="hs-item${f.shelf ? ' hs-shelf' : ''}" style="left:${f.x}%;top:${f.y}%;font-size:${f.size}em" aria-hidden="true">${f.emoji}</span>`).join('');
+  const showPet = r.mode === 'tell' || ggRun.reveal;
+  const petHTML = showPet ? `<span class="hs-pet${spot.behind ? ' behind' : ''}" style="left:${spot.x}%;top:${spot.y}%" aria-label="Your pet">${pet}</span>` : '';
+  const taps = r.mode === 'find' && !ggRun.reveal ? SPOTS.map(s => `<button type="button" class="hs-spot" style="left:${s.x}%;top:${s.y}%" data-hs-spot="${s.id}" aria-label="Look here"></button>`).join('') : '';
+  const ask = r.mode === 'find'
+    ? `<p class="gg-ask">🔎 Your pet is hiding <b>${esc(r.clue)}</b>. Tap the spot!</p>`
+    : `<p class="gg-ask">✍️ Where is your pet? Finish the sentence.</p><div class="row hs-tell"><span>My pet is</span>
+        <select data-hs-prep aria-label="Preposition"><option value="">preposition…</option>${HIDE_PREPS.map(p => `<option${ggRun.prep === p ? ' selected' : ''}>${p}</option>`).join('')}</select>
+        <select data-hs-obj aria-label="Object"><option value="">object…</option>${HIDE_OBJECTS.map(o => `<option${ggRun.obj === o ? ' selected' : ''}>${o}</option>`).join('')}</select><span>.</span>
+        <button type="button" class="btn berry" data-hs-tell ${ggRun.reveal ? 'disabled' : ''}>Check</button></div>`;
+  return `<p><b>Round ${ggRun.i + 1} of ${HIDE_ROUNDS}</b> · ⭐ ${ggRun.first} on the first try</p>${ask}
+    <div class="hs-room">${furniture}${petHTML}${taps}</div>
+    ${ggRun.msg ? `<p class="${ggRun.ok ? 'sim-news' : 'dig-hint'}">${ggRun.msg}</p>` : ''}
+    ${ggRun.reveal ? `<button type="button" class="btn berry" data-gg-next>${ggRun.i + 1 < HIDE_ROUNDS ? 'Next round' : 'Finish'}</button>` : ''}`;
+}
+function hideAnswer(right, shown){
+  ggRun.tries++;
+  if (right) { if (ggRun.tries === 1) ggRun.first++; ggRun.ok = true; ggRun.reveal = true; ggRun.msg = `✅ ${ggRun.tries === 1 ? 'First try! ' : ''}${shown}`; sfx('good'); }
+  else if (ggRun.tries >= 2) { ggRun.ok = false; ggRun.reveal = true; ggRun.msg = `Not quite. ${shown}`; sfx('bad'); }
+  else { ggRun.ok = false; ggRun.msg = 'Not quite. Read it again and look closely. One more try!'; sfx('bad'); }
+  render();
+}
+/* ✂️ */
+function crossHTML(){
+  const c = CROSS_SENTENCES[ggRun.i], words = parseCross(c.text), crossedAll = ggRun.step !== 'cross';
+  const sentence = words.map((x, i) => {
+    if (x.blank) return `<span class="cx-blank">${ggRun.verb ? `<b>${esc(ggRun.verb)}</b>` : '___'}${esc(x.w.slice(3))}</span>`;
+    const crossed = ggRun.crossed.includes(i), subject = crossedAll && x.subject;
+    return `<button type="button" class="cx-word${crossed ? ' crossed' : ''}${subject ? ' subject' : ''}" data-cx="${i}" ${crossedAll ? 'disabled' : ''}>${esc(x.w)}</button>`;
+  }).join(' ');
+  const verbs = [...c.verbs].sort();
+  return `<p><b>Sentence ${ggRun.i + 1} of ${CROSS_SENTENCES.length}</b> · ⭐ ${ggRun.first} on the first try</p>
+    <p class="gg-ask">${ggRun.step === 'cross' ? '✂️ Tap every word of every prepositional phrase to cross it out.' : ggRun.step === 'verb' ? '🎯 Now the subject is easy to see. Which verb agrees with it?' : ''}</p>
+    <p class="cx-sentence">${sentence}</p>
+    ${ggRun.step === 'cross' ? '<div class="row"><button type="button" class="btn berry" data-cx-check>Check my cross-outs</button></div>' : ''}
+    ${ggRun.step === 'verb' ? `<div class="row">${verbs.map(v => `<button type="button" class="btn berry" data-cx-verb="${v}">${v}</button>`).join('')}</div>` : ''}
+    ${ggRun.msg ? `<p class="${ggRun.ok ? 'sim-news' : 'dig-hint'}">${ggRun.msg}</p>` : ''}
+    ${ggRun.step === 'done' ? `<button type="button" class="btn berry" data-gg-next>${ggRun.i + 1 < CROSS_SENTENCES.length ? 'Next sentence' : 'Finish'}</button>` : ''}`;
+}
+/* 💥 */
+function comicHTML(){
+  const p = COMIC_PANELS[ggRun.i];
+  const strip = ggRun.lines.map(l => `<div class="comic-panel"><div class="comic-scene">${l.scene}</div><div class="comic-bubble">${petEmoji()} ${esc(l.line)}</div></div>`).join('');
+  return `<p><b>Panel ${ggRun.i + 1} of ${COMIC_PANELS.length}</b> · ⭐ ${ggRun.first} on the first try</p>
+    ${strip ? `<div class="comic-strip">${strip}</div>` : ''}
+    <section class="card comic-now"><div class="comic-scene big">${p.scene}</div><p class="gg-ask">${esc(p.setup)} What does your pet say?</p>
+      <div class="row comic-words">${COMIC_WORDS.map(w => `<button type="button" class="btn small${ggRun.word === w ? ' mint' : ''}" data-cm-word="${w}" aria-pressed="${ggRun.word === w}">${w}</button>`).join('')}</div>
+      <div class="row"><span>Punctuation:</span><button type="button" class="btn small${ggRun.mark === '!' ? ' mint' : ''}" data-cm-mark="!">! (strong feeling)</button><button type="button" class="btn small${ggRun.mark === ',' ? ' mint' : ''}" data-cm-mark=",">, (mild feeling)</button></div>
+      <p class="comic-preview">${ggRun.word && ggRun.mark ? esc(comicLine(p, ggRun.word, ggRun.mark)) : `<span class="muted">${ggRun.word || '___'}${ggRun.mark || '?'} ${esc(p.rest)}${p.end}</span>`}</p>
+      <div class="row"><button type="button" class="btn berry" data-cm-check ${ggRun.word && ggRun.mark ? '' : 'disabled'}>Add to my comic</button></div>
+      ${ggRun.msg ? `<p class="dig-hint">${ggRun.msg}</p>` : ''}</section>`;
+}
+function render(){
+  if (!ggRun) return renderMenu();
+  const g = ggameById(ggRun.id), total = totalOf(g.id);
+  const body = ggRun.done ? (g.id === 'comic' ? `<h3>📰 Your comic</h3><div class="comic-strip">${ggRun.lines.map(l => `<div class="comic-panel"><div class="comic-scene">${l.scene}</div><div class="comic-bubble">${petEmoji()} ${esc(l.line)}</div></div>`).join('')}</div>` : '') + doneHTML(total)
+    : g.id === 'hide' ? hideHTML() : g.id === 'cross' ? crossHTML() : comicHTML();
+  app.innerHTML = `<div id="ggWrap"><div class="row" style="justify-content:space-between"><h2>${g.emoji} ${esc(g.name)}</h2><button class="btn small" data-menu>All games</button></div><p class="muted">${esc(g.intro)}</p>${body}</div>`;
+}
+app.addEventListener('change', e => {
+  if (!ggRun || ggRun.id !== 'hide') return;
+  if (e.target.matches('[data-hs-prep]')) ggRun.prep = e.target.value;
+  if (e.target.matches('[data-hs-obj]')) ggRun.obj = e.target.value;
+});
+app.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.open) { ggStart(b.dataset.open); return; }
+  if (b.hasAttribute('data-menu')) { renderMenu(); return; }
+  if (!ggRun) return;
+  if (b.hasAttribute('data-again')) { ggStart(ggRun.id); return; }
+  const total = totalOf(ggRun.id);
+  if (b.hasAttribute('data-gg-next')) {
+    ggRun.i++; ggRun.tries = 0; ggRun.msg = ''; ggRun.reveal = false; ggRun.prep = ''; ggRun.obj = ''; ggRun.crossed = []; ggRun.step = 'cross'; ggRun.verb = ''; ggRun.missed = false;
+    if (ggRun.i >= total) ggFinish(total);
+    render(); return;
+  }
+  /* 🐾 */
+  if (b.dataset.hsSpot) { const r = ggRun.rounds[ggRun.i]; hideAnswer(b.dataset.hsSpot === r.spot, `Your pet was ${r.clue}.`); return; }
+  if (b.hasAttribute('data-hs-tell')) {
+    const r = ggRun.rounds[ggRun.i]; if (!ggRun.prep || !ggRun.obj) { toast('Pick a preposition and an object.'); return; }
+    hideAnswer(tellIsRight(r.spot, ggRun.prep, ggRun.obj), `${tellIsRight(r.spot, ggRun.prep, ggRun.obj) ? 'Yes: ' : 'Your pet is '}${spotById(r.spot).phrases.join(', or ')}.`); return;
+  }
+  /* ✂️ */
+  if (b.dataset.cx != null && ggRun.step === 'cross') { const i = +b.dataset.cx; ggRun.crossed = ggRun.crossed.includes(i) ? ggRun.crossed.filter(x => x !== i) : [...ggRun.crossed, i]; ggRun.msg = ''; render(); return; }
+  if (b.hasAttribute('data-cx-check')) {
+    const words = parseCross(CROSS_SENTENCES[ggRun.i].text), want = crossTargets(words), got = [...ggRun.crossed].sort((x, y) => x - y);
+    if (want.length === got.length && want.every((x, i) => x === got[i])) { ggRun.step = 'verb'; ggRun.ok = true; ggRun.msg = `✅ Crossed out! The subject is “${words.find(x => x.subject).w}.”`; sfx('good'); }
+    else {
+      ggRun.missed = true; ggRun.ok = false; sfx('bad');
+      const extra = got.filter(i => !want.includes(i)).length, missing = want.filter(i => !got.includes(i)).length;
+      ggRun.msg = ++ggRun.tries >= 2 ? 'Here are the phrases. Each starts with a preposition and ends with its object.' : `Not yet: ${missing ? `${missing} word${missing === 1 ? '' : 's'} of a phrase still showing` : ''}${missing && extra ? ', and ' : ''}${extra ? `${extra} crossed word${extra === 1 ? '' : 's'} that aren’t in a phrase` : ''}. Try again!`;
+      if (ggRun.tries >= 2) { ggRun.crossed = want; ggRun.step = 'verb'; }
+    }
+    render(); return;
+  }
+  if (b.dataset.cxVerb) {
+    const c = CROSS_SENTENCES[ggRun.i], right = b.dataset.cxVerb === c.verbs[0], subject = parseCross(c.text).find(x => x.subject).w;
+    ggRun.verb = c.verbs[0]; ggRun.step = 'done';
+    if (right && !ggRun.missed) { ggRun.first++; ggRun.ok = true; ggRun.msg = `⭐ First try! “${subject}” goes with “${c.verbs[0]}.”`; sfx('good'); }
+    else { ggRun.ok = right; ggRun.msg = right ? `✅ Right: “${subject}” goes with “${c.verbs[0]}.”` : `Not quite. The subject is “${subject},” so the verb is “${c.verbs[0]}.”`; sfx(right ? 'good' : 'bad'); }
+    render(); return;
+  }
+  /* 💥 */
+  if (b.dataset.cmWord) { ggRun.word = b.dataset.cmWord; ggRun.msg = ''; render(); return; }
+  if (b.dataset.cmMark) { ggRun.mark = b.dataset.cmMark; ggRun.msg = ''; render(); return; }
+  if (b.hasAttribute('data-cm-check')) {
+    const p = COMIC_PANELS[ggRun.i], wrong = comicCheck(p, ggRun.word, ggRun.mark);
+    if (wrong) {
+      ggRun.missed = true; sfx('bad');
+      ggRun.msg = wrong === 'word' ? `Does “${ggRun.word}” fit how you’d feel? Try a different interjection.` : p.feel === 'strong' ? 'That’s a strong feeling! It needs an exclamation point.' : 'That’s a mild feeling, so use a comma and keep going.';
+      render(); return;
+    }
+    if (!ggRun.missed) ggRun.first++;
+    ggRun.lines.push({scene:p.scene, line:comicLine(p, ggRun.word, ggRun.mark)}); sfx('good');
+    ggRun.i++; ggRun.word = ''; ggRun.mark = ''; ggRun.msg = ''; ggRun.missed = false;
+    if (ggRun.i >= COMIC_PANELS.length) ggFinish(COMIC_PANELS.length);
+    render();
+  }
+});
+const sfx = () => {}, toast = msg => { const m = app.querySelector('.gg-ask'); if (m) m.insertAdjacentHTML('afterend', `<p class="dig-hint">${esc(msg)}</p>`); };
+
+function renderMenu(){
+  ggRun = null;
+  app.innerHTML = `<h1>🔗 Link Library Games</h1><p class="muted">Prepositions and interjections, from English Unit 5.</p>
+    <div class="games">${GGAMES.map(g => `<button type="button" class="game" data-open="${g.id}"><span class="e">${g.emoji}</span><span><b>${esc(g.name)}</b><span class="muted">${esc(g.intro)} · ${best[g.id] ? '⭐'.repeat(best[g.id]) + '☆'.repeat(3 - best[g.id]) : 'Not played yet'}</span></span></button>`).join('')}</div>`;
+}
+renderMenu();
+</script>
+</body>
+</html>

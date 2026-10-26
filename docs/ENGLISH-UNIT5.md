@@ -66,3 +66,7 @@ The recall game the user made (type all 48 prepositions against the clock) is se
 - The round is kept in `S.prepRecall` (last 30 rounds and her best time) and goes in the day log under English.
 - Coins: 10 the first time she finishes on a day, and 5 for a new best time.
 - The page still keeps its own history table and CSV download on that device.
+
+## In the Arcade too
+
+Since Oct 26, 2026, the three games are also one Arcade game, 🔗 Link Library Games (`link-games`, `arcade/link-games/index.html`). It uses the same rounds from `src/game/grammarGames.js`. It pays tickets (1 per star, up to 3 a game), never coins, and doesn't change her unit stars or Link Library Master. See `ARCADE-GAMES.md`.

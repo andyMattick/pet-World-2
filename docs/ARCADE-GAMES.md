@@ -10,12 +10,13 @@
 | 🐧 Penguin Push | Ice Rink → Weather Station (`openPenguin`) | `penguin-push`, `public/arcade/penguin-push/` | 1 per star, up to 3 a battle |
 | 🔍 Potion Detective | Potion Lab → Potion Shelf (`openDetective`) | `potion-detective`, `public/arcade/potion-detective/` | 1 per case solved, up to 3 |
 | 🎪 Carnival Midway | Pet Fair → Prize Counter (`openCarnival`) | `carnival`, `public/arcade/carnival/` | 1 per booth star, up to 3 a booth |
+| 🔗 Link Library Games (Pet Hide-and-Seek, Cross It Out, Comic Strip Studio) | English Unit 5, cards under its blocks (`ggameCardsHTML`) | `link-games`, `arcade/link-games/index.html` | 1 per star, up to 3 a game |
 | ⚡ Punctuation Power Lab | English Unit 6, a card under each block (`heroLabCardHTML`) | `power-lab`, `arcade/power-lab/index.html` | 1 per 2 first launches, up to 3 a pack |
 
 ## Two ways to build the Arcade copy
 
 1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game, Supermarket Dash, Penguin Push, Potion Detective, Carnival Midway). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
-2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
+2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`; the Link Library Games import `src/game/grammarGames.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
 
 Either way:
 - Add the payout to `arcadeModuleMessage` in `src/game/game.js` (tickets, capped per round).
