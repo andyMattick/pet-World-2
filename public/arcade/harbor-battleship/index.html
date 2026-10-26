@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harbor Battleship</title>
+<!-- Pet World: served at /arcade/harbor-battleship/ (docs/HARBOR-BATTLESHIP.md). Played from Pet Harbor's Shipyard
+     (?from=harbor, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: Khan 6th grade
+     unit 9 (the coordinate plane). Every shot is a coordinate question: she names the point she aimed at (the shot goes
+     where she typed), plots the pirates' shots on her own map, and answers sonar and salvage questions about distance,
+     area and perimeter. It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#EAF6FB; --card:#FFFFFF; --ink:#0E2A3B; --muted:#4F6B7C; --edge:#B9DBEA; --accent:#1F6FB2; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --sea:#CFEAF7; --sea2:#B4DDF1; --grid:#8EC3DC; --axis:#0E2A3B; --ship:#6B7B8C; --hit:#E8590C; --miss:#FFFFFF; --aim:#F08C00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0B1A24; --card:#12293A; --ink:#E3F2FA; --muted:#9DB8C8; --edge:#24465E; --accent:#4DABF7; --accent-ink:#0B1A24;
+      --ok:#69DB7C; --bad:#FF8787; --sea:#123A52; --sea2:#0F3146; --grid:#2C5F7D; --axis:#E3F2FA; --ship:#93A4B4; --hit:#FF922B; --miss:#CFEAF7; --aim:#FFD43B; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:860px; margin:0 auto; padding:10px 16px 28px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.1em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:focus-visible, .pt:focus-visible{outline:3px solid var(--aim); outline-offset:2px}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .hud{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0 6px}
+  .pill{background:var(--card); border:1px solid var(--edge); border-radius:999px; padding:3px 10px; font-weight:700; font-size:.92em}
+  .tabs{display:flex; gap:6px; margin:4px 0}
+  .tabs button{flex:1; border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:6px; font-weight:700}
+  .tabs button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .layout{display:grid; gap:10px}
+  @media (min-width:760px){ .layout{grid-template-columns:minmax(0, 1.1fr) minmax(0, 1fr); align-items:start} .tabs{display:none} }
+  .board{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:6px}
+  .board svg{display:block; width:100%; height:auto; touch-action:manipulation}
+  .board h2{margin:2px 4px 4px; font-size:1em}
+  .q{font-size:1.1em; font-weight:600; margin:2px 0 6px}
+  .coord{display:flex; align-items:center; gap:4px; font-size:1.4em; font-weight:700; flex-wrap:wrap}
+  .coord input, .num input{width:3.2em; font-size:1em; padding:4px 6px; border:3px solid var(--edge); border-radius:10px; background:var(--card); text-align:center}
+  .coord input:focus, .num input:focus{outline:3px solid var(--aim); outline-offset:1px}
+  .pm{min-width:2.1em; border:2px solid var(--edge); background:var(--sea); border-radius:10px; font-weight:800; padding:2px 6px}
+  .num{display:flex; align-items:center; gap:8px; font-size:1.3em; flex-wrap:wrap}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px}
+  .fb{min-height:1.4em; margin:8px 0 0; font-weight:600}
+  .fb.bad{color:var(--bad)} .fb.ok{color:var(--ok)}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin:10px 0}
+  .stats div{background:var(--card); border:2px solid var(--edge); border-radius:12px; padding:8px; text-align:center}
+  .stats b{display:block; font-size:1.3em}
+  .fleet{display:flex; gap:6px; flex-wrap:wrap; font-size:.9em}
+  .fleet span{background:var(--sea); border-radius:8px; padding:2px 8px}
+  .fleet s{opacity:.6}
+  svg .sea{fill:var(--sea)} svg .gl{stroke:var(--grid); stroke-width:1} svg .ax{stroke:var(--axis); stroke-width:2}
+  svg .n{fill:var(--muted); font-size:10px; text-anchor:middle} svg .pt{fill:transparent; cursor:pointer}
+  svg .dot{fill:var(--grid)} svg .ship{fill:var(--ship); opacity:.85}
+  svg .aim{fill:none; stroke:var(--aim); stroke-width:3}
+  svg .missm{fill:var(--miss); stroke:var(--grid); stroke-width:1.5}
+  svg .ref{fill:var(--accent)} svg .lbl{font-size:12px; font-weight:800; fill:var(--ink)}
+  svg .net{fill:var(--aim); fill-opacity:.18; stroke:var(--aim); stroke-width:2; stroke-dasharray:5 4}
+  @keyframes pop{from{transform:scale(.3); opacity:0} to{transform:scale(1); opacity:1}}
+  svg .new{transform-box:fill-box; transform-origin:center; animation:pop .35s ease-out}
+  @media (prefers-reduced-motion: reduce){ svg .new{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_HARBOR = params.get('from') === 'harbor';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const R = 5, ROUNDS = 15, FLEET = [['Galleon', 4], ['Schooner', 3], ['Sloop', 3], ['Raft', 2], ['Dinghy', 2]];
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const sg = n => n < 0 ? `−${-n}` : String(n);
+const pt = (x, y) => `(${sg(x)}, ${sg(y)})`;
+const key = (x, y) => `${x},${y}`;
+const onGrid = (x, y) => Math.abs(x) <= R && Math.abs(y) <= R;
+let best = 0; try { best = +localStorage.getItem('harbor-battleship:best') || 0; } catch(e){}
+const SKILL_NAMES = {pointsId:'Points on the coordinate plane', distPoints:'Distance between points', coordWord:'Coordinate plane problems', areaCoord:'Area and perimeter on the coordinate plane'};
+
+/* ---------- fleets ---------- */
+function placeFleet(){
+  for (;;) {
+    const taken = new Set(), ships = [];
+    let ok = true;
+    for (const [name, len] of FLEET) {
+      let placed = false;
+      for (let t = 0; t < 200 && !placed; t++) {
+        const horiz = Math.random() < .5, x = rnd(-R, horiz ? R - len + 1 : R), y = rnd(-R, horiz ? R : R - len + 1);
+        const cells = Array.from({length:len}, (_, i) => horiz ? [x + i, y] : [x, y + i]);
+        if (cells.some(([a, b]) => taken.has(key(a, b)))) continue;
+        cells.forEach(([a, b]) => taken.add(key(a, b))); ships.push({name, cells, hits:new Set()}); placed = true;
+      }
+      if (!placed) { ok = false; break; }
+    }
+    if (ok) return ships;
+  }
+}
+const shipAt = (fleet, x, y) => fleet.find(s => s.cells.some(([a, b]) => a === x && b === y));
+const sunk = s => s.hits.size === s.cells.length;
+const afloat = fleet => fleet.filter(s => !sunk(s));
+const partsHit = fleet => fleet.reduce((n, s) => n + s.hits.size, 0);
+
+/* ---------- game state ---------- */
+let G = null;
+function newGame(){
+  G = {round:1, enemy:placeFleet(), mine:placeFleet(), myShots:new Map(), theirShots:new Map(), right:0, tries:0, missed:{}, started:Date.now(),
+       phase:'aim', aim:null, view:'enemy', fb:'', fbKind:'', q:null, hunt:[], lastNew:null, treasure:0, salvaged:new Set(), done:false};
+}
+function miss(skill){ G.missed[skill] = (G.missed[skill] || 0) + 1; }
+
+/* ---------- the board (SVG). Every lattice point from −5 to 5 is a target. ---------- */
+const S = 30, PAD = 22, W = PAD * 2 + S * 2 * R;
+const X = x => PAD + (x + R) * S, Y = y => PAD + (R - y) * S;
+function boardSVG(which){
+  const enemy = which === 'enemy', shots = enemy ? G.myShots : G.theirShots, fleet = enemy ? G.enemy : G.mine;
+  let g = `<rect class="sea" x="0" y="0" width="${W}" height="${W}" rx="12"/>`;
+  for (let i = -R; i <= R; i++) g += `<line class="gl" x1="${X(i)}" y1="${Y(R)}" x2="${X(i)}" y2="${Y(-R)}"/><line class="gl" x1="${X(-R)}" y1="${Y(i)}" x2="${X(R)}" y2="${Y(i)}"/>`;
+  g += `<line class="ax" x1="${X(-R) - 8}" y1="${Y(0)}" x2="${X(R) + 8}" y2="${Y(0)}"/><line class="ax" x1="${X(0)}" y1="${Y(-R) + 8}" x2="${X(0)}" y2="${Y(R) - 8}"/>`;
+  for (let i = -R; i <= R; i++) if (i) g += `<text class="n" x="${X(i)}" y="${Y(0) + 13}">${sg(i)}</text><text class="n" x="${X(0) - 9}" y="${Y(i) + 4}">${sg(i)}</text>`;
+  g += `<text class="n" x="${X(R) + 12}" y="${Y(0) - 4}">x</text><text class="n" x="${X(0) + 10}" y="${Y(R) - 6}">y</text>`;
+  if (!enemy || G.done) for (const s of fleet) {   // her ships (and, at the end, theirs) as capsules over their points
+    const xs = s.cells.map(c => X(c[0])), ys = s.cells.map(c => Y(c[1])), x0 = Math.min(...xs) - 11, y0 = Math.min(...ys) - 11;
+    g += `<rect class="ship" x="${x0}" y="${y0}" width="${Math.max(...xs) - Math.min(...xs) + 22}" height="${Math.max(...ys) - Math.min(...ys) + 22}" rx="11"${enemy ? ' style="opacity:.45"' : ''}/>`;
+  }
+  if (G.q?.net && enemy) { const [[a, b], [c, d]] = G.q.net; g += `<rect class="net" x="${X(a)}" y="${Y(d)}" width="${X(c) - X(a)}" height="${Y(b) - Y(d)}"/>`; }
+  for (const [k, r] of shots) { const [x, y] = k.split(',').map(Number), cls = k === G.lastNew ? ' new' : '';
+    g += r === 'hit' ? `<text class="${cls.trim()}" x="${X(x)}" y="${Y(y) + 7}" text-anchor="middle" font-size="20">💥</text>` : `<circle class="missm${cls}" cx="${X(x)}" cy="${Y(y)}" r="6"/>`; }
+  if (G.q?.ref && enemy) { const [x, y] = G.q.ref; g += `<circle class="ref" cx="${X(x)}" cy="${Y(y)}" r="7"/><text class="lbl" x="${X(x) + 9}" y="${Y(y) - 8}">🛟</text>`; }
+  if (G.q?.ref2 && enemy) { const [x, y] = G.q.ref2; g += `<text x="${X(x)}" y="${Y(y) + 6}" text-anchor="middle" font-size="16">🔎</text>`; }
+  if (enemy && G.aim) g += `<circle class="aim" cx="${X(G.aim[0])}" cy="${Y(G.aim[1])}" r="12"/><text class="lbl" x="${X(G.aim[0]) + 12}" y="${Y(G.aim[1]) - 12}">A</text>`;
+  if (!enemy && G.q?.show) { const [x, y] = G.q.show; g += `<circle class="aim" cx="${X(x)}" cy="${Y(y)}" r="12"/>`; }
+  const tappable = (enemy && G.phase === 'aim') || (!enemy && G.phase === 'plot');
+  if (tappable) for (let x = -R; x <= R; x++) for (let y = -R; y <= R; y++) {
+    const done = enemy && G.myShots.has(key(x, y));
+    if (!done) g += `<circle class="pt" cx="${X(x)}" cy="${Y(y)}" r="14" data-x="${x}" data-y="${y}" tabindex="-1" role="button" aria-label="point ${pt(x, y)}"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${W}" role="img" aria-label="${enemy ? 'The pirates’ waters' : 'Your fleet'}: a coordinate plane from −5 to 5">${g}</svg>`;
+}
+const fleetHTML = fleet => `<div class="fleet">${fleet.map(s => sunk(s) ? `<span><s>${esc(s.name)}</s> sunk</span>` : `<span>${esc(s.name)} (${s.cells.length})</span>`).join('')}</div>`;
+
+/* ---------- the question panel ---------- */
+const coordInputs = () => `<div class="coord">( <button type="button" class="pm" data-pm="ax" aria-label="Make x negative or positive">+</button><input id="ax" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="x-coordinate"> , <button type="button" class="pm" data-pm="ay" aria-label="Make y negative or positive">+</button><input id="ay" inputmode="numeric" maxlength="3" autocomplete="off" aria-label="y-coordinate"> )</div>`;
+function readCoord(){
+  const one = id => { const box = document.getElementById(id), raw = box.value.trim(), neg = /^[-−]/.test(raw) !== (document.querySelector(`[data-pm="${id}"]`).textContent === '−'); const n = parseInt(raw.replace(/[-−\s]/g, ''), 10); return Number.isFinite(n) ? (neg ? -n : n) : NaN; };
+  return [one('ax'), one('ay')];
+}
+function panelHTML(){
+  const P = G.phase, q = G.q;
+  if (P === 'aim') return `<p class="q">Round ${G.round} of ${ROUNDS}. Your shot! Tap a spot in the pirates’ waters to aim.</p>`;
+  if (P === 'name') return `<p class="q">You aimed at A. Type A’s coordinates to fire:</p><form id="f">${coordInputs()}<div class="row"><button class="btn go" type="submit">💣 Fire!</button><button class="btn" type="button" data-reaim>Aim somewhere else</button></div></form>`;
+  if (P === 'plot') return `<p class="q">🏴‍☠️ The pirates fire at <b>${pt(...q.at)}</b>! Tap that spot on your map to see where it lands.</p>`;
+  if (P === 'coord') return `<p class="q">${q.text}</p><form id="f">${coordInputs()}<div class="row"><button class="btn go" type="submit">Send</button></div></form>`;
+  if (P === 'num') return `<p class="q">${q.text}</p><form id="f"><div class="num"><input id="an" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="Your answer"> <span class="muted">${esc(q.unit)}</span></div><div class="row"><button class="btn go" type="submit">Send</button></div></form>`;
+  if (P === 'next') return `<div class="row"><button class="btn go" type="button" data-next>${esc(G.nextLabel || 'Next ▶')}</button></div>`;
+  return '';
+}
+function render(focus){
+  if (!G) return;
+  const e = G.view === 'enemy';
+  app.innerHTML = `<div class="hud"><span class="pill">🌊 Round ${Math.min(G.round, ROUNDS)} of ${ROUNDS}</span><span class="pill">💥 You: ${partsHit(G.enemy)}</span><span class="pill">🏴‍☠️ Pirates: ${partsHit(G.mine)}</span>${G.treasure ? `<span class="pill">💰 ${G.treasure}</span>` : ''}</div>
+    <div class="tabs" role="group" aria-label="Which map"><button type="button" data-view="enemy" aria-pressed="${e}">🏴‍☠️ Pirates’ waters</button><button type="button" data-view="mine" aria-pressed="${!e}">⛵ Your fleet</button></div>
+    <div class="layout">
+      <div class="board" id="bEnemy" ${!e ? 'data-hide-small' : ''}><h2>🏴‍☠️ Pirates’ waters</h2>${boardSVG('enemy')}${fleetHTML(G.enemy)}</div>
+      <div class="board" id="bMine" ${e ? 'data-hide-small' : ''}><h2>⛵ Your fleet</h2>${boardSVG('mine')}${fleetHTML(G.mine)}</div>
+    </div>
+    <div class="card" id="panel">${panelHTML()}<p class="fb ${G.fbKind}" role="status">${G.fb}</p></div>`;
+  if (focus) (document.getElementById('ax') || document.getElementById('an') || document.querySelector('[data-next]'))?.focus();
+}
+// on a phone only one map shows at a time
+const css = document.createElement('style'); css.textContent = '@media (max-width:759px){ [data-hide-small]{display:none} }'; document.head.appendChild(css);
+
+/* ---------- turns ---------- */
+function startRound(){
+  if (G.round > ROUNDS || !afloat(G.enemy).length || !afloat(G.mine).length) return finish();
+  if (G.round % 3 === 0 && afloat(G.enemy).length && !G.sonarDone) { G.sonarDone = true; return sonar(); }
+  G.sonarDone = false; G.phase = 'aim'; G.view = 'enemy'; G.aim = null; G.q = null; render();
+}
+function aimAt(x, y){ G.aim = [x, y]; G.phase = 'name'; G.fb = ''; G.fbKind = ''; render(true); }
+function fire(){
+  const [x, y] = readCoord(); if (!Number.isFinite(x) || !Number.isFinite(y)) { G.fb = 'Type both numbers. Use ± to make a number negative.'; G.fbKind = 'bad'; return render(true); }
+  G.tries++;
+  const [ax, ay] = G.aim, ok = x === ax && y === ay;
+  if (ok) G.right++; else miss('pointsId');
+  let msg = ok ? '' : `A is at ${pt(ax, ay)}, but you typed ${pt(x, y)}${x === ay && y === ax ? ' (x and y are swapped)' : x === -ax && y === ay || x === ax && y === -ay ? ' (check the signs)' : ''}, so that’s where the cannonball went. `;
+  if (!onGrid(x, y)) { msg += 'It splashed outside the harbor.'; G.fbKind = 'bad'; }
+  else if (G.myShots.has(key(x, y))) { msg += 'You already fired there.'; G.fbKind = 'bad'; }
+  else msg += shoot(G.enemy, G.myShots, x, y, 'You');
+  G.fbKind = ok ? (G.myShots.get(key(x, y)) === 'hit' ? 'ok' : '') : 'bad';
+  G.fb = msg; G.aim = null; G.phase = 'next'; G.nextLabel = 'Pirates’ turn ▶'; G.after = enemyTurn; render(true);
+}
+function shoot(fleet, shots, x, y, who){
+  const s = shipAt(fleet, x, y); G.lastNew = key(x, y);
+  if (!s) { shots.set(key(x, y), 'miss'); return `${who === 'You' ? 'Splash! A miss' : 'Splash! The pirates missed'} at ${pt(x, y)}.`; }
+  shots.set(key(x, y), 'hit'); s.hits.add(key(x, y));
+  if (who === 'You' && sunk(s)) { G.toSalvage = s; return `💥 Hit! You sank the pirates’ ${s.name}!`; }
+  return who === 'You' ? `💥 Hit at ${pt(x, y)}!` : `💥 The pirates hit your ${s.name}${sunk(s) ? ' and sank it' : ''}!`;
+}
+function enemyTurn(){
+  if (G.toSalvage) { const s = G.toSalvage; G.toSalvage = null; return salvage(s); }
+  if (!afloat(G.enemy).length) return finish();
+  // the pirates: usually finish off a ship they've hit; otherwise a random spot, mostly on a checkerboard (every ship covers one)
+  let target = null;
+  const live = [...G.theirShots].filter(([k, r]) => r === 'hit').map(([k]) => k.split(',').map(Number)).filter(([x, y]) => !sunk(shipAt(G.mine, x, y)));
+  if (live.length && Math.random() < .85) { const opts = live.flatMap(([x, y]) => [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]).filter(([x, y]) => onGrid(x, y) && !G.theirShots.has(key(x, y))); if (opts.length) target = pick(opts); }
+  if (!target) { const checker = Math.random() < .75; let t = 0; do { target = [rnd(-R, R), rnd(-R, R)]; } while ((G.theirShots.has(key(...target)) || (checker && t++ < 60 && (target[0] + target[1]) % 2)) ); }
+  G.q = {at:target}; G.phase = 'plot'; G.view = 'mine'; G.fb = ''; G.fbKind = ''; render();
+}
+function plotAt(x, y){
+  const [tx, ty] = G.q.at, ok = x === tx && y === ty; G.tries++;
+  if (ok) G.right++; else miss('pointsId');
+  const res = shoot(G.mine, G.theirShots, tx, ty, 'Pirates');
+  G.fb = ok ? `Right spot! ${res}` : `You tapped ${pt(x, y)}. ${pt(tx, ty)} is ${tx > 0 ? `${tx} right` : tx < 0 ? `${-tx} left` : 'on the y-axis'}${ty ? `, ${ty > 0 ? `${ty} up` : `${-ty} down`}` : ' on the x-axis'}. ${res}`;
+  G.fbKind = ok ? 'ok' : 'bad'; G.q = {show:[tx, ty]}; G.phase = 'next'; G.nextLabel = 'Next round ▶'; G.after = () => { G.round++; startRound(); }; render(true);
+}
+
+function toAim(){ if (!afloat(G.enemy).length) return finish(); G.phase = 'aim'; G.aim = null; G.q = null; G.fb = ''; G.fbKind = ''; G.view = 'enemy'; render(); }
+/* sonar: a free hit for a right answer about distance (Khan: distance between points, coordinate plane problems) */
+function sonar(){
+  const cells = afloat(G.enemy).flatMap(s => s.cells.filter(([x, y]) => !G.myShots.has(key(x, y))));
+  if (!cells.length) { G.round++; return startRound(); }
+  const [cx, cy] = pick(cells), horiz = Math.random() < .5;
+  let ref, d; for (let t = 0; t < 50; t++) { const r = horiz ? [rnd(-R, R), cy] : [cx, rnd(-R, R)]; d = horiz ? Math.abs(r[0] - cx) : Math.abs(r[1] - cy); if (d >= 2) { ref = r; break; } }
+  if (!ref) { ref = horiz ? [cx > 0 ? -R : R, cy] : [cx, cy > 0 ? -R : R]; d = horiz ? Math.abs(ref[0] - cx) : Math.abs(ref[1] - cy); }
+  const dir = horiz ? (cx > ref[0] ? 'right' : 'left') : (cy > ref[1] ? 'up' : 'down');
+  G.view = 'enemy'; G.fb = ''; G.fbKind = '';
+  if (Math.random() < .5) { G.phase = 'coord'; G.q = {kind:'find', ans:[cx, cy], ref, skill:'distPoints', text:`📡 Sonar ping! Part of a pirate ship is <b>${d} units ${dir}</b> of the buoy 🛟 at ${pt(...ref)}. What are its coordinates? A right answer is a free hit.`}; }
+  else { G.phase = 'num'; G.q = {kind:'dist', ans:d, ref, ref2:[cx, cy], unit:'units', skill:'coordWord', text:`📡 Sonar ping! The lookout on the buoy 🛟 at ${pt(...ref)} spots a pirate ship 🔎 at ${pt(cx, cy)}. How far apart are they? A right answer is a free hit.`}; }
+  render(true);
+}
+/* salvage: a net around a sunken ship (Khan: area and perimeter on the coordinate plane) */
+function salvage(s, then = enemyTurn){
+  const xs = s.cells.map(c => c[0]), ys = s.cells.map(c => c[1]);
+  const a = Math.max(-R, Math.min(...xs) - 1), b = Math.max(-R, Math.min(...ys) - 1), c = Math.min(R, Math.max(...xs) + 1), d = Math.min(R, Math.max(...ys) + 1);
+  const w = c - a, h = d - b, ask = Math.random() < .5 ? 'area' : 'perimeter';
+  G.view = 'enemy'; G.phase = 'num'; G.fb = ''; G.fbKind = '';
+  G.salvageThen = then; G.q = {kind:'salvage', net:[[a, b], [c, d]], ans:ask === 'area' ? w * h : 2 * (w + h), ask, w, h, unit:ask === 'area' ? 'square units' : 'units', skill:'areaCoord',
+    text:`🪝 Salvage! A rectangular net goes around the sunken ${esc(s.name)}, with corners at ${pt(a, b)}, ${pt(c, b)}, ${pt(c, d)} and ${pt(a, d)}. What is the net’s <b>${ask}</b>? A right answer finds 💰 treasure.`};
+  render(true);
+}
+function answerQ(){
+  const q = G.q; let ok, said;
+  if (G.phase === 'coord') { const [x, y] = readCoord(); if (!Number.isFinite(x) || !Number.isFinite(y)) { G.fb = 'Type both numbers. Use ± to make a number negative.'; G.fbKind = 'bad'; return render(true); } ok = x === q.ans[0] && y === q.ans[1]; said = pt(x, y); }
+  else { const v = parseInt(document.getElementById('an').value.replace(/[^\d]/g, ''), 10); if (!Number.isFinite(v)) { G.fb = 'Type a number.'; G.fbKind = 'bad'; return render(true); } ok = v === q.ans; said = v; }
+  G.tries++; if (ok) G.right++; else miss(q.skill);
+  if (q.kind === 'salvage') {
+    if (ok) G.treasure++;
+    G.fb = ok ? `💰 Treasure! The ${q.ask} is ${q.ans} ${q.unit}.` : `Not quite. The net is ${q.w} wide and ${q.h} tall, so its ${q.ask} is ${q.ask === 'area' ? `${q.w} × ${q.h}` : `${q.w} + ${q.h} + ${q.w} + ${q.h}`} = ${q.ans} ${q.unit}.`;
+    G.fbKind = ok ? 'ok' : 'bad'; G.phase = 'next'; G.nextLabel = G.salvageThen === enemyTurn ? 'Pirates’ turn ▶' : 'Take your shot ▶'; G.after = G.salvageThen; G.q = {net:q.net}; return render(true);
+  }
+  const [cx, cy] = q.kind === 'find' ? q.ans : q.ref2, d = q.kind === 'find' ? Math.abs(q.ans[0] - q.ref[0]) + Math.abs(q.ans[1] - q.ref[1]) : q.ans;
+  const across = (q.ref[0] !== cx && Math.sign(q.ref[0]) * Math.sign(cx) < 0) || (q.ref[1] !== cy && Math.sign(q.ref[1]) * Math.sign(cy) < 0);
+  const why = `${pt(...q.ref)} to ${pt(cx, cy)} is ${d} units${across ? ' (count to 0, then past it)' : ''}.`;
+  if (ok) { G.fb = `📡 Right! ${shoot(G.enemy, G.myShots, cx, cy, 'You')}`; G.fbKind = 'ok'; }
+  else { G.fb = `The sonar answer was ${q.kind === 'find' ? pt(cx, cy) : d}: ${why} You said ${said}. No free hit this time.`; G.fbKind = 'bad'; }
+  G.phase = 'next'; G.q = null; G.nextLabel = 'Take your shot ▶'; G.after = toAim;
+  if (ok && G.toSalvage) { const s = G.toSalvage; G.toSalvage = null; G.after = () => salvage(s, toAim); }
+  render(true);
+}
+
+/* ---------- events ---------- */
+app.addEventListener('click', e => {
+  const p = e.target.closest('.pt');
+  if (p && G) { const x = +p.dataset.x, y = +p.dataset.y; if (G.phase === 'aim') return aimAt(x, y); if (G.phase === 'plot') return plotAt(x, y); }
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.matches('[data-start]')) { newGame(); return startRound(); }
+  if (!G) return;
+  if (b.matches('[data-view]')) { G.view = b.dataset.view; return render(); }
+  if (b.matches('[data-pm]')) { b.textContent = b.textContent === '−' ? '+' : '−'; document.getElementById(b.dataset.pm)?.focus(); return; }
+  if (b.matches('[data-reaim]')) { G.phase = 'aim'; G.aim = null; return render(); }
+  if (b.matches('[data-next]')) { G.lastNew = null; const f = G.after; G.after = null; f && f(); }
+});
+app.addEventListener('submit', e => { e.preventDefault(); if (!G) return; if (G.phase === 'name') fire(); else if (G.phase === 'coord' || G.phase === 'num') answerQ(); });
+
+/* ---------- start and end ---------- */
+function intro(){
+  G = null;
+  app.innerHTML = `<h1>⚓ Harbor Battleship</h1>
+    <p>Pirate parrots have hidden 5 ships in the harbor, and they’re hunting your fleet! The harbor is a coordinate plane from −5 to 5.</p>
+    <div class="card"><h2>How to play</h2><ol class="how">
+      <li><b>Your shot:</b> tap a spot in the pirates’ waters, then type its coordinates to fire. The cannonball goes where you <i>typed</i>, so get them right!</li>
+      <li><b>Their shot:</b> the pirates call out coordinates. Tap that spot on your map to see if they hit you.</li>
+      <li>📡 Every third round, <b>sonar</b> asks a distance question. Get it right for a free hit.</li>
+      <li>🪝 Sink a ship and <b>salvage</b> it: find the area or perimeter of the net around it for 💰 treasure.</li>
+      <li>${ROUNDS} rounds. Earn a ⭐ for hitting more ship parts than the pirates, a ⭐ for sinking 2 ships, and a ⭐ for getting 80% of your answers right.</li></ol>
+      <p class="muted" style="margin:0">(x, y): go left or right first (x), then up or down (y).</p>
+      ${FROM_HARBOR ? '<p class="muted">Each right answer earns Pet World coins. Battleship games don’t count toward Pet Harbor orders or quizzes.</p>' : ''}</div>
+    <p style="margin-top:14px"><button type="button" class="btn go" data-start>⛵ Set sail</button>${best ? ` <span class="muted">Best: ${'⭐'.repeat(best)}</span>` : ''}</p>`;
+}
+function finish(){
+  if (!G || G.done) return; G.done = true;
+  const mine = partsHit(G.enemy), theirs = partsHit(G.mine), sunkN = G.enemy.filter(sunk).length, acc = G.tries ? G.right / G.tries : 0;
+  const won = !afloat(G.enemy).length || (afloat(G.mine).length > 0 && mine > theirs);
+  const stars = (won ? 1 : 0) + (sunkN >= 2 ? 1 : 0) + (acc >= .8 && G.tries >= 5 ? 1 : 0);
+  const result = {won, stars, hits:mine, sunk:sunkN, treasure:G.treasure, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('harbor-battleship:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_HARBOR) window.parent.postMessage({type:'battleship:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'harbor-battleship', runId:ARCADE_RUN, roundId:`battle-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  G.phase = 'over'; G.view = 'enemy';
+  app.innerHTML = `<h1>${won ? '🏆 The harbor is yours!' : '🏴‍☠️ The pirates got the better of you'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${won ? 'Great captaining!' : 'Every battle makes you a sharper navigator. Try again!'}</p>
+    <div class="stats"><div><b>${mine} to ${theirs}</b>ship parts hit</div><div><b>${sunkN} of ${FLEET.length}</b>pirate ships sunk</div><div><b>${G.right} of ${G.tries}</b>answers right</div><div><b>${G.treasure}</b>💰 treasure</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    <div class="board" style="margin-top:10px"><h2>Where the pirates were hiding</h2>${boardSVG('enemy')}</div>
+    <p><button type="button" class="btn go" data-start>Play again</button></p>`;
+}
+window.__battle = {get G(){ return G; }, startRound, finish};   // for tests
+intro();
+})();
+</script>
+</body>
+</html>

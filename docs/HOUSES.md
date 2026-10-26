@@ -1,6 +1,6 @@
 # 6th grade, shop 7: Pet Houses
 
-**Status: built (7 stations). Unit 8 rebuilt to match Khan exactly on Oct 26, 2026.** Khan Academy 6th grade, Units 8 (plane figures), 9 (the coordinate plane), and 10 (3D figures). Units 9 and 10 stay here until they move to their own buildings. The generators are `HOUSES_GEN` (stations 1 to 5) and `HOUSES2_GEN` (stations 6 and 7) in `src/game/game.js` (stress-tested: 1,020,000 problems, 20,000 per skill and level; every area, distance, coordinate, reflection, quadrant, volume, and surface area checked). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
+**Status: built (5 stations). Unit 8 rebuilt to match Khan exactly on Oct 26, 2026.** Khan Academy 6th grade, Units 8 (plane figures) and 10 (3D figures). Unit 9 (the coordinate plane) moved to its own building, ⚓ Pet Harbor (`HARBOR.md`), on Oct 26, 2026; Unit 10 stays here until it gets its own building. The generators are `HOUSES_GEN` (stations 1 to 3) and `HOUSES2_GEN` (stations 4 and 5) in `src/game/game.js` (stress-tested: 1,020,000 problems, 20,000 per skill and level; every area, distance, coordinate, reflection, quadrant, volume, and surface area checked). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
 
 Pet Houses opens after the Potion Lab Unit Test (or with the teacher's "Open Pet Houses for everyone").
 
@@ -11,10 +11,8 @@ Pet Houses opens after the Potion Lab Unit Test (or with the teacher's "Open Pet
 | 1 | 📐 Floor Plans | Area of parallelograms (`areaPara`), find a missing length given the area (`paraMissing`) |
 | 2 | 🔺 Roof Lines | Find base and height on a triangle (`triBaseHeight`), area of right triangles (`areaRightTri`), area of triangles (`areaTri`), find a missing length given the area (`triMissing`) |
 | 3 | 🧱 Rooms | Decompose area with triangles (`decompTri`), area of composite shapes (`areaComposite`). ☄️ Shape Asteroids is here. |
-| 4 | 📍 Yard Map | Points on the coordinate plane (`pointsId`), quadrants (`graphQuad`), reflecting points (`reflect`) |
-| 5 | 📏 Fence Lines | Distance between points (`distPoints`), area and perimeter on the coordinate plane (`areaCoord`), coordinate plane word problems (`coordWord`) |
-| 6 | 📦 Toy Boxes | Volume with fractions (`volPrism`), fractional unit cubes (`volCubes`), volume word problems (`volWord`) |
-| 7 | 🎁 Wrapping Paper | Nets (`netsId`), surface area of boxes (`surfaceArea`), surface area of square pyramids (`surfacePyramid`) |
+| 4 | 📦 Toy Boxes | Volume with fractions (`volPrism`), fractional unit cubes (`volCubes`), volume word problems (`volWord`) |
+| 5 | 🎁 Wrapping Paper | Nets (`netsId`), surface area of boxes (`surfaceArea`), surface area of square pyramids (`surfacePyramid`) |
 
 Stations 1 to 3 are Khan's Unit 8 in Khan's order: all 8 exercises, each linked. Unit 8 has no mid-unit quizzes; its unit test is in `MATH_KHAN_UNITS`.
 
@@ -22,8 +20,8 @@ Stations 1 to 3 are Khan's Unit 8 in Khan's order: all 8 exercises, each linked.
 
 - **New skills:** `paraMissing` (area ÷ base or height; level 3 can have a half-unit side), `triBaseHeight` (pick the height CD when AB is the base; level 2 puts the height outside the triangle, level 3 turns the triangle so the base isn't at the bottom, and levels 2 and 3 then find the area), `triMissing` (double the area, then divide).
 - **⟳ Turn it:** every parallelogram and triangle picture in stations 1 and 2 is wrapped in `turnable()`. The button turns the picture a quarter turn at a time (a sideways turn shrinks it so it still fits). Labels turn with the picture.
-- **Think sets:** `houses:1` is now parallelograms (with a missing-height question) and `houses:2` is triangles (with a missing-height question and a "height outside the triangle" short answer). The old sets moved up one: `houses:3` to `houses:7`.
-- Station numbers for Units 9 and 10 moved up by one, so their station quizzes are `houses:4` to `houses:7` now. A student's old station quiz results for stations 2 to 6 stay under the old numbers, so those quizzes may show as not taken.
+- **Think sets:** `houses:1` is now parallelograms (with a missing-height question) and `houses:2` is triangles (with a missing-height question and a "height outside the triangle" short answer). The old sets moved up one. Then the Unit 9 sets moved to Pet Harbor (`harbor:1`, `harbor:2`), so Pet Houses has `houses:1` to `houses:5`.
+- Unit 10's stations are now 4 and 5. A student's old Pet Houses station quiz results stay under the old station numbers, so those quizzes may show as not taken.
 - **Stress-tested** in the built game: 3,000 problems per skill and level for all 8 Unit 8 skills. Every answer is valid and every choice question has one right choice.
 
 ## Pictures

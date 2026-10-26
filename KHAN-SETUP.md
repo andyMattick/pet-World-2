@@ -27,7 +27,8 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 | Ice Rink | 6th grade math | [Negative numbers](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-negative-number-topic) (unit 5) |
 | Potion Lab | 6th grade math | [Variables and expressions](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-expressions-and-variables) (unit 6) |
 | Pet Fair | 6th grade math | [Equations and inequalities](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-equations-and-inequalities) (unit 7) |
-| Pet Houses | 6th grade math | [Plane figures](https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:cc-6th-plane-figures), [Coordinate plane](https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:coordinate-plane), and [Volume and surface area](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-geometry-topic) (units 8 to 10) |
+| Pet Houses | 6th grade math | [Plane figures](https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:cc-6th-plane-figures) and [Volume and surface area](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-geometry-topic) (units 8 and 10) |
+| Pet Harbor | 6th grade math | [Coordinate plane](https://www.khanacademy.org/math/cc-sixth-grade-math/x0267d782:coordinate-plane) (unit 9) |
 | Pet Show | 6th grade math | [Data and statistics](https://www.khanacademy.org/math/cc-sixth-grade-math/cc-6th-data-statistics) (unit 11) |
 | Lemonade Stand, Toy Shop, Pizza Parlor, Garden Center | [4th grade math](https://www.khanacademy.org/math/cc-fourth-grade-math) | Place value, addition and subtraction, multiplication and division, fractions, decimals, measurement and data, area and perimeter. Each station links to its own exercise. |
 | Story Corner Library (nouns) | Grammar | [The noun](https://www.khanacademy.org/humanities/grammar/parts-of-speech-the-noun) |

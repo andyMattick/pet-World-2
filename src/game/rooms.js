@@ -24,6 +24,8 @@ const ROOMS = {
            props:['🎈','🎡','🍿','🎠','🎯','🎈'], hero:'🎡', float:['🎈','🎉'], motion:'rise'},
   houses: {wall:'#CDEBFA', wall2:'#FFFFFF', pattern:'sky', floor:'#8CCB6E', floor2:'#74B758', floorKind:'grass', frame:'#A0522D', awning:['#D9534F','#FFFFFF'],
            props:['🌳','🏡','🌻','🧱','🐝','🌳'], hero:'☀️', float:['☁️'], motion:'drift'},
+  harbor: {wall:'#BFE6F7', wall2:'#E8F7FD', pattern:'sky', floor:'#B98A5E', floor2:'#A0744B', floorKind:'planks', frame:'#1F4E79', awning:['#1F6FB2','#FFFFFF'],
+           props:['⛵','🛟','🦀','⚓','🐚','⛵'], hero:'🗼', float:['☁️','🕊️'], motion:'drift'},
   show:   {wall:'#9E1B32', wall2:'#7A1226', pattern:'drapes', floor:'#B07A4A', floor2:'#9A6638', floorKind:'planks', frame:'#C9A227', awning:['#B5122E','#F2C94C'],
            props:['💐','🎀','🏆','📸','🎪','💐'], hero:'⭐', float:['🎉','⭐'], motion:'fall', dark:true},
   // 4th grade math

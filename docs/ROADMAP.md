@@ -184,6 +184,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F52. 💬 Messages moved to the class Dashboard: every student is a button with a count of new replies; tap one to open the conversation. See `CHAT.md`
 - [x] F53. 🏡 Pet Houses Unit 8 rebuilt to match Khan: 3 new skills (`paraMissing`, `triBaseHeight`, `triMissing`), a new 🔺 Roof Lines station, Khan's order, ⟳ Turn it on shape pictures. See `HOUSES.md`
 - [x] F54. ☄️ Shape Asteroids: tap a shape asteroid to freeze space and solve it in a minute; in Pet Houses (Rooms) and the Arcade. See `SHAPE-ASTEROIDS.md`
+- [x] F55. ⚓ Pet Harbor: Khan Unit 9 (the coordinate plane) gets its own building, with 2 new skills (`polyDraw`, `quadCoord`). Pet Houses keeps Units 8 and 10. See `HARBOR.md`
+- [x] F56. ⚓ Harbor Battleship: battleship on a coordinate plane; in Pet Harbor (Shipyard) and the Arcade. See `HARBOR-BATTLESHIP.md`
 
 ## Database files, in the order they were run
 

@@ -776,24 +776,29 @@ export const TYPED_QUESTIONS = {
       {"type": "short", "prompt": "Explain two different ways to find the area of an L-shaped figure.", "rubric": ["Describes splitting it into rectangles and adding", "Describes a big rectangle minus the missing part"], "model": "One way is to split the L into two rectangles and add their areas. Another way is to find the area of the whole big rectangle and subtract the corner that is missing.", "minWords": 8},
     ],
     "houses:4": [
-      {"type": "sort", "difficulty": 2, "prompt": "Which quadrant is each point in?", "groups": ["Quadrant I", "Quadrant II", "Quadrant III"], "items": [["(3, 5)", 0], ["(−2, 4)", 1], ["(−1, −6)", 2], ["(7, 1)", 0], ["(−5, 2)", 1], ["(−3, −3)", 2]]},
-      {"type": "fill", "difficulty": 2, "prompt": "Reflect the point (4, −3) across the x-axis. What is the new point? Type it like (x, y).", "accept": ["(4, 3)", "(4,3)", "4, 3", "4,3"]},
-      {"type": "short", "prompt": "Explain what happens to a point’s coordinates when you reflect it across the y-axis.", "rubric": ["Says the x-coordinate changes to its opposite", "Says the y-coordinate stays the same (gives an example)"], "model": "The x-coordinate becomes its opposite and the y-coordinate stays the same. (2, 5) becomes (−2, 5).", "minWords": 8},
-    ],
-    "houses:5": [
-      {"type": "two", "difficulty": 2, "prompt": "Part A: What is the distance between (−3, 2) and (5, 2)?", "options": ["8 units", "2 units", "5 units"], "answer": 0, "partB": {"prompt": "Part B: How do you know?", "options": ["Count the units from −3 to 0, then from 0 to 5, and add them.", "Subtract 2 from 5.", "Add −3 and 5."], "answer": 0}},
-      {"type": "fill", "difficulty": 2, "prompt": "A rectangle has corners at (1, 1), (1, 4), (6, 4), and (6, 1). What is its perimeter? Type the number.", "accept": ["16"]},
-      {"type": "short", "prompt": "Explain how to find the distance between two points that are on opposite sides of an axis, like (0, −4) and (0, 3).", "rubric": ["Uses absolute values or counts through 0", "Adds 4 + 3 to get 7"], "model": "Find how far each point is from 0: |−4| = 4 and |3| = 3. They are on opposite sides, so add: 4 + 3 = 7 units.", "minWords": 8},
-    ],
-    "houses:6": [
       {"type": "two", "difficulty": 2, "prompt": "Part A: A box is 2 ft long, 1 1/2 ft wide, and 1 ft tall. What is its volume?", "options": ["3 cubic feet", "4 1/2 cubic feet", "1 1/2 cubic feet"], "answer": 0, "partB": {"prompt": "Part B: Which formula did you use?", "options": ["Volume = length × width × height", "Volume = length + width + height", "Volume = 2 × length × width"], "answer": 0}},
       {"type": "fill", "difficulty": 3, "prompt": "How many 1/2-inch cubes fit in a 1-inch cube? Type the number.", "accept": ["8"]},
       {"type": "short", "prompt": "Explain why a box that is 1/2 ft by 1/2 ft by 1/2 ft has a volume of 1/8 cubic foot.", "rubric": ["Multiplies 1/2 × 1/2 × 1/2 = 1/8", "Or explains 8 of these small cubes fill a 1-foot cube"], "model": "1/2 × 1/2 × 1/2 = 1/8. You can also see it: 8 of those small cubes stack to fill one cubic foot, so each is 1/8 of it.", "minWords": 8},
     ],
-    "houses:7": [
+    "houses:5": [
       {"type": "multi", "difficulty": 2, "prompt": "A cube has edges of 3 cm. Select every true statement.", "options": ["Each face has an area of 9 square cm", "It has 6 faces", "Its surface area is 54 square cm", "Its surface area is 27 square cm", "It has 8 faces"], "answers": [0, 1, 2]},
       {"type": "two", "difficulty": 2, "prompt": "Part A: Which 3D figure does a net of 1 square and 4 triangles make?", "options": ["A square pyramid", "A cube", "A triangular prism"], "answer": 0, "partB": {"prompt": "Part B: How do you find its surface area?", "options": ["Add the area of the square and the 4 triangles.", "Multiply length × width × height.", "Find the area of one triangle only."], "answer": 0}},
       {"type": "short", "prompt": "Explain the difference between surface area and volume, using a gift box.", "rubric": ["Surface area: the wrapping paper that covers the outside (square units)", "Volume: the space inside the box (cubic units)"], "model": "Surface area is how much wrapping paper covers the outside of the box, in square units. Volume is how much space is inside the box, in cubic units.", "minWords": 8},
+    ],
+    "harbor:1": [
+      {"type": "sort", "difficulty": 2, "prompt": "Which quadrant is each point in?", "groups": ["Quadrant I", "Quadrant II", "Quadrant III"], "items": [["(3, 5)", 0], ["(−2, 4)", 1], ["(−1, −6)", 2], ["(7, 1)", 0], ["(−5, 2)", 1], ["(−3, −3)", 2]]},
+      {"type": "fill", "difficulty": 2, "prompt": "Reflect the point (4, −3) across the x-axis. What is the new point? Type it like (x, y).", "accept": ["(4, 3)", "(4,3)", "4, 3", "4,3"]},
+      {"type": "short", "prompt": "Explain what happens to a point’s coordinates when you reflect it across the y-axis.", "rubric": ["Says the x-coordinate changes to its opposite", "Says the y-coordinate stays the same (gives an example)"], "model": "The x-coordinate becomes its opposite and the y-coordinate stays the same. (2, 5) becomes (−2, 5).", "minWords": 8},
+    ],
+    "harbor:2": [
+      {"type": "two", "difficulty": 2, "prompt": "Part A: What is the distance between (−3, 2) and (5, 2)?", "options": ["8 units", "2 units", "5 units"], "answer": 0, "partB": {"prompt": "Part B: How do you know?", "options": ["Count the units from −3 to 0, then from 0 to 5, and add them.", "Subtract 2 from 5.", "Add −3 and 5."], "answer": 0}},
+      {"type": "fill", "difficulty": 2, "prompt": "A rectangle has corners at (1, 1), (1, 4), (6, 4), and (6, 1). What is its perimeter? Type the number.", "accept": ["16"]},
+      {"type": "short", "prompt": "Explain how to find the distance between two points that are on opposite sides of an axis, like (0, −4) and (0, 3).", "rubric": ["Uses absolute values or counts through 0", "Adds 4 + 3 to get 7"], "model": "Find how far each point is from 0: |−4| = 4 and |3| = 3. They are on opposite sides, so add: 4 + 3 = 7 units.", "minWords": 8},
+    ],
+    "harbor:3": [
+      {"type": "fill", "difficulty": 2, "prompt": "A rectangle has corners at (−3, 2), (4, 2) and (4, −1). What is the fourth corner? Type it like (x, y).", "accept": ["(−3, −1)", "(-3, -1)", "(-3,-1)", "−3, −1", "-3, -1", "-3,-1"]},
+      {"type": "two", "difficulty": 2, "prompt": "Part A: A dock is a rectangle with corners at (−2, −3), (5, −3), (5, 1) and (−2, 1). What is its area?", "options": ["28 square units", "22 square units", "15 square units"], "answer": 0, "partB": {"prompt": "Part B: How do you find the length of the bottom side?", "options": ["Count from −2 to 0 (2 units), then from 0 to 5 (5 units): 7 units.", "Subtract 2 from 5 to get 3 units.", "Add the y-coordinates."], "answer": 0}},
+      {"type": "short", "prompt": "Explain how you can tell that the points (1, 1), (4, 1), (4, 4) and (1, 4) make a square and not just a rectangle.", "rubric": ["Finds the side lengths by counting or subtracting (each is 3)", "Says all four sides are equal (and the sides are straight across and up and down)"], "model": "Each side is 3 units long: from x = 1 to x = 4 is 3, and from y = 1 to y = 4 is 3. The sides go straight across and straight up and down, so the corners are right angles, and all four sides are equal, so it is a square.", "minWords": 10},
     ],
     "show:1": [
       {"type": "sort", "difficulty": 2, "prompt": "Is each one a statistical question?", "groups": ["Statistical question", "Not a statistical question"], "items": [["How many hours do kids in my class sleep?", 0], ["How old is my dog?", 1], ["How tall are the sunflowers in our garden?", 0], ["What time is it now?", 1], ["How many pets do families on my street have?", 0], ["How many legs does a cat have?", 1]]},

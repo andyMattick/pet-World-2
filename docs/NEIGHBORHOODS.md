@@ -18,7 +18,7 @@ Pet World is **one town per student**, with **one neighborhood per grade**. Each
 |---|---|---|
 | 4th grade | Sadlier *Progress Mathematics* Grade 4 + Khan 4th grade (`GRADE4.md`): Lemonade Stand ✅, Toy Shop ✅, Pizza Parlor ✅, Garden Center (stations 1 and 2) | building |
 | 5th grade | Khan 5th grade | later |
-| **6th grade** | Math: Café ✅, Bakery ✅, Market ✅, Clock Tower ✅, Ice Rink ✅, Potion Lab ✅, Pet Fair ✅, Pet Houses ✅, Pet Show ✅; History, Biology, English classes planned | building |
+| **6th grade** | Math: Café ✅, Bakery ✅, Market ✅, Clock Tower ✅, Ice Rink ✅, Potion Lab ✅, Pet Fair ✅, Pet Houses ✅, Pet Harbor ✅, Pet Show ✅; History, Biology, English classes planned | building |
 | 7th grade | Khan 7th grade (needed for next school year) | next year |
 | 8th grade | Khan 8th grade | later |
 | Algebra 1 | Khan Algebra 1 | later |

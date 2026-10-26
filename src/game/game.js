@@ -184,6 +184,8 @@ function normalize(raw){
       games:(Array.isArray(s.carnival?.games) ? s.carnival.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-40).map(g => ({t:+g.t, booth:String(g.booth || '').slice(0, 12), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🎪 Carnival Midway (docs/CARNIVAL.md)
     s.asteroids = {best:Math.max(0, Math.min(3, Math.round(+s.asteroids?.best || 0))), day:typeof s.asteroids?.day === 'string' ? s.asteroids.day : '', coinsToday:Math.max(0, Math.round(+s.asteroids?.coinsToday || 0)),
       games:(Array.isArray(s.asteroids?.games) ? s.asteroids.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), blasted:Math.max(0, +g.blasted || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // ☄️ Shape Asteroids (docs/SHAPE-ASTEROIDS.md)
+    s.battleship = {best:Math.max(0, Math.min(3, Math.round(+s.battleship?.best || 0))), day:typeof s.battleship?.day === 'string' ? s.battleship.day : '', coinsToday:Math.max(0, Math.round(+s.battleship?.coinsToday || 0)),
+      games:(Array.isArray(s.battleship?.games) ? s.battleship.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), sunk:Math.max(0, +g.sunk || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // ⚓ Harbor Battleship (docs/HARBOR-BATTLESHIP.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -4977,27 +4979,33 @@ const HOUSES_GEN = {
         numStep('Total', 'compute', `${top * h} + ${t * h} = ? square feet`, top * h + t * h, {mis:v => v === top * h + 2 * t * h ? 'halfWrong' : null})], answerSteps:[2]};
   },
 
-  /* ----- station 4: Yard Map (points and quadrants) ----- */
+};
+Object.assign(GEN, HOUSES_GEN);
+
+/* ===== 6th grade, Pet Harbor (Khan unit 9): the coordinate plane. These skills were Pet Houses stations 4 and 5
+   until Oct 26, 2026, when Unit 9 got its own building; their ids and mix-ups are the same. ===== */
+const HARBOR_GEN = {
+  /* ----- station 1: Lighthouse (points and quadrants) ----- */
   pointsId(lvl){
     const R = lvl === 1 ? 6 : 8; let x, y; do { x = lvl === 1 ? rand(1, R) * pick([1, -1]) : nz(R); y = nz(R); } while (Math.abs(x) === Math.abs(y));
     if (lvl === 3 && Math.random() < 0.5) { if (Math.random() < 0.5) x = 0; else y = 0; }   // level 3: half the points sit on an axis
     const zero = x === 0 || y === 0, wrongs = [{text:pt(y, x), mis:'coordSwap'}, ...(zero ? [{text:pt(-y, -x), mis:'coordSwap'}] : []), {text:pt(-x, y), mis:'signWrong'}, {text:pt(x, -y), mis:'signWrong'}];
     const opts = choiceOf({text:pt(x, y)}, wrongs.filter((w, i, arr) => w.text !== pt(x, y) && arr.findIndex(u => u.text === w.text) === i).slice(0, 3));
-    return {title:'Yard Map', ctx:`point ${pt(x, y)}`, bubble:'Where is the bone buried? Give the coordinates of point A.', helper:'(x, y): go left or right first (x), then up or down (y).', visual:planeSVG(R, [{x, y, name:'A'}]),
+    return {title:'Lighthouse', ctx:`point ${pt(x, y)}`, bubble:'Where is the buoy? Give the coordinates of point A.', helper:'(x, y): go left or right first (x), then up or down (y).', visual:planeSVG(R, [{x, y, name:'A'}]),
       steps:[{name:'Coordinates', type:'concept', kind:'choice', prompt:'What are the coordinates of A?', options:opts, hint:() => `Start at the origin. How far ${x > 0 ? 'right' : 'left'}? Then how far ${y > 0 ? 'up' : 'down'}?`}]};
   },
   graphQuad(lvl){
     if (lvl === 3 && Math.random() < 0.5) {   // level 3: the reverse question, which point is in a given quadrant
       let x = nz(9), y = nz(9); while (Math.abs(x) === Math.abs(y)) y = nz(9);
       const q = quadOf(x, y), wrongs = [[-x, y], [x, -y], [-x, -y]].map(([a, b]) => ({text:pt(a, b), mis:'quadrantWrong'}));
-      return {title:'Yard Map', ctx:`which point in ${q}`, bubble:`The cat hid its ball in ${q}. Which point could be the ball?`, helper:'Quadrant I is top right (+, +). Go counterclockwise: II (−, +), III (−, −), IV (+, −).', visual:'<div style="text-align:center; font-size:2rem">📍 ❓</div>',
+      return {title:'Lighthouse', ctx:`which point in ${q}`, bubble:`The seal hid its beach ball in ${q}. Which point could be the ball?`, helper:'Quadrant I is top right (+, +). Go counterclockwise: II (−, +), III (−, −), IV (+, −).', visual:'<div style="text-align:center; font-size:2rem">📍 ❓</div>',
         steps:[{name:'Which point', type:'concept', kind:'choice', prompt:`Which point is in ${q}?`, options:choiceOf({text:pt(x, y)}, wrongs), hint:() => `In ${q}, x is ${x > 0 ? 'positive' : 'negative'} and y is ${y > 0 ? 'positive' : 'negative'}.`}]};
     }
     let x = nz(9), y = nz(9); if (lvl === 3 && Math.random() < 0.3) { if (Math.random() < 0.5) x = 0; else y = 0; }
     const right = quadOf(x, y), all = ['Quadrant I', 'Quadrant II', 'Quadrant III', 'Quadrant IV', ...(lvl === 3 ? ['the x-axis', 'the y-axis'] : [])];
     const swapQ = quadOf(y, x), flipQ = quadOf(-x, -y);
     const opts = choiceOf({text:right}, shuffle(all.filter(q => q !== right)).slice(0, 3).map(q => ({text:q, mis:q === swapQ ? 'coordSwap' : q === flipQ || q === quadOf(-x, y) || q === quadOf(x, -y) ? 'quadrantWrong' : null})));
-    return {title:'Yard Map', ctx:`${pt(x, y)} in`, bubble:`The cat's ball is at ${pt(x, y)}. Where is it?`, helper:'Quadrant I is top right (+, +). Go counterclockwise: II (−, +), III (−, −), IV (+, −). A 0 means the point is on an axis.',
+    return {title:'Lighthouse', ctx:`${pt(x, y)} in`, bubble:`The seal’s beach ball is at ${pt(x, y)}. Where is it?`, helper:'Quadrant I is top right (+, +). Go counterclockwise: II (−, +), III (−, −), IV (+, −). A 0 means the point is on an axis.',
       visual:lvl === 1 ? planeSVG(9, [{x, y, name:'●'}]) : `<div style="text-align:center; font-size:2rem">📍 ${pt(x, y)}</div>`,
       steps:[{name:'Where', type:'concept', kind:'choice', prompt:`Where is ${pt(x, y)}?`, options:opts, hint:() => `x is ${x > 0 ? 'positive' : x < 0 ? 'negative' : '0'} and y is ${y > 0 ? 'positive' : y < 0 ? 'negative' : '0'}.`}]};
   },
@@ -5008,31 +5016,31 @@ const HOUSES_GEN = {
     const wrongs = [[axis === 'x-axis' ? -x : x, axis === 'x-axis' ? y : -y, 'reflectAxisWrong'], [-x, -y, 'reflectAxisWrong'], [x, -y, 'reflectAxisWrong'], [-x, y, 'reflectAxisWrong'], [y, x, 'coordSwap']];
     const opts = choiceOf({text:pt(...ans)}, wrongs.map(([a, b, m]) => ({text:pt(a, b), mis:m})).filter((w, i, arr) => w.text !== pt(x, y) && w.text !== pt(...ans) && arr.findIndex(u => u.text === w.text) === i).slice(0, 3));
     const across = axis === 'both axes' ? 'both axes' : `the ${axis}`;
-    return {title:'Yard Map', ctx:`${pt(x, y)} over ${axis}`, bubble:`Reflect the doghouse at ${pt(x, y)} across ${across}. Where does it land?`, helper:'Across the x-axis, y changes sign. Across the y-axis, x changes sign.',
+    return {title:'Lighthouse', ctx:`${pt(x, y)} over ${axis}`, bubble:`A sailboat at ${pt(x, y)} is reflected across ${across}. Where does its reflection land?`, helper:'Across the x-axis, y changes sign. Across the y-axis, x changes sign.',
       visual:planeSVG(8, [{x, y, name:'D'}]),
       steps:[{name:'Reflection', type:'concept', kind:'choice', prompt:`${pt(x, y)} reflected across ${across} = ?`, options:opts, hint:() => axis === 'x-axis' ? 'Flip up or down: same x, opposite y.' : axis === 'y-axis' ? 'Flip left or right: opposite x, same y.' : 'Both numbers change sign.'}]};
   },
 
-  /* ----- station 4: Fence Lines (distance, polygons, word problems) ----- */
+  /* ----- station 2: Docks (distance and coordinate plane word problems) ----- */
   distPoints(lvl){
     if (lvl === 3) {   // level 3: find the second point from the distance; it lands on the other side of an axis
       const horiz = Math.random() < 0.5, k = nz(7), a = nz(6), d = Math.abs(a) + rand(1, 7), b = a > 0 ? a - d : a + d, dir = horiz ? (a > 0 ? 'left' : 'right') : (a > 0 ? 'down' : 'up');
       const P1 = horiz ? [a, k] : [k, a], P2 = horiz ? [b, k] : [k, b];
-      return {title:'Fence Lines', ctx:`${pt(...P1)} ${dir} ${d}`, bubble:`A fence starts at post P ${pt(...P1)} and runs ${d} m ${dir} to post Q. Each unit is 1 meter. What are the coordinates of Q?`, helper:`Moving ${dir} changes only the ${horiz ? 'x' : 'y'}-coordinate. Count past 0 if you need to.`,
+      return {title:'Docks', ctx:`${pt(...P1)} ${dir} ${d}`, bubble:`A rope starts at dock post P ${pt(...P1)} and runs ${d} m ${dir} to post Q. Each unit is 1 meter. What are the coordinates of Q?`, helper:`Moving ${dir} changes only the ${horiz ? 'x' : 'y'}-coordinate. Count past 0 if you need to.`,
         visual:planeSVG(8, [{x:P1[0], y:P1[1], name:'P'}]),
         steps:[negStep(`${horiz ? 'x' : 'y'} of Q`, 'compute', `${sgn(a)} ${a > 0 ? '−' : '+'} ${d} = ?`, b, {mis:v => v === -b ? 'signWrong' : null, hint:() => `${Math.abs(a)} to get to 0, then ${d - Math.abs(a)} more.`}),
           {name:'Q', type:'concept', kind:'choice', prompt:'So Q is at…', options:choiceOf({text:pt(...P2)}, [{text:pt(...(horiz ? [-b, k] : [k, -b])), mis:'signWrong'}, {text:pt(...(horiz ? [k, b] : [b, k])), mis:'coordSwap'}].filter(w => w.text !== pt(...P2))), hint:() => `Only the ${horiz ? 'x' : 'y'}-coordinate changed.`}], answerSteps:[1]};
     }
     const horiz = Math.random() < 0.5, k = nz(7); let a, b; do { a = lvl === 1 ? rand(0, 8) : rand(-8, 8); b = rand(-8, 8); } while (a === b || (lvl >= 2 && Math.sign(a) === Math.sign(b) && Math.random() < 0.7) || (lvl === 1 && b < 0 && a < 0));
     const P1 = horiz ? [a, k] : [k, a], P2 = horiz ? [b, k] : [k, b], d = Math.abs(a - b), fake = Math.abs(Math.abs(a) - Math.abs(b));
-    return {title:'Fence Lines', ctx:`${pt(...P1)} to ${pt(...P2)}`, bubble:`How long is a fence from ${pt(...P1)} to ${pt(...P2)}? Each unit is 1 meter.`, helper:'Same ' + (horiz ? 'y' : 'x') + ', so count along the other coordinate. On opposite sides of 0, add the distances from 0.',
+    return {title:'Docks', ctx:`${pt(...P1)} to ${pt(...P2)}`, bubble:`How long is a rope from dock post ${pt(...P1)} to post ${pt(...P2)}? Each unit is 1 meter.`, helper:'Same ' + (horiz ? 'y' : 'x') + ', so count along the other coordinate. On opposite sides of 0, add the distances from 0.',
       visual:planeSVG(8, [{x:P1[0], y:P1[1], name:'P'}, {x:P2[0], y:P2[1], name:'Q'}]),
       steps:[numStep('Distance', 'compute', `Distance from ${pt(...P1)} to ${pt(...P2)} = ?`, d, {mis:v => v === fake && fake !== d ? 'negDistance' : null, hint:() => Math.sign(a) !== Math.sign(b) && a && b ? `${Math.abs(a)} to 0, then ${Math.abs(b)} more.` : `Subtract: ${Math.max(a, b)} − ${Math.min(a, b)}.`})]};
   },
   areaCoord(lvl){
     let x1, x2, y1, y2; do { x1 = rand(-7, 5); x2 = rand(x1 + 2, 7); y1 = rand(-7, 5); y2 = rand(y1 + 2, 7); } while (lvl >= 2 && !(x1 < 0 && x2 > 0 || y1 < 0 && y2 > 0));
     const w = x2 - x1, h = y2 - y1, ask = lvl === 3 ? 'perimeter' : 'area', corners = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
-    return {title:'Fence Lines', ctx:`rect ${pt(x1, y1)} ${pt(x2, y2)} ${ask}`, bubble:`A garden has corners at ${corners.map(c => pt(...c)).join(', ')}. What is its ${ask}? Each unit is 1 yard.`, helper:'Find the length and width by counting between the coordinates.',
+    return {title:'Shipyard', ctx:`rect ${pt(x1, y1)} ${pt(x2, y2)} ${ask}`, bubble:`The swimming area has corners at ${corners.map(c => pt(...c)).join(', ')}. What is its ${ask}? Each unit is 1 yard.`, helper:'Find the length and width by counting between the coordinates.',
       visual:planeSVG(8, corners.map(([x, y]) => ({x, y})), corners),
       steps:[numStep('Width', 'compute', `From x = ${sgn(x1)} to x = ${sgn(x2)} = ?`, w, {mis:v => v === Math.abs(Math.abs(x2) - Math.abs(x1)) && v !== w ? 'negDistance' : null}),
         numStep('Height', 'compute', `From y = ${sgn(y1)} to y = ${sgn(y2)} = ?`, h, {mis:v => v === Math.abs(Math.abs(y2) - Math.abs(y1)) && v !== h ? 'negDistance' : null}),
@@ -5040,20 +5048,83 @@ const HOUSES_GEN = {
           : numStep('Perimeter', 'compute', `${w} + ${h} + ${w} + ${h} = ? yards`, 2 * (w + h), {mis:v => v === w * h ? 'areaPerimeterSwap' : v === w + h ? 'halfPerimeter' : null})], answerSteps:[2]};
   },
   coordWord(lvl){
-    const places = shuffle([['🦴', 'the bone'], ['🐾', 'the pet door'], ['🥣', 'the food bowl'], ['🧸', 'the toy box'], ['🌳', 'the tree']]).slice(0, 2);
+    const places = shuffle([['⚓', 'the anchor'], ['🛟', 'the life ring'], ['🐟', 'the fish stand'], ['⛵', 'the sailboat'], ['🏝️', 'the island']]).slice(0, 2);
     const same = Math.random() < 0.5 ? 'x' : 'y', k = nz(6); let a, b; do { a = rand(-8, 8); b = rand(-8, 8); } while (a === b || (lvl >= 2 && Math.sign(a) === Math.sign(b)));
     const P1 = same === 'y' ? [a, k] : [k, a], P2 = same === 'y' ? [b, k] : [k, b], d = Math.abs(a - b);
     const move = lvl === 3 ? rand(1, 4) : 0, end = same === 'y' ? [P2[0], P2[1] + move] : [P2[0] + move, P2[1]];
-    const bubble = lvl === 3 ? `The map is in meters. ${places[0][1].replace(/^./, m => m.toUpperCase())} is at ${pt(...P1)} and ${places[1][1]} is at ${pt(...P2)}. The dog walks from ${places[0][1]} to ${places[1][1]}, then ${move} m ${same === 'y' ? 'up' : 'right'}. How far does the dog walk?`
+    const bubble = lvl === 3 ? `The map is in meters. ${places[0][1].replace(/^./, m => m.toUpperCase())} is at ${pt(...P1)} and ${places[1][1]} is at ${pt(...P2)}. The otter swims from ${places[0][1]} to ${places[1][1]}, then ${move} m ${same === 'y' ? 'up' : 'right'}. How far does the otter swim?`
       : `The map is in meters. ${places[0][1].replace(/^./, m => m.toUpperCase())} is at ${pt(...P1)} and ${places[1][1]} is at ${pt(...P2)}. How far apart are they?`;
     const total = d + move;
-    return {title:'Fence Lines', ctx:`${pt(...P1)} ${pt(...P2)} +${move}`, bubble, helper:'Points with the same x (or the same y) line up. Count the distance between the other coordinates.',
+    return {title:'Docks', ctx:`${pt(...P1)} ${pt(...P2)} +${move}`, bubble, helper:'Points with the same x (or the same y) line up. Count the distance between the other coordinates.',
       visual:planeSVG(8, [{x:P1[0], y:P1[1], name:places[0][0]}, {x:P2[0], y:P2[1], name:places[1][0]}]),
       steps:[numStep('Distance', 'compute', `${places[0][1]} to ${places[1][1]} = ? m`, d, {mis:v => v === Math.abs(Math.abs(a) - Math.abs(b)) && v !== d ? 'negDistance' : null}),
-        ...(move ? [numStep('Total walk', 'compute', `${d} + ${move} = ? m`, total, {})] : [])], answerSteps:[move ? 1 : 0]};
+        ...(move ? [numStep('Total swim', 'compute', `${d} + ${move} = ? m`, total, {})] : [])], answerSteps:[move ? 1 : 0]};
+  },
+  /* ----- station 3: Shipyard (polygons on the coordinate plane; polyDraw and quadCoord added Oct 26, 2026 for Khan unit 9) ----- */
+  /* drawing polygons with coordinates */
+  polyDraw(lvl){
+    const R = 6;
+    if (lvl === 1) {   // which picture shows the polygon with these corners?
+      let x1, x2, y1, y2; do { x1 = rand(-5, 3); x2 = rand(x1 + 2, 5); y1 = rand(-5, 3); y2 = rand(y1 + 2, 5); } while (!(x1 < 0 && x2 > 0) && !(y1 < 0 && y2 > 0));
+      const C = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]], k = rand(0, 3), names = ['A', 'B', 'C', 'D'];
+      const pic = (pts, mis) => ({text:pts.map(p => pt(...p)).join(' '), html:planeSVG(R, pts.map(([x, y]) => ({x, y})), pts), mis});
+      const swap = C.map((p, i) => i === k ? [p[1], p[0]] : p), flipX = C.map((p, i) => i === k ? [-p[0], p[1]] : p), flipY = C.map((p, i) => i === k ? [p[0], -p[1]] : p), allSwap = C.map(([x, y]) => [y, x]);
+      const wrongs = [pic(swap, 'coordSwap'), pic(flipX, 'signWrong'), pic(flipY, 'signWrong'), pic(allSwap, 'coordSwap')].filter(w => w.text !== pic(C).text);
+      return {title:'Shipyard', ctx:`rect ${pt(x1, y1)} ${pt(x2, y2)}`, bubble:`The new dock is a polygon with corners ${C.map((p, i) => `${names[i]}${pt(...p)}`).join(', ')}. Which picture shows it?`, helper:'Plot each corner: x first (left or right), then y (up or down). Then connect them in order.',
+        visual:'<div style="text-align:center; font-size:2rem">⚓ 🛠️</div>', steps:[{name:'The dock', type:'concept', kind:'choice', prompt:'Which picture shows the dock?', options:picChoice(pic(C), wrongs), hint:() => `Find ${names[k]}${pt(...C[k])}: ${C[k][0] > 0 ? 'right' : C[k][0] < 0 ? 'left' : 'stay at 0'} ${Math.abs(C[k][0])}, then ${C[k][1] > 0 ? 'up' : C[k][1] < 0 ? 'down' : 'stay at 0'} ${Math.abs(C[k][1])}.`}]};
+    }
+    if (lvl === 2) {   // the fourth corner of a rectangle
+      let x1, x2, y1, y2; do { x1 = rand(-5, 3); x2 = rand(x1 + 2, 5); y1 = rand(-5, 3); y2 = rand(y1 + 2, 5); } while (!(x1 < 0 && x2 > 0) && !(y1 < 0 && y2 > 0));
+      const C = shuffle([[x1, y1], [x2, y1], [x2, y2], [x1, y2]]), [A, B, D, miss] = [C[0], C[1], C[2], C[3]];
+      const wrongs = [{text:pt(miss[1], miss[0]), mis:'coordSwap'}, {text:pt(-miss[0], miss[1]), mis:'signWrong'}, {text:pt(miss[0], -miss[1]), mis:'signWrong'}, {text:pt(miss[0] + 1, miss[1])}].filter(w => ![A, B, D].some(p => pt(...p) === w.text));
+      return {title:'Shipyard', ctx:`4th corner ${pt(...miss)}`, bubble:`A rectangular sail has three corners at ${pt(...A)}, ${pt(...B)} and ${pt(...D)}. Where is the fourth corner?`, helper:'A rectangle’s sides go straight across and straight up and down. The missing corner shares its x with one corner and its y with another.',
+        visual:planeSVG(R, [A, B, D].map(([x, y]) => ({x, y}))), steps:[{name:'Fourth corner', type:'concept', kind:'choice', prompt:'The fourth corner is at…', options:choiceOf({text:pt(...miss)}, wrongs.slice(0, 3)), hint:() => 'Which x shows up only once? Which y shows up only once? The missing corner uses both.'}]};
+    }
+    // level 3: plot the corners in your head (or on paper) and name the shape
+    const kinds = ['rectangle', 'right triangle', 'parallelogram', 'trapezoid'], kind = pick(kinds); let P;
+    const x0 = rand(-5, 0), y0 = rand(-5, 0);
+    if (kind === 'rectangle') { const w = rand(2, 5); let h; do { h = rand(2, 5); } while (h === w); P = [[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]]; }
+    else if (kind === 'right triangle') { const w = rand(2, 5), h = rand(2, 5); P = [[x0, y0], [x0 + w, y0], [x0, y0 + h]]; }
+    else if (kind === 'parallelogram') { const w = rand(2, 4), h = rand(2, 5), r = rand(1, 2); P = [[x0, y0], [x0 + w, y0], [x0 + w + r, y0 + h], [x0 + r, y0 + h]]; }
+    else { const w = rand(4, 5), h = rand(2, 5); P = [[x0, y0], [x0 + w, y0], [x0 + w - 1, y0 + h], [x0 + 1, y0 + h]]; }
+    // only names that are wrong: a rectangle is also a parallelogram, so those never share a question
+    const WRONG = {'rectangle':['square', 'right triangle', 'pentagon'], 'right triangle':['rectangle', 'trapezoid', 'parallelogram'], 'parallelogram':['rectangle', 'square', 'right triangle'], 'trapezoid':['parallelogram', 'rectangle', 'right triangle']};
+    const wrongs = WRONG[kind].map(k => ({text:k, mis:null}));
+    const names = ['A', 'B', 'C', 'D'];
+    return {title:'Shipyard', ctx:`shape ${kind}`, bubble:`Plot the corners ${P.map((p, i) => `${names[i]}${pt(...p)}`).join(', ')} and connect them in order. What is the best name for the shape the boat builder makes?`, helper:'Plot each point, then connect A to B to C and back. Look at the side lengths and which sides are straight across or up and down.',
+      visual:planeSVG(R, []), steps:[{name:'The shape', type:'concept', kind:'choice', prompt:'What is the best name for it?', options:choiceOf({text:kind}, wrongs), hint:() => P.length === 3 ? 'How many corners are there?' : 'Are both pairs of opposite sides parallel? Are the corners square corners? A trapezoid has only one pair of parallel sides.'}]};
+  },
+  /* quadrilateral problems on the coordinate plane */
+  quadCoord(lvl){
+    let x1, x2, y1, y2; do { x1 = rand(-7, 4); x2 = rand(x1 + 2, 7); y1 = rand(-7, 4); y2 = rand(y1 + 2, 7); } while (!(x1 < 0 && x2 > 0) || (lvl > 1 && !(y1 < 0 && y2 > 0)));
+    const w = x2 - x1, h = y2 - y1;
+    if (lvl === 1) {   // the fourth corner, then a side length
+      return {title:'Shipyard', ctx:`rect ${pt(x1, y1)} ${pt(x2, y2)} side`, bubble:`A boat ramp is a rectangle with corners at ${pt(x1, y1)}, ${pt(x2, y1)} and ${pt(x2, y2)}. Each unit is 1 meter. Find the fourth corner, then the length of the top side.`, helper:'The missing corner shares its x with one corner and its y with another. For a side’s length, count across, through 0 if needed.',
+        visual:planeSVG(8, [[x1, y1], [x2, y1], [x2, y2]].map(([x, y]) => ({x, y}))),
+        steps:[{name:'Fourth corner', type:'concept', kind:'choice', prompt:'The fourth corner is at…', options:choiceOf({text:pt(x1, y2)}, [{text:pt(y2, x1), mis:'coordSwap'}, {text:pt(-x1, y2), mis:'signWrong'}, {text:pt(x1, -y2), mis:'signWrong'}, {text:pt(x1 - 1, y2)}, {text:pt(x1, y2 + 1)}].filter(o => o.text !== pt(x1, y2) && o.text !== pt(x2, y2) && o.text !== pt(x1, y1) && o.text !== pt(x2, y1)).filter((o, i, arr) => arr.findIndex(u => u.text === o.text) === i).slice(0, 3)), hint:() => 'It is straight above one corner and straight across from another.'},
+          numStep('Top side', 'compute', `From ${pt(x1, y2)} to ${pt(x2, y2)} = ? meters`, w, {mis:v => v === Math.abs(Math.abs(x2) - Math.abs(x1)) && v !== w ? 'negDistance' : null, hint:() => `${Math.abs(x1)} to 0, then ${x2} more.`})], answerSteps:[1]};
+    }
+    if (lvl === 2) {   // a word problem: rope around the swimming area, and the cost
+      const cost = rand(2, 6), P = 2 * (w + h);
+      return {title:'Shipyard', ctx:`rope ${w}×${h} $${cost}`, bubble:`The harbor ropes off a rectangle with corners at ${pt(x1, y1)}, ${pt(x2, y1)}, ${pt(x2, y2)} and ${pt(x1, y2)}. Each unit is 1 meter, and rope costs $${cost} a meter. How much does the rope cost?`, helper:'Rope goes around the edge: that’s the perimeter. Then multiply by the price of one meter.',
+        visual:planeSVG(8, [], [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]),
+        steps:[numStep('Length', 'compute', `From x = ${sgn(x1)} to x = ${sgn(x2)} = ?`, w, {mis:v => v === Math.abs(Math.abs(x2) - Math.abs(x1)) && v !== w ? 'negDistance' : null}),
+          numStep('Width', 'compute', `From y = ${sgn(y1)} to y = ${sgn(y2)} = ?`, h, {mis:v => v === Math.abs(Math.abs(y2) - Math.abs(y1)) && v !== h ? 'negDistance' : null}),
+          numStep('Perimeter', 'compute', `${w} + ${h} + ${w} + ${h} = ? meters`, P, {mis:v => v === w * h ? 'areaPerimeterSwap' : v === w + h ? 'halfPerimeter' : null}),
+          numStep('Cost', 'compute', `${P} × $${cost} = ?`, P * cost, {fact:fx(P, cost), mis:v => v === w * h * cost ? 'areaPerimeterSwap' : null})], answerSteps:[3]};
+    }
+    // level 3: the area is known; find where the other corners are
+    const up = Math.random() < 0.5, A = w * h;
+    const yb = up ? y1 : y2, ya = up ? yb + h : yb - h;
+    if (Math.abs(ya) > 9) return HARBOR_GEN.quadCoord(lvl);
+    return {title:'Shipyard', ctx:`area ${A} from ${pt(x1, yb)} ${pt(x2, yb)} ${up ? 'up' : 'down'}`, bubble:`A rectangular deck has two corners at ${pt(x1, yb)} and ${pt(x2, yb)}. Its area is ${A} square units, and its other two corners are ${up ? 'above' : 'below'} these. What is the y-coordinate of the other corners?`, helper:'Find the side you know, then area ÷ that side gives the other side. Then count up or down from y = ' + sgn(yb) + '.',
+      visual:planeSVG(8, [{x:x1, y:yb, name:'P'}, {x:x2, y:yb, name:'Q'}]),
+      steps:[numStep('Side PQ', 'compute', `From ${pt(x1, yb)} to ${pt(x2, yb)} = ?`, w, {mis:v => v === Math.abs(Math.abs(x2) - Math.abs(x1)) && v !== w ? 'negDistance' : null}),
+        numStep('Other side', 'compute', `${A} ÷ ${w} = ?`, h, {fact:fx(w, h, true), mis:v => v === A - w ? 'wrongOperation' : null}),
+        negStep('y of the other corners', 'compute', `${sgn(yb)} ${up ? '+' : '−'} ${h} = ?`, ya, {mis:v => v === -ya ? 'signWrong' : null, hint:() => `Count ${h} ${up ? 'up' : 'down'} from ${sgn(yb)}.`})], answerSteps:[2]};
   }
 };
-Object.assign(GEN, HOUSES_GEN);
+Object.assign(GEN, HARBOR_GEN);
 
 /* ===== 6th grade, Pet Houses part 2 (Khan unit 10): volume and surface area ===== */
 /* a box drawn at a slant: l across, h up, w back; labels are text */
@@ -5712,6 +5783,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
+  else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
   else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
   else if (run.gameId === 'potion-detective') earned = Math.max(0, Math.min(3, score));   // 1 ticket per case solved, up to 3 (docs/POTION-DETECTIVE.md)
   else if (run.gameId === 'penguin-push') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/PENGUIN-PUSH.md)
@@ -7534,6 +7606,42 @@ window.addEventListener('message', e => {
   save();
   toast(`☄️ ${won ? 'The ship is safe!' : `${stars} of 3 waves cleared!`}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= ASTEROIDS_COINS_PER_DAY ? ' (Today’s asteroid coins are all earned.)' : ''}`);
 });
+/* ---------- ⚓ Harbor Battleship (public/arcade/harbor-battleship, docs/HARBOR-BATTLESHIP.md) ----------
+   Battleship on a coordinate plane from −5 to 5: she names the point she aimed at to fire, plots the pirates' shots,
+   and answers sonar (distance) and salvage (area and perimeter) questions. Opened from the Shipyard (the last Pet
+   Harbor station) and also an Arcade game. Played from Pet Harbor it pays Pet World coins: 1 per right answer, up to
+   BATTLESHIP_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const BATTLESHIP_COINS_PER_DAY = 20;
+function battleshipButtonHTML(){
+  const best = S.battleship?.best || 0;
+  return `<button type="button" class="btn" data-battleship>⚓ Harbor Battleship${best ? ` · best ${'⭐'.repeat(best)}` : ''}</button>`;
+}
+function openBattleship(){
+  if ($('#battleshipWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'battleshipWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Harbor Battleship');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">⚓ Harbor Battleship</b><button type="button" class="btn small" data-battleship-close>Done</button></div><iframe src="/arcade/harbor-battleship/?from=harbor" title="Harbor Battleship"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-battleship-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('harbor'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#battleshipWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'battleship:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), won = !!r.won, sunk = Math.max(0, Math.min(5, Math.round(+r.sunk || 0)));
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.battleship, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), won, stars, sunk, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, BATTLESHIP_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'battleship', s:right, n:tries, title:`${won ? 'won' : 'lost'} the battle, ${sunk} pirate ship${sunk === 1 ? '' : 's'} sunk, ${right} of ${tries} answers right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`⚓ ${won ? 'The harbor is yours!' : 'The pirates won this one.'}${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= BATTLESHIP_COINS_PER_DAY ? ' (Today’s battleship coins are all earned.)' : ''}`);
+});
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
    every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
@@ -9137,7 +9245,8 @@ const MATH_KHAN_UNITS = {
   rink:[['Negative numbers', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-negative-number-topic`]],
   potion:[['Variables and expressions', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-expressions-and-variables`]],
   fair:[['Equations and inequalities', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-equations-and-inequalities`]],
-  houses:[['Plane figures', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-plane-figures`], ['Coordinate plane', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:coordinate-plane`], ['Volume and surface area', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-geometry-topic`]],
+  houses:[['Plane figures', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-plane-figures`], ['Volume and surface area', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-geometry-topic`]],
+  harbor:[['Coordinate plane', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:coordinate-plane`]],
   show:[['Data and statistics', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-data-statistics`]]
 };
 const mathKhanUnits = shop => MATH_KHAN_UNITS[shop] || (BUILDINGS.find(b => b.id === shop)?.hood === 'g4' ? [['4th grade math', `${KHAN_MATH}cc-fourth-grade-math`]] : []);
@@ -10794,7 +10903,7 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -10803,6 +10912,7 @@ $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-dash]')) { openDash(); return; }
   if (e.target.closest('[data-penguin]')) { openPenguin(); return; }
   if (e.target.closest('[data-asteroids]')) { openAsteroids(); return; }
+  if (e.target.closest('[data-battleship]')) { openBattleship(); return; }
   if (e.target.closest('[data-detective]')) { openDetective(); return; }
   if (e.target.closest('[data-carnival]')) { openCarnival(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
@@ -12037,7 +12147,7 @@ function rewardTileHTML(reward, state){
   const hint = () => {
     if (!unitOpen(building.id)) return unitLockedText(building);
     const rule = reward.unlock;
-    if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
+    if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${(SHOPS[reward.unit]?.stations || STATIONS)[rule.station - 1]?.name || `station ${rule.station}`}`;
     if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
     if (rule.type === 'unitMastery') return `Master every ${building.name} skill`;
     if (rule.type === 'sprint') return `Reach ${rule.best} in the Fact Sprint`;
@@ -12069,7 +12179,7 @@ function renderBook(unit){
   const hint = reward => {
     if (!unitOpen(building.id)) return unitLockedText(building);
     const rule = reward.unlock;
-    if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${STATIONS[rule.station - 1].name}`;
+    if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${(SHOPS[reward.unit]?.stations || STATIONS)[rule.station - 1]?.name || `station ${rule.station}`}`;
     if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
     if (rule.type === 'unitMastery') return `Master every ${building.name} skill`;
     if (rule.type === 'sprint') return `Reach ${rule.best} in the Fact Sprint`;
@@ -12401,6 +12511,7 @@ function placeOnScreen(){
   if ($('#dashWrap')) return 'dash';
   if ($('#penguinWrap')) return 'penguin';
   if ($('#asteroidsWrap')) return 'asteroids';
+  if ($('#battleshipWrap')) return 'battleship';
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -12437,6 +12548,7 @@ function placeLabel(key){
   if (kind === 'dash') return '🛒 Supermarket Dash';
   if (kind === 'penguin') return '🐧 Penguin Push';
   if (kind === 'asteroids') return '☄️ Shape Asteroids';
+  if (kind === 'battleship') return '⚓ Harbor Battleship';
   if (kind === 'detective') return '🔍 Potion Detective';
   if (kind === 'carnival') return '🎪 Carnival Midway';
   if (kind === 'bible') return '✝️ Bible';
@@ -12462,6 +12574,7 @@ function eventText(e){
   if (e.k === 'dash') return `🛒 Supermarket Dash: ${e.title}`;
   if (e.k === 'penguin') return `🐧 Penguin Push: ${e.title}`;
   if (e.k === 'asteroids') return `☄️ Shape Asteroids: ${e.title}`;
+  if (e.k === 'battleship') return `⚓ Harbor Battleship: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
@@ -12553,6 +12666,7 @@ function subjectOnScreen(){
   if ($('#dashWrap')) return 'math';   // Supermarket Dash is Market practice
   if ($('#penguinWrap')) return 'math';   // Penguin Push is Ice Rink practice
   if ($('#asteroidsWrap')) return 'math';   // Shape Asteroids is Pet Houses practice
+  if ($('#battleshipWrap')) return 'math';   // Harbor Battleship is Pet Harbor practice
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

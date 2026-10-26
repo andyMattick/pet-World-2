@@ -170,7 +170,7 @@ need('src/shared/registry.ts', 'export const shopOfSkill', 'the skill-to-shop lo
 const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
-if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 12)) problems.push('src/shared/registry.ts should define REWARDS.length === 136 (the Pet Fair set was added Oct 26, 2026)');
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 13)) problems.push('src/shared/registry.ts should define REWARDS.length === 146 (the Pet Harbor set was added Oct 26, 2026)');
 if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);
@@ -220,7 +220,7 @@ for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', avail
 }
 
 // Owner rule (CLAUDE.md, "Games go in the unit and in the Arcade"): every unit game is also an Arcade game
-for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML('})) {
+for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML('})) {
   if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
   if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
 }
