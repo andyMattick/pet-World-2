@@ -4,10 +4,12 @@ A grown-up (a parent or teacher) can write to a student from the teacher app, an
 
 ## Teacher app
 
-- On the student's page, under 🔴 Right now: **💬 Messages with {name}** (`src/teacher/chat.ts`, `startChatCard`).
-- Type your name once (like "Dad"; it's remembered on this device), write, and press Send (or Ctrl/⌘+Enter).
+- **💬 Messages** is on the class **Dashboard**, above the report (`messagesPanel` in `src/teacher/chat.ts`, added to the page by `renderDashboard` in `main.ts`). It moved there from each student's page on Oct 26, 2026.
+- Every student in the class is a button. A red **"2 new"** counts replies since you last opened that student's messages (remembered on this device). A 💬 means there's a conversation.
+- Tap a student to open the conversation (`startChatCard`). Type your name once (like "Dad"; it's remembered on this device), write, and press Send (or Ctrl/⌘+Enter).
+- The panel stays put through the dashboard's live refreshes, so a message you're typing isn't lost. A reply that arrives while you're typing doesn't wipe it either.
 - Messages are saved in `quiz_overrides` as `chat`: `{"msgs":[{"id","at","from","text"}]}` (the last 60). This is the same pipe as Bible verses and help answers, so no new tables or functions.
-- Her replies are read from her save every 20 seconds while the card is on screen. "✓ She has seen your last message" shows once she opens it.
+- Her replies come from her save. They show right away from the dashboard's load, then get checked every 20 seconds while the conversation is open. "✓ She has seen your last message" shows once she opens it.
 - **Clear my messages** removes your messages from her screen. Her replies stay in her save.
 
 ## In her town

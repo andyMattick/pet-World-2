@@ -21,8 +21,8 @@ export function parseChat(raw: unknown): ChatMsg[] {
   } catch { return []; }
 }
 
-export function startChatCard(el: HTMLElement, student: { id: string; n: string }, getRaw: () => unknown, save: (value: string | null) => Promise<void>) {
-  let replies: ChatReply[] = [], seenAt = 0, timer: ReturnType<typeof setInterval> | null = null, readError = '';
+export function startChatCard(el: HTMLElement, student: { id: string; n: string }, getRaw: () => unknown, save: (value: string | null) => Promise<void>, known?: ChatSave | null) {
+  let replies: ChatReply[] = Array.isArray(known?.replies) ? known!.replies!.filter(r => r && typeof r.text === 'string') : [], seenAt = +(known?.seenAt || 0), timer: ReturnType<typeof setInterval> | null = null, readError = '';
   let from = ''; try { from = localStorage.getItem(FROM_KEY) || ''; } catch { /* private mode */ }
   async function poll() {
     if (!el.isConnected) { if (timer) clearInterval(timer); return; }
@@ -33,9 +33,10 @@ export function startChatCard(el: HTMLElement, student: { id: string; n: string 
     readError = error ? error.message : '';
     const c = ((data as { chat?: ChatSave } | null)?.chat) || {};
     const next = Array.isArray(c.replies) ? c.replies.filter(r => r && typeof r.text === 'string').map(r => ({ id: String(r.id || ''), at: +r.at || 0, text: String(r.text).slice(0, 1000) })) : [];
-    if (next.length !== replies.length || (+(c.seenAt || 0)) !== seenAt) { replies = next; seenAt = +(c.seenAt || 0); render(); }
+    if (next.length !== replies.length || (+(c.seenAt || 0)) !== seenAt) { replies = next; seenAt = +(c.seenAt || 0); render(); try { localStorage.setItem(`pw-chat-read:${student.id}`, String(Date.now())); } catch { /* private mode */ } }
   }
-  function render() {
+  function render(keepDraft = true) {
+    const draft = keepDraft ? el.querySelector<HTMLTextAreaElement>('#chatText')?.value || '' : '', typing = document.activeElement?.id === 'chatText';   // a reply arriving never wipes what you're typing
     const msgs = parseChat(getRaw());
     const all = [...msgs.map(m => ({ ...m, mine: true })), ...replies.map(r => ({ ...r, from: student.n, mine: false }))].sort((a, b) => a.at - b.at).slice(-40);
     const lastMine = msgs.length ? msgs[msgs.length - 1].at : 0;
@@ -48,9 +49,10 @@ export function startChatCard(el: HTMLElement, student: { id: string; n: string 
       <textarea id="chatText" rows="2" maxlength="1000" style="width:100%" placeholder="Write to ${esc(student.n)}…"></textarea>
       <div class="row"><button type="button" class="btn small primary" id="chatSend">Send</button>${msgs.length ? '<button type="button" class="btn small" id="chatClear">Clear my messages</button>' : ''}</div>
       <p class="status" id="chatMsg" role="status" style="margin:4px 0">${readError ? `Couldn’t read her replies: ${esc(readError)}` : ''}</p></div>`;
+    const box = el.querySelector<HTMLTextAreaElement>('#chatText'); if (box && draft) { box.value = draft; if (typing) box.focus(); }
     el.querySelector<HTMLButtonElement>('#chatSend')?.addEventListener('click', () => void send());
     el.querySelector<HTMLTextAreaElement>('#chatText')?.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void send(); });
-    el.querySelector<HTMLButtonElement>('#chatClear')?.addEventListener('click', () => { if (confirm(`Clear your messages from ${student.n}’s screen? Her replies stay in her town.`)) void save(null).then(render); });
+    el.querySelector<HTMLButtonElement>('#chatClear')?.addEventListener('click', () => { if (confirm(`Clear your messages from ${student.n}’s screen? Her replies stay in her town.`)) void save(null).then(() => render()); });
   }
   async function send() {
     const box = el.querySelector<HTMLTextAreaElement>('#chatText'), text = box?.value.trim() || '', name = (el.querySelector<HTMLInputElement>('#chatFrom')?.value.trim() || '').slice(0, 40);
@@ -59,9 +61,47 @@ export function startChatCard(el: HTMLElement, student: { id: string; n: string 
     if (!text) { box?.focus(); return; }
     from = name; try { localStorage.setItem(FROM_KEY, name); } catch { /* private mode */ }
     const msgs = [...parseChat(getRaw()), { id: `m${Date.now().toString(36)}`, at: Date.now(), from: name, text: text.slice(0, 1000) }].slice(-MAX);
-    try { await save(JSON.stringify({ msgs })); render(); }
+    try { await save(JSON.stringify({ msgs })); render(false); }
     catch (err) { if (msg) msg.textContent = `Not sent: ${String(err)}`; }
   }
   render(); void poll();
   timer = setInterval(() => { void poll(); }, 20000);
+}
+
+/* ---------- 💬 the Messages panel on the class dashboard ----------
+   Every student in the class as a chip (with how many replies came in since you last opened that chat); tap one to
+   open the conversation (startChatCard). The panel element survives the dashboard's live refreshes, so a message you
+   are typing isn't lost; each refresh only updates the chips and the numbers. "Last read" is kept on this device. */
+export interface ChatStudent { id: string; n: string; qx?: Record<string, string> | null; chat?: ChatSave | null }
+const READ_KEY = (id: string) => `pw-chat-read:${id}`;
+const readAt = (id: string) => { try { return +(localStorage.getItem(READ_KEY(id)) || 0); } catch { return 0; } };
+const markRead = (id: string) => { try { localStorage.setItem(READ_KEY(id), String(Date.now())); } catch { /* private mode */ } };
+let panelStudents = new Map<string, ChatStudent>(), panelSelected = '', panelSave: (id: string, value: string | null) => Promise<void> = async () => {};
+export function messagesPanel(students: ChatStudent[], save: (id: string, value: string | null) => Promise<void>): HTMLElement {
+  let el = document.getElementById('msgPanel');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'msgPanel'; el.className = 'noprint';
+    el.innerHTML = '<div class="card"><h2 style="margin-top:0">💬 Messages</h2><p class="muted" style="margin-top:0">Write to any student. It pops up in their town with your name on it, and they can write back.</p><div class="row" data-msg-chips style="flex-wrap:wrap"></div></div><div data-msg-thread></div>';
+    el.addEventListener('click', e => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-msg-student]'); if (!b) return;
+      openThread(el!, b.dataset.msgStudent || '');
+    });
+  }
+  panelStudents = new Map(students.map(s => [s.id, s])); panelSave = save;
+  const chips = el.querySelector('[data-msg-chips]') as HTMLElement;
+  chips.innerHTML = students.length ? students.map(s => {
+    const replies = Array.isArray(s.chat?.replies) ? s.chat!.replies! : [], fresh = replies.filter(r => +r.at > readAt(s.id)).length, sent = parseChat(s.qx?.chat).length;
+    return `<button type="button" class="btn small${s.id === panelSelected ? ' primary' : ''}" data-msg-student="${esc(s.id)}" aria-pressed="${s.id === panelSelected}">${esc(s.n)}${fresh ? ` <b style="background:#E03131;color:#fff;border-radius:999px;padding:0 6px">${fresh} new</b>` : sent || replies.length ? ' 💬' : ''}</button>`;
+  }).join('') : '<p class="muted">No students in this class yet.</p>';
+  if (panelSelected && !panelStudents.has(panelSelected)) { panelSelected = ''; (el.querySelector('[data-msg-thread]') as HTMLElement).innerHTML = ''; }
+  return el;
+}
+function openThread(el: HTMLElement, id: string) {
+  const s = panelStudents.get(id); if (!s) return;
+  panelSelected = id; markRead(id);
+  el.querySelectorAll<HTMLButtonElement>('[data-msg-student]').forEach(b => { const on = b.dataset.msgStudent === id; b.classList.toggle('primary', on); b.setAttribute('aria-pressed', String(on)); if (on) b.querySelector('b')?.remove(); });
+  const host = el.querySelector('[data-msg-thread]') as HTMLElement;
+  host.innerHTML = '<div></div>';   // a fresh element: the old conversation's 20-second check stops on its own
+  startChatCard(host.firstElementChild as HTMLElement, { id, n: s.n }, () => panelStudents.get(id)?.qx?.chat,
+    async value => { await panelSave(id, value); markRead(id); }, s.chat);   // her replies from the dashboard's load show right away
 }

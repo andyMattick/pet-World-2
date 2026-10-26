@@ -7,7 +7,6 @@ import { thinkReportHTML } from '../shared/thinkReport';
 import { brainReportHTML, type BrainSettings } from '../shared/brainGames';
 import { renderLedger, type SaveDayLog } from './ledger';
 import { startRightNow } from './live';
-import { startChatCard } from './chat';
 import { renderCourses } from './courses';
 import { renderTranscript } from './transcript';
 import { renderPlanCard } from './plan';
@@ -44,6 +43,7 @@ export interface StudentReport {
   subjectTime?: Record<string, Record<string, number>>;
   dayLog?: Record<string, SaveDayLog>;   // the save's day log (src/teacher/ledger.ts)
   bible?: unknown;   // ✝️ S.bible from the save: journal, books game, verse practice
+  chat?: { replies?: { id: string; at: number; text: string }[]; seenAt?: number } | null;   // 💬 her replies (docs/CHAT.md)
   brain?: unknown; brainOn?: BrainSettings;   // brain stretches: S.brain from the save, and the class setting
   mathThink?: Record<string, { best?: number; tries?: number; passed?: boolean; lastScore?: number; questionCount?: number; lastMissed?: string[] }>;   // 🧠 Think it through sets, from the save   // active seconds per day and subject, from the student's save
 }
@@ -236,7 +236,6 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += '<div id="helpQCard" class="noprint"></div>';   // ✋ questions (docs/QUESTIONS.md)
   h += '<div id="liveNowCard" class="noprint"></div>';   // 🔴 Right now (docs/LIVE.md)
-  h += '<div id="chatCard" class="noprint"></div>';   // 💬 messages with her (docs/CHAT.md)
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
   const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['bible', '✝️ Bible'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['brain', '🧠 Brain'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
@@ -493,7 +492,6 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     try { await onSaveStudentDrills(r.id, {...(currentOverride || {}), resetAt:new Date().toISOString()}); b.disabled = true; b.textContent = 'Cleared'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
   }));
   startRightNow($('#liveNowCard'), r);
-  startChatCard($('#chatCard'), r, () => overrides.chat, value => saveOverride('chat', value));
   $('#dClose').focus();
   $('#dClose').addEventListener('click', closeDetail);
   $('#dPrint').addEventListener('click', () => { document.querySelectorAll<HTMLDetailsElement>('#detailSheet details').forEach(d => { d.open = true; }); window.print(); });

@@ -10,6 +10,7 @@ import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, b
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
 import { setLedgerClass } from './ledger';
 import { startAlerts } from './live';
+import { messagesPanel } from './chat';
 import { renderApprovals, waitingCount } from './approvals';
 import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus } from './vocab';
 import { installWordPick } from './wordPick';
@@ -216,10 +217,17 @@ async function renderDashboard() {
     student.subjectTime = state?.subjectTime && typeof state.subjectTime === 'object' ? state.subjectTime as NonNullable<StudentReport['subjectTime']> : {};
     student.dayLog = state?.dayLog && typeof state.dayLog === 'object' ? state.dayLog as NonNullable<StudentReport['dayLog']> : {};   // the last 14 days in detail (the 📅 Ledger tab)
     student.bible = state?.bible ?? null;   // ✝️ Bible journal and progress
+    student.chat = state?.chat && typeof state.chat === 'object' ? state.chat as NonNullable<StudentReport['chat']> : null;   // 💬 her replies (docs/CHAT.md)
     student.brain = state?.brain ?? null;   // brain stretches (the 🧠 Brain tab)
     student.brainOn = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   });
-  pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="report"></div>`;
+  const msgs = messagesPanel(reports, async (id, value) => {   // 💬 Messages (docs/CHAT.md): kept across live refreshes
+    const r = reports.find(x => x.id === id), next = { ...(r?.qx || {}) };
+    if (value) next.chat = value; else delete next.chat;
+    await saveQuizOverride(id, Object.keys(next).length ? next : null); if (r) r.qx = Object.keys(next).length ? next : null;
+  });
+  pane.innerHTML = `<p class="live noprint"><i></i>Live. Updates as students finish problems, quizzes, and tests. Last updated ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.</p>${saveError ? '<p class="err">English and Reading Log data could not be loaded.</p>' : ''}<div id="msgSlot"></div><div id="report"></div>`;
+  $('#msgSlot').replaceWith(msgs);
   setReportClass(cls.id, cls.game_settings?.home, cls.game_settings?.khan, cls.game_settings?.requireThink);
   setLedgerClass(sb, cls.id);
   startAlerts(sb!, cls.id, reports);   // pop-ups when a student finishes a subject or passes a test (docs/LIVE.md)
