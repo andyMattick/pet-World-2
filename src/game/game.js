@@ -175,6 +175,8 @@ function normalize(raw){
       games:(Array.isArray(s.surgery?.games) ? s.surgery.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, healed:Math.max(0, +g.healed || 0), perfect:Math.max(0, +g.perfect || 0), steps:Math.max(0, +g.steps || 0), right:Math.max(0, +g.right || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🩺 Dr. Paws' Surgery Center (docs/PET-SURGERY.md)
     s.dash = {best:Math.max(0, Math.round(+s.dash?.best || 0)), day:typeof s.dash?.day === 'string' ? s.dash.day : '', coinsToday:Math.max(0, Math.round(+s.dash?.coinsToday || 0)),
       games:(Array.isArray(s.dash?.games) ? s.dash.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, total:Math.max(0, +g.total || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🛒 Supermarket Dash (docs/SUPERMARKET-DASH.md)
+    s.penguin = {best:Math.max(0, Math.min(3, Math.round(+s.penguin?.best || 0))), day:typeof s.penguin?.day === 'string' ? s.penguin.day : '', coinsToday:Math.max(0, Math.round(+s.penguin?.coinsToday || 0)),
+      games:(Array.isArray(s.penguin?.games) ? s.penguin.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), dunked:Math.max(0, +g.dunked || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🐧 Penguin Push (docs/PENGUIN-PUSH.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
@@ -3819,6 +3821,31 @@ const RINK_GEN = {
       steps.push(negStep(j === k ? 'Value' : `Opposite ${j}`, 'concept', `${inner} = ?`, cur, {mis:w => w === -cur ? 'signWrong' : null, hint:() => `The opposite of ${sgn(-cur)}.`})); }
     return {title:'Thermometer', ctx:expr, bubble:`What is ${expr}?`, helper:`Each ${MINUS} in front means "the opposite of". Work from the inside out.`, visual:`<div style="text-align:center; font-size:2rem">🌡️ ${expr}</div>`, steps, answerSteps:[steps.length - 1]};
   },
+  /* negative symbol as opposite (Khan unit 5, added Oct 26, 2026): −a means "the opposite of a", even when a is negative */
+  negSymbol(lvl){
+    if (lvl === 1) {   // a point a on the line; which point is −a?
+      let a, c; do { a = pick([-1, 1]) * rand(2, 9); c = pick([-1, 1]) * rand(1, 9); } while (Math.abs(Math.abs(c) - Math.abs(a)) < 2);
+      const names = shuffle(['P', 'Q', 'R']), pts = [-a, c, -c];
+      const opts = [0, 1, 2].map(i => ({html:names[i], text:names[i], ok:pts[i] === -a, mis:null}));
+      return {title:'Thermometer', ctx:`−a when a = ${sgn(a)}`, bubble:`The point a is on the number line. Which point is at ${MINUS}a?`, helper:`${MINUS}a means "the opposite of a": the same distance from 0, on the other side.`,
+        visual:iceLineSVG(-10, 10, 1, {labelEvery:5, dots:[{t:a, name:'a'}, ...pts.map((t, i) => ({t, name:names[i]}))]}),
+        steps:[{name:'Find −a', type:'concept', kind:'choice', prompt:`Which point is at ${MINUS}a?`, options:shuffle(opts), hint:() => `a is ${Math.abs(a)} ${a < 0 ? 'left' : 'right'} of 0, so ${MINUS}a is ${Math.abs(a)} ${a < 0 ? 'right' : 'left'} of 0.`}]};
+    }
+    const v = pick(['a', 'b', 'n', 'x', 'y']);
+    if (lvl === 2) {
+      const a = pick([-1, -1, 1]) * rand(1, 30);
+      return {title:'Thermometer', ctx:`${v} = ${sgn(a)}, ${MINUS}${v}`, bubble:`If ${v} = ${sgn(a)}, what is ${MINUS}${v}?`, helper:`${MINUS}${v} means the opposite of ${v}. The opposite of a negative number is positive.`, visual:`<div style="text-align:center; font-size:2rem">🌡️ ${v} = ${sgn(a)}</div>`,
+        steps:[negStep(`${MINUS}${v}`, 'concept', `${MINUS}${v} = ?`, -a, {mis:w => w === a ? 'signWrong' : null, hint:() => `The opposite of ${sgn(a)}.`})]};
+    }
+    if (Math.random() < 0.5) {   // −(−v), worked from the inside out
+      const a = pick([-1, 1]) * rand(1, 20);
+      return {title:'Thermometer', ctx:`${MINUS}(${MINUS}${v}), ${v} = ${sgn(a)}`, bubble:`If ${v} = ${sgn(a)}, what is ${MINUS}(${MINUS}${v})?`, helper:'Work from the inside out: first the opposite of ' + v + ', then the opposite of that.', visual:`<div style="text-align:center; font-size:2rem">🌡️ ${MINUS}(${MINUS}${v})</div>`,
+        steps:[negStep(`${MINUS}${v}`, 'concept', `${MINUS}${v} = ?`, -a, {mis:w => w === a ? 'signWrong' : null}), negStep(`${MINUS}(${MINUS}${v})`, 'concept', `${MINUS}(${MINUS}${v}) = ?`, a, {mis:w => w === -a ? 'signWrong' : null, hint:() => `The opposite of ${sgn(-a)}.`})], answerSteps:[1]};
+    }
+    const neg = Math.random() < 0.5;
+    return {title:'Thermometer', ctx:`${v} ${neg ? '<' : '>'} 0, sign of ${MINUS}${v}`, bubble:`${v} is a ${neg ? 'negative' : 'positive'} number. Is ${MINUS}${v} positive or negative?`, helper:`${MINUS}${v} is the opposite of ${v}, so it is on the other side of 0.`, visual:`<div style="text-align:center; font-size:2rem">🌡️ ${v} ${neg ? '<' : '>'} 0</div>`,
+      steps:[{name:'Sign of the opposite', type:'concept', kind:'choice', prompt:`${MINUS}${v} is…`, options:choiceOf({text:neg ? 'positive' : 'negative'}, [{text:neg ? 'negative' : 'positive', mis:'signWrong'}, {text:'zero'}]), hint:() => `The opposite of a ${neg ? 'negative' : 'positive'} number is on the ${neg ? 'right' : 'left'} side of 0.`}]};
+  },
 
   /* ----- station 2: Rink Lines (negative decimals and fractions) ----- */
   negDecLine(lvl){
@@ -3872,6 +3899,23 @@ const RINK_GEN = {
     return {title:'Race Board', ctx:`${txt(a)} ? ${txt(b)}`, bubble:`Which is greater: ${txt(a)} or ${txt(b)}?`, helper:'For negatives, the one closer to 0 is greater.', visual:lvl === 1 ? distLineSVG([a, b]) : '',   // level 1 reads the number line; levels 2 and 3 picture it
       steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${txt(a)} ◯ ${txt(b)}`, options:opts, hint:() => 'Picture them on a number line: farther right is greater.'}]};
   },
+  /* ordering small negative numbers (Khan unit 5, added Oct 26, 2026): integers from −9 to 9 */
+  orderSmallNeg(lvl){
+    const n = lvl === 1 ? 4 : 5, pool = new Set(); while (pool.size < n) pool.add(rand(-9, 9));
+    const vals = [...pool]; if (vals.filter(v => v < 0).length < 2) return RINK_GEN.orderSmallNeg(lvl);
+    const up = [...vals].sort((x, y) => x - y), T = arr => arr.map(sgn).join(', ');
+    if (lvl === 3) {
+      const least = Math.random() < 0.5, ans = least ? up[0] : up[up.length - 1], trap = least ? [...vals].sort((x, y) => Math.abs(x) - Math.abs(y))[0] : vals.filter(v => v < 0).sort((x, y) => x - y)[0];
+      return {title:'Podium', ctx:`${least ? 'least' : 'greatest'} of ${T(vals)}`, bubble:`Which number is the ${least ? 'least' : 'greatest'}: ${T(shuffle(vals))}?`, helper:'Picture the number line. Least is farthest left; greatest is farthest right.', visual:`<div style="text-align:center; font-size:1.4rem">🏆 ${T(vals)}</div>`,
+        steps:[negStep(least ? 'Least' : 'Greatest', 'concept', `The ${least ? 'least' : 'greatest'} number is ?`, ans, {mis:w => w === trap && trap !== ans ? 'negCompare' : null, hint:() => least ? 'The negative number farthest from 0 is the least.' : 'Any positive number is greater than every negative number.'})]};
+    }
+    const down = Math.random() < 0.35, right = down ? [...up].reverse() : up;
+    const digits = [...up.filter(v => v < 0).reverse(), ...up.filter(v => v >= 0)], byAbs = [...vals].sort((x, y) => Math.abs(x) - Math.abs(y) || x - y);
+    const wrongs = [{text:T(down ? [...digits].reverse() : digits), mis:'negCompare'}, {text:T(down ? [...byAbs].reverse() : byAbs), mis:'negCompare'}, {text:T(down ? up : [...up].reverse())}];
+    return {title:'Podium', ctx:`order ${T(vals)}${down ? ' down' : ''}`, bubble:`Put the skaters’ scores in order from ${down ? 'greatest to least' : 'least to greatest'}: ${T(shuffle(vals))}.`, helper:'Negatives are left of 0. The farther left, the less.',
+      visual:lvl === 1 ? distLineSVG(vals) : `<div style="text-align:center; font-size:1.4rem">🏆 ${T(vals)}</div>`,
+      steps:[{name:down ? 'Greatest to least' : 'Least to greatest', type:'concept', kind:'choice', prompt:`Which order goes from ${down ? 'greatest to least' : 'least to greatest'}?`, options:choiceOf({text:T(right)}, wrongs), hint:() => 'Picture them on the number line, from left to right.'}]};
+  },
   orderNeg(lvl){
     const pool = new Set(); while (pool.size < 4) pool.add(lvl === 1 ? rand(-15, 15) : lvl === 2 ? rand(-60, 60) / 10 : rand(-20, 20) / 4);
     const vals = [...pool], txt = x => lvl === 3 && Math.round(x) !== x ? sgnF(Math.round(x * 4), 4) : sgnD(x);
@@ -3880,7 +3924,7 @@ const RINK_GEN = {
     const T = arr => arr.map(txt).join(', ');
     const digitsFirst = [...up.filter(v => v < 0).reverse(), ...up.filter(v => v >= 0)];      // −2, −8, 1, 5: negatives ordered by their digits
     const wrongs = [{text:T(byAbs), mis:'negCompare'}, {text:T(digitsFirst), mis:'negCompare'}, {text:T(down)}];
-    return {title:'Race Board', ctx:`order ${T(vals)}`, bubble:`Put these race times (seconds ahead or behind) in order from least to greatest: ${T(vals)}.`, helper:'Least is farthest left on the number line. Negatives come first, and the most negative is least.',
+    return {title:'Podium', ctx:`order ${T(vals)}`, bubble:`Put these race times (seconds ahead or behind) in order from least to greatest: ${T(vals)}.`, helper:'Least is farthest left on the number line. Negatives come first, and the most negative is least.',
       visual:`<div style="text-align:center; font-size:1.4rem">🏁 ${T(vals)}</div>`,
       steps:[{name:'Least to greatest', type:'concept', kind:'choice', prompt:'Which order goes from least to greatest?', options:choiceOf({text:T(up)}, wrongs), hint:() => 'The negative with the biggest digits is the least.'}]};
   },
@@ -3904,7 +3948,23 @@ const RINK_GEN = {
       steps:[{name:'Write it', type:'concept', kind:'choice', prompt:'Which inequality matches?', options:choiceOf({text:right}, wrongs), hint:() => `${sgn(lo)} is farther left, so it is less.`}]};
   },
 
-  /* ----- station 4: Ice Depth (absolute value) ----- */
+  /* ----- station 5: Ice Depth (absolute value) ----- */
+  /* meaning of absolute value (Khan unit 5, added Oct 26, 2026): the distance from 0 */
+  absMeaning(lvl){
+    const n = rand(2, 9), x = Math.random() < 0.7 ? -n : n;
+    if (lvl === 1) return {title:'Ice Depth', ctx:`distance of ${sgn(x)}`, bubble:`How far is the dot from 0? That distance is |${sgn(x)}|.`, helper:'Count the ticks from 0 to the dot. A distance is never negative.',
+      visual:iceLineSVG(-10, 10, 1, {labelEvery:5, dots:[{t:x}]}),
+      steps:[negStep('Distance from 0', 'concept', 'How many units from 0 is the dot?', n, {mis:w => w === -n ? 'absNegative' : null, hint:() => `Count from 0 to the dot.`})]};
+    if (lvl === 2) {
+      const m = rand(2, 40);
+      return {title:'Ice Depth', ctx:`|?| = ${m}`, bubble:`Which numbers have an absolute value of ${m}?`, helper:'Absolute value is the distance from 0. Two numbers are that far from 0: one on each side.', visual:`<div style="text-align:center; font-size:2rem">🧊 |?| = ${m}</div>`,
+        steps:[{name:'Which numbers', type:'concept', kind:'choice', prompt:`|?| = ${m}`, options:choiceOf({text:`${MINUS}${m} and ${m}`}, [{text:`${m}, but not ${MINUS}${m}`, mis:'absNegative'}, {text:`${MINUS}${m}, but not ${m}`, mis:'absNegative'}]), hint:() => `Which numbers are ${m} units from 0?`}]};
+    }
+    const t = sgn(x), d = Math.abs(x);
+    const right = `It is the distance from ${t} to 0, so it is ${d}.`;
+    return {title:'Ice Depth', ctx:`meaning of |${t}|`, bubble:`Which statement about |${t}| is true?`, helper:'Read |x| as "the distance between x and 0."', visual:`<div style="text-align:center; font-size:2rem">🧊 |${t}|</div>`,
+      steps:[{name:'What it means', type:'concept', kind:'choice', prompt:`Which is true about |${t}|?`, options:choiceOf({text:right}, [{text:`It is ${sgn(-d)}, because absolute value keeps the minus sign.`, mis:'absNegative'}, {text:`It is the distance from ${t} to ${sgn(-x)}, so it is ${2 * d}.`}]), hint:() => 'How far is it from 0?'}]};
+  },
   absVal(lvl){
     if (lvl < 3) {
       const x = lvl === 1 ? pick([-1, 1]) * rand(1, 30) : pick([-1, 1]) * rand(1, 99) / 10, t = sgnD(x);
@@ -3926,34 +3986,56 @@ const RINK_GEN = {
       const steps = [];
       if (lvl === 1) steps.push(negStep(`|${sgn(a)}|`, 'concept', `|${sgn(a)}| = ?`, A, {mis:v => v === a && a < 0 ? 'absNegative' : null}), negStep(`|${sgn(b)}|`, 'concept', `|${sgn(b)}| = ?`, B, {mis:v => v === b && b < 0 ? 'absNegative' : null}));
       steps.push({name:'Compare', type:'concept', kind:'choice', prompt:`|${sgn(a)}| ◯ |${sgn(b)}|`, options:opts, hint:() => `Compare the distances ${A} and ${B}.`});
-      return {title:'Ice Depth', ctx:`|${sgn(a)}| ? |${sgn(b)}|`, bubble:`Compare |${sgn(a)}| and |${sgn(b)}|.`, helper:'Compare the distances from 0.', visual:lvl === 1 ? distLineSVG([a, b], {distances:true}) : '', steps, ...(lvl === 1 ? {answerSteps:[2]} : {})};
+      return {title:'Weather Station', ctx:`|${sgn(a)}| ? |${sgn(b)}|`, bubble:`Compare |${sgn(a)}| and |${sgn(b)}|.`, helper:'Compare the distances from 0.', visual:lvl === 1 ? distLineSVG([a, b], {distances:true}) : '', steps, ...(lvl === 1 ? {answerSteps:[2]} : {})};
     }
     const c = a + (a > 0 ? 1 : -1);        /* [text, value, the number inside without the bars] */
     const items = [[`|${sgn(a)}|`, Math.abs(a), a], [sgn(b), b, b], [`${MINUS}|${sgn(c)}|`, -Math.abs(c), c], [`|${sgn(b)}|`, Math.abs(b), b]];
     if (new Set(items.map(i => i[1])).size < 4) return RINK_GEN.cmpAbs(lvl);
     const up = [...items].sort((x, y) => x[1] - y[1]).map(i => i[0]).join(', '), noAbs = [...items].sort((x, y) => x[2] - y[2] || x[1] - y[1]).map(i => i[0]).join(', ');
     const down = [...items].sort((x, y) => y[1] - x[1]).map(i => i[0]).join(', ');
-    return {title:'Ice Depth', ctx:`order ${items.map(i => i[0]).join(', ')}`, bubble:`Put these in order from least to greatest: ${shuffle(items.map(i => i[0])).join(', ')}.`, helper:'Find each value first. Absolute values are never negative, but a minus sign outside the bars makes it negative.', visual:'',
+    return {title:'Weather Station', ctx:`order ${items.map(i => i[0]).join(', ')}`, bubble:`Put these in order from least to greatest: ${shuffle(items.map(i => i[0])).join(', ')}.`, helper:'Find each value first. Absolute values are never negative, but a minus sign outside the bars makes it negative.', visual:'',
       steps:[{name:'Least to greatest', type:'concept', kind:'choice', prompt:'Which order goes from least to greatest?', options:choiceOf({text:up}, [{text:noAbs, mis:'absIgnored'}, {text:down}]), hint:() => items.map(i => `${i[0]} = ${sgn(i[1])}`).join(', ') + '.'}]};
+  },
+  /* ----- station 6: Weather Station (comparing and interpreting absolute value) ----- */
+  /* comparing absolute values challenge (Khan unit 5, added Oct 26, 2026): letters on a line with no numbers, then rules */
+  cmpAbs2(lvl){
+    const cmpOpts = (r, trap) => choiceOf({text:r}, ['>', '<', '='].map(t => ({text:t, mis:t === trap && t !== r ? 'absIgnored' : null}))).map(o => ({...o, html:`<span style="font-size:1.4rem">${o.text}</span>`}));
+    const blank = {labelEvery:20, labelFn:u => (u === 0 ? '0' : '')};
+    if (lvl < 3) {
+      let a, b; do { a = rand(-9, 9); b = rand(-9, 9); } while (!a || !b || Math.abs(a) === Math.abs(b) || (a > 0 && b > 0) || a === b);
+      const [L, R, lt, rt] = lvl === 1 ? [`|p|`, `|q|`, Math.abs(a), Math.abs(b)] : pick([[`p`, `|q|`, a, Math.abs(b)], [`${MINUS}|p|`, `q`, -Math.abs(a), b], [`|p|`, `q`, Math.abs(a), b]]);
+      if (lt === rt) return RINK_GEN.cmpAbs2(lvl);
+      const r = lt > rt ? '>' : '<', raw = a > b ? '>' : '<';
+      return {title:'Weather Station', ctx:`${L} ? ${R} (p=${a}, q=${b})`, bubble:`The points p and q are on the number line. Compare ${L} and ${R}.`, helper:'|p| is how far p is from 0. Count the ticks.',
+        visual:iceLineSVG(-10, 10, 1, {...blank, dots:[{t:a, name:'p'}, {t:b, name:'q'}]}),
+        steps:[{name:'Compare', type:'concept', kind:'choice', prompt:`${L} ◯ ${R}`, options:cmpOpts(r, raw), hint:() => 'Find how far each point is from 0 first. A minus sign outside the bars makes it negative.'}]};
+    }
+    const [ask, right, wrongs] = pick([
+      ['x and y are negative numbers, and x < y. Which must be true?', '|x| > |y|', [{text:'|x| < |y|', mis:'absIgnored'}, {text:'|x| = |y|'}]],
+      ['x and y are negative numbers, and |x| < |y|. Which must be true?', 'x > y', [{text:'x < y', mis:'absIgnored'}, {text:'x = y'}]],
+      ['x is negative, y is positive, and |x| > |y|. Which must be true?', 'x < y', [{text:'x > y', mis:'absIgnored'}, {text:'|x| < |y|'}]],
+      ['x is negative and y = |x|. Which must be true?', 'y > x', [{text:'y < x', mis:'absNegative'}, {text:'y = x', mis:'absNegative'}]]]);
+    return {title:'Weather Station', ctx:ask, bubble:ask, helper:'Try it with real numbers, like x = −8 and y = −3, then check each choice.', visual:'',
+      steps:[{name:'Which is true', type:'concept', kind:'choice', prompt:'Which must be true?', options:choiceOf({text:right}, wrongs), hint:() => 'Pick numbers that fit, then test each choice.'}]};
   },
   absWord(lvl){
     if (lvl === 1) {
       const [txt, s] = pick(ICE_CONTEXTS.filter(c => c[1] < 0)), n = rand(3, 60), story = txt.replace('#', n);
-      return {title:'Ice Depth', ctx:`|${sgn(-n)}| in words`, bubble:`${story} The number is ${sgn(-n)}. How far is that from 0?`, helper:'Absolute value is the size of the change or the distance, without the direction.',
+      return {title:'Weather Station', ctx:`|${sgn(-n)}| in words`, bubble:`${story} The number is ${sgn(-n)}. How far is that from 0?`, helper:'Absolute value is the size of the change or the distance, without the direction.',
         visual:`<div style="text-align:center; font-size:1.6rem">🧊 |${sgn(-n)}|</div>`,
         steps:[negStep('How far from 0', 'concept', `|${sgn(-n)}| = ?`, n, {mis:v => v === -n ? 'absNegative' : null})]};
     }
     if (lvl === 2) {
       let d, h; do { d = rand(5, 60); h = rand(5, 60); } while (d === h);
       const far = d > h ? 'The diver' : 'The bird';
-      return {title:'Ice Depth', ctx:`${sgn(-d)} vs ${h}`, bubble:`A diver is at ${sgn(-d)} meters and a bird is at ${h} meters. Who is farther from sea level?`, helper:'Compare the absolute values: the distances from 0.',
+      return {title:'Weather Station', ctx:`${sgn(-d)} vs ${h}`, bubble:`A diver is at ${sgn(-d)} meters and a bird is at ${h} meters. Who is farther from sea level?`, helper:'Compare the absolute values: the distances from 0.',
         visual:`<div style="text-align:center; font-size:1.6rem">🤿 ${sgn(-d)} m · 🐦 ${h} m</div>`,
         steps:[negStep('Diver\'s distance', 'concept', `|${sgn(-d)}| = ?`, d, {mis:v => v === -d ? 'absNegative' : null}),
           {name:'Farther', type:'concept', kind:'choice', prompt:'Who is farther from sea level?', options:choiceOf({text:far}, [{text:far === 'The diver' ? 'The bird' : 'The diver', mis:d > h ? 'absIgnored' : null}]), hint:() => `${d} meters down vs ${h} meters up.`}], answerSteps:[1]};
     }
     const limit = rand(2, 9) * 5, bal = [-(limit + rand(1, 9)), -(limit - rand(1, 4)), limit + rand(1, 9)];
     const opts = choiceOf({text:`${MINUS}$${Math.abs(bal[0])}`}, [{text:`${MINUS}$${Math.abs(bal[1])}`}, {text:`$${bal[2]}`, mis:'absIgnored'}]);
-    return {title:'Ice Depth', ctx:`debt more than ${limit}`, bubble:`A skate shop account shows a debt of more than $${limit}. Which balance could it be?`, helper:'A debt is a negative balance. A debt of more than $' + limit + ' is a balance less than ' + MINUS + '$' + limit + '.',
+    return {title:'Weather Station', ctx:`debt more than ${limit}`, bubble:`A skate shop account shows a debt of more than $${limit}. Which balance could it be?`, helper:'A debt is a negative balance. A debt of more than $' + limit + ' is a balance less than ' + MINUS + '$' + limit + '.',
       visual:`<div style="text-align:center; font-size:1.6rem">🧾 debt &gt; $${limit}</div>`,
       steps:[{name:'Which balance', type:'concept', kind:'choice', prompt:`Which balance is a debt of more than $${limit}?`, options:opts, hint:() => `Owing more than $${limit} means the balance is below ${MINUS}$${limit}.`}]};
   }
@@ -5251,6 +5333,7 @@ function arcadeModuleMessage(event){
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'penguin-push') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/PENGUIN-PUSH.md)
   else if (run.gameId === 'supermarket-dash') earned = Math.max(0, Math.min(3, score));   // 1 ticket per checkout star, up to 3 a dash (docs/SUPERMARKET-DASH.md)
   else if (run.gameId === 'pet-surgery') earned = Math.min(3, Math.floor(score / 3));   // 1 ticket per 3 patients healed, up to 3 a shift (docs/PET-SURGERY.md)
   else if (run.gameId === 'mine-walker' && data.mode === 'endless') earned = Math.floor(score / policy.mineRowsPerTicket);
@@ -6927,6 +7010,41 @@ window.addEventListener('message', e => {
   logEvent({k:'dash', s:right, n:tries, title:`cart $${(total / 100).toFixed(2)} of $100, ${'⭐'.repeat(stars) || 'no stars'}, ${right} of ${tries} priced right${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🛒 Cart: $${(total / 100).toFixed(2)}${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= DASH_COINS_PER_DAY ? ' (Today’s dash coins are all earned.)' : ''}`);
+});
+/* ---------- 🐧 Penguin Push (public/arcade/penguin-push, docs/PENGUIN-PUSH.md) ----------
+   A penguins-vs-walruses battle on an icy number line from −7 to 7: every order card names a spot with an Ice Rink skill,
+   opened from the Weather Station (and also an Arcade game). Played from the Rink it pays Pet World coins: 1 per order
+   right, up to PENGUIN_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const PENGUIN_COINS_PER_DAY = 20;
+function penguinButtonHTML(){
+  const best = S.penguin?.best || 0;
+  return `<button type="button" class="btn" data-penguin>🐧 Penguin Push${best ? ` · best ${'⭐'.repeat(best)}` : ''}</button>`;
+}
+function openPenguin(){
+  if ($('#penguinWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'penguinWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Penguin Push');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🐧 Penguin Push</b><button type="button" class="btn small" data-penguin-close>Done</button></div><iframe src="/arcade/penguin-push/?from=rink" title="Penguin Push"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-penguin-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('rink'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#penguinWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'penguin:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), dunked = Math.max(0, Math.min(3, Math.round(+r.dunked || 0)));
+  const tries = Math.max(0, Math.min(200, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.penguin, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), won:!!r.won, stars, dunked, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, PENGUIN_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'penguin', s:right, n:tries, title:`${r.won ? 'won' : 'battle over'}, ${dunked} walrus${dunked === 1 ? '' : 'es'} dunked, ${right} of ${tries} orders right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🐧 ${r.won ? 'You won the floe!' : `${dunked} walrus${dunked === 1 ? '' : 'es'} dunked!`}${stars ? ` ${'⭐'.repeat(stars)}` : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= PENGUIN_COINS_PER_DAY ? ' (Today’s Penguin Push coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10129,13 +10247,14 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-chef-rush]')) { openChefRush(); return; }
   if (e.target.closest('[data-surgery]')) { openSurgery(e.target.closest('[data-surgery]').dataset.surgery); return; }
   if (e.target.closest('[data-dash]')) { openDash(); return; }
+  if (e.target.closest('[data-penguin]')) { openPenguin(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
@@ -11730,6 +11849,7 @@ function placeOnScreen(){
   if ($('#chefRushWrap')) return 'chef';
   if ($('#surgeryWrap')) return 'surgery';
   if ($('#dashWrap')) return 'dash';
+  if ($('#penguinWrap')) return 'penguin';
   if ($('#bibleWrap')) return 'bible';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
@@ -11762,6 +11882,7 @@ function placeLabel(key){
   if (kind === 'chef') return '🍳 Chef’s Rush';
   if (kind === 'surgery') return '🩺 Dr. Paws’ Surgery Center';
   if (kind === 'dash') return '🛒 Supermarket Dash';
+  if (kind === 'penguin') return '🐧 Penguin Push';
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
@@ -11783,6 +11904,7 @@ function eventText(e){
   if (e.k === 'chef') return `🍳 Chef’s Rush: ${e.title}`;
   if (e.k === 'surgery') return `🩺 Dr. Paws’ Surgery: ${e.title}`;
   if (e.k === 'dash') return `🛒 Supermarket Dash: ${e.title}`;
+  if (e.k === 'penguin') return `🐧 Penguin Push: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
@@ -11870,6 +11992,7 @@ function subjectOnScreen(){
   if ($('#chefRushWrap')) return 'math';   // Chef's Rush is Café practice
   if ($('#surgeryWrap')) return 'math';   // the surgery game is Bakery practice
   if ($('#dashWrap')) return 'math';   // Supermarket Dash is Market practice
+  if ($('#penguinWrap')) return 'math';   // Penguin Push is Ice Rink practice
   if ($('#bibleWrap')) return 'bible';
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';

@@ -686,8 +686,18 @@ export const TYPED_QUESTIONS = {
       {"type": "short", "prompt": "Explain why −10 is less than −2, even though 10 is greater than 2.", "rubric": ["Says −10 is farther left on the number line (farther below 0)", "Uses a real example, like temperature or owing money"], "model": "−10 is farther left of 0 than −2, so it is less. A temperature of −10° is colder than −2°.", "minWords": 8},
     ],
     "rink:4": [
+      {"type": "order", "difficulty": 2, "prompt": "Put these numbers in order from least to greatest.", "items": ["−8", "−5.5", "−1", "0", "2/3"]},
+      {"type": "fill", "difficulty": 1, "prompt": "Which is the least: −4, 2, −9, 0? Type the number.", "accept": ["−9", "-9"]},
+      {"type": "short", "prompt": "Explain how you would put −5, 3, −1 and 0 in order from least to greatest.", "rubric": ["Uses the number line (least is farthest left) or says negatives come before 0 and positives", "Says −5 is less than −1 because it is farther from 0 on the left", "Gives the order −5, −1, 0, 3"], "model": "Picture a number line. The farther left, the less. −5 is farther left than −1, then comes 0, then 3. So the order is −5, −1, 0, 3.", "minWords": 10},
+    ],
+    "rink:5": [
       {"type": "sort", "difficulty": 2, "prompt": "Sort by absolute value.", "groups": ["Absolute value is 6", "Absolute value is not 6"], "items": [["−6", 0], ["6", 0], ["6 units left of 0", 0], ["−3", 1], ["0", 1], ["−12", 1]]},
+      {"type": "fill", "difficulty": 1, "prompt": "What is |−8.5|? Type the number.", "accept": ["8.5", "8 1/2", "17/2"]},
+      {"type": "short", "prompt": "Explain what |−9| means, and why an absolute value is never negative.", "rubric": ["Says |−9| is the distance between −9 and 0 (so it is 9)", "Says a distance can’t be negative"], "model": "|−9| means how far −9 is from 0 on the number line. That distance is 9 units. A distance is never negative, so an absolute value is never negative.", "minWords": 10},
+    ],
+    "rink:6": [
       {"type": "two", "difficulty": 2, "prompt": "Part A: A diver is at −30 feet and a bird is at 20 feet. Which is farther from sea level?", "options": ["The diver", "The bird", "They are the same distance"], "answer": 0, "partB": {"prompt": "Part B: Which numbers show why?", "options": ["|−30| = 30 and |20| = 20", "−30 < 20", "−30 + 20 = −10"], "answer": 0}},
+      {"type": "multi", "difficulty": 3, "prompt": "Select every true statement.", "options": ["|−7| > |4|", "−7 > 4", "|−2| < |−5|", "−2 < −5", "|−3| = |3|"], "answers": [0, 2, 4]},
       {"type": "short", "prompt": "Explain why a debt of $50 is a bigger debt than a debt of $20, even though −50 < −20.", "rubric": ["Uses absolute value: |−50| = 50 is bigger than |−20| = 20", "Explains the absolute value is the size of the debt"], "model": "The size of a debt is its absolute value. |−50| = 50 and |−20| = 20, so you owe more with the $50 debt, even though −50 is lower on the number line.", "minWords": 8},
     ],
     "potion:1": [

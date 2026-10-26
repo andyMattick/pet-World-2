@@ -1,17 +1,26 @@
 # 6th grade, shop 5: the Ice Rink
 
-**Status: built (all 4 stations).** Khan Academy 6th grade, Unit 5: Negative numbers. The generators are `RINK_GEN` in `src/game/game.js` (stress-tested: 720,000 problems, 20,000 per skill and level; every number-line reading, opposite, absolute value, comparison, ordering, and inequality option checked). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
+**Status: built (6 stations, rebuilt Oct 26, 2026 to match Khan's unit page: all 16 exercises, each with its own link).** Khan Academy 6th grade, Unit 5: Negative numbers. The generators are `RINK_GEN` in `src/game/game.js` (stress-tested: 720,000 problems, 20,000 per skill and level; every number-line reading, opposite, absolute value, comparison, ordering, and inequality option checked). Read `AGENTS.md` and `NEIGHBORHOODS.md` first. **Edit in place, never rewrite a file.**
 
 The Ice Rink opens after the Clock Tower Unit Test (or with the teacher's "Open the Ice Rink for everyone").
 
 ## Stations and skills (Khan's order)
 
-| # | Station | Skills (ids) |
-|---|---|---|
-| 1 | 🌡️ Thermometer | Interpreting negative numbers (`negIntro`), negative numbers on the number line (`negLine`), number opposites (`opposites`) |
-| 2 | 📏 Rink Lines | Negative decimals on the number line (`negDecLine`), negative fractions on the number line (`negFracLine`) |
-| 3 | 🏁 Race Board | Compare using a number line (`cmpLine`), compare rational numbers (`cmpRational`), ordering (`orderNeg`), writing numerical inequalities (`numIneq`) |
-| 4 | 🧊 Ice Depth | Finding absolute values (`absVal`), compare and order absolute values (`cmpAbs`), interpreting absolute value (`absWord`) |
+| # | Station | Skills (ids) | Khan |
+|---|---|---|---|
+| 1 | 🌡️ Thermometer | Negative numbers on the number line (`negLine`), interpreting negative numbers (`negIntro`), negative symbol as opposite (`negSymbol`), number opposites (`opposites`) | Quiz 1 |
+| 2 | 📏 Rink Lines | Negative decimals on the number line (`negDecLine`), negative fractions on the number line (`negFracLine`) | Quiz 1 |
+| 3 | 🏁 Race Board | Compare using a number line (`cmpLine`), compare rational numbers (`cmpRational`), writing numerical inequalities (`numIneq`) | Quiz 2 |
+| 4 | 🏆 Podium | Ordering small negative numbers (`orderSmallNeg`), ordering rational numbers (`orderNeg`) | Quiz 2 |
+| 5 | 🧊 Ice Depth | Meaning of absolute value (`absMeaning`), finding absolute values (`absVal`) | |
+| 6 | 🌨️ Weather Station | Compare and order absolute values (`cmpAbs`), comparing absolute values challenge (`cmpAbs2`), interpreting absolute value (`absWord`) | |
+
+**Oct 26, 2026 rebuild:** four new skills (`negSymbol`, `orderSmallNeg`, `absMeaning`, `cmpAbs2`), `orderNeg` now links to Khan's "Ordering rational numbers" exercise (it linked a video), and the stations follow Khan's lessons (4 stations became 6). Each new generator was stress-tested (4,000 problems per level: one right choice, no duplicate choices, orders and comparisons checked).
+
+- **Negative symbol as opposite** (`negSymbol`): level 1, a point a on the line: which point is −a? Level 2, "if a = −6, what is −a?" Level 3, −(−a) worked from the inside out, or "a is negative: is −a positive or negative?"
+- **Ordering small negative numbers** (`orderSmallNeg`): integers from −9 to 9. Level 1 with a number line, level 2 without (sometimes greatest to least), level 3 types the least or greatest. Wrong orders that follow "bigger digits is bigger" are named (`negCompare`).
+- **Meaning of absolute value** (`absMeaning`): level 1 counts the distance from a dot to 0, level 2 "which numbers have an absolute value of 7?" (−7 and 7), level 3 which statement about |−5| is true.
+- **Comparing absolute values challenge** (`cmpAbs2`): letters p and q on a number line with only 0 labeled: compare |p| and |q| (level 1), then p, q, |q| and −|p| (level 2); level 3 rules like "x and y are negative and x < y: which must be true?"
 
 ## Negative answers
 

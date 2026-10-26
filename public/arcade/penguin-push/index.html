@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penguin Push</title>
+<!-- Pet World: served at /arcade/penguin-push/ (docs/PENGUIN-PUSH.md). Played from the Ice Rink's Weather Station
+     (?from=rink, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: the Ice Rink skills
+     (Khan 6th grade unit 5, negative numbers). It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#EAF4FB; --card:#FFFFFF; --ink:#16324A; --muted:#55708A; --edge:#BCD5E8; --accent:#1C7ED6; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --ice:#DDEFFC; --ice2:#C5E3F8; --water:#4DABF7; --sel:#FFD43B;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0E1B26; --card:#16293A; --ink:#E3F0FA; --muted:#9DB8CE; --edge:#2A4660; --accent:#4DABF7; --accent-ink:#0E1B26;
+      --ok:#69DB7C; --bad:#FF8787; --ice:#1C3448; --ice2:#234059; --water:#1971C2; --sel:#E8B400; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:820px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.8em; margin:6px 0 4px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .top{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .pill{background:var(--ice); border-radius:999px; padding:4px 10px; font-weight:700}
+  .order{font-size:1.25em; font-weight:700; margin:4px 0}
+  .order small{display:block; font-size:.7em; font-weight:400; color:var(--muted)}
+  /* the ice floe: spots −7 to 7 with water on both ends */
+  .floe{display:flex; align-items:stretch; margin-top:12px; border-radius:14px; overflow:hidden}
+  .water{flex:0 0 14px; background:repeating-linear-gradient(180deg, var(--water) 0 6px, #74C0FC 6px 10px)}
+  .spots{flex:1; display:grid; grid-template-columns:repeat(15, minmax(0, 1fr)); background:var(--ice)}
+  .spot{border:none; border-left:1px solid var(--ice2); background:none; padding:4px 0 2px; display:flex; flex-direction:column; align-items:center; gap:2px; min-height:74px}
+  .spot:nth-child(even){background:var(--ice2)}
+  .spot .u{font-size:clamp(13px, 4.2vw, 30px); line-height:1.2; min-height:1.2em}
+  .spot .n{font-size:clamp(10px, 2.8vw, 14px); font-weight:700; color:var(--muted)}
+  .spot.zero .n{color:var(--ink)}
+  .spot.picked{outline:3px solid var(--sel); outline-offset:-3px}
+  .spot:focus-visible{outline:3px solid var(--accent); outline-offset:-3px}
+  .spot.hit{animation:bump .5s}
+  @keyframes bump{30%{transform:translateY(-6px)}}
+  @media (prefers-reduced-motion: reduce){ .spot.hit{animation:none} }
+  .log{margin:8px 0 0; padding-left:18px; color:var(--muted); font-size:.95em}
+  .msg{min-height:1.4em; font-weight:700; margin:8px 0 0}
+  .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .bench{font-size:1.3em; letter-spacing:2px}
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+  .stats div{flex:1 1 120px; background:var(--ice); border-radius:12px; padding:10px; text-align:center}
+  .stats b{display:block; font-size:1.5em}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_RINK = params.get('from') === 'rink';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const LO = -7, HI = 7, MAX_TURNS = 30;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const M = '−', sg = x => (x < 0 ? M : '') + Math.abs(x), sgd = x => (x < 0 ? M : '') + String(Math.abs(x));
+let best = 0; try { best = +localStorage.getItem('penguin-push:best') || 0; } catch(e){}
+
+/* ---------- order cards: each one names a spot (or a few) in negative-number language ---------- */
+const range = (a, b) => { const out = []; for (let i = a; i <= b; i++) out.push(i); return out; };
+const CONTEXTS = [[-1, 'It’s # degrees below zero. Slide to that temperature.'], [1, 'It’s # degrees above zero. Slide to that temperature.'],
+  [-1, 'A seal dives # meters below sea level. Slide to that depth.'], [1, 'A puffin flies # meters above sea level. Slide there.'],
+  [-1, 'You owe # fish. Slide to that number.'], [1, 'You caught # fish. Slide to that number.']];
+/* makers take a target t (an integer from −7 to 7) and return {text, small?, targets, skill} or null if they can't name it */
+const MAKERS = [
+  t => t ? {skill:'negLine', text:`Slide to ${sg(t)}.`, targets:[t]} : null,
+  t => { if (Math.abs(t) < 2) return null; const c = pick(CONTEXTS.filter(c => c[0] === Math.sign(t))); return {skill:'negIntro', text:c[1].replace('#', Math.abs(t)), targets:[t]}; },
+  t => t ? {skill:'opposites', text:`Slide to the opposite of ${sg(-t)}.`, targets:[t]} : null,
+  t => { if (!t) return null; const v = pick(['a', 'b', 'n']); return t < 0 || Math.random() < 0.5 ? {skill:'negSymbol', text:`${v} = ${sg(-t)}. Slide to ${M}${v}.`, targets:[t]} : {skill:'negSymbol', text:`Slide to ${M}(${sg(-t)}).`, small:`${M}( ) means “the opposite of.”`, targets:[t]}; },
+  t => t > 0 ? {skill:'absVal', text:`Slide to |${sg(pick([t, -t]))}|.`, targets:[t]} : t < 0 ? {skill:'absVal', text:`Slide to ${M}|${sg(pick([t, -t]))}|.`, targets:[t], small:'A minus sign outside the bars stays.'} : null,
+  t => t && Math.abs(t) <= 7 ? {skill:'absMeaning', text:`Slide to a spot that is ${Math.abs(t)} away from 0.`, small:'Two spots work!', targets:[t, -t]} : null,
+  t => { const others = shuffle(range(t + 1, 9)).slice(0, 2); return others.length === 2 ? {skill:'orderSmallNeg', text:`Slide to the least of ${shuffle([t, ...others]).map(sg).join(', ')}.`, targets:[t]} : null; },
+  t => { const others = shuffle(range(-9, t - 1)).slice(0, 2); return others.length === 2 ? {skill:'cmpRational', text:`Slide to the greatest of ${shuffle([t, ...others]).map(sg).join(', ')}.`, targets:[t]} : null; },
+  t => { const b = t + rnd(1, 2), c = t - rnd(1, 2);   // inequalities, with at most 5 spots that work
+         if (b <= LO + 5 && Math.random() < 0.5) return {skill:'numIneq', text:`Slide to any spot less than ${sg(b)}.`, targets:range(LO, b - 1)};
+         if (c >= HI - 5 && Math.random() < 0.5) return {skill:'numIneq', text:`Slide to any spot greater than ${sg(c)}.`, targets:range(c + 1, HI)};
+         return {skill:'numIneq', text:`Slide to a spot greater than ${sg(c)} and less than ${sg(b)}.`, targets:range(c + 1, b - 1)}; },
+  t => Math.random() < 0.5 ? {skill:'negDecLine', text:`Slide to the whole number just left of ${sgd(t + 0.5)}.`, targets:[t]} : {skill:'negDecLine', text:`Slide to the whole number just right of ${sgd(t - 0.5)}.`, targets:[t]},
+  t => { if (Math.abs(t) < 2) return null; const u = pick(range(-(Math.abs(t) - 1), Math.abs(t) - 1).filter(x => x !== 0)); return {skill:'cmpAbs', text:`Slide to whichever of ${shuffle([t, u]).map(sg).join(' and ')} has the greater absolute value.`, targets:[t]}; }
+];
+const SKILL_NAMES = {negLine:'Negative numbers on the number line', negIntro:'Interpreting negative numbers', opposites:'Number opposites', negSymbol:'Negative symbol as opposite', absVal:'Finding absolute values', absMeaning:'Meaning of absolute value', orderSmallNeg:'Ordering small negative numbers', cmpRational:'Comparing rational numbers', numIneq:'Inequalities', negDecLine:'Negative decimals on the number line', cmpAbs:'Comparing absolute values'};
+
+/* ---------- the battle ---------- */
+let g = null;
+const at = x => g.units.find(u => !u.out && u.pos === x);
+const alive = side => g.units.filter(u => u.side === side && !u.out);
+function newGame(){
+  const P = ['Pip', 'Waddles', 'Flipper'], W = ['Wally', 'Tusk', 'Blubber'];
+  g = {units:[...[-6, -4, -2].map((pos, i) => ({id:`p${i}`, side:'p', name:P[i], pos, out:false})), ...[2, 4, 6].map((pos, i) => ({id:`w${i}`, side:'w', name:W[i], pos, out:false}))],
+    turn:1, right:0, tries:0, missed:{}, picked:null, card:null, msg:'', ok:false, log:[], hits:[], busy:false, started:Date.now(), over:false};
+  g.picked = alive('p')[0].id;
+  newCard(); render();
+}
+function newCard(){
+  const pens = new Set(alive('p').map(u => u.pos)), walrusSpots = alive('w').map(u => u.pos);
+  for (let i = 0; i < 80; i++) {
+    const t = Math.random() < 0.75 && walrusSpots.length ? pick(walrusSpots) : rnd(LO, HI);
+    if (pens.has(t)) continue;
+    const pool = g.turn <= 3 ? MAKERS.slice(0, 5) : MAKERS, c = pick(pool)(t);
+    if (!c) continue;
+    c.targets = c.targets.filter(x => x >= LO && x <= HI && !pens.has(x));
+    if (c.targets.length) { g.card = c; return; }
+  }
+  g.card = {skill:'negLine', text:'Slide to 0.', targets:[0]};
+}
+/* push a unit dir × steps; units it bumps get pushed 1 more (a chain); past ±7 is the water */
+function shove(u, dir, steps, out){
+  let pos = u.pos + dir * steps;
+  const other = !u.out && pos >= LO && pos <= HI ? g.units.find(x => x !== u && !x.out && x.pos === pos) : null;
+  u.pos = pos;
+  if (pos < LO || pos > HI) { u.out = true; out.push(`🌊 Splash! ${u.side === 'w' ? '🦭' : '🐧'} ${u.name} fell into the water!`); g.hits.push(Math.max(LO, Math.min(HI, pos))); return; }
+  g.hits.push(pos);
+  if (other) shove(other, dir, 1, out);
+}
+function slide(u, target, out){
+  const dir = Math.sign(target - u.pos), dist = Math.abs(target - u.pos), hit = at(target);
+  u.pos = target; g.hits.push(target);
+  if (hit && hit !== u) { const power = Math.max(1, Math.ceil(dist / 2)); out.push(`💥 ${u.side === 'p' ? '🐧' : '🦭'} ${u.name} slid ${dist} and bumped ${hit.side === 'w' ? '🦭' : '🐧'} ${hit.name} ${power} spot${power > 1 ? 's' : ''}!`); shove(hit, dir, power, out); }
+}
+function tapSpot(x){
+  if (!g || g.busy || g.over) return;
+  const u = at(x);
+  if (u && u.side === 'p') { g.picked = u.id; g.msg = ''; render(); return; }
+  const me = g.units.find(v => v.id === g.picked && !v.out);
+  if (!me) { g.msg = 'Tap one of your penguins first.'; g.ok = false; render(); return; }
+  g.tries++; g.hits = [];
+  const out = [];
+  if (g.card.targets.includes(x)) {
+    g.right++; g.ok = true; g.msg = `✅ Right! ${x === 0 ? '0' : sg(x)} it is.`;
+    out.push(`🐧 ${me.name} slid from ${sg(me.pos)} to ${sg(x)}.`); slide(me, x, out);
+  } else {
+    g.ok = false; g.missed[g.card.skill] = (g.missed[g.card.skill] || 0) + 1;
+    const ans = g.card.targets.length === 1 ? sg(g.card.targets[0]) : g.card.targets.map(sg).join(' or ');
+    g.msg = `💫 Slip! The order meant ${ans}. ${me.name} wobbled in place.`;
+  }
+  g.log = out;
+  if (checkEnd()) return;
+  g.busy = true; render();
+  const game = g; setTimeout(() => { if (g === game) walrusTurn(); }, 900);   // never a stale walrus turn in a new battle
+}
+function walrusTurn(){
+  if (!g || g.over) return;
+  const out = [], ws = alive('w'), ps = alive('p');
+  if (ws.length && ps.length) {
+    const w = pick(ws), near = ps.reduce((a, b) => (Math.abs(b.pos - w.pos) < Math.abs(a.pos - w.pos) ? b : a));
+    const dir = Math.sign(near.pos - w.pos) || 1, step = Math.min(Math.abs(near.pos - w.pos), rnd(1, 3)), target = w.pos + dir * step;
+    const blocker = at(target);
+    if (blocker && blocker.side === 'w') out.push(`🦭 ${w.name} waddled around.`);
+    else { out.push(`🦭 ${w.name} slid from ${sg(w.pos)} to ${sg(target)}.`); g.hits = []; slide(w, target, out); }
+  }
+  g.log = [...g.log, ...out]; g.busy = false; g.turn++;
+  if (checkEnd()) return;
+  if (!alive('p').some(u => u.id === g.picked)) g.picked = alive('p')[0]?.id || null;
+  newCard(); render();
+}
+function checkEnd(){
+  const ws = alive('w').length, ps = alive('p').length;
+  if (ws && ps && g.turn < MAX_TURNS) return false;
+  g.over = true; finish(ws === 0 && ps > 0, ps === 0); return true;
+}
+function finish(won, lost){
+  const dunked = 3 - alive('w').length, saved = alive('p').length;
+  const stars = won ? Math.max(1, saved) : dunked >= 2 && saved ? 1 : 0;
+  const result = {won, stars, dunked, saved, right:g.right, tries:g.tries, turns:g.turn, missed:g.missed, ms:Date.now() - g.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('penguin-push:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_RINK) window.parent.postMessage({type:'penguin:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'penguin-push', runId:ARCADE_RUN, roundId:`battle-${g.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(g.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>${won ? '🏆 The floe is yours!' : lost ? '🌊 The walruses won this time' : '⏱️ Time’s up!'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${won ? `Every walrus is in the water, and ${saved} penguin${saved === 1 ? '' : 's'} still standing.` : `${dunked} walrus${dunked === 1 ? '' : 'es'} dunked.`}</p>
+    <div class="stats"><div><b>${g.right} of ${g.tries}</b>orders right</div><div><b>${dunked}</b>walruses dunked</div><div><b>${saved}</b>penguins saved</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    ${FROM_RINK ? '<p class="muted">Each order you get right earns Pet World coins. Battles don’t count toward Ice Rink orders or quizzes.</p>' : ''}
+    <p><button class="btn go" data-start>🐧 Battle again</button></p>`;
+}
+function render(){
+  const c = g.card, hits = new Set(g.hits);
+  const spots = range(LO, HI).map(x => { const u = at(x), picked = u && u.id === g.picked;
+    return `<button class="spot${x === 0 ? ' zero' : ''}${picked ? ' picked' : ''}${hits.has(x) ? ' hit' : ''}" data-spot="${x}" aria-label="${x === 0 ? '0' : sg(x)}${u ? `: ${u.side === 'p' ? 'penguin' : 'walrus'} ${u.name}` : ''}"><span class="u">${u ? (u.side === 'p' ? '🐧' : '🦭') : ''}</span><span class="n">${x === 0 ? '0' : sg(x)}</span></button>`; }).join('');
+  const bench = side => g.units.filter(u => u.side === side).map(u => u.out ? '💦' : side === 'p' ? '🐧' : '🦭').join('');
+  app.innerHTML = `<div class="top"><span class="pill">Turn ${Math.min(g.turn, MAX_TURNS)} of ${MAX_TURNS}</span><span class="pill">✅ ${g.right} right</span><span class="bench" aria-label="penguins">${bench('p')}</span><span class="muted">vs</span><span class="bench" aria-label="walruses">${bench('w')}</span></div>
+    <div class="card"><p class="order">📜 ${esc(c.text)}${c.small ? `<small>${esc(c.small)}</small>` : ''}</p>
+      <p class="muted" style="margin:0">${g.busy ? '🦭 The walruses are moving…' : 'Tap a penguin, then tap the spot where it should slide.'}</p></div>
+    <div class="floe"><div class="water" aria-hidden="true"></div><div class="spots">${spots}</div><div class="water" aria-hidden="true"></div></div>
+    <p class="msg ${g.ok ? 'ok' : g.msg ? 'bad' : ''}" role="status">${g.msg}</p>
+    ${g.log.length ? `<ul class="log">${g.log.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}`;
+}
+function renderStart(){
+  app.innerHTML = `<h1>🐧 Penguin Push</h1>
+    <p class="muted">Three walruses want your ice floe! Follow the orders, slide your penguins, and bump every walrus into the water.</p>
+    <ol class="how">
+      <li>Each turn you get an order, like “Slide to the opposite of 4” or “Slide to ${M}|3|”. Tap a penguin, then tap the right spot.</li>
+      <li>Land on a walrus to bump it. The farther you slide, the harder the bump: 1 spot for a short slide, up to 7 for a long one.</li>
+      <li>Anyone pushed past ${M}7 or 7 falls into the water. 🌊</li>
+      <li>Wrong spot? Your penguin slips. Then a walrus slides at your penguins, so watch out!</li>
+      <li>Dunk all 3 walruses to win. ⭐ for every penguin still standing.</li>
+    </ol>
+    ${best ? `<p>🏆 Best battle: <b>${'⭐'.repeat(best)}</b></p>` : ''}
+    <button class="btn go" data-start>🐧 Start the battle</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-start')) { newGame(); return; }
+  if (b.dataset.spot != null) tapSpot(+b.dataset.spot);
+});
+if (params.has('selftest')) window.__push = {MAKERS, newGame, newCard, tapSpot, walrusTurn, get g(){ return g; }};
+renderStart();
+})();
+</script>
+</body>
+</html>
