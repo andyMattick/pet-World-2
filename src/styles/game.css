@@ -1273,7 +1273,7 @@ a.btn{display:inline-block; text-decoration:none}
 @media (prefers-reduced-motion: reduce){ .hl-spot{animation:none} }
 .hl-filled{color:var(--berry-deep)}
 .hl-hero{display:flex; gap:14px; align-items:center; margin:10px 0; padding:12px 14px; border:3px solid var(--edge); border-radius:16px; background:var(--surface); transition:background .2s}
-.hl-hero .hl-emoji{font-size:2.6em; line-height:1; white-space:nowrap}
+.hl-hero{flex-wrap:wrap} .hl-hero .hl-emoji{font-size:2.6em; line-height:1.1; max-width:100%; word-break:break-all} .hl-hero > div:last-child{flex:1 1 180px}
 .hl-hero p{margin:4px 0 0}
 .hl-hero.small{padding:6px 10px; margin:4px 0}
 .hl-hero.small .hl-emoji{font-size:1.6em}

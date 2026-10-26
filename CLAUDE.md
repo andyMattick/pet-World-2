@@ -86,6 +86,10 @@ This applies to **every unit in every subject, now and in the future** (English,
 
 `npm run verify` checks all of this. Never remove or weaken these steps to make a check pass.
 
+## Games go in the unit and in the Arcade (owner rule, Oct 26, 2026)
+
+Every time the owner says something is a game, it goes in **both** places: inside its unit (or shop station) **and** in the 🕹️ Arcade (`ARCADE_GAMES` in `src/shared/registry.ts`, with a ticket payout in `arcadeModuleMessage`). Add it to the unit-game list in `scripts/verify.mjs` and the table in `docs/ARCADE-GAMES.md`. `npm run verify` checks the list. See `docs/ARCADE-GAMES.md` for the two ways to build the Arcade copy.
+
 ## Reading Quiz
 
 Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet World coins. See `docs/READING-QUIZ.md`.

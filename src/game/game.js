@@ -5248,6 +5248,7 @@ function arcadeModuleMessage(event){
     earned = Math.floor(run.highestScore / policy.corsairPointsPerTicket) - oldMilestones;
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
+  else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'pet-surgery') earned = Math.min(3, Math.floor(score / 3));   // 1 ticket per 3 patients healed, up to 3 a shift (docs/PET-SURGERY.md)
   else if (run.gameId === 'mine-walker' && data.mode === 'endless') earned = Math.floor(score / policy.mineRowsPerTicket);
   else if (run.gameId === 'mine-walker') {

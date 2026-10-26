@@ -9,6 +9,8 @@ A Bakery practice game (Khan 6th grade Unit 2, arithmetic with rational numbers)
 
 It never counts toward station orders, skill mastery, quizzes, unit tests or unlocks.
 
+See `ARCADE-GAMES.md` for the rule that every unit game is in the Arcade too.
+
 ## How it plays
 
 Each patient has a chart with 3 steps. Each step uses the answer from the step before, so she has to do them in order and get each one right.

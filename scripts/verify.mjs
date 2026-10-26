@@ -210,9 +210,19 @@ if (allSrc.includes('learning_events')) problems.push('Code writes to a "learnin
 if (allSrc.includes('window.prompt(')) problems.push('Code uses window.prompt(). The real teacher app uses forms. This is a sign of a placeholder rewrite.');
 for (const file of ['docs/AGENTS.md', 'docs/CLAUDE.md']) if (existsSync(file)) problems.push(`${file} is a stray copy of repository instructions and must not exist.`);
 
-// Every available Arcade game has its built copy in public/ (a game's source is in src/arcade/<id>/; see its README)
+// Every available Arcade game has its built copy in public/ (a game's source is in src/arcade/<id>/; see its README),
+// or is a Vite page at arcade/<id>/index.html listed in vite.config.ts (an Arcade copy of a unit game; docs/ARCADE-GAMES.md)
+const viteConfig = read('vite.config.ts');
 for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', available: true/g)) {
+  const vitePage = `${src.slice(1)}index.html`;
+  if (existsSync(vitePage) && viteConfig.includes(`'${vitePage}'`)) continue;
   if (!existsSync(`public${src}index.html`)) problems.push(`The Arcade game at ${src} isn't built: public${src}index.html is missing. Build it from src${src} (see its README.md).`);
+}
+
+// Owner rule (CLAUDE.md, "Games go in the unit and in the Arcade"): every unit game is also an Arcade game
+for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'power-lab':'function heroLabCardHTML('})) {
+  if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
+  if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
 }
 
 // The brain stretch games are built into public/ (source: src/brain-games/; see its README and docs/BRAIN-GAMES.md)

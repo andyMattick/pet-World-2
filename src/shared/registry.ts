@@ -315,6 +315,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'treasure-chase', name: 'The Great Treasure Chase', emoji: '🗺️', description: 'Track stolen artifacts around the world with geography and history clues.', src: '/arcade/treasure-chase/', available: true },
   { id: 'chefs-rush', name: "Chef's Rush", emoji: '🍳', description: 'The Pet Café is slammed! Read each ticket, plate the right amounts with every Café ratio skill, and serve before customers leave.', src: '/arcade/chefs-rush/', available: true },
   { id: 'pet-surgery', name: "Dr. Paws' Surgery Center", emoji: '🩺', description: 'Patients are lining up! Work through each chart of decimal, fraction and long-division steps in order to heal every pet.', src: '/arcade/pet-surgery/', available: true },
+  { id: 'power-lab', name: 'Punctuation Power Lab', emoji: '⚡', description: 'Tap the glowing spots to change the punctuation and watch your superhero change. Build the hero each mission needs!', src: '/arcade/power-lab/', available: true },
   { id: 'prep-recall', name: 'Name All 48 Prepositions', emoji: '🔗', description: 'Race the clock to type every preposition you can remember. (During English Unit 5 it is on Today’s plan instead.)', src: '/prep-recall/', available: true }
 ];
 
