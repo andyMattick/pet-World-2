@@ -1170,6 +1170,17 @@ a.btn{display:inline-block; text-decoration:none}
 .help-btn:hover{transform:translateY(-1px)} .help-btn:active{transform:translateY(3px); box-shadow:0 2px 0 var(--edge)}
 .help-btn[hidden]{display:none}
 @media (max-width:520px){ .help-btn{font-size:17px; padding:11px 15px} }
+.chat-btn{position:fixed; right:14px; bottom:14px; z-index:40; font:800 22px/1 Grandstander, system-ui, sans-serif; padding:12px 16px; border-radius:999px; border:3px solid var(--edge); background:var(--surface); color:var(--ink); box-shadow:0 5px 0 var(--edge); cursor:pointer}
+.chat-btn b{display:inline-block; min-width:1.4em; padding:2px 6px; border-radius:999px; background:var(--berry); color:#fff; font-size:.75em}
+.chat-btn.has-new{animation:chatPing 1.4s ease-in-out 6}
+@keyframes chatPing{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion: reduce){ .chat-btn.has-new{animation:none} }
+.chat-list{max-height:45vh; overflow:auto; display:flex; flex-direction:column; gap:6px; margin:8px 0; text-align:left}
+.chat-msg{align-self:flex-start; max-width:85%; padding:6px 10px; border-radius:12px; background:var(--butter); color:#3B2A00; white-space:pre-wrap}
+.chat-msg.mine{align-self:flex-end; background:#D0EBFF; color:#0B2E4F}
+.chat-msg small{display:block; opacity:.75; font-size:.78em}
+.chat-box label{display:block; text-align:left; font-weight:700}
+.chat-box textarea{display:block; width:100%; margin-top:4px; font:inherit; font-size:1.05rem; padding:8px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--surface); color:var(--ink)}
 .help-box{text-align:left; max-height:calc(100vh - 40px); overflow:auto}
 .help-box h2, .help-box .theme-kicker, .help-box .theme-emoji{text-align:center}
 .help-box textarea{width:100%; font:inherit; padding:8px; border-radius:10px; margin-top:4px}

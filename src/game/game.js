@@ -182,6 +182,7 @@ function normalize(raw){
     s.carnival = {best:Object.fromEntries(Object.entries(s.carnival?.best && typeof s.carnival.best === 'object' ? s.carnival.best : {}).filter(([k, v]) => /^[a-z]{2,12}$/.test(k) && Number.isFinite(+v)).map(([k, v]) => [k, Math.max(0, Math.min(3, Math.round(+v)))])),
       day:typeof s.carnival?.day === 'string' ? s.carnival.day : '', coinsToday:Math.max(0, Math.round(+s.carnival?.coinsToday || 0)),
       games:(Array.isArray(s.carnival?.games) ? s.carnival.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-40).map(g => ({t:+g.t, booth:String(g.booth || '').slice(0, 12), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), stars:Math.max(0, Math.min(3, +g.stars || 0)), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🎪 Carnival Midway (docs/CARNIVAL.md)
+    s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
@@ -8496,6 +8497,64 @@ async function captureScreen(card){
   } catch(e) { return null; }
   finally { stream?.getTracks().forEach(t => t.stop()); card.style.visibility = ''; }
 }
+/* ---------- 💬 Messages from a grown-up (docs/CHAT.md) ----------
+   A grown-up writes from her page in the teacher app (quiz_overrides "chat": {msgs:[{id, at, from, text}]}). A 💬 button
+   shows in the corner when there are messages, with a count of new ones, and a note pops up when one arrives. Every
+   message shows who wrote it. Her replies go in S.chat.replies, which the teacher app reads from her save. The town
+   checks for new messages every 30 seconds while it's open. Her time pauses while the messages are open. */
+function chatMsgs(){
+  try { const v = JSON.parse(Backend.me?.quiz_overrides?.chat || '{}');
+    return (Array.isArray(v?.msgs) ? v.msgs : []).filter(m => m && typeof m.text === 'string').map(m => ({id:String(m.id || ''), at:+m.at || 0, from:String(m.from || 'A grown-up').slice(0, 40), text:String(m.text).slice(0, 1000)})).slice(-60); }
+  catch(e) { return []; }
+}
+const chatUnread = msgs => msgs.filter(m => m.at > (S?.chat?.seenAt || 0)).length;
+const chatBtn = document.createElement('button');
+chatBtn.type = 'button'; chatBtn.id = 'chatBtn'; chatBtn.className = 'chat-btn'; chatBtn.hidden = true;
+document.body.appendChild(chatBtn);
+let chatToldAt = 0;
+function updateChatBtn(){
+  const msgs = S && S.chat && Backend.me && !Backend.lookOnly ? chatMsgs() : [], n = chatUnread(msgs);
+  chatBtn.hidden = !msgs.length || !!$('#chatCard');
+  chatBtn.innerHTML = `💬${n ? ` <b>${n}</b>` : ''}`; chatBtn.setAttribute('aria-label', n ? `${n} new message${n > 1 ? 's' : ''}` : 'Messages');
+  chatBtn.classList.toggle('has-new', !!n);
+  const newest = msgs[msgs.length - 1];
+  if (newest && n && newest.at > chatToldAt) { chatToldAt = newest.at; toast(`💬 New message from ${newest.from}`); }
+  if ($('#chatCard')) renderChatCard();
+}
+setInterval(updateChatBtn, 2000);
+setInterval(() => { if (S && Backend.me && !Backend.lookOnly && !document.hidden) void Backend.refreshSettings().then(updateChatBtn); }, 30000);
+chatBtn.addEventListener('click', () => openChatCard());
+let chatShown = '';
+function renderChatCard(){
+  const el = $('#chatCard'); if (!el) return;
+  const msgs = chatMsgs(), all = [...msgs.map(m => ({...m, mine:false})), ...S.chat.replies.map(r => ({...r, from:'You', mine:true}))].sort((a, b) => a.at - b.at).slice(-40);
+  const key = all.map(m => m.id + m.at).join(','); if (key === chatShown) return; chatShown = key;
+  const names = [...new Set(msgs.map(m => m.from))].join(' and ') || 'a grown-up';
+  if (msgs.length) { S.chat.seenAt = Math.max(S.chat.seenAt, msgs[msgs.length - 1].at); save(); }
+  el.querySelector('[data-chat-list]').innerHTML = all.map(m => `<div class="chat-msg${m.mine ? ' mine' : ''}"><small>${esc(m.from)} · ${esc(new Date(m.at).toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'}))}</small><div>${esc(m.text)}</div></div>`).join('') || '<p class="muted">No messages yet.</p>';
+  el.querySelector('[data-chat-who]').textContent = `Messages from ${names}`;
+  const list = el.querySelector('[data-chat-list]'); list.scrollTop = list.scrollHeight;
+}
+function openChatCard(){
+  if ($('#chatCard')) return;
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.id = 'chatCard'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Messages');
+  el.innerHTML = `<form class="theme-box chat-box" data-chat-form><p class="theme-kicker">Your time is paused</p><div class="theme-emoji" aria-hidden="true">💬</div><h2 data-chat-who>Messages</h2>
+    <div class="chat-list" data-chat-list></div>
+    <label>Write back<textarea name="text" rows="2" maxlength="1000" placeholder="Type your reply…"></textarea></label>
+    <div class="row" style="margin-top:8px"><button type="submit" class="btn berry">Send</button><button type="button" class="btn small" data-chat-close>Close</button></div>
+    <p class="muted" data-chat-sent style="margin:6px 0 0" role="status"></p></form>`;
+  document.body.appendChild(el); chatShown = ''; renderChatCard(); updateChatBtn();
+  setTimeout(() => el.querySelector('textarea')?.focus(), 50);
+  el.querySelector('[data-chat-close]').addEventListener('click', () => { el.remove(); updateChatBtn(); });
+  el.querySelector('[data-chat-form]').addEventListener('submit', e => {
+    e.preventDefault();
+    const box = el.querySelector('textarea'), text = box.value.trim(); if (!text) { box.focus(); return; }
+    S.chat.replies = [...S.chat.replies, {id:`r${Date.now().toString(36)}`, at:Date.now(), text:text.slice(0, 1000)}].slice(-60);
+    save(); box.value = ''; chatShown = ''; renderChatCard();
+    el.querySelector('[data-chat-sent]').textContent = '✅ Sent!';
+  });
+}
 function openHelpCard(){
   if ($('#helpCard')) return;
   const place = helpPlace(), el = document.createElement('div');
@@ -12209,7 +12268,7 @@ const townTracker = new ActivityTracker(seconds => {
   }
   localSession.end = now; localSession.active += seconds; save();
   return true;
-}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun || $('#helpCard')) return; const subject = subjectOnScreen(); if (S.readTimer && subject === 'reading') return; moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // the reading timer counts Reading itself   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
+}, seconds => { S.now = {t:Date.now(), what:brainRun ? '🧠 Brain stretch' : moveRun ? '🤸 Stand-and-stretch break' : String(placeLabel(placeOnScreen())).slice(0, 120)}; if (brainRun || moveRun || $('#helpCard') || $('#chatCard')) return; const subject = subjectOnScreen(); if (S.readTimer && subject === 'reading') return; moveTrack(subject, seconds); addSubjectTime(S.subjectTime, subject, seconds); logPlaceTime(placeOnScreen(), seconds); });   // the reading timer counts Reading itself   // a brain stretch counts its own time (brainTick); a stand-and-stretch break counts toward no subject
 /* which subject the active time goes to: whatever is on screen (docs: PRACTICE-TIME.md, "Time by subject") */
 /* ---------- the day log (docs: LEDGER.md steps 1 and 2) ----------
    S.dayLog['YYYY-MM-DD'] = {places:{lesson: seconds}, counts:{"shop:cafe:2": {n, ok}}, events:[{t, k, text, ...}], labels:{key: name}, sent}

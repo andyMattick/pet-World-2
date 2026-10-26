@@ -7,6 +7,7 @@ import { thinkReportHTML } from '../shared/thinkReport';
 import { brainReportHTML, type BrainSettings } from '../shared/brainGames';
 import { renderLedger, type SaveDayLog } from './ledger';
 import { startRightNow } from './live';
+import { startChatCard } from './chat';
 import { renderCourses } from './courses';
 import { renderTranscript } from './transcript';
 import { renderPlanCard } from './plan';
@@ -235,6 +236,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += '<div id="helpQCard" class="noprint"></div>';   // ✋ questions (docs/QUESTIONS.md)
   h += '<div id="liveNowCard" class="noprint"></div>';   // 🔴 Right now (docs/LIVE.md)
+  h += '<div id="chatCard" class="noprint"></div>';   // 💬 messages with her (docs/CHAT.md)
   h += practiceHTML(r);
   /* progress by subject and unit: one tab per subject, one fold-out per unit (the units in progress start open) */
   const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['bible', '✝️ Bible'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['brain', '🧠 Brain'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
@@ -491,6 +493,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     try { await onSaveStudentDrills(r.id, {...(currentOverride || {}), resetAt:new Date().toISOString()}); b.disabled = true; b.textContent = 'Cleared'; } catch (err) { $('#studentDrillMsg').textContent = String(err); }
   }));
   startRightNow($('#liveNowCard'), r);
+  startChatCard($('#chatCard'), r, () => overrides.chat, value => saveOverride('chat', value));
   $('#dClose').focus();
   $('#dClose').addEventListener('click', closeDetail);
   $('#dPrint').addEventListener('click', () => { document.querySelectorAll<HTMLDetailsElement>('#detailSheet details').forEach(d => { d.open = true; }); window.print(); });

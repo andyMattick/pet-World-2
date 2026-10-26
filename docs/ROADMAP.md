@@ -179,6 +179,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F47. 🔍 Potion Detective: a Unit 6 mystery at the Potion Shelf (and in the Arcade). Each clue is a problem whose answer is the thief's evidence; right answers rule out suspects. See `POTION-DETECTIVE.md`
 - [x] F48. 🎡 The Pet Fair: Khan Unit 7 (equations and inequalities) gets its own building between the Potion Lab and Pet Houses. All 22 Khan exercises across 6 stations (15 new skills), its own rewards set and Khan unit test link. See `FAIR.md`
 - [x] F49. 🎪 Carnival Midway: six carnival booths testing every Pet Fair skill, at the Prize Counter and in the Arcade. See `CARNIVAL.md`
+- [x] F50. 💬 Messages with a grown-up: write to her from her page in the teacher app; a 💬 button and a note pop up in her town, labeled with your name, and she can write back. See `CHAT.md`
 
 ## Database files, in the order they were run
 
