@@ -16,6 +16,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
+import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
 import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
@@ -214,6 +215,8 @@ function normalize(raw){
   s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;
   s.testReady = Object.fromEntries(Object.entries(s.testReady && typeof s.testReady === 'object' ? s.testReady : {}).filter(([k, v]) => typeof k === 'string' && Number.isFinite(+v)).slice(-60));   // "<course or shop>:pw|khan": the review is done for the next test (docs/TEST-GATE.md)
   s.reviewDone = Object.fromEntries(Object.entries(s.reviewDone && typeof s.reviewDone === 'object' ? s.reviewDone : {}).filter(([k, v]) => typeof k === 'string' && v && Number.isFinite(+v.t) && Number.isInteger(v.total) && v.total > 0).map(([k, v]) => [k, {t:+v.t, total:v.total, right:Math.max(0, Math.min(v.total, Math.round(+v.right || 0))), fixed:Math.max(0, Math.round(+v.fixed || 0))}]).slice(-60));   // the last finished test review per test: all its mixed questions done, how many right the first time, lessons fixed after
+  s.wheelLog = normalizeWheelLog(s.wheelLog);   // 🎡 each school day's classes (docs/CLASS-WHEEL.md)
+  s.wheelSeen = typeof s.wheelSeen === 'string' ? s.wheelSeen : '';   // the last day she spun it
   s.endOfDay = s.endOfDay && typeof s.endOfDay.day === 'string' && /^\d{2}:\d{2}$/.test(s.endOfDay.at) ? {day:s.endOfDay.day, at:s.endOfDay.at} : null;   // today's end of the school day, set at the theme question
   s.endDefault = /^\d{2}:\d{2}$/.test(s.endDefault) ? s.endDefault : '15:00';   // the end of day the grown-up picked last
   s.readTimer = s.readTimer && Number.isFinite(+s.readTimer.start) ? {start:+s.readTimer.start} : null;   // a running Reading Log timer (wall clock: keeps going while the screen sleeps)   // earned theme days so far (the rotation's place)
@@ -6641,6 +6644,7 @@ function themeCheck(){
     const theme = S.themeSeen === day ? null : todayTheme();
     if (theme) { openThemeCard(theme, true); return; }
   }
+  if (wheelPending(day) && !$('#scr-home').hidden) { openWheel(); return; }   // 🎡 then the class wheel (docs/CLASS-WHEEL.md)
   if (S.warmupShown !== day && warmupPending() && !$('#scr-home').hidden) { S.warmupShown = day; save(); openWarmupCard(); }
 }
 /* the grown-up's question, every morning before the warm-up: make today a theme day? It first lists what she didn't get
@@ -6743,7 +6747,7 @@ async function photoToJpeg(file, maxLen = 190000){
   } catch(e) { /* not an image the browser can read */ } finally { URL.revokeObjectURL(url); }
   return null;
 }
-function openOutsideForm(row = null){
+function openOutsideForm(row = null, preset = null){
   if ($('.theme-card')) return;
   const day = logDayKey(), courses = [...new Set(outsideCache.rows.map(x => x.course))].sort();
   let photos = [...(row?.images || [])];
@@ -6752,9 +6756,9 @@ function openOutsideForm(row = null){
   el.innerHTML = `<div class="theme-box outside-box"><p class="theme-kicker">${row?.review === 'redo' ? 'Fix it and send it again' : 'Work outside Pet World'}</p><h2>📎 ${row ? 'Your outside work' : 'Add outside work'}</h2>
     ${row?.review === 'redo' && row.review_note ? `<p><b>Note from a grown-up:</b> “${esc(row.review_note)}”</p>` : ''}
     <form class="outside-form">
-      <label>Course <input name="course" maxlength="80" required list="outsideCourses" placeholder="Piano, Spanish, Science co-op…" value="${esc(row?.course || '')}"></label><datalist id="outsideCourses">${courses.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+      <label>Course <input name="course" maxlength="80" required list="outsideCourses" placeholder="Piano, Spanish, Science co-op…" value="${esc(row?.course || preset?.course || '')}"></label><datalist id="outsideCourses">${courses.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
       <label>What did you do? <input name="title" maxlength="300" placeholder="Practiced scales, read chapter 4…" value="${esc(row?.title || '')}"></label>
-      <div class="row"><label>Minutes <input name="minutes" type="number" min="1" max="600" required value="${row?.minutes ?? ''}" style="width:6em"></label><label>Grade <small class="muted">(if there is one)</small> <input name="grade" maxlength="20" value="${esc(row?.grade || '')}" style="width:6em" placeholder="A, 95"></label><label>Day <input name="day" type="date" value="${esc(row?.day || day)}" min="${esc(outsideFrom())}" max="${esc(day)}"></label></div>
+      <div class="row"><label>Minutes <input name="minutes" type="number" min="1" max="600" required value="${row?.minutes ?? preset?.minutes ?? ''}" style="width:6em"></label><label>Grade <small class="muted">(if there is one)</small> <input name="grade" maxlength="20" value="${esc(row?.grade || '')}" style="width:6em" placeholder="A, 95"></label><label>Day <input name="day" type="date" value="${esc(row?.day || day)}" min="${esc(outsideFrom())}" max="${esc(day)}"></label></div>
       <label>Photos for a grown-up to check <small class="muted">(up to 3)</small> <input name="photos" type="file" accept="image/*" multiple></label>
       <div class="outside-photos"></div>
       <div class="row"><button type="submit" class="btn berry">${row ? 'Send again' : 'Add it'}</button><button type="button" class="btn" data-outside-close>Cancel</button>${row ? '<button type="button" class="btn small" data-outside-delete>Take it back</button>' : ''}</div>
@@ -6787,7 +6791,7 @@ function openOutsideForm(row = null){
     logEvent({k:'outside', title:`${course}${f.get('title') ? `: ${String(f.get('title')).trim()}` : ''} · ${minutes} min${photos.length ? `, ${photos.length} photo${photos.length === 1 ? '' : 's'}` : ''}`, minutes}); save();
     el.remove(); toast(row ? 'Sent again! 📎' : 'Added! A grown-up will check it. 📎'); void loadOutside(true);
   });
-  setTimeout(() => el.querySelector('input[name="course"]')?.focus(), 50);
+  setTimeout(() => el.querySelector(preset ? 'input[name="title"]' : 'input[name="course"]')?.focus(), 50);
 }
 document.addEventListener('click', e => {
   if (e.target.closest('[data-outside-add]')) { openOutsideForm(); return; }
@@ -8867,7 +8871,7 @@ const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronou
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
-  return !!x && typeof x.id === 'string' && ((x.kind === 'recall' && inPrepUnit()) || (x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]));
+  return !!x && typeof x.id === 'string' && ((x.kind === 'recall' && inPrepUnit()) || (x.kind === 'subject' && !!PLAN_SUBJECT_TIME[x.subject]) || (x.kind === 'unit' && BUILDINGS.some(b => b.id === x.unit)) || (x.kind === 'project' && !!HISTORY_PROJECTS[x.project]) || (x.kind === 'elective' && typeof x.course === 'string' && !!x.course));
 }
 /* "I'm done for today" saves what's left (S.planCarry). If she never tapped it on her last school day, the first look at
    today's plan works it out from that day instead, so nothing quietly drops off. */
@@ -8881,13 +8885,138 @@ function ensureCarry(day = logDayKey()){
 /* a time row (a subject's minutes, or practice in a unit): the only kind of carried row that holds up the day.
    Carried minutes don't add to today's: a carried 30 math minutes and today's 30 are both done after 30 minutes of math. */
 const timeKey = y => y.kind === 'subject' ? `s:${y.subject}` : y.kind === 'unit' && y.what !== 'quiz' && y.what !== 'test' ? `u:${y.unit}` : '';
+/* ---------- 🎡 the class wheel (docs/CLASS-WHEEL.md) ----------
+   Every school day, after the grown-up's theme and end-of-day question, she spins for the day's classes. The picks
+   come from pickClasses (src/shared/classWheel.ts): a few rules a grown-up sets on the teacher app's daily plan card
+   keep the week close to even (3 core classes 4 times and 1 three times; electives 2, 2 and 1), keep a class with a
+   Pet World review or test waiting, and rest it the next day. She only sees a wheel. A grown-up can change the day's classes. */
+const wheelPolicy = () => wheelRules(planSettings().wheel);
+const WHEEL_CORE_NAME = Object.fromEntries(CORE_CLASSES);
+const ELECTIVE_EMOJI = {spanish:'🇪🇸', art:'🎨', 'computer science':'💻', music:'🎵', piano:'🎹', pe:'⚽', 'physical education':'⚽', latin:'🏛️', french:'🇫🇷'};
+const electiveEmoji = name => ELECTIVE_EMOJI[String(name).trim().toLowerCase()] || '⭐';
+const sameCourse = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+/* the day's wheel picks, when the wheel is on and it's a school day (null otherwise, or before she spins) */
+function wheelDay(day = logDayKey()){ const r = wheelPolicy(); return r.on && isSchoolDay(day) ? S.wheelLog[day] || null : null; }
+const subjectOfUnit = id => BUILDINGS.find(b => b.id === id)?.subject || '';
+function wheelSatOut(subject, day = logDayKey()){ const w = wheelDay(day); return !!w && wheelPolicy().core.includes(subject) && !w.c.includes(subject); }
+/* plan rows on a wheel day: a core class the wheel sat out loses its time and practice rows (quizzes, tests and projects
+   stay); a class it picked with no row gets one; each elective gets a row (done when she writes what she did) */
+function wheelItems(base, day){
+  const w = wheelDay(day); if (!w) return base;
+  const rules = wheelPolicy(), core = new Set(rules.core);
+  const items = base.filter(x => !((x.kind === 'subject' && core.has(x.subject) && !w.c.includes(x.subject)) || (x.kind === 'unit' && x.what === 'practice' && core.has(subjectOfUnit(x.unit)) && !w.c.includes(subjectOfUnit(x.unit)))));
+  w.c.forEach(subject => { if (!items.some(x => (x.kind === 'subject' && x.subject === subject) || (x.kind === 'unit' && x.what === 'practice' && subjectOfUnit(x.unit) === subject))) items.push({id:`wheel:${subject}`, kind:'subject', subject, minutes:rules.coreMinutes}); });
+  w.e.forEach(course => items.push({id:`wheel:e:${course}`, kind:'elective', course, minutes:rules.electiveMinutes}));
+  return items;
+}
+/* a class is in its Pet World test stage (the wheel always picks it): its Pet World review is done and the test is
+   waiting, or every quiz in its current unit is passed (the review and the Pet World test are next). A Khan unit test
+   waiting doesn't count (owner decision, Oct 26, 2026). */
+const unitOfTestKey = k => { const p = k.slice(0, k.lastIndexOf(':')); return SHOPS[p] ? p : BUILDINGS.find(b => unitCourse(b.id) === p)?.id || ''; };
+function testWaiting(subject){
+  if (Object.keys(S.testReady || {}).some(k => k.endsWith(':pw') && subjectOfUnit(unitOfTestKey(k)) === subject)) return true;
+  const u = nextUnit(subject);
+  if (!u || !unitOpen(u.id) || unitTestPassed(u.id)) return false;
+  return SHOPS[u.id] ? SHOPS[u.id].stations.every(st => { const k = assessKey(u.id, st.id); return !!S.quizzes[k]?.passed || Backend.me?.quiz_overrides?.[k] === 'excused'; })
+    : (c => !!c && c.id === unitCourse(u.id) && courseQuizzesPassed(c))(englishCourse(unitCourse(u.id)));
+}
+function wheelPending(day = logDayKey()){ return !LOOK_ID && !!Backend.me && wheelPolicy().on && isSchoolDay(day) && S.wheelSeen !== day; }
+function wheelPick(day = logDayKey()){
+  if (!S.wheelLog[day]) {
+    const rules = wheelPolicy(), p = pickClasses(day, S.wheelLog, rules, rules.core.filter(testWaiting));
+    S.wheelLog = {...S.wheelLog, [day]:{c:p.core, e:p.electives, ...(p.tests.length ? {t:p.tests} : {})}}; save();
+  }
+  return S.wheelLog[day];
+}
+const wheelNames = w => [...w.c.map(id => WHEEL_CORE_NAME[id] || id), ...w.e.map(e => `${electiveEmoji(e)} ${e}`)].join(', ');
+const WHEEL_COLORS = ['#f6b8c8', '#bfe3c9', '#bcd7f5', '#f8dc9b', '#d8c6f2', '#f5c3a3', '#b9e6e6', '#e6e2a8'];
+function wheelFace(labels){
+  const seg = 360 / labels.length;
+  return `<div class="wheel-spin" style="background:conic-gradient(${labels.map((_, i) => `${WHEEL_COLORS[i % WHEEL_COLORS.length]} ${i * seg}deg ${(i + 1) * seg}deg`).join(', ')})">${labels.map((t, i) => `<span class="wheel-label" data-seg="${i}" style="transform:rotate(${(i + .5) * seg}deg) translateY(-62px) rotate(${-(i + .5) * seg}deg)">${esc(t)}</span>`).join('')}</div>`;
+}
+function openWheel(){
+  if ($('.theme-card')) return;
+  const day = logDayKey(), w = wheelPick(day), rules = wheelPolicy();
+  const rounds = [{labels:rules.core.map(id => WHEEL_CORE_NAME[id] || id), picks:shuffle([...w.c]).map(id => rules.core.indexOf(id)).filter(i => i >= 0)},
+    {labels:rules.electives.map(e => `${electiveEmoji(e)} ${e}`), picks:shuffle([...w.e]).map(e => rules.electives.indexOf(e)).filter(i => i >= 0)}].filter(r => r.labels.length && r.picks.length);
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Spin for today’s classes');
+  el.innerHTML = `<div class="theme-box wheel-box"><p class="theme-kicker">Today’s classes</p><h2>🎡 Spin the class wheel!</h2>
+    <div class="wheel-wrap"><div class="wheel-pointer" aria-hidden="true">▼</div><div class="wheel-holder" aria-hidden="true">${rounds[0] ? wheelFace(rounds[0].labels) : ''}</div></div>
+    <ul class="wheel-picks" aria-live="polite"></ul>
+    <div class="row wheel-actions"><button type="button" class="btn berry" data-wheel-spin>Spin! 🎡</button></div></div>`;
+  document.body.appendChild(el);
+  const list = el.querySelector('.wheel-picks'), actions = el.querySelector('.wheel-actions'), holder = el.querySelector('.wheel-holder');
+  const quick = matchMedia('(prefers-reduced-motion: reduce)').matches, wait = ms => new Promise(ok => setTimeout(ok, ms));
+  const finish = () => {
+    actions.innerHTML = `<button type="button" class="btn berry" data-wheel-done>Let’s go! 🎉</button><button type="button" class="btn small" data-wheel-change>Grown-up: change today’s classes</button>`;
+    actions.querySelector('[data-wheel-done]').addEventListener('click', () => closeWheel(el));
+    actions.querySelector('[data-wheel-change]').addEventListener('click', async () => { closeWheel(el, false); await changeWheel(); });
+    actions.querySelector('[data-wheel-done]').focus();
+  };
+  actions.querySelector('[data-wheel-spin]').addEventListener('click', async e => {
+    e.target.disabled = true;
+    for (const [ri, round] of rounds.entries()) {
+      if (ri) { holder.innerHTML = wheelFace(round.labels); await wait(400); }
+      const wheel = holder.querySelector('.wheel-spin'), seg = 360 / round.labels.length; let turned = 0;
+      for (const i of round.picks) {
+        const target = 360 - (i + .5) * seg + (Math.random() - .5) * seg * .6;
+        turned += 360 * (quick ? 1 : 4) + ((target - turned) % 360 + 360) % 360;
+        wheel.style.transition = `transform ${quick ? .3 : 2.4}s cubic-bezier(.15,.7,.2,1)`; wheel.style.transform = `rotate(${turned}deg)`;
+        await wait(quick ? 350 : 2500);
+        wheel.querySelector(`[data-seg="${i}"]`)?.classList.add('picked');
+        list.insertAdjacentHTML('beforeend', `<li>${esc(round.labels[i])}${ri ? ' <small class="muted">(away from Pet World: write what you did)</small>' : ''}</li>`); sfx('coin');
+        await wait(quick ? 100 : 500);
+      }
+    }
+    finish();
+  });
+  if (!rounds.length) finish();
+}
+function closeWheel(el, again = true){
+  el.remove();
+  const day = logDayKey(), w = S.wheelLog[day];
+  if (S.wheelSeen !== day) { S.wheelSeen = day; if (w) logEvent({k:'wheel', title:`🎡 Today’s classes: ${wheelNames(w)}`}); save(); }
+  if (!$('#scr-home').hidden) renderHome();
+  if (again) setTimeout(themeCheck, 300);
+}
+/* a grown-up changes the day's classes (with the grown-up PIN); the next days' picks work from this */
+async function changeWheel(){
+  const day = logDayKey(), rules = wheelPolicy(), w = wheelPick(day);
+  if (!await askGrownUp({title:'Change today’s classes', text:'Pick the classes for today. The wheel works from these for the rest of the week.', ok:'Next', log:'🔐 Grown-up OK: change today’s classes'})) { if (S.wheelSeen !== day) { S.wheelSeen = day; save(); } return; }
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Today’s classes');
+  const box = (name, value, on, text) => `<label class="wheel-check"><input type="checkbox" name="${name}" value="${esc(value)}"${on ? ' checked' : ''}> ${esc(text)}</label>`;
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><h2>🎡 Today’s classes</h2>
+    <form class="wheel-form"><p><b>Core</b> <small class="muted">(on Pet World)</small></p>${rules.core.map(id => box('c', id, w.c.includes(id), `${WHEEL_CORE_NAME[id] || id}${(w.t || []).includes(id) ? ' (test waiting)' : ''}`)).join('')}
+    <p><b>Electives</b> <small class="muted">(away from Pet World)</small></p>${rules.electives.map(e => box('e', e, w.e.includes(e), `${electiveEmoji(e)} ${e}`)).join('')}
+    <div class="row"><button type="submit" class="btn berry">Save today’s classes</button><button type="button" class="btn" data-wheel-cancel>Cancel</button></div></form></div>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-wheel-cancel]').addEventListener('click', () => { el.remove(); if (S.wheelSeen !== day) { S.wheelSeen = day; save(); } if (!$('#scr-home').hidden) renderHome(); });
+  el.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = new FormData(e.target), c = f.getAll('c').map(String), ex = f.getAll('e').map(String);
+    if (!c.length && !ex.length) { toast('Pick at least one class.'); return; }
+    S.wheelLog = {...S.wheelLog, [day]:{c:rules.core.filter(id => c.includes(id)), e:rules.electives.filter(x => ex.includes(x)), ...(w.t ? {t:w.t} : {}), o:1}};
+    S.wheelSeen = day; logEvent({k:'wheel', title:`🎡 A grown-up changed today’s classes: ${wheelNames(S.wheelLog[day])}`}); save();
+    el.remove(); toast('Today’s classes are saved.'); if (!$('#scr-home').hidden) renderHome(); setTimeout(themeCheck, 300);
+  });
+}
+function wheelPlanRow(){
+  const w = wheelDay(); if (!w) return '';
+  return `<div class="row extras-row"><span style="flex:1">🎡 <b>Today’s classes:</b> ${esc(wheelNames(w))}${w.o ? ' <small class="muted">(set by a grown-up)</small>' : ''}</span><button type="button" class="btn small" data-wheel-change>Grown-up: change</button></div>`;
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('.plan-card [data-wheel-change]')) { void changeWheel(); return; }
+  const b = e.target.closest('[data-elective]'); if (b) openOutsideForm(null, {course:b.dataset.elective, minutes:+b.dataset.minutes || ''});
+});
 /* the day's items: that date's own list, or its weekday's, plus what was left from an earlier day */
 function planItems(day = logDayKey()){
   const s = planSettings(), dow = PLAN_DAYS[new Date(`${day}T12:00:00`).getDay()];
   const base = (Array.isArray(s.days?.[day]) ? s.days[day] : Array.isArray(s.week?.[dow]) ? s.week[dow] : []).filter(validPlanItem);
   const carry = S.planCarry.after && S.planCarry.after < day ? S.planCarry.items.filter(validPlanItem).filter(x => !base.some(b => b.id === x.id) && x.kind !== 'recall').map(x => ({...x, carried:true})) : [];
   const recall = inPrepUnit() ? [{id:'recall:prepositions', kind:'recall'}] : [];   // the daily prep test, only while she is in English Unit 5
-  return [...recall, ...base, ...carry];
+  return [...recall, ...wheelItems(base, day), ...carry];
 }
 /* the unit to keep going in: the first open one in the subject whose unit test isn't passed yet (this grade first) */
 function nextUnit(subject){
@@ -8922,6 +9051,10 @@ function planItemInfo(x, day = logDayKey()){
     const test = x.what === 'test', done = unitPassedOn(x.unit, x.what, day) || (test && unitTestPassed(x.unit));
     return {label:`${test ? 'Pass the unit test' : 'Pass a quiz'} in the ${unitName(x.unit)}`, open:x.unit, status:done ? 'done' : 'todo', progress:''};
   }
+  if (x.kind === 'elective') {
+    const rows = outsideCache.rows.filter(o => o.source === 'student' && o.day === day && sameCourse(o.course, x.course)), ok = rows.some(o => o.review === 'ok'), sent = rows.some(o => o.review !== 'redo');
+    return {label:`${electiveEmoji(x.course)} ${x.course}: ${minutes()} min, away from Pet World`, open:'', elective:x.course, status:ok ? 'done' : sent ? 'waiting' : 'todo', progress:ok ? 'checked' : sent ? 'sent · waiting for a grown-up' : 'then write what you did'};
+  }
   if (x.kind === 'recall') { const done = prepRecallDoneOn(day); return {label:'🔗 Prep test: name all 48 prepositions', open:'prepRecall', status:done ? 'done' : 'todo', progress:S.prepRecall?.best ? `best ${fmtRecall(S.prepRecall.best)}` : ''}; }
   const state = historyProjectState(x.project).state;
   return {label:`📁 ${HISTORY_PROJECTS[x.project].title}`, open:projectBuilding(x.project), status:state === 'verified' ? 'done' : state === 'submitted' ? 'waiting' : 'todo', progress:state === 'revise' ? 'fix it and send it again' : state === 'submitted' ? 'sent · waiting for a grown-up' : ''};
@@ -8937,6 +9070,7 @@ function dayPlan(day = logDayKey()){
   GOAL_SUBJECTS.filter(([id]) => goals[id] > 0).forEach(([id, name]) => {
     const subject = GOAL_PLAN_SUBJECT[id];
     if (!subject) { goalRows.push([id, name, goals[id]]); return; }
+    if (wheelSatOut(subject, day)) return;   // 🎡 not one of today's classes
     const row = items.find(x => x.kind === 'subject' && x.subject === subject && !x.carried);   // a goal is for today's row, not one carried from before
     if (row) row.minutes = Math.max(Math.round(+row.minutes || 0), goals[id]);
     else items.push({id:`goal:${id}`, kind:'subject', subject, minutes:goals[id], goal:true});
@@ -8974,12 +9108,12 @@ function planCardHTML(){
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
     const must = first.some(y => y.id === x.id && y.carried === x.carried), lead = must ? '<b>⏪ Finish first:</b> ' : x.start && i.status === 'todo' && !fixing && !first.length ? '<b>⭐ Start here:</b> ' : '';
-    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${x.kind === 'elective' && i.status === 'todo' ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-elective="${esc(x.course)}" data-minutes="${Math.round(+x.minutes) || ''}">Write it</button>` : go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${rows.join('')}${outsideRowsHTML()}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${wheelPlanRow()}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -10406,9 +10540,11 @@ const reviewDue = (courseId, skillId) => {
   const at = +(Backend.me?.quiz_overrides?.[`review:${courseId}:${skillId}`] || 0);
   return at > 0 && !((englishRecord(skillId, courseId).lastPassAt || 0) > at);
 };
-const englishFinalReady = course => unitOpenedByGrownUp(course.building) || (course.noQuizzes
-  ? practiceSkills(course).every(skillId => !!englishRecord(skillId,course.id).passed)
-  : course.groups.every(group => !!englishRecord(englishQuizKey(group.id,course.id),course.id).passed));
+const englishFinalReady = course => unitOpenedByGrownUp(course.building) || courseQuizzesPassed(course);
+function courseQuizzesPassed(course){
+  return course.noQuizzes ? practiceSkills(course).every(skillId => !!englishRecord(skillId, course.id).passed)
+    : course.groups.every(group => !!englishRecord(englishQuizKey(group.id, course.id), course.id).passed);
+}
 /* hosted: the teacher's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"; local: a grown-up sets it */
 /* a teacher's guess at what a drawing shows (quiz_overrides "project-guess:<id>" = "<submittedAt>:<text>"); steps marked after:'guess' open once it arrives */
 function projectGuess(courseId){ return String(Backend.me?.quiz_overrides?.[`project-guess:${courseId}`] || '').replace(/^\d+:/, '').trim(); }
@@ -13303,6 +13439,7 @@ function mergeProgress(base, other){
   }
   base.sessions = [...sessions.values()].sort((a, b) => a.start - b.start).slice(-30);
   n += mergeSubjectTime(base.subjectTime, other.subjectTime);
+  for (const [day, w] of Object.entries(normalizeWheelLog(other.wheelLog))) if (!base.wheelLog[day] || (w.o && !base.wheelLog[day].o)) { base.wheelLog[day] = w; n++; }   // the wheel's picks: a grown-up's change wins
   n += mergeBrainState(base.brain, other.brain);   // brain stretch results and levels from both devices
   for (const [day, mins] of Object.entries(other.mathMinutes || {})) if ((Number(mins) || 0) > (Number(base.mathMinutes[day]) || 0)) { base.mathMinutes[day] = mins; n++; }
   for (const [sk, count] of Object.entries(other.kn || {})) if (count > (base.kn[sk] || 0)) {

@@ -21,6 +21,10 @@
 - **Carry-over:** "I'm done for today" saves the day's not-done items in the save (`S.planCarry`); the next days show them marked "(from before)" until a later "I'm done" replaces the list. An item that is already on the new day's plan isn't doubled. If she never tapped "I'm done" on her last school day, the next day works out what was left from that day (`ensureCarry`).
 - **Carried minutes don't add up:** a carried 30 math minutes and today's 30 are both done after 30 minutes of math.
 
+## 🎡 Class wheel days
+
+With the class wheel on (`CLASS-WHEEL.md`), a school day's plan keeps only the core classes the wheel picked, plus an elective row for each elective (written up as outside work). Quizzes, tests, projects and rows from before stay.
+
 ## Finish from before first
 
 - After the warm-up, carried time rows go to the top of the plan as **⏪ Finish first** and must be done before the rest of the plan. Until then, opening any other subject shows a card listing them (with Go buttons). Opening the same subject's units is allowed. Carried quizzes, unit tests and projects still show "(from before)" but don't hold up the day.

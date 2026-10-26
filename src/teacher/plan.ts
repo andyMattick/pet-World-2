@@ -3,9 +3,10 @@
    shows the day's items on the town page with ✅ / ⏳ / ⬜, opens the right unit, and moves unfinished items to the next day. */
 import { BUILDINGS } from '../shared/registry';
 import { subjectDayKey } from '../shared/subjectTime';
+import { CORE_CLASSES, DEFAULT_WHEEL, wheelRules, type WheelRules } from '../shared/classWheel';
 
 interface PlanItem { id: string; kind: 'subject' | 'unit' | 'project'; subject?: string; unit?: string; what?: 'practice' | 'quiz' | 'test'; project?: string; minutes?: number }
-interface PlanSettings { week?: Record<string, PlanItem[]>; days?: Record<string, PlanItem[]> }
+interface PlanSettings { week?: Record<string, PlanItem[]>; days?: Record<string, PlanItem[]>; wheel?: Partial<WheelRules> }
 
 const esc = (s: unknown) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 const WEEK: [string, string][] = [['mon', 'Monday'], ['tue', 'Tuesday'], ['wed', 'Wednesday'], ['thu', 'Thursday'], ['fri', 'Friday'], ['sat', 'Saturday'], ['sun', 'Sunday']];
@@ -47,17 +48,18 @@ export function renderPlanCard(el: HTMLElement, name: string, projects: Record<s
       <label data-plan-for="subject practice">Minutes <input type="number" id="planMin" min="1" max="240" value="15" style="width:70px"></label>
       <button class="btn small primary" id="planAdd">Add</button></div>
     ${isDate ? '' : `<div class="row"><button class="btn small" id="planCopy">Copy ${esc(WEEK.find(w => w[0] === pick)?.[1])} to Monday–Friday</button></div>`}
-    <p class="status" id="planMsg"></p>`;
+    <p class="status" id="planMsg"></p>
+    ${wheelHTML(wheelRules(s.wheel), name)}`;
   const kind = el.querySelector<HTMLSelectElement>('#planKind')!;
   const showFields = () => el.querySelectorAll<HTMLElement>('[data-plan-for]').forEach(f => { f.hidden = !f.dataset.planFor!.split(' ').includes(kind.value); });
   kind.addEventListener('change', showFields);
   const again = () => renderPlanCard(el, name, projects, getRaw, save);
   async function store(nextItems: PlanItem[] | null, msg: string, allWeekdays = false) {
-    const next: PlanSettings = { week: { ...week }, days: Object.fromEntries(Object.entries(days).filter(([d]) => d >= today)) };
+    const next: PlanSettings = { ...(s.wheel ? { wheel: s.wheel } : {}), week: { ...week }, days: Object.fromEntries(Object.entries(days).filter(([d]) => d >= today)) };
     if (allWeekdays && nextItems) ['mon', 'tue', 'wed', 'thu', 'fri'].forEach(d => { next.week![d] = nextItems.map(x => ({ ...x })); });
     else if (isDate) { if (nextItems) next.days![pick] = nextItems; else delete next.days![pick]; }
     else if (nextItems && nextItems.length) next.week![pick] = nextItems; else delete next.week![pick];
-    const empty = !Object.keys(next.week!).length && !Object.keys(next.days!).length;
+    const empty = !Object.keys(next.week!).length && !Object.keys(next.days!).length && !next.wheel;
     await save(empty ? null : JSON.stringify(next));
     again();
     const m = el.querySelector('#planMsg'); if (m) m.textContent = msg;
@@ -75,5 +77,42 @@ export function renderPlanCard(el: HTMLElement, name: string, projects: Record<s
       : { id, kind: 'unit', unit: el.querySelector<HTMLSelectElement>('#planUnit')!.value, what: k as 'practice' | 'quiz' | 'test', ...(k === 'practice' ? { minutes } : {}) };
     void store([...items, item].slice(0, 20), 'Added.');
   });
+  el.querySelector('#wheelSave')?.addEventListener('click', () => {
+    const f = el.querySelector<HTMLElement>('#wheelRules')!, val = (id: string) => f.querySelector<HTMLInputElement>(`#${id}`)!, on = (id: string) => val(id).checked;
+    const rules = wheelRules({
+      on: on('wheelOn'), core: [...f.querySelectorAll<HTMLInputElement>('[name="wheelCore"]:checked')].map(x => x.value), corePerDay: +val('wheelCoreN').value,
+      electives: val('wheelElectives').value.split(','), electivesPerDay: +val('wheelElectN').value, electiveMinutes: +val('wheelElectMin').value, coreMinutes: +val('wheelCoreMin').value,
+      testsMeet: on('wheelTests'), restAfterTest: on('wheelRest'), satOutMeets: on('wheelSatOut'), fewestFirst: on('wheelFewest'), electiveGap: on('wheelGapOn') ? +val('wheelGap').value : 0
+    });
+    const next: PlanSettings = { ...s, wheel: rules };
+    void save(JSON.stringify(next)).then(() => { again(); const m = el.querySelector('#wheelMsg'); if (m) m.textContent = rules.on ? 'Saved. The wheel spins each school morning.' : 'Saved. The wheel is off.'; });
+  });
+  el.querySelector('#wheelDefaults')?.addEventListener('click', () => {
+    void save(JSON.stringify({ ...s, wheel: { ...DEFAULT_WHEEL, on: wheelRules(s.wheel).on } })).then(() => { again(); const m = el.querySelector('#wheelMsg'); if (m) m.textContent = 'Back to the usual rules.'; });
+  });
   showFields();
+}
+/* 🎡 the class wheel's rules (docs/CLASS-WHEEL.md): saved in this same plan as "wheel" */
+function wheelHTML(w: WheelRules, name: string) {
+  const box = (id: string, on: boolean, text: string) => `<label style="display:flex; gap:8px; align-items:flex-start"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}> <span>${text}</span></label>`;
+  return `<div id="wheelRules" class="wheel-rules"><h3>🎡 Class wheel</h3>
+    <p class="muted" style="margin-top:0">Each school morning (Monday to Friday), after the theme and end-of-day question, ${esc(name)} spins a wheel for the day’s classes. It looks random to her; these rules decide the picks. Classes the wheel doesn’t pick drop off that day’s plan (quizzes, tests and projects stay). A grown-up can change the day’s classes after the spin.</p>
+    ${box('wheelOn', w.on, '<b>Use the class wheel</b>')}
+    <p style="margin:6px 0 2px"><b>Core classes</b> (on Pet World)</p>
+    <div class="row">${CORE_CLASSES.map(([id, n]) => `<label><input type="checkbox" name="wheelCore" value="${id}" ${w.core.includes(id) ? 'checked' : ''}> ${esc(n)}</label>`).join('')}</div>
+    <div class="row"><label>Core classes a day <input type="number" id="wheelCoreN" min="0" max="4" value="${w.corePerDay}" style="width:60px"></label>
+      <label>Minutes for a core class with none on the plan <input type="number" id="wheelCoreMin" min="5" max="240" value="${w.coreMinutes}" style="width:70px"></label></div>
+    <p style="margin:6px 0 2px"><b>Electives</b> (away from Pet World; she writes what she did, and you check it in the Ledger)</p>
+    <div class="row"><label style="flex:1">Electives, with commas <input id="wheelElectives" value="${esc(w.electives.join(', '))}" style="width:100%"></label></div>
+    <div class="row"><label>Electives a day <input type="number" id="wheelElectN" min="0" max="4" value="${w.electivesPerDay}" style="width:60px"></label>
+      <label>Minutes each <input type="number" id="wheelElectMin" min="5" max="240" value="${w.electiveMinutes}" style="width:70px"></label></div>
+    <p style="margin:6px 0 2px"><b>Rules</b></p>
+    ${box('wheelTests', w.testsMeet, 'A class with its Pet World review or test waiting always meets (a Khan test doesn’t count)')}
+    ${box('wheelRest', w.restAfterTest, '…and sits out the next school day (unless its test is still waiting)')}
+    ${box('wheelSatOut', w.satOutMeets, 'A class that sat out the last school day meets today')}
+    ${box('wheelFewest', w.fewestFirst, 'A class that met the fewest times last week goes first on Monday (core and electives)')}
+    <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="wheelGapOn" ${w.electiveGap ? 'checked' : ''}> Each elective meets at least once every <input type="number" id="wheelGap" min="2" max="10" value="${w.electiveGap || 3}" style="width:60px"> school days</label>
+    <p class="muted" style="margin:4px 0">Core classes that sit out are spread evenly: with 3 of 4 a day, three meet 4 times a week and one meets 3 times. Electives are spread the same way (2, 2 and 1 with 3 electives).</p>
+    <div class="row"><button class="btn small primary" id="wheelSave">Save wheel rules</button><button class="btn small" id="wheelDefaults">Use the usual rules</button></div>
+    <p class="status" id="wheelMsg"></p></div>`;
 }
