@@ -9,9 +9,11 @@ The Market Stall opens after the Bakery Unit Test (or with the teacher's "Open t
 | # | Station | Skills (ids) |
 |---|---|---|
 | 1 | 🏷️ Price Tags | Unit rates (`unitRate`), rate problems (`rateProblems`), comparing rates (`compareRates`) |
-| 2 | 💯 Percent Signs | Intro to percents (`introPercent`), percents from fraction models (`pctModel`) |
-| 3 | 🪧 Sale Signs | Percents, decimals, and fractions (`pctConvert`), benchmark percents (`benchmarkPct`), equivalent representations of percent problems (`pctEquivalent`) |
-| 4 | 🧺 Discount Bin | Find percents visually (`pctVisual`), finding percents (`findingPct`), percent word problems (`pctWord`) |
+| 2 | 💯 Percent Signs | Intro to percents (`introPercent`), percents from fraction models (`pctModel`), find percents visually (`pctVisual`) |
+| 3 | 🪧 Sale Signs | Percents, decimals, and fractions (`pctConvert`, an extra skill the owner kept: Khan's 6th grade Unit 3 no longer has it), equivalent representations of percent problems (`pctEquivalent`), benchmark percents (`benchmarkPct`) |
+| 4 | 🧺 Discount Bin | Finding percents (`findingPct`), percent word problems (`pctWord`) |
+
+Oct 26, 2026: reordered to match Khan's unit page (find percents visually comes before Quiz 2, so it moved to station 2; equivalent representations come before benchmark percents). Checked against Khan's live Unit 3 list: all 10 exercises, each with its own link.
 
 ## What students get
 

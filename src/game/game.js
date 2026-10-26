@@ -3464,22 +3464,22 @@ const MARKET_GEN = {
       helper:'A percent can be written as a decimal or a fraction.', visual:`<div style="text-align:center; font-size:1.8rem">🧺 ${P}% of ${N}</div>`, steps, ...(lvl >= 2 ? {answerSteps:[1]} : {})};
   },
 
-  /* ----- station 4: Discount Bin (percent problems) ----- */
+  /* ----- find percents visually (station 2 since Oct 26, 2026, Khan's order) ----- */
   pctVisual(lvl){
     const seg = pick([4, 5]), stepP = 100 / seg, u = rand(2, 12) * (lvl === 3 ? 1 : 1), W = u * seg, j = rand(lvl === 3 ? 1 : 2, seg - 1), [e, what] = pick(BY_EACH);
     const ticks = Array.from({length:seg + 1}, (_, i) => ({t:`${i * stepP}%`, b:''}));
     if (lvl === 1) {
       ticks[0].b = 0; ticks[seg].b = W; ticks[j].b = '?';
-      return {title:'Discount Bin', ctx:`${j * stepP}% of ${W}`, bubble:`The bin holds ${W} ${what}. What is ${j * stepP}% of ${W}?`, helper:`Split the whole into ${seg} equal jumps of ${stepP}%.`, visual:dnlFit('%', `${e}`, ticks, false),
+      return {title:'Percent Signs', ctx:`${j * stepP}% of ${W}`, bubble:`The bin holds ${W} ${what}. What is ${j * stepP}% of ${W}?`, helper:`Split the whole into ${seg} equal jumps of ${stepP}%.`, visual:dnlFit('%', `${e}`, ticks, false),
         steps:[numStep(`One jump (${stepP}%)`, 'compute', `${W} ÷ ${seg} = ?`, u, {fact:fx(seg, u, true)}), numStep(`${j * stepP}%`, 'compute', `${j} × ${u} = ?`, j * u, {fact:fx(j, u), mis:v => v === W - j * u ? 'percentComplement' : null})], answerSteps:[1]};
     }
     if (lvl === 2) {
       ticks[0].b = 0; ticks[j].b = j * u; ticks[seg].b = '?';
-      return {title:'Discount Bin', ctx:`${j * u} is ${j * stepP}%`, bubble:`${j * u} ${what} are ${j * stepP}% of the bin. How many ${what} fill the whole bin?`, helper:`Find one jump of ${stepP}% first.`, visual:dnlFit('%', `${e}`, ticks, false),
+      return {title:'Percent Signs', ctx:`${j * u} is ${j * stepP}%`, bubble:`${j * u} ${what} are ${j * stepP}% of the bin. How many ${what} fill the whole bin?`, helper:`Find one jump of ${stepP}% first.`, visual:dnlFit('%', `${e}`, ticks, false),
         steps:[numStep(`One jump (${stepP}%)`, 'compute', `${j * u} ÷ ${j} = ?`, u, {fact:fx(j, u, true)}), numStep('100%', 'compute', `${seg} × ${u} = ?`, W, {fact:fx(seg, u), mis:v => v === j * u * j * stepP / 100 ? 'partWholeSwap' : null})], answerSteps:[1]};
     }
     ticks.forEach((t, i) => { t.b = i === 0 ? 0 : i === seg ? W : i === j ? j * u : ''; t.t = i === j ? '?' : t.t; });
-    return {title:'Discount Bin', ctx:`${j * u} of ${W}`, bubble:`${j * u} of the ${W} ${what} are on sale. What percent are on sale?`, helper:'How many equal jumps from 0 to the dot? Each jump is the same percent.', visual:dnlFit('%', `${e}`, ticks, false),
+    return {title:'Percent Signs', ctx:`${j * u} of ${W}`, bubble:`${j * u} of the ${W} ${what} are on sale. What percent are on sale?`, helper:'How many equal jumps from 0 to the dot? Each jump is the same percent.', visual:dnlFit('%', `${e}`, ticks, false),
       steps:[numStep('One jump', 'concept', `100% ÷ ${seg} = ?%`, stepP, {}), numStep('Percent', 'compute', `${j} × ${stepP}% = ?%`, j * stepP, {mis:v => v === j * u ? 'percentNot100' : v === 100 - j * stepP ? 'percentComplement' : null})], answerSteps:[1]};
   },
   findingPct(lvl){
