@@ -95,6 +95,24 @@ export const TERM_CARDS = {
     { term: 'algae bloom', means: 'Algae growing so fast they cover the water, often because of extra nutrients and warm weather.', example: 'Lake Erie near Toledo, Ohio, in 2014', skill: 'growthEnvA' },
     { term: 'decomposer', means: 'A living thing (like bacteria) that breaks down dead matter. In water, decomposers use up oxygen.', example: 'Bacteria breaking down dead algae', skill: 'growthEnvA' }
   ],
+  punctuation: [
+    { term: 'end mark', means: "The punctuation mark that ends a sentence: a period, a question mark, or an exclamation point.", example: "The robot is ready. Is the robot ready? The robot is ready!", skill: 'endMarks' },
+    { term: 'indirect question', means: "A sentence that reports a question someone asked. It is a statement, so it ends with a period.", example: "Comet asked if the jet was fueled.", skill: 'endMarks' },
+    { term: 'comma', means: "A mark that shows a small pause and keeps parts of a sentence apart.", example: "After lunch, the heroes trained.", skill: 'meetComma' },
+    { term: 'serial (Oxford) comma', means: "The comma before the last and in a list of three or more.", example: "capes, masks, and boots", skill: 'listCommas' },
+    { term: 'salutation and valediction', means: "The greeting and the sign-off of a letter. In a friendly letter, both end with a comma.", example: "Dear Captain Comet, … Your fan,", skill: 'letterCommas' },
+    { term: 'commas in dates and places', means: "A comma goes between the day and the year and between the city and the state, and another after them when the sentence keeps going.", example: "On May 4, 2026, in Dayton, Ohio, the factory opened.", skill: 'letterCommas' },
+    { term: 'introductory element', means: "A word, phrase, or clause before the main part of a sentence. A comma comes after it.", example: "However, the villain escaped.", skill: 'introCommas' },
+    { term: 'direct address', means: "Using the name of the person you are talking to. Set the name off with commas.", example: "Blaze, can you fly?", skill: 'dialogueCommas' },
+    { term: 'tag question', means: "A short question added to the end of a statement, after a comma.", example: "You’re new here, aren’t you?", skill: 'dialogueCommas' },
+    { term: 'appositive', means: "A noun phrase right next to a noun that renames it. Use commas when it only adds extra information.", example: "Comet, the oldest hero, trains the new ones.", skill: 'appositives' },
+    { term: 'apostrophe', means: "A mark (’) that shows missing letters or belonging.", example: "we’re, Blaze’s cape", skill: 'meetApostrophe' },
+    { term: 'contraction', means: "Two words squeezed into one, with an apostrophe where letters were taken out.", example: "can’t, we’ll, they’re", skill: 'contractions' },
+    { term: 'plural', means: "More than one. Most plurals add -s or -es and never take an apostrophe.", example: "two robots, three heroes", skill: 'apostrophePlurals' },
+    { term: 'possessive noun', means: "A noun that shows ownership. One owner: add ’s. A plural ending in s: add ’ only.", example: "the hero’s cape, the heroes’ capes", skill: 'possessive' },
+    { term: 'irregular plural possessive', means: "A plural that doesn’t end in s takes ’s.", example: "the children’s heroes, the people’s choice", skill: 'pluralPossessive' },
+    { term: 'its or it’s', means: "It’s means it is or it has. Its means belonging to it.", example: "It’s ready, and its battery is full.", skill: 'itsVsIts' }
+  ],
   prepositions: [
     { term: 'preposition', means: 'A word that shows how a noun or pronoun is related to the rest of the sentence: where, when, or how.', example: 'under the bed, after lunch, with a spoon', skill: 'meetPreposition' },
     { term: 'object of the preposition', means: 'The noun or pronoun at the end of a prepositional phrase.', example: 'behind the shed (shed), with her (her)', skill: 'prepPhrases' },

@@ -22,8 +22,9 @@ import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/the
 import { termCards } from '../shared/termCards';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS } from './scienceSims.js';
+import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -165,6 +166,7 @@ function normalize(raw){
     s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
+    s.heroLab = {packs:Object.fromEntries(HERO_PACKS.map(p => [p.id, s.heroLab?.packs?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.heroLab?.master};   // ⚡ Punctuation Power Lab (docs/ENGLISH-UNIT6.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
@@ -355,7 +357,7 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
-const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test'};
+const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test', elaPunct:'punctuation:final-test'};
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (ELA_FINAL_KEYS[unit]) {
@@ -5361,7 +5363,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && vocabRun) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -7271,6 +7273,91 @@ function bibleClick(e){
   }
 }
 
+/* ⚡ Punctuation Power Lab (English Unit 6, the Superhero Factory; src/game/heroLab.js, docs/ENGLISH-UNIT6.md)
+   One pack of 6 missions per block. She taps the glowing spots to swap punctuation and watches the hero change, then
+   launches when the hero matches the mission. A mission is right on the first launch or not; stars from first launches.
+   Coins like the grammar games: 10 + 5 a star the first time, then 5 for each new star; 3 stars in all five packs is
+   "Factory Hero" (+50 once). S.heroLab = {packs:{packId:{best, plays}}, master}. */
+let hlRun = null;
+function heroLabCardHTML(courseId, groupId){
+  if (courseId !== 'punctuation') return '';
+  const pack = HERO_PACKS.find(p => p.id === groupId); if (!pack) return '';
+  const st = S.heroLab.packs[pack.id], stars = st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)}` : 'Not played yet';
+  return `<section class="ela-final-assessment sim-card"><div><h3>⚡ Punctuation Power Lab: ${esc(pack.name)}</h3><p class="muted">Tap the glowing spots to change the punctuation and watch your hero change. Build the hero each mission needs! ${missionsIn(pack.id).length} missions · ${stars}</p></div><button type="button" class="btn small berry" data-hl-open="${pack.id}">${st?.plays ? 'Play again' : 'Play'}</button></section>`;
+}
+function hlStart(pack){
+  const list = missionsIn(pack);
+  hlRun = {pack, list, i:0, choices:startChoices(list[0]), tries:0, first:0, msg:'', ok:false, reveal:false, done:false};
+  renderHeroLab();
+}
+function hlHeroHTML(m, choices, big = true){
+  const h = heroOutcome(m, choices);
+  return `<div class="hl-hero mood-${h.mood}${big ? '' : ' small'}"><div class="hl-emoji" aria-hidden="true">${h.emoji}</div><div><b>${esc(h.name)}</b><p>${esc(h.text)}</p></div></div>`;
+}
+function hlSentenceHTML(m, choices, live){
+  return m.text.split(/(\{\d\})/).map(part => {
+    const k = part.match(/^\{(\d)\}$/); if (!k) return esc(part);
+    const i = +k[1], c = choices[i];
+    return live ? `<button type="button" class="hl-spot${c ? '' : ' empty'}" data-hl-spot="${i}" aria-label="Spot ${i + 1}: ${c ? esc(c) : 'nothing'}. Tap to change.">${c ? esc(c) : '◌'}</button>` : `<b class="hl-filled">${esc(c)}</b>`;
+  }).join('');
+}
+function renderHeroLab(){
+  const r = hlRun, pack = HERO_PACKS.find(p => p.id === r.pack), total = r.list.length;
+  activeEnglishCourse = 'punctuation';
+  let body;
+  if (r.done) {
+    body = `<section class="card"><h3>🏁 ${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)} ${r.first} of ${total} missions on the first launch</h3>
+      <p>${r.stars === 3 ? 'Every hero built perfectly. The city is safe!' : r.stars === 2 ? 'So close to three stars. Try again?' : 'Every mission makes you a stronger punctuation hero. Try again for more stars!'}${r.coins ? ` +${r.coins} 🪙` : ''}</p>
+      ${r.master ? '<p class="review-banner">🦸 Factory Hero! Three stars in every Power Pack. +50 🪙</p>' : ''}
+      <div class="row"><button type="button" class="btn berry" data-hl-again>🔁 Play again</button></div></section>`;
+  } else {
+    const m = r.list[r.i];
+    const versions = r.reveal ? `<details class="hl-versions" open><summary>👀 Every version of this sentence</summary>${Object.keys(m.outcomes).map(key => { const ch = key.split('|');
+      return `<div class="hl-version${key === m.goal ? ' goal' : ''}"><p>${key === m.goal ? '🎯 ' : ''}${hlSentenceHTML(m, ch, false)}</p>${hlHeroHTML(m, ch, false)}</div>`; }).join('')}</details>` : '';
+    body = `<p><b>Mission ${r.i + 1} of ${total}</b> · ⭐ ${r.first} on the first launch</p>
+      <p class="gg-ask">🎯 <b>Mission:</b> ${esc(m.mission)}</p>
+      <p class="hl-sentence">${hlSentenceHTML(m, r.choices, !r.reveal)}</p>
+      ${r.reveal ? '' : '<p class="muted" style="margin:0">Tap a glowing spot to change it. Your hero changes too!</p>'}
+      ${hlHeroHTML(m, r.choices)}
+      ${r.msg ? `<p class="${r.ok ? 'sim-news' : 'dig-hint'}">${r.msg}</p>` : ''}
+      <div class="row">${r.reveal ? `<button type="button" class="btn berry" data-hl-next>${r.i + 1 < total ? 'Next mission' : 'Finish'}</button>` : '<button type="button" class="btn berry" data-hl-launch>🚀 Launch!</button>'}</div>
+      ${versions}`;
+  }
+  $('#libraryWrap').innerHTML = `<div id="hlWrap" class="sim gg hl"><div class="backrow"><h2>⚡ Punctuation Power Lab</h2><button class="btn small" data-dig-back="punctuation">Back to unit</button></div><p class="muted">${pack.emoji} ${esc(pack.name)}</p>${body}</div>`;
+}
+function hlFinish(){
+  const r = hlRun, total = r.list.length, st = S.heroLab.packs[r.pack] || (S.heroLab.packs[r.pack] = {best:0, plays:0}), stars = starsFor(r.first, total), before = st.best;
+  const coins = st.plays ? Math.max(0, stars - before) * 5 : 10 + 5 * stars;
+  st.plays++; st.best = Math.max(before, stars); r.done = true; r.stars = stars; r.coins = coins;
+  if (coins) { S.coins += coins; updateHeader(); }
+  logEvent({k:'hero', title:HERO_PACKS.find(p => p.id === r.pack)?.name || 'Punctuation Power Lab', s:r.first, n:total});
+  if (!S.heroLab.master && HERO_PACKS.every(p => (S.heroLab.packs[p.id]?.best || 0) >= 3)) { S.heroLab.master = true; S.coins += 50; updateHeader(); r.master = true; }
+  sfx('good'); save();
+}
+$('#libraryWrap').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.hlOpen) { hlStart(b.dataset.hlOpen); return; }
+  if (!hlRun || !b.closest('#hlWrap')) return;
+  const r = hlRun;
+  if (b.hasAttribute('data-hl-again')) { hlStart(r.pack); return; }
+  if (b.dataset.hlSpot != null && !r.reveal) {
+    const m = r.list[r.i], i = +b.dataset.hlSpot, opts = m.spots[i];
+    r.choices[i] = opts[(opts.indexOf(r.choices[i]) + 1) % opts.length]; r.msg = ''; sfx('tick');
+    renderHeroLab(); $(`#hlWrap [data-hl-spot="${i}"]`)?.focus(); return;
+  }
+  if (b.hasAttribute('data-hl-launch')) {
+    const m = r.list[r.i];
+    if (heroKey(r.choices) === m.goal) { if (!r.tries) r.first++; r.ok = true; r.reveal = true; r.msg = `✅ ${r.tries ? 'Mission complete!' : 'First launch! Mission complete!'} ${heroOutcome(m, r.choices).name} is ready.`; sfx('good'); }
+    else if (++r.tries >= 2) { r.choices = m.goal.split('|'); r.ok = false; r.reveal = true; r.msg = 'Not quite. Here’s the hero this mission needed. Look at every version below to see what each mark does.'; sfx('bad'); }
+    else { r.ok = false; r.msg = 'Your hero isn’t doing the mission yet. Read the mission again and try another mark!'; sfx('bad'); }
+    renderHeroLab(); return;
+  }
+  if (b.hasAttribute('data-hl-next')) {
+    r.i++; r.tries = 0; r.msg = ''; r.ok = false; r.reveal = false;
+    if (r.i >= r.list.length) hlFinish(); else r.choices = startChoices(r.list[r.i]);
+    renderHeroLab();
+  }
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -7488,7 +7575,7 @@ const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science', reading:'reading'};
 const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology', reading:'📖 Reading Log'};
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
-const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions'};
+const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions', elaPunct:'punctuation'};
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
@@ -7791,7 +7878,7 @@ function helpPlace(){
   const where = placeOnScreen(), [kind, a = ''] = where.split(':');
   const open = kind === 'shop' ? a : ['vocab', 'sprint', 'arcade', 'reading'].includes(kind) ? kind
     : kind === 'course' ? (a === 'math' ? currentShop || '' : courseBuilding(a)) : kind === 'project' ? projectBuilding(a)
-    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
+    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
   return {where, label:String(placeLabel(where)), open};
 }
 const helpBtn = document.createElement('button');
@@ -8179,7 +8266,9 @@ const HISTORY_PROJECTS = {
     {key:'claim',label:'4. Answer “Was agriculture a mistake?” with a claim, supporting evidence, and a counterargument.'},
     {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]}
 };
-const englishCourse = course => course === 'prepositions'
+const englishCourse = course => course === 'punctuation'
+  ? {id:'punctuation',building:'elaPunct',title:'English Unit 6: Punctuation',skills:ENGLISH_UNIT6,groups:ENGLISH_GROUPS6,finalKey:'punctuation:final-test',finalPass:11}
+  : course === 'prepositions'
   ? {id:'prepositions',building:'elaConj',title:'English Unit 5: Prepositions and Interjections',skills:ENGLISH_UNIT5,groups:ENGLISH_GROUPS5,finalKey:'prepositions:final-test',testPer:2,finalPass:13}
   : course === 'modifiers'
   ? {id:'modifiers',building:'elaDescr',title:'English Unit 4: Adjectives and Adverbs',skills:ENGLISH_UNIT4,groups:ENGLISH_GROUPS4,finalKey:'modifiers:final-test',finalPass:8}
@@ -8287,6 +8376,7 @@ const KHAN_UNIT_TESTS = {
   pronouns:`${KHAN}humanities/grammar/parts-of-speech-the-pronoun/test/parts-of-speech-the-pronoun-unit-test`,
   modifiers:`${KHAN}humanities/grammar/parts-of-speech-the-modifier/test/parts-of-speech-the-modifier-unit-test`,
   prepositions:`${KHAN}ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/test/x90cef5375e9bcad6:prepositions-and-interjections-5-unit-test`,
+  punctuation:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/its-vs-its/test/punctuation-the-comma-and-the-apostrophe-unit-test`,
   /* History follows Khan's World History Project (Origins to the Present), Biology Unit 1 Grade 6 Science: Life sciences,
      Biology Unit 2 Middle school biology: Organism growth and reproduction (checked on khanacademy.org, Oct 20 2026) */
   history:`${KHAN}humanities/world-history/x66f79d8a:origins-of-history/x66f79d8a:history-and-memory-1-4/test/x66f79d8a:origins-of-history-unit-test`,
@@ -8467,7 +8557,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','history','history2','history3','history4','bio1','bio2'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','history','history2','history3','history4','bio1','bio2'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -8614,7 +8704,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'prepositions') return applyQuestionEdits(courseId, skillId, (courseId === 'prepositions' ? PREPOSITION_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'prepositions' || courseId === 'punctuation') return applyQuestionEdits(courseId, skillId, (courseId === 'punctuation' ? PUNCTUATION_QUESTIONS : courseId === 'prepositions' ? PREPOSITION_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -8934,7 +9024,7 @@ function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
@@ -9157,7 +9247,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
@@ -11570,6 +11660,7 @@ function placeOnScreen(){
   if ($('#scribeWrap')) return 'scribe';
   if ($('#simWrap') && simRun) return `sim:${simRun.id}`;
   if ($('#ggWrap') && ggRun) return `ggame:${ggRun.id}`;
+  if ($('#hlWrap') && hlRun) return `hero:${hlRun.pack}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
   return `course:${activeEnglishCourse}`;
@@ -11590,6 +11681,7 @@ function placeLabel(key){
   if (kind === 'chef') return '🍳 Chef’s Rush';
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
+  if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -11608,6 +11700,7 @@ function eventText(e){
   if (e.k === 'chef') return `🍳 Chef’s Rush: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
+  if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;

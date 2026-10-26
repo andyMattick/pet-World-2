@@ -1265,3 +1265,23 @@ a.btn{display:inline-block; text-decoration:none}
 .bible-wrap .prep-recall-bar b{flex:1}
 .bible-slots.neighbors{flex-wrap:nowrap; gap:4px}
 .bible-slots.neighbors .bible-slot{min-width:0; flex:1 1 0; padding:6px 3px; font-size:.85em; overflow-wrap:anywhere}
+/* ⚡ Punctuation Power Lab (English Unit 6, the Superhero Factory) */
+.hl-sentence{font-size:1.45em; line-height:2; margin:10px 0 4px}
+.hl-spot{font:inherit; font-weight:800; min-width:1.6em; padding:0 .3em; margin:0 1px; border:3px dashed var(--berry); border-radius:10px; background:var(--butter); color:var(--ink); cursor:pointer; animation:hlGlow 1.6s ease-in-out infinite}
+.hl-spot.empty{color:var(--ink-soft)}
+@keyframes hlGlow{50%{box-shadow:0 0 0 5px rgba(228,87,122,.25)}}
+@media (prefers-reduced-motion: reduce){ .hl-spot{animation:none} }
+.hl-filled{color:var(--berry-deep)}
+.hl-hero{display:flex; gap:14px; align-items:center; margin:10px 0; padding:12px 14px; border:3px solid var(--edge); border-radius:16px; background:var(--surface); transition:background .2s}
+.hl-hero .hl-emoji{font-size:2.6em; line-height:1; white-space:nowrap}
+.hl-hero p{margin:4px 0 0}
+.hl-hero.small{padding:6px 10px; margin:4px 0}
+.hl-hero.small .hl-emoji{font-size:1.6em}
+.hl-hero.mood-alarm{background:#FFE1D6} .hl-hero.mood-villain{background:#E9D7FF} .hl-hero.mood-friendly{background:#DDF5EA}
+.hl-hero.mood-curious{background:#E0EEFF} .hl-hero.mood-proud{background:#FFF1C2} .hl-hero.mood-sad{background:#E6E6EE} .hl-hero.mood-glitch{background:#EDEDED}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .hl-hero[class*="mood-"]{background:var(--surface)} }
+:root[data-theme="dark"] .hl-hero[class*="mood-"]{background:var(--surface)}
+.hl-hero[class*="mood-"]{color:var(--ink)}
+.hl-versions{margin-top:12px}
+.hl-version{border-top:2px dashed var(--dot); padding:6px 0}
+.hl-version.goal p{font-weight:700}

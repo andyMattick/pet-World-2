@@ -60,7 +60,7 @@ export interface KhanData { roster: RosterRow[] | null; results: KhanResults | n
 const DEFAULT_KHAN_PASS = 80;
 /* where the game keeps each course's unit test result in a student's save */
 export const UNIT_TESTS: Record<string, [string, string]> = {
-  nouns: ['elaProgress', 'final-test'], verbs: ['elaProgress', 'verbs:final-test'], pronouns: ['elaProgress', 'pronouns:final-test'], modifiers: ['elaProgress', 'modifiers:final-test'], prepositions: ['elaProgress', 'prepositions:final-test'],
+  nouns: ['elaProgress', 'final-test'], verbs: ['elaProgress', 'verbs:final-test'], pronouns: ['elaProgress', 'pronouns:final-test'], modifiers: ['elaProgress', 'modifiers:final-test'], prepositions: ['elaProgress', 'prepositions:final-test'], punctuation: ['elaProgress', 'punctuation:final-test'],
   history: ['historyProgress', 'history:final-test'], history2: ['historyProgress', 'history2:final-test'],
   history3: ['historyProgress', 'history3:final-test'], history4: ['historyProgress', 'history4:final-test'],
   bio1: ['scienceProgress', 'bio1:final-test'], bio2: ['scienceProgress', 'bio2:final-test']

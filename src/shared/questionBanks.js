@@ -1068,6 +1068,7 @@ const KHAN_LINKS = {
   pronouns:{intro:`${GRAMMAR}pronoun/introduction-to-pronouns/v/what-is-a-pronoun-the-parts-of-speech-grammar`,possessive:`${GRAMMAR}pronoun/possessive-and-reflexive-pronouns/v/possessive-pronouns-the-parts-of-speech-grammar`,relative:`${GRAMMAR}pronoun/relative-pronouns/v/relative-pronouns-the-parts-of-speech-grammar`,caseNumber:`${GRAMMAR}pronoun/subject-object-person-and-number/v/subject-and-object-pronouns-the-parts-of-speech-grammar`,indefinite:`${GRAMMAR}pronoun/indefinite-pronouns-pronoun-vagueness-and-emphatic-pronouns/v/indefinite-pronouns-the-parts-of-speech-grammar`},
   modifiers:{intro:`${GRAMMAR}modifier/introduction-to-adjectives-and-articles/v/intro-to-adjectives-v1`,adverbs:`${GRAMMAR}modifier/introduction-to-adverbs/v/intro-to-adverbs`,order:`${GRAMMAR}modifier/adjective-order-and-commas-with-adjectives/v/adjective-order`,degree:`${GRAMMAR}modifier/comparative-superlative-intensifiers-and-adverbs-of-degree/v/intro-to-the-comparative-and-the-superlative-v2`},
   prepositions:{prepositions:'https://www.khanacademy.org/ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/x90cef5375e9bcad6:prepositions-and-prepositional-phrases-5/v/meet-the-preposition',interjections:'https://www.khanacademy.org/ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/x90cef5375e9bcad6:interjections-5/a/interjections-5'},
+  punctuation:{endCommas:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/introduction-to-commas/v/three-ways-to-end-a-sentence-punctuation-khan-academy`,spaceTime:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/commas-in-space-and-time/v/salutations-and-valedictions-the-comma-punctuation-khan-academy`,moreCommas:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/more-ways-to-use-commas/v/more-uses-for-commas-the-comma-punctuation-khan-academy`,apostrophes:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/apostrophes-and-contractions/v/introduction-to-the-apostrophe-the-apostrophe-punctuation-khan-academy`,possessive:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/introduction-to-the-possessive/v/introduction-to-the-possessive-the-apostrophe-punctuation-khan-academy`},
   history:{stories:`${WORLD}origins-of-history/x66f79d8a:history-stories-1-1/v/meet-oer-project-world-history`,frames:`${WORLD}origins-of-history/x66f79d8a:history-frames-1-3/v/frame-concept-introduction-world-history-project-beta`,memory:`${WORLD}origins-of-history/x66f79d8a:history-and-memory-1-4/a/activity-opener-worst-day-ever`},
   history2:{earliestHumans:`${WORLD}early-humans/x66f79d8a:the-earliest-humans-2-1/a/activity-opener-then-vs-now`,migrationArt:`${WORLD}early-humans/x66f79d8a:migration-and-art-2-2/a/activity-opener-who-s-an-authority`,foragingSocieties:`${WORLD}early-humans/x66f79d8a:foraging-societies-2-3/a/activity-opener-what-is-this-asking-introduction-origins`,agriculturalRevolution:`${WORLD}early-humans/x66f79d8a:the-agricultural-revolution-2-4/a/activity-opener-which-frame`,biggestMistake:`${WORLD}early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/a/activity-opener-casual-map-jack-and-the-giant-beanstalk`},
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
@@ -1982,13 +1983,240 @@ const PREPOSITION_QUESTIONS = {
     qLevel(3,"Which sentence uses “like” as a preposition?","She sings like a bird.","I like apples a whole lot.","Like, I don’t really know.","We like to swim in summer.")
   ]
 };
+// English Unit 6: Punctuation: end-of-sentence punctuation, the comma, and the apostrophe (Khan Academy Grammar). The Punctuation Library.
+// Docs: docs/ENGLISH-UNIT6.md
+const ENGLISH_UNIT6 = [
+  {id:'endMarks',name:'Three ways to end a sentence',lesson:'Every sentence ends with one end mark. A statement (it tells something) and a command (it tells someone to do something) end with a period. A question ends with a question mark. A sentence that shows strong feeling, like surprise or alarm, ends with an exclamation point. A sentence that only reports a question, like “She asked if I was hungry,” is a statement, so it ends with a period.'},
+  {id:'meetComma',name:'Meet the comma',lesson:'A comma marks a small pause inside a sentence and keeps words that belong apart from running together. Commas separate items in a list, come after an introduction, set off the name of someone you are talking to, and join two complete sentences when a joining word like and, but, or so comes after the comma. A comma never ends a sentence, and it never goes between a subject and its verb.'},
+  {id:'listCommas',name:'Punctuating lists',lesson:'Put a comma after each item in a list of three or more: We packed apples, cheese, and crackers. Pet World uses a comma before the last and (the serial or Oxford comma), because it can keep the meaning clear; some writers leave it out. A list of only two items gets no comma: apples and cheese. Adjectives that each describe the noun on their own get commas too: a long, cold, rainy day.'},
+  {id:'letterCommas',name:'Salutations, valedictions, dates, and addresses',lesson:'A friendly letter opens with a greeting (salutation) followed by a comma: Dear Grandpa, and closes with a sign-off (valediction) followed by a comma (Love, or Sincerely,). A date gets a comma between the day and the year (May 4, 2026), and another comma after the year when the sentence keeps going. A place gets a comma between the city and the state (Austin, Texas), and another after the state when the sentence keeps going. No comma goes between a month and a year alone (May 2026) or between a state and a ZIP code.'},
+  {id:'introCommas',name:'Commas and introductory elements',lesson:'When a sentence starts with an introduction before the main part, put a comma after the introduction. It can be a word (However, Finally, Yes), a phrase (After the long game, To get ready for the trip), or a clause, a part with its own subject and verb that can’t stand alone (When the bell rang, Because it rained). The comma shows where the introduction ends and the main sentence begins.'},
+  {id:'dialogueCommas',name:'Commas in dialogue, tag questions, direct address, and yes-or-no responses',lesson:'In dialogue, a comma separates the speaker tag from the quotation: Mia said, “Let’s go.” or “Let’s go,” Mia said. (A question mark or exclamation point inside the quotation replaces the comma.) A tag question at the end gets a comma: You’re coming, aren’t you? Use commas to set off the name of someone you are talking to (Leo, come here. Thanks, Mom.) and words like yes, no, and well at the start of an answer (Yes, I finished.).'},
+  {id:'appositives',name:'Appositives',lesson:'An appositive is a noun or noun phrase right next to another noun that renames it: My dog, a lazy beagle, sleeps all day. When the appositive just adds extra information, set it off with commas on both sides (or one comma if it ends the sentence). When it is needed to tell which one you mean, use no commas: my friend Ava (when you have more than one friend), the poet Langston Hughes.'},
+  {id:'meetApostrophe',name:'Meet the apostrophe',lesson:'The apostrophe (’) has two main jobs. It stands in for missing letters in a contraction (do not → don’t), and it shows that something belongs to someone (the cat’s bowl). An apostrophe almost never makes a word plural: one dog, two dogs, with no apostrophe.'},
+  {id:'contractions',name:'Introduction to contractions',lesson:'A contraction squeezes two words into one, and the apostrophe goes exactly where letters were taken out: is not → isn’t, I am → I’m, they are → they’re, we will → we’ll, you have → you’ve. A few are unusual: will not → won’t, cannot → can’t. Contractions sound friendly, so formal writing often spells both words out.'},
+  {id:'apostrophePlurals',name:'Apostrophes and plurals',lesson:'To make most nouns plural, add -s or -es, with no apostrophe: two cats, three boxes, the Lopezes, the 1990s. An apostrophe before the s shows that something belongs to someone, not that there is more than one. Before you write ’s, ask: Does something belong to it? If not, leave the apostrophe out.'},
+  {id:'possessive',name:'Introduction to the possessive',lesson:'To show that something belongs to one person or thing, add an apostrophe and s: the girl’s coat, the dog’s leash, Ben’s idea. Read it as “the coat of the girl.” Possessive pronouns like his, hers, its, ours, yours, theirs, and whose never take an apostrophe.'},
+  {id:'pluralPossessive',name:'Advanced (plural) possession',lesson:'For a plural noun that already ends in s, add only an apostrophe after the s: the girls’ team (more than one girl), the birds’ nests. For a plural that doesn’t end in s, add apostrophe and s: the children’s books, the people’s choice, the mice’s cheese. To decide, write the plural first, then add the possessive. When two people share one thing, only the second name gets ’s: Mia and Leo’s project.'},
+  {id:'itsVsIts',name:'Choosing between its and it’s',lesson:'It’s always means it is or it has: It’s raining. It’s been a long day. Its, with no apostrophe, means belonging to it, like his or her: The dog wagged its tail. Test it: if you can say “it is” or “it has” in its place, write it’s; if not, write its.'}
+];
+const ENGLISH_GROUPS6 = [
+  {id:'endCommas',hook:{emoji:'🏭',title:'Welcome to the Superhero Factory',story:'Every hero in this factory is built from a sentence, and punctuation is the power source. One missing comma, and Captain Comet invites Grandma to dinner... or tries to eat her. Your job: install the right marks so every hero does exactly what the city needs.'},quizName:'End marks and commas Quiz',name:'End marks, the comma, and lists',learn:'End sentences with the right mark, learn what commas do, and punctuate lists.',skills:['endMarks','meetComma','listCommas']},
+  {id:'spaceTime',hook:{emoji:'📬',title:'The hero mail room',story:'Fan letters pour into the factory every day, and the robots that sort them read every comma. Write May 4 2026 with no commas, and a robot counts 42,026 heroes. Write “When the robot sneezed the factory shook,” and a reader thinks the robot sneezed the whole factory.'},quizName:'Commas in space and time Quiz',name:'Commas in space and time',learn:'Use commas in letters, dates, and addresses, and after introductory words, phrases, and clauses.',skills:['letterCommas','introCommas']},
+  {id:'moreCommas',hook:{emoji:'🎙️',title:'Who said that?',story:'“The hero said the villain is a genius.” Add two commas, “The hero, said the villain, is a genius,” and now the villain is the one talking. In this block, commas decide who is speaking, who is being spoken to, and how many sidekicks a hero has.'},quizName:'More ways to use commas Quiz',name:'More ways to use commas',learn:'Use commas in dialogue, tag questions, direct address, yes-or-no answers, and around appositives.',skills:['dialogueCommas','appositives']},
+  {id:'apostrophes',hook:{emoji:'🧷',title:'The missing-letter patch',story:'When the factory squeezes two words into one, “we are” into “we’re,” the apostrophe patches the spot where letters were cut out. Put a patch where nothing is missing, “Two Hero’s Wanted,” and the sign stops making sense.'},quizName:'Apostrophes and contractions Quiz',name:'Apostrophes and contractions',learn:'Learn what apostrophes do, write contractions, and keep apostrophes out of plurals.',skills:['meetApostrophe','contractions','apostrophePlurals']},
+  {id:'possessive',hook:{emoji:'🛡️',title:'Whose cape is it?',story:'The hero’s capes belong to one hero. The heroes’ capes belong to the whole team. One little mark tells the factory who owns what, and its and it’s decide whether the robot is wagging its tail or saying it’s happy.'},quizName:'Possessives Quiz',name:'The possessive, and its versus it’s',learn:'Show who owns something with singular and plural possessives, and choose between its and it’s.',skills:['possessive','pluralPossessive','itsVsIts'],
+    extraLessons:[{name:'Its versus it’s (video)',lesson:'A short video on choosing between its and it’s.',url:'https://www.khanacademy.org/humanities/grammar/punctuation-the-comma-and-the-apostrophe/its-vs-its/v/choosing-between-its-and-its-the-apostrophe-punctuation-khan-academy'}]}
+];
+const PUNCTUATION_QUESTIONS = {
+  endMarks:[
+    qLevel(1,"Which end mark belongs at the end? Where did you put my sneakers___","?",".","!",","),
+    qLevel(1,"Which sentence is punctuated correctly?","Our class is going to the zoo on Friday.","Our class is going to the zoo on Friday?","Our class is going to the zoo on Friday,","Our class is going, to the zoo on Friday."),
+    qLevel(1,"Which end mark shows strong feeling?","An exclamation point","A period at the very end","A question mark","A comma"),
+    qLevel(1,"Which sentence is a question?","Have you ever seen a shooting star?","I have never seen a shooting star.","What a bright shooting star that was!","Look at that shooting star over there."),
+    qLevel(2,"Which sentence should end with a question mark?","Can you hand me the glue","Please hand me the glue","I wonder where the glue went","Hand me the glue right now"),
+    qLevel(2,"What kind of sentence is this, and how should it end? Close the door, please","A command, so it ends with a period","A question, so it ends with a question mark","A statement, so it ends with a question mark","An exclamation, so it ends with a comma"),
+    qLevel(2,"Choose the end mark that shows the speaker is shouting with excitement: We won the championship___","!","?",",",":"),
+    qLevel(2,"Which sentence uses its end mark correctly?","Watch out for that bike!","What time does the bus leave!","Did you remember your lunch.","Is this seat taken."),
+    qLevel(2,"What kind of sentence ends with a period?","A statement that tells something","A question that asks something","A sentence that asks for an answer","A sentence that shows great surprise"),
+    qLevel(3,"Which sentence is punctuated correctly?","Maya asked whether the pool was open.","Maya asked whether the pool was open?","Maya asked, whether the pool was open?","Maya asked whether the pool, was open."),
+    qLevel(3,"Which sentence should end with a period?","I wonder if it will snow tonight","Will it snow tonight","Do you think it will snow tonight","Is it going to snow tonight"),
+    qLevel(3,"Which end mark should finish this sentence? Sam wanted to know who ate the last slice of pie___",".","?","!",","),
+    qLevel(3,"Which sentence has the wrong end mark?","Please sit in the front row?","Are you sitting in the front row?","I sat in the front row with Kai.","Wow, the front row is so close!"),
+    qLevel(3,"Which sentence is punctuated correctly?","Did you hear that loud noise?","Did you hear that loud noise?.","Did you hear that loud noise.?","Did you hear, that loud noise?")
+  ],
+  meetComma:[
+    qLevel(1,"What does a comma usually show?","A short pause inside a sentence","The very end of a sentence","That a question is being asked of someone","That letters are missing"),
+    qLevel(1,"Which sentence uses a comma correctly?","After lunch, we played tag.","After lunch we, played tag.","After, lunch we played tag.","After lunch we played, tag."),
+    qLevel(1,"Which is a comma?",",",".","’","?"),
+    qLevel(2,"Which sentence uses a comma to join two complete sentences correctly?","I wanted to swim, but the pool was closed.","I wanted to swim but, the pool was closed.","I wanted, to swim but the pool was closed.","I wanted to swim but the pool, was closed."),
+    qLevel(2,"Where does the comma belong? Kai can you help me carry this box?","After “Kai”","After “help”","After “carry”","After “this”"),
+    qLevel(2,"Which sentence has a comma that should NOT be there?","My little brother, likes trains.","My little brother likes trains, buses, and boats.","Yes, my little brother likes trains.","My little brother likes trains, and I like boats."),
+    qLevel(2,"Why does this sentence need a comma? “Let’s eat Grandma” should be “Let’s eat, Grandma.”","The comma shows we are talking to Grandma, not about eating her.","The comma shows that the sentence is a question.","The comma shows that the word “eat” is a noun.","The comma shows that some letters are missing from the word Grandma."),
+    qLevel(2,"Which sentence uses a comma correctly?","Yes, I fed the fish.","Yes I fed, the fish.","Yes I, fed the fish.","Yes I fed the fish,"),
+    qLevel(3,"Which sentence is punctuated correctly?","The sky turned dark, so we went inside.","The sky turned dark so, we went inside.","The sky, turned dark so we went inside.","The sky turned dark, so, we went inside."),
+    qLevel(3,"Which sentence shows a comma between a subject and its verb, which is a mistake?","The girl in the yellow raincoat, waved to us.","The girl waved to us, and then we both waved back.","Waving to us, the girl smiled.","The girl, my cousin, waved to us."),
+    qLevel(3,"Which sentence needs a comma?","We can play outside or we can bake cookies.","We can play outside or bake some cookies.","We played outside and then baked cookies together.","We played outside until dinner."),
+    qLevel(3,"Which sentence uses a comma in place of an end mark, which is a mistake?","The bus was late, we walked to school.","The bus was late, so we walked to school.","Because the bus was late, we walked to school.","The bus was late; we walked to school."),
+    qLevel(3,"How many commas does this sentence need? Mom I packed snacks and water.","One","Two","Three","None")
+  ],
+  listCommas:[
+    qLevel(1,"Which sentence punctuates the list correctly?","We saw lions, zebras, and giraffes.","We saw lions zebras and giraffes.","We saw, lions, zebras, and giraffes.","We saw lions, zebras and, giraffes."),
+    qLevel(1,"How many items are in this list? I need flour, sugar, eggs, and butter.","Four","Three","Two","Five"),
+    qLevel(1,"Which list of two items is punctuated correctly?","I ordered a sandwich and a salad.","I ordered a sandwich, and a salad.","I ordered, a sandwich and a salad.","I ordered a sandwich and, a salad."),
+    qLevel(2,"Which sentence is punctuated correctly?","My favorite colors are red, orange, and purple.","My favorite colors are red, orange, and, purple.","My favorite colors are, red, orange, and purple.","My favorite colors, are red orange and purple."),
+    qLevel(2,"Where are commas needed? Pack a toothbrush pajamas and a pillow.","After “toothbrush” and after “pajamas”","After “Pack” and after “toothbrush” and “a”","After “pajamas” and after “and”","After “a” and after “pajamas”"),
+    qLevel(2,"Which sentence punctuates a list of actions correctly?","She jumped, spun, and landed on her feet.","She jumped spun, and landed, on her feet.","She jumped, spun and, landed on her feet.","She, jumped, spun, and landed on her feet."),
+    qLevel(2,"What is the comma before the last “and” in a list called?","The serial (Oxford) comma","The ending comma","The question comma","The apostrophe-and-list comma"),
+    qLevel(2,"Which sentence uses commas between describing words correctly?","It was a long, cold, rainy day.","It was a long cold, rainy, day.","It was, a long, cold, rainy day.","It was a long, cold, rainy, day."),
+    qLevel(3,"Why can a comma before the last “and” help? I thank my parents, Ms. Lee, and Coach Ray.","It shows these are three separate people, not that Ms. Lee and Coach Ray are my parents.","It shows that Coach Ray is the most important and most honored person in the whole list.","It shows that the sentence is really a question.","It shows that Ms. Lee and Coach Ray belong to my parents."),
+    qLevel(3,"Which sentence is punctuated correctly?","For lunch we had soup, grilled cheese, and peanut butter and jelly.","For lunch we had soup, grilled cheese, and peanut butter, and jelly.","For lunch we had soup grilled, cheese, and peanut butter and jelly.","For lunch, we had, soup, grilled cheese, and peanut butter and jelly."),
+    qLevel(3,"Which sentence needs NO commas?","Leo and Ava painted the fence.","Leo Ava and Max painted the fence.","Leo painted Ava sanded and Max cleaned up.","We bought nails screws and glue."),
+    qLevel(3,"Which sentence lists three places correctly?","This summer we visited Boston, New York, and Washington.","This summer we visited Boston, New, York, and Washington.","This summer we visited, Boston, New York and, Washington.","This summer, we visited Boston New York and Washington."),
+    qLevel(3,"Which sentence is NOT punctuated correctly?","I like to read, draw and, swim.","I like to read, draw, and swim.","I like to read and swim.","I like reading, drawing, and swimming.")
+  ],
+  letterCommas:[
+    qLevel(1,"Which greeting for a friendly letter is punctuated correctly?","Dear Aunt Rosa,","Dear, Aunt Rosa","Dear Aunt, Rosa","Dear Aunt Rosa."),
+    qLevel(1,"Which closing for a letter is punctuated correctly?","Your friend,","Your, friend","Your friend.","Your, friend,"),
+    qLevel(1,"Which date is written correctly?","June 12, 2026","June, 12 2026","June 12 2026,","June, 12, 2026"),
+    qLevel(1,"Which place is written correctly?","Denver, Colorado","Denver Colorado,","Denver, Colorado,,","Den, ver Colorado"),
+    qLevel(2,"Which sentence is punctuated correctly?","On July 4, 1776, the colonies declared independence.","On July 4 1776, the colonies declared independence.","On July, 4, 1776 the colonies declared independence.","On July 4, 1776 the colonies, declared independence."),
+    qLevel(2,"Which sentence is punctuated correctly?","My cousin moved to Tulsa, Oklahoma, last spring.","My cousin moved to Tulsa Oklahoma, last spring.","My cousin moved to Tulsa, Oklahoma last spring.","My cousin moved, to Tulsa, Oklahoma, last spring."),
+    qLevel(2,"Which date needs NO comma?","March 2027","March 3 2027","Friday March 3","Friday March 3 2027"),
+    qLevel(2,"Which closing is punctuated correctly?","Love,","Love.","Love:","Love;"),
+    qLevel(2,"Which address line is written correctly?","Miami, FL 33101","Miami FL, 33101","Miami, FL, 33101","Miami FL 33101,"),
+    qLevel(3,"Which sentence is punctuated correctly?","Grandpa was born on Monday, May 2, 1960, in Ohio.","Grandpa was born on Monday May 2, 1960, in Ohio.","Grandpa was born on Monday, May 2 1960 in Ohio.","Grandpa was born, on Monday, May, 2, 1960, in Ohio."),
+    qLevel(3,"Which sentence is punctuated correctly?","Paris, France, is famous for its bakeries.","Paris France, is famous for its bakeries.","Paris, France is famous for its bakeries.","Paris, France, is famous, for its bakeries."),
+    qLevel(3,"Which sentence uses commas correctly?","In August 2025, we moved to a new house.","In August, 2025, we moved to a new house.","In, August 2025 we moved to a new house.","In August 2025 we, moved to a new house."),
+    qLevel(3,"Which sentence is punctuated correctly?","We drove from Reno, Nevada, to Boise, Idaho.","We drove from Reno Nevada, to Boise Idaho.","We drove from Reno, Nevada to Boise, Idaho.","We drove, from Reno, Nevada, to Boise, Idaho,"),
+    qLevel(3,"Which letter is punctuated correctly from greeting to closing?","Dear Coach Kim, Thank you for a great season! Your player, Jada","Dear Coach Kim. Thank you for a great season! Your player. Jada","Dear, Coach Kim Thank you for a great season! Your player Jada","Dear Coach Kim Thank you for a great season, Your player, Jada")
+  ],
+  introCommas:[
+    qLevel(1,"Which sentence uses a comma after an introductory word?","Finally, the rain stopped.","Finally the rain, stopped.","Finally the, rain stopped.","Finally the rain stopped,"),
+    qLevel(1,"Where does the comma go? However the store was already closed.","After “However”","After “store”","After “was”","After “already”"),
+    qLevel(1,"Which sentence is punctuated correctly?","After the long game, we ate pizza.","After the long game we, ate pizza.","After, the long game we ate pizza.","After the long, game we ate pizza."),
+    qLevel(2,"Which sentence is punctuated correctly?","When the bell rang, everyone ran outside.","When the bell rang everyone, ran outside.","When, the bell rang everyone ran outside.","When the bell, rang everyone ran outside."),
+    qLevel(2,"Which sentence needs a comma?","Because it was raining we stayed inside.","We stayed inside because it was raining.","We stayed inside all afternoon.","We stayed inside and played games."),
+    qLevel(2,"What is the introductory part of this sentence? To get ready for the trip, Mom made a checklist.","To get ready for the trip","Mom made a checklist for it","made a checklist","for the trip, Mom made a"),
+    qLevel(2,"Which sentence is punctuated correctly?","Excited about the news, Lena called her best friend.","Excited about the news Lena, called her best friend.","Excited, about the news Lena called her best friend.","Excited about the news, Lena called, her best friend."),
+    qLevel(2,"Which word at the start of a sentence needs a comma after it?","Meanwhile","Dogs","Seven","Running"),
+    qLevel(3,"Which sentence is punctuated correctly?","If you finish your homework early, we can go to the park.","If you finish your homework early we can, go to the park.","If you finish, your homework early we can go to the park.","If you finish your homework, early we can go to the park."),
+    qLevel(3,"In which sentence is the comma missing after the introduction?","While the cake baked we cleaned the kitchen.","While the cake baked, we cleaned the kitchen.","We cleaned the kitchen while the cake baked.","The cake baked while we cleaned the kitchen."),
+    qLevel(3,"Which sentence is punctuated correctly?","Without saying a word, Theo handed me the note.","Without saying a word Theo handed, me the note.","Without, saying a word Theo handed me the note.","Without saying a word, Theo handed me, the note."),
+    qLevel(3,"Why does this sentence need a comma? “While we were eating the dog barked” becomes “While we were eating, the dog barked.”","Without it, a reader might think we were eating the dog.","Without it, the sentence would be a question.","Without it, the dog would become the subject of the word eating.","Without it, the sentence would have no verb."),
+    qLevel(3,"Which sentence uses commas correctly?","After school on Tuesday, Kai and I built a fort.","After school on Tuesday Kai, and I built a fort.","After school, on Tuesday, Kai, and I built a fort.","After school on Tuesday Kai and I, built a fort.")
+  ],
+  dialogueCommas:[
+    qLevel(1,"Which sentence uses a comma correctly with someone’s name?","Leo, please close the window.","Leo please, close the window.","Leo please close, the window.","Leo please close the window,"),
+    qLevel(1,"Which answer is punctuated correctly?","No, I didn’t see your hat.","No I, didn’t see your hat.","No I didn’t see, your hat.","No I didn’t see your hat,"),
+    qLevel(1,"Which sentence is punctuated correctly?","Mia said, “Let’s go to the park.”","Mia said “Let’s go, to the park.”","Mia, said “Let’s go to the park.”","Mia said “, Let’s go to the park.”"),
+    qLevel(2,"Which sentence is punctuated correctly?","“I’m hungry,” said Theo.","“I’m hungry” said, Theo.","“I’m hungry.” said Theo.","“I’m, hungry” said Theo."),
+    qLevel(2,"Which tag question is punctuated correctly?","You finished the book, didn’t you?","You finished the book didn’t, you?","You finished, the book didn’t you?","You finished the book didn’t you?,"),
+    qLevel(2,"Which sentence uses commas correctly to talk to someone?","Thanks for the ride, Mrs. Diaz.","Thanks for the ride Mrs., Diaz.","Thanks, for the ride Mrs. Diaz.","Thanks for, the ride Mrs. Diaz."),
+    qLevel(2,"Which sentence is punctuated correctly?","No, the library isn’t open today.","No the library, isn’t open today.","No the library isn’t, open today.","No the library isn’t open, today."),
+    qLevel(2,"Which sentence is punctuated correctly?","“Can I come too?” asked Ruby.","“Can I come too?,” asked Ruby.","“Can I come too,” asked Ruby?","“Can I come too” asked, Ruby."),
+    qLevel(3,"Which sentence needs commas on both sides of a name?","I think, Sam, that you’re right.","I think Sam is right about that.","Sam thinks that I’m right.","I told Sam that he was right."),
+    qLevel(3,"Which sentence is punctuated correctly?","“If we hurry,” said Dad, “we can catch the early train.”","“If we hurry” said Dad “we can catch the early train.”","“If we hurry,” said Dad. “we can catch the early train.”","“If we hurry, said Dad, we can catch the early train.”"),
+    qLevel(3,"Which sentence is punctuated correctly?","Well, I guess we can try again.","Well I guess, we can try again.","Well I guess we, can try again.","Well I, guess we can try again."),
+    qLevel(3,"In which sentence is “Mom” the person being spoken to?","I’m ready to go, Mom.","My mom is ready to go.","Mom is ready, and so am I.","I told Mom I was ready."),
+    qLevel(3,"Which sentence is punctuated correctly?","It’s cold outside, isn’t it?","It’s cold outside isn’t it.","It’s cold, outside isn’t it?","It’s cold outside, isn’t it.")
+  ],
+  appositives:[
+    qLevel(1,"What is the appositive in this sentence? My dog, a lazy beagle, sleeps all day.","a lazy beagle","My dog","sleeps in the sun","My dog sleeps"),
+    qLevel(1,"What does an appositive do?","It renames a noun right next to it.","It ends a sentence with strong feeling.","It joins two complete sentences.","It shows that something belongs to someone."),
+    qLevel(1,"Which sentence uses commas around the appositive correctly?","Ms. Patel, our music teacher, plays the cello.","Ms. Patel our music teacher, plays the cello.","Ms. Patel, our music teacher plays the cello.","Ms. Patel our, music teacher, plays the cello."),
+    qLevel(2,"Which sentence is punctuated correctly?","We visited Yellowstone, a famous national park.","We visited Yellowstone a famous national park.","We visited, Yellowstone, a famous national park.","We visited Yellowstone a famous, national park."),
+    qLevel(2,"Which noun does the appositive rename? The pizza, a giant pepperoni pie, disappeared fast.","pizza","pie","pepperoni","fast"),
+    qLevel(2,"Which sentence has an appositive?","Jupiter, the largest planet, has many moons.","Jupiter is a very large planet with many moons.","Jupiter has many moons and big storms.","Many moons circle Jupiter quickly."),
+    qLevel(2,"Which sentence is punctuated correctly?","Our neighbor, a retired firefighter, fixed our fence.","Our neighbor a retired firefighter, fixed our fence.","Our neighbor, a retired, firefighter fixed our fence.","Our neighbor, a retired firefighter fixed, our fence."),
+    qLevel(3,"Which sentence correctly uses NO commas because the appositive tells which one?","The author Roald Dahl wrote Matilda.","The author, Roald Dahl wrote Matilda.","The author Roald Dahl, wrote Matilda.","The, author Roald Dahl wrote Matilda."),
+    qLevel(3,"Kai has only one sister. Which sentence is punctuated correctly?","Kai’s sister, Nora, plays soccer.","Kai’s sister Nora plays, soccer.","Kai’s sister Nora, plays on a soccer team.","Kai’s, sister Nora plays soccer."),
+    qLevel(3,"Which sentence is punctuated correctly?","I lent my book, a mystery about a lost ring, to Theo.","I lent my book, a mystery about a lost ring to Theo.","I lent my book a mystery, about a lost ring, to Theo.","I lent my book a mystery about a lost ring, to Theo."),
+    qLevel(3,"Which sentence uses an appositive at the start?","A talented artist, Ruby painted the whole mural.","Ruby painted the whole mural in less than a week.","Ruby, who loves art, painted the mural.","The mural that Ruby painted is huge."),
+    qLevel(3,"Why does this sentence need commas? Mount Everest, the tallest mountain on Earth, is in Asia.","The appositive adds extra information about a mountain already named.","The appositive is needed to tell exactly which mountain we are talking about.","The appositive is the subject of the sentence.","The commas show that the mountain belongs to Earth."),
+    qLevel(3,"You have only one best friend. Which sentence is punctuated correctly?","My best friend, Ava, lives next door.","My best friend Ava, lives next door.","My best friend, Ava lives, next door.","My, best friend Ava lives next door.")
+  ],
+  meetApostrophe:[
+    qLevel(1,"Which mark is an apostrophe?","’",",",".","\""),
+    qLevel(1,"What are the two main jobs of an apostrophe?","To show missing letters and to show that something belongs to someone","To end a sentence and to join two complete sentences together into one longer one","To make words plural and to show a question","To separate items in a list and set off a name"),
+    qLevel(1,"In “don’t,” what does the apostrophe show?","Letters are missing","Something belongs to someone","There is more than one","The sentence is a question"),
+    qLevel(1,"In “the cat’s bowl,” what does the apostrophe show?","The bowl belongs to the cat","There is more than one cat","Letters are missing from cat","The cat is a question"),
+    qLevel(2,"Which sentence uses an apostrophe correctly?","The bird’s nest fell from the tree.","The bird’s flew south for the winter.","The birds’ is singing outside.","The bird flew to it’s nest."),
+    qLevel(2,"Which sentence needs an apostrophe?","Kims dog has a red leash.","I have three dogs at home.","The dogs barked at the mail truck.","Two dogs ran across the yard."),
+    qLevel(2,"Which word is a contraction?","can’t","cats","cats’","cast"),
+    qLevel(2,"Which sentence has an apostrophe that should NOT be there?","I bought three apple’s at the store.","I bought my brother’s favorite apples.","I didn’t buy any apples today.","The apple’s skin was shiny and red."),
+    qLevel(3,"What does the apostrophe show in each word? Sam’s / isn’t","Sam’s shows belonging; isn’t shows missing letters.","Both show that letters are missing.","Both show that something belongs to someone.","Sam’s shows missing letters; isn’t shows belonging."),
+    qLevel(3,"Which sentence uses apostrophes correctly?","Mia’s bike isn’t in the garage.","Mias bike isnt in the garage.","Mia’s bike is’nt in the garage.","Mias’ bike isn’t in the garage."),
+    qLevel(3,"Which sentence uses an apostrophe to show that letters are missing?","We’re going to the beach.","Jen’s towel is on the sand.","The waves’ sound is calm.","The beach’s sand is warm."),
+    qLevel(3,"“Kim’s” can mean two different things. Which pair shows both meanings?","Kim’s coat (the coat of Kim) and Kim’s late (Kim is late)","Kim’s coat (two Kims) and Kim’s late (Kim was late)","Kim’s coat (Kim has a coat) and Kim’s late (the late of Kim)","Kim’s coat (Kim is coat) and Kim’s late (more than one Kim)"),
+    qLevel(3,"Which word should NOT have an apostrophe?","Two pizza’s were delivered.","The pizza’s crust was crispy.","That pizza’s still warm.","Leo’s pizza had mushrooms.")
+  ],
+  contractions:[
+    qLevel(1,"What is the contraction for “do not”?","don’t","do’nt","dont","d’ont"),
+    qLevel(1,"What two words make the contraction “I’m”?","I am","I will","I have","I would"),
+    qLevel(1,"What is the contraction for “they are”?","they’re","there","their","the’yre"),
+    qLevel(1,"What two words make the contraction “we’ll”?","we will","we would","we all","well done"),
+    qLevel(2,"Which contraction is spelled correctly?","shouldn’t","should’nt","shouldnt’","shoul’dnt"),
+    qLevel(2,"What is the contraction for “will not”?","won’t","willn’t","wo’nt","willnt"),
+    qLevel(2,"What two words make the contraction “you’ve”?","you have","you are","you will","you had"),
+    qLevel(2,"Which sentence uses a contraction correctly?","She’s my best friend.","Shes’ my best friend.","She’is my best friend.","Sh’es my best friend."),
+    qLevel(2,"Where does the apostrophe go in a contraction?","Where the letters were taken out","At the very end of the whole word","Right before the last letter","At the start of the second word"),
+    qLevel(3,"“He’d” can stand for two different pairs of words. Which are they?","he had or he would","he did or he does","he dared or he dead","he and or he add"),
+    qLevel(3,"Which sentence has a contraction spelled wrong?","They’re sure that it wasnt’ late.","I can’t find my other shoe anywhere.","We’ve already eaten lunch.","Who’s ready for the game?"),
+    qLevel(3,"Which contraction means “let us”?","let’s","lets","let’us","le’ts"),
+    qLevel(3,"What does “it’s” stand for in this sentence? It’s been raining all week.","it has","it is","it was","it will"),
+    qLevel(3,"Which sentence would sound more formal in a report?","The volcano did not erupt last year.","The volcano didn’t erupt at all last year.","The volcano did’nt erupt last year.","The volcano didnt erupt last year.")
+  ],
+  apostrophePlurals:[
+    qLevel(1,"Which sentence is correct?","I saw three rabbits in the garden.","I saw three rabbit’s in the garden.","I saw three rabbits’ in the garden.","I saw three rabbit in the garden."),
+    qLevel(1,"How do you make most nouns plural?","Add -s or -es","Add an apostrophe and s","Add only an apostrophe","Add -ly"),
+    qLevel(1,"Which word is a plural, meaning more than one?","boxes","box’s","boxe’s","boxs’"),
+    qLevel(2,"Which sentence has an apostrophe that should NOT be there?","We ate taco’s for dinner.","We ate Dad’s tacos for dinner.","We didn’t eat tacos for dinner.","Our tacos were spicy."),
+    qLevel(2,"Which sentence is correct?","The Garcias are coming to dinner.","The Garcia’s are coming to dinner.","The Garcias’ are coming to dinner.","The Garcia’s’ are coming to dinner."),
+    qLevel(2,"Which sentence is correct?","My grandparents grew up in the 1960s.","My grandparents grew up in the 1960’s’.","My grandparent’s grew up in the 1960s.","My grandparents’ grew up in the 1960s."),
+    qLevel(2,"Which question helps you decide if a word needs an apostrophe before the s?","Does something belong to it?","Is there more than one of it?","Is it at the end of the sentence?","Is it a long word?"),
+    qLevel(2,"Which sentence is correct?","The puppies chased their tails.","The puppy’s chased their tails.","The puppies’ chased their tails.","The puppie’s chased their tails."),
+    qLevel(3,"Which sign is punctuated correctly?","Fresh Peaches for Sale","Fresh Peache’s for Sale","Fresh Peaches’ for Sale","Fresh Peach’es for Sale"),
+    qLevel(3,"Which sentence is correct?","Both of my brothers play the drums.","Both of my brother’s play the drums.","Both of my brothers’ play the drums.","Both of my brother’s’ play the drum’s."),
+    qLevel(3,"Which sentence uses a plural AND a possessive correctly?","The teacher’s books are on the shelves.","The teacher’s book’s are on the shelves.","The teachers book’s are on the shelves.","The teacher’s books are on the shelve’s."),
+    qLevel(3,"How many words in this sentence should be fixed? The kid’s ran to the swing’s after the bell’s rang.","Three","Two","One","None"),
+    qLevel(3,"Which sentence is correct?","The Joneses have two cats.","The Jones’s have two cats.","The Jone’s have two cats.","The Joneses’ have two cat’s.")
+  ],
+  possessive:[
+    qLevel(1,"Which phrase shows that the bike belongs to Sam?","Sam’s bike","Sams bike","Sams’ bike","Sam bike’s"),
+    qLevel(1,"How do you show that something belongs to one person or thing?","Add an apostrophe and s","Add an s with no apostrophe","Add -es","Add a comma"),
+    qLevel(1,"Which phrase means “the leash of the dog”?","the dog’s leash","the dogs leash","the dog leash’s","the dogs’s leash"),
+    qLevel(2,"Which sentence is correct?","My sister’s room is painted green.","My sisters room is painted green.","My sister’s room’s is painted green.","My sisters’s room is painted green."),
+    qLevel(2,"Which pronoun is spelled correctly?","hers","her’s","hers’","he’rs"),
+    qLevel(2,"Which sentence is correct?","Is this backpack yours?","Is this backpack your’s?","Is this backpack yours’?","Is this backpack you’rs?"),
+    qLevel(2,"Which phrase means “the roof of the house”?","the house’s roof","the houses roof","the house roof’s","the houses’s roof"),
+    qLevel(2,"Which sentence is correct?","The teacher’s desk was covered in papers.","The teachers desk was covered in papers.","The teacher’s desk was covered in paper’s.","The teachers’s desk was covered in papers."),
+    qLevel(3,"Which sentence is correct?","The decision is ours, not theirs.","The decision is our’s, not their’s.","The decision is ours’, not theirs’.","The decision is ours, not their’s."),
+    qLevel(3,"Which sentence is correct?","The tree’s leaves turned red.","The trees leaves’ turned red.","The tree leave’s turned red.","The trees’s leaves turned red."),
+    qLevel(3,"Rewrite using a possessive: the idea of my friend","my friend’s idea","my friends idea","my friend idea’s","my friends’s idea"),
+    qLevel(3,"Which sentence is correct?","Whose jacket is this?","Who’s jacket is this?","Whos’ jacket is this?","Whose’ jacket is this?"),
+    qLevel(3,"Which sentence uses a possessive noun correctly?","The baby’s smile made everyone laugh.","The babys smile made everyone laugh.","The baby smile’s made everyone laugh.","The babys’s smile made everyone laugh.")
+  ],
+  pluralPossessive:[
+    qLevel(1,"Which phrase means “the toys of the two puppies”?","the puppies’ toys","the puppy’s toys","the puppies toys","the puppies’s toys"),
+    qLevel(1,"How do you make a plural noun that ends in s possessive?","Add only an apostrophe after the s","Add an apostrophe and then another s","Add an apostrophe before the s","Add -es"),
+    qLevel(1,"Which phrase is correct for books that belong to several children?","the children’s books","the childrens’ books","the childrens books","the children’ books"),
+    qLevel(2,"Which sentence means more than one girl owns the team?","The girls’ team won the trophy.","The girl’s team won the trophy.","The girls team won the trophy.","The girls’s team won the trophy."),
+    qLevel(2,"Which phrase is correct?","the people’s choice","the peoples’ choice","the peoples choice","the people choice’s"),
+    qLevel(2,"Which phrase means “the nests of the birds”?","the birds’ nests","the bird’s nests","the birds nests’","the birds’s nests"),
+    qLevel(2,"What should you write first when making a plural possessive?","The plural form of the noun","The possessive form of one","The word with an apostrophe","The word with a comma"),
+    qLevel(2,"Which phrase is correct for cheese that belongs to many mice?","the mice’s cheese","the mices’ cheese","the mouses’ cheese","the mices cheese"),
+    qLevel(3,"Mia and Leo built one project together. Which sentence is correct?","Mia and Leo’s project won first place.","Mia’s and Leo project won first place.","Mia and Leos’ project won first place.","Mias and Leos project won first place."),
+    qLevel(3,"Mia and Leo each have their own bike. Which sentence is correct?","Mia’s and Leo’s bikes are both blue.","Mia and Leo’s bikes are both blue.","Mias and Leos bikes are both blue.","Mia’s and Leos’ bikes are both blue."),
+    qLevel(3,"Which sentence is correct?","The teachers’ lounge is on the second floor.","The teachers lounge’s is on the second floor.","The teacher’s’ lounge is on the second floor.","The teacherses lounge is on the second floor."),
+    qLevel(3,"Which sentence is correct?","All three classes’ field trips are in May.","All three class’s field trips are in May.","All three classes field trip’s are in May.","All three classes’s field trips are in May."),
+    qLevel(3,"Which sentence is correct?","The women’s soccer team plays tonight.","The womens’ soccer team plays tonight.","The womens soccer team plays tonight.","The woman’s’ soccer team plays tonight."),
+    qLevel(3,"Which phrase is correct for the wings of several geese?","the geese’s wings","the gooses’ wings","the geeses’ wings","the goose’s wing’s")
+  ],
+  itsVsIts:[
+    qLevel(1,"What does “it’s” always mean?","it is or it has","belonging to it","more than one it","it was or it will"),
+    qLevel(1,"Which word finishes the sentence? The cat licked ___ paw.","its","it’s","its’","it’is"),
+    qLevel(1,"Which word finishes the sentence? ___ going to rain later.","It’s","Its","Its’","It’"),
+    qLevel(2,"Which sentence is correct?","The tree lost its leaves.","The tree lost it’s leaves.","The tree lost its’ leaves.","The tree lost it’s’ leaves."),
+    qLevel(2,"Which sentence is correct?","It’s been a long day.","Its been a long day.","Its’ been a long day.","It’ been a long day."),
+    qLevel(2,"Which trick helps you choose between its and it’s?","Try saying “it is” or “it has” in its place.","Use it’s whenever something in the sentence belongs to it.","Use its at the start of every sentence.","Use it’s when the next word is a noun."),
+    qLevel(2,"Which sentence is correct?","The team won its first game.","The team won it’s first game.","The team won its’ first game.","The team won it is first game."),
+    qLevel(2,"Which word finishes the sentence? I think ___ time for lunch.","it’s","its","its’","it is’"),
+    qLevel(3,"Which sentence uses both words correctly?","It’s clear that the dog wants its dinner.","Its clear that the dog wants it’s dinner.","It’s clear that the dog wants it’s dinner.","Its clear that the dog wants its dinner."),
+    qLevel(3,"Which sentence has a mistake?","The bird flapped it’s wings.","It’s the bird with blue wings.","The bird flapped its wings.","It’s flapping its wings."),
+    qLevel(3,"Why is “its” right in this sentence? The company changed its name.","The name belongs to the company.","It means “it is” here.","It means “it has” here.","It shows that there is more than one company."),
+    qLevel(3,"Which word finishes the sentence? The phone is dead because ___ battery ran out.","its","it’s","its’","it’"),
+    qLevel(3,"Which sentence is correct?","It’s got a crack in its screen.","Its got a crack in it’s screen.","It’s got a crack in it’s screen.","Its got a crack in its screen."),
+    qLevel(3,"How many mistakes are in this sentence? Its sunny, and the garden is showing off it’s flowers.","Two","One","Three","None")
+  ]
+};
 /* ---------- end of the moved banks ---------- */
 
 export {
-  ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, ENGLISH_UNIT4, ENGLISH_GROUPS4, ENGLISH_UNIT5, ENGLISH_GROUPS5,
+  ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, ENGLISH_UNIT4, ENGLISH_GROUPS4, ENGLISH_UNIT5, ENGLISH_GROUPS5, ENGLISH_UNIT6, ENGLISH_GROUPS6,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4,
   BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2,
-  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS, MODIFIER_QUESTIONS, PREPOSITION_QUESTIONS,
+  HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, PRONOUN_QUESTIONS, MODIFIER_QUESTIONS, PREPOSITION_QUESTIONS, PUNCTUATION_QUESTIONS,
   KHAN, KHAN_LINKS, mc
 };
 
@@ -2001,6 +2229,7 @@ export const LESSON_COURSES = [
   {id:'pronouns', title:'English Unit 3: Pronouns', skills:ENGLISH_UNIT3, groups:ENGLISH_GROUPS3},
   {id:'modifiers', title:'English Unit 4: Adjectives and Adverbs', skills:ENGLISH_UNIT4, groups:ENGLISH_GROUPS4},
   {id:'prepositions', title:'English Unit 5: Prepositions and Interjections', skills:ENGLISH_UNIT5, groups:ENGLISH_GROUPS5},
+  {id:'punctuation', title:'English Unit 6: Punctuation', skills:ENGLISH_UNIT6, groups:ENGLISH_GROUPS6},
   {id:'history', title:'History Unit 1: Origins of History', skills:HISTORY_UNIT1, groups:HISTORY_GROUPS},
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
@@ -2014,7 +2243,7 @@ export function builtInBank(courseId){
   return courseId === 'bio1' ? BIO1_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS
     : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS
     : courseId === 'history2' ? HISTORY2_QUESTIONS : courseId === 'history' ? HISTORY_QUESTIONS
-    : courseId === 'verbs' ? VERB_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'prepositions' ? PREPOSITION_QUESTIONS : PLURAL_QUESTIONS;
+    : courseId === 'verbs' ? VERB_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'prepositions' ? PREPOSITION_QUESTIONS : courseId === 'punctuation' ? PUNCTUATION_QUESTIONS : PLURAL_QUESTIONS;
 }
 
 /* Every place a lesson shows a Khan link: one per block, plus each extra reading in that block.

@@ -653,7 +653,7 @@ export const BUILDINGS: Building[] = [
   /* the grammar libraries follow Khan Academy Grammar unit by unit (Units 1 to 10); reading and writing come after */
   {id:'elaDescr',  emoji:'🎨', name:'Poetry Library',       unit:'Unit 4: Adjectives and adverbs', hood:'g6', subject:'english', open:true},
   {id:'elaConj',   emoji:'🔗', name:'Link Library',         unit:'Unit 5: Prepositions and interjections', hood:'g6', subject:'english', open:true},
-  {id:'elaPunct',  emoji:'✏️', name:'Punctuation Library',  unit:'Unit 6: End marks, commas, and apostrophes', hood:'g6', subject:'english'},
+  {id:'elaPunct',  emoji:'🦸', name:'Superhero Factory',    unit:'Unit 6: End marks, commas, and apostrophes', hood:'g6', subject:'english', open:true},
   {id:'elaColon',  emoji:'⏸️', name:'Pause Library',        unit:'Unit 7: Colons, semicolons, and more', hood:'g6', subject:'english'},
   {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Unit 8: Sentences and clauses', hood:'g6', subject:'english'},
   {id:'elaRules',  emoji:'📏', name:'Rule Library',         unit:'Unit 9: Conventions of standard English', hood:'g6', subject:'english'},

@@ -31,6 +31,7 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 | Lemonade Stand, Toy Shop, Pizza Parlor, Garden Center | [4th grade math](https://www.khanacademy.org/math/cc-fourth-grade-math) | Place value, addition and subtraction, multiplication and division, fractions, decimals, measurement and data, area and perimeter. Each station links to its own exercise. |
 | Story Corner Library (nouns) | Grammar | [The noun](https://www.khanacademy.org/humanities/grammar/parts-of-speech-the-noun) |
 | Action Library (verbs) | Grammar | [The verb](https://www.khanacademy.org/humanities/grammar/parts-of-speech-the-verb) |
+| Superhero Factory (punctuation) | Grammar | [Punctuation: end-of-sentence punctuation, the comma, and the apostrophe](https://www.khanacademy.org/humanities/grammar/punctuation-the-comma-and-the-apostrophe) |
 | Origins of History Museum | World history | [Origins of history](https://www.khanacademy.org/humanities/world-history/x66f79d8a:origins-of-history) |
 | Rift Valley Museum | World history | [Early humans](https://www.khanacademy.org/humanities/world-history/x66f79d8a:early-humans) |
 | Nile Valley Museum | World history | [Early agrarian societies](https://www.khanacademy.org/humanities/world-history/x66f79d8a:early-agrarian-societies) |

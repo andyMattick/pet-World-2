@@ -81,7 +81,7 @@ const LIBRARY = {wall:'#F2E6D3', wall2:'#8B5E3C', pattern:'shelves', floor:'#A05
 const LIBRARY_PROPS = {
   elaNouns:['🛋️','📚','🧸','📖','🕯️','🪴'], elaVerbs:['⚽','📚','🚲','🛹','🏀','🪴'], elaPron:['🪞','📚','🎭','👥','💬','🪴'], elaDescr:['🌹','📜','🪶','🌙','🎨','🪴'],
   elaConj:['🔗','📚','🌉','🧵','➕','🪴'], elaColon:['⏸️','📚','📌','🗒️','✒️','🪴'], elaRules:['📏','📚','✅','📐','🧾','🪴'], elaStyle:['🪶','📚','🎙️','💬','🖋️','🪴'],
-  elaSent:['🧩','📚','🔗','✏️','🧩','🪴'], elaPunct:['✏️','❗','📝','❓','✏️','🪴'], elaVocab:['🔤','📖','🔍','🗝️','📚','🪴'],
+  elaSent:['🧩','📚','🔗','✏️','🧩','🪴'], elaPunct:['🦸','⚡','🏭','🛡️','🦸‍♀️','🔋'], elaVocab:['🔤','📖','🔍','🗝️','📚','🪴'],
   elaRead:['🔎','🗺️','📚','🧭','🕯️','🪴'], elaLit:['🎭','🏰','📖','🐉','👑','🪴'], elaInfo:['📰','🌍','📊','🗞️','📚','🪴'], elaWrite:['📝','✒️','📓','💡','📚','🪴']
 };
 const SUBJECT_FALLBACK = {math:'cafe', history:'histOrigins', biology:'bioChem'};

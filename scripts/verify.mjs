@@ -196,6 +196,8 @@ need('src/game/game.js', 'function openHelpCard(', '✋ I have a question (QUEST
 need('src/teacher/report.ts', 'function questionsWaitingHTML(', 'teacher sees ✋ questions waiting (QUESTIONS.md)');
 need('src/shared/questionBanks.js', 'const PREPOSITION_QUESTIONS', 'English Unit 5 questions (ENGLISH-UNIT5.md)');
 need('src/game/game.js', 'function renderGgame(', 'English Unit 5 grammar games (ENGLISH-UNIT5.md)');
+need('src/shared/questionBanks.js', 'const PUNCTUATION_QUESTIONS', 'English Unit 6 questions (ENGLISH-UNIT6.md)');
+need('src/game/game.js', 'function renderHeroLab(', 'English Unit 6 Punctuation Power Lab (ENGLISH-UNIT6.md)');
 need('public/prep-recall/index.html', 'prep:result', 'the preposition recall game tells Pet World its score (ENGLISH-UNIT5.md)');
 need('src/game/game.js', 'function openPrepRecall(', 'the preposition recall game on Today’s plan during Unit 5 (ENGLISH-UNIT5.md)');
 need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
