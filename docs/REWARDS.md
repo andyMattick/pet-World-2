@@ -79,9 +79,10 @@ These units don't have skills yet. Until each one is built, its items use only `
 | Pet Fair (`fair`) | 🦘 Bounce the kangaroo, 🦩 Flo the flamingo, 🦭 Bubbles the seal, 🐯 Taffy the tiger, 🐨 Gumdrop the koala | 🎈 Balloon bunch, 🍭 Lollipop stand, 🎯 Ring toss, 🎢 Roller coaster, 🎡 Golden Ferris wheel |
 | Pet Houses (`houses`) | 🐌 Shelly the snail, 🐞 Dot the ladybug, 🐝 Buzz the bee, 🦡 Digger the badger, 🦚 Jewel the peacock | 🌻 Sunflower patch, 🧱 Brick pile, 🏕️ Camp tent, 🏠 Tiny house, 🏰 Castle |
 | Pet Harbor (`harbor`) | 🦦 Pip the otter, 🦀 Pinchy the crab, 🐡 Puff the pufferfish, 🦑 Squiggle the squid, 🐳 Captain the whale | 🛟 Life ring, ⚓ Anchor, 🧭 Compass, 🪸 Coral reef, 🚢 Golden ship |
+| Pet Post Office (`post`) | 🐦 Robin the bluebird, 🦆 Waddles the duck, 🐁 Squeak the mouse, 🦤 Doodle the dodo, 🐻‍❄️ Snowy the polar bear | ✉️ Letter stack, 📬 Mailbox, 📯 Post horn, 🛩️ Mail plane, 📮 Golden mailbox |
 | Pet Show (`show`) | 🐩 Fifi the poodle, 🐈 Duchess the show cat, 🦒 Tallulah the giraffe, 🦓 Stripes the zebra, 🦁 King the lion | 🎀 Ribbons, 📊 Score board, 🎪 Show tent, 🎺 Trumpet, 🏆 Grand trophy |
 
-A unit with only 3 stations (Clock Tower, Pet Harbor) unlocks its 4th reward (the one that would need station 4) at its last station; before Oct 26, 2026 the Clock Tower’s 🦅 Soar the eagle and 🌙 Moon banner could only be bought after mastering the unit. Locked rewards now name the unit’s own station (they used to show a Café station name).
+A unit with only 3 stations (Clock Tower, Pet Houses, Pet Harbor) unlocks its 4th reward (the one that would need station 4) at its last station; before Oct 26, 2026 the Clock Tower’s 🦅 Soar the eagle and 🌙 Moon banner could only be bought after mastering the unit. Locked rewards now name the unit’s own station (they used to show a Café station name).
 
 Rules and prices for every column in units 2 to 8:
 

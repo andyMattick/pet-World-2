@@ -26,6 +26,8 @@ const ROOMS = {
            props:['🌳','🏡','🌻','🧱','🐝','🌳'], hero:'☀️', float:['☁️'], motion:'drift'},
   harbor: {wall:'#BFE6F7', wall2:'#E8F7FD', pattern:'sky', floor:'#B98A5E', floor2:'#A0744B', floorKind:'planks', frame:'#1F4E79', awning:['#1F6FB2','#FFFFFF'],
            props:['⛵','🛟','🦀','⚓','🐚','⛵'], hero:'🗼', float:['☁️','🕊️'], motion:'drift'},
+  post:   {wall:'#FFF1E0', wall2:'#F4D9B8', pattern:'stripes', floor:'#C4A27A', floor2:'#AD8B63', floorKind:'planks', frame:'#C92A2A', awning:['#C92A2A','#1C3D6E'],
+           props:['📦','📬','✉️','🎁','📦','📮'], hero:'📮', float:['✉️','🕊️'], motion:'drift'},
   show:   {wall:'#9E1B32', wall2:'#7A1226', pattern:'drapes', floor:'#B07A4A', floor2:'#9A6638', floorKind:'planks', frame:'#C9A227', awning:['#B5122E','#F2C94C'],
            props:['💐','🎀','🏆','📸','🎪','💐'], hero:'⭐', float:['🎉','⭐'], motion:'fall', dark:true},
   // 4th grade math

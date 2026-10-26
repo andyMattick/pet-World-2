@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parcel Post</title>
+<!-- Pet World: served at /arcade/parcel-post/ (docs/PARCEL-POST.md). Played from the Pet Post Office's Wrapping Desk
+     (?from=post, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: Khan 6th grade
+     unit 10 (3D shapes, volume, surface area). Every parcel is a 3D shape she can spin by dragging it (or with the
+     arrow buttons). It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#FFF6EA; --card:#FFFFFF; --ink:#2B1D10; --muted:#6E5B47; --edge:#E8D3B8; --accent:#C92A2A; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --belt:#5C5F66; --belt2:#868E96; --slot:#F4E4CF; --stamp:#2B8A3E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1C140D; --card:#2A1F15; --ink:#F6EBDD; --muted:#C8B49C; --edge:#4A3826; --accent:#FF6B6B; --accent-ink:#1C140D;
+      --ok:#69DB7C; --bad:#FF8787; --belt:#3A3D42; --belt2:#5C5F66; --slot:#3A2C1E; --stamp:#69DB7C; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:720px; margin:0 auto; padding:10px 16px 28px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.1em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:focus-visible{outline:3px solid #FAB005; outline-offset:2px}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .hud{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0 6px}
+  .pill{background:var(--card); border:1px solid var(--edge); border-radius:999px; padding:3px 10px; font-weight:700; font-size:.92em}
+  .truck{display:flex; gap:2px; align-items:center; font-size:1.15em; flex-wrap:wrap}
+  .truck .slot{width:1.5em; height:1.5em; display:inline-flex; align-items:center; justify-content:center; background:var(--slot); border-radius:6px; font-size:.85em}
+  .belt{position:relative; overflow:hidden; background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:8px 8px 18px}
+  .belt::after{content:""; position:absolute; left:0; right:0; bottom:0; height:12px; background:repeating-linear-gradient(90deg, var(--belt) 0 14px, var(--belt2) 14px 28px)}
+  .parcel{transition:transform .45s ease-out; touch-action:none; cursor:grab; user-select:none}
+  .parcel.in{transform:translateX(-110%)} .parcel.out{transform:translateX(110%)}
+  .parcel svg{display:block; width:100%; max-width:380px; height:auto; margin:0 auto}
+  .spin{display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:4px}
+  .spin button{min-width:2.6em; border:2px solid var(--edge); background:var(--slot); border-radius:10px; font-weight:800; padding:4px 8px}
+  .stamp{position:absolute; top:22%; left:50%; transform:translate(-50%, 0) rotate(-12deg); border:4px solid var(--stamp); color:var(--stamp); font-weight:900; font-size:1.6em; padding:2px 12px; border-radius:10px; background:color-mix(in srgb, var(--card) 70%, transparent); pointer-events:none}
+  .stamp.back{border-color:var(--bad); color:var(--bad)}
+  .timer{height:10px; border-radius:999px; background:var(--slot); overflow:hidden; margin:6px 0}
+  .timer i{display:block; height:100%; background:var(--ok); transition:width .25s linear}
+  .timer.low i{background:var(--bad)}
+  .q{font-size:1.1em; font-weight:600; margin:4px 0 6px}
+  .job{display:inline-block; background:var(--slot); border-radius:8px; padding:1px 8px; font-weight:800; font-size:.9em}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px}
+  .answer input{flex:1 1 110px; min-width:0; font-size:1.25em; padding:6px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .answer input:focus{outline:3px solid #FAB005; outline-offset:1px}
+  .opts{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px}
+  .opts button{border:2px solid var(--edge); background:var(--slot); border-radius:12px; padding:8px; font-weight:700}
+  .fb{min-height:1.4em; margin:6px 0 0; font-weight:600}
+  .fb.bad{color:var(--bad)} .fb.ok{color:var(--ok)}
+  .explain{background:var(--slot); border-left:4px solid var(--accent); border-radius:8px; padding:8px 10px; margin-top:8px}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin:10px 0}
+  .stats div{background:var(--card); border:2px solid var(--edge); border-radius:12px; padding:8px; text-align:center}
+  .stats b{display:block; font-size:1.3em}
+  .s3-face{stroke:#5A3E1B; stroke-width:1.5; stroke-linejoin:round}
+  .s3-edge{stroke:#3D2A12; stroke-width:2; stroke-linecap:round}
+  .s3-hid{stroke:#3D2A12; stroke-width:1.3; stroke-dasharray:4 4; opacity:.6}
+  .s3-dash{stroke:#E64980; stroke-width:2.5; stroke-dasharray:5 4}
+  .s3-lbl{fill:currentColor; font-size:15px; font-weight:800}
+  @media (prefers-reduced-motion: reduce){ .parcel, .timer i{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+/* 3D solids drawn as SVG: polyhedra are turned (yaw around the vertical axis, then pitch toward her), projected
+   straight on, shaded by how much each face points at the light, with hidden edges dashed. Curved solids (cylinder,
+   cone, sphere) are drawn by hand. Shared by Pet Post Office problems and the Parcel Post game (docs/POST.md). */
+const SOLID3D = (() => {
+  const add = (a, b) => a.map((v, i) => v + b[i]);
+  const ngon = (n, r, rot = -Math.PI / 2) => Array.from({length:n}, (_, i) => { const a = rot + i * 2 * Math.PI / n; return [r * Math.cos(a), 0, r * Math.sin(a)]; });
+  const prism = (base, off) => { const n = base.length, V = [...base, ...base.map(p => add(p, off))], F = [[...Array(n).keys()], Array.from({length:n}, (_, i) => n + i)]; for (let i = 0; i < n; i++) F.push([i, (i + 1) % n, n + (i + 1) % n, n + i]); return {V, F}; };
+  const pyramid = (base, apex) => { const n = base.length, V = [...base, apex], F = [[...Array(n).keys()]]; for (let i = 0; i < n; i++) F.push([i, (i + 1) % n, n]); return {V, F}; };
+  const box = (l, w, h) => prism([[-l / 2, 0, -w / 2], [l / 2, 0, -w / 2], [l / 2, 0, w / 2], [-l / 2, 0, w / 2]], [0, h, 0]);
+  /* every solid; box(l, w, h) puts length along x, width going back (z), height up (y) */
+  const MAKE = {
+    'cube':(d = {}) => box(d.l || 1, d.l || 1, d.l || 1),
+    'rectangular prism':(d = {}) => box(d.l || 1.8, d.w || 1, d.h || 0.9),
+    'triangular prism':(d = {}) => { const b = d.b || 1.2, t = d.t || 1, len = d.len || 1.8, a = d.apex ?? b / 2; return prism([[-b / 2, 0, -len / 2], [b / 2, 0, -len / 2], [-b / 2 + a, t, -len / 2]], [0, 0, len]); },
+    'pentagonal prism':() => prism(ngon(5, .8), [0, 1, 0]),
+    'hexagonal prism':() => prism(ngon(6, .8), [0, 1, 0]),
+    'square pyramid':(d = {}) => { const s = d.s || 1.3; return pyramid([[-s / 2, 0, -s / 2], [s / 2, 0, -s / 2], [s / 2, 0, s / 2], [-s / 2, 0, s / 2]], [0, d.h || 1.1, 0]); },
+    'triangular pyramid':() => pyramid(ngon(3, .85), [0, 1.1, 0]),
+    'pentagonal pyramid':() => pyramid(ngon(5, .8), [0, 1.1, 0]),
+    'hexagonal pyramid':() => pyramid(ngon(6, .8), [0, 1.1, 0])
+  };
+  const CURVED = ['cylinder', 'cone', 'sphere'];
+  /* faces, edges and vertices (Euler: F + V − E = 2) */
+  function counts(kind){ const s = MAKE[kind](); const E = new Set(); s.F.forEach(f => f.forEach((a, i) => { const b = f[(i + 1) % f.length]; E.add(a < b ? `${a}-${b}` : `${b}-${a}`); })); return {faces:s.F.length, edges:E.size, vertices:s.V.length}; }
+  /* turn and project; returns screen points and which faces face her */
+  function view(kind, d, yaw, pitch){
+    const s = MAKE[kind](d), c = s.V.reduce((m, p) => add(m, p.map(v => v / s.V.length)), [0, 0, 0]);
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const P = s.V.map(p => { const [x0, y0, z0] = [p[0] - c[0], p[1] - c[1], p[2] - c[2]], x1 = x0 * cy + z0 * sy, z1 = -x0 * sy + z0 * cy, y2 = y0 * cp - z1 * sp, z2 = y0 * sp + z1 * cp; return [x1, y2, z2]; });
+    const faces = s.F.map(f => {
+      const [a, b, e] = [P[f[0]], P[f[1]], P[f[2]]], u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [e[0] - a[0], e[1] - a[1], e[2] - a[2]];
+      let n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]; const m = Math.hypot(...n) || 1; n = n.map(x => x / m);
+      const fc = f.reduce((q, i) => add(q, P[i].map(x => x / f.length)), [0, 0, 0]); if (n[0] * fc[0] + n[1] * fc[1] + n[2] * fc[2] < 0) n = n.map(x => -x);
+      return {f, n, z:fc[2], front:n[2] > 1e-6};
+    });
+    const edges = new Map(); faces.forEach((F, fi) => F.f.forEach((a, i) => { const b = F.f[(i + 1) % F.f.length], k = a < b ? `${a}-${b}` : `${b}-${a}`; const e = edges.get(k) || {a:Math.min(a, b), b:Math.max(a, b), faces:[]}; e.faces.push(fi); edges.set(k, e); }));
+    return {P, faces, edges:[...edges.values()].map(e => ({...e, front:e.faces.some(fi => faces[fi].front)}))};
+  }
+  /* the picture. opts: yaw, pitch (radians), size, d (dimensions), labels:[{edge:[a, b], text}] or [{from:[x,y,z]...}],
+     hiV (a vertex), hiE ([a, b]), hiF (a face index), slant:true draws a pyramid's slant height */
+  function svg(kind, opts = {}){
+    const W = opts.size || 240, H = opts.h || Math.round(W * .8), yaw = opts.yaw ?? .6, pitch = opts.pitch ?? .45;
+    if (CURVED.includes(kind)) return curved(kind, W, H, opts);
+    const v = view(kind, opts.d, yaw, pitch), xs = v.P.map(p => p[0]), ys = v.P.map(p => p[1]);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1, k = Math.min(W, H) * .62 / span;
+    const mx = (Math.max(...xs) + Math.min(...xs)) / 2, my = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const S = p => [W / 2 + (p[0] - mx) * k, H / 2 - (p[1] - my) * k], sp = v.P.map(S);
+    let g = '';
+    v.faces.map((F, i) => ({...F, i})).filter(F => F.front).sort((a, b) => a.z - b.z).forEach(F => {
+      const lit = Math.max(0, .35 * F.n[0] + .6 * F.n[1] + .7 * F.n[2]), shade = Math.round(78 - lit * 22);
+      g += `<polygon points="${F.f.map(i => sp[i].map(x => x.toFixed(1)).join(',')).join(' ')}" class="s3-face${opts.hiF === F.i ? ' s3-hi' : ''}" style="fill:hsl(${opts.hue ?? 38} 85% ${shade}%)"/>`;
+    });
+    v.edges.filter(e => !e.front).forEach(e => { const [a, b] = [sp[e.a], sp[e.b]]; g += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" class="s3-hid"/>`; });   // hidden edges show through, dashed
+    v.edges.filter(e => e.front).forEach(e => { const [a, b] = [sp[e.a], sp[e.b]], hi = opts.hiE && ((opts.hiE[0] === e.a && opts.hiE[1] === e.b) || (opts.hiE[0] === e.b && opts.hiE[1] === e.a)); g += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" class="${hi ? 's3-hiE' : 's3-edge'}"/>`; });
+    if (opts.hiV != null) { const p = sp[opts.hiV]; g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="7" class="s3-hiV"/>`; }
+    const cx = W / 2, cyy = H / 2;
+    if (opts.slant && kind.includes('pyramid')) {   // a dashed slant height from the apex to the middle of the nearest base edge
+      const n = v.P.length - 1, apex = sp[n]; let bestE = null;
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n, z = (v.P[i][2] + v.P[j][2]) / 2; if (!bestE || z > bestE.z) bestE = {i, j, z}; }
+      const m = [(sp[bestE.i][0] + sp[bestE.j][0]) / 2, (sp[bestE.i][1] + sp[bestE.j][1]) / 2];
+      g += `<line x1="${apex[0].toFixed(1)}" y1="${apex[1].toFixed(1)}" x2="${m[0].toFixed(1)}" y2="${m[1].toFixed(1)}" class="s3-dash"/>`;
+      if (opts.slantText) g += lbl([(apex[0] + m[0]) / 2 + 6, (apex[1] + m[1]) / 2], opts.slantText, 'start');
+      opts.labels = (opts.labels || []).map(L => L.edge === 'base' ? {...L, edge:[bestE.i, bestE.j]} : L);
+    }
+    for (const L of opts.labels || []) {
+      let [a, b] = L.edge;
+      if (L.parallel) {   // of the front edges parallel to this one, label the one on the outline (farthest from the middle)
+        const dir = (i, j) => { const u = MAKE[kind](opts.d).V; return u[j].map((x, t) => x - u[i][t]); }, d0 = dir(a, b), par = v.edges.filter(e => { const d1 = dir(e.a, e.b), cr = [d0[1] * d1[2] - d0[2] * d1[1], d0[2] * d1[0] - d0[0] * d1[2], d0[0] * d1[1] - d0[1] * d1[0]]; return Math.hypot(...cr) < 1e-6 && e.front; });
+        if (par.length) { const out = e => Math.hypot((sp[e.a][0] + sp[e.b][0]) / 2 - cx, (sp[e.a][1] + sp[e.b][1]) / 2 - cyy), e = par.sort((p, q) => out(q) - out(p))[0]; a = e.a; b = e.b; }
+      }
+      const m = [(sp[a][0] + sp[b][0]) / 2, (sp[a][1] + sp[b][1]) / 2], dx = m[0] - cx, dy = m[1] - cyy, dd = Math.hypot(dx, dy) || 1;
+      g += lbl([m[0] + dx / dd * 18, m[1] + dy / dd * 16 + 5], L.text, Math.abs(dx) / dd > .4 ? (dx > 0 ? 'start' : 'end') : 'middle');
+    }
+    return `<svg class="s3" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${opts.aria || kind}">${g}</svg>`;
+  }
+  const lbl = ([x, y], t, anchor = 'middle') => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" class="s3-lbl">${t}</text>`;
+  function curved(kind, W, H, opts){
+    const cx = W / 2, r = Math.min(W, H) * .3, ry = r * .32; let g = '';
+    if (kind === 'sphere') g = `<circle cx="${cx}" cy="${H / 2}" r="${r * 1.15}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 70%)"/><path d="M ${cx - r * 1.15} ${H / 2} A ${r * 1.15} ${ry} 0 0 0 ${cx + r * 1.15} ${H / 2}" class="s3-edge" fill="none"/><path d="M ${cx - r * 1.15} ${H / 2} A ${r * 1.15} ${ry} 0 0 1 ${cx + r * 1.15} ${H / 2}" class="s3-hid" fill="none"/>`;
+    else if (kind === 'cylinder') { const t = H * .2, b = H * .78; g = `<path d="M ${cx - r} ${t} L ${cx - r} ${b} A ${r} ${ry} 0 0 0 ${cx + r} ${b} L ${cx + r} ${t}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 66%)"/><path d="M ${cx - r} ${b} A ${r} ${ry} 0 0 1 ${cx + r} ${b}" class="s3-hid" fill="none"/><ellipse cx="${cx}" cy="${t}" rx="${r}" ry="${ry}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 76%)"/>`; }
+    else { const t = H * .14, b = H * .8; g = `<path d="M ${cx - r} ${b} L ${cx} ${t} L ${cx + r} ${b} A ${r} ${ry} 0 0 1 ${cx - r} ${b}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 68%)"/><path d="M ${cx - r} ${b} A ${r} ${ry} 0 0 1 ${cx + r} ${b}" class="s3-hid" fill="none"/>`; }
+    return `<svg class="s3" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${opts.aria || kind}">${g}</svg>`;
+  }
+  return {MAKE, CURVED, counts, view, svg};
+})();
+const params = new URLSearchParams(location.search);
+const FROM_POST = params.get('from') === 'post';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const PARCELS = 10, STRIKES = 3, SOLVE_MS = 90000, TRIES = 2;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const same = (a, b) => Math.abs(a - b) < 1e-6;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* 7.5 → "7 1/2" (halves, quarters and eighths) */
+function mixed(v){
+  for (const d of [1, 2, 4, 8]) { const n = Math.round(v * d); if (Math.abs(n - v * d) < 1e-6) { if (d === 1) return String(n); const w = Math.floor(n / d), r = n % d, g = (a, b) => b ? g(b, a % b) : a, k = g(r, d); return `${w ? w + ' ' : ''}${r / k}/${d / k}`; } }
+  return String(Math.round(v * 100) / 100);
+}
+function parseNum(s){
+  s = String(s).trim().replace(/[^\d./\s]/g, '').replace(/\s+/g, ' '); if (!s) return NaN;
+  let m = s.match(/^(\d+) (\d+)\/(\d+)$/); if (m) return +m[1] + +m[2] / +m[3];
+  m = s.match(/^(\d+)\/(\d+)$/); if (m) return +m[1] / +m[2];
+  return /^\d*\.?\d+$/.test(s) ? parseFloat(s) : NaN;
+}
+let best = 0; try { best = +localStorage.getItem('parcel-post:best') || 0; } catch(e){}
+const SKILL_NAMES = {solidId:'Naming 3D shapes', solidParts:'Faces, edges and vertices', volPrism:'Volume with fractions', volBaseHeight:'Base area × height', surfaceArea:'Surface area of boxes', surfacePyramid:'Surface area of pyramids', saWord:'Surface area word problems'};
+
+/* ---------- the jobs. A parcel: {sk, kind, d (shape sizes), labels, slant, job, q, ans or choices, unit, check(v), explain} ---------- */
+const BIG = 3.2;   // drawing scale: the longest side of a box is drawn this long
+const boxD = (l, w, h) => { const m = Math.max(l, w, h); return {l:l / m * BIG * .62, w:w / m * BIG * .62, h:h / m * BIG * .62}; };
+const boxLabels = (l, w, h, u) => [{edge:[0, 1], text:`${mixed(l)} ${u}`, parallel:true}, {edge:[1, 2], text:`${mixed(w)} ${u}`, parallel:true}, {edge:[1, 5], text:`${mixed(h)} ${u}`, parallel:true}];
+const JOBS = {
+  sort(){   // Khan: identify geometric solids
+    const POOL = ['cube', 'rectangular prism', 'triangular prism', 'pentagonal prism', 'hexagonal prism', 'square pyramid', 'triangular pyramid', 'hexagonal pyramid', 'cylinder', 'cone', 'sphere'];
+    const kind = pick(POOL), base = kind.split(' ')[0], fam = kind.split(' ')[1];
+    const near = [fam ? `${base} ${fam === 'prism' ? 'pyramid' : 'prism'}` : null, ...shuffle(POOL)].filter(k => k && k !== kind && POOL.includes(k) && !(kind === 'cube' && k === 'rectangular prism') && !(kind === 'rectangular prism' && k === 'cube'));
+    const choices = shuffle([{t:kind, ok:true}, ...[...new Set(near)].slice(0, 3).map(t => ({t}))]);
+    return {sk:'solidId', kind, job:'🔍 Sort it', q:'Which bin does this parcel go in? Name its shape.', choices,
+      check:t => t.split(' ')[0] === base ? 'Right base, but look again: does it have a matching base on top (a prism) or come to a point (a pyramid)?' : fam && t.split(' ')[1] === fam ? 'Right family, but count the sides of the base.' : '',
+      explain:`It’s a ${kind}. ${fam === 'prism' ? `It has 2 matching ${base === 'rectangular' ? 'rectangle' : base === 'triangular' ? 'triangle' : base.replace('al', '')} bases joined by rectangles.` : fam === 'pyramid' ? `It has 1 ${base === 'triangular' ? 'triangle' : base.replace('al', '')} base and triangles that meet at a point.` : kind === 'cube' ? 'All 6 faces are squares.' : kind === 'sphere' ? 'It’s round all over, like a ball.' : kind === 'cone' ? 'One circle base and a curved side that comes to a point.' : 'Two circle bases and a curved side.'}`};
+  },
+  stamp(){   // Khan: identify parts of 3D shapes
+    const kind = pick(['cube', 'rectangular prism', 'triangular prism', 'pentagonal prism', 'hexagonal prism', 'square pyramid', 'triangular pyramid', 'pentagonal pyramid', 'hexagonal pyramid']);
+    const C = SOLID3D.counts(kind), ask = pick(['faces', 'edges', 'vertices']);
+    return {sk:'solidParts', kind, job:'🏷️ Label it', q:`The label needs the number of <b>${ask}</b>${ask === 'vertices' ? ' (corners)' : ''}. Spin the parcel to count them all.`, ans:C[ask], unit:ask,
+      check:v => v !== C[ask] && Object.values(C).includes(v) ? `That’s the number of ${Object.keys(C).find(k => C[k] === v)}. ${ask === 'faces' ? 'Faces are the flat sides.' : ask === 'edges' ? 'Edges are the lines where two faces meet.' : 'Vertices are the corners.'}` : '',
+      explain:`A ${kind} has ${C.faces} faces, ${C.edges} edges and ${C.vertices} vertices. (Check: faces + vertices − edges = ${C.faces} + ${C.vertices} − ${C.edges} = 2.)`};
+  },
+  pack(){   // Khan: volume with fractions, volume by base area × height
+    if (Math.random() < .35) {
+      const B = rnd(6, 30), h = pick([2, 3, 4, 5, 2.5, 3.5, 1.5]), V = B * h;
+      return {sk:'volBaseHeight', kind:'rectangular prism', d:boxD(3, 2, h), labels:[{edge:[1, 5], text:`${mixed(h)} ft`, parallel:true}], job:'📦 Pack it', q:`The bottom of this crate has an area of <b>${B} square feet</b>. How many cubic feet of packing peanuts fill it?`, ans:V, unit:'cubic feet',
+        check:v => same(v, B + h) ? 'Volume multiplies: base area × height.' : '', explain:`Volume = base area × height = ${B} × ${mixed(h)} = ${mixed(V)} cubic feet.`};
+    }
+    const l = pick([2, 3, 4, 1.5, 2.5, 3.5]), w = pick([1, 2, 3, 1.5]), h = pick([1, 2, .5, 1.5, 2.5]), V = l * w * h, SA = 2 * (l * w + l * h + w * h);
+    return {sk:'volPrism', kind:'rectangular prism', d:boxD(l, w, h), labels:boxLabels(l, w, h, 'ft'), job:'📦 Pack it', q:'How many cubic feet of packing peanuts fill this box? (You can type a fraction like 7 1/2.)', ans:V, unit:'cubic feet',
+      check:v => same(v, l + w + h) ? 'Volume multiplies the three sides; it doesn’t add them.' : same(v, SA) ? 'That’s the surface area (the outside). Peanuts fill the inside: length × width × height.' : '',
+      explain:`Volume = length × width × height = ${mixed(l)} × ${mixed(w)} × ${mixed(h)} = ${mixed(V)} cubic feet.`};
+  },
+  wrap(){   // Khan: surface area (nets, expressions, word problems)
+    const r = Math.random();
+    if (r < .3) {   // a square pyramid
+      const s = rnd(2, 8), t = rnd(s, s + 5), SA = s * s + 2 * s * t;
+      return {sk:'surfacePyramid', kind:'square pyramid', d:{s:1.6, h:1.1 + t / s * .2}, slant:true, slantText:`${t} in.`, labels:[{edge:'base', text:`${s} in.`}], job:'🎁 Wrap it', q:'How much paper covers this pyramid, including the square bottom? Each triangle face is as tall as the dashed line.', ans:SA, unit:'square inches',
+        check:v => same(v, 2 * s * t) ? 'Don’t forget the square on the bottom.' : same(v, s * s + 4 * s * t) ? 'Each triangle is ½ × base × height.' : same(v, s * s + s * t / 2) ? 'There are 4 triangles.' : '',
+        explain:`Square: ${s} × ${s} = ${s * s}. Four triangles: 4 × ½ × ${s} × ${t} = ${2 * s * t}. Total: ${SA} square inches.`};
+    }
+    const l = rnd(2, 9), w = rnd(2, 7), h = rnd(2, 6), open = r > .8, A = l * w, B = l * h, C = w * h, SA = (open ? A : 2 * A) + 2 * B + 2 * C;
+    return {sk:open ? 'saWord' : 'surfaceArea', kind:'rectangular prism', d:boxD(l, w, h), labels:boxLabels(l, w, h, 'in.'), job:'🎁 Wrap it',
+      q:open ? 'This tray has <b>no lid</b>. How much paper covers the outside (the bottom and 4 sides)?' : 'How much wrapping paper covers this box, with no overlap?', ans:SA, unit:'square inches',
+      check:v => same(v, l * w * h) ? 'That’s the volume (the inside). Wrapping paper covers the faces.' : same(v, A + B + C) ? 'That’s only 3 faces. Each face has a matching one on the other side.' : open && same(v, 2 * (A + B + C)) ? 'There’s no lid, so leave out the top.' : '',
+      explain:`${open ? `Bottom: ${l} × ${w} = ${A}.` : `Top and bottom: 2 × ${l} × ${w} = ${2 * A}.`} Front and back: 2 × ${l} × ${h} = ${2 * B}. Ends: 2 × ${w} × ${h} = ${2 * C}. Total: ${SA} square inches.`};
+  }
+};
+
+/* ---------- game state ---------- */
+let G = null, timerT = 0;
+function newGame(){
+  const order = [...shuffle(['sort', 'sort', 'stamp', 'stamp']), ...shuffle(['pack', 'pack', 'pack', 'wrap', 'wrap', 'wrap'])];
+  G = {order, i:0, delivered:0, strikes:0, right:0, tries:0, missed:{}, started:Date.now(), done:false};
+  nextParcel(true);
+}
+function nextParcel(first){
+  if (G.strikes >= STRIKES || G.i >= PARCELS) return finish();
+  const P = JOBS[G.order[G.i]]();
+  G.P = {...P, yaw:.5 + Math.random() * .6, pitch:.42, triesLeft:TRIES, fb:'', fbKind:'', done:false, left:SOLVE_MS};
+  G.tries++;
+  render(true, 'in');
+  clearInterval(timerT); const started = Date.now();
+  timerT = setInterval(() => {
+    const P = G?.P; if (!P || P.done) { clearInterval(timerT); return; }
+    P.left = Math.max(0, SOLVE_MS - (Date.now() - started));
+    const bar = document.querySelector('.timer'), fill = bar?.querySelector('i'); if (fill) fill.style.width = (P.left / SOLVE_MS * 100) + '%'; bar?.classList.toggle('low', P.left < 20000); const sec = document.getElementById('secs'); if (sec) sec.textContent = Math.ceil(P.left / 1000);
+    if (P.left <= 0) fail('The truck had to leave without it!');
+  }, 250);
+}
+function parcelSVG(){ const P = G.P; return SOLID3D.svg(P.kind, {size:340, h:250, yaw:P.yaw, pitch:P.pitch, d:P.d, labels:P.labels, slant:P.slant, slantText:P.slantText, aria:`a parcel shaped like a ${P.kind}`}); }
+function render(focus, anim){
+  const P = G.P;
+  const answer = P.done ? '' : P.choices ? `<div class="opts">${P.choices.map(c => `<button type="button" data-choice="${esc(c.t)}">${esc(c.t)}</button>`).join('')}</div>`
+    : `<form class="answer" id="f"><input id="an" inputmode="decimal" autocomplete="off" aria-label="Your answer"><span class="muted">${esc(P.unit)}</span><button class="btn go" type="submit">Stamp it ✅</button></form>`;
+  app.innerHTML = `<div class="hud"><span class="pill">📦 Parcel ${Math.min(G.i + 1, PARCELS)} of ${PARCELS}</span><span class="pill">❌ ${'●'.repeat(G.strikes)}${'○'.repeat(STRIKES - G.strikes)}</span><span class="pill">⏱ <span id="secs">${Math.ceil(P.left / 1000)}</span> s</span></div>
+    <div class="truck" aria-label="${G.delivered} parcels on the truck">🚚 ${Array.from({length:PARCELS}, (_, k) => `<span class="slot">${k < G.delivered ? '📦' : ''}</span>`).join('')}</div>
+    <div class="timer"><i style="width:${P.left / SOLVE_MS * 100}%"></i></div>
+    <div class="belt"><div class="parcel${anim ? ' ' + anim : ''}" id="parcel">${parcelSVG()}</div>${P.stamp ? `<div class="stamp${P.fbKind === 'bad' ? ' back' : ''}">${P.stamp}</div>` : ''}
+      ${SOLID3D.CURVED.includes(P.kind) ? '' : `<div class="spin" aria-label="Spin the parcel"><button type="button" data-spin="-1,0" aria-label="Spin left">⟲</button><button type="button" data-spin="0,-1" aria-label="Tilt up">⤒</button><button type="button" data-spin="0,1" aria-label="Tilt down">⤓</button><button type="button" data-spin="1,0" aria-label="Spin right">⟳</button></div>`}</div>
+    <div class="card"><span class="job">${P.job}</span><p class="q">${P.q}</p>${answer}<p class="fb ${P.fbKind}" role="status">${esc(P.fb)}</p>
+      ${P.done ? `${P.showExplain ? `<div class="explain">${esc(P.explain)}</div>` : ''}<div style="margin-top:10px"><button type="button" class="btn go" data-next>${G.i + 1 >= PARCELS || G.strikes >= STRIKES ? 'End the shift ▶' : 'Next parcel ▶'}</button></div>` : ''}</div>`;
+  if (anim === 'in') requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById('parcel')?.classList.remove('in')));
+  if (focus) (document.getElementById('an') || document.querySelector('[data-choice]') || document.querySelector('[data-next]'))?.focus();
+}
+function redrawParcel(){ const el = document.getElementById('parcel'); if (el) el.innerHTML = parcelSVG(); }
+function spin(dy, dp){ const P = G.P; P.yaw += dy; P.pitch = Math.max(-1.2, Math.min(1.2, P.pitch + dp)); redrawParcel(); }
+
+function tryAnswer(v){
+  const P = G.P; if (!P || P.done) return;
+  const ok = P.choices ? !!P.choices.find(c => c.t === v)?.ok : same(v, P.ans);
+  if (ok) return pass();
+  P.triesLeft--;
+  const why = P.check(v);
+  if (P.triesLeft <= 0) return fail(why ? `Not quite. ${why}` : 'Not quite.');
+  P.fb = why || 'Not quite. Check it and try once more.'; P.fbKind = 'bad';
+  if (P.choices) P.choices = P.choices.filter(c => c.t !== v);
+  render(true);
+}
+function pass(){
+  const P = G.P; P.done = true; clearInterval(timerT); G.right++; G.delivered++;
+  P.stamp = '✅ DELIVERED'; P.fb = pick(['On the truck!', 'Signed, sealed, delivered!', 'Great work, postmaster!', 'Right on time!']); P.fbKind = 'ok'; P.showExplain = false;
+  render(true);
+}
+function fail(msg){
+  const P = G.P; if (!P || P.done) return; P.done = true; clearInterval(timerT);
+  G.strikes++; G.missed[P.sk] = (G.missed[P.sk] || 0) + 1;
+  P.stamp = '↩️ RETURN TO SENDER'; P.fb = msg; P.fbKind = 'bad'; P.showExplain = true;
+  render(true);
+}
+function next(){
+  const el = document.getElementById('parcel');
+  const go = () => { G.i++; nextParcel(); };
+  if (el && !REDUCED) { el.classList.add('out'); setTimeout(go, 350); } else go();
+}
+
+/* drag to spin */
+let drag = null;
+app.addEventListener('pointerdown', e => { const el = e.target.closest('#parcel'); if (!el || !G?.P || SOLID3D.CURVED.includes(G.P.kind)) return; drag = {x:e.clientX, y:e.clientY}; el.setPointerCapture(e.pointerId); el.style.cursor = 'grabbing'; });
+app.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) < 3) return; drag = {x:e.clientX, y:e.clientY}; spin(dx * .012, dy * .012); });
+app.addEventListener('pointerup', () => { drag = null; const el = document.getElementById('parcel'); if (el) el.style.cursor = ''; });
+app.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.matches('[data-start]')) return newGame();
+  if (!G || G.done) return;
+  if (b.matches('[data-spin]')) { const [a, c] = b.dataset.spin.split(',').map(Number); return spin(a * .45, c * .3); }
+  if (b.matches('[data-choice]')) return tryAnswer(b.dataset.choice);
+  if (b.matches('[data-next]')) return next();
+});
+app.addEventListener('submit', e => {
+  e.preventDefault(); if (!G?.P || G.P.done) return;
+  const v = parseNum(document.getElementById('an').value);
+  if (!Number.isFinite(v)) { G.P.fb = 'Type a number, like 24, 7.5 or 7 1/2.'; G.P.fbKind = 'bad'; const fb = document.querySelector('.fb'); if (fb) { fb.textContent = G.P.fb; fb.className = 'fb bad'; } return; }
+  tryAnswer(v);
+});
+
+/* ---------- start and end ---------- */
+function intro(){
+  G = null;
+  app.innerHTML = `<h1>📮 Parcel Post</h1>
+    <p>It’s the holiday rush at the Pet Post Office! Get ${PARCELS} parcels onto the truck before it leaves.</p>
+    <div class="card"><h2>How to play</h2><ol class="how">
+      <li>Each parcel is a 3D shape. <b>Drag it to spin it</b> (or use the arrow buttons) and look at every side.</li>
+      <li>Do its job: 🔍 sort it by shape, 🏷️ count its faces, edges or vertices, 📦 find its volume, or 🎁 find how much paper wraps it.</li>
+      <li>You have 90 seconds and 2 tries for each parcel. A miss sends it back to the sender (❌).</li>
+      <li>3 ❌ and the truck leaves early. Finish with no ❌ for ⭐⭐⭐, one ❌ for ⭐⭐, two for ⭐.</li></ol>
+      <p class="muted" style="margin:0">Volume fills the inside: length × width × height. Surface area covers the outside: add the area of every face.</p>
+      ${FROM_POST ? '<p class="muted">Each parcel you deliver earns Pet World coins. Parcel Post doesn’t count toward Post Office orders or quizzes.</p>' : ''}</div>
+    <p style="margin-top:14px"><button type="button" class="btn go" data-start>🚚 Start the shift</button>${best ? ` <span class="muted">Best: ${'⭐'.repeat(best)}</span>` : ''}</p>`;
+}
+function finish(){
+  if (!G || G.done) return; G.done = true; clearInterval(timerT);
+  const stars = G.strikes >= STRIKES ? 0 : 3 - G.strikes, full = G.delivered >= PARCELS;
+  const result = {stars, delivered:G.delivered, strikes:G.strikes, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('parcel-post:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_POST) window.parent.postMessage({type:'parcel:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'parcel-post', runId:ARCADE_RUN, roundId:`shift-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>${full && stars ? '🚚 The truck is full!' : '📭 The truck left early'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${stars === 3 ? 'Every parcel delivered. Postmaster of the year!' : stars ? 'Nice shift! Can you deliver them all with no returns next time?' : 'Tough shift. Spin each parcel and look at every side, and you’ll get there!'}</p>
+    <div class="stats"><div><b>${G.delivered} of ${PARCELS}</b>parcels delivered</div><div><b>${G.strikes}</b>returned</div><div><b>${'⭐'.repeat(best) || '—'}</b>best${newBest && stars ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    <p><button type="button" class="btn go" data-start>Another shift</button></p>`;
+}
+window.__parcel = {JOBS, SOLID3D, get G(){ return G; }, mixed, parseNum};   // for tests
+intro();
+})();
+</script>
+</body>
+</html>

@@ -186,6 +186,8 @@ function normalize(raw){
       games:(Array.isArray(s.asteroids?.games) ? s.asteroids.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), blasted:Math.max(0, +g.blasted || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // ☄️ Shape Asteroids (docs/SHAPE-ASTEROIDS.md)
     s.battleship = {best:Math.max(0, Math.min(3, Math.round(+s.battleship?.best || 0))), day:typeof s.battleship?.day === 'string' ? s.battleship.day : '', coinsToday:Math.max(0, Math.round(+s.battleship?.coinsToday || 0)),
       games:(Array.isArray(s.battleship?.games) ? s.battleship.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, won:!!g.won, stars:Math.max(0, Math.min(3, +g.stars || 0)), sunk:Math.max(0, +g.sunk || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // ⚓ Harbor Battleship (docs/HARBOR-BATTLESHIP.md)
+    s.parcel = {best:Math.max(0, Math.min(3, Math.round(+s.parcel?.best || 0))), day:typeof s.parcel?.day === 'string' ? s.parcel.day : '', coinsToday:Math.max(0, Math.round(+s.parcel?.coinsToday || 0)),
+      games:(Array.isArray(s.parcel?.games) ? s.parcel.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), delivered:Math.max(0, +g.delivered || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 📮 Parcel Post (docs/PARCEL-POST.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -5149,14 +5151,156 @@ function netSVG(name){
 }
 const qt = r => RQ.txt(r);                                               // 5/2 → 2 1/2
 const HALVES = [RQ.of(1, 2), RQ.of(3, 2), RQ.of(5, 2), RQ.of(1, 4), RQ.of(3, 4), RQ.of(5, 4), [2, 1], [3, 1], [4, 1], RQ.of(7, 2)];
+/* ===== Pet Post Office (Khan unit 10): 3D shapes, volume, surface area. HOUSES2_GEN keeps its name; it was Pet Houses
+   part 2 until Oct 26, 2026, when Unit 10 got its own building. ===== */
+/* 3D solids drawn as SVG: polyhedra are turned (yaw around the vertical axis, then pitch toward her), projected
+   straight on, shaded by how much each face points at the light, with hidden edges dashed. Curved solids (cylinder,
+   cone, sphere) are drawn by hand. Shared by Pet Post Office problems and the Parcel Post game (docs/POST.md). */
+const SOLID3D = (() => {
+  const add = (a, b) => a.map((v, i) => v + b[i]);
+  const ngon = (n, r, rot = -Math.PI / 2) => Array.from({length:n}, (_, i) => { const a = rot + i * 2 * Math.PI / n; return [r * Math.cos(a), 0, r * Math.sin(a)]; });
+  const prism = (base, off) => { const n = base.length, V = [...base, ...base.map(p => add(p, off))], F = [[...Array(n).keys()], Array.from({length:n}, (_, i) => n + i)]; for (let i = 0; i < n; i++) F.push([i, (i + 1) % n, n + (i + 1) % n, n + i]); return {V, F}; };
+  const pyramid = (base, apex) => { const n = base.length, V = [...base, apex], F = [[...Array(n).keys()]]; for (let i = 0; i < n; i++) F.push([i, (i + 1) % n, n]); return {V, F}; };
+  const box = (l, w, h) => prism([[-l / 2, 0, -w / 2], [l / 2, 0, -w / 2], [l / 2, 0, w / 2], [-l / 2, 0, w / 2]], [0, h, 0]);
+  /* every solid; box(l, w, h) puts length along x, width going back (z), height up (y) */
+  const MAKE = {
+    'cube':(d = {}) => box(d.l || 1, d.l || 1, d.l || 1),
+    'rectangular prism':(d = {}) => box(d.l || 1.8, d.w || 1, d.h || 0.9),
+    'triangular prism':(d = {}) => { const b = d.b || 1.2, t = d.t || 1, len = d.len || 1.8, a = d.apex ?? b / 2; return prism([[-b / 2, 0, -len / 2], [b / 2, 0, -len / 2], [-b / 2 + a, t, -len / 2]], [0, 0, len]); },
+    'pentagonal prism':() => prism(ngon(5, .8), [0, 1, 0]),
+    'hexagonal prism':() => prism(ngon(6, .8), [0, 1, 0]),
+    'square pyramid':(d = {}) => { const s = d.s || 1.3; return pyramid([[-s / 2, 0, -s / 2], [s / 2, 0, -s / 2], [s / 2, 0, s / 2], [-s / 2, 0, s / 2]], [0, d.h || 1.1, 0]); },
+    'triangular pyramid':() => pyramid(ngon(3, .85), [0, 1.1, 0]),
+    'pentagonal pyramid':() => pyramid(ngon(5, .8), [0, 1.1, 0]),
+    'hexagonal pyramid':() => pyramid(ngon(6, .8), [0, 1.1, 0])
+  };
+  const CURVED = ['cylinder', 'cone', 'sphere'];
+  /* faces, edges and vertices (Euler: F + V − E = 2) */
+  function counts(kind){ const s = MAKE[kind](); const E = new Set(); s.F.forEach(f => f.forEach((a, i) => { const b = f[(i + 1) % f.length]; E.add(a < b ? `${a}-${b}` : `${b}-${a}`); })); return {faces:s.F.length, edges:E.size, vertices:s.V.length}; }
+  /* turn and project; returns screen points and which faces face her */
+  function view(kind, d, yaw, pitch){
+    const s = MAKE[kind](d), c = s.V.reduce((m, p) => add(m, p.map(v => v / s.V.length)), [0, 0, 0]);
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const P = s.V.map(p => { const [x0, y0, z0] = [p[0] - c[0], p[1] - c[1], p[2] - c[2]], x1 = x0 * cy + z0 * sy, z1 = -x0 * sy + z0 * cy, y2 = y0 * cp - z1 * sp, z2 = y0 * sp + z1 * cp; return [x1, y2, z2]; });
+    const faces = s.F.map(f => {
+      const [a, b, e] = [P[f[0]], P[f[1]], P[f[2]]], u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [e[0] - a[0], e[1] - a[1], e[2] - a[2]];
+      let n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]; const m = Math.hypot(...n) || 1; n = n.map(x => x / m);
+      const fc = f.reduce((q, i) => add(q, P[i].map(x => x / f.length)), [0, 0, 0]); if (n[0] * fc[0] + n[1] * fc[1] + n[2] * fc[2] < 0) n = n.map(x => -x);
+      return {f, n, z:fc[2], front:n[2] > 1e-6};
+    });
+    const edges = new Map(); faces.forEach((F, fi) => F.f.forEach((a, i) => { const b = F.f[(i + 1) % F.f.length], k = a < b ? `${a}-${b}` : `${b}-${a}`; const e = edges.get(k) || {a:Math.min(a, b), b:Math.max(a, b), faces:[]}; e.faces.push(fi); edges.set(k, e); }));
+    return {P, faces, edges:[...edges.values()].map(e => ({...e, front:e.faces.some(fi => faces[fi].front)}))};
+  }
+  /* the picture. opts: yaw, pitch (radians), size, d (dimensions), labels:[{edge:[a, b], text}] or [{from:[x,y,z]...}],
+     hiV (a vertex), hiE ([a, b]), hiF (a face index), slant:true draws a pyramid's slant height */
+  function svg(kind, opts = {}){
+    const W = opts.size || 240, H = opts.h || Math.round(W * .8), yaw = opts.yaw ?? .6, pitch = opts.pitch ?? .45;
+    if (CURVED.includes(kind)) return curved(kind, W, H, opts);
+    const v = view(kind, opts.d, yaw, pitch), xs = v.P.map(p => p[0]), ys = v.P.map(p => p[1]);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1, k = Math.min(W, H) * .62 / span;
+    const mx = (Math.max(...xs) + Math.min(...xs)) / 2, my = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const S = p => [W / 2 + (p[0] - mx) * k, H / 2 - (p[1] - my) * k], sp = v.P.map(S);
+    let g = '';
+    v.faces.map((F, i) => ({...F, i})).filter(F => F.front).sort((a, b) => a.z - b.z).forEach(F => {
+      const lit = Math.max(0, .35 * F.n[0] + .6 * F.n[1] + .7 * F.n[2]), shade = Math.round(78 - lit * 22);
+      g += `<polygon points="${F.f.map(i => sp[i].map(x => x.toFixed(1)).join(',')).join(' ')}" class="s3-face${opts.hiF === F.i ? ' s3-hi' : ''}" style="fill:hsl(${opts.hue ?? 38} 85% ${shade}%)"/>`;
+    });
+    v.edges.filter(e => !e.front).forEach(e => { const [a, b] = [sp[e.a], sp[e.b]]; g += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" class="s3-hid"/>`; });   // hidden edges show through, dashed
+    v.edges.filter(e => e.front).forEach(e => { const [a, b] = [sp[e.a], sp[e.b]], hi = opts.hiE && ((opts.hiE[0] === e.a && opts.hiE[1] === e.b) || (opts.hiE[0] === e.b && opts.hiE[1] === e.a)); g += `<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" class="${hi ? 's3-hiE' : 's3-edge'}"/>`; });
+    if (opts.hiV != null) { const p = sp[opts.hiV]; g += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="7" class="s3-hiV"/>`; }
+    const cx = W / 2, cyy = H / 2;
+    if (opts.slant && kind.includes('pyramid')) {   // a dashed slant height from the apex to the middle of the nearest base edge
+      const n = v.P.length - 1, apex = sp[n]; let bestE = null;
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n, z = (v.P[i][2] + v.P[j][2]) / 2; if (!bestE || z > bestE.z) bestE = {i, j, z}; }
+      const m = [(sp[bestE.i][0] + sp[bestE.j][0]) / 2, (sp[bestE.i][1] + sp[bestE.j][1]) / 2];
+      g += `<line x1="${apex[0].toFixed(1)}" y1="${apex[1].toFixed(1)}" x2="${m[0].toFixed(1)}" y2="${m[1].toFixed(1)}" class="s3-dash"/>`;
+      if (opts.slantText) g += lbl([(apex[0] + m[0]) / 2 + 6, (apex[1] + m[1]) / 2], opts.slantText, 'start');
+      opts.labels = (opts.labels || []).map(L => L.edge === 'base' ? {...L, edge:[bestE.i, bestE.j]} : L);
+    }
+    for (const L of opts.labels || []) {
+      let [a, b] = L.edge;
+      if (L.parallel) {   // of the front edges parallel to this one, label the one on the outline (farthest from the middle)
+        const dir = (i, j) => { const u = MAKE[kind](opts.d).V; return u[j].map((x, t) => x - u[i][t]); }, d0 = dir(a, b), par = v.edges.filter(e => { const d1 = dir(e.a, e.b), cr = [d0[1] * d1[2] - d0[2] * d1[1], d0[2] * d1[0] - d0[0] * d1[2], d0[0] * d1[1] - d0[1] * d1[0]]; return Math.hypot(...cr) < 1e-6 && e.front; });
+        if (par.length) { const out = e => Math.hypot((sp[e.a][0] + sp[e.b][0]) / 2 - cx, (sp[e.a][1] + sp[e.b][1]) / 2 - cyy), e = par.sort((p, q) => out(q) - out(p))[0]; a = e.a; b = e.b; }
+      }
+      const m = [(sp[a][0] + sp[b][0]) / 2, (sp[a][1] + sp[b][1]) / 2], dx = m[0] - cx, dy = m[1] - cyy, dd = Math.hypot(dx, dy) || 1;
+      g += lbl([m[0] + dx / dd * 18, m[1] + dy / dd * 16 + 5], L.text, Math.abs(dx) / dd > .4 ? (dx > 0 ? 'start' : 'end') : 'middle');
+    }
+    return `<svg class="s3" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${opts.aria || kind}">${g}</svg>`;
+  }
+  const lbl = ([x, y], t, anchor = 'middle') => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" class="s3-lbl">${t}</text>`;
+  function curved(kind, W, H, opts){
+    const cx = W / 2, r = Math.min(W, H) * .3, ry = r * .32; let g = '';
+    if (kind === 'sphere') g = `<circle cx="${cx}" cy="${H / 2}" r="${r * 1.15}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 70%)"/><path d="M ${cx - r * 1.15} ${H / 2} A ${r * 1.15} ${ry} 0 0 0 ${cx + r * 1.15} ${H / 2}" class="s3-edge" fill="none"/><path d="M ${cx - r * 1.15} ${H / 2} A ${r * 1.15} ${ry} 0 0 1 ${cx + r * 1.15} ${H / 2}" class="s3-hid" fill="none"/>`;
+    else if (kind === 'cylinder') { const t = H * .2, b = H * .78; g = `<path d="M ${cx - r} ${t} L ${cx - r} ${b} A ${r} ${ry} 0 0 0 ${cx + r} ${b} L ${cx + r} ${t}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 66%)"/><path d="M ${cx - r} ${b} A ${r} ${ry} 0 0 1 ${cx + r} ${b}" class="s3-hid" fill="none"/><ellipse cx="${cx}" cy="${t}" rx="${r}" ry="${ry}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 76%)"/>`; }
+    else { const t = H * .14, b = H * .8; g = `<path d="M ${cx - r} ${b} L ${cx} ${t} L ${cx + r} ${b} A ${r} ${ry} 0 0 1 ${cx - r} ${b}" class="s3-face" style="fill:hsl(${opts.hue ?? 38} 85% 68%)"/><path d="M ${cx - r} ${b} A ${r} ${ry} 0 0 1 ${cx + r} ${b}" class="s3-hid" fill="none"/>`; }
+    return `<svg class="s3" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="${opts.aria || kind}">${g}</svg>`;
+  }
+  return {MAKE, CURVED, counts, view, svg};
+})();
 const HOUSES2_GEN = {
-  /* ----- station 5: Toy Boxes (volume) ----- */
+  /* ----- station 1: Sorting Room (3D shapes; solidParts and solidId added Oct 26, 2026 for Khan unit 10) ----- */
+  /* identify parts of 3D shapes: faces, edges, vertices */
+  solidParts(lvl){
+    const POOL = lvl === 1 ? ['cube', 'rectangular prism', 'square pyramid', 'triangular prism'] : lvl === 2 ? ['triangular prism', 'square pyramid', 'triangular pyramid', 'pentagonal prism', 'rectangular prism'] : ['pentagonal prism', 'hexagonal prism', 'pentagonal pyramid', 'hexagonal pyramid', 'triangular prism'];
+    const kind = pick(POOL), C = SOLID3D.counts(kind), yaw = 0.3 + Math.random() * 1.2, pitch = 0.35 + Math.random() * 0.25;
+    const NAMES = {faces:'faces', edges:'edges', vertices:'vertices (corners)'};
+    const helper = 'Faces are the flat sides. Edges are where two faces meet. Vertices are the corners, where edges meet.';
+    if (lvl === 1 && Math.random() < 0.5) {   // which kind of part is marked?
+      const v = SOLID3D.view(kind, undefined, yaw, pitch), part = pick(['face', 'edge', 'vertex']);
+      const fe = v.edges.filter(e => e.front), ff = v.faces.map((F, i) => ({...F, i})).filter(F => F.front), vs = [...new Set(fe.flatMap(e => [e.a, e.b]))];
+      const mark = part === 'face' ? {hiF:pick(ff).i} : part === 'edge' ? (e => ({hiE:[e.a, e.b]}))(pick(fe)) : {hiV:pick(vs)};
+      return {title:'Sorting Room', ctx:`${kind} marked ${part}`, bubble:`This parcel is a ${kind}. What is the part marked in red?`, helper,
+        visual:SOLID3D.svg(kind, {yaw, pitch, ...mark}), steps:[{name:'The part', type:'concept', kind:'choice', prompt:'The red part is a…', options:choiceOf({text:part}, ['face', 'edge', 'vertex'].filter(t => t !== part).map(t => ({text:t, mis:'partsWrong'}))), hint:() => part === 'face' ? 'Is it a flat side?' : part === 'edge' ? 'Is it a line where two flat sides meet?' : 'Is it a corner point?'}]};
+    }
+    const asks = lvl === 1 ? [pick(['faces', 'vertices'])] : lvl === 2 ? [pick(['faces', 'edges', 'vertices'])] : ['edges', 'vertices'];
+    const mis = (ask) => v => v !== C[ask] && Object.values(C).includes(v) ? 'partsWrong' : null;
+    return {title:'Sorting Room', ctx:`${kind} ${asks.join('+')}`, bubble:`This parcel is a ${kind}. Count its ${asks.map(a => NAMES[a]).join(' and its ')}. The dashed lines are edges on the back.`, helper,
+      visual:SOLID3D.svg(kind, {yaw, pitch}),
+      steps:asks.map(a => numStep(a[0].toUpperCase() + a.slice(1), 'compute', `How many ${NAMES[a]}?`, C[a], {mis:mis(a), hint:() => a === 'faces' ? (kind.includes('pyramid') ? 'Count the base, then the triangles around it.' : 'Count the 2 bases, then the faces around the sides.') : a === 'edges' ? (kind.includes('pyramid') ? 'The edges around the base, plus one going up to the point from each corner.' : 'The edges around the top, around the bottom, and the ones going up.') : (kind.includes('pyramid') ? 'The corners of the base, plus the point on top.' : 'The corners on top plus the corners on the bottom.')})),
+      ...(asks.length > 1 ? {answerSteps:[1]} : {})};
+  },
+  /* identify geometric solids */
+  solidId(lvl){
+    if (lvl === 3) {   // from a description, no picture
+      const D = [['cube', '6 faces, and every face is a square'], ['rectangular prism', '6 rectangle faces, and they are not all squares'], ['triangular prism', '2 triangle bases and 3 rectangle faces'], ['pentagonal prism', '2 pentagon bases and 5 rectangle faces'], ['square pyramid', '1 square base and 4 triangle faces that meet at a point'], ['triangular pyramid', '4 faces, and every face is a triangle'], ['hexagonal pyramid', '1 hexagon base and 6 triangle faces'], ['cylinder', '2 circle bases and one curved surface'], ['cone', '1 circle base and a curved surface that comes to a point']];
+      const [kind, text] = pick(D), wrongs = shuffle(D.map(d => d[0]).filter(k => k !== kind && !(kind === 'cube' && k === 'rectangular prism'))).slice(0, 3);
+      return {title:'Sorting Room', ctx:`describe ${kind}`, bubble:`A label on a parcel says: “I have ${text}.” What shape is the parcel?`, helper:'Prisms have 2 matching bases joined by rectangles. Pyramids have 1 base and triangles that meet at a point. Cylinders and cones are curved.',
+        visual:'<div style="text-align:center; font-size:2rem">📦 🏷️</div>', steps:[{name:'Which shape', type:'concept', kind:'choice', prompt:'The parcel is a…', options:choiceOf({text:kind}, wrongs.map(t => ({text:t, mis:'solidWrong'}))), hint:() => 'How many bases? What shape are they? Do the sides come to a point?'}]};
+    }
+    const POOL = lvl === 1 ? ['cube', 'rectangular prism', 'cylinder', 'cone', 'sphere', 'square pyramid'] : ['triangular prism', 'pentagonal prism', 'hexagonal prism', 'square pyramid', 'triangular pyramid', 'pentagonal pyramid', 'hexagonal pyramid', 'rectangular prism'];
+    const kind = pick(POOL), base = kind.split(' ')[0], fam = kind.split(' ')[1];
+    const near = lvl === 2 ? [`${base} ${fam === 'prism' ? 'pyramid' : 'prism'}`, ...POOL.filter(k => k.endsWith(fam) && k !== kind)] : POOL;
+    const wrongs = shuffle([...new Set(near)].filter(k => k !== kind && !(kind === 'cube' && k === 'rectangular prism') && !(kind === 'rectangular prism' && k === 'cube'))).slice(0, 3);
+    return {title:'Sorting Room', ctx:`name ${kind}`, bubble:'Sort this parcel. What 3D shape is it?', helper:'Look at the base (or bases). Two matching bases: a prism. One base and a point on top: a pyramid.',
+      visual:SOLID3D.svg(kind, {yaw:0.3 + Math.random() * 1.2, pitch:0.4}), steps:[{name:'Which shape', type:'concept', kind:'choice', prompt:'The parcel is a…', options:choiceOf({text:kind}, wrongs.map(t => ({text:t, mis:'solidWrong'}))), hint:() => 'Count the sides of the base. Does it have a matching base on top, or a point?'}]};
+  },
+
+  /* ----- station 2: Packing Room (volume) ----- */
+  /* volume by multiplying the area of the base times the height (added Oct 26, 2026) */
+  volBaseHeight(lvl){
+    if (lvl === 2) {   // a triangular prism: the base is a triangle
+      const b = rand(2, 9), t = rand(2, 8), len = rand(3, 12), B2 = b * t;
+      return {title:'Packing Room', ctx:`tri prism ${b},${t} × ${len}`, bubble:`A tent-shaped parcel is a triangular prism. Its triangle base is ${b} in. across and ${t} in. tall, and the parcel is ${len} in. long. What is its volume?`, helper:'Volume = area of the base × height. Here the base is a triangle, and the “height” of the prism is its length.',
+        visual:SOLID3D.svg('triangular prism', {d:{b:b / 5, t:t / 5, len:len / 5}, yaw:0.7, pitch:0.35, labels:[{edge:[0, 1], text:`${b} in.`, parallel:true}, {edge:[0, 3], text:`${len} in.`, parallel:true}]}),
+        steps:[halfAreaStep('Base area', `½ × ${b} × ${t} = ? square inches`, B2, {mis:v => v === B2 ? 'halfWrong' : null}),
+          halfAreaStep('Volume', `${half(B2)} × ${len} = ? cubic inches`, B2 * len, {mis:v => v === B2 * len ? 'halfWrong' : null})], answerSteps:[1]};
+    }
+    const B = rand(lvl === 1 ? 4 : 6, lvl === 1 ? 30 : 48), h = rand(2, 12), V = B * h;
+    if (lvl === 3) return {title:'Packing Room', ctx:`V ${V} B ${B} find h`, bubble:`A box holds ${V} cubic inches. The area of its base is ${B} square inches. How tall is the box?`, helper:'Volume = base area × height, so height = volume ÷ base area.',
+      visual:SOLID3D.svg('rectangular prism', {yaw:0.6, pitch:0.45, labels:[{edge:[1, 5], text:'? in.', parallel:true}]}) + `<p style="text-align:center; margin:4px 0">Base area = ${B} square inches</p>`,
+      steps:[numStep('Height', 'compute', `${V} ÷ ${B} = ? inches`, h, {fact:fx(B, h, true), mis:v => v === V * B ? 'wrongOperation' : null})]};
+    return {title:'Packing Room', ctx:`B ${B} h ${h}`, bubble:`The bottom of a box has an area of ${B} square inches, and the box is ${h} in. tall. What is its volume?`, helper:'Volume = area of the base × height. Each layer of cubes covers the base; there are as many layers as the height.',
+      visual:SOLID3D.svg('rectangular prism', {yaw:0.6, pitch:0.45, labels:[{edge:[1, 5], text:`${h} in.`, parallel:true}]}) + `<p style="text-align:center; margin:4px 0">Base area = ${B} square inches</p>`,
+      steps:[numStep('Volume', 'compute', `${B} × ${h} = ? cubic inches`, V, {fact:fx(B, h), mis:v => v === B + h ? 'volumeAddWrong' : null})]};
+  },
+  /* (station 2, Packing Room, continued) */
   volPrism(lvl){
     const d = lvl === 1 ? [[rand(2, 9), 1], [rand(2, 9), 1], [rand(2, 6), 1]] : lvl === 2 ? [pick(HALVES.slice(0, 3)), [rand(2, 6), 1], [rand(2, 5), 1]] : [pick(HALVES), pick(HALVES), pick(HALVES)];
     const [l, w, h] = d, base = RQ.mul(l, w), V = RQ.mul(base, h);
     if (V[1] > 64) return HOUSES2_GEN.volPrism(lvl);
     const lw = [l[0] / l[1], w[0] / w[1], h[0] / h[1]];
-    return {title:'Toy Boxes', ctx:`box ${qt(l)} × ${qt(w)} × ${qt(h)}`, bubble:`A pet toy box is ${qt(l)} ft long, ${qt(w)} ft wide, and ${qt(h)} ft tall. What is its volume?`, helper:'Volume = length × width × height. Find the area of the bottom first.',
+    return {title:'Packing Room', ctx:`box ${qt(l)} × ${qt(w)} × ${qt(h)}`, bubble:`A pet toy box is ${qt(l)} ft long, ${qt(w)} ft wide, and ${qt(h)} ft tall. What is its volume?`, helper:'Volume = length × width × height. Find the area of the bottom first.',
       visual:boxSVG(`${qt(l)} ft`, `${qt(w)} ft`, `${qt(h)} ft`, {l:Math.max(1, lw[0]), w:Math.max(1, lw[1]), h:Math.max(1, lw[2])}),
       steps:[rqStep('Base area', `${qt(l)} × ${qt(w)} = ?`, base, {fact:l[1] === 1 && w[1] === 1 ? fx(l[0], w[0]) : undefined}),
         rqStep('Volume', `${qt(base)} × ${qt(h)} = ? cubic feet`, V, {simplest:true, mis:w2 => { const s = RQ.add(RQ.add(l, w), h); return w2[0] * s[1] === s[0] * w2[1] ? 'volumeAddWrong' : null; }}),
@@ -5166,71 +5310,129 @@ const HOUSES2_GEN = {
     const n = [rand(1, lvl === 1 ? 4 : 6), rand(1, 4), rand(1, lvl === 3 ? 5 : 3)], k = lvl === 3 ? pick([2, 4]) : 2;     // edges are n/k units, cubes are 1/k on a side
     if (n.every(x => x % k === 0)) n[0]++;
     const edges = n.map(x => RQ.of(x, k)), cubes = n[0] * n[1] * n[2], V = RQ.of(cubes, k * k * k);
-    return {title:'Toy Boxes', ctx:`cubes 1/${k} in ${edges.map(qt).join('×')}`, bubble:`A treat box is ${edges.map(e => qt(e)).join(' in. by ')} in. It is packed with cubes that are 1/${k} in. on each side. How many cubes fit? What is the volume?`,
+    return {title:'Packing Room', ctx:`cubes 1/${k} in ${edges.map(qt).join('×')}`, bubble:`A treat box is ${edges.map(e => qt(e)).join(' in. by ')} in. It is packed with cubes that are 1/${k} in. on each side. How many cubes fit? What is the volume?`,
       helper:`Each cube is 1/${k} × 1/${k} × 1/${k} = 1/${k * k * k} cubic inch.`, visual:boxSVG(`${qt(edges[0])} in.`, `${qt(edges[1])} in.`, `${qt(edges[2])} in.`, {l:n[0], w:n[1], h:n[2]}),
       steps:[numStep('Cubes along each edge', 'compute', `${n[0]} × ${n[1]} × ${n[2]} = ?`, cubes, {hint:() => `${qt(edges[0])} in. holds ${n[0]} cubes of 1/${k} in.`}),
         rqStep('Volume', `${cubes} × 1/${k * k * k} = ? cubic inches`, V, {simplest:true, mis:w => w[1] === 1 && w[0] === cubes ? 'fracVolumeWrong' : null})], answerSteps:[1]};
   },
   volWord(lvl){
+    if (lvl >= 2 && Math.random() < 0.4) {   // decimals (Khan: “fractions & decimals”): one side ends in .5 and another is even, so the answers are whole
+      const [, n0] = pick(LEMON_KIDS), l = rand(2, 6) + 0.5, w = 2 * rand(1, 3), h = rand(2, 5), base = l * w, V = base * h;
+      return {title:'Packing Room', ctx:`decimal ${l}×${w}×${h}`, bubble:`${n0} packs a crate for the pet store. It is ${l} m long, ${w} m wide and ${h} m tall. What is its volume?`, helper:'Volume = length × width × height. Multiply the decimal like a whole number, then place the decimal point.',
+        visual:boxSVG(`${l} m`, `${w} m`, `${h} m`, {l:3, w:2, h:2}),
+        steps:[numStep('Base area', 'compute', `${l} × ${w} = ? square meters`, base, {fact:fx(w, base / w)}), numStep('Volume', 'compute', `${base} × ${h} = ? cubic meters`, V, {fact:fx(base, h), mis:v => v === l + w + h ? 'volumeAddWrong' : null})], answerSteps:[1]};
+    }
     const [e, n] = pick(LEMON_KIDS), D = [RQ.of(3, 2), [2, 1], RQ.of(5, 2), [3, 1], RQ.of(7, 2), [4, 1]], H = [[1, 1], RQ.of(3, 2), [2, 1], RQ.of(5, 2), RQ.of(3, 4), RQ.of(5, 4)];
     const l = pick(D), w = pick(D.slice(0, 4)), h = pick(H), base = RQ.mul(l, w), V = RQ.mul(base, h);
     if (lvl === 3) {   // level 3: a second step that uses the volume
       const c = V[1] * rand(2, 6), cost = V[0] * c / V[1];
-      return {title:'Toy Boxes', ctx:`sand ${qt(l)}×${qt(w)}×${qt(h)} $${c}`, bubble:`${n} fills a sandbox for the dogs. It is ${qt(l)} ft long and ${qt(w)} ft wide, and the sand will be ${qt(h)} ft deep. Sand costs $${c} per cubic foot. How much will the sand cost?`, helper:'Find the volume of the sand first, then multiply by the price of one cubic foot.',
+      return {title:'Packing Room', ctx:`sand ${qt(l)}×${qt(w)}×${qt(h)} $${c}`, bubble:`${n} fills a sandbox for the dogs. It is ${qt(l)} ft long and ${qt(w)} ft wide, and the sand will be ${qt(h)} ft deep. Sand costs $${c} per cubic foot. How much will the sand cost?`, helper:'Find the volume of the sand first, then multiply by the price of one cubic foot.',
         visual:boxSVG(`${qt(l)} ft`, `${qt(w)} ft`, `${qt(h)} ft`, {l:3, w:2, h:2}),
         steps:[rqStep('Base area', `${qt(l)} × ${qt(w)} = ? square feet`, base), rqStep('Volume', `${qt(base)} × ${qt(h)} = ? cubic feet`, V, {simplest:true}),
           numStep('Cost', 'compute', `${qt(V)} × $${c} = ? dollars`, cost, {slowOK:true})], answerSteps:[2]};
     }
-    if (lvl === 1) return {title:'Toy Boxes', ctx:`fish tank ${qt(l)}×${qt(w)}×${qt(h)}`, bubble:`${n}'s fish tank is ${qt(l)} ft long, ${qt(w)} ft wide, and ${qt(h)} ft deep. How much water fills it?`, helper:'Volume = length × width × height.',
+    if (lvl === 1) return {title:'Packing Room', ctx:`fish tank ${qt(l)}×${qt(w)}×${qt(h)}`, bubble:`${n}'s fish tank is ${qt(l)} ft long, ${qt(w)} ft wide, and ${qt(h)} ft deep. How much water fills it?`, helper:'Volume = length × width × height.',
       visual:boxSVG(`${qt(l)} ft`, `${qt(w)} ft`, `${qt(h)} ft`, {l:3, w:2, h:2}), steps:[rqStep('Base area', `${qt(l)} × ${qt(w)} = ? square feet`, base), rqStep('Volume', `${qt(base)} × ${qt(h)} = ? cubic feet`, V, {simplest:true})], answerSteps:[1]};
-    return {title:'Toy Boxes', ctx:`V ${qt(V)} base ${qt(l)}×${qt(w)}`, bubble:`${n}'s hamster cage holds ${qt(V)} cubic feet. Its floor is ${qt(l)} ft by ${qt(w)} ft. How tall is it?`, helper:'Volume = base area × height, so height = volume ÷ base area.',
+    return {title:'Packing Room', ctx:`V ${qt(V)} base ${qt(l)}×${qt(w)}`, bubble:`${n}'s hamster cage holds ${qt(V)} cubic feet. Its floor is ${qt(l)} ft by ${qt(w)} ft. How tall is it?`, helper:'Volume = base area × height, so height = volume ÷ base area.',
       visual:boxSVG(`${qt(l)} ft`, `${qt(w)} ft`, '? ft', {l:3, w:2, h:2}),
       steps:[rqStep('Base area', `${qt(l)} × ${qt(w)} = ? square feet`, base), rqStep('Height', `${qt(V)} ÷ ${qt(base)} = ? feet`, h, {simplest:true, mis:w2 => { const p = RQ.mul(V, base); return w2[0] * p[1] === p[0] * w2[1] ? 'fracVolumeWrong' : null; }})], answerSteps:[1]};
   },
-  /* ----- station 6: Wrapping Paper (nets and surface area) ----- */
+  /* ----- station 3: Box Folding (nets and surface area) ----- */
   netsId(lvl){
     const names = Object.keys(NETS), right = pick(lvl === 1 ? ['cube', 'rectangular prism', 'square pyramid'] : names);
     if (lvl === 3) {   // level 3: the reverse question, pick the net that folds into a named solid
       const opts = shuffle([right, ...shuffle(names.filter(nm => nm !== right)).slice(0, 2)].map(nm => ({html:netSVG(nm), text:`net of ${nm}`, ok:nm === right, mis:nm === right ? null : 'netWrong'})));
-      return {title:'Wrapping Paper', ctx:`pick net ${right}`, bubble:`Which net folds up into a ${right}?`, helper:'Count the faces and look at their shapes: squares, rectangles, or triangles.', visual:'<div style="text-align:center; font-size:2rem">📦 ✂️</div>',
+      return {title:'Box Folding', ctx:`pick net ${right}`, bubble:`Which net folds up into a ${right}?`, helper:'Count the faces and look at their shapes: squares, rectangles, or triangles.', visual:'<div style="text-align:center; font-size:2rem">📦 ✂️</div>',
         steps:[{name:'Which net', type:'concept', kind:'choice', prompt:`Which net makes a ${right}?`, options:opts, hint:() => right.includes('pyramid') ? 'A pyramid has one base and triangles that meet at a point.' : right.includes('triangular') ? 'A triangular prism has two triangles and three rectangles.' : 'Count six faces.'}]};
     }
     const wrongs = shuffle(names.filter(nm => nm !== right)).slice(0, 3).map(nm => ({text:nm, mis:'netWrong'}));
-    return {title:'Wrapping Paper', ctx:`net of ${right}`, bubble:'Fold up this net. What shape does it make?', helper:'Count the faces and look at their shapes: squares, rectangles, or triangles.', visual:netSVG(right),
+    return {title:'Box Folding', ctx:`net of ${right}`, bubble:'Fold up this net. What shape does it make?', helper:'Count the faces and look at their shapes: squares, rectangles, or triangles.', visual:netSVG(right),
       steps:[{name:'Which shape', type:'concept', kind:'choice', prompt:'What 3D shape does the net make?', options:choiceOf({text:right}, wrongs), hint:() => right.includes('pyramid') ? 'Triangles meet at a point: a pyramid.' : right.includes('triangular') ? 'Two triangle ends and rectangles around the side.' : 'Six faces, all rectangles (or all squares).'}]};
   },
   surfaceArea(lvl){
     if (lvl === 3) {   // level 3: an open box, so only 5 faces
       const l = rand(3, 12), w = rand(2, 9), h = rand(2, 9), a = l * w, b = l * h, c = w * h, SA = a + 2 * b + 2 * c;
-      return {title:'Wrapping Paper', ctx:`open box ${l}×${w}×${h}`, bubble:`A toy bin is an open box with no lid. It is ${l} in. long, ${w} in. wide, and ${h} in. tall. How much fabric covers the outside, with no overlap?`, helper:'An open box has 5 faces: the bottom and 4 sides. There is no top.',
+      return {title:'Box Folding', ctx:`open box ${l}×${w}×${h}`, bubble:`A toy bin is an open box with no lid. It is ${l} in. long, ${w} in. wide, and ${h} in. tall. How much fabric covers the outside, with no overlap?`, helper:'An open box has 5 faces: the bottom and 4 sides. There is no top.',
         visual:boxSVG(`${l} in.`, `${w} in.`, `${h} in.`, {l, w, h}),
         steps:[numStep('Bottom only', 'compute', `${l} × ${w} = ?`, a, {fact:fx(l, w), mis:v => v === 2 * a ? 'surfaceMissingFaces' : null}), numStep('Front and back', 'compute', `2 × ${l} × ${h} = ?`, 2 * b, {mis:v => v === b ? 'surfaceMissingFaces' : null}),
           numStep('Left and right', 'compute', `2 × ${w} × ${h} = ?`, 2 * c, {mis:v => v === c ? 'surfaceMissingFaces' : null}),
           numStep('Surface area', 'compute', `${a} + ${2 * b} + ${2 * c} = ? square inches`, SA, {mis:v => v === SA + a ? 'surfaceMissingFaces' : v === l * w * h ? 'volumeAddWrong' : null})], answerSteps:[3]};
     }
     const l = rand(2, lvl === 1 ? 6 : 10), w = rand(2, 8), h = lvl === 1 ? w : rand(2, 9), a = l * w, b = l * h, c = w * h, SA = 2 * (a + b + c);
-    return {title:'Wrapping Paper', ctx:`SA ${l}×${w}×${h}`, bubble:`How much wrapping paper covers a gift box ${l} in. by ${w} in. by ${h} in., with no overlap?`, helper:'Surface area = the area of all 6 faces. Opposite faces match, so find 3 areas and double each.',
+    return {title:'Box Folding', ctx:`SA ${l}×${w}×${h}`, bubble:`How much wrapping paper covers a gift box ${l} in. by ${w} in. by ${h} in., with no overlap?`, helper:'Surface area = the area of all 6 faces. Opposite faces match, so find 3 areas and double each.',
       visual:boxSVG(`${l} in.`, `${w} in.`, `${h} in.`, {l, w, h}),
       steps:[numStep('Top and bottom', 'compute', `2 × ${l} × ${w} = ?`, 2 * a, {fact:fx(l, w), mis:v => v === a ? 'surfaceMissingFaces' : null}), numStep('Front and back', 'compute', `2 × ${l} × ${h} = ?`, 2 * b, {mis:v => v === b ? 'surfaceMissingFaces' : null}),
         numStep('Left and right', 'compute', `2 × ${w} × ${h} = ?`, 2 * c, {mis:v => v === c ? 'surfaceMissingFaces' : null}),
         numStep('Surface area', 'compute', `${2 * a} + ${2 * b} + ${2 * c} = ? square inches`, SA, {mis:v => v === a + b + c ? 'surfaceMissingFaces' : v === l * w * h ? 'volumeAddWrong' : null})], answerSteps:[3]};
   },
+  /* surface area (Khan's “Surface area”: prisms and pyramids; this was “Surface area of a square pyramid”) */
   surfacePyramid(lvl){
     const s = rand(2, lvl === 1 ? 6 : 12), t = rand(s, s + 8), base = s * s, tri2 = s * t;                 // t is the height of each triangle face
     if (lvl === 3) {   // level 3: then how many fabric pieces to buy (round up)
       const SA = base + 2 * tri2, F = pick([20, 25, 50]), pieces = Math.ceil(SA / F);
       if (SA % F === 0) return HOUSES2_GEN.surfacePyramid(lvl);
-      return {title:'Wrapping Paper', ctx:`pyramid ${s} slant ${t} fabric ${F}`, bubble:`A pet tent is a square pyramid with a floor. The square base is ${s} ft on each side, and each triangle face is ${t} ft tall. Tent fabric comes in pieces of ${F} square feet. How many pieces must you buy?`, helper:'1 square + 4 triangles. Then divide by the size of a piece, and round up so there is enough.',
+      return {title:'Wrapping Desk', ctx:`pyramid ${s} slant ${t} fabric ${F}`, bubble:`A pet tent is a square pyramid with a floor. The square base is ${s} ft on each side, and each triangle face is ${t} ft tall. Tent fabric comes in pieces of ${F} square feet. How many pieces must you buy?`, helper:'1 square + 4 triangles. Then divide by the size of a piece, and round up so there is enough.',
         visual:netSVG('square pyramid'),
         steps:[numStep('Square base', 'compute', `${s} × ${s} = ?`, base, {fact:fx(s, s)}), numStep('Four triangles', 'compute', `4 × ½ × ${s} × ${t} = ?`, 2 * tri2, {mis:v => v === tri2 || v === 4 * tri2 ? 'halfWrong' : null}),
           numStep('Surface area', 'compute', `${base} + ${2 * tri2} = ? square feet`, SA, {mis:v => v === 2 * tri2 ? 'surfaceMissingFaces' : null}),
           numStep('Pieces', 'compute', `${SA} ÷ ${F}, rounded up = ? pieces`, pieces, {hint:() => `${F * (pieces - 1)} square feet is not enough. ${F * pieces} is.`})], answerSteps:[3]};
     }
-    return {title:'Wrapping Paper', ctx:`pyramid ${s} slant ${t}`, bubble:`A pet tent is a square pyramid. The square base is ${s} ft on each side, and each triangle face is ${t} ft tall. What is the surface area, including the floor?`, helper:'1 square + 4 triangles. Each triangle is ½ × base × height.',
+    return {title:'Wrapping Desk', ctx:`pyramid ${s} slant ${t}`, bubble:`A pet tent is a square pyramid. The square base is ${s} ft on each side, and each triangle face is ${t} ft tall. What is the surface area, including the floor?`, helper:'1 square + 4 triangles. Each triangle is ½ × base × height.',
       visual:netSVG('square pyramid'),
       steps:[numStep('Square base', 'compute', `${s} × ${s} = ?`, base, {fact:fx(s, s)}), halfAreaStep('One triangle', `½ × ${s} × ${t} = ?`, tri2, {mis:v => v === tri2 ? 'halfWrong' : null}),
         numStep('Four triangles', 'compute', `4 × ${half(tri2)} = ?`, 2 * tri2, {mis:v => v * 2 === tri2 ? 'surfaceMissingFaces' : null}),
         numStep('Surface area', 'compute', `${base} + ${2 * tri2} = ? square feet`, base + 2 * tri2, {mis:v => v === 2 * tri2 ? 'surfaceMissingFaces' : v === base + tri2 ? 'surfaceMissingFaces' : null})], answerSteps:[3]};
+  },
+  /* ----- station 4: Wrapping Desk (surface area; saExpr and saWord added Oct 26, 2026) ----- */
+  /* expressions to find surface area */
+  saExpr(lvl){
+    if (lvl === 1) {
+      const l = rand(3, 9), w = rand(2, 7), h = rand(2, 6);
+      const right = `2(${l} × ${w}) + 2(${l} × ${h}) + 2(${w} × ${h})`, wrongs = [{text:`${l} × ${w} + ${l} × ${h} + ${w} × ${h}`, mis:'surfaceMissingFaces'}, {text:`${l} × ${w} × ${h}`, mis:'volumeAddWrong'}, {text:`2(${l} + ${w} + ${h})`, mis:'volumeAddWrong'}];
+      return {title:'Wrapping Desk', ctx:`SA expr box ${l}×${w}×${h}`, bubble:`Which expression gives the surface area of a box ${l} cm long, ${w} cm wide and ${h} cm tall?`, helper:'A box has 6 faces in 3 matching pairs: top and bottom, front and back, left and right.',
+        visual:SOLID3D.svg('rectangular prism', {d:{l:l / 4, w:w / 4, h:h / 4}, labels:[{edge:[0, 1], text:`${l} cm`, parallel:true}, {edge:[1, 2], text:`${w} cm`, parallel:true}, {edge:[1, 5], text:`${h} cm`, parallel:true}]}),
+        steps:[{name:'Expression', type:'concept', kind:'choice', prompt:'Surface area =', options:choiceOf({text:right}, wrongs), hint:() => 'Count the faces: there are 6, so you need 3 pairs.'}]};
+    }
+    if (lvl === 2) {
+      const sd = rand(2, 8), t = rand(sd, sd + 6), val = sd * sd + 2 * sd * t;
+      const right = `${sd} × ${sd} + 4(½ × ${sd} × ${t})`, wrongs = [{text:`4(½ × ${sd} × ${t})`, mis:'surfaceMissingFaces'}, {text:`${sd} × ${sd} + 4(${sd} × ${t})`, mis:'halfWrong'}, {text:`${sd} × ${sd} + ½ × ${sd} × ${t}`, mis:'surfaceMissingFaces'}];
+      return {title:'Wrapping Desk', ctx:`SA expr pyramid ${sd} ${t}`, bubble:`A square pyramid has a base ${sd} in. on each side, and each triangle face is ${t} in. tall. Which expression gives its surface area? Then find it.`, helper:'1 square base + 4 triangles. Each triangle is ½ × base × height.',
+        visual:SOLID3D.svg('square pyramid', {slant:true, slantText:`${t} in.`, labels:[{edge:'base', text:`${sd} in.`}]}),
+        steps:[{name:'Expression', type:'concept', kind:'choice', prompt:'Surface area =', options:choiceOf({text:right}, wrongs), hint:() => 'Don’t forget the square on the bottom, and the ½ for each triangle.'},
+          numStep('Surface area', 'compute', `${right} = ? square inches`, val, {mis:v => v === 2 * sd * t ? 'surfaceMissingFaces' : v === sd * sd + 4 * sd * t ? 'halfWrong' : null})], answerSteps:[1]};
+    }
+    const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13]]), L = rand(4, 12), val = a * b + (a + b + c) * L;
+    const right = `2(½ × ${a} × ${b}) + ${a} × ${L} + ${b} × ${L} + ${c} × ${L}`;
+    const wrongs = [{text:`½ × ${a} × ${b} + ${a} × ${L} + ${b} × ${L} + ${c} × ${L}`, mis:'surfaceMissingFaces'}, {text:`2(${a} × ${b}) + ${a} × ${L} + ${b} × ${L} + ${c} × ${L}`, mis:'halfWrong'}, {text:`2(½ × ${a} × ${b}) + ${a} × ${L} + ${b} × ${L}`, mis:'surfaceMissingFaces'}];
+    return {title:'Wrapping Desk', ctx:`SA expr tri prism ${a},${b},${c} × ${L}`, bubble:`A triangular prism is ${L} ft long. Its ends are right triangles with sides ${a} ft, ${b} ft and ${c} ft. Which expression gives its surface area? Then find it.`, helper:'2 triangle ends + 3 rectangles. Each rectangle is one side of the triangle × the length.',
+      visual:SOLID3D.svg('triangular prism', {d:{b:b / 4, t:a / 4, len:L / 4, apex:0}, yaw:0.7, pitch:0.35, labels:[{edge:[0, 3], text:`${L} ft`, parallel:true}]}),
+      steps:[{name:'Expression', type:'concept', kind:'choice', prompt:'Surface area =', options:choiceOf({text:right}, wrongs), hint:() => 'There are 5 faces: 2 triangles and 3 rectangles.'},
+        numStep('Surface area', 'compute', `${right} = ? square feet`, val, {mis:v => v === val - a * b / 2 ? 'surfaceMissingFaces' : v === val + a * b ? 'halfWrong' : null})], answerSteps:[1]};
+  },
+  /* surface area word problems */
+  saWord(lvl){
+    const [e, n] = pick(LEMON_KIDS);
+    if (lvl === 1) {
+      const s = rand(2, 12);
+      return {title:'Wrapping Desk', ctx:`cube ${s}`, bubble:`${n} wraps a gift box shaped like a cube. Each edge is ${s} in. How much wrapping paper covers it, with no overlap?`, helper:'A cube has 6 faces, and every face is the same square.',
+        visual:SOLID3D.svg('cube', {labels:[{edge:[0, 1], text:`${s} in.`, parallel:true}]}),
+        steps:[numStep('One face', 'compute', `${s} × ${s} = ?`, s * s, {fact:fx(s, s)}), numStep('Six faces', 'compute', `6 × ${s * s} = ? square inches`, 6 * s * s, {fact:fx(6, s * s), mis:v => v === s * s * s ? 'volumeAddWrong' : v === 4 * s * s ? 'surfaceMissingFaces' : null})], answerSteps:[1]};
+    }
+    if (lvl === 2) {   // paint everything but the bottom
+      const l = rand(3, 8), w = rand(2, 6), h = rand(2, 6), top = l * w, fb = 2 * l * h, lr = 2 * w * h, ans = top + fb + lr;
+      return {title:'Wrapping Desk', ctx:`paint no bottom ${l}×${w}×${h}`, bubble:`${n} paints a toy chest that is ${l} ft long, ${w} ft wide and ${h} ft tall. The bottom sits on the floor and doesn’t get painted. How many square feet get paint?`, helper:'Paint the top, the front and back, and the two ends: 5 faces.',
+        visual:SOLID3D.svg('rectangular prism', {d:{l:l / 4, w:w / 4, h:h / 4}, labels:[{edge:[0, 1], text:`${l} ft`, parallel:true}, {edge:[1, 2], text:`${w} ft`, parallel:true}, {edge:[1, 5], text:`${h} ft`, parallel:true}]}),
+        steps:[numStep('Top', 'compute', `${l} × ${w} = ?`, top, {fact:fx(l, w)}), numStep('Front and back', 'compute', `2 × ${l} × ${h} = ?`, fb, {mis:v => v === l * h ? 'surfaceMissingFaces' : null}), numStep('The two ends', 'compute', `2 × ${w} × ${h} = ?`, lr, {mis:v => v === w * h ? 'surfaceMissingFaces' : null}),
+          numStep('Paint', 'compute', `${top} + ${fb} + ${lr} = ? square feet`, ans, {mis:v => v === ans + top ? 'surfaceMissingFaces' : v === l * w * h ? 'volumeAddWrong' : null})], answerSteps:[3]};
+    }
+    // level 3: which box needs more paper, and how much more?
+    const box = () => { const l = rand(2, 9), w = rand(2, 7), h = rand(2, 6); return {l, w, h, SA:2 * (l * w + l * h + w * h)}; };
+    let A = box(), B = box(); while (A.SA === B.SA) B = box();
+    return {title:'Wrapping Desk', ctx:`compare ${A.SA} ${B.SA}`, bubble:`Box A is ${A.l} × ${A.w} × ${A.h} in. and box B is ${B.l} × ${B.w} × ${B.h} in. One box needs more wrapping paper than the other. How much more?`, helper:'Find each surface area (3 pairs of faces), then subtract.',
+      visual:`<div style="display:flex; gap:6px; justify-content:center; align-items:flex-end">${SOLID3D.svg('rectangular prism', {size:150, d:{l:A.l / 4, w:A.w / 4, h:A.h / 4}, aria:'box A'})}${SOLID3D.svg('rectangular prism', {size:150, d:{l:B.l / 4, w:B.w / 4, h:B.h / 4}, hue:200, aria:'box B'})}</div>`,
+      steps:[numStep('Box A', 'compute', `2(${A.l} × ${A.w}) + 2(${A.l} × ${A.h}) + 2(${A.w} × ${A.h}) = ?`, A.SA, {mis:v => v === A.SA / 2 ? 'surfaceMissingFaces' : v === A.l * A.w * A.h ? 'volumeAddWrong' : null}),
+        numStep('Box B', 'compute', `2(${B.l} × ${B.w}) + 2(${B.l} × ${B.h}) + 2(${B.w} × ${B.h}) = ?`, B.SA, {mis:v => v === B.SA / 2 ? 'surfaceMissingFaces' : v === B.l * B.w * B.h ? 'volumeAddWrong' : null}),
+        numStep('How much more', 'compute', `${Math.max(A.SA, B.SA)} − ${Math.min(A.SA, B.SA)} = ? square inches`, Math.abs(A.SA - B.SA), {})], answerSteps:[2]};
   }
 };
 Object.assign(GEN, HOUSES2_GEN);
@@ -5783,6 +5985,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
+  else if (run.gameId === 'parcel-post') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/PARCEL-POST.md)
   else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
   else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
   else if (run.gameId === 'potion-detective') earned = Math.max(0, Math.min(3, score));   // 1 ticket per case solved, up to 3 (docs/POTION-DETECTIVE.md)
@@ -7642,6 +7845,42 @@ window.addEventListener('message', e => {
   save();
   toast(`⚓ ${won ? 'The harbor is yours!' : 'The pirates won this one.'}${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= BATTLESHIP_COINS_PER_DAY ? ' (Today’s battleship coins are all earned.)' : ''}`);
 });
+/* ---------- 📮 Parcel Post (public/arcade/parcel-post, docs/PARCEL-POST.md) ----------
+   A shift of 10 parcels, each a 3D shape she can spin: sort it by shape, count its faces, edges or vertices, find its
+   volume, or find the paper that wraps it. Opened from the Wrapping Desk (the last Pet Post Office station) and also an
+   Arcade game. Played from the Post Office it pays Pet World coins: 1 per parcel delivered, up to PARCEL_COINS_PER_DAY a
+   day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const PARCEL_COINS_PER_DAY = 20;
+function parcelButtonHTML(){
+  const best = S.parcel?.best || 0;
+  return `<button type="button" class="btn" data-parcel>📮 Parcel Post${best ? ` · best ${'⭐'.repeat(best)}` : ''}</button>`;
+}
+function openParcel(){
+  if ($('#parcelWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'parcelWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Parcel Post');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">📮 Parcel Post</b><button type="button" class="btn small" data-parcel-close>Done</button></div><iframe src="/arcade/parcel-post/?from=post" title="Parcel Post"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-parcel-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('post'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#parcelWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'parcel:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), delivered = Math.max(0, Math.min(10, Math.round(+r.delivered || 0)));
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.parcel, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), stars, delivered, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, PARCEL_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'parcel', s:right, n:tries, title:`${delivered} of 10 parcels delivered${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`📮 ${delivered} of 10 parcels delivered!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= PARCEL_COINS_PER_DAY ? ' (Today’s Parcel Post coins are all earned.)' : ''}`);
+});
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
    every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
@@ -9245,7 +9484,8 @@ const MATH_KHAN_UNITS = {
   rink:[['Negative numbers', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-negative-number-topic`]],
   potion:[['Variables and expressions', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-expressions-and-variables`]],
   fair:[['Equations and inequalities', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-equations-and-inequalities`]],
-  houses:[['Plane figures', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-plane-figures`], ['Volume and surface area', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-geometry-topic`]],
+  houses:[['Plane figures', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:cc-6th-plane-figures`]],
+  post:[['Volume and surface area', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-geometry-topic`]],
   harbor:[['Coordinate plane', `${KHAN_MATH}cc-sixth-grade-math/x0267d782:coordinate-plane`]],
   show:[['Data and statistics', `${KHAN_MATH}cc-sixth-grade-math/cc-6th-data-statistics`]]
 };
@@ -10903,7 +11143,7 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}${open && config.id === 'post' && st.id === 4 ? parcelButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -10913,6 +11153,7 @@ $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-penguin]')) { openPenguin(); return; }
   if (e.target.closest('[data-asteroids]')) { openAsteroids(); return; }
   if (e.target.closest('[data-battleship]')) { openBattleship(); return; }
+  if (e.target.closest('[data-parcel]')) { openParcel(); return; }
   if (e.target.closest('[data-detective]')) { openDetective(); return; }
   if (e.target.closest('[data-carnival]')) { openCarnival(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
@@ -12512,6 +12753,7 @@ function placeOnScreen(){
   if ($('#penguinWrap')) return 'penguin';
   if ($('#asteroidsWrap')) return 'asteroids';
   if ($('#battleshipWrap')) return 'battleship';
+  if ($('#parcelWrap')) return 'parcel';
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -12549,6 +12791,7 @@ function placeLabel(key){
   if (kind === 'penguin') return '🐧 Penguin Push';
   if (kind === 'asteroids') return '☄️ Shape Asteroids';
   if (kind === 'battleship') return '⚓ Harbor Battleship';
+  if (kind === 'parcel') return '📮 Parcel Post';
   if (kind === 'detective') return '🔍 Potion Detective';
   if (kind === 'carnival') return '🎪 Carnival Midway';
   if (kind === 'bible') return '✝️ Bible';
@@ -12575,6 +12818,7 @@ function eventText(e){
   if (e.k === 'penguin') return `🐧 Penguin Push: ${e.title}`;
   if (e.k === 'asteroids') return `☄️ Shape Asteroids: ${e.title}`;
   if (e.k === 'battleship') return `⚓ Harbor Battleship: ${e.title}`;
+  if (e.k === 'parcel') return `📮 Parcel Post: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
@@ -12667,6 +12911,7 @@ function subjectOnScreen(){
   if ($('#penguinWrap')) return 'math';   // Penguin Push is Ice Rink practice
   if ($('#asteroidsWrap')) return 'math';   // Shape Asteroids is Pet Houses practice
   if ($('#battleshipWrap')) return 'math';   // Harbor Battleship is Pet Harbor practice
+  if ($('#parcelWrap')) return 'math';   // Parcel Post is Pet Post Office practice
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

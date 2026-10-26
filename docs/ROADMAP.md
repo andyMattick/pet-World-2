@@ -186,6 +186,8 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F54. ☄️ Shape Asteroids: tap a shape asteroid to freeze space and solve it in a minute; in Pet Houses (Rooms) and the Arcade. See `SHAPE-ASTEROIDS.md`
 - [x] F55. ⚓ Pet Harbor: Khan Unit 9 (the coordinate plane) gets its own building, with 2 new skills (`polyDraw`, `quadCoord`). Pet Houses keeps Units 8 and 10. See `HARBOR.md`
 - [x] F56. ⚓ Harbor Battleship: battleship on a coordinate plane; in Pet Harbor (Shipyard) and the Arcade. See `HARBOR-BATTLESHIP.md`
+- [x] F57. 📮 Pet Post Office: Khan Unit 10 (volume and surface area) gets its own building, with 5 new skills and 3D shape pictures (`SOLID3D`). Pet Houses is Unit 8 only. See `POST.md`
+- [x] F58. 📮 Parcel Post: spin 3D parcels to sort, count, pack and wrap them; in the Post Office (Wrapping Desk) and the Arcade. See `PARCEL-POST.md`
 
 ## Database files, in the order they were run
 
