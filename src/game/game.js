@@ -171,6 +171,8 @@ function normalize(raw){
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
       games:(Array.isArray(s.chefRush?.games) ? s.chefRush.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, served:Math.max(0, +g.served || 0), perfect:Math.max(0, +g.perfect || 0), level:Math.max(1, +g.level || 1), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🍳 Chef's Rush (docs/CHEFS-RUSH.md)
+    s.surgery = {best:Math.max(0, Math.round(+s.surgery?.best || 0)), day:typeof s.surgery?.day === 'string' ? s.surgery.day : '', coinsToday:Math.max(0, Math.round(+s.surgery?.coinsToday || 0)),
+      games:(Array.isArray(s.surgery?.games) ? s.surgery.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, healed:Math.max(0, +g.healed || 0), perfect:Math.max(0, +g.perfect || 0), steps:Math.max(0, +g.steps || 0), right:Math.max(0, +g.right || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🩺 Dr. Paws' Surgery Center (docs/PET-SURGERY.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
     s.scribe = {done:(Array.isArray(s.scribe?.done) ? s.scribe.done : []).filter(id => SCRIBE_SYSTEMS.some(x => x.id === id))};   // Scribe School (F12)
@@ -5246,6 +5248,7 @@ function arcadeModuleMessage(event){
     earned = Math.floor(run.highestScore / policy.corsairPointsPerTicket) - oldMilestones;
   } else if (run.gameId === 'whack-a-mole') earned = policy.whackTicketsPerRound;
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
+  else if (run.gameId === 'pet-surgery') earned = Math.min(3, Math.floor(score / 3));   // 1 ticket per 3 patients healed, up to 3 a shift (docs/PET-SURGERY.md)
   else if (run.gameId === 'mine-walker' && data.mode === 'endless') earned = Math.floor(score / policy.mineRowsPerTicket);
   else if (run.gameId === 'mine-walker') {
     // Each reward (a level clear or a medal, e.g. 'L3-flawless_run') pays once, ever. Rewards that don't fit under
@@ -6850,6 +6853,41 @@ window.addEventListener('message', e => {
   logEvent({k:'chef', s:served, title:`${served} orders served, ${perfect} perfect${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🍳 ${served} order${served === 1 ? '' : 's'} served!${newBest && served ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= CHEF_COINS_PER_DAY ? ' (Today’s Chef’s Rush coins are all earned.)' : ''}`);
+});
+/* ---------- 🩺 Dr. Paws' Surgery Center (public/arcade/pet-surgery, docs/PET-SURGERY.md) ----------
+   Chained decimal, fraction and long-division steps with every Bakery operation, opened from the Bulk Orders station
+   (and also an Arcade game). Played from the Bakery it pays Pet World coins: 1 per step done right, up to
+   SURGERY_COINS_PER_DAY a day. It never counts toward station orders, skill mastery, quizzes or unlocks. */
+const SURGERY_COINS_PER_DAY = 20;
+function surgeryButtonHTML(){
+  const best = S.surgery?.best || 0;
+  return `<button type="button" class="btn" data-surgery>🩺 Dr. Paws’ Surgery${best ? ` · best ${best}` : ''}</button>`;
+}
+function openSurgery(){
+  if ($('#surgeryWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'surgeryWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Dr. Paws’ Surgery Center');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🩺 Dr. Paws’ Surgery Center</b><button type="button" class="btn small" data-surgery-close>Done</button></div><iframe src="/arcade/pet-surgery/?from=bakery" title="Dr. Paws’ Surgery Center"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-surgery-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-cafe').hidden) renderShopFloor('bakery'); });
+}
+window.addEventListener('message', e => {
+  const frame = $('#surgeryWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'surgery:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, healed = Math.max(0, Math.min(200, Math.round(+r.healed || 0))), perfect = Math.max(0, Math.min(healed, Math.round(+r.perfect || 0)));
+  const steps = Math.max(0, Math.min(1000, Math.round(+r.steps || 0))), right = Math.max(0, Math.min(steps, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.surgery, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = healed > c.best;
+  c.games = [...c.games, {t:Date.now(), healed, perfect, steps, right, missed}].slice(-30);
+  if (newBest) c.best = healed;
+  const coins = Math.min(right, Math.max(0, SURGERY_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => SKILLS[k]?.short || k).join(', ');
+  logEvent({k:'surgery', s:healed, title:`${healed} patients healed, ${right} of ${steps} steps right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🩺 ${healed} patient${healed === 1 ? '' : 's'} healed!${newBest && healed ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= SURGERY_COINS_PER_DAY ? ' (Today’s surgery coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10052,11 +10090,12 @@ function renderShopFloor(shop){
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}</div>`;
+      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
   if (e.target.closest('[data-chef-rush]')) { openChefRush(); return; }
+  if (e.target.closest('[data-surgery]')) { openSurgery(); return; }
   const think = e.target.closest('[data-think]'); if (think) { startThink(think.dataset.think); return; }
   const unitTest = e.target.closest('[data-unit-test]');
   if (unitTest && !unitTest.disabled) { void gatedUnitTest(unitTest.dataset.shop); return; }
@@ -11649,6 +11688,7 @@ function placeOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'recall';
   if ($('#chefRushWrap')) return 'chef';
+  if ($('#surgeryWrap')) return 'surgery';
   if ($('#bibleWrap')) return 'bible';
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : 'shops';
   if (on('sprint') || on('summary')) return 'sprint';
@@ -11679,6 +11719,7 @@ function placeLabel(key){
   if (kind === 'sim') return `🧪 ${simById(a)?.name || 'Science lab'}`;
   if (kind === 'recall') return '🔗 Name all 48 prepositions';
   if (kind === 'chef') return '🍳 Chef’s Rush';
+  if (kind === 'surgery') return '🩺 Dr. Paws’ Surgery Center';
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
@@ -11698,6 +11739,7 @@ function eventText(e){
   if (e.k === 'help') return `✋ Asked a question in ${e.title}: “${e.q || ''}”`;
   if (e.k === 'recall') return `🔗 Prep test: ${e.title}`;
   if (e.k === 'chef') return `🍳 Chef’s Rush: ${e.title}`;
+  if (e.k === 'surgery') return `🩺 Dr. Paws’ Surgery: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
@@ -11783,6 +11825,7 @@ function subjectOnScreen(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if ($('#prepRecallWrap')) return 'english';
   if ($('#chefRushWrap')) return 'math';   // Chef's Rush is Café practice
+  if ($('#surgeryWrap')) return 'math';   // the surgery game is Bakery practice
   if ($('#bibleWrap')) return 'bible';
   if (on('sprint')) return 'facts';   // Fact Sprint time is its own, so slow times tables don't use up the math minutes
   if (on('cafe') || on('shift') || on('summary')) return 'math';

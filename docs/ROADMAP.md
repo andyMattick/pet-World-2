@@ -169,6 +169,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F37. 🔗 English Unit 5 at the Link Library (Prepositions and interjections): 8 lessons with a challenge lesson, 2 quizzes, a 16-question test and essay, review flashcards, three games (Pet Hide-and-Seek, Cross It Out, Comic Strip Studio, plus Link Library Master), and three projects off the screen (a treasure hunt at home, prepositions in her own book, a hand-drawn comic). See `ENGLISH-UNIT5.md`
 - [x] F38. 🔗 The preposition recall game: a daily Today's plan item while she is in English Unit 5, an Arcade game the rest of the time. ✏️ Spelling patterns: “Add to focus and practice” works again and adds new words to the class list and the focus words. See `ENGLISH-UNIT5.md`, `VOCAB.md`
 - [x] F39. 🦸 English Unit 6 at the Superhero Factory (Punctuation: end marks, commas, apostrophes; Khan Grammar): 13 lessons in 5 blocks with 5 quizzes, a 13-question test and paragraph, review flashcards, and the ⚡ Punctuation Power Lab (5 packs of 6 missions where the hero changes with the punctuation, plus Factory Hero). See `ENGLISH-UNIT6.md`
+- [x] F40. 🩺 Dr. Paws' Surgery Center: a Bakery game at Bulk Orders (and in the Arcade) with 3-step charts of decimals, fractions and long division, where each step uses the answer before it. Pays 1 coin a right step, up to 20 a day. See `PET-SURGERY.md`
 
 ## Database files, in the order they were run
 

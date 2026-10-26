@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dr. Paws’ Surgery Center</title>
+<!-- Pet World: served at /arcade/pet-surgery/ (docs/PET-SURGERY.md). Played from the Bakery's Bulk Orders station
+     (?from=bakery, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Math: every Pet World
+     Bakery skill (Khan 6th grade unit 2). It never counts toward station orders, skill mastery, quizzes or unlocks. -->
+<style>
+  :root{
+    --bg:#EEF7F6; --card:#FFFFFF; --ink:#1E2B2A; --muted:#5D6F6D; --edge:#C9DEDB; --accent:#148F86; --accent-ink:#FFFFFF;
+    --ok:#2E8B57; --bad:#C8372D; --warn:#E8A33A; --slot:#E2F1EF; --mon:#0D1B1A; --beat:#41E07A;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#101A19; --card:#182625; --ink:#E6F2F0; --muted:#9DB5B2; --edge:#2B403E; --accent:#3CC3B7; --accent-ink:#0D1B1A;
+      --ok:#5CC98A; --bad:#F06B60; --warn:#F2B957; --slot:#1F3230; --mon:#050B0B; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; min-height:100%}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:820px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.8em; margin:6px 0 4px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:600}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .stats{display:flex; gap:10px; flex-wrap:wrap; margin:12px 0}
+  .stats div{flex:1 1 120px; background:var(--slot); border-radius:12px; padding:10px; text-align:center}
+  .stats b{display:block; font-size:1.6em}
+  .top{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .pill{background:var(--slot); border-radius:999px; padding:3px 10px; font-weight:600}
+  /* the operating table */
+  .table{position:relative; display:grid; grid-template-columns:minmax(0,1fr) 130px; gap:12px; align-items:center}
+  .patient{position:relative; height:150px; border-radius:18px; background:repeating-linear-gradient(90deg, #DCEFEA 0 20px, #D2E9E3 20px 40px); border:3px solid var(--edge); overflow:hidden}
+  @media (prefers-color-scheme: dark){ .patient{background:repeating-linear-gradient(90deg, #1C2E2C 0 20px, #182927 20px 40px)} }
+  .pet{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:70px; line-height:1}
+  .ail{position:absolute; font-size:30px; transition:transform .5s, opacity .5s}
+  .ail.fixed{transform:translateY(-90px) scale(1.4) rotate(20deg); opacity:0}
+  .ail.now{animation:pulse 1s infinite}
+  @keyframes pulse{50%{transform:scale(1.25)}}
+  .zap{animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+  @media (prefers-reduced-motion: reduce){ .ail.now, .zap{animation:none} .ail{transition:none} }
+  .monitor{width:130px; background:var(--mon); color:var(--beat); border-radius:12px; padding:8px; font:600 14px ui-monospace, monospace}
+  .monitor svg{display:block; width:100%; height:40px}
+  .monitor .line{fill:none; stroke:var(--beat); stroke-width:2; stroke-dasharray:60 150; animation:ekg 1.2s linear infinite}
+  .monitor.worry .line{stroke:var(--warn)} .monitor.panic .line{stroke:var(--bad); animation-duration:.6s}
+  @keyframes ekg{to{stroke-dashoffset:-210}}
+  .bar{height:8px; background:#25403D; border-radius:4px; overflow:hidden; margin-top:6px}
+  .bar i{display:block; height:100%; background:var(--beat)}
+  .monitor.worry .bar i{background:var(--warn)} .monitor.panic .bar i{background:var(--bad)}
+  /* the chart */
+  .chart ol{margin:6px 0 0; padding-left:22px}
+  .chart li{margin:6px 0; padding:4px 8px; border-radius:10px}
+  .chart li.now{background:var(--slot); font-weight:600}
+  .chart li.done{color:var(--muted)}
+  .chart li .res{font-weight:700; color:var(--ok)}
+  .chart li .res.fixd{color:var(--bad)}
+  .start{font-size:1.15em}
+  .q{font-size:1.25em; margin:10px 0 6px}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .answer input{flex:1 1 180px; min-width:0; font-size:1.3em; padding:10px 12px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .answer input:focus{outline:3px solid var(--accent); outline-offset:1px}
+  .tip{font-size:.9em}
+  .msg{min-height:1.5em; font-weight:700; margin:8px 0 0}
+  .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .hearts{font-size:1.2em; letter-spacing:2px}
+  .toast{position:fixed; left:50%; top:12px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:8px 16px; border-radius:999px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:9}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_BAKERY = params.get('from') === 'bakery';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+let best = 0; try { best = +localStorage.getItem('pet-surgery:best') || 0; } catch(e){}
+
+/* ---------- exact numbers: every value is a fraction n/d (BigInt-free; the numbers stay small) ---------- */
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
+const F = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d); return {n:n / g, d:d / g}; };
+const add = (a, b) => F(a.n * b.d + b.n * a.d, a.d * b.d);
+const sub = (a, b) => F(a.n * b.d - b.n * a.d, a.d * b.d);
+const mul = (a, b) => F(a.n * b.n, a.d * b.d);
+const div = (a, b) => F(a.n * b.d, a.d * b.n);
+const eq = (a, b) => a.n === b.n && a.d === b.d;
+const dec = (str) => { const [w, f = ''] = String(str).split('.'); return F(+(w + f), 10 ** f.length); };
+/* decimal places a fraction needs (null if it doesn't end) */
+function places(x){ let d = x.d, p = 0; while (d % 10 === 0) { d /= 10; p++; } while (d % 2 === 0) { d /= 2; p++; } while (d % 5 === 0) { d /= 5; p++; } return d === 1 ? Math.max(p, decPlacesNeeded(x)) : null; }
+function decPlacesNeeded(x){ for (let p = 0; p < 8; p++) if ((x.n * 10 ** p) % x.d === 0) return p; return 8; }
+function showDec(x){ const p = decPlacesNeeded(x); return (x.n / x.d).toFixed(p); }
+function showFrac(x){
+  if (x.d === 1) return String(x.n);
+  const w = Math.floor(x.n / x.d), r = x.n - w * x.d;
+  return w ? `${w} ${r}/${x.d}` : `${r}/${x.d}`;
+}
+const show = (x, kind) => (kind === 'frac' ? showFrac(x) : kind === 'dec' ? showDec(x) : String(x.n / x.d));
+/* what she typed: "2.375", "3 1/2", "7/4", "12" (commas and spaces are fine) */
+function parse(raw){
+  const s = String(raw).trim().replace(/,/g, '').replace(/\s+/g, ' ');
+  let m;
+  if ((m = s.match(/^(\d+) (\d+)\/(\d+)$/))) return {v:F(+m[1] * +m[3] + +m[2], +m[3]), form:'mixed', proper:+m[2] < +m[3] && gcd(+m[2], +m[3]) === 1};
+  if ((m = s.match(/^(\d+)\/(\d+)$/)) && +m[2]) return {v:F(+m[1], +m[2]), form:'frac', proper:+m[1] < +m[2] && gcd(+m[1], +m[2]) === 1};
+  if ((m = s.match(/^(\d*)\.?(\d*)$/)) && (m[1] || m[2])) return {v:dec((m[1] || '0') + (m[2] ? '.' + m[2] : '')), form:m[2] ? 'dec' : 'whole', proper:true};
+  return null;
+}
+
+/* ---------- procedures: a chart of 3 steps, each using the result of the step before ---------- */
+const PETS = ['🐶','🐱','🐰','🐹','🦊','🐼','🐨','🐯','🐷','🐸','🦝','🐻'];
+const NAMES = ['Biscuit','Mochi','Pip','Clover','Rusty','Bamboo','Koko','Stripes','Truffle','Hops','Bandit','Waffles'];
+const AILS = ['🦴','🩹','🌵','🪲','🧦','🔩','🪶','🍬','🧷','🔑'];
+const ok = x => x.n > 0 && x.n / x.d < 10000;
+/* each maker returns {text, op(value), kind} or null if it doesn't fit the value */
+const DEC_STEPS = [
+  v => { const a = dec(`${rnd(0, 9)}.${String(rnd(1, 999)).padStart(3, '0')}`); return {skill:'addDec', text:`Add ${showDec(a)} mL of medicine`, sym:`+ ${showDec(a)}`, out:add(v, a)}; },
+  v => { const a = dec(`${rnd(0, Math.max(0, Math.floor(v.n / v.d) - 1))}.${String(rnd(1, 99)).padStart(2, '0')}`); const r = sub(v, a); return r.n > 0 ? {skill:'subDec', text:`Drain ${showDec(a)} mL`, sym:`− ${showDec(a)}`, out:r} : null; },
+  v => { const m = pick(['0.5', '1.5', '2.5', '0.4', '1.2', '3', '4', '0.25']), r = mul(v, dec(m)); return places(r) != null && places(r) <= 3 && ok(r) ? {skill:'mulDec', text:`Multiply the dose by ${m}`, sym:`× ${m}`, out:r} : null; },
+  v => { const k = pick([2, 4, 5, 8]), r = div(v, F(k)); return places(r) != null && places(r) <= 3 ? {skill:'divToDec', text:`Split it into ${k} equal shots`, sym:`÷ ${k}`, out:r} : null; },
+  v => { const k = pick(['0.5', '0.25', '0.2', '1.25']), r = div(v, dec(k)); return places(r) != null && places(r) <= 3 && ok(r) ? {skill:'divDec2', text:`How many ${k} mL drops is that?`, sym:`÷ ${k}`, out:r} : null; }
+];
+const FRAC_STEPS = [
+  v => { const k = rnd(2, 6), r = div(v, F(k)); return r.d <= 12 ? {skill:'fracDivWhole', text:`Split it into ${k} equal parts. How big is each part?`, sym:`÷ ${k}`, out:r} : null; },
+  v => { const f = pick([F(1, 2), F(1, 3), F(1, 4), F(2, 3), F(3, 4), F(1, 6), F(3, 8)]), r = div(v, f); return r.d <= 12 && r.n / r.d <= 60 ? {skill:'fracDiv', text:`How many ${showFrac(f)}-inch stitches can you make from it?`, sym:`÷ ${showFrac(f)}`, out:r} : null; },
+  v => { const f = pick([F(3, 2), F(5, 4), F(5, 2), F(7, 4)]), r = div(v, f); return r.d <= 12 ? {skill:'mixedDiv', text:`How many ${showFrac(f)}-inch wraps can you make from it?`, sym:`÷ ${showFrac(f)}`, out:r} : null; }
+];
+function decimalChart(){
+  let v = dec(`${rnd(1, 9)}.${String(rnd(1, 99)).padStart(2, '0')}`); const start = v, steps = [];
+  let guard = 0;
+  while (steps.length < 3 && guard++ < 200) { const s = pick(DEC_STEPS)(v); if (s && !steps.some(x => x.skill === s.skill)) { steps.push({...s, kind:'dec', want:s.out}); v = s.out; } }
+  return steps.length === 3 ? {unit:'mL', kind:'dec', start, startText:`${showDec(start)} mL of medicine`, steps} : null;
+}
+function fractionChart(){
+  /* step 1 is always a whole number ÷ a fraction (how many pieces), then two more fraction steps */
+  const whole = rnd(2, 9), f0 = pick([F(1, 2), F(1, 3), F(1, 4), F(2, 3), F(3, 4), F(2, 5), F(3, 2)]), r0 = div(F(whole), f0);
+  if (r0.d > 12) return null;
+  const start = F(whole), steps = [{skill:'wholeDivFrac', kind:'frac', text:`Cut it into ${showFrac(f0)}-inch pieces. How many pieces?`, sym:`÷ ${showFrac(f0)}`, want:r0}];
+  let v = r0, guard = 0;
+  while (steps.length < 3 && guard++ < 200) { const s = pick(FRAC_STEPS)(v); if (s && !steps.some(x => x.skill === s.skill)) { steps.push({...s, kind:'frac', want:s.out}); v = s.out; } }
+  return steps.length === 3 ? {unit:'in', kind:'frac', start, startText:`${showFrac(start)} inches of bandage`, steps} : null;
+}
+function wholeChart(){
+  const k = rnd(12, 48), q = rnd(12, 95), n = k * q, r1 = F(q);
+  const k2 = pick([4, 8, 5]), r2 = div(r1, F(k2)), m = pick(['0.6', '1.5', '2.4', '0.8']), r3 = mul(r2, dec(m));
+  if (places(r3) == null || places(r3) > 3) return null;
+  return {unit:'', kind:'mix', start:F(n), startText:`${n} tiny vitamin crumbs`, steps:[
+    {skill:'div2', kind:'whole', text:`Sort them into ${k} equal piles. How many in each pile?`, sym:`÷ ${k}`, want:r1},
+    {skill:'divToDec', kind:'dec', text:`Grind one pile into ${k2} equal doses`, sym:`÷ ${k2}`, want:r2},
+    {skill:'mulDec', kind:'dec', text:`Mix with ${m} times as much water`, sym:`× ${m}`, want:r3}
+  ]};
+}
+function newPatient(level){
+  let chart = null, tries = 0;
+  const makers = level <= 1 ? [decimalChart, fractionChart] : [decimalChart, fractionChart, wholeChart];
+  while (!chart && tries++ < 50) chart = pick(makers)();
+  const i = rnd(0, PETS.length - 1);
+  return {...chart, pet:PETS[i], name:NAMES[i], ails:chart.steps.map(() => pick(AILS)), at:0, results:[], wrong:0, time:Math.max(60, 120 - level * 10) * 1000, left:0};
+}
+
+/* ---------- the shift ---------- */
+let shift = null, timer = null, last = 0;
+const level = () => 1 + Math.floor(shift.healed / 3);
+function startShift(){
+  shift = {healed:0, perfect:0, steps:0, stepsRight:0, hearts:3, patient:null, started:Date.now(), missed:{}, msg:'', msgOk:false};
+  nextPatient(); renderPlay(); last = performance.now(); clearInterval(timer); timer = setInterval(tick, 250);
+}
+function nextPatient(){ const p = newPatient(level()); p.left = p.time; shift.patient = p; shift.msg = ''; }
+function tick(){
+  const now = performance.now(), dt = Math.min(1000, now - last); last = now;
+  if (!shift || document.hidden) return;
+  const p = shift.patient; p.left -= dt;
+  if (p.left <= 0) {   // out of time: the step is finished for her, and a heart is lost
+    loseHeart('⏰ Out of time! Dr. Paws finished the step.');
+    if (!shift) return;
+  }
+  const mon = document.getElementById('monitor'); if (mon) { const f = Math.max(0, p.left / p.time); mon.className = `monitor${f < .2 ? ' panic' : f < .45 ? ' worry' : ''}`; mon.querySelector('.bar i').style.width = `${f * 100}%`; mon.querySelector('.secs').textContent = `${Math.ceil(Math.max(0, p.left) / 1000)}s`; }
+}
+function loseHeart(msg){
+  const p = shift.patient, s = p.steps[p.at];
+  shift.hearts--; shift.missed[s.skill] = (shift.missed[s.skill] || 0) + 1;
+  p.results[p.at] = {v:s.want, fixed:true}; p.wrong++; p.at++; p.left = Math.max(p.left, 20000);
+  shift.msg = msg; shift.msgOk = false;
+  if (shift.hearts <= 0) { endShift(); return; }
+  afterStep(); renderPlay(true);
+}
+function afterStep(){
+  const p = shift.patient;
+  if (p.at < p.steps.length) return;
+  shift.healed++; if (!p.wrong) shift.perfect++;
+  toast(p.wrong ? `🩹 ${p.name} is patched up!` : `🌟 ${p.name} is all better! Perfect surgery!`);
+  nextPatient();
+}
+function submit(){
+  const input = document.getElementById('ans'); if (!input || !shift) return;
+  const p = shift.patient, s = p.steps[p.at], got = parse(input.value);
+  if (!got) { shift.msg = 'Type a number, a decimal like 2.75, or a fraction like 3/4 or 1 1/2.'; shift.msgOk = false; renderPlay(); return; }
+  shift.steps++;
+  if (eq(got.v, s.want)) {
+    if (s.kind === 'frac' && !(got.form === 'whole' || (got.form === 'mixed' && got.proper) || (got.form === 'frac' && got.proper))) {   // the right amount, not in simplest form
+      shift.steps--; shift.msg = `Right amount! Doctors write it in simplest form${s.want.n > s.want.d ? ', as a mixed number' : ''}. Try writing it that way.`; shift.msgOk = false; renderPlay(); return;
+    }
+    shift.stepsRight++; p.results[p.at] = {v:s.want}; p.at++;
+    shift.msg = pick(['✅ Steady hands!', '✅ Perfect cut!', '✅ Nice work, doctor!', '✅ Exactly right!']); shift.msgOk = true;
+    afterStep(); renderPlay(true, 'fix');
+  } else {
+    if (!p.tried) { p.tried = true; shift.missed[s.skill] = (shift.missed[s.skill] || 0) + 1; p.wrong++; shift.msg = `⚡ Bzzt! ${esc(p.name)} wiggled. Check your work and try once more.`; shift.msgOk = false; renderPlay(false, 'zap'); return; }
+    p.tried = false;
+    loseHeart(`⚡ Bzzt! The answer was ${show(s.want, s.kind === 'whole' ? 'whole' : s.kind)}. Dr. Paws fixed it, so keep going from there.`);
+    return;
+  }
+  p.tried = false;
+}
+function endShift(){
+  clearInterval(timer); timer = null;
+  const g = shift; shift = null;
+  const newBest = g.healed > best;
+  if (newBest) { best = g.healed; try { localStorage.setItem('pet-surgery:best', String(best)); } catch(e){} }
+  const result = {healed:g.healed, perfect:g.perfect, steps:g.steps, right:g.stepsRight, ms:Date.now() - g.started, missed:g.missed};
+  try {
+    if (window.parent !== window) {
+      if (FROM_BAKERY) window.parent.postMessage({type:'surgery:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'pet-surgery', runId:ARCADE_RUN, roundId:`shift-${g.started}`, score:g.healed}, location.origin);
+    }
+  } catch(e){}
+  const NAMES_SK = {addDec:'Adding decimals', subDec:'Subtracting decimals', mulDec:'Multiplying decimals', divToDec:'Dividing to get a decimal', divDec2:'Dividing by a decimal', fracDivWhole:'Dividing a fraction by a whole number', fracDiv:'Dividing by a fraction', wholeDivFrac:'Dividing a whole number by a fraction', mixedDiv:'Dividing by a mixed number', div2:'Dividing by a 2-digit number'};
+  const practice = Object.entries(g.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(NAMES_SK[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>🏥 Shift over!</h1>
+    <div class="stats"><div><b>${g.healed}</b>patients healed</div><div><b>${g.perfect}</b>perfect surgeries</div><div><b>${g.stepsRight} of ${g.steps}</b>steps right</div><div><b>${best}</b>best shift${newBest && g.healed ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    ${FROM_BAKERY ? '<p class="muted">Each step done right earns Pet World coins. Surgery shifts don’t count toward Bakery orders or quizzes.</p>' : ''}
+    <p><button class="btn go" id="again">Start another shift</button></p>`;
+  document.getElementById('again').addEventListener('click', startShift);
+}
+
+/* ---------- drawing ---------- */
+function renderPlay(focus = true, fx = ''){
+  if (!shift) return;
+  const p = shift.patient, s = p.steps[p.at];
+  const ails = p.ails.map((a, i) => `<span class="ail${i < p.at ? ' fixed' : i === p.at ? ' now' : ''}" style="left:${18 + i * 26}%; top:${i % 2 ? 62 : 14}%">${a}</span>`).join('');
+  const chart = p.steps.map((st, i) => `<li class="${i < p.at ? 'done' : i === p.at ? 'now' : ''}">${esc(st.text)} <span class="muted">(${esc(st.sym)})</span>${p.results[i] ? ` → <span class="res${p.results[i].fixed ? ' fixd' : ''}">${esc(show(p.results[i].v, st.kind === 'whole' ? 'whole' : st.kind))}</span>` : ''}</li>`).join('');
+  const prev = p.at ? p.results[p.at - 1].v : p.start, prevKind = p.at ? p.steps[p.at - 1].kind : (p.kind === 'frac' ? 'frac' : p.kind === 'dec' ? 'dec' : 'whole');
+  const hint = s.kind === 'frac' ? 'Answer as a fraction or mixed number in simplest form, like 3/4 or 2 1/3.' : s.kind === 'dec' ? 'Answer as a decimal, like 3.125.' : 'Answer with a whole number.';
+  app.innerHTML = `<div class="top"><span class="hearts" aria-label="${shift.hearts} hearts left">${'❤️'.repeat(shift.hearts)}${'🤍'.repeat(3 - shift.hearts)}</span><span class="pill">🏥 ${shift.healed} healed</span><span class="pill">⭐ Level ${level()}</span></div>
+    <div class="card table${fx === 'zap' ? ' zap' : ''}"><div class="patient" aria-label="${esc(p.name)} on the operating table"><span class="pet">${p.pet}</span>${ails}</div>
+      <div class="monitor" id="monitor"><div>♥ <span class="secs"></span></div><svg viewBox="0 0 120 40" aria-hidden="true"><polyline class="line" points="0,22 30,22 38,22 44,6 50,36 56,14 62,22 120,22"/></svg><div class="bar"><i></i></div></div></div>
+    <div class="card chart"><b>📋 ${esc(p.name)}’s chart.</b> Start: <span class="start">${esc(p.startText)}</span><ol>${chart}</ol></div>
+    <div class="card"><p class="q">Step ${p.at + 1}: ${esc(show(prev, prevKind))} <b>${esc(s.sym)}</b> = ?</p>
+      <div class="answer"><input id="ans" inputmode="text" autocomplete="off" aria-label="Your answer" placeholder="Your answer"><button class="btn go" id="go">🩺 Operate</button></div>
+      <p class="muted tip">${hint}</p><p class="msg${shift.msgOk ? ' ok' : shift.msg ? ' bad' : ''}" role="status">${shift.msg}</p></div>`;
+  document.getElementById('go').addEventListener('click', submit);
+  document.getElementById('ans').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  if (focus) document.getElementById('ans').focus();
+  tick();
+}
+let toastT = null;
+function toast(msg){ const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1800); }
+function renderStart(){
+  app.innerHTML = `<h1>🏥 Dr. Paws’ Surgery Center</h1>
+    <p class="muted">Patients are lining up! Each pet’s chart lists 3 steps of medicine math. Every step uses the answer from the step before, so do them in order, and do them carefully.</p>
+    <ol class="how">
+      <li>Read the chart: medicine in mL (decimals), bandages in inches (fractions), or vitamin crumbs (long division).</li>
+      <li>Work out each step and press <b>🩺 Operate</b>. Watch the heart monitor: it’s your timer.</li>
+      <li>Wrong answer? <b>Bzzt!</b> The patient wiggles, and you get one more try. Miss twice, or run out of time, and you lose a ❤️. Dr. Paws finishes that step so you can keep going.</li>
+      <li>Fractions go in simplest form, as mixed numbers when they’re more than 1 (like 2 1/4).</li>
+      <li>Every 3 patients, the cases get harder. Lose all 3 ❤️ and the shift is over.</li>
+    </ol>
+    ${best ? `<p>🏆 Best shift: <b>${best}</b> patients healed</p>` : ''}
+    <button class="btn go" id="start">Start my shift</button>`;
+  document.getElementById('start').addEventListener('click', startShift);
+}
+if (params.has('selftest')) window.__surgery = {newPatient, parse, show, F, eq, get shift(){ return shift; }};
+renderStart();
+})();
+</script>
+</body>
+</html>
