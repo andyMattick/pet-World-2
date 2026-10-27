@@ -1426,3 +1426,5 @@ a.btn{display:inline-block; text-decoration:none}
 .web-svg{max-width:360px; margin:0 auto}
 .web-effects{columns:2; padding-left:18px; margin:6px 0}
 @media (max-width:380px){.web-effects{columns:1}}
+.pz-key .learned{background:#D6F0D2; border-radius:6px; padding:0 4px}
+.pz-key-note{text-align:center; margin:-4px 0 8px; font-size:.85rem}

@@ -38,6 +38,8 @@ export function makeCode(words, rand){
   return { code, shown: [...shown].sort() };
 }
 export const encode = (word, code) => [...letters(word)].map(ch => code[ch]);
+/** the letters she knows: the ones the key gave her, plus every letter of a word she has solved (sorted) */
+export const knownLetters = (shown, solvedWords) => [...new Set([...shown, ...solvedWords.flatMap(w => [...letters(w)])])].sort();
 
 /* ---------- crossword ---------- */
 /** Lays out words in a crossword (each crossing at least one other word). Tries several orders and keeps the one that

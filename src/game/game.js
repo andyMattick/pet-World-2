@@ -15,7 +15,7 @@ import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkT
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
-import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords } from '../shared/wordPuzzles';
+import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
@@ -11815,7 +11815,8 @@ function renderPuzzle(){
     const k = pzLeft(p)[0], v = wordObj(k);
     const shown = p.type === 'scramble' ? `<div class="pz-tiles">${[...p.data.mix[k]].map(ch => `<span>${esc(ch.toUpperCase())}</span>`).join('')}</div>`
       : `<div class="pz-tiles pz-code">${encodeWord(k, p.data.code).map(sym => `<span>${esc(sym)}</span>`).join('')}</div>
-        <div class="pz-key"><b>Code key</b>${p.data.shown.map(ch => `<span><i>${esc(p.data.code[ch])}</i>=${ch.toUpperCase()}</span>`).join('')}</div>`;
+        <div class="pz-key"><b>Code key</b>${knownLetters(p.data.shown, [...p.solved, ...p.helped]).map(ch => `<span${p.data.shown.includes(ch) ? '' : ' class="learned" title="You cracked this one!"'}><i>${esc(p.data.code[ch])}</i>=${ch.toUpperCase()}</span>`).join('')}</div>
+        ${knownLetters(p.data.shown, [...p.solved, ...p.helped]).length > p.data.shown.length ? '<p class="muted pz-key-note">✨ Green letters are ones you cracked by solving words.</p>' : ''}`;
     body = `<div class="pz-card"><p class="vocab-ask">Which word means:</p><div class="fact vocab-prompt long">${esc(v.d)}</div>${shown}
       <form class="typed-fill" data-pz-answer="${esc(k)}"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form></div>`;
   } else if (p.type === 'crossword') {
@@ -11847,11 +11848,14 @@ function renderPuzzle(){
 function puzzleAnswer(k, ok){
   const p = puzzleRun?.p; if (!p || !puzzleRun) return;
   recordVocab(k, ok);
-  if (ok) { if (!p.solved.includes(k)) p.solved.push(k); sfx('good'); save(); renderPuzzle(); return; }
+  /* Secret Code: every letter of a word she gets (or is shown) joins her code key */
+  const crack = () => { if (p.type !== 'decode') return; const before = knownLetters(p.data.shown, [...p.solved, ...p.helped].filter(w => w !== k)), now = knownLetters(p.data.shown, [...p.solved, ...p.helped]), fresh = now.filter(ch => !before.includes(ch));
+    if (fresh.length) toast(`🔓 New in your code key: ${fresh.map(ch => `${p.data.code[ch]} = ${ch.toUpperCase()}`).join(', ')}`); };
+  if (ok) { if (!p.solved.includes(k)) p.solved.push(k); sfx('good'); crack(); save(); renderPuzzle(); return; }
   sfx('bad');
   const host = $('#vocabWrap .pz-wrap'); host.querySelector('form[data-pz-answer]')?.remove();
   host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>`);
-  askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); save(); renderPuzzle(); });
+  askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); crack(); save(); renderPuzzle(); });
 }
 function finishPuzzle(why){
   const run = puzzleRun, p = run?.p; if (!p || !run) return;
