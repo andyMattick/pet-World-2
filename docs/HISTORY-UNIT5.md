@@ -33,6 +33,7 @@ Khan's World History Project, Unit 5. It's built in the 🐫 Silk Road Museum, w
 - **Newer-type questions.** Each practice has 2 scored newer-type questions (sort, select all, order, or Part A/B) and 1 short answer. The unit test has a paragraph.
 - **Project.** 📁 Trade Web Travel Journal: follow one trade good or traveler across a web.
 - **Test.** The unit test has 22 questions (2 per practice), and 17 right passes. The Khan unit test link is in `KHAN_UNIT_TESTS`.
-- **Not added (yet).** There's no Dig Site or Scribe School for this unit, and no unit game. Tell me if you want one.
+- **Game.** ⚖️ Pax Oeconomica, the trade strategy game, with the Medieval empires (Byzantium, the Abbasids, Song, Mali, Srivijaya, Kievan Rus). See `PAX-OECONOMICA.md`.
+- **Not added (yet).** There's no Dig Site or Scribe School for this unit. Tell me if you want one.
 
 **Review.** All the questions, with the right answers in bold, are in `docs/history5-review.md`. They haven't had a separate blind review yet. Please skim them before applying.

@@ -191,6 +191,8 @@ function normalize(raw){
       games:(Array.isArray(s.parcel?.games) ? s.parcel.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), delivered:Math.max(0, +g.delivered || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 📮 Parcel Post (docs/PARCEL-POST.md)
     s.petshow = {best:Math.max(0, Math.min(3, Math.round(+s.petshow?.best || 0))), day:typeof s.petshow?.day === 'string' ? s.petshow.day : '', coinsToday:Math.max(0, Math.round(+s.petshow?.coinsToday || 0)),
       games:(Array.isArray(s.petshow?.games) ? s.petshow.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), ribbons:Math.max(0, +g.ribbons || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🏆 Pet Show Awards (docs/PET-SHOW-AWARDS.md)
+    s.pax = {day:typeof s.pax?.day === 'string' ? s.pax.day : '', coinsToday:Math.max(0, Math.round(+s.pax?.coinsToday || 0)),
+      games:(Array.isArray(s.pax?.games) ? s.pax.games : []).filter(g => g && Number.isFinite(+g.t) && (g.course === 'history4' || g.course === 'history5')).slice(-30).map(g => ({t:+g.t, course:g.course, id:String(g.id || '').slice(0, 20), stars:Math.max(1, Math.min(3, Math.round(+g.stars || 1))), rank:Math.max(1, Math.min(4, Math.round(+g.rank || 1))), empires:Math.max(2, Math.min(4, Math.round(+g.empires || 2))), prestige:Math.max(0, Math.min(5000, Math.round(+g.prestige || 0))), rounds:Math.max(1, Math.min(40, Math.round(+g.rounds || 1)))}))};   // ⚖️ Pax Oeconomica (docs/PAX-OECONOMICA.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -6210,6 +6212,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
+  else if (run.gameId === 'pax-oeconomica') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/PAX-OECONOMICA.md)
   else if (run.gameId === 'parcel-post') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/PARCEL-POST.md)
   else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
   else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
@@ -8143,6 +8146,49 @@ window.addEventListener('message', e => {
   save();
   toast(`🏆 ${ribbons} ribbons pinned!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= PETSHOW_COINS_PER_DAY ? ' (Today’s Pet Show coins are all earned.)' : ''}`);
 });
+/* ---------- ⚖️ Pax Oeconomica (src/arcade/pax-oeconomica, docs/PAX-OECONOMICA.md) ----------
+   The trade strategy game for History Units 4 and 5: the same game, with the Classical empires in Unit 4 and the
+   Medieval ones in Unit 5. It opens from the unit page (?from=history4 or history5) and from the Arcade (both eras).
+   A finished game pays 3 coins a star (1 star for finishing, 2 for second place, 3 for first), up to 20 a day. */
+const PAX_COINS_PER_DAY = 20;
+const PAX_COURSES = {history4:{era:1, age:'Classical Age', empires:'Rome, Han, Parthia, Maurya, Kush and Athens'}, history5:{era:2, age:'Medieval Age', empires:'Byzantium, the Abbasids, Song, Mali, Srivijaya and Kievan Rus'}};
+function paxCardHTML(courseId){
+  const c = PAX_COURSES[courseId]; if (!c) return '';
+  const games = S.pax.games.filter(g => g.course === courseId), best = games.reduce((a, g) => Math.max(a, g.stars), 0);
+  return `<section class="ela-final-assessment"><div><h3>⚖️ Pax Oeconomica</h3><p class="muted">A trading strategy game for the ${c.age}: lead ${esc(c.empires)}. Sell what you have extra of, buy what you need, and earn the most prestige · ${games.length ? `${games.length} game${games.length === 1 ? '' : 's'} finished, best ${'⭐'.repeat(best)}` : 'Not played yet'}</p></div><button type="button" class="btn small berry" data-pax-open="${courseId}">Play</button></section>`;
+}
+function openPax(courseId){
+  if ($('#paxWrap') || !PAX_COURSES[courseId]) return;
+  const el = document.createElement('div');
+  el.id = 'paxWrap'; el.className = 'prep-recall'; el.dataset.course = courseId; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Pax Oeconomica');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">⚖️ Pax Oeconomica</b><button type="button" class="btn small" data-pax-close>Done</button></div><iframe src="/arcade/pax-oeconomica/?from=${courseId}" title="Pax Oeconomica"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-pax-close]').addEventListener('click', closePax);
+}
+function closePax(){
+  const el = $('#paxWrap'); if (!el) return;
+  const courseId = el.dataset.course; el.remove();
+  if (!$('#scr-library').hidden && $('#libraryWrap [data-pax-open]')) renderEnglishUnit(courseId);
+}
+window.addEventListener('message', e => {
+  const wrap = $('#paxWrap'), frame = $('#paxWrap iframe');
+  if (e.origin !== location.origin || !frame || e.source !== frame.contentWindow) return;
+  if (e.data?.type === 'pax:close') { closePax(); return; }
+  if (e.data?.type !== 'pax:result') return;
+  const d = e.data, courseId = wrap.dataset.course;
+  if (d.from !== courseId) return;
+  const id = String(d.gameId || '').slice(0, 20), c = S.pax, day = logDayKey();
+  if (!id || c.games.some(g => g.id === id)) return;   // each game pays once
+  const n = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+v || 0)));
+  const g = {t:Date.now(), course:courseId, id, stars:n(d.stars, 1, 3), rank:n(d.rank, 1, 4), empires:n(d.empires, 2, 4), prestige:n(d.prestige, 0, 5000), rounds:n(d.rounds, 1, 40)};
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  c.games = [...c.games, g].slice(-30);
+  const coins = Math.min(g.stars * 3, Math.max(0, PAX_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  logEvent({k:'pax', course:courseId, title:`${PAX_COURSES[courseId].age}: finished #${g.rank} of ${g.empires} empires with ${g.prestige} prestige after ${g.rounds} rounds ${'⭐'.repeat(g.stars)}`});
+  save();
+  toast(`⚖️ ${g.rank === 1 ? 'Your empire won!' : `Your empire finished #${g.rank}.`} ${'⭐'.repeat(g.stars)}${coins ? ` +${coins} 🪙` : c.coinsToday >= PAX_COINS_PER_DAY ? ' (Today’s Pax Oeconomica coins are all earned.)' : ''}`);
+});
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
    every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
@@ -8655,7 +8701,7 @@ function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
     return `<section class="ela-final-assessment"><div><h3>⛏️ ${esc(s.name)}${s.bonus ? ' <small>(bonus)</small>' : ''}</h3><p class="muted">Uncover ${s.finds.length} famous finds and tap where each came from on the map · ${st?.done ? '✅ Finished' : n ? `${n} of ${s.finds.length} found` : 'Not started'}</p></div><button type="button" class="btn small berry" data-dig-open="${s.id}">${n && !st?.done ? 'Keep digging' : 'Open the dig'}</button></section>`; }).join('');
   const scribe = courseId === 'history3' || courseId === 'history4' ? `<section class="ela-final-assessment"><div><h3>✍️ Scribe School</h3><p class="muted">Write your name in cuneiform, hieroglyphs or Greek letters, or ask the ancestors a question on an oracle bone · ${S.scribe.done.length} of ${SCRIBE_SYSTEMS.length} tried</p></div><button type="button" class="btn small berry" data-scribe-open="${courseId}">Open Scribe School</button></section>` : '';
-  return sites + scribe;
+  return sites + scribe + paxCardHTML(courseId);
 }
 let digBrushing = false, digLastCell = -1;
 $('#libraryWrap').addEventListener('pointerdown', e => { const cell = e.target.closest('#digWrap [data-dig-cell]'); if (!cell) return; e.preventDefault(); digBrushing = true; digLastCell = +cell.dataset.digCell; digBrush(digLastCell); });
@@ -8667,6 +8713,7 @@ document.addEventListener('pointerup', () => { digBrushing = false; digLastCell 
 $('#libraryWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.digOpen) { digRun = null; renderDig(b.dataset.digOpen); return; }
+  if (b.dataset.paxOpen) { openPax(b.dataset.paxOpen); return; }
   if (b.dataset.digBack) { renderEnglishUnit(b.dataset.digBack); return; }
   if (b.dataset.digPlace && digRun && !digRun.shown && !digRun.wrong.includes(b.dataset.digPlace)) { digRun.choice = b.dataset.digPlace; renderDig(digRun.site); return; }
   if (b.hasAttribute('data-dig-confirm')) { digAnswer(); return; }
@@ -13286,6 +13333,7 @@ function placeOnScreen(){
   if ($('#battleshipWrap')) return 'battleship';
   if ($('#parcelWrap')) return 'parcel';
   if ($('#petshowWrap')) return 'petshow';
+  if ($('#paxWrap')) return `course:${$('#paxWrap').dataset.course}:⚖️ Pax Oeconomica`;   // counts for its history unit
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -13355,6 +13403,7 @@ function eventText(e){
   if (e.k === 'battleship') return `⚓ Harbor Battleship: ${e.title}`;
   if (e.k === 'parcel') return `📮 Parcel Post: ${e.title}`;
   if (e.k === 'petshow') return `🏆 Pet Show Awards: ${e.title}`;
+  if (e.k === 'pax') return `⚖️ Pax Oeconomica: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
@@ -13450,6 +13499,7 @@ function subjectOnScreen(){
   if ($('#battleshipWrap')) return 'math';   // Harbor Battleship is Pet Harbor practice
   if ($('#parcelWrap')) return 'math';   // Parcel Post is Pet Post Office practice
   if ($('#petshowWrap')) return 'math';   // Pet Show Awards is Pet Show practice
+  if ($('#paxWrap')) return 'history';   // Pax Oeconomica is History Unit 4 and 5's game
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

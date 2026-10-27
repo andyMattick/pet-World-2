@@ -16,6 +16,7 @@
 | ☄️ Shape Asteroids | Pet Houses → Rooms (`openAsteroids`) | `shape-asteroids`, `public/arcade/shape-asteroids/` | 1 per wave survived, up to 3 |
 | 🔗 Link Library Games (Pet Hide-and-Seek, Cross It Out, Comic Strip Studio) | English Unit 5, cards under its blocks (`ggameCardsHTML`) | `link-games`, `arcade/link-games/index.html` | 1 per star, up to 3 a game |
 | ⚡ Punctuation Power Lab | English Unit 6, a card under each block (`heroLabCardHTML`) | `power-lab`, `arcade/power-lab/index.html` | 1 per 2 first launches, up to 3 a pack |
+| ⚖️ Pax Oeconomica | History Units 4 and 5, a card at the bottom of the unit page (`openPax`; Unit 4 plays the Classical empires, Unit 5 the Medieval ones) | `pax-oeconomica`, `public/arcade/pax-oeconomica/` (React source in `src/arcade/pax-oeconomica/`; both eras) | 1 per star, up to 3 a game |
 
 ## Two ways to build the Arcade copy
 

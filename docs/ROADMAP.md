@@ -197,6 +197,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F65. 🎬 History and Biology: videos first. A big Watch-first button, a watch-first prompt before practice, and video time counted as class time (a Pet World video while it plays; a Khan lesson in another tab for up to 25 minutes). See `PRACTICE-TIME.md`
 - [x] F66. 🏛️ History Unit 4 matches Khan: 15 lessons in Khan's order, Khan's 4 quizzes, every Khan video as its own button, and the question bank revised after a blind review (220 questions, sources in every lesson). See `HISTORY-UNIT4.md` and `history4-review.md`
 - [x] F67. 🐫 History Unit 5: Regional Webs in the Silk Road Museum (8 Khan lessons, 11 practices, Khan's 2 quizzes, 23 videos, 157 questions with sources, a project). Every new History or Science unit lists its Khan videos (`KHAN_VIDEOS`; `npm run verify` checks). See `HISTORY-UNIT5.md` and `history5-review.md`
+- [x] F68. ⚖️ Pax Oeconomica: a hex-map trade strategy game for History Units 4 and 5 (12 empires in two eras, a supply-and-demand market, storage and spoilage, barbarian mercenaries, crises, a trader, fog of war, hotseat or computer rivals). In both units and the Arcade. See `PAX-OECONOMICA.md`
 
 ## Database files, in the order they were run
 

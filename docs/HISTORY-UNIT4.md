@@ -56,3 +56,5 @@ What was done:
 - **Typed questions.** One typed-question choice ("Taking the imperial exams") and the Han official's role card were fixed for the same Han-exam error. The Cyrus role card no longer says his empire reached Egypt (that was his son Cambyses).
 
 **Not done yet:** a second blind review of the 52 new and rewritten questions. They're all in `docs/history4-review.md` with the right answers in bold. Please read that list before applying.
+
+**Game.** ⚖️ Pax Oeconomica, the trade strategy game, has a card at the bottom of the unit page. Unit 4 plays the Classical empires (Rome, Han, Parthia, Maurya, Kush, Athens). See `PAX-OECONOMICA.md`.
