@@ -12,7 +12,7 @@ import { renderTranscript } from './transcript';
 import { renderPlanCard } from './plan';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, DRILLS, type DrillSettings } from '../shared/registry';
 /* extras a grown-up assigns one student (ROADMAP F7) */
-interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string }
+interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string; challenge?: number }
 const DRILL_NAMES = DRILLS as unknown as Record<string, { name?: string }>;
 const VOCAB_MODES: Record<string, string> = { practice: '🃏 Practice cards', sprint: '⚡ Word sprint', spell: '🔤 Spell it' };
 
@@ -338,10 +338,10 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     const list = extrasList(), drillIds = Object.keys(DRILL_NAMES).filter(id => !id.startsWith('story'));
     const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}`
       : `⚡ Fact Sprint: ${(x.skills || ['times']).map(t => DRILL_NAMES[t]?.name || t).join(' + ')}${x.tables?.length ? ` (${x.tables.join(', ')}s)` : ''}`;
-    el.innerHTML = `<p class="muted" style="margin-top:0">Extras show on ${esc(r.n)}’s town page every day as a checklist. Fact Sprint minutes count when the sprint is started from that list; Word Workshop minutes count for that exercise. Remove an extra when it’s no longer needed.</p>
-  ${list.length ? `<table class="steptable"><tr><th>Extra</th><th>Minutes a day</th><th></th></tr>${list.map(x => `<tr><td>${esc(label(x))}</td><td>${esc(x.minutes)}</td><td><button class="btn small" data-extra-remove="${esc(x.id)}">Remove</button></td></tr>`).join('')}</table>` : '<p class="muted">No extras yet.</p>'}
+    el.innerHTML = `<p class="muted" style="margin-top:0">Extras show on ${esc(r.n)}’s town page every day as a checklist. Fact Sprint minutes count when the sprint is started from that list; Word Workshop minutes count for that exercise. Remove an extra when it’s no longer needed.<br><b>⏱️ Timed challenge:</b> the warm-up is one hard-timed round (“how many can you get in 5 minutes?”) that stops when the clock runs out. Any minutes beyond the challenge show as a separate row later in the day, after her plan.</p>
+  ${list.length ? `<table class="steptable"><tr><th>Extra</th><th>Minutes a day</th><th></th></tr>${list.map(x => `<tr><td>${esc(label(x))}${x.challenge ? `<br><small>⏱️ ${Math.min(x.challenge, x.minutes)}-minute challenge first${x.minutes > x.challenge ? `, then ${x.minutes - x.challenge} min later in the day` : ''}</small>` : ''}</td><td>${esc(x.minutes)}</td><td style="white-space:nowrap">${x.challenge ? `<button class="btn small" data-extra-challenge="${esc(x.id)}" data-min="0">Turn off the challenge</button>` : `<button class="btn small" data-extra-challenge="${esc(x.id)}" data-min="5">⏱️ Make it a 5-min challenge</button>`} <button class="btn small" data-extra-remove="${esc(x.id)}">Remove</button></td></tr>`).join('')}</table>` : '<p class="muted">No extras yet.</p>'}
   <h3>Add an extra</h3>
-  <div class="row"><label>Activity <select id="exKind"><option value="sprint">⚡ Fact Sprint</option><option value="vocab">🔤 Word Workshop</option></select></label><label>Minutes a day <input id="exMin" type="number" min="1" max="60" value="5" style="width:70px"></label></div>
+  <div class="row"><label>Activity <select id="exKind"><option value="sprint">⚡ Fact Sprint</option><option value="vocab">🔤 Word Workshop</option></select></label><label>Minutes a day <input id="exMin" type="number" min="1" max="60" value="5" style="width:70px"></label><label><input type="checkbox" id="exChallenge"> ⏱️ Start with a timed challenge of <input id="exChallengeMin" type="number" min="1" max="30" value="5" style="width:60px"> min</label></div>
   <div id="exSprint"><p style="margin:6px 0 2px"><b>Skills</b></p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px">${drillIds.map(id => `<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-ex-skill="${esc(id)}" ${id === 'times' ? 'checked' : ''}> ${esc(DRILL_NAMES[id]?.name || id)}</label>`).join('')}</div>
   <p style="margin:8px 0 2px"><b>Times tables</b> <span class="muted">(tick the ones to practice, or leave them all unticked for a mix of every table)</span></p><div class="row">${[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => `<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-ex-table="${n}"> ${n}s</label>`).join('')}</div></div>
   <div id="exVocab" hidden><label>Exercise <select id="exMode">${Object.entries(VOCAB_MODES).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}</select></label> <span class="muted">Uses ${esc(r.n)}’s focus words.</span></div>
@@ -353,10 +353,16 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       const ticked = [...el.querySelectorAll<HTMLInputElement>('[data-ex-skill]:checked')].map(b => b.dataset.exSkill!), skills = ticked.length ? ticked : ['times'];
       const tables = [...el.querySelectorAll<HTMLInputElement>('[data-ex-table]:checked')].map(b => +b.dataset.exTable!);
       const id = `x${Date.now().toString(36)}`;
-      const extra: Extra = kind.value === 'vocab' ? { id, kind: 'vocab', minutes, mode: el.querySelector<HTMLSelectElement>('#exMode')!.value }
-        : { id, kind: 'sprint', minutes, skills, tables: skills.includes('times') ? tables : [] };
+      const challenge = el.querySelector<HTMLInputElement>('#exChallenge')!.checked ? Math.max(1, Math.min(30, Math.round(+el.querySelector<HTMLInputElement>('#exChallengeMin')!.value || 5))) : 0;
+      const extra: Extra = kind.value === 'vocab' ? { id, kind: 'vocab', minutes: Math.max(minutes, challenge), mode: el.querySelector<HTMLSelectElement>('#exMode')!.value, ...(challenge ? { challenge } : {}) }
+        : { id, kind: 'sprint', minutes: Math.max(minutes, challenge), skills, tables: skills.includes('times') ? tables : [], ...(challenge ? { challenge } : {}) };
       void saveOverride('extras', JSON.stringify([...extrasList(), extra].slice(-10)));
     });
+    el.querySelectorAll<HTMLButtonElement>('[data-extra-challenge]').forEach(b => b.addEventListener('click', () => {
+      const min = +b.dataset.min!;
+      const next = extrasList().map(x => x.id !== b.dataset.extraChallenge ? x : min > 0 ? { ...x, challenge: min, minutes: Math.max(x.minutes, min) } : { ...x, challenge: undefined });   // undefined drops out of the JSON
+      void saveOverride('extras', JSON.stringify(next));
+    }));
     el.querySelectorAll<HTMLButtonElement>('[data-extra-remove]').forEach(b => b.addEventListener('click', () => {
       const next = extrasList().filter(x => x.id !== b.dataset.extraRemove);
       void saveOverride('extras', next.length ? JSON.stringify(next) : null);

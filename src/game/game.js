@@ -200,6 +200,8 @@ function normalize(raw){
     if (!s.planCarry || typeof s.planCarry.after !== 'string' || !Array.isArray(s.planCarry.items)) s.planCarry = {after:'', items:[]};   // plan items left from an earlier day (F10)
     s.planCarry.items = s.planCarry.items.filter(x => x && typeof x === 'object' && typeof x.id === 'string').slice(0, 30);
     if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
+    if (s.extrasLog.challenge !== undefined && (typeof s.extrasLog.challenge !== 'object' || !s.extrasLog.challenge)) delete s.extrasLog.challenge;   // ⏱️ today's challenge scores
+    s.challengeBest = Object.fromEntries(Object.entries(s.challengeBest && typeof s.challengeBest === 'object' ? s.challengeBest : {}).filter(([k, v]) => typeof k === 'string' && Number.isFinite(+v)).slice(-20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));   // ⏱️ best challenge score per extra
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
@@ -6604,7 +6606,7 @@ function planAllDone(day = logDayKey()){
   if (!items.length && !extras.length && !goalRows.length) return false;
   if (day === logDayKey() && fixItems().length) return false;   // sent-back work comes first (Fix first)
   return items.every(x => planItemInfo(x, day).status !== 'todo')   // "waiting for a grown-up" counts: her part is done
-    && extras.every(x => Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes))
+    && extras.every(extraFullyDone)
     && goalRows.every(([id, , goal]) => Math.floor((today[id] || 0) / 60) >= goal);
 }
 /* the last day before today that she was in Pet World */
@@ -6620,7 +6622,7 @@ function trackDoneRows(){
   if (S.doneRows.day !== day) S.doneRows = {day, ids:[]};
   const {items, goalRows} = dayPlan(day), today = S.subjectTime?.[day] || {}, fresh = [];
   items.forEach(x => { const i = planItemInfo(x, day); if (i.status !== 'todo') fresh.push([`plan:${x.id}`, i.label, x.subject || '']); });
-  assignedExtras().forEach(x => { if (Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes)) fresh.push([`extra:${x.id}`, extraLabel(x), '']); });
+  assignedExtras().forEach(x => { if (extraFullyDone(x)) fresh.push([`extra:${x.id}`, extraLabel(x), '']); });
   goalRows.forEach(([id, name, goal]) => { if (Math.floor((today[id] || 0) / 60) >= goal) fresh.push([`goal:${id}`, `${name}: ${goal} min`, id]); });
   if (S.fixLog?.day === day) Object.entries(S.fixLog.done).forEach(([key, title]) => fresh.push([`fix:${key}`, `🔁 Fixed and sent again: ${title}`, '']));
   const added = fresh.filter(([id]) => !S.doneRows.ids.includes(id));
@@ -8875,6 +8877,36 @@ function extraSecs(id){
   return assignedExtras().find(x => x.id === id)?.kind === 'vocab' ? Math.max(own, S.subjectTime?.[localDay()]?.words || 0) : own;
 }
 function addExtraTime(id, secs){ extraSecs(id); S.extrasLog.secs[id] = Math.round((S.extrasLog.secs[id] || 0) + Math.max(0, Math.min(secs, 900))); save(); }
+/* ⏱️ timed challenge (owner, Oct 27, 2026; docs/DAILY-PLAN.md "Timed challenge"): a grown-up can make an extra start with
+   a hard N-minute challenge (x.challenge, usually 5): one round that stops when the clock runs out, "how many can you get".
+   That's the warm-up. The rest of the extra's minutes become a separate row later in the day, after the plan items. */
+const challengeMin = x => +x?.challenge > 0 ? Math.max(1, Math.min(Math.round(+x.challenge), Math.round(+x.minutes))) : 0;
+function challengeScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[x.id]; return Number.isFinite(v) ? v : null; }
+function recordChallenge(id, right){
+  extraSecs(id); S.extrasLog.challenge = {...(S.extrasLog.challenge || {}), [id]:right};
+  const best = S.challengeBest?.[id] || 0; S.challengeBest = {...(S.challengeBest || {}), [id]:Math.max(best, right)};
+  save(); return right > best;
+}
+const restMin = x => challengeMin(x) ? Math.max(0, Math.round(+x.minutes) - challengeMin(x)) : 0;
+const restDone = x => Math.max(0, Math.floor(extraSecs(x.id) / 60) - challengeMin(x));
+/* is the warm-up part of this extra done? (the challenge, or all its minutes) */
+const extraFullyDone = x => challengeMin(x) ? challengeScore(x) !== null && restDone(x) >= restMin(x) : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
+const extraWarmDone = x => challengeMin(x) ? challengeScore(x) !== null : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
+/* one extra's row: the warm-up part, or (part 'rest') the minutes left after a challenge */
+function extraRowHTML(x, part = 'warm', lead = ''){
+  const start = (p, berry = true) => `<button type="button" class="btn small${berry ? ' berry' : ''}" data-extra-start="${esc(x.id)}" data-extra-part="${p}">Start</button>`;
+  if (part === 'rest') {
+    const goal = restMin(x); if (!goal) return '';
+    const done = restDone(x), finished = done >= goal;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ➕ ${esc(extraLabel(x))}, more practice · <b>${done} of ${goal} min</b></span>${finished ? '' : start('rest', extraWarmDone(x))}</div>`;
+  }
+  if (challengeMin(x)) {
+    const score = challengeScore(x), best = S.challengeBest?.[x.id] || 0;
+    return `<div class="row extras-row"><span style="flex:1">${score !== null ? '✅' : '⬜'} ${lead}⏱️ ${challengeMin(x)}-minute challenge: ${esc(extraLabel(x))} · <b>${score !== null ? `${score} right` : best ? `best ${best}` : 'how many can you get?'}</b></span>${score !== null ? '' : start('challenge')}</div>`;
+  }
+  const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
+  return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${lead}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : start('all')}</div>`;
+}
 const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it'};
 function extraTypes(x){ const t = (x.skills || []).filter(type => DRILL_IMPL[type]?.sprintItem); return t.length ? t : ['times']; }
 function extraLabel(x){
@@ -8884,17 +8916,16 @@ function extraLabel(x){
 }
 function extrasCardHTML(){
   const list = assignedExtras(); if (!list.length) return '';
-  return `<div class="card extras-card" style="grid-column:1/-1"><h2>📋 Today’s extras</h2>${list.map(x => {
-    const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
-  }).join('')}</div>`;
+  return `<div class="card extras-card" style="grid-column:1/-1"><h2>📋 Today’s extras</h2>${list.map(x => extraRowHTML(x) + extraRowHTML(x, 'rest')).join('')}</div>`;
 }
 let pendingExtra = null, activeExtra = null;   // the extra the next sprint was started from
 document.addEventListener('click', event => {
   const b = event.target.closest('[data-extra-start]'); if (!b) return;
   const x = assignedExtras().find(e => e.id === b.dataset.extraStart); if (!x) return;
-  if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
-  else { pendingExtra = x; openSprint(); }
+  const challenge = b.dataset.extraPart === 'challenge' && challengeMin(x) > 0;
+  if (x.kind === 'vocab' && challenge) { vocabTab = 'sprint'; show('vocab'); startVocab('sprint', x); }
+  else if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
+  else { pendingExtra = challenge ? {...x, challengeRun:true} : x; openSprint(); }
 });
 /* today's minutes for each subject a grown-up set a goal for (ROADMAP F8); time is the same active time the reports count */
 function goalsCardHTML(){
@@ -9148,19 +9179,16 @@ function planCardHTML(){
   const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0, helpHTML = helpPlanHTML();
   const bibleRow = bibleOn() ? (st => `<div class="row extras-row"><span style="flex:1">${st.done ? '✅' : S.bible.skipped === logDayKey() ? '⏭️' : '⬜'} <b>✝️ Bible first:</b> journal, then ${st.verse ? 'the verse or ' : ''}a books round${S.bible.skipped === logDayKey() && !st.done ? ' <small class="muted">(skipped today by a grown-up)</small>' : ''}</span>${st.done ? '' : `<button type="button" class="btn small berry" data-open="bible">Go</button>`}</div>`)(bibleStatus()) : '';
   if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow) return '';
-  const extraRows = extras.map(x => {
-    const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
-  });
+  const extraRows = extras.map(x => extraRowHTML(x, 'warm', extrasFirst() ? '☀️ ' : '')), restRows = extras.map(x => extraRowHTML(x, 'rest')).filter(Boolean);
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
     const must = first.some(y => y.id === x.id && y.carried === x.carried), lead = must ? '<b>⏪ Finish first:</b> ' : x.start && i.status === 'todo' && !fixing && !first.length ? '<b>⭐ Start here:</b> ' : '';
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${x.kind === 'elective' && i.status === 'todo' ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-elective="${esc(x.course)}" data-minutes="${Math.round(+x.minutes) || ''}">Write it</button>` : go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
-  }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
+  }), extrasFirst() ? [] : extraRows, restRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${done} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
-  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${wheelPlanRow()}${rows.join('')}${outsideRowsHTML()}</div>`;
+  return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the warm-up (Fact Sprint, Word Workshop), then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${wheelPlanRow()}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
@@ -9554,7 +9582,7 @@ setInterval(() => {
    until they're done, opening a subject shows the warm-up card instead. Class setting game_settings.extrasFirst
    (on unless a teacher turns it off). */
 const extrasFirst = () => Backend.me?.game_settings?.extrasFirst !== false;
-const warmupPending = () => extrasFirst() && S.warmupSkipped !== localDay() && assignedExtras().some(x => Math.floor(extraSecs(x.id) / 60) < Math.round(+x.minutes));
+const warmupPending = () => extrasFirst() && S.warmupSkipped !== localDay() && assignedExtras().some(x => !extraWarmDone(x));
 const SUBJECT_OPENS = id => !!(SHOPS[id] || ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || id === 'reading');
 function openWarmupCard(){
   if ($('.theme-card')) return;
@@ -9562,8 +9590,7 @@ function openWarmupCard(){
   el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Warm-up');
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">Before your first subject</p><div class="theme-emoji" aria-hidden="true">☀️</div><h2>Warm-up time!</h2>
     <p>Do these first, then pick a subject.</p>${list.map(x => {
-      const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-      return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+      return extraRowHTML(x);
     }).join('')}<button type="button" class="btn small" data-warmup-close>Back to town</button>
     <details class="warmup-skip"><summary>Grown-up: skip the warm-up today</summary><form class="theme-pin" data-warmup-skip><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Skip for today</button></form></details></div>`;
   document.body.appendChild(el);
@@ -11335,10 +11362,11 @@ function renderVocab(){
     <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}
     ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: ${flaggedWaiting().map(f => `<b>${esc(f.w)}</b> ${dictLinkHTML(f.w)}`).join(' · ')} · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, or want to keep a word from your own writing, highlight it (double-click, or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
 }
-function startVocab(mode){
+function startVocab(mode, challengeExtra = null){
   const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
   stopVocabTimer();
-  vocabRun = {mode, all, focus, spellFocus:vocabWords().spellFocus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + 60000 : 0, started:performance.now()};
+  const cmin = challengeExtra ? challengeMin(challengeExtra) : 0;
+  vocabRun = {mode, challengeId:cmin ? challengeExtra.id : null, challengeMin:cmin, all, focus, spellFocus:vocabWords().spellFocus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + (cmin ? cmin * 60 : 60) * 1000 : 0, started:performance.now()};
   if (mode === 'sprint') vocabTimer = setInterval(() => { const left = Math.max(0, vocabRun.end - performance.now()); const t = $('#vocabTime'); if (t) t.textContent = Math.ceil(left / 1000); if (left <= 0) finishVocab(); }, 200);
   nextVocabCard();
 }
@@ -11436,15 +11464,16 @@ function answerVocab(ok, shownAnswer, typed = ''){
 function finishVocab(){
   stopVocabTimer(); const run = vocabRun; vocabRun = null; if (!run) return;
     assignedExtras().filter(x => x.kind === 'vocab').forEach(x => addExtraTime(x.id, (performance.now() - run.started) / 1000));   // time on an assigned Word Workshop extra, in any mode
-      logEvent({k:'vocab', mode:run.mode, s:run.correct, ...(run.mode === 'sprint' ? {} : {n:run.index})});   // day log
+      logEvent({k:'vocab', mode:run.mode, s:run.correct, ...(run.mode === 'sprint' ? {} : {n:run.index}), ...(run.challengeId ? {min:run.challengeMin} : {})});   // day log
+  const challengeBest = run.challengeId && performance.now() >= run.end - 1500 ? recordChallenge(run.challengeId, run.correct) : false;
   let extra = '';
   if (run.mode === 'sprint') {
-    const coins = Math.floor(run.correct / 2); S.coins += coins; const best = run.correct > S.vocab.sprintBest; if (best) S.vocab.sprintBest = run.correct;
-    save(); updateHeader(); extra = `${best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.vocab.sprintBest}</p>`}${coins ? `<p>You earned <b>🪙 ${coins}</b>.</p>` : ''}`;
+    const coins = Math.floor(run.correct / 2); S.coins += coins; const best = !run.challengeId && run.correct > S.vocab.sprintBest; if (best) S.vocab.sprintBest = run.correct;
+    save(); updateHeader(); extra = `${run.challengeId ? (challengeBest ? '<p><b>New challenge best!</b></p>' : `<p class="muted">Your challenge best is ${S.challengeBest?.[run.challengeId] || run.correct}</p>`) : best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.vocab.sprintBest}</p>`}${coins ? `<p>You earned <b>🪙 ${coins}</b>.</p>` : ''}`;
   }
   const missed = [...new Map(run.missed.map(v => [wordKey(v.w), v])).values()];
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
-    <div class="sprint-card vocab-card"><div class="big-emoji">${run.mode === 'sprint' ? '⚡' : '🃏'}</div><h2>${run.correct} right${run.mode === 'sprint' ? '' : ` of ${run.index}`}</h2>${extra}
+    <div class="sprint-card vocab-card"><div class="big-emoji">${run.mode === 'sprint' ? '⚡' : '🃏'}</div><h2>${run.correct} right${run.challengeId ? ` in ${run.challengeMin} minute${run.challengeMin === 1 ? '' : 's'}!` : run.mode === 'sprint' ? '' : ` of ${run.index}`}</h2>${extra}
     ${missed.length ? `<p class="muted">Words to look at again</p><dl class="vocab-missed">${missed.map(v => `<dt>${esc(v.w)}</dt><dd>${esc(v.d)}</dd>`).join('')}</dl>` : '<p>No misses. Great job!</p>'}
     <div class="row"><button class="btn berry" data-vocab-start="${run.mode}">Again</button><button class="btn" data-vocab-tab="chart">See my words</button></div></div>`;
 }
@@ -12779,7 +12808,9 @@ function openSprint(){
   if (pad) pad.hidden = true;
   $('#spCorrect').textContent = '0'; $('#spTime').textContent = '60'; $('#timerFill').style.width = '100%';
   $('#spOpts').hidden = true; $('#spOpts').innerHTML = '';
-  $('#spNote').textContent = 'Answer as many as you can in 60 seconds. Every right answer powers up your tips.';
+  const cm = activeExtra?.challengeRun ? challengeMin(activeExtra) : 0;
+  if (cm) $('#spTime').textContent = String(cm * 60);
+  $('#spNote').textContent = cm ? `⏱️ ${cm}-minute challenge: answer as many as you can before the clock runs out.` : 'Answer as many as you can in 60 seconds. Every right answer powers up your tips.';
   renderSprintPick();
   show('sprint'); setTimeout(() => $('#spStart').focus(), 60);
 }
@@ -12791,6 +12822,7 @@ function sprintPicked(){
 }
 function renderSprintPick(){
   const types = sprintDrillTypes(), picked = sprintPicked(), wrap = $('#spPick');
+    if (activeExtra?.challengeRun) { const best = S.challengeBest?.[activeExtra.id] || 0; wrap.innerHTML = `<p class="sp-pick-q">⏱️ ${challengeMin(activeExtra)}-minute challenge: <b>${esc(extraLabel(activeExtra))}</b>${best ? ` · your best is ${best}` : ''}</p>`; return; }
     if (activeExtra) { wrap.innerHTML = `<p class="sp-pick-q">📋 Today’s extra: <b>${esc(extraLabel(activeExtra))}</b> · ${Math.floor(extraSecs(activeExtra.id) / 60)} of ${Math.round(+activeExtra.minutes)} min</p>`; return; }
   const n = picked.length;
   wrap.innerHTML = `${types.length > 1 ? `<p class="sp-pick-q">Which skills do you want in this sprint?</p>
@@ -12806,7 +12838,8 @@ function renderSprintPick(){
 function sprintPad(){ const pad = $('#spInput').nextElementSibling; return pad?.classList.contains('number-pad') ? pad : null; }
 function stopSprintTimer(){ if (spTimer) { clearInterval(spTimer); spTimer = null; } }
 $('#spStart').addEventListener('click', () => {
-  sp = {end:performance.now() + 60000, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:'', types:activeExtra ? extraTypes(activeExtra) : sprintPicked(), tables:activeExtra?.tables || [], extraId:activeExtra?.id || null, started:performance.now()};
+  const dur = (activeExtra?.challengeRun ? challengeMin(activeExtra) * 60 : 60) * 1000;
+  sp = {dur, challengeId:activeExtra?.challengeRun ? activeExtra.id : null, challengeMin:activeExtra?.challengeRun ? challengeMin(activeExtra) : 0, end:performance.now() + dur, correct:0, missed:[], slow:[], queue:[], item:null, shown:0, lock:false, hadWrong:false, wrongValue:'', types:activeExtra ? extraTypes(activeExtra) : sprintPicked(), tables:activeExtra?.tables || [], extraId:activeExtra?.id || null, started:performance.now()};
   $('#spStartWrap').hidden = true; $('#spInput').hidden = false; $('#spCheck').hidden = false; $('#spNote').textContent = 'Type the answer. It moves on by itself when it\'s right. Press Enter to check a different answer.';
   const pad = $('#spInput').nextElementSibling; if (pad?.classList.contains('number-pad')) pad.hidden = false;
   nextFact(); spTimer = setInterval(sprintTick, 100);
@@ -12843,7 +12876,7 @@ function nextFact(){
 }
 function sprintTick(){
   const left = Math.max(0, sp.end - performance.now());
-  $('#spTime').textContent = Math.ceil(left/1000); $('#timerFill').style.width = (left/600) + '%';
+  $('#spTime').textContent = Math.ceil(left/1000); $('#timerFill').style.width = (left / (sp.dur || 60000) * 100) + '%';
   if (left <= 0) endSprint();
 }
 $('#spInput').addEventListener('input', e => {
@@ -12896,7 +12929,8 @@ $('#spCheck').addEventListener('click', () => {
 function endSprint(){
   stopSprintTimer(); if (!sp) return;
   const run = sp; sp = null;
-  logEvent({k:'sprint', s:run.correct, skills:run.types});   // day log
+  logEvent({k:'sprint', s:run.correct, skills:run.types, ...(run.challengeId ? {min:run.challengeMin} : {})});   // day log
+  const challengeBest = run.challengeId ? recordChallenge(run.challengeId, run.correct) : false;
   if (run.extraId) addExtraTime(run.extraId, (performance.now() - run.started) / 1000);   // a sprint started from the extras card
   const pw = Math.round((1 + Math.min(run.correct, 20)*0.05)*100)/100;
   S.power = Math.max(S.power, pw);
@@ -12907,8 +12941,8 @@ function endSprint(){
   Backend.log('sprints', {correct:run.correct}); Backend.flush();
   const seen = new Set(), chips = [];
   run.missed.forEach(entry => { const id = Array.isArray(entry) ? fkey(entry[0], entry[1]) : `${entry.type}:${entry.key}`; if (!seen.has(id)) { seen.add(id); chips.push(Array.isArray(entry) ? `<span>${entry[0]} × ${entry[1]} = ${entry[0]*entry[1]}</span>` : `<span>${esc(entry.reveal || `${entry.prompt} = ${entry.answer}`)}</span>`); } });
-  $('#summaryCard').innerHTML = `<div class="big-emoji">⚡</div><h2>${run.correct} correct!</h2>
-    ${best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.sprintBest}</p>`}
+  $('#summaryCard').innerHTML = `<div class="big-emoji">${run.challengeId ? '⏱️' : '⚡'}</div><h2>${run.correct} ${run.challengeId ? `right in ${run.challengeMin} minute${run.challengeMin === 1 ? '' : 's'}!` : 'correct!'}</h2>
+    ${run.challengeId ? (challengeBest ? '<p><b>New challenge best!</b></p>' : `<p class="muted">Your challenge best is ${S.challengeBest?.[run.challengeId] || run.correct}</p>`) : best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.sprintBest}</p>`}
     ${coins ? `<p>You earned <b>🪙 ${coins}</b> (${skills} skill${skills === 1 ? '' : 's'}).</p>` : ''}
     <p>Your tips are powered up <b>×${fmtPow(S.power)}</b> for your next café shift.</p>
     ${chips.length ? `<p class="muted">Tricky ones</p><div class="factchips">${chips.join('')}</div>` : ''}
@@ -13362,8 +13396,8 @@ function placeLabel(key){
 function eventText(e){
   const score = e.n ? ` · ${e.s} of ${e.n}` : e.s != null ? ` · ${e.s} right` : '';
   if (e.k === 'assess') return `${stationLabel(e.shop, e.station, e.mode)}${score}${e.passed ? ' ✅ passed' : ''}`;
-  if (e.k === 'sprint') return `⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
-  if (e.k === 'vocab') return `🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
+  if (e.k === 'sprint') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
+  if (e.k === 'vocab') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
   if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through', review:'test review'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
   if (e.k === 'review') return `📇 ${englishCourse(e.course)?.title || e.course}: test review flashcards · ${e.s} of ${e.n} known on the first try`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
