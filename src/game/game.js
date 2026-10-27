@@ -9343,6 +9343,11 @@ function chatMsgs(){
   catch(e) { return []; }
 }
 const chatUnread = msgs => msgs.filter(m => m.at > (S?.chat?.seenAt || 0)).length;
+/* read receipts: when a grown-up last read her replies (readAt, saved with the messages by the teacher app) */
+function chatReadAt(){ try { return Math.max(0, +JSON.parse(Backend.me?.quiz_overrides?.chat || '{}')?.readAt || 0); } catch(e) { return 0; } }
+/* 🔔 her option (this device): a notification when a message comes while Pet World is in another tab */
+const CHAT_NOTIFY_KEY = 'pw-chat-notify-me';
+const chatNotifyOn = () => { try { return localStorage.getItem(CHAT_NOTIFY_KEY) === '1' && typeof Notification !== 'undefined' && Notification.permission === 'granted'; } catch(e) { return false; } };
 const chatBtn = document.createElement('button');
 chatBtn.type = 'button'; chatBtn.id = 'chatBtn'; chatBtn.className = 'chat-btn'; chatBtn.hidden = true;
 document.body.appendChild(chatBtn);
@@ -9353,20 +9358,23 @@ function updateChatBtn(){
   chatBtn.innerHTML = `💬${n ? ` <b>${n}</b>` : ''}`; chatBtn.setAttribute('aria-label', n ? `${n} new message${n > 1 ? 's' : ''}` : 'Messages');
   chatBtn.classList.toggle('has-new', !!n);
   const newest = msgs[msgs.length - 1];
-  if (newest && n && newest.at > chatToldAt) { chatToldAt = newest.at; toast(`💬 New message from ${newest.from}`); }
+  if (newest && n && newest.at > chatToldAt) {
+    chatToldAt = newest.at; toast(`💬 New message from ${newest.from}`);
+    if (document.hidden && chatNotifyOn()) { try { new Notification(`💬 New message from ${newest.from}`, {body:newest.text.slice(0, 200), tag:`chat:${newest.id}`}); } catch(e) { /* some phones only allow notifications from an installed app */ } }
+  }
   if ($('#chatCard')) renderChatCard();
 }
 setInterval(updateChatBtn, 2000);
-setInterval(() => { if (S && Backend.me && !Backend.lookOnly && !document.hidden) void Backend.refreshSettings().then(updateChatBtn); }, 30000);
+setInterval(() => { if (S && Backend.me && !Backend.lookOnly && (!document.hidden || chatNotifyOn())) void Backend.refreshSettings().then(updateChatBtn); }, 30000);   // in another tab too, when she turned on notifications
 chatBtn.addEventListener('click', () => openChatCard());
 let chatShown = '';
 function renderChatCard(){
   const el = $('#chatCard'); if (!el) return;
   const msgs = chatMsgs(), all = [...msgs.map(m => ({...m, mine:false})), ...S.chat.replies.map(r => ({...r, from:'You', mine:true}))].sort((a, b) => a.at - b.at).slice(-40);
-  const key = all.map(m => m.id + m.at).join(','); if (key === chatShown) return; chatShown = key;
+  const readAt = chatReadAt(), key = all.map(m => m.id + m.at).join(',') + ':' + readAt; if (key === chatShown) return; chatShown = key;
   const names = [...new Set(msgs.map(m => m.from))].join(' and ') || 'a grown-up';
   if (msgs.length) { S.chat.seenAt = Math.max(S.chat.seenAt, msgs[msgs.length - 1].at); save(); }
-  el.querySelector('[data-chat-list]').innerHTML = all.map(m => `<div class="chat-msg${m.mine ? ' mine' : ''}"><small>${esc(m.from)} · ${esc(new Date(m.at).toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'}))}</small><div>${esc(m.text)}</div></div>`).join('') || '<p class="muted">No messages yet.</p>';
+  el.querySelector('[data-chat-list]').innerHTML = all.map(m => `<div class="chat-msg${m.mine ? ' mine' : ''}"><small>${esc(m.from)} · ${esc(new Date(m.at).toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'}))}</small><div>${esc(m.text)}</div>${m.mine ? `<small class="chat-receipt">${readAt >= m.at ? '✓✓ Seen' : '✓ Sent'}</small>` : ''}</div>`).join('') || '<p class="muted">No messages yet.</p>';
   el.querySelector('[data-chat-who]').textContent = `Messages from ${names}`;
   const list = el.querySelector('[data-chat-list]'); list.scrollTop = list.scrollHeight;
 }
@@ -9378,10 +9386,18 @@ function openChatCard(){
     <div class="chat-list" data-chat-list></div>
     <label>Write back<textarea name="text" rows="2" maxlength="1000" placeholder="Type your reply…"></textarea></label>
     <div class="row" style="margin-top:8px"><button type="submit" class="btn berry">Send</button><button type="button" class="btn small" data-chat-close>Close</button></div>
-    <p class="muted" data-chat-sent style="margin:6px 0 0" role="status"></p></form>`;
+    <p class="muted" data-chat-sent style="margin:6px 0 0" role="status"></p>
+    ${typeof Notification === 'undefined' ? '' : `<label class="chat-notify"><input type="checkbox" data-chat-notify ${chatNotifyOn() ? 'checked' : ''}> 🔔 Tell me when a message comes, even when I’m in another tab</label>`}</form>`;
   document.body.appendChild(el); chatShown = ''; renderChatCard(); updateChatBtn();
   setTimeout(() => el.querySelector('textarea')?.focus(), 50);
   el.querySelector('[data-chat-close]').addEventListener('click', () => { el.remove(); updateChatBtn(); });
+  el.querySelector('[data-chat-notify]')?.addEventListener('change', async e => {
+    const box = e.target;
+    if (!box.checked) { try { localStorage.removeItem(CHAT_NOTIFY_KEY); } catch(err) { /* private mode */ } return; }
+    let p = Notification.permission; if (p === 'default') { try { p = await Notification.requestPermission(); } catch(err) { /* older browsers */ } }
+    if (p === 'granted') { try { localStorage.setItem(CHAT_NOTIFY_KEY, '1'); } catch(err) { /* private mode */ } toast('🔔 You’ll get a notification when a message comes.'); }
+    else { box.checked = false; toast('This browser is blocking notifications. Ask a grown-up to allow them for Pet World.'); }
+  });
   el.querySelector('[data-chat-form]').addEventListener('submit', e => {
     e.preventDefault();
     const box = el.querySelector('textarea'), text = box.value.trim(); if (!text) { box.focus(); return; }

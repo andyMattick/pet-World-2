@@ -1339,3 +1339,5 @@ a.btn{display:inline-block; text-decoration:none}
 .wheel-form{text-align:left}
 .wheel-check{display:block; margin:4px 0}
 .wheel-picks small{color:inherit; opacity:.85}
+.chat-receipt{display:block; text-align:right; opacity:.7; font-size:.75rem}
+.chat-notify{display:flex; gap:6px; align-items:center; margin-top:8px; font-size:.85rem}

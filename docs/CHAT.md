@@ -19,3 +19,12 @@ A grown-up (a parent or teacher) can write to a student from the teacher app, an
 - Tapping 💬 opens **Messages from Dad**: every message with who wrote it and when, her replies on the right, and a box to write back. Her time is paused while it's open, like ✋ questions.
 - Saved state: `S.chat = {seenAt, replies:[{id, at, text}]}` (the last 60 replies).
 - Not shown in Look-only mode, or in local mode (no sign-in).
+
+## Read receipts and notifications (Oct 27, 2026)
+
+- **Read receipts, both ways.**
+  - In the teacher app, each of your messages shows **✓ Sent**, or **✓✓ Seen** once she opens it (from her `S.chat.seenAt`). The line under the conversation gives the time she saw your last one.
+  - In her town, each of her replies shows **✓ Sent**, or **✓✓ Seen** once a grown-up has had the conversation open (or wrote back) after she sent it. The teacher app saves that time with the messages: `quiz_overrides.chat = {msgs, readAt}`.
+- **🔔 Notifications for the grown-up** (an option in the 💬 Messages panel, per device): **🔕 Notify me when a student writes** turns it on. A new reply then shows a pop-up on the dashboard (click it to jump to Messages) and plays a short sound. If the browser allows it, a device notification ("💬 New message from Ava") also comes. It checks every 30 seconds while the teacher app is open, even in a background tab. It can't reach you when the teacher app is closed. That would need a push service, which Pet World doesn't have.
+- **🔔 Notifications for her** (a checkbox in her Messages box, per device): **Tell me when a message comes, even when I'm in another tab**. With it on, the town keeps checking for messages while Pet World is in a background tab, and a new one sends a device notification. It asks the browser's permission the first time.
+- Code: `parseReadAt`, `startChatAlerts` and `drawNotify` in `src/teacher/chat.ts`; `chatReadAt`, `chatNotifyOn` and `CHAT_NOTIFY_KEY` in `src/game/game.js`.
