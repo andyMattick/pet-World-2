@@ -95,6 +95,8 @@ Every time the owner says something is a game, it goes in **both** places: insid
 
 In History and Science (Biology), the lesson videos are the most important part. Encourage her to watch them (the 🎬 Watch first button and prompt), and count watching as time for that class (`ActivityTracker.watching`). See `docs/PRACTICE-TIME.md`.
 
+**Standard for every new History or Science unit:** check Khan's lesson pages and list every video in each lesson in `KHAN_VIDEOS` (src/shared/questionBanks.js; `[]` for a lesson with none), so each one shows as its own ▶ button. Each lesson's `KHAN_LINKS` entry opens the start of that lesson. `npm run verify` fails if a lesson has no video list. Units built before this rule (History 1–3, Biology 1–2) are listed in `scripts/verify.mjs` until their videos are added.
+
 ## Reading Quiz
 
 Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet World coins. See `docs/READING-QUIZ.md`.

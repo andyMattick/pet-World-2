@@ -232,6 +232,21 @@ if (!existsSync('public/brain-games/index.html')) problems.push("The Brain Games
 try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); problems.push(...offlineProblems(await khanLinks())); }
 catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
 
+// History and Science: the videos come first (owner rule, Oct 27, 2026; CLAUDE.md). Every lesson block of a History or
+// Biology unit lists its Khan videos in KHAN_VIDEOS (an empty list for a lesson with none), and the game shows them and
+// counts watching as class time. Units built before the rule are listed here until their videos are added.
+try {
+  const ID_STUB = "const questionId = (c, s, p, a) => `${c}:${s}:${p}:${a}`;";   // questionBanks.js imports a TypeScript file; a stand-in lets Node load it
+  const src = readFileSync('src/shared/questionBanks.js', 'utf8').replace(/^import \{ questionId \} from '\.\/questionIds';$/m, ID_STUB);
+  const { LESSON_COURSES, KHAN_VIDEOS } = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
+  const BEFORE_THE_RULE = ['history', 'history2', 'history3', 'bio1', 'bio2'];
+  for (const course of LESSON_COURSES.filter(c => /^(history|bio)\d*$/.test(c.id) && !BEFORE_THE_RULE.includes(c.id)))
+    for (const group of course.groups) if (!Array.isArray(KHAN_VIDEOS?.[course.id]?.[group.id])) problems.push(`${course.id}: lesson "${group.name}" has no KHAN_VIDEOS list (src/shared/questionBanks.js). History and Science lessons list their Khan videos; use [] for a lesson with none.`);
+} catch (error) { problems.push(`The History/Science video check could not run: ${error.message}`); }
+need('src/game/game.js', 'function khanVideosHTML(', 'the lesson video buttons (History and Science videos come first)');
+need('src/game/game.js', 'ActivityTracker.watching = ', 'video time counted as class time');
+need('src/game/game.js', 'function watchFirstThen(', 'the watch-first prompt before practice');
+
 // Tests: review first, a grown-up's PIN, every unit (CLAUDE.md, "Tests: review first"; docs/TEST-GATE.md)
 for (const [fn, what] of [['async function gatedTestReview(', 'the PIN before a test review'], ['async function gatedPetWorldTest(', 'the review + PIN before a Pet World test'],
   ['async function gatedKhanTest(', 'the review + PIN before a Khan test'], ['async function gatedUnitReview(', 'the PIN before a math unit review'], ['async function gatedUnitTest(', 'the review + PIN before a math Unit Test'],

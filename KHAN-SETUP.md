@@ -38,7 +38,8 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 | Origins of History Museum | World history | [Origins of history](https://www.khanacademy.org/humanities/world-history/x66f79d8a:origins-of-history) |
 | Rift Valley Museum | World history | [Early humans](https://www.khanacademy.org/humanities/world-history/x66f79d8a:early-humans) |
 | Nile Valley Museum | World history | [Early agrarian societies](https://www.khanacademy.org/humanities/world-history/x66f79d8a:early-agrarian-societies) |
-| Rome Museum | World history | [Empires and belief systems](https://www.khanacademy.org/humanities/world-history/x66f79d8a:empires-and-belief-systems). Comparing portable belief systems and The rise and fall of empires link straight to Khan; the other lessons show a Khan search. |
+| Rome Museum | World history | [Empires and belief systems](https://www.khanacademy.org/humanities/world-history/x66f79d8a:empires-and-belief-systems). Every lesson links to its start on Khan, with each video as its own button. |
+| Silk Road Museum | World history | [Regional webs](https://www.khanacademy.org/humanities/world-history/x66f79d8a:regional-webs). Every lesson links to its start on Khan, with each video as its own button. |
 | Nature Center (Biology) | Grade 6 science | [Life sciences](https://www.khanacademy.org/science/grade-6-science/x88f5990a7622d8f5:life-sciences) |
 | Petting Zoo (Biology Unit 2) | Middle school biology | Organism growth and reproduction (a teacher can still paste their own links in Lessons) |
 

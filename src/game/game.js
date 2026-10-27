@@ -25,7 +25,7 @@ import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, mo
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -136,7 +136,7 @@ function normalize(raw){
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
-  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4','prepositions','prepositionslab','prepositionslab2']);   // English projects are kept here too
+  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4','history5','prepositions','prepositionslab','prepositionslab2']);   // English projects are kept here too
   s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
@@ -9601,8 +9601,8 @@ $('#town').addEventListener('click', e => {
   else if (id === 'bible') openBible('today');
 });
 
-const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4';
-const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',bioChem:'bio1',bioCells:'bio2'};
+const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5';
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2'};
 const isScienceCourse = id => /^bio\d+$/.test(id);
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id) || id === 'prepositions';
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
@@ -9641,6 +9641,17 @@ const ROLE_CARDS = {
   rome:{emoji:'🛡️',who:'a Roman legionary',where:'the Roman Empire, about 100 CE',intro:'You march, build roads, and guard the frontier of the empire.'},
   romeHan:{emoji:'📚',who:'a Han government official',where:'Luoyang, China, about 100 CE',intro:'You were recommended for your learning in the Confucian classics and trained at the Imperial Academy. Merchants bring rumors of a great empire far to the west: Rome.'},
   womenAncient:{emoji:'✍️',who:'Ban Zhao, Han historian and writer',where:'Luoyang, China, about 100 CE',intro:'You finished your brother’s history of the Han and wrote a famous book of advice for women.'},
+  collapseEmpires:{emoji:'🏚️',who:'a Roman landowner in Gaul',where:'the Western Roman Empire, about 450 CE',intro:'Taxes keep rising, the roads feel less safe, and Goths now live nearby. Neighbors ask you what is happening to Rome.'},
+  byzantine:{emoji:'👑',who:'Empress Theodora',where:'Constantinople, about 540 CE',intro:'You rule beside Emperor Justinian in the great city where the Roman Empire lives on in the East.'},
+  darkAges:{emoji:'📜',who:'a monk copying books',where:'a monastery in Ireland, about 800 CE',intro:'You spend your days praying and copying books by hand. Visitors ask whether learning has died since Rome fell.'},
+  serfdom:{emoji:'🌾',who:'a serf on a French manor',where:'France, about 1100 CE',intro:'You farm strips of your lord’s land and owe him work and crops. Travelers ask how life on the manor works.'},
+  peasantRevolts:{emoji:'🔥',who:'an English peasant marching with Wat Tyler',where:'England, 1381 CE',intro:'Since the plague, you know your work is worth more, but the lords and the new poll tax say otherwise.'},
+  europeChina:{emoji:'🏯',who:'a Tang official',where:'Chang’an, China, about 750 CE',intro:'You passed the exams to serve the emperor in the busiest city in the world. Visitors ask how China rebuilt after the Han.'},
+  islamicWorld:{emoji:'🕌',who:'a merchant in Cairo',where:'Cairo, about 1100 CE',intro:'Your ships and caravans reach Spain and India. Travelers ask you about the caliphs and the Islamic world.'},
+  islamGoldenAge:{emoji:'📚',who:'a translator at the House of Wisdom',where:'Baghdad, about 830 CE',intro:'You turn Greek, Persian, and Indian books into Arabic, and scholars around you add new ideas.'},
+  silkRoad:{emoji:'🐫',who:'a Sogdian caravan merchant',where:'Samarkand, about 700 CE',intro:'Your camels carry silk west and silver east. Every oasis brings new goods, languages, and beliefs.'},
+  expandingRoutes:{emoji:'⛵',who:'Ibn Battuta, a traveler from Morocco',where:'the Indian Ocean and Africa, about 1350 CE',intro:'You have traveled by ship and by camel from Morocco to China and down to Mali. People ask what you have seen.'},
+  songChina:{emoji:'🏮',who:'a merchant in Song China',where:'Kaifeng, China, about 1100 CE',intro:'Your shop sells porcelain and silk, you are paid in paper money, and your son is studying for the exams.'},
   cellsOrganisms:{emoji:'🔬',who:'a tour guide at the Nature Center’s Microscope Corner',where:'Pet World Nature Center',intro:'Your tour group is peeking through microscopes at pond water and onion skin.'},
   cellPartsU:{emoji:'🧫',who:'a tour guide at the Giant Cell Model',where:'Pet World Nature Center',intro:'Your group walks right inside a model cell as big as a room.'},
   cellPartsA:{emoji:'🧩',who:'a tour guide running the Cell Detective game',where:'Pet World Nature Center',intro:'Visitors describe a cell problem, and you figure out which part is involved.'},
@@ -9742,6 +9753,13 @@ const HISTORY_PROJECTS = {
     {key:'comic',kind:'photo',label:'2. Draw the comic on paper with speech bubbles. Use at least 4 interjections (at least 2 strong ones with an exclamation point and 2 mild ones with a comma) and at least 3 prepositional phrases. Take a photo and add it here.'},
     {key:'lines',label:'3. Type the words from your speech bubbles, exactly as you wrote them.'},
     {key:'explain',label:'4. Pick one strong and one mild interjection from your comic. Explain how you chose the punctuation for each.'}]},
+  history5:{title:'Trade Web Travel Journal',summary:'Follow one trade good or traveler across a regional web and show what moved along with it.',steps:[
+    {key:'subject',label:'1. Choose one trade good (silk, paper, gold, salt, porcelain, spices) or one traveler (Ibn Battuta, Zheng He, a Sogdian merchant). Say where and when.'},
+    {key:'route',label:'2. Describe the route: which places, which network (Silk Roads, Indian Ocean, Sahara), and how people traveled.'},
+    {key:'evidence',label:'3. Give at least three pieces of evidence (a source, an object, a map, or a video from the unit) and what each shows.'},
+    {key:'spread',label:'4. Besides goods, what else moved along the route (a religion, an idea, an invention, a disease)? Explain one.'},
+    {key:'claim',label:'5. Make a claim: how did this web connect people after the fall of Rome and the Han? Defend it with evidence.'},
+    {key:'sources',label:'6. List the sources you used so a teacher can check them.'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -9785,6 +9803,8 @@ const englishCourse = course => course === 'punctuation'
     ? {id:'history3',building:'histAgrarian',title:'History Unit 3: Early Agrarian Societies',skills:HISTORY_UNIT3,groups:HISTORY_GROUPS3,finalKey:'history3:final-test',testPer:2,finalPass:14,noQuizzes:true}
   : course === 'history4'
     ? {id:'history4',building:'histEmpires',title:'History Unit 4: Empires and Belief Systems',skills:HISTORY_UNIT4,groups:HISTORY_GROUPS4,finalKey:'history4:final-test',testPer:2,finalPass:19}   // Khan's four quizzes (HISTORY_GROUPS4 quizName/quizSkills; docs/HISTORY-UNIT4.md)
+  : course === 'history5'
+    ? {id:'history5',building:'histWebs',title:'History Unit 5: Regional Webs',skills:HISTORY_UNIT5,groups:HISTORY_GROUPS5,finalKey:'history5:final-test',testPer:2,finalPass:17}   // Khan's two quizzes (docs/HISTORY-UNIT5.md)
   : course === 'bio1'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : course === 'bio2'
@@ -9885,6 +9905,7 @@ const KHAN_UNIT_TESTS = {
   history2:`${KHAN}humanities/world-history/x66f79d8a:early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/test/x66f79d8a:early-humans-unit-test`,
   history3:`${KHAN}humanities/world-history/x66f79d8a:early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/test/x66f79d8a:early-agrarian-societies-unit-test`,
   history4:`${KHAN}humanities/world-history/x66f79d8a:empires-and-belief-systems/x66f79d8a:women-in-the-ancient-world-4-15/test/x66f79d8a:empires-and-belief-systems-unit-test`,
+  history5:`${KHAN}humanities/world-history/x66f79d8a:regional-webs/x66f79d8a:expanding-the-silk-roads-5-8/test/x66f79d8a:regional-webs-unit-test`,
   bio1:`${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:human-digestive-system/test/x88f5990a7622d8f5:life-sciences-unit-test`,
   bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`
 };
@@ -10122,7 +10143,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','history','history2','history3','history4','bio1','bio2'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','history','history2','history3','history4','history5','bio1','bio2'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -10265,7 +10286,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (isHistoryCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS : courseId === 'history2' ? HISTORY2_QUESTIONS : HISTORY_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (isHistoryCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'history5' ? HISTORY5_QUESTIONS : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS : courseId === 'history2' ? HISTORY2_QUESTIONS : HISTORY_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
