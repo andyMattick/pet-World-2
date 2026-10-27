@@ -34,5 +34,7 @@ On the Ledger, under English: "📇 English Unit 2: Verbs: test review flashcard
 
 The review teaches, it isn't just another quiz. It's the same review before the Pet World test and the Khan test.
 
-- **English, History, Biology:** a wrong answer shows the lesson for that skill right away (its short lesson, the group's "learn" line, and its video or Khan link). After the 8 questions, every lesson she missed comes back in a **fix-up round**: the lesson first, then a new question on it. A miss shows the lesson again and adds another new question (up to 3 per lesson). The test is ready only after the fix-up round. The result screen shows her first-try score and which lessons she went back over.
-- **Math:** a miss already brings the step hints, the mix-up note and practice pop-ups. After the 8 orders, each skill she didn't get perfect comes back as fix-up orders (her pet explains the idea first; Hint stays available) until she gets one perfect, up to 10 extra orders.
+- **English, History, Biology:** a wrong answer shows the lesson for that skill right away (its short lesson, the group's "learn" line, and its video or Khan link). The result screen shows her score and the lessons to look at again.
+- **Math:** a miss brings the step hints, the mix-up note and practice pop-ups.
+
+**No fix-up round (owner, Oct 27, 2026).** The fix-up round (missed lessons coming back before the review counted) was removed: it wasn't clear to her or to a grown-up that it was still going, so a review could look finished without counting. Now the review counts as soon as she finishes the flashcards and the 8 questions (math: the review orders), and the test opens with a grown-up's PIN.

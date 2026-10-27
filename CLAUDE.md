@@ -76,12 +76,12 @@ See `README.md` for setup and architecture, and `docs/REWARDS.md` for the next p
 This applies to **every unit in every subject, now and in the future** (English, History, Biology, every math shop, every grade). See `docs/TEST-GATE.md` and `docs/TEST-REVIEW.md`.
 
 1. **Review before every test.** The 📇 review comes before the Pet World unit test and again before the Khan unit test. It's the same review both times. Starting a test uses the review up, so every try needs a new one (`S.testReady`, `markTestReady`, `useTestReady`).
-2. **The review teaches what she missed.** A wrong answer shows that lesson right away (`reviewTeachHTML`). After the questions, every missed lesson comes back in a fix-up round: the lesson first, then a new question (`startReviewFixup`). Math does the same with fix-up orders (`shift.unitReview.needs`). The test is ready only after the fix-up.
+2. **The review teaches what she missed.** A wrong answer shows that lesson right away (`reviewTeachHTML`), and the result screen lists the lessons to look at again. There's **no fix-up round** (owner, Oct 27, 2026): the review is done when she finishes the flashcards and the 8 questions (math: the review orders), and then a grown-up OKs the test with the PIN.
 3. **A grown-up's PIN** before each review and before each test (`askGrownUp`, `gatedTestReview`, `gatedPetWorldTest`, `gatedKhanTest`, `gatedUnitReview`, `gatedUnitTest`). There's no skip button, only Cancel. Every OK goes in the day log.
 4. **Written answers** never show what a strong answer has unless a grown-up opens the 💡 hint with the PIN.
 
 **A new unit is not done until:**
-- It runs through the shared library course (`englishCourse`) or shop (`SHOPS` + `renderShopFloor`) code, so it gets the review, the PIN steps and the fix-up for free. Never build a separate test screen around them.
+- It runs through the shared library course (`englishCourse`) or shop (`SHOPS` + `renderShopFloor`) code, so it gets the review and the PIN steps for free. Never build a separate test screen around them.
 - It has a Khan unit test link: `KHAN_UNIT_TESTS` (English, History, Biology) or `MATH_KHAN_UNITS` (math) in `src/game/game.js`, and the table in `KHAN-SETUP.md`.
 - Every lesson has its short `lesson:` explanation (what the review shows when she misses it).
 

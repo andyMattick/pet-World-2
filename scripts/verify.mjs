@@ -250,7 +250,7 @@ need('src/game/game.js', 'function watchFirstThen(', 'the watch-first prompt bef
 // Tests: review first, a grown-up's PIN, every unit (CLAUDE.md, "Tests: review first"; docs/TEST-GATE.md)
 for (const [fn, what] of [['async function gatedTestReview(', 'the PIN before a test review'], ['async function gatedPetWorldTest(', 'the review + PIN before a Pet World test'],
   ['async function gatedKhanTest(', 'the review + PIN before a Khan test'], ['async function gatedUnitReview(', 'the PIN before a math unit review'], ['async function gatedUnitTest(', 'the review + PIN before a math Unit Test'],
-  ['function askGrownUp(', 'the grown-up PIN card'], ['function startReviewFixup(', 'the review fix-up round (teach what she missed)'], ['function reviewTeachHTML(', 'the lesson shown for a missed review question'],
+  ['function askGrownUp(', 'the grown-up PIN card'], ['function reviewTeachHTML(', 'the lesson shown for a missed review question'],
   ['shift.unitReview.needs', 'the math review fix-up orders'], ['data-written-hint', 'the written-answer hint behind the grown-up PIN']]) need('src/game/game.js', fn, what);
 if (/data-ela-final'\)\) \{ startEnglishAssessment/.test(game)) problems.push('src/game/game.js starts a Pet World test without the review and grown-up PIN (use gatedPetWorldTest)');
 if (/data-unit-test\]'\);\s*if \(unitTest && !unitTest\.disabled\) \{ void startAssessment/.test(game)) problems.push('src/game/game.js starts a math Unit Test without the review and grown-up PIN (use gatedUnitTest)');

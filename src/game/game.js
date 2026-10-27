@@ -10151,44 +10151,18 @@ function reviewTeachHTML(courseId, skillId, kicker = '📘 Let’s learn it'){
   const link = group ? khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`) : '';
   return `<div class="review-teach"><b>${kicker}: ${esc(skill.name)}</b>${skill.lesson ? `<p>${esc(skill.lesson)}</p>` : ''}${group?.learn ? `<p class="muted">${esc(group.learn)}</p>` : ''}${link}</div>`;
 }
-/* one new question on a lesson, not one she already saw in this review */
-function freshReviewQuestion(courseId, skillId, seen){
-  const pool = englishQuestions(skillId, courseId), unseen = pool.filter(q => !seen.has(String(q.prompt || q.sentence || '')));
-  const q = (unseen.length ? shuffle(unseen) : shuffle(pool))[0]; if (q) seen.add(String(q.prompt || q.sentence || ''));
-  return q || null;
-}
-function startReviewFixup(run, missed){
-  const seen = new Set(run.questions.map(q => String(q.prompt || q.sentence || '')));
-  const questions = missed.map(id => freshReviewQuestion(run.courseId, id, seen)).filter(Boolean);
-  if (!questions.length) return false;
-  activeEnglishCourse = run.courseId;
-  englishRun = {title:'Review: fix what you missed', progressKey:`${run.courseId}:test-review-fix`, retryType:'review', retryId:'review', courseId:run.courseId, khan:run.khan, fixup:true,
-    first:{score:run.score, total:run.questions.length, missed}, seen, tries:{}, questions, index:0, score:0, passMark:questions.length, answered:false, outcomes:[], written:null};
-  toast('Now let’s fix the ones you missed. 📘');
-  renderEnglishQuestion(); return true;
-}
-/* in the fix-up round a miss adds another new question on that lesson (up to 3 tries per lesson) */
-function reviewFixupMiss(run, question){
-  if (!run.fixup) return;
-  const n = run.tries[question.skillId] = (run.tries[question.skillId] || 1) + 1;
-  if (n > 3) return;
-  const q = freshReviewQuestion(run.courseId, question.skillId, run.seen); if (q) run.questions.push(q);
-}
 function testReviewResult(run){
-  if (!run.fixup) {
-    const missedIds = [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))];
-    if (missedIds.length && startReviewFixup(run, missedIds)) return;   // teach what she missed before the test
-  }
-  markReviewDone(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`, run.fixup ? run.first.score : run.score, run.fixup ? run.first.total : run.questions.length, run.fixup ? run.first.missed.length : 0);
-  markTestReady(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`);   // the review is done: the next test can start (with a grown-up's PIN)
-  if (run.fixup) run = {...run, score:run.first.score, passMark:6, questions:run.questions.slice(0, run.first.total), outcomes:[], fixedAll:run.outcomes.every(Boolean)};
+  /* the review is done once she finishes the flashcards and the 8 questions (owner, Oct 27, 2026: no fix-up round);
+     a grown-up then OKs the test with the PIN */
+  markReviewDone(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`, run.score, run.questions.length, 0);
+  markTestReady(`${run.courseId}:${run.khan ? 'khan' : 'pw'}`);
   const course = englishCourse(run.courseId), ready = run.score >= run.passMark;
-  const missed = (run.first ? run.first.missed : [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))]).map(id => course.skills.find(s => s.id === id)).filter(Boolean);
+  const missed = [...new Set(run.questions.filter((q, i) => !run.outcomes[i]).map(q => q.skillId))].map(id => course.skills.find(s => s.id === id)).filter(Boolean);
   const khanUrl = KHAN_UNIT_TESTS[run.courseId], finalOk = englishFinalReady(course);
   const next = run.khan && khanUrl && khanOn() ? `<button class="btn berry" type="button" data-khan-open data-ela-course="${run.courseId}">🔐 Open the Khan test</button>`
     : finalOk ? `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">🔐 Start the Pet World test</button>` : '';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${ready ? '✅ Ready for the test!' : '📖 Almost ready'}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(course.title)}</button></div>
-    <div class="ela-question ela-result"><p><strong>${run.score} of ${run.first ? run.first.total : run.questions.length} right the first time.</strong> ${run.first ? `Then you went back over ${run.first.missed.length} lesson${run.first.missed.length === 1 ? '' : 's'} you missed${run.fixedAll ? ' and got them right.' : '. Some are still tricky: practice them below.'}` : ready ? 'Nice review.' : 'Practice the lessons below before the test.'}</p>
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>✅ Review done${finalOk || run.khan ? ': ready for the test!' : ''}</h2><button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(course.title)}</button></div>
+    <div class="ela-question ela-result"><p><strong>${run.score} of ${run.questions.length} right.</strong> ${ready ? 'Nice review.' : 'Look over the lessons below before the test.'}</p>
     ${missed.length ? `<p>Lessons to look at again:</p><div class="row card-missed">${missed.map(s => `<button class="btn small" type="button" data-ela-practice="${s.id}" data-ela-course="${run.courseId}">${esc(s.name)}</button>`).join('')}</div>` : ''}
     <div class="row">${next}<button class="btn" type="button" data-review-check data-ela-course="${run.courseId}"${run.khan ? ' data-khan' : ''}>8 more questions</button></div></div>`;
 }
@@ -10951,7 +10925,6 @@ function renderEnglishQuestion(){
     history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}${typeOf(question) === 'mc' ? `<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div>` : `<div class="typed" data-type="${typeOf(question)}">${typedBodyHTML(question, run)}</div>`}<div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
   addCrossOuts($('#libraryWrap'), '.ela-option:not([data-typed-place]):not([data-typed-unplace])');
   const talkLog = $('#libraryWrap .stage-history'); if (talkLog) talkLog.scrollTop = talkLog.scrollHeight;   // newest exchange in view
-  if (run.fixup) $('#libraryWrap .ela-question')?.insertAdjacentHTML('afterbegin', reviewTeachHTML(run.courseId, question.skillId, '📘 First, the lesson'));   // the review's fix-up: teach, then ask
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
@@ -10992,7 +10965,7 @@ function recordEnglishAnswer(run, question, correct){
   save();
 }
 function commitEnglishRun(run){
-  if (run.committed || run.fixup) return;   // the review's fix-up round keeps no record of its own
+  if (run.committed) return;
   run.committed = true;
   const store = progressStore(run.courseId);
   const previous = englishRecord(run.progressKey,run.courseId), passed = run.score >= run.passMark;
@@ -11044,7 +11017,7 @@ $('#libraryWrap').addEventListener('click', event => {
     feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
       : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
       : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${question.options[question.answer]}.`;
-    if (!correct && englishRun.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(englishRun.courseId, question.skillId)); reviewFixupMiss(englishRun, question); }
+    if (!correct && englishRun.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(englishRun.courseId, question.skillId)); }
     button.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>'); return;
   }
   if (button.hasAttribute('data-ela-next') && englishRun) {
@@ -11163,7 +11136,7 @@ function answerTyped(){
   feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${answerText(question)}.`)
     : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
     : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${answerText(question)}.`;
-  if (!correct && run.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(run.courseId, question.skillId)); reviewFixupMiss(run, question); }
+  if (!correct && run.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(run.courseId, question.skillId)); }
   host.closest('.ela-question').insertAdjacentHTML('beforeend','<button type="button" class="btn berry" data-ela-next>Continue</button>');
 }
 /* the written step at the end of a practice (short answer) or a unit test (paragraph) */
@@ -11866,10 +11839,6 @@ function ticketHTML(text){
 }
 function nextCustomer(){
   if (shift.mode === 'practice' && shift.reviewKey && reviewComplete(shift.reviewKey)) { endShift(); return; }
-  if (shift.unitReview && shift.n >= shift.total && shift.unitReview.needs?.length && (shift.unitReview.extra || 0) < 10) {   // fix what she missed before the review counts
-    const ur = shift.unitReview; if (!ur.fixing) { ur.fixing = true; ur.firstPerfect = shift.perfect; toast('Now let’s fix the ones you missed. 📘'); }
-    ur.extra = (ur.extra || 0) + 1; shift.total++;
-  }
   if (shift.n >= shift.total) { endShift(); return; }
   stopOrderSpeech(); cancelReadFirst(order);
   shift.n++; renderDots();
