@@ -27,6 +27,10 @@ export class ActivityTracker {
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private reportTimer: ReturnType<typeof setInterval> | null = null;
   private lastInput = 0;
+  private lastTick = 0;
+  /** set by the game: true while she is watching a lesson video (in Pet World or on Khan Academy in another tab), so
+   *  that time counts with no taps and with Pet World hidden (docs/PRACTICE-TIME.md, "Videos count") */
+  static watching: (() => boolean) | null = null;
   private pending = 0;
   private reporting = false;
   private readonly onInput = () => { this.lastInput = Date.now(); };
@@ -47,8 +51,12 @@ export class ActivityTracker {
     document.addEventListener('visibilitychange', this.onVisibility);
     document.addEventListener('load', this.onFrameLoad, true);   // load doesn't bubble, so listen in the capture phase
     document.querySelectorAll('iframe').forEach(f => this.watchFrame(f));
+    this.lastTick = Date.now();
     this.tickTimer = setInterval(() => {
-      if (!document.hidden && Date.now() - this.lastInput < 60000) { this.pending += 15; try { this.onActive?.(15); } catch { /* never stop the clock */ } }
+      /* the real time since the last tick (a background tab's timers can slow to once a minute), at most 2 minutes */
+      const now = Date.now(), secs = Math.max(0, Math.min(120, Math.round((now - this.lastTick) / 1000))); this.lastTick = now;
+      let watching = false; try { watching = !!ActivityTracker.watching?.(); } catch { /* not watching */ }
+      if (secs && ((!document.hidden && now - this.lastInput < 60000) || watching)) { this.pending += secs; try { this.onActive?.(secs); } catch { /* never stop the clock */ } }
     }, 15000);
     this.reportTimer = setInterval(() => { void this.report(); }, 60000);
   }

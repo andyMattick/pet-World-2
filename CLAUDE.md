@@ -91,6 +91,10 @@ This applies to **every unit in every subject, now and in the future** (English,
 
 Every time the owner says something is a game, it goes in **both** places: inside its unit (or shop station) **and** in the 🕹️ Arcade (`ARCADE_GAMES` in `src/shared/registry.ts`, with a ticket payout in `arcadeModuleMessage`). Add it to the unit-game list in `scripts/verify.mjs` and the table in `docs/ARCADE-GAMES.md`. `npm run verify` checks the list. See `docs/ARCADE-GAMES.md` for the two ways to build the Arcade copy.
 
+## Videos come first in History and Science (owner rule, Oct 27, 2026)
+
+In History and Science (Biology), the lesson videos are the most important part. Encourage her to watch them (the 🎬 Watch first button and prompt), and count watching as time for that class (`ActivityTracker.watching`). See `docs/PRACTICE-TIME.md`.
+
 ## Reading Quiz
 
 Keep the grown-up check in front of reading quizzes: only chapters whose notes are verified (`reading:<bookId>:<chapterId>` in `quiz_overrides`, or the local parent PIN review) can be quizzed. Keep `buildReadingQuiz`, `readingChapterState`, and the teacher app's `readingReviewHTML`. Reading quizzes never award Pet World coins. See `docs/READING-QUIZ.md`.

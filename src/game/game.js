@@ -9811,7 +9811,7 @@ let videoSession = null;
 function closeLessonVideo(){
   if (!videoSession) return;
   clearTimeout(videoSession.blockedTimer); window.removeEventListener('message', videoSession.onMessage);
-  videoSession.modal.remove(); videoSession = null;
+  videoSession.modal.remove(); videoSession = null; if (watching?.kind === 'video') stopWatching();
   document.querySelectorAll('[data-video-style]').forEach(button => { const video = studentVideo(button.dataset.lessonVideo); if (video) button.outerHTML = lessonVideoButtonHTML(video, button.dataset.videoStyle); });
 }
 function openLessonVideo(key){
@@ -9827,6 +9827,7 @@ function openLessonVideo(key){
   document.body.appendChild(modal);
   const frame = modal.querySelector('iframe');
   const session = videoSession = { key, modal, heard:false, last:null, played:0, onMessage:null, blockedTimer:0 };
+  startWatching('video', key, 60);   // its time counts while it plays (videoSession.state === 1), even with no taps
   /* the YouTube embed reports playing time by postMessage once told we are listening (the same messages its iframe API uses) */
   session.onMessage = event => {
     if (event.source !== frame.contentWindow || !/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(event.origin)) return;
@@ -9907,6 +9908,54 @@ function khanTestCardHTML(courseId){
   const url = KHAN_UNIT_TESTS[courseId]; if (!url || !khanOn()) return '';
   return `<section class="ela-final-assessment khan-test-next"><div><h3>🎓 Next: the Khan Academy unit test</h3><p class="muted">You passed the Pet World test. Now take Khan Academy’s unit test for the same unit, then tell your ${Backend.me ? 'teacher' : 'grown-up'} your score.</p></div><div class="row test-buttons">${testReviewButtonHTML(courseId, true)}<button type="button" class="btn small${testReady(`${courseId}:khan`) ? ' berry' : ''}" data-khan-open data-ela-course="${courseId}">🔐 Open the Khan test</button></div></section>`;
 }
+/* ---------- 🎬 videos come first in History and Biology (owner rule, Oct 27, 2026; docs/PRACTICE-TIME.md) ----------
+   The lesson videos matter most there. The Khan link is a big "Watch the video" button, practice asks her to watch
+   first, and watching counts as time in the class: a Pet World video while it plays, and a Khan Academy lesson in
+   another tab for up to WATCH_CAP_MIN minutes after she opens it (or until she starts the practice). */
+const WATCH_CAP_MIN = 25;
+let watching = null;   // {kind:'khan'|'video', key, until}
+const videoFirstCourse = id => isHistoryCourse(id) || isScienceCourse(id);
+const classWord = id => isScienceCourse(id) ? 'Biology' : 'History';
+ActivityTracker.watching = () => !!watching && Date.now() < watching.until && (watching.kind === 'khan' || (videoSession?.state === 1));
+function startWatching(kind, key, minutes = WATCH_CAP_MIN){ watching = {kind, key, until:Date.now() + minutes * 60000}; }
+function stopWatching(){ watching = null; }
+const lessonOpened = key => !!(S.videosWatched?.[key] || S.videosWatched?.[`khan:${key}`]);
+function markKhanOpened(key){
+  if (!key) return;
+  const course = englishCourse(key.split(':')[0]), group = (course?.groups || []).find(g => `${course.id}:${g.id}` === key);
+  startWatching('khan', key);
+  if (!S.videosWatched[`khan:${key}`]) { S.videosWatched = {...S.videosWatched, [`khan:${key}`]:arcadeDateKey()}; }
+  logEvent({k:'watch', title:`🎬 Opened the Khan Academy lesson: ${group?.name || key}`}); save();
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[data-watch-key]'); if (a) markKhanOpened(a.dataset.watchKey);
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && watching?.kind === 'khan' && Date.now() < watching.until && !watching.welcomed) {
+    watching.welcomed = true; const id = watching.key.split(':')[0];
+    toast(`🎬 Welcome back! Your video time counts as ${classWord(id)} time.`);
+  }
+});
+/* before practice in a History or Biology lesson she hasn't opened: watch the video first */
+function watchFirstThen(courseId, skillId, go){
+  const course = englishCourse(courseId), group = (course?.groups || []).find(g => (g.skills || []).includes(skillId));
+  if (!videoFirstCourse(courseId) || !group || LOOK_ID) return go();
+  const key = `${course.id}:${group.id}`, video = studentVideo(key), url = KHAN_LINKS[course.id]?.[group.id];
+  if (lessonOpened(key) || (!video && !(url && khanOn()))) return go();
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Watch the lesson first');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(group.name)}</p><div class="theme-emoji" aria-hidden="true">🎬</div><h2>Watch the lesson first!</h2>
+    <p>In ${classWord(courseId)}, the videos are the most important part. Watching counts as ${classWord(courseId)} time.</p>
+    <div class="row" style="justify-content:center"><button type="button" class="btn berry" data-watch-now>🎬 Watch it now</button><button type="button" class="btn small" data-watch-done>I already watched it</button></div></div>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-watch-now]').addEventListener('click', () => {
+    el.remove();
+    if (video) { openLessonVideo(key); return; }
+    markKhanOpened(key); if (!window.open(url, '_blank', 'noopener')) toast('Your browser blocked the new tab. Use the Watch button on the lesson.');
+  });
+  el.querySelector('[data-watch-done]').addEventListener('click', () => { el.remove(); S.videosWatched = {...S.videosWatched, [`khan:${key}`]:arcadeDateKey()}; save(); go(); });
+  el.querySelector('[data-watch-now]').focus();
+}
 function khanLinkHTML(url, name, key){
   const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
   /* a fixed link can break if Khan moves a page, so it always comes with a search for the lesson as a backup (docs: KHAN.md) */
@@ -9917,6 +9966,10 @@ function khanLinkHTML(url, name, key){
   if (mine) return `<a class="ela-khan-link ela-teacher-link" href="${esc(mine.url)}" target="_blank" rel="noopener noreferrer">\u25b6 ${esc(mine.title || 'Watch your teacher\u2019s lesson')}</a>${mine.note ? `<p class="ela-teacher-note">${esc(mine.note)}</p>` : ''}${video ? lessonVideoButtonHTML(video, 'also') : mine.showKhan && khanOn() ? `<a class="ela-khan-also" href="${esc(href)}" target="_blank" rel="noopener noreferrer">Also on Khan Academy</a>` : ''}`;
   if (video) return lessonVideoButtonHTML(video);   // our own video replaces the Khan link (docs: LESSON-VIDEOS.md)
   if (!khanOn()) return youtubeLink(name, key, 'Find a video for this lesson on YouTube');   // Khan is off: the lesson text above is the lesson, with a video search if allowed
+  if (key && videoFirstCourse(key.split(':')[0])) {   // History and Biology: the video comes first, and watching counts as class time
+    const id = key.split(':')[0];
+    return `<a class="ela-khan-link ela-watch-first" href="${esc(href)}" target="_blank" rel="noopener" data-watch-key="${esc(key)}">🎬 ${lessonOpened(key) ? 'Watch the lesson again' : 'Watch the lesson first'} on Khan Academy</a><p class="ela-teacher-note">${lessonOpened(key) ? '✓ Opened. ' : ''}The videos are the most important part. Watching counts as ${classWord(id)} time.</p>${backup}`;
+  }
   return `<a class="ela-khan-link" href="${esc(href)}" target="_blank" rel="noopener">${url ? '\u25b6 Watch or read this lesson on Khan Academy' : '\ud83d\udd0d Find this lesson on Khan Academy'}</a>${backup}`;
 }
 /* ---------- 📇 Review for the test (docs/TEST-REVIEW.md) ----------
@@ -10888,7 +10941,7 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.cardGrade && cardRun) { gradeCard(button.dataset.cardGrade === 'knew'); return; }
   if (button.hasAttribute('data-card-side') && cardRun) { cardRun.meaningFirst = !cardRun.meaningFirst; cardRun.flipped = false; renderCard(); return; }
   if (button.hasAttribute('data-card-skip') && cardRun) { finishCards(); return; }
-  if (button.dataset.elaPractice) { startEnglishPractice(button.dataset.elaPractice,button.dataset.elaCourse || activeEnglishCourse); return; }
+  if (button.dataset.elaPractice) { const skillId = button.dataset.elaPractice, courseId = button.dataset.elaCourse || activeEnglishCourse; watchFirstThen(courseId, skillId, () => { if (watching?.kind === 'khan') stopWatching(); startEnglishPractice(skillId, courseId); }); return; }
   if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-ela-final')) { void gatedPetWorldTest(button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
@@ -13281,6 +13334,7 @@ function eventText(e){
   if (e.k === 'theme') return `🎉 Theme day: ${e.title}`;
   if (e.k === 'done') return `✅ Finished: ${e.title}`;
   if (e.k === 'outside') return `📎 Outside work: ${e.title}`;
+  if (e.k === 'watch') return e.title;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,

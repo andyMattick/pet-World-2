@@ -49,6 +49,14 @@ Each 15 seconds of active time is credited to whatever is on screen:
 - **Practice in a unit (daily plan):** the row counted only time at the unit's stations. It now also counts the shop floor (`shop:<id>`), the shift or quiz summary, 🧠 Think it through (`shop:<id>:<station>:think`) and the unit's own game (`GAME_PLACE_SHOP`). The row also shows all of today's minutes in that subject ("2 of 15 min here · 12 min of Math today"), so she sees all of her time.
 - Dr. Paws' Surgery Center logs as `surgery:bakery` or `surgery:clock`.
 
+### Videos count, and come first in History and Biology (owner rule, Oct 27, 2026)
+
+- **Encouraged.** In History and Biology, each lesson's Khan link is a big **🎬 Watch the lesson first on Khan Academy** button with "The videos are the most important part. Watching counts as History (or Biology) time." Starting practice in a lesson she hasn't opened shows **Watch the lesson first!**, with **🎬 Watch it now** or **I already watched it**.
+- **Counted.** Opening the Khan lesson (from the button or the prompt) starts a watch window of up to 25 minutes (`WATCH_CAP_MIN`). During it, time counts for the class with no taps, even while Pet World is in another tab, until it runs out or she starts the practice. A Pet World lesson video counts the whole time it's playing.
+- How: `ActivityTracker.watching` (set by the game) counts as activity. The tracker now adds the real time between its checks (at most 2 minutes), because a background tab's timers can slow to once a minute.
+- The day log gets "🎬 Opened the Khan Academy lesson: …", and the lesson shows "✓ Opened" (`S.videosWatched["khan:<course>:<lesson>"]`).
+- Limit: Pet World can't see the Khan tab, so it can't tell whether the video is really playing there. The 25-minute window is the cap.
+
 ## What the database file does (tested on real PostgreSQL 16)
 
 - Adds `practice_sessions`. Students can't read or write it directly; they only go through `session_start()` and `session_ping()`, which only touch their own session. Teachers can read their own classes' sessions.
