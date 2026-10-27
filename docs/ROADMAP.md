@@ -195,6 +195,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
 - [x] F63. 🎡 Class wheel: each school morning after the theme and end-of-day question, a wheel picks 3 core classes and 1 elective (offline, written up as outside work), with rules that keep the week at 4-4-4-3 and 2-2-1, keep a class with its Pet World test waiting (not Khan) and rest it the next day; a grown-up can change the day's classes and the rules. See `CLASS-WHEEL.md`
 - [x] F64. 💬 Messages: read receipts both ways (✓ Sent, ✓✓ Seen) and a 🔔 notification option for the grown-up (pop-up, sound, device notification) and for her (device notification when Pet World is in another tab). See `CHAT.md`
 - [x] F65. 🎬 History and Biology: videos first. A big Watch-first button, a watch-first prompt before practice, and video time counted as class time (a Pet World video while it plays; a Khan lesson in another tab for up to 25 minutes). See `PRACTICE-TIME.md`
+- [x] F66. 🏛️ History Unit 4 matches Khan: 15 lessons in Khan's order, Khan's 4 quizzes, every Khan video as its own button, and the question bank revised after a blind review (220 questions, sources in every lesson). See `HISTORY-UNIT4.md` and `history4-review.md`
 
 ## Database files, in the order they were run
 

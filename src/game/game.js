@@ -25,7 +25,7 @@ import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, mo
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -9634,12 +9634,12 @@ const ROLE_CARDS = {
   judaismChristianity:{emoji:'🕍',who:'a pilgrim visiting Jerusalem',where:'Southwest Asia, about 50 CE',intro:'Jerusalem is full of pilgrims, teachers, and travelers from many lands.'},
   islam:{emoji:'🕌',who:'a trader in Mecca',where:'Arabia, about 650 CE',intro:'Caravans come and go from Mecca, and travelers ask you about the faith that began here.'},
   comparePortable:{emoji:'🙏',who:'Xuanzang, a Buddhist monk and traveler',where:'the road from China to India, about 640 CE',intro:'You walked thousands of miles to study in India and met people of many faiths along the way.'},
-  persia:{emoji:'👑',who:'Cyrus the Great of Persia',where:'the Persian Empire, about 540 BCE',intro:'You built the largest empire the world had yet seen, stretching from Egypt to India.'},
+  persia:{emoji:'👑',who:'Cyrus the Great of Persia',where:'the Persian Empire, about 540 BCE',intro:'You built the largest empire the world had yet seen, from the Aegean Sea to Central Asia.'},
   greece:{emoji:'🏺',who:'Aristotle, the Greek philosopher',where:'Athens, about 340 BCE',intro:'You study everything from animals to governments, and you were once a teacher to young Alexander.'},
   imperialChina:{emoji:'📏',who:'Li Si, chancellor of the Qin dynasty',where:'Xianyang, China, about 220 BCE',intro:'You helped the First Emperor unite China under one strict set of rules.'},
   compareEmpires:{emoji:'🧳',who:'Zhang Qian, a Han envoy to the western lands',where:'Central Asia, about 125 BCE',intro:'The emperor sent you west to learn about faraway kingdoms. You have seen many ways to rule.'},
   rome:{emoji:'🛡️',who:'a Roman legionary',where:'the Roman Empire, about 100 CE',intro:'You march, build roads, and guard the frontier of the empire.'},
-  romeHan:{emoji:'📚',who:'a Han government official',where:'Luoyang, China, about 100 CE',intro:'You passed tests on the classics to earn your job. Merchants bring rumors of a great empire far to the west: Rome.'},
+  romeHan:{emoji:'📚',who:'a Han government official',where:'Luoyang, China, about 100 CE',intro:'You were recommended for your learning in the Confucian classics and trained at the Imperial Academy. Merchants bring rumors of a great empire far to the west: Rome.'},
   womenAncient:{emoji:'✍️',who:'Ban Zhao, Han historian and writer',where:'Luoyang, China, about 100 CE',intro:'You finished your brother’s history of the Han and wrote a famous book of advice for women.'},
   cellsOrganisms:{emoji:'🔬',who:'a tour guide at the Nature Center’s Microscope Corner',where:'Pet World Nature Center',intro:'Your tour group is peeking through microscopes at pond water and onion skin.'},
   cellPartsU:{emoji:'🧫',who:'a tour guide at the Giant Cell Model',where:'Pet World Nature Center',intro:'Your group walks right inside a model cell as big as a room.'},
@@ -9784,7 +9784,7 @@ const englishCourse = course => course === 'punctuation'
   : course === 'history3'
     ? {id:'history3',building:'histAgrarian',title:'History Unit 3: Early Agrarian Societies',skills:HISTORY_UNIT3,groups:HISTORY_GROUPS3,finalKey:'history3:final-test',testPer:2,finalPass:14,noQuizzes:true}
   : course === 'history4'
-    ? {id:'history4',building:'histEmpires',title:'History Unit 4: Empires and Belief Systems',skills:HISTORY_UNIT4,groups:HISTORY_GROUPS4,finalKey:'history4:final-test',testPer:2,finalPass:19,noQuizzes:true}
+    ? {id:'history4',building:'histEmpires',title:'History Unit 4: Empires and Belief Systems',skills:HISTORY_UNIT4,groups:HISTORY_GROUPS4,finalKey:'history4:final-test',testPer:2,finalPass:19}   // Khan's four quizzes (HISTORY_GROUPS4 quizName/quizSkills; docs/HISTORY-UNIT4.md)
   : course === 'bio1'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : course === 'bio2'
@@ -10134,7 +10134,7 @@ function courseReportBodyHTML(courseId, canReview = false){
       const summary = accuracy === null ? record.tries ? `No answer history yet · best ${record.best}/${record.questionCount || 4}` : 'Not practiced' : `${accuracy}% correct · ${record.misses} missed of ${record.answered}`;
       return `<div class="ela-parent-row"><strong>${esc(skill.name)}</strong><span>${summary}</span>${record.answered >= 4 && accuracy < 70 ? '<b class="ela-review-flag">Review suggested</b>' : ''}</div>`;
     }).join('');
-    const assessments = [...(course.noQuizzes ? [] : course.groups.map(group => ({name:group.quizName || `${group.name} quiz`,key:englishQuizKey(group.id,courseId),total:4}))),{name:`${course.title} Test`,key:course.finalKey,total:testSize(course)}].map(item => {
+    const assessments = [...(course.noQuizzes ? [] : course.groups.filter(group => !group.noQuiz).map(group => ({name:group.quizName || `${group.name} quiz`,key:englishQuizKey(group.id,courseId),total:4}))),{name:`${course.title} Test`,key:course.finalKey,total:testSize(course)}].map(item => {
       const record = englishRecord(item.key,courseId);
       return `<div class="ela-parent-row"><strong>${esc(item.name)}</strong><span>${record.tries ? `${record.passed ? 'Passed' : 'Not passed'} · best ${record.best}/${record.questionCount || item.total} · ${record.tries} tries` : 'Not started'}</span></div>`;
     }).join('');
@@ -10612,7 +10612,19 @@ const reviewDue = (courseId, skillId) => {
 const englishFinalReady = course => unitOpenedByGrownUp(course.building) || courseQuizzesPassed(course);
 function courseQuizzesPassed(course){
   return course.noQuizzes ? practiceSkills(course).every(skillId => !!englishRecord(skillId, course.id).passed)
-    : course.groups.every(group => !!englishRecord(englishQuizKey(group.id, course.id), course.id).passed);
+    : course.groups.every(group => group.noQuiz ? group.skills.every(skillId => !!englishRecord(skillId, course.id).passed) : !!englishRecord(englishQuizKey(group.id, course.id), course.id).passed);
+}
+/* a block opens when the one before it is done: its quiz passed, or (a lesson with no quiz, like History Unit 4's) its practice passed */
+function groupOpen(course, i){
+  if (i === 0 || unitOpenedByGrownUp(course.building)) return true;
+  const prev = course.groups[i - 1], passed = skillId => !!englishRecord(skillId, course.id).passed;
+  if (course.noQuizzes || prev.noQuiz) return groupOpen(course, i - 1) && prev.skills.every(passed);   // a lesson with no practice (Learn only) passes the lock along
+  return !!englishRecord(englishQuizKey(prev.id, course.id), course.id).passed;
+}
+/* every Khan video in a lesson, each its own 🎬 button (opening one counts as watching: markKhanOpened) */
+function khanVideosHTML(courseId, groupId){
+  const list = KHAN_VIDEOS[courseId]?.[groupId]; if (!list?.length || !khanOn() || validLessonLink(Backend.me?.lesson_links?.[`${courseId}:${groupId}`])) return '';
+  return `<div class="khan-videos"><b>🎬 Videos in this lesson</b>${list.map(([title, url]) => `<a class="khan-video" href="${esc(url)}" target="_blank" rel="noopener" data-watch-key="${esc(`${courseId}:${groupId}`)}">▶ ${esc(title)}</a>`).join('')}</div>`;
 }
 /* hosted: the teacher's verdict lives in quiz_overrides as "verified:<submittedAt>" or "revise:<submittedAt>"; local: a grown-up sets it */
 /* a teacher's guess at what a drawing shows (quiz_overrides "project-guess:<id>" = "<submittedAt>:<text>"); steps marked after:'guess' open once it arrives */
@@ -10796,7 +10808,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
   const course = englishCourse(courseId), active = selectedReading(); activeEnglishCourse = course.id;
   syncRoom('library');
   const groups = course.groups.map((group, groupIndex) => {
-    const blockUnlocked = groupIndex === 0 || unitOpenedByGrownUp(course.building) || (course.noQuizzes ? course.groups[groupIndex-1].skills.every(skillId => !!englishRecord(skillId,course.id).passed) : !!englishRecord(englishQuizKey(course.groups[groupIndex-1].id,course.id),course.id).passed);
+    const blockUnlocked = groupOpen(course, groupIndex);
     const exercises = group.skills.map((skillId, skillIndex) => {
       const skill = course.skills.find(item => item.id === skillId), record = englishRecord(skillId,course.id);
       const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1],course.id).passed);
@@ -10809,12 +10821,12 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       return `<article class="ela-exercise${unlocked ? '' : ' locked'}${review ? ' review' : ''}"><div>${review ? '<span class="review-tag">🔁 Review: your teacher wants you to practice this again</span>' : ''}<strong>${esc(skill.name)}</strong><p>${esc(skill.lesson)}</p>${skill.why ? `<p class="why-care">💡 <b>Why care?</b> ${esc(skill.why)}</p>` : ''}${skill.tip ? `<p class="why-care">💡 <b>Tip:</b> ${esc(skill.tip)}</p>` : ''}${ROLE_CARDS[skillId] ? `<span class="role-line">${ROLE_CARDS[skillId].emoji} You are ${esc(ROLE_CARDS[skillId].who)}</span>` : ''}<span class="muted">${status}</span>${tracking}</div><button type="button" class="btn small${unlocked ? ' berry' : ''}" data-ela-practice="${skillId}" data-ela-course="${course.id}" ${unlocked || review ? '' : 'disabled'}>${review ? 'Review' : record.passed ? 'Practice again' : record.tries ? 'Try again' : 'Practice'}</button></article>`;
     }).join('');
     const key = englishQuizKey(group.id,course.id), quiz = englishRecord(key,course.id);
-    const canQuiz = blockUnlocked && (unitOpenedByGrownUp(course.building) || group.skills.every(skillId => !!englishRecord(skillId,course.id).passed));
+    const canQuiz = blockUnlocked && (unitOpenedByGrownUp(course.building) || (group.quizSkills || group.skills).every(skillId => !!englishRecord(skillId,course.id).passed));
     const quizStatus = quiz.passed ? `Passed · best ${quiz.best}/4 · ${quiz.tries} tries`
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}<span>Learn</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
