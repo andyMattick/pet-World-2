@@ -8901,7 +8901,7 @@ function addExtraTime(id, secs){ extraSecs(id); S.extrasLog.secs[id] = Math.roun
    for a Fact Sprint and 7 for Word Workshop; any minutes beyond the round are the "more practice" row later in the day.
    Not finishing is fine: the round counts how many she gets. */
 const ROUND_DEFAULT = {sprint:5, vocab:7};
-const challengeMin = x => !x ? 0 : Math.max(1, Math.min(Math.round(+x.challenge > 0 ? +x.challenge : ROUND_DEFAULT[x.kind] || 5), Math.max(1, Math.round(+x.minutes || 0))));
+const challengeMin = x => !x ? 0 : +x.challenge > 0 ? Math.max(1, Math.round(+x.challenge)) : ROUND_DEFAULT[x.kind] || 5;
 function challengeScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[x.id]; return Number.isFinite(v) ? v : null; }
 function recordChallenge(id, right, min = 0){
   extraSecs(id); S.extrasLog.challenge = {...(S.extrasLog.challenge || {}), [id]:right};
@@ -8927,7 +8927,7 @@ function challengeBragHTML(id, right, min, unit = 'right'){
   const bars = recent.length > 1 ? `<div class="brag-bars" aria-label="Your last ${recent.length} rounds">${recent.map((r, i) => `<span style="height:${Math.max(8, Math.round(r.n / top * 48))}px" class="${i === recent.length - 1 ? 'now' : ''}" title="${r.n}"><i>${r.n}</i></span>`).join('')}</div>` : '';
   return `<div class="brag">${lines.map(l => `<p>${l}</p>`).join('')}${bars}</div>`;
 }
-const restMin = x => challengeMin(x) ? Math.max(0, Math.round(+x.minutes) - challengeMin(x)) : 0;
+const restMin = x => Math.max(0, Math.round(+x.minutes || 0) - challengeMin(x));
 const restDone = x => Math.max(0, Math.floor(extraSecs(x.id) / 60) - challengeMin(x));
 /* is the warm-up part of this extra done? (the challenge, or all its minutes) */
 const extraFullyDone = x => challengeMin(x) ? challengeScore(x) !== null && restDone(x) >= restMin(x) : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
@@ -11344,8 +11344,11 @@ const vocabWords = () => {
   const list = vocabList({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
   const mine = lookedUpWords(list.all), spell = spellFocusWords(list.all), have = new Set(list.focus.map(v => wordKey(v.w)));
   const extra = [...mine, ...spell].filter(v => { const k = wordKey(v.w); if (have.has(k)) return false; have.add(k); return true; });
-  const hall = new Set((S.vocab.hall || []).map(h => h.w)), focus = [...list.focus, ...extra], left = focus.filter(v => !hall.has(wordKey(v.w)));   // mastered words leave the focus list
-  return {...list, all:[...list.all, ...spell.filter(v => !list.all.some(a => wordKey(a.w) === wordKey(v.w)))], focus:left.length ? left : focus, lookedUp:mine, spellFocus:new Set(spell.map(v => wordKey(v.w)))};
+  /* one giant list (owner, Oct 27, 2026): every word on her lists (the 10 built-in sets, the class's and the family's) is
+     one list; whatever isn't mastered yet is "unmastered", and words a grown-up adds join it. Focus picks no longer narrow it. */
+  const hall = new Set((S.vocab.hall || []).map(h => h.w)), all = [...list.all, ...spell.filter(v => !list.all.some(a => wordKey(a.w) === wordKey(v.w)))], left = all.filter(v => !hall.has(wordKey(v.w)));
+  void extra;
+  return {...list, all, focus:left.length ? left : all, lookedUp:mine, spellFocus:new Set(spell.map(v => wordKey(v.w)))};
 };
 function lookedUpWords(all){
   const seen = new Set(), out = [];
@@ -11400,10 +11403,11 @@ function renderVocab(){
   let body = '';
   if (vocabTab === 'week') body = weekTabHTML();
   else if (vocabTab === 'chart') {
-    const looked = new Set(vocabWords().lookedUp.map(v => wordKey(v.w))), groups = [...(looked.size ? [['📌 Words you looked up', v => looked.has(wordKey(v.w))]] : []),
-      ...[...new Set(focus.filter(v => !looked.has(wordKey(v.w))).map(v => v.set))].map(set => [set, v => v.set === set && !looked.has(wordKey(v.w))])];
-    body = `<p class="muted">${solid} of ${focus.length} focus words are solid. Tap a word to see what it means.</p>${groups.map(([set, inGroup]) => `<h4 class="vocab-set">${esc(set)}</h4><div class="vocab-grid">${focus.filter(inGroup).map(v => {
-      const st = wordStatus(vocabStat(v.w)); return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st])}">${esc(v.w)}</button>`; }).join('')}</div>`).join('')}
+    const hall = new Set((S.vocab.hall || []).map(h => h.w)), un = all.filter(v => !hall.has(wordKey(v.w))).sort((a, b) => a.w.localeCompare(b.w)), won = all.filter(v => hall.has(wordKey(v.w))).sort((a, b) => a.w.localeCompare(b.w));
+    const chip = (v, st) => `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st] || 'Mastered')}">${st === 'solid' && hall.has(wordKey(v.w)) ? '⭐ ' : ''}${esc(v.w)}</button>`;
+    body = `<p class="muted">All your words in one list. Tap a word to see what it means. Each week 25 more are picked at random from the unmastered ones.</p>
+      <h4 class="vocab-set">Unmastered (${un.length})</h4><div class="vocab-grid">${un.map(v => chip(v, wordStatus(vocabStat(v.w)))).join('')}</div>
+      ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>` : ''}
       <p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
   } else {
     const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
@@ -11414,7 +11418,7 @@ function renderVocab(){
   }
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
-    <p class="muted">${focus.length} focus word${focus.length === 1 ? '' : 's'}${focus.length < all.length ? ` (of ${all.length})` : ''} · ${solid} solid</p>${body}
+    <p class="muted">${focus.length} unmastered word${focus.length === 1 ? '' : 's'} · ${(S.vocab.hall || []).length} mastered</p>${body}
     ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: ${flaggedWaiting().map(f => `<b>${esc(f.w)}</b> ${dictLinkHTML(f.w)}`).join(' · ')} · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, or want to keep a word from your own writing, highlight it (double-click, or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
 }
 function startVocab(mode, challengeExtra = null){
@@ -11561,7 +11565,7 @@ const hallKeys = () => new Set((S.vocab.hall || []).map(h => h.w));
 function ensureWeek(){
   const id = weekOf(localDay()), cur = S.vocab.week;
   if (cur?.id === id) return cur;
-  const base = vocabWords(), next = nextWeekWords(cur?.words || [], cur?.mastered || [], base.focus, [...hallKeys()], WEEK_NEW_WORDS);
+  const base = vocabWords(), next = nextWeekWords(cur?.words || [], cur?.mastered || [], shuffle(base.focus.slice()), [...hallKeys()], WEEK_NEW_WORDS);   // the new ones drawn at random from the unmastered list
   S.vocab.week = {id, words:next.words, kept:next.kept.length, added:next.added.length, mastered:[], check:null};
   save(); return S.vocab.week;
 }
@@ -11579,7 +11583,12 @@ function todayPuzzle(){
   const day = localDay(), p = S.vocab.puzzle;
   if (p && p.day === day) return p;
   if (p && !p.done && p.first === p.day && p.day === dayBefore(day)) { p.day = day; save(); return p; }
-  const type = todayPuzzleType(), size = PUZZLE_SIZE[type] || 8;
+  S.vocab.puzzle = makePuzzle(todayPuzzleType(), day); save();
+  return S.vocab.puzzle;
+}
+/* a puzzle of one type on this week's words */
+function makePuzzle(type, day = localDay()){
+  const size = PUZZLE_SIZE[type] || 8;
   const fit = weekWordObjs().filter(v => puzzleWord(v.w) && v.w.length <= (type === 'search' ? 10 : 12));
   const pool = fit.length >= 4 ? fit : vocabWords().focus.filter(v => puzzleWord(v.w) && v.w.length <= 10);
   const picked = [];
@@ -11590,17 +11599,18 @@ function todayPuzzle(){
   else if (type === 'crossword') { const cw = buildCrossword(words, Math.random); words = cw.entries.map(e => e.word); data = {w:cw.w, h:cw.h, entries:cw.entries}; }
   else if (type === 'search') { const ws = buildWordSearch(words, Math.random, 10); words = ws.placed.map(x => x.word); data = {size:ws.size, grid:ws.grid.map(r => r.join('')), placed:ws.placed}; }
   else if (type === 'match') data = {order:shuffle(words.slice())};
-  S.vocab.puzzle = {day, first:day, type, words, solved:[], helped:[], done:false, data}; save();
-  return S.vocab.puzzle;
+  return {day, first:day, type, words, solved:[], helped:[], done:false, data};
 }
 const wordObj = k => vocabWords().all.find(v => wordKey(v.w) === k) || {w:k, d:''};
 let puzzleRun = null, checkRun = null, puzzleTimer = null;   // puzzleRun {timed, end, min, extraId, startedAt, startSolved, sel, active}
 function stopPuzzleRun(){ if (puzzleTimer) { clearInterval(puzzleTimer); puzzleTimer = null; } if (puzzleRun) addVocabExtraTime(puzzleRun.startedAt); if (checkRun) addVocabExtraTime(checkRun.startedAt); puzzleRun = null; checkRun = null; fixThen = null; save(); }
 function addVocabExtraTime(startedAt){ assignedExtras().filter(x => x.kind === 'vocab').forEach(x => addExtraTime(x.id, (performance.now() - startedAt) / 1000)); }
-function startPuzzle({timed = false, min = 7, extraId = null} = {}){
-  const p = todayPuzzle(); if (!p.words.length) { toast('Add a few more words first.'); return; }
+/* every word game is a timed round (7 minutes unless the grown-up set another length for the warm-up). type: play any of
+   the 5 games for fun (not saved); without it, today's puzzle (saved, and finished tomorrow if the clock runs out) */
+function startPuzzle({timed = true, min = 7, extraId = null, type = ''} = {}){
+  const p = type && type !== todayPuzzleType() ? {...makePuzzle(type), free:true} : todayPuzzle(); if (!p.words.length) { toast('Add a few more words first.'); return; }
   if (vocabRun) { stopVocabTimer(); vocabRun = null; }
-  puzzleRun = {timed, min, extraId, end:performance.now() + min * 60000, startedAt:performance.now(), startSolved:p.solved.length, sel:null, active:0};
+  puzzleRun = {p, timed, min, extraId, end:performance.now() + min * 60000, startedAt:performance.now(), startSolved:p.solved.length, sel:null, active:0};
   if (puzzleTimer) clearInterval(puzzleTimer);
   if (timed) puzzleTimer = setInterval(() => { if (!puzzleRun) return; const left = Math.max(0, puzzleRun.end - performance.now()), t = $('#puzzleTime'); if (t) t.textContent = fmtCountdown(left); if (left <= 0) finishPuzzle('time'); }, 250);
   renderPuzzle();
@@ -11608,7 +11618,7 @@ function startPuzzle({timed = false, min = 7, extraId = null} = {}){
 const fmtCountdown = ms => { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const pzLeft = p => p.words.filter(w => !p.solved.includes(w) && !p.helped.includes(w));
 function renderPuzzle(){
-  const p = S.vocab.puzzle, run = puzzleRun; if (!p || !run) return;
+  const run = puzzleRun, p = run?.p; if (!p || !run) return;
   if (!pzLeft(p).length) { finishPuzzle('done'); return; }
   const info = PUZZLE_INFO[p.type], got = p.solved.length - run.startSolved;
   const head = `<div class="backrow"><h2>${info.emoji} ${esc(info.name)}</h2><button class="btn small" data-pz-stop>${run.timed ? 'Stop' : 'Back'}</button></div>
@@ -11649,7 +11659,7 @@ function renderPuzzle(){
 }
 /* a word answered: right the first time is ✅ solved; wrong means typing it correctly first (then it counts as helped) */
 function puzzleAnswer(k, ok){
-  const p = S.vocab.puzzle; if (!p || !puzzleRun) return;
+  const p = puzzleRun?.p; if (!p || !puzzleRun) return;
   recordVocab(k, ok);
   if (ok) { if (!p.solved.includes(k)) p.solved.push(k); sfx('good'); save(); renderPuzzle(); return; }
   sfx('bad');
@@ -11658,17 +11668,17 @@ function puzzleAnswer(k, ok){
   askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); save(); renderPuzzle(); });
 }
 function finishPuzzle(why){
-  const p = S.vocab.puzzle, run = puzzleRun; if (!p || !run) return;
+  const run = puzzleRun, p = run?.p; if (!p || !run) return;
   if (puzzleTimer) { clearInterval(puzzleTimer); puzzleTimer = null; }
   puzzleRun = null; fixThen = null;
   const n = p.solved.length - run.startSolved, complete = !pzLeft(p).length, info = PUZZLE_INFO[p.type];
-  if (complete) p.done = true;
+  if (complete && !p.free) p.done = true;
   addVocabExtraTime(run.startedAt);
   logEvent({k:'vocab', mode:'puzzle', s:n, title:info.name, ...(run.timed ? {min:run.min} : {})});
   if (run.extraId) recordChallenge(run.extraId, n, run.min);
   const best = n > (S.vocab.puzzleBest || 0); if (best) S.vocab.puzzleBest = n;
   const coins = Math.floor(n / 2); S.coins += coins; save(); updateHeader();
-  const later = !complete && p.first === p.day ? '<p>📌 Your puzzle is saved. You can finish it tomorrow.</p>' : !complete ? '<p class="muted">Tomorrow is a brand-new puzzle.</p>' : '';
+  const later = p.free ? '' : !complete && p.first === p.day ? '<p>📌 Your puzzle is saved. You can finish it tomorrow.</p>' : !complete ? '<p class="muted">Tomorrow is a brand-new puzzle.</p>' : '';
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>${info.emoji} ${esc(info.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="big-emoji">${complete ? '🎉' : '⏱️'}</div><h2>${n} word${n === 1 ? '' : 's'} solved${run.timed && why === 'time' ? ` in ${run.min} minute${run.min === 1 ? '' : 's'}!` : '!'}</h2>
     ${complete ? `<p><b>Puzzle complete!</b>${p.helped.length ? ` (${p.helped.length} with a little help)` : ''}</p>` : ''}${later}
@@ -11721,6 +11731,8 @@ function weekTabHTML(){
     + (p && p.day === today && p.done ? `<p>✅ Today’s ${esc(PUZZLE_INFO[p.type].name)} is done!</p>` : `<button type="button" class="btn${checkDue() ? '' : ' berry'}" data-pz-start>${PUZZLE_INFO[todayPuzzleType()].emoji} ${checkDue() ? 'Puzzle' : 'Today’s puzzle'}: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}</button>`);
   return `<p>This week: <b>${wk.words.length} words</b>${wk.kept ? ` (${wk.kept} from last week, ${wk.added} new)` : ''}. Practice them all week. <b>Friday</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
     <div class="row">${puzzleLine}</div>
+    <h4 class="vocab-set">🎮 All 5 word games (7 minutes each, on this week’s words)</h4>
+    <div class="row pz-games">${['scramble', 'decode', 'crossword', 'search', 'match'].map(t => `<button type="button" class="btn small${t === todayPuzzleType() ? ' butter' : ''}" data-pz-play="${t}">${PUZZLE_INFO[t].emoji} ${esc(PUZZLE_INFO[t].name)}${t === todayPuzzleType() ? ' (today’s)' : ''}</button>`).join('')}</div>
     ${wk.check?.done ? `<p>🏁 Mastery check done: <b>${wk.mastered.length} mastered</b> this week! 🎉</p>` : day >= 1 && day <= 4 ? `<p class="muted">Mastery check in ${5 - day} day${5 - day === 1 ? '' : 's'} (Friday).</p>` : ''}
     <div class="vocab-grid">${wk.words.map(chip).join('')}</div><p class="vocab-peek muted" aria-live="polite"></p>
     ${(S.vocab.hall || []).length ? `<details><summary>🏆 Word Hall of Fame: ${S.vocab.hall.length} mastered</summary><div class="vocab-grid">${S.vocab.hall.map(h => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(h.w)?.w || h.w)}</span>`).join('')}</div></details>` : ''}`;
@@ -11739,11 +11751,12 @@ document.addEventListener('submit', event => {
 }, true);
 $('#vocabWrap').addEventListener('click', event => {
   const b = event.target.closest('button'); if (!b) return;
-  if (b.hasAttribute('data-pz-start')) { startPuzzle({timed:false}); return; }
+  if (b.hasAttribute('data-pz-start')) { startPuzzle(); return; }
+  if (b.dataset.pzPlay) { startPuzzle({type:b.dataset.pzPlay}); return; }
   if (b.hasAttribute('data-check-start')) { startCheck(); return; }
   if (b.hasAttribute('data-pz-stop')) { if (puzzleRun?.timed) { finishPuzzle('stop'); return; } stopPuzzleRun(); vocabTab = 'week'; renderVocab(); return; }
   if (b.dataset.checkHear) { void speakWord(b.dataset.checkHear); return; }
-  const p = S.vocab.puzzle; if (!puzzleRun || !p) return;
+  const p = puzzleRun?.p; if (!puzzleRun || !p) return;
   if (b.dataset.pzClue) { puzzleRun.active = +b.dataset.pzClue; renderPuzzle(); return; }
   if (b.dataset.pzCell) {
     const at = b.dataset.pzCell.split(',').map(Number);
@@ -11773,10 +11786,8 @@ function vocabGrownUpHTML(all){
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
     ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
-    <h4>Focus words</h4><p class="muted" style="margin-top:0">${allFocus ? 'All words are in focus.' : `${focus.size} words picked.`} Untick to leave a word out of practice.</p>
-    <div class="row"><button class="btn small" type="button" data-vocab-focus-all>Focus on all</button><button class="btn small" type="button" data-vocab-focus-none>Clear all</button></div>
-    ${sets.map(set => `<details class="vocab-focus-set"><summary>${esc(set)}</summary><div class="vocab-focus">${all.filter(x => x.set === set).map(x => `<label title="${esc(x.d)}"><input type="checkbox" data-vocab-focus="${esc(x.w)}" ${allFocus || focus.has(wordKey(x.w)) ? 'checked' : ''}> ${esc(x.w)}</label>`).join('')}</div></details>`).join('')}
-    <div class="row"><button class="btn small primary" type="button" data-vocab-save-focus>Save focus words</button><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
+    <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each Monday she gets the words she didn’t master last week plus 25 more picked at random from the unmastered ones; Friday’s mastery check moves the ones she spells right to her 🏆 Hall of Fame.</p>
+    <div class="row"><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
 }
 $('#vocabWrap').addEventListener('submit', event => {
   const pinForm = event.target.closest('#vocabPinForm');

@@ -336,7 +336,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   function renderExtrasCard() {
     const el = $('#extrasCard'); if (!el) return;
     const list = extrasList(), drillIds = Object.keys(DRILL_NAMES).filter(id => !id.startsWith('story'));
-    const roundOf = (x: Extra) => Math.max(1, Math.min(Math.round(x.challenge && x.challenge > 0 ? x.challenge : x.kind === 'vocab' ? 7 : 5), Math.max(1, Math.round(x.minutes || 0))));
+    const roundOf = (x: Extra) => Math.max(1, Math.round(x.challenge && x.challenge > 0 ? x.challenge : x.kind === 'vocab' ? 7 : 5));
     const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: the day’s puzzle on this week’s words (Friday: the mastery check)${x.minutes > roundOf(x) ? `; more practice: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}` : ''}`
       : `⚡ Fact Sprint: ${(x.skills || ['times']).map(t => DRILL_NAMES[t]?.name || t).join(' + ')}${x.tables?.length ? ` (${x.tables.join(', ')}s)` : ''}`;
     /* every extra is a timed warm-up round (owner, Oct 27, 2026): x.challenge minutes (default 5 for a Fact Sprint, 7 for
