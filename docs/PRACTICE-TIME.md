@@ -152,3 +152,7 @@ A student's town is one saved record, so two devices could save over each other.
 - **When a town left open comes back on screen,** or any screen refreshes the class settings, the game asks the server whether another device has saved since (`Backend.onRemoteSave`). If one has, it merges that save in before saving again, and shows "Brought in your work from your other device."
 - **Not merged:** coins, tickets and stickers, so nothing can be spent twice.
 - **Teacher reset:** a reset is never merged over. It's handled at the next sign-in, as before.
+
+**Reading Log (Oct 27, 2026).** The Reading Log page counts without taps while it's open and visible, for up to 20 minutes after her last tap (`READ_IDLE_MIN`, through `ActivityTracker.watching`). See `READING-TIMER.md`.
+
+**Plans show all her time.** The daily plan, extras and time goals show every minute she did ("32 of 20 min"), not a number stopped at the goal.

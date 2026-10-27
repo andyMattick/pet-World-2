@@ -8886,7 +8886,7 @@ function extrasCardHTML(){
   const list = assignedExtras(); if (!list.length) return '';
   return `<div class="card extras-card" style="grid-column:1/-1"><h2>📋 Today’s extras</h2>${list.map(x => {
     const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
   }).join('')}</div>`;
 }
 let pendingExtra = null, activeExtra = null;   // the extra the next sprint was started from
@@ -8902,7 +8902,7 @@ function goalsCardHTML(){
   const rows = GOAL_SUBJECTS.filter(([id]) => goals[id] > 0); if (!rows.length) return '';
   return `<div class="card goals-card" style="grid-column:1/-1"><h2>🎯 Today’s time goals</h2>${rows.map(([id, name]) => {
     const done = Math.floor((today[id] || 0) / 60), goal = goals[id];
-    return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)}</span><b>${Math.min(done, goal)} of ${goal} min</b></div>`;
+    return `<div class="row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)}</span><b>${done} of ${goal} min</b></div>`;
   }).join('')}</div>`;
 }
 /* ---------- daily plan (ROADMAP F10, docs/DAILY-PLAN.md) ----------
@@ -9087,13 +9087,13 @@ function planItemInfo(x, day = logDayKey()){
   const minutes = () => Math.max(1, Math.min(240, Math.round(+x.minutes || 15)));
   if (x.kind === 'subject') {
     const unit = x.subject === 'reading' ? null : nextUnit(x.subject), mins = minutes(), secs = (S.subjectTime?.[day] || {})[PLAN_SUBJECT_TIME[x.subject]] || 0;
-    return {label:`${PLAN_SUBJECT_NAME[x.subject]}: ${mins} min${unit ? ` in the ${unit.name}` : ''}`, open:x.subject === 'reading' ? 'reading' : unit?.id || '', status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min`};
+    return {label:`${PLAN_SUBJECT_NAME[x.subject]}: ${mins} min${unit ? ` in the ${unit.name}` : ''}`, open:x.subject === 'reading' ? 'reading' : unit?.id || '', status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.floor(secs / 60)} of ${mins} min`};
   }
   if (x.kind === 'unit') {
     if (x.what !== 'quiz' && x.what !== 'test') {
       const mins = minutes(), secs = unitSecs(x.unit, day), subj = BUILDINGS.find(u => u.id === x.unit)?.subject, all = (S.subjectTime?.[day] || {})[PLAN_SUBJECT_TIME[subj] || subj] || 0;
       const more = Math.floor(all / 60) > Math.floor(secs / 60) ? ` · ${Math.floor(all / 60)} min of ${PLAN_SUBJECT_NAME[subj]?.replace(/^\S+\s/, '') || subj} today` : '';   // she sees all her time in the subject, not only this unit's
-      return {label:`Practice in the ${unitName(x.unit)}: ${mins} min`, open:x.unit, status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.min(mins, Math.floor(secs / 60))} of ${mins} min here${more}`};
+      return {label:`Practice in the ${unitName(x.unit)}: ${mins} min`, open:x.unit, status:secs >= mins * 60 ? 'done' : 'todo', progress:`${Math.floor(secs / 60)} of ${mins} min here${more}`};
     }
     const test = x.what === 'test', done = unitPassedOn(x.unit, x.what, day) || (test && unitTestPassed(x.unit));
     return {label:`${test ? 'Pass the unit test' : 'Pass a quiz'} in the ${unitName(x.unit)}`, open:x.unit, status:done ? 'done' : 'todo', progress:''};
@@ -9150,7 +9150,7 @@ function planCardHTML(){
   if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow) return '';
   const extraRows = extras.map(x => {
     const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${extrasFirst() ? '☀️ ' : ''}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
   });
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
@@ -9158,7 +9158,7 @@ function planCardHTML(){
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${x.kind === 'elective' && i.status === 'todo' ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-elective="${esc(x.course)}" data-minutes="${Math.round(+x.minutes) || ''}">Write it</button>` : go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
   }), extrasFirst() ? [] : extraRows, goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
-    return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
+    return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${done} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
   return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the Fact Sprint and Word Workshop, then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${wheelPlanRow()}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
@@ -9563,7 +9563,7 @@ function openWarmupCard(){
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">Before your first subject</p><div class="theme-emoji" aria-hidden="true">☀️</div><h2>Warm-up time!</h2>
     <p>Do these first, then pick a subject.</p>${list.map(x => {
       const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
-      return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${Math.min(done, goal)} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
+      return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : `<button type="button" class="btn small berry" data-extra-start="${esc(x.id)}">Start</button>`}</div>`;
     }).join('')}<button type="button" class="btn small" data-warmup-close>Back to town</button>
     <details class="warmup-skip"><summary>Grown-up: skip the warm-up today</summary><form class="theme-pin" data-warmup-skip><label>Grown-up PIN <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required></label><button type="submit" class="btn small">Skip for today</button></form></details></div>`;
   document.body.appendChild(el);
@@ -9985,7 +9985,14 @@ const WATCH_CAP_MIN = 25;
 let watching = null;   // {kind:'khan'|'video', key, until}
 const videoFirstCourse = id => isHistoryCourse(id) || isScienceCourse(id);
 const classWord = id => isScienceCourse(id) ? 'Biology' : 'History';
-ActivityTracker.watching = () => !!watching && Date.now() < watching.until && (watching.kind === 'khan' || (videoSession?.state === 1));
+/* Reading on screen has few taps, so the Reading Log keeps counting while it's open and visible for up to
+   READ_IDLE_MIN minutes after her last tap (any tap starts it again). A paper book with the screen asleep still needs
+   the ⏱️ reading timer, which counts by the clock (docs/READING-TIMER.md). */
+const READ_IDLE_MIN = 20;
+let lastTapAt = Date.now();
+for (const type of ['pointerdown', 'keydown', 'touchstart']) document.addEventListener(type, () => { lastTapAt = Date.now(); }, {passive:true, capture:true});
+const readingOnScreen = () => !document.hidden && !S?.readTimer && Date.now() - lastTapAt < READ_IDLE_MIN * 60000 && subjectOnScreen() === 'reading';
+ActivityTracker.watching = () => (!!watching && Date.now() < watching.until && (watching.kind === 'khan' || (videoSession?.state === 1))) || readingOnScreen();
 function startWatching(kind, key, minutes = WATCH_CAP_MIN){ watching = {kind, key, until:Date.now() + minutes * 60000}; }
 function stopWatching(){ watching = null; }
 const lessonOpened = key => !!(S.videosWatched?.[key] || S.videosWatched?.[`khan:${key}`]);
