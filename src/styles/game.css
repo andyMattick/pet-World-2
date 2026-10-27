@@ -1395,3 +1395,34 @@ a.btn{display:inline-block; text-decoration:none}
 .theme-way{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:2px solid rgba(255,255,255,.35);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font:inherit;cursor:pointer}
 .theme-way.on{border-color:var(--butter);background:rgba(255,255,255,.22);box-shadow:0 0 0 2px var(--butter)}
 .theme-way span{font-size:.92rem}
+.hands-on h3{margin:14px 0 6px}
+.hands-on ul,.hands-on ol{margin:0;padding-left:22px}
+.hands-on li{margin:3px 0}
+.hands-safety{padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--butter) 40%,var(--surface));border:1px solid var(--edge)}
+.hands-q{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.hands-q span{font-size:.92rem;color:var(--muted,inherit)}
+.hands-q textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;border-radius:8px;border:2px solid var(--edge)}
+.ho-thumbs img{width:90px;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--edge)}
+/* Biology labs: Build-a-Cell, Punnett squares, the meadow food web (docs/HANDS-ON.md) */
+.sim-cell{display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; min-height:150px; max-width:320px; margin:8px auto; padding:18px; border:2px dashed #aaa; border-radius:50%; background:var(--surface)}
+.sim-cell.plant{border-radius:14px}
+.sim-cell.membraned{border:3px solid #E08AAE}
+.sim-cell.jelly{background:color-mix(in srgb, var(--surface) 75%, #9FD3F0)}
+.sim-cell.walled{box-shadow:0 0 0 7px #6E9E3A}
+.cell-part{display:inline-flex; flex-direction:column; align-items:center; font-size:24px; line-height:1}
+.cell-part small{font-size:10px; font-weight:700}
+.pn-grid{border-collapse:collapse; margin:8px 0; font-size:14px}
+.pn-grid th, .pn-grid td{border:2px solid #c9b8a8; padding:6px; text-align:center}
+.pn-grid select{font-size:16px; padding:4px}
+.pn-grid td.pn-bad{background:#F8D2D2}
+.pn-grid td.pn-ok{background:#D6F0D2}
+.pups{display:flex; flex-wrap:wrap; gap:4px; margin:8px 0}
+.pup{display:inline-flex; flex-direction:column; align-items:center; width:40px; padding:2px; border-radius:8px; font-size:22px; line-height:1}
+.pup small{font-size:10px; font-weight:700}
+.pup.brown{background:#C99A6B}
+.pup.white{background:#fff; border:1px solid #ccc}
+.web-row{margin:8px 0; padding:6px 8px; border-radius:10px}
+.web-row.bad{background:color-mix(in srgb, var(--surface) 85%, #E05A5A)}
+.web-svg{max-width:360px; margin:0 auto}
+.web-effects{columns:2; padding-left:18px; margin:6px 0}
+@media (max-width:380px){.web-effects{columns:1}}

@@ -21,6 +21,8 @@ Everything here is built ahead of time. Nothing calls an AI while the student pl
 
 ## 🧪 Labs in the browser (`src/game/scienceSims.js`)
 
+The Punnett Square Puppy Lab, the Meadow Food Web (and Unit 1's Build-a-Cell) were added Oct 27, 2026, together with the weekly hands-on experiments: see `HANDS-ON.md`.
+
 A lab card sits under the block it goes with. Each lab ends with two “What did you find?” questions. Getting both right finishes the lab: +15 coins the first time and a 🧪 line in the day log (Ledger, Science).
 
 - **🏝️ Clone Island vs. Mix Island** (block 1). The student picks the weather for 8 seasons.

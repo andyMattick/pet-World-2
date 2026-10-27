@@ -22,8 +22,9 @@ import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainS
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
 import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
 import { termCards } from '../shared/termCards';
+import { HANDS_ON, NATURE_JOURNAL, handsOnById, weekHandsOn } from '../shared/handsOn';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
-import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS } from './scienceSims.js';
+import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS, SIM_MISSIONS, CELL_PARTS, CELLS, cellPart, cellPick, GENOTYPES, furOf, punnettGrid, whiteShare, litter, PUNNETT_MISSIONS, WEB, webById, WEB_ANIMALS, WEB_LIVING, sameSet, removeEffect, effectLabel, WEB_MISSIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
@@ -167,7 +168,7 @@ function normalize(raw){
     s.art.hung = (Array.isArray(s.art.hung) ? s.art.hung : []).filter(f => f && typeof f.id === 'string' && typeof f.painting === 'string' && Number.isFinite(+f.x) && Number.isFinite(+f.y)).slice(0, s.art.frames).map(f => ({id:f.id, painting:f.painting, x:Math.max(4, Math.min(96, +f.x)), y:Math.max(8, Math.min(88, +f.y))}));
     s.artLocal = (Array.isArray(s.artLocal) ? s.artLocal : []).filter(p => p && typeof p.id === 'string' && typeof p.image === 'string' && p.image.startsWith('data:image/jpeg') && p.image.length <= 190000).slice(0, 4);
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
-    s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries(LAKE_MISSIONS.filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
+    s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries((SIM_MISSIONS[id] || []).filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.heroLab = {packs:Object.fromEntries(HERO_PACKS.map(p => [p.id, s.heroLab?.packs?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.heroLab?.master};   // ⚡ Punctuation Power Lab (docs/ENGLISH-UNIT6.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
@@ -211,7 +212,10 @@ function normalize(raw){
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
   s.themeWay = s.themeWay && typeof s.themeWay.day === 'string' && (s.themeWay.way === 'quick' || s.themeWay.way === 'long') ? {day:s.themeWay.day, way:s.themeWay.way} : null;   // ⚡ quick or 🛠️ longer way to join the theme
-  s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';   // the last day its theme was announced (docs/THEME-DAYS.md)
+  s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';
+  s.handsOn = {entries:Object.fromEntries(Object.entries(s.handsOn?.entries && typeof s.handsOn.entries === 'object' ? s.handsOn.entries : {}).filter(([k, e]) => /^[a-zA-Z]{2,20}(:\d{4}-\d{2}-\d{2})?$/.test(k) && e && typeof e === 'object').slice(-80).map(([k, e]) => [k, {
+    id:String(e.id || k.split(':')[0]).slice(0, 20), answers:Object.fromEntries(['predict', 'observe', 'explain'].map(f => [f, String(e.answers?.[f] || '').slice(0, 1500)])),
+    minutes:Math.max(0, Math.min(240, Math.round(+e.minutes || 0))), sentAt:Number.isFinite(+e.sentAt) ? +e.sentAt : 0, outsideId:Number.isFinite(+e.outsideId) ? +e.outsideId : 0, week:typeof e.week === 'string' ? e.week.slice(0, 10) : ''}]))};   // 🔬 hands-on Biology (docs/HANDS-ON.md)   // the last day its theme was announced (docs/THEME-DAYS.md)
   s.themeAsk = s.themeAsk && typeof s.themeAsk.day === 'string' && ['yes', 'no'].includes(s.themeAsk.answer) ? {day:s.themeAsk.day, answer:s.themeAsk.answer, ...(typeof s.themeAsk.id === 'string' ? {id:s.themeAsk.id} : {})} : null;   // today's grown-up answer, and the theme it earned
   s.planStart = s.planStart && typeof s.planStart.day === 'string' && typeof s.planStart.id === 'string' ? s.planStart : null;   // today's ⭐ Start here
   s.doneRows = s.doneRows && typeof s.doneRows.day === 'string' && Array.isArray(s.doneRows.ids) ? {day:s.doneRows.day, ids:s.doneRows.ids.filter(x => typeof x === 'string').slice(0, 60)} : {day:'', ids:[]};   // plan rows already reported finished today
@@ -6755,6 +6759,91 @@ function outsideRowsHTML(){
   return `${rows.map(x => `<div class="row extras-row"><span style="flex:1">📎 ${esc(x.course)}${x.title ? `: ${esc(x.title)}` : ''} · <b>${x.minutes} min</b>${x.grade ? ` · grade ${esc(x.grade)}` : ''}${(x.images || []).length ? ` · 📷 ${x.images.length}` : ''} <small class="muted">${OUTSIDE_STATE[x.review] || ''}${x.day !== day ? ` (${esc(x.day)})` : ''}</small>${x.review === 'redo' && x.review_note ? `<br><small>“${esc(x.review_note)}”</small>` : ''}</span>${x.review === 'ok' ? '' : `<button type="button" class="btn small${x.review === 'redo' ? ' berry' : ''}" data-outside-edit="${x.id}">${x.review === 'redo' ? 'Fix it' : 'Edit'}</button>`}</div>`).join('')}
     <div class="row" style="margin-top:6px"><button type="button" class="btn small" data-outside-add>➕ Outside work</button><small class="muted" style="align-self:center">Did school work somewhere else? Add it here.</small></div>`;
 }
+/* ---------- 🔬 hands-on Biology (owner, Oct 27, 2026: "at least 1 hands-on per week"; docs/HANDS-ON.md) ----------
+   Short experiments with kitchen and yard things, tied to the Biology lessons (src/shared/handsOn.js), and a nature
+   journal for any week. Each week Today's plan has a 🔬 row with that week's pick (the next one she hasn't done in her
+   Biology unit) until she sends one. She answers predict / observe / explain and adds up to 3 photos; it goes to the
+   grown-up as outside work (Biology) for a ✅, and her answers stay in her save (S.handsOn). */
+let handsOnPhotos = [];
+const handsOnWeek = () => weekOf(localDay());
+const handsOnKey = id => (id === 'nature' ? `nature:${handsOnWeek()}` : id);
+const handsOnEntry = id => S.handsOn.entries[handsOnKey(id)] || null;
+const handsOnSentIds = () => Object.values(S.handsOn.entries).filter(e => e.sentAt && e.id !== 'nature').map(e => e.id);
+const handsOnDoneThisWeek = () => Object.values(S.handsOn.entries).some(e => e.sentAt && weekOf(logDayKey(new Date(e.sentAt))) === handsOnWeek());
+const bioOpen = () => ['bioChem', 'bioCells'].some(id => unitOpen(id));
+const currentBioCourse = () => unitCourse(nextUnit('biology')?.id || 'bioChem') || 'bio1';
+function handsOnPick(){ return weekHandsOn(currentBioCourse(), handsOnSentIds()); }
+function handsOnPlanRow(){
+  if (!bioOpen()) return '';
+  const done = handsOnDoneThisWeek(), x = handsOnPick();
+  return `<div class="row extras-row"><span style="flex:1">${done ? '✅' : '⬜'} 🔬 <b>Hands-on Biology this week:</b> ${done ? 'done! 🎉' : `${x.emoji} ${esc(x.title)}`}</span>${done ? '' : `<button type="button" class="btn small" data-hands-on="${x.id}">Go</button>`}</div>`;
+}
+function handsOnStatus(id){
+  const e = handsOnEntry(id); if (!e) return 'Not started';
+  if (!e.sentAt) return 'Started';
+  const row = outsideCache.rows.find(r => r.id === e.outsideId);
+  return row?.review === 'ok' ? '✅ Checked' : row?.review === 'redo' ? '🔁 Fix it' : '⏳ Sent';
+}
+/* the cards on a Biology unit page */
+function handsOnCardsHTML(courseId){
+  const pick = handsOnPick().id, list = HANDS_ON.filter(x => x.course === courseId);
+  return `<section class="ela-final-assessment hands-on-head"><div><h3>🔬 Hands-on at home</h3><p class="muted">Do at least one each week: an experiment, or the nature journal. ${handsOnDoneThisWeek() ? '✅ This week’s is done!' : 'This week’s pick is marked ⭐.'}</p></div></section>`
+    + [...list, NATURE_JOURNAL].map(x => `<section class="ela-final-assessment"><div><h3>${x.id === pick && !handsOnDoneThisWeek() ? '⭐ ' : ''}${x.emoji} ${esc(x.title)}</h3><p class="muted">${esc(x.why)} · ${esc(x.time)} · ${x.id === 'nature' ? (handsOnEntry('nature')?.sentAt ? '✅ This week’s entry sent' : 'Any week') : handsOnStatus(x.id)}</p></div><button type="button" class="btn small${x.id === pick ? ' berry' : ''}" data-hands-on="${x.id}">${handsOnEntry(x.id)?.sentAt ? 'Open' : 'Start'}</button></section>`).join('');
+}
+function renderHandsOn(id){
+  const x = handsOnById(id); if (!x) return;
+  if ($('#scr-library').hidden) show('library');
+  activeEnglishCourse = x.course || currentBioCourse();   // its time counts for Biology
+  const e = handsOnEntry(id) || {answers:{}}, sent = !!e.sentAt, back = x.course || currentBioCourse();
+  const field = (f, label) => `<label class="hands-q"><b>${label}</b><span>${esc(x[f])}</span><textarea data-ho-field="${f}" rows="3" maxlength="1500" ${sent ? 'readonly' : ''}>${esc(e.answers?.[f] || '')}</textarea></label>`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${x.emoji} ${esc(x.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${back}">Back to Biology</button></div>
+    ${todayTimeHTML('science')}
+    <div class="hands-on"><p>${esc(x.why)}</p><p class="muted">⏱️ ${esc(x.time)}</p>
+    <h3>🧺 You need</h3><ul>${x.need.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
+    <p class="hands-safety">⚠️ <b>Safety:</b> ${esc(x.safety)}</p>
+    <h3>📋 Steps</h3><ol>${x.steps.map(st => `<li>${esc(st)}</li>`).join('')}</ol>
+    <h3>✍️ Your lab notes</h3>
+    ${field('predict', '1. Before: predict')}${field('observe', '2. During: what happened?')}${field('explain', '3. After: explain')}
+    ${sent ? `<p class="review-banner">${handsOnStatus(id)} · sent ${new Date(e.sentAt).toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'})}${e.minutes ? ` · ${e.minutes} min` : ''}</p>${handsOnStatus(id) === '🔁 Fix it' ? '<p>Your grown-up asked you to fix something: open ➕ Outside work on Today’s plan to see the note and send it again.</p>' : ''}`
+      : `<h3>📷 Photos (up to 3)</h3><input type="file" accept="image/*" multiple data-ho-photos><div class="row ho-thumbs">${handsOnPhotos.map((src, i) => `<img src="${src}" alt="Photo ${i + 1}">`).join('')}</div>
+        <label>How many minutes did it take? <input type="number" min="1" max="240" value="${e.minutes || 20}" data-ho-minutes style="width:80px"></label>
+        <div class="row"><button type="button" class="btn" data-ho-save="${id}">Save my notes</button><button type="button" class="btn berry" data-ho-send="${id}">Send to a grown-up 🔬</button></div>
+        <p class="muted">${Backend.me ? 'It goes to your grown-up with your photos, like outside work.' : 'Photos need a class sign-in; your notes are saved here.'}</p>`}</div>`;
+}
+function handsOnSaveDraft(id){
+  const key = handsOnKey(id), e = S.handsOn.entries[key] || {id, answers:{}, minutes:0, sentAt:0, outsideId:0, week:handsOnWeek()};
+  $$('#libraryWrap [data-ho-field]').forEach(t => { e.answers[t.dataset.hoField] = t.value.slice(0, 1500); });
+  const m = $('#libraryWrap [data-ho-minutes]'); if (m) e.minutes = Math.max(1, Math.min(240, Math.round(+m.value) || 20));
+  S.handsOn.entries[key] = e; save(); return e;
+}
+async function handsOnSend(id){
+  const x = handsOnById(id), e = handsOnSaveDraft(id);
+  const missing = ['predict', 'observe', 'explain'].filter(f => String(e.answers[f] || '').trim().split(/\s+/).length < 3);
+  if (missing.length) { toast('Write a little more in each of the 3 lab notes first (at least a sentence).'); return; }
+  if (Backend.me && !handsOnPhotos.length) { toast('Add at least one photo of your experiment first. 📷'); return; }
+  const summary = `🔬 ${x.title}: I predicted ${e.answers.predict.trim()} I saw ${e.answers.observe.trim()}`.replace(/\s+/g, ' ');
+  if (Backend.me) {
+    const r = await Backend.saveOutsideWork(null, {day:logDayKey(), course:'Biology', title:summary.slice(0, 297) + (summary.length > 297 ? '…' : ''), minutes:e.minutes || 20, grade:'', images:handsOnPhotos.slice(0, 3)});
+    if (r.error) { toast(`Couldn’t send: ${r.error}`); return; }
+    e.outsideId = r.id || 0; void loadOutside(true);
+  }
+  e.sentAt = Date.now(); e.week = handsOnWeek(); handsOnPhotos = [];
+  S.coins += 5; updateHeader();
+  logEvent({k:'handson', title:`${x.emoji} ${x.title}`, course:'bio'});
+  save(); sfx('unlock'); toast(`🔬 Sent! Great science. +5 🪙`);
+  renderHandsOn(id);
+}
+document.addEventListener('click', event => {
+  const go = event.target.closest('[data-hands-on]'); if (go) { handsOnPhotos = []; renderHandsOn(go.dataset.handsOn); return; }
+  const sv = event.target.closest('[data-ho-save]'); if (sv) { handsOnSaveDraft(sv.dataset.hoSave); toast('Notes saved. ✍️'); return; }
+  const send = event.target.closest('[data-ho-send]'); if (send) { void handsOnSend(send.dataset.hoSend); }
+});
+document.addEventListener('change', async event => {
+  const inp = event.target.closest('[data-ho-photos]'); if (!inp) return;
+  for (const f of [...inp.files].slice(0, 3)) { const jpg = await photoToJpeg(f); if (jpg && handsOnPhotos.length < 3) handsOnPhotos.push(jpg); }
+  const thumbs = $('#libraryWrap .ho-thumbs'); if (thumbs) thumbs.innerHTML = handsOnPhotos.map((src, i) => `<img src="${src}" alt="Photo ${i + 1}">`).join('');
+  inp.value = '';
+});
 /* a photo shrunk to a JPEG data URL under about 190 KB (the database takes up to 200 KB each) */
 async function photoToJpeg(file, maxLen = 190000){
   const url = URL.createObjectURL(file);
@@ -7501,11 +7590,11 @@ function simReady(id){
   const st = simState(id);
   if (id === 'cloneIsland') return st.runs > 0;
   if (id === 'parenting') return HOMES.every(h => st.homes[h.id]);
-  return LAKE_MISSIONS.every(m => st.missions[m.id]);
+  return (SIM_MISSIONS[id] || []).every(m => st.missions[m.id]);
 }
 function simQuestionsHTML(id){
   const st = simState(id);
-  if (!simReady(id)) return `<p class="muted">🔒 ${id === 'cloneIsland' ? 'Play all 8 seasons' : id === 'parenting' ? 'Find a strategy that works in all three homes' : 'Finish both missions'} to unlock two questions about what you found.</p>`;
+  if (!simReady(id)) return `<p class="muted">🔒 ${id === 'cloneIsland' ? 'Play all 8 seasons' : id === 'parenting' ? 'Find a strategy that works in all three homes' : id === 'buildCell' ? 'Build both cells' : `Finish all ${SIM_MISSIONS[id]?.length || 2} missions`} to unlock two questions about what you found.</p>`;
   if (!simRun.order) simRun.order = SIM_QUESTIONS[id].map(q => shuffle(q.slice(1)));
   const rows = SIM_QUESTIONS[id].map((q, i) => {
     const got = simRun.right?.[i] || st.done;
@@ -7577,11 +7666,95 @@ function lakeLabHTML(){
     ${weeks ? `<section class="card"><h3>Your summer</h3>${pond}${lakeChartSVG(weeks)}<p>Highest algae: <b>${Math.round(sum.peakAlgae)}</b> · Lowest oxygen: <b>${sum.lowOxygen.toFixed(1)} mg/L</b> · Fish left: <b>${sum.fishLeft} of 100</b></p>
       <p class="sim-news">${sum.fishLeft < 40 ? '💀 A fish kill. When the bloom grew too thick, algae died, and the decomposers breaking them down used up the oxygen.' : sum.peakAlgae >= 70 ? '🟢 A big bloom, but the fish hung on.' : sum.peakAlgae >= 40 ? 'The pond got greener, but it stayed healthy.' : '💧 A clear, healthy pond.'}</p></section>` : ''}`;
 }
+/* 🧫 Build-a-Cell (Biology Unit 1). simRun.cell = {type, order, step, placed, why}. Missions: animal, plant. */
+function simMission(id, mid, text){
+  const st = simState(id); if (st.missions[mid]) return;
+  st.missions[mid] = true; toast(`✅ Mission done: ${text}`); sfx('good');
+}
+const missionListHTML = id => `<ol class="sim-missions">${SIM_MISSIONS[id].map(m => `<li>${simState(id).missions[m.id] ? '✅' : '⬜'} ${esc(m.text)}</li>`).join('')}</ol>`;
+function newCellRun(type){ const cell = CELLS.find(c => c.id === type); return {type, order:shuffle(cell.parts.slice()), step:0, placed:[], why:''}; }
+function buildCellHTML(){
+  const st = simState('buildCell'), c = simRun.cell, cell = CELLS.find(x => x.id === c.type), done = c.step >= c.order.length, job = done ? null : cellPart(c.order[c.step]);
+  const inside = c.placed.filter(id => id !== 'membrane' && id !== 'wall').map(id => { const p = cellPart(id); return `<span class="cell-part" title="${esc(p.name)}">${p.emoji}<small>${esc(p.name)}</small></span>`; }).join('');
+  const box = `<div class="sim-cell ${cell.id}${c.placed.includes('wall') ? ' walled' : ''}${c.placed.includes('membrane') ? ' membraned' : ''}${c.placed.includes('cytoplasm') ? ' jelly' : ''}" role="img" aria-label="${esc(cell.name)} with ${c.placed.length} parts">${inside || '<span class="muted">empty</span>'}</div>`;
+  return `${missionListHTML('buildCell')}<div class="row subject-tabs" role="tablist">${CELLS.map(x => `<button type="button" role="tab" class="btn small subject-tab" data-cell-type="${x.id}" aria-selected="${x.id === c.type}">${x.emoji} ${x.name}${st.missions[x.id] ? ' ✅' : ''}</button>`).join('')}</div>
+    <section class="card"><h3>${cell.emoji} ${esc(cell.name)} <small class="muted">${c.placed.length} of ${cell.parts.length} parts</small></h3>${box}
+      ${c.placed.length ? `<p class="muted">In the cell: ${c.placed.map(id => `${cellPart(id).emoji} ${esc(cellPart(id).name)}`).join(' · ')}</p>` : ''}
+      ${done ? `<p class="review-banner">🎉 Your ${cell.name.toLowerCase()} is built! ${cell.id === 'animal' ? 'Now try the plant cell: it needs 3 more parts.' : 'Compare it with the animal cell: what’s different?'}</p><div class="row"><button type="button" class="btn" data-cell-type="${cell.id}">🔁 Build it again</button></div>`
+        : `<p class="sim-news"><b>Job ${c.step + 1} of ${cell.parts.length}:</b> “${esc(job.job)}” Which part am I?</p>
+      <div class="row cell-bank">${CELL_PARTS.map(p => `<button type="button" class="btn small" data-cell-pick="${p.id}" ${c.placed.includes(p.id) ? 'disabled' : ''}>${p.emoji} ${esc(p.name)}</button>`).join('')}</div>
+      ${c.why ? `<p class="dig-hint">${esc(c.why)}</p>` : ''}`}</section>`;
+}
+function cellAnswer(pick){
+  const c = simRun.cell, r = cellPick(c.type, c.order[c.step], pick);
+  if (!r.ok) { c.why = r.why; sfx('bad'); return; }
+  c.why = ''; c.placed.push(pick); c.step++; sfx('good');
+  if (c.step >= c.order.length) { simRanOnce('buildCell'); simMission('buildCell', c.type, `${CELLS.find(x => x.id === c.type).name} built`); }
+}
+/* 🐶 Punnett Square Puppy Lab (Biology Unit 2). simRun.pn = {mom, dad, fill, checked, pups}. */
+const pupHTML = g => `<span class="pup ${furOf(g)}" title="${g}: ${furOf(g)} fur">🐶<small>${g}</small></span>`;
+function punnettHTML(){
+  const p = simRun.pn, grid = punnettGrid(p.mom, p.dad), allRight = p.checked && grid.flat().every((g, k) => p.fill[k] === g);
+  const parent = (who, label) => `<div><b>${label}</b><div class="row" role="group" aria-label="${label}">${GENOTYPES.map(g => `<button type="button" class="btn small${p[who] === g ? ' mint' : ''}" data-pn-${who}="${g}" aria-pressed="${p[who] === g}">${furOf(g) === 'brown' ? '🟫' : '⬜'} ${g}</button>`).join('')}</div></div>`;
+  const cellBox = k => { const want = grid[Math.floor(k / 2)][k % 2], got = p.fill[k] || '', bad = p.checked && got !== want;
+    return `<td class="${bad ? 'pn-bad' : p.checked ? 'pn-ok' : ''}"><select data-pn-cell="${k}" aria-label="Box ${k + 1}"><option value="">?</option>${GENOTYPES.map(g => `<option${got === g ? ' selected' : ''}>${g}</option>`).join('')}</select></td>`; };
+  const table = `<table class="pn-grid"><tr><th></th><th>Dad gives <b>${p.dad[0]}</b></th><th>Dad gives <b>${p.dad[1]}</b></th></tr>${[0, 1].map(i => `<tr><th>Mom gives <b>${p.mom[i]}</b></th>${cellBox(i * 2)}${cellBox(i * 2 + 1)}</tr>`).join('')}</table>`;
+  const whites = p.pups ? p.pups.filter(g => furOf(g) === 'white').length : 0, share = whiteShare(p.mom, p.dad);
+  return `${missionListHTML('punnett')}
+    <section class="card"><h3>1. Pick the parents</h3><p class="muted">🟫 brown fur needs one B or more. ⬜ white fur only happens with bb.</p><div class="sim-two">${parent('mom', '🐕 Mom')}${parent('dad', '🐕 Dad')}</div></section>
+    <section class="card"><h3>2. Fill in the Punnett square</h3><p class="muted">Each box gets one gene from Mom (the row) and one from Dad (the column).</p>${table}
+      <div class="row"><button type="button" class="btn berry" data-pn-check>✔️ Check my square</button></div>
+      ${p.checked ? allRight ? `<p class="review-banner">✅ Right! ${share} out of 4 boxes are bb, so about ${share} in 4 puppies should be white.</p>` : '<p class="dig-hint">The red boxes aren’t right yet. Take Mom’s letter from the row and Dad’s from the column.</p>' : ''}</section>
+    ${allRight ? `<section class="card"><h3>3. Raise a litter</h3><div class="row"><button type="button" class="btn" data-pn-litter>🍼 Raise 12 puppies</button></div>
+      ${p.pups ? `<div class="pups">${p.pups.map(pupHTML).join('')}</div><p class="sim-news">${whites} white out of 12. Your square said about ${share * 3} (${share} in 4). ${Math.abs(whites - share * 3) <= 2 ? 'Close! ' : ''}Real litters wobble, just like flipping coins. Try another litter.</p>` : ''}</section>` : ''}`;
+}
+function punnettCheck(){
+  const p = simRun.pn, grid = punnettGrid(p.mom, p.dad).flat(); p.checked = true; p.pups = null;
+  if (!grid.every((g, k) => p.fill[k] === g)) { sfx('bad'); return; }
+  simRanOnce('punnett');
+  PUNNETT_MISSIONS.forEach(m => { if (m.check(p.mom, p.dad)) simMission('punnett', m.id, m.text.split(':')[0].replace(/\.$/, '')); });
+}
+/* 🕸️ Meadow Food Web (Biology Unit 2). simRun.web = {picks, wrong, gone}. */
+const WEB_POS = {sun:[160, 18], grass:[100, 72], clover:[220, 72], rabbit:[245, 132], grasshopper:[75, 132], mouse:[150, 180], frog:[40, 200], snake:[90, 250], hawk:[230, 252]};
+function webSVG(effect, gone){
+  const node = x => { const [cx, cy] = WEB_POS[x.id], e = effect && x.id !== gone && !x.sun ? effectLabel(effect[x.id])[0] : '';
+    return `<g opacity="${x.id === gone ? .3 : 1}"><circle cx="${cx}" cy="${cy}" r="17" fill="var(--surface)" stroke="#999"/><text x="${cx}" y="${cy + 7}" font-size="20" text-anchor="middle">${x.emoji}</text>${x.id === gone ? `<text x="${cx}" y="${cy + 8}" font-size="26" text-anchor="middle">❌</text>` : ''}${e ? `<text x="${cx + 16}" y="${cy - 10}" font-size="13">${e}</text>` : ''}</g>`; };
+  const arrows = WEB.flatMap(x => x.eats.map(f => { const [x1, y1] = WEB_POS[f], [x2, y2] = WEB_POS[x.id], d = Math.hypot(x2 - x1, y2 - y1), k = 19 / d;
+    return `<line x1="${(x1 + (x2 - x1) * k).toFixed(1)}" y1="${(y1 + (y2 - y1) * k).toFixed(1)}" x2="${(x2 - (x2 - x1) * k).toFixed(1)}" y2="${(y2 - (y2 - y1) * k).toFixed(1)}" stroke="${f === gone || x.id === gone ? '#ccc' : '#7a8f4a'}" stroke-width="2" marker-end="url(#webArrow)"/>`; })).join('');
+  return `<svg viewBox="0 0 300 280" class="sim-chart web-svg" role="img" aria-label="The meadow food web; arrows go from food to eater"><defs><marker id="webArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a8f4a"/></marker></defs>${arrows}${WEB.map(node).join('')}</svg>`;
+}
+function foodWebHTML(){
+  const st = simState('foodWeb'), w = simRun.web, drawn = !!st.missions.draw;
+  if (!drawn) {
+    const foods = WEB_LIVING.filter(id => id !== 'hawk');
+    return `${missionListHTML('foodWeb')}<section class="card"><h3>1. Draw the web</h3><p class="muted">Tap everything each animal eats. Plants don’t eat: they get their energy from the ☀️ sun.</p>
+      ${WEB_ANIMALS.map(a => { const x = webById(a);
+        return `<div class="web-row${w.wrong.includes(a) ? ' bad' : ''}"><b>${x.emoji} ${x.name} eats…</b><div class="row">${foods.filter(f => f !== a).map(f => `<button type="button" class="btn small${w.picks[a].includes(f) ? ' mint' : ''}" data-web-pick="${a}" data-web-food="${f}" aria-pressed="${w.picks[a].includes(f)}">${webById(f).emoji} ${webById(f).name}</button>`).join('')}</div>${w.wrong.includes(a) ? `<p class="dig-hint">Not quite. ${x.name === 'Mouse' ? 'Mice eat seeds and grass, and they snack on bugs too.' : x.name === 'Hawk' ? 'Hawks hunt from the sky: anything small enough to grab, even snakes.' : x.name === 'Snake' ? 'Snakes swallow small animals whole.' : x.name === 'Frog' ? 'Frogs catch hopping bugs with their tongues.' : x.name === 'Rabbit' ? 'Rabbits munch on two different plants here.' : 'This one eats only one plant here.'}</p>` : ''}</div>`; }).join('')}
+      <div class="row"><button type="button" class="btn berry" data-web-check>✔️ Check my web</button></div></section>`;
+  }
+  const eff = w.gone ? removeEffect(w.gone) : null;
+  return `${missionListHTML('foodWeb')}<section class="card"><h3>${w.gone ? `What happens without the ${webById(w.gone).name.toLowerCase()}?` : 'Your meadow food web'}</h3>${webSVG(eff, w.gone)}<p class="muted">Arrows go from the food to the eater: they show where the energy goes.</p></section>
+    <section class="card"><h3>2. Take one away</h3><div class="row">${WEB_LIVING.map(id => `<button type="button" class="btn small${w.gone === id ? ' mint' : ''}" data-web-gone="${id}">${webById(id).emoji} ${webById(id).name}</button>`).join('')}${w.gone ? '<button type="button" class="btn small butter" data-web-gone="">↩️ Put it back</button>' : ''}</div>
+      ${eff ? `<ul class="web-effects">${WEB_LIVING.filter(id => id !== w.gone).map(id => { const [e, t] = effectLabel(eff[id]); return `<li>${e} ${webById(id).emoji} ${webById(id).name}: ${t}</li>`; }).join('')}</ul>` : ''}</section>`;
+}
+function webCheck(){
+  const w = simRun.web; w.wrong = WEB_ANIMALS.filter(a => !sameSet(w.picks[a], webById(a).eats));
+  if (w.wrong.length) { sfx('bad'); return; }
+  simMission('foodWeb', 'draw', 'Web drawn');
+}
+function webGone(id){
+  const w = simRun.web; w.gone = id || null; if (!w.gone) return;
+  simRanOnce('foodWeb');
+  WEB_MISSIONS.filter(m => m.check).forEach(m => { if (m.check(w.gone)) simMission('foodWeb', m.id, m.id === 'boom' ? 'Grasshopper boom' : 'Found the most important living thing'); });
+}
 function renderSim(id){
   const sim = simById(id); if (!sim) return;
-  if (simRun?.id !== id) simRun = {id, islands:newIslands(), home:'beach', sizes:{beach:4, forest:20, ice:3}, lake:{fert:0, heat:'normal', buffer:false}, weeks:null};
+  if (simRun?.id !== id) simRun = {id, islands:newIslands(), home:'beach', sizes:{beach:4, forest:20, ice:3}, lake:{fert:0, heat:'normal', buffer:false}, weeks:null,
+    cell:newCellRun(simState('buildCell').missions.animal && !simState('buildCell').missions.plant ? 'plant' : 'animal'),
+    pn:{mom:'Bb', dad:'BB', fill:{}, checked:false, pups:null},
+    web:{picks:Object.fromEntries(WEB_ANIMALS.map(a => [a, simState('foodWeb').missions.draw ? webById(a).eats.slice() : []])), wrong:[], gone:null}};
   activeEnglishCourse = sim.course;
-  const body = id === 'cloneIsland' ? cloneIslandHTML() : id === 'parenting' ? parentingHTML() : lakeLabHTML();
+  const body = id === 'cloneIsland' ? cloneIslandHTML() : id === 'parenting' ? parentingHTML() : id === 'buildCell' ? buildCellHTML() : id === 'punnett' ? punnettHTML() : id === 'foodWeb' ? foodWebHTML() : lakeLabHTML();
   $('#libraryWrap').innerHTML = `<div id="simWrap" class="sim"><div class="backrow"><h2>🧪 ${sim.emoji} ${esc(sim.name)}</h2><button class="btn small" data-dig-back="${sim.course}">Back to unit</button></div>
     <p class="muted">${esc(sim.intro)}</p>${body}<section class="card">${simQuestionsHTML(id)}</section></div>`;
 }
@@ -7592,6 +7765,14 @@ $('#libraryWrap').addEventListener('click', e => {
   if (!simRun) return;
   const id = simRun.id;
   if (b.dataset.simAnswer != null) { simAnswer(+b.dataset.simAnswer, b.dataset.simChoice); return; }
+  if (b.dataset.cellType) { simRun.cell = newCellRun(b.dataset.cellType); renderSim(id); return; }
+  if (b.dataset.cellPick) { cellAnswer(b.dataset.cellPick); save(); renderSim(id); return; }
+  if (b.dataset.pnMom || b.dataset.pnDad) { const p = simRun.pn; if (b.dataset.pnMom) p.mom = b.dataset.pnMom; else p.dad = b.dataset.pnDad; p.fill = {}; p.checked = false; p.pups = null; renderSim(id); return; }
+  if (b.hasAttribute('data-pn-check')) { punnettCheck(); save(); renderSim(id); return; }
+  if (b.hasAttribute('data-pn-litter')) { simRun.pn.pups = litter(simRun.pn.mom, simRun.pn.dad); renderSim(id); return; }
+  if (b.dataset.webPick) { const l = simRun.web.picks[b.dataset.webPick], f = b.dataset.webFood; l.includes(f) ? l.splice(l.indexOf(f), 1) : l.push(f); simRun.web.wrong = simRun.web.wrong.filter(a => a !== b.dataset.webPick); renderSim(id); return; }
+  if (b.hasAttribute('data-web-check')) { webCheck(); save(); renderSim(id); return; }
+  if (b.dataset.webGone != null) { webGone(b.dataset.webGone); save(); renderSim(id); return; }
   if (b.dataset.simWeather) {
     if (islandsDone(simRun.islands)) return;
     const w = b.dataset.simWeather === 'random' ? WEATHER[Math.floor(Math.random() * WEATHER.length)].id : b.dataset.simWeather;
@@ -7616,6 +7797,11 @@ $('#libraryWrap').addEventListener('click', e => {
     LAKE_MISSIONS.forEach(m => { if (!st.missions[m.id] && m.check(sum, simRun.lake)) { st.missions[m.id] = true; toast(`✅ Mission done: ${m.text.split(':')[0]}`); } });
     save(); renderSim(id);
   }
+});
+$('#libraryWrap').addEventListener('change', e => {
+  const sel = e.target.closest('#simWrap [data-pn-cell]'); if (!sel || !simRun?.pn) return;
+  simRun.pn.fill[+sel.dataset.pnCell] = sel.value; simRun.pn.checked = false; simRun.pn.pups = null;
+  sel.closest('td').className = '';
 });
 $('#libraryWrap').addEventListener('input', e => {
   const r = e.target.closest('#simWrap [data-sim-size]'); if (!r || !simRun) return;
@@ -9231,13 +9417,13 @@ function planCardHTML(){
   const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {}, first = carryFirst();
   const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0, helpHTML = helpPlanHTML();
   const bibleRow = bibleOn() ? (st => `<div class="row extras-row"><span style="flex:1">${st.done ? '✅' : S.bible.skipped === logDayKey() ? '⏭️' : '⬜'} <b>✝️ Bible first:</b> journal, then ${st.verse ? 'the verse or ' : ''}a books round${S.bible.skipped === logDayKey() && !st.done ? ' <small class="muted">(skipped today by a grown-up)</small>' : ''}</span>${st.done ? '' : `<button type="button" class="btn small berry" data-open="bible">Go</button>`}</div>`)(bibleStatus()) : '';
-  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow) return '';
+  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow && !handsOnPlanRow()) return '';
   const extraRows = extras.map(x => extraRowHTML(x, 'warm', extrasFirst() ? '☀️ ' : '')), restRows = extras.map(x => extraRowHTML(x, 'rest')).filter(Boolean);
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
     const must = first.some(y => y.id === x.id && y.carried === x.carried), lead = must ? '<b>⏪ Finish first:</b> ' : x.start && i.status === 'todo' && !fixing && !first.length ? '<b>⭐ Start here:</b> ' : '';
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${x.kind === 'elective' && i.status === 'todo' ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-elective="${esc(x.course)}" data-minutes="${Math.round(+x.minutes) || ''}">Write it</button>` : go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
-  }), extrasFirst() ? [] : extraRows, restRows, goalRows.map(([id, name, goal]) => {
+  }), extrasFirst() ? [] : extraRows, restRows, [handsOnPlanRow()].filter(Boolean), goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${done} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
@@ -10963,7 +11149,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -13704,6 +13890,7 @@ function eventText(e){
   if (e.k === 'parcel') return `📮 Parcel Post: ${e.title}`;
   if (e.k === 'petshow') return `🏆 Pet Show Awards: ${e.title}`;
   if (e.k === 'pax') return `⚖️ Pax Oeconomica: ${e.title}`;
+  if (e.k === 'handson') return `🔬 Hands-on Biology: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;

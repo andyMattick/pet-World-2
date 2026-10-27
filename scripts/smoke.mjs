@@ -51,7 +51,7 @@ function fakeBackend(mode){
       if (name === 'session_ping') return { data: true };
       return { data: null };
     },
-    from: () => ({ upsert: async row => { localStorage.setItem('fake-save', JSON.stringify(row.state)); return {}; }, insert: async () => ({}), select: () => ({ eq: async () => ({ data: [] }) }) })
+    from: () => ({ upsert: async row => { localStorage.setItem('fake-save', JSON.stringify(row.state)); return {}; }, insert: async () => ({}), select: () => { const q = { eq: () => q, gte: () => q, lte: () => q, order: () => q, then: ok => ok({ data: [] }) }; return q; } })
   }) };
 }
 

@@ -1,4 +1,4 @@
-/* Science simulations for Biology Unit 2 (the Petting Zoo). Plain models with no DOM, so they can be tested in Node;
+/* Science simulations for Biology Units 1 and 2 (Build-a-Cell is Unit 1; the rest are the Petting Zoo, Unit 2). Plain models with no DOM, so they can be tested in Node;
    game.js draws them (renderSim) and saves progress in S.sims. Docs: docs/SCIENCE-UNIT2.md
    Each sim ends with two "what did you find?" questions; answering both right finishes it (coins the first time). */
 
@@ -8,7 +8,13 @@ export const SIMS = [
   {id:'parenting', course:'bio2', group:'traits', emoji:'🐣', name:'Parenting Strategy Lab',
     intro:'Every parent has the same amount of energy to spend. Spend it on lots of babies with no care, or on a few babies with lots of care? Find the best family size for three very different homes.'},
   {id:'lakeLab', course:'bio2', group:'growth', emoji:'🦆', name:'Duck Pond Lake Lab',
-    intro:'The Petting Zoo’s duck pond sits below a farm. Change how much fertilizer washes in, how hot the summer is, and whether there is a grass strip to catch the runoff. Then run the summer and watch the algae, the oxygen, and the fish.'}
+    intro:'The Petting Zoo’s duck pond sits below a farm. Change how much fertilizer washes in, how hot the summer is, and whether there is a grass strip to catch the runoff. Then run the summer and watch the algae, the oxygen, and the fish.'},
+  {id:'buildCell', course:'bio1', group:'cells', emoji:'🧫', name:'Build-a-Cell',
+    intro:'Build an animal cell, then a plant cell. Each part has a job: read the job, then pick the part that does it. Watch out: some parts belong only in plant cells.'},
+  {id:'punnett', course:'bio2', group:'traits', emoji:'🐶', name:'Punnett Square Puppy Lab',
+    intro:'Brown fur (B) wins over white fur (b). Each parent passes one fur gene to each puppy. Pick two parents, fill in the Punnett square, then raise a litter and see if your square was right.'},
+  {id:'foodWeb', course:'bio2', group:'growth', emoji:'🕸️', name:'Meadow Food Web',
+    intro:'Every living thing in the meadow gets its energy from something else. First draw the web: pick what each animal eats. Then take one living thing away and see what happens to everyone else.'}
 ];
 export const simById = id => SIMS.find(s => s.id === id);
 
@@ -126,8 +132,111 @@ export const SIM_QUESTIONS = {
     ['Why do sea turtles lay so many eggs but emperor penguins lay just one?', 'Penguin chicks need so much care that a parent can raise only one', 'Penguins are too big to lay more eggs', 'Sea turtle eggs are safer than penguin eggs'],
     ['What did every best strategy have in common?', 'It fit the dangers of that home', 'It made the most babies', 'It gave each baby the most care']
   ],
+  buildCell:[
+    ['Which parts did the plant cell have that the animal cell didn’t?', 'A cell wall, chloroplasts and a big vacuole', 'A nucleus and a membrane', 'Mitochondria and cytoplasm'],
+    ['Plants make their own sugar. Why do plant cells still need mitochondria?', 'To turn that sugar into energy the cell can use', 'To make sugar from sunlight', 'To hold the cell’s DNA']
+  ],
+  punnett:[
+    ['Two brown dogs had a white puppy. How?', 'Each parent carried a hidden white gene (b) and passed it on', 'The puppy didn’t get any genes from its parents', 'Brown fur fades to white in some puppies'],
+    ['Two Bb parents: about how many puppies out of 4 will be white?', '1 out of 4', '2 out of 4', '0 out of 4']
+  ],
+  foodWeb:[
+    ['Hawks don’t eat grass. Why did hawks go down when the grass was gone?', 'Their food ate the grass, so their energy started with it', 'Hawks build nests out of grass', 'Hawks got lost without the grass'],
+    ['In a food web, what do the arrows show?', 'Where the energy goes, from food to eater', 'Which animal is the biggest', 'Which animals are friends']
+  ],
   lakeLab:[
     ['Algae don’t eat fish. Why did the fish die in a bloom?', 'Dead algae rotted and decomposers used up the oxygen', 'The algae wrapped around the fish', 'The fish ate too much algae'],
     ['Which change protected the pond best when the farm used Lots of fertilizer?', 'A grass strip that catches the runoff', 'A hotter summer', 'Adding more fish to the pond']
   ]
 };
+
+/* ---------- 🧫 Build-a-Cell (Biology Unit 1, cells) ----------
+   Two cells to build. For each job, she picks the part that does it from all 7 parts; a right pick puts the part in the
+   cell. A plant-only part picked for the animal cell gets its own explanation. */
+export const CELL_PARTS = [
+  {id:'membrane', emoji:'🫧', name:'Cell membrane', job:'I’m the thin skin around the cell. I let food and water in and waste out.'},
+  {id:'nucleus', emoji:'🟣', name:'Nucleus', job:'I hold the DNA, the cell’s instructions. I’m the control center.'},
+  {id:'cytoplasm', emoji:'💧', name:'Cytoplasm', job:'I’m the jelly that fills the cell. The other parts float in me.'},
+  {id:'mito', emoji:'⚡', name:'Mitochondria', job:'I turn sugar from food into energy the cell can use.'},
+  {id:'wall', emoji:'🧱', name:'Cell wall', job:'I’m a stiff box outside the membrane that holds a plant up.'},
+  {id:'chloro', emoji:'🍃', name:'Chloroplasts', job:'I use sunlight to make sugar (food) for the plant.'},
+  {id:'vacuole', emoji:'🫙', name:'Large vacuole', job:'I’m a big water tank that keeps a plant cell firm, so the plant doesn’t wilt.'}
+];
+export const CELLS = [
+  {id:'animal', emoji:'🐾', name:'Animal cell', parts:['membrane', 'nucleus', 'cytoplasm', 'mito']},
+  {id:'plant', emoji:'🌱', name:'Plant cell', parts:['wall', 'membrane', 'nucleus', 'cytoplasm', 'mito', 'chloro', 'vacuole']}
+];
+export const PLANT_ONLY = {wall:'Animal cells have no cell wall. That’s why animals can bend and stretch.',
+  chloro:'Animal cells have no chloroplasts. Animals get their sugar by eating food.',
+  vacuole:'Animal cells have only tiny vacuoles, not one big water tank.'};
+export const cellPart = id => CELL_PARTS.find(p => p.id === id);
+/* answer one job: {ok, why} */
+export function cellPick(cellId, jobPart, pick){
+  if (pick === jobPart) return {ok:true};
+  const cell = CELLS.find(c => c.id === cellId);
+  if (!cell.parts.includes(pick)) return {ok:false, why:PLANT_ONLY[pick] || 'That part doesn’t belong in this cell.'};
+  return {ok:false, why:`${cellPart(pick).name} is in this cell, but that’s not its job. Read the job again.`};
+}
+
+/* ---------- 🐶 Punnett Square Puppy Lab (Biology Unit 2, traits) ----------
+   One gene for fur: B (brown) is dominant, b (white) is recessive. Parents are BB, Bb or bb. */
+export const GENOTYPES = ['BB', 'Bb', 'bb'];
+export const furOf = g => g.includes('B') ? 'brown' : 'white';
+export const furEmoji = g => g.includes('B') ? '🟫' : '⬜';
+const sortG = (a, b) => a === b ? a + b : a === 'B' ? a + b : b + a;   // 'B' before 'b'
+export function punnettGrid(mom, dad){ return [0, 1].map(i => [0, 1].map(j => sortG(mom[i], dad[j]))); }
+export const whiteShare = (mom, dad) => punnettGrid(mom, dad).flat().filter(g => furOf(g) === 'white').length;   // out of 4
+export function litter(mom, dad, n = 12, rand = Math.random){
+  return Array.from({length:n}, () => sortG(mom[rand() < 0.5 ? 0 : 1], dad[rand() < 0.5 ? 0 : 1]));
+}
+export const PUNNETT_MISSIONS = [
+  {id:'square', text:'Fill in a Punnett square with no mistakes.', check:() => true},
+  {id:'surprise', text:'Two brown parents: find a pair that can have a white puppy.', check:(mom, dad) => furOf(mom) === 'brown' && furOf(dad) === 'brown' && whiteShare(mom, dad) > 0},
+  {id:'hidden', text:'One parent is white, but every puppy is brown. Find that pair.', check:(mom, dad) => (furOf(mom) === 'white') !== (furOf(dad) === 'white') && whiteShare(mom, dad) === 0}
+];
+
+/* ---------- 🕸️ Meadow Food Web (Biology Unit 2, growth in the environment) ----------
+   Arrows go from food to eater. Taking one living thing away: its eaters lose that share of their food (down), what it
+   ate loses a predator (up), and the change passes one more step along the web. */
+export const WEB = [
+  {id:'sun', emoji:'☀️', name:'Sun', eats:[], sun:true},
+  {id:'grass', emoji:'🌾', name:'Grass', eats:['sun']},
+  {id:'clover', emoji:'☘️', name:'Clover', eats:['sun']},
+  {id:'rabbit', emoji:'🐇', name:'Rabbit', eats:['grass', 'clover']},
+  {id:'grasshopper', emoji:'🦗', name:'Grasshopper', eats:['grass']},
+  {id:'mouse', emoji:'🐁', name:'Mouse', eats:['grass', 'grasshopper']},
+  {id:'frog', emoji:'🐸', name:'Frog', eats:['grasshopper']},
+  {id:'snake', emoji:'🐍', name:'Snake', eats:['mouse', 'frog']},
+  {id:'hawk', emoji:'🦅', name:'Hawk', eats:['rabbit', 'mouse', 'snake']}
+];
+export const webById = id => WEB.find(x => x.id === id);
+export const WEB_ANIMALS = WEB.filter(x => x.eats.length && !x.eats.includes('sun')).map(x => x.id);
+export const WEB_LIVING = WEB.filter(x => !x.sun).map(x => x.id);
+export const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+/* what happens to everyone when `gone` disappears: id -> change (negative = fewer, positive = more) */
+export function removeEffect(gone){
+  const ch = Object.fromEntries(WEB_LIVING.map(id => [id, 0]));
+  ch[gone] = -1;
+  for (let round = 0; round < 3; round++) {
+    const next = {...ch};
+    for (const x of WEB) {
+      if (x.sun || x.id === gone) continue;
+      const food = x.eats.filter(f => f !== 'sun'), eaters = WEB.filter(y => y.eats.includes(x.id));
+      const fromFood = food.length ? food.reduce((t, f) => t + Math.min(0, ch[f]), 0) / food.length : 0;   // less food → fewer
+      const fromEaters = eaters.length ? eaters.reduce((t, y) => t - Math.min(0, ch[y.id]), 0) / eaters.length : 0;   // fewer eaters → more
+      next[x.id] = Math.max(-1, Math.min(1, fromFood * (round ? 0.8 : 1) + fromEaters * 0.6));
+    }
+    next[gone] = -1; Object.assign(ch, next);
+  }
+  return ch;
+}
+export const effectLabel = v => v <= -0.45 ? ['⬇️⬇️', 'a lot fewer'] : v <= -0.08 ? ['⬇️', 'fewer'] : v >= 0.3 ? ['⬆️⬆️', 'a lot more'] : v >= 0.08 ? ['⬆️', 'more'] : ['➖', 'about the same'];
+export const hurtCount = gone => Object.entries(removeEffect(gone)).filter(([id, v]) => id !== gone && v <= -0.08).length;
+export const mostHurt = () => WEB_LIVING.reduce((best, id) => hurtCount(id) > hurtCount(best) ? id : best, WEB_LIVING[0]);
+export const WEB_MISSIONS = [
+  {id:'draw', text:'Draw the web: pick the right food for every animal.'},
+  {id:'boom', text:'Take something away so the grasshoppers grow in number.', check:gone => removeEffect(gone).grasshopper >= 0.08},
+  {id:'keystone', text:'Find the one living thing whose loss makes the most others go down.', check:gone => hurtCount(gone) === hurtCount(mostHurt())}
+];
+export const SIM_MISSIONS = {lakeLab:LAKE_MISSIONS, punnett:PUNNETT_MISSIONS, foodWeb:WEB_MISSIONS,
+  buildCell:CELLS.map(c => ({id:c.id, text:`Build the ${c.name.toLowerCase()}.`}))};
