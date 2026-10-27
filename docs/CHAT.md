@@ -22,6 +22,7 @@ A grown-up (a parent or teacher) can write to a student from the teacher app, an
 
 ## Read receipts and notifications (Oct 27, 2026)
 
+- **Newest first (Oct 27, 2026).** Both sides show the newest message at the top, under the box for writing, so nobody has to scroll down.
 - **Read receipts, both ways.**
   - In the teacher app, each of your messages shows **✓ Sent**, or **✓✓ Seen** once she opens it (from her `S.chat.seenAt`). The line under the conversation gives the time she saw your last one.
   - In her town, each of her replies shows **✓ Sent**, or **✓✓ Seen** once a grown-up has had the conversation open (or wrote back) after she sent it. The teacher app saves that time with the messages: `quiz_overrides.chat = {msgs, readAt}`.

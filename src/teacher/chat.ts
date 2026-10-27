@@ -44,17 +44,18 @@ export function startChatCard(el: HTMLElement, student: { id: string; n: string 
   function render(keepDraft = true) {
     const draft = keepDraft ? el.querySelector<HTMLTextAreaElement>('#chatText')?.value || '' : '', typing = document.activeElement?.id === 'chatText';   // a reply arriving never wipes what you're typing
     const msgs = parseChat(getRaw());
-    const all = [...msgs.map(m => ({ ...m, mine: true })), ...replies.map(r => ({ ...r, from: student.n, mine: false }))].sort((a, b) => a.at - b.at).slice(-40);
+    const all = [...msgs.map(m => ({ ...m, mine: true })), ...replies.map(r => ({ ...r, from: student.n, mine: false }))].sort((a, b) => b.at - a.at).slice(0, 40);   // newest first, so nothing needs scrolling
     const lastMine = msgs.length ? msgs[msgs.length - 1].at : 0;
     el.innerHTML = `<div class="card"><h2>💬 Messages with ${esc(student.n)}</h2>
       <p class="muted" style="margin-top:0">They pop up on ${esc(student.n)}’s screen with your name on them, and she can write back. Her replies show here (checked every 20 seconds). ✓ Sent, ✓✓ Seen; she sees ✓✓ Seen on her replies once this conversation is open.</p>
-      <div style="max-height:320px; overflow:auto; display:flex; flex-direction:column; gap:6px; margin:8px 0">${all.length ? all.map(m => `<div style="align-self:${m.mine ? 'flex-end' : 'flex-start'}; max-width:85%; padding:6px 10px; border-radius:12px; background:${m.mine ? '#E7F5FF' : '#FFF3BF'}; color:#222">
-        <div style="font-size:.8em; opacity:.75">${esc(m.mine ? m.from : student.n)} · ${esc(when(m.at))}</div><div style="white-space:pre-wrap">${esc(m.text)}</div>${m.mine ? `<div style="font-size:.75em; opacity:.75; text-align:right">${seenAt >= m.at ? `✓✓ Seen` : '✓ Sent'}</div>` : ''}</div>`).join('') : `<p class="muted">No messages yet.</p>`}</div>
+      
       ${lastMine ? `<p class="muted" style="margin:0 0 6px; font-size:.85em">${seenAt >= lastMine ? `✓✓ ${esc(student.n)} has seen your last message${seenAt ? ` (${esc(when(seenAt))})` : ''}.` : `✓ Sent. ${esc(student.n)} hasn’t opened your last message yet.`}</p>` : ''}
       <div class="row" style="flex-wrap:wrap; align-items:flex-end"><label>Your name <input id="chatFrom" maxlength="40" value="${esc(from)}" placeholder="Dad" style="width:9em"></label></div>
       <textarea id="chatText" rows="2" maxlength="1000" style="width:100%" placeholder="Write to ${esc(student.n)}…"></textarea>
       <div class="row"><button type="button" class="btn small primary" id="chatSend">Send</button>${msgs.length ? '<button type="button" class="btn small" id="chatClear">Clear my messages</button>' : ''}</div>
-      <p class="status" id="chatMsg" role="status" style="margin:4px 0">${readError ? `Couldn’t read her replies: ${esc(readError)}` : ''}</p></div>`;
+      <p class="status" id="chatMsg" role="status" style="margin:4px 0">${readError ? `Couldn’t read her replies: ${esc(readError)}` : ''}</p>
+      <div style="max-height:320px; overflow:auto; display:flex; flex-direction:column; gap:6px; margin:8px 0">${all.length ? all.map(m => `<div style="align-self:${m.mine ? 'flex-end' : 'flex-start'}; max-width:85%; padding:6px 10px; border-radius:12px; background:${m.mine ? '#E7F5FF' : '#FFF3BF'}; color:#222">
+        <div style="font-size:.8em; opacity:.75">${esc(m.mine ? m.from : student.n)} · ${esc(when(m.at))}</div><div style="white-space:pre-wrap">${esc(m.text)}</div>${m.mine ? `<div style="font-size:.75em; opacity:.75; text-align:right">${seenAt >= m.at ? `✓✓ Seen` : '✓ Sent'}</div>` : ''}</div>`).join('') : `<p class="muted">No messages yet.</p>`}</div></div>`;
     const box = el.querySelector<HTMLTextAreaElement>('#chatText'); if (box && draft) { box.value = draft; if (typing) box.focus(); }
     el.querySelector<HTMLButtonElement>('#chatSend')?.addEventListener('click', () => void send());
     el.querySelector<HTMLTextAreaElement>('#chatText')?.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void send(); });

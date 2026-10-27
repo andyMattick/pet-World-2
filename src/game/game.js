@@ -9370,23 +9370,24 @@ chatBtn.addEventListener('click', () => openChatCard());
 let chatShown = '';
 function renderChatCard(){
   const el = $('#chatCard'); if (!el) return;
-  const msgs = chatMsgs(), all = [...msgs.map(m => ({...m, mine:false})), ...S.chat.replies.map(r => ({...r, from:'You', mine:true}))].sort((a, b) => a.at - b.at).slice(-40);
+  const msgs = chatMsgs(), all = [...msgs.map(m => ({...m, mine:false})), ...S.chat.replies.map(r => ({...r, from:'You', mine:true}))].sort((a, b) => b.at - a.at).slice(0, 40);   // newest first
   const readAt = chatReadAt(), key = all.map(m => m.id + m.at).join(',') + ':' + readAt; if (key === chatShown) return; chatShown = key;
   const names = [...new Set(msgs.map(m => m.from))].join(' and ') || 'a grown-up';
   if (msgs.length) { S.chat.seenAt = Math.max(S.chat.seenAt, msgs[msgs.length - 1].at); save(); }
   el.querySelector('[data-chat-list]').innerHTML = all.map(m => `<div class="chat-msg${m.mine ? ' mine' : ''}"><small>${esc(m.from)} · ${esc(new Date(m.at).toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'}))}</small><div>${esc(m.text)}</div>${m.mine ? `<small class="chat-receipt">${readAt >= m.at ? '✓✓ Seen' : '✓ Sent'}</small>` : ''}</div>`).join('') || '<p class="muted">No messages yet.</p>';
   el.querySelector('[data-chat-who]').textContent = `Messages from ${names}`;
-  const list = el.querySelector('[data-chat-list]'); list.scrollTop = list.scrollHeight;
+  const list = el.querySelector('[data-chat-list]'); list.scrollTop = 0;
 }
 function openChatCard(){
   if ($('#chatCard')) return;
   const el = document.createElement('div');
   el.className = 'theme-card'; el.id = 'chatCard'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Messages');
   el.innerHTML = `<form class="theme-box chat-box" data-chat-form><p class="theme-kicker">Your time is paused</p><div class="theme-emoji" aria-hidden="true">💬</div><h2 data-chat-who>Messages</h2>
-    <div class="chat-list" data-chat-list></div>
     <label>Write back<textarea name="text" rows="2" maxlength="1000" placeholder="Type your reply…"></textarea></label>
     <div class="row" style="margin-top:8px"><button type="submit" class="btn berry">Send</button><button type="button" class="btn small" data-chat-close>Close</button></div>
     <p class="muted" data-chat-sent style="margin:6px 0 0" role="status"></p>
+    <p class="muted" style="margin:8px 0 2px; font-size:.85em">Newest messages first</p>
+    <div class="chat-list" data-chat-list></div>
     ${typeof Notification === 'undefined' ? '' : `<label class="chat-notify"><input type="checkbox" data-chat-notify ${chatNotifyOn() ? 'checked' : ''}> 🔔 Tell me when a message comes, even when I’m in another tab</label>`}</form>`;
   document.body.appendChild(el); chatShown = ''; renderChatCard(); updateChatBtn();
   setTimeout(() => el.querySelector('textarea')?.focus(), 50);
