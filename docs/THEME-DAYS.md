@@ -10,6 +10,8 @@ A fun theme for the school day, with something to wear and a small challenge, of
   - **Ask me later:** the card comes back in 20 minutes.
 - **When she sees it:** right after the grown-up says yes (or, for a special day or the every-day and Friday options, right after the morning brain stretch). It stays in 📋 Today's plan all day with a **See it** button.
 - **Themes:** 18 in the rotation and 6 special days.
+- **A quick way or a longer way (owner, Oct 27, 2026):** each theme has a ⚡ quick way (wear it: "Wear the silliest hat in the house") and a 🛠️ longer way (make it: "Make a crazy hat from paper"). She picks one on the theme card before going on; her pick shows on the plan row and in the day log. The longer ways are in `make` in `src/shared/themeDays.ts`.
+- **Order:** the theme card now comes right after ✝️ Bible (there's no morning brain stretch any more).
 
 ## How it works
 

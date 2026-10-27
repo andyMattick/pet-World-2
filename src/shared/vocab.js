@@ -223,6 +223,20 @@ export function blankSentence(ctx, word){
 /* weaker words come up more often */
 export const wordWeight = stat => ({ new: 3, work: 4, close: 2, solid: 1 })[wordStatus(stat)];
 
+/* this week's words, the Friday mastery check, words mastered for good, and the day's puzzle (docs/VOCAB.md, "Weekly words") */
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const keys = (list, max = VOCAB_LIMITS.list) => (Array.isArray(list) ? list : []).map(wordKey).filter(k => k && k.length <= VOCAB_LIMITS.word).slice(0, max);
+function weeklyState(out){
+  const wk = out.week && typeof out.week === 'object' && DAY_KEY.test(out.week.id) ? out.week : null;
+  const ck = wk?.check && typeof wk.check === 'object' ? wk.check : null;
+  const week = wk ? { id: wk.id, words: keys(wk.words, 80), kept: Math.max(0, Math.round(+wk.kept || 0)), added: Math.max(0, Math.round(+wk.added || 0)), mastered: keys(wk.mastered, 80),
+    check: ck ? { day: DAY_KEY.test(ck.day) ? ck.day : '', done: !!ck.done, results: Object.fromEntries(Object.entries(ck.results && typeof ck.results === 'object' ? ck.results : {}).filter(([k]) => k.length <= VOCAB_LIMITS.word).slice(0, 80).map(([k, v]) => [wordKey(k), v ? 1 : 0])) } : null } : null;
+  const hall = (Array.isArray(out.hall) ? out.hall : []).filter(h => h && typeof h.w === 'string' && h.w.length <= VOCAB_LIMITS.word).map(h => ({ w: wordKey(h.w), wk: DAY_KEY.test(h.wk) ? h.wk : '' })).slice(-VOCAB_LIMITS.list);
+  const pz = out.puzzle && typeof out.puzzle === 'object' && DAY_KEY.test(out.puzzle.day) && typeof out.puzzle.type === 'string' ? out.puzzle : null;
+  const puzzle = pz ? { day: pz.day, first: DAY_KEY.test(pz.first) ? pz.first : pz.day, type: pz.type.slice(0, 12), words: keys(pz.words, 12), solved: keys(pz.solved, 12), helped: keys(pz.helped, 12),
+    done: !!pz.done, data: pz.data && typeof pz.data === 'object' && JSON.stringify(pz.data).length < 6000 ? pz.data : null } : null;
+  return { week, hall, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0 };
+}
 export function normalizeVocabState(v){
   const out = v && typeof v === 'object' ? v : {};
   const stats = {};
@@ -244,7 +258,8 @@ export function normalizeVocabState(v){
   return {
     flagged, lookedUp, stats, mistakes, level: { spell: level(lv.spell ?? 1), cards: level(lv.cards) }, streak: Number.isFinite(+out.streak) ? Math.max(-9, Math.min(9, Math.round(+out.streak))) : 0, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
     home: { builtIn: home.builtIn !== false, words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
-      focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) }
+      focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) },
+    ...weeklyState(out)
   };
 }
 

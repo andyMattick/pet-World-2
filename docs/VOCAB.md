@@ -74,3 +74,17 @@ The **Add to focus and practice with …** button under each student's suggested
 - Words not on the class list are added (set "Spelling patterns") and marked **➕ new** beforehand.
 - When the class uses focus words, words that aren't focus words are added to them, marked **○ not in focus** beforehand.
 - A message in that student's box says what was saved and added.
+
+## Weekly words, daily puzzles and the Friday mastery check (Oct 27, 2026)
+
+Owner: "working on the same words all week and showing mastery of words at the end of the week."
+
+- **This week's words** (📅 This week tab, `S.vocab.week`): the words she didn't master last week, plus up to **25 new ones** from her list in order (her focus words: the family's or the class's picks, else the whole list), skipping mastered words. A new week starts on Monday (`nextWeekWords`, `weekOf` in `src/shared/wordPuzzles.js`). Practice cards, Word sprint and Spell it use this week's words.
+- **A puzzle a day** on the week's words (`src/shared/wordPuzzles.js`): Monday 🔀 Word Scramble, Tuesday 🔐 Secret Code (each symbol is a letter; the key shows about half of them), Wednesday ✏️ Crossword (built from the words, definitions as clues), Thursday 🔎 Word Search (the clues are meanings, not the words), weekends 🧩 Match-Up. 6–8 words each.
+- **The warm-up** for a Word Workshop extra is a timed round on the day's puzzle (7 minutes by default; teacher app → extras). It counts the words she solves; the end screen brags on her progress. Not finishing is fine.
+- **An unfinished puzzle is saved** and comes back the next day ("📌 Yesterday's puzzle: finish it today!"), one more day only; after that a new puzzle starts.
+- **Type it to keep going:** a wrong answer anywhere in Word Workshop (puzzles, practice cards, Word sprint, Spell it, the mastery check) shows the right word, and she types it correctly before she can go on. Copying it wrong doesn't move on.
+- **🏁 Friday mastery check** (Friday, or the weekend if Friday was missed): each of the week's words, from its meaning (with 🔊), typed. Right the first time = **mastered**: celebrated on a 🎉 screen, added to her **🏆 Word Hall of Fame** (`S.vocab.hall`), removed from her focus list, and worth 🪙 1 each. The rest stay for next week. Progress is saved, so she can stop and finish later. On Friday the Word Workshop warm-up is the mastery check instead of a timed puzzle.
+- **Coins:** 🪙 1 for every 2 puzzle words solved, and 1 per mastered word.
+- **Tested** (phone size, Playwright with a fake clock): each puzzle type built and finished, a wrong answer needing the typed word (and a wrong copy not moving on), yesterday's crossword coming back once, a Friday check with 20 mastered and 5 kept, and the next Monday with 5 kept + 25 new. The puzzle builders were checked on 300 random sets: every crossword word matches its squares and fits 12 wide (all 8 words placed on average), every word-search word reads correctly both ways, every scramble is a real mix-up, every code word has a letter in the key.
+

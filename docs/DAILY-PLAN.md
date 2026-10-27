@@ -59,15 +59,15 @@ With the class wheel on (`CLASS-WHEEL.md`), a school day's plan keeps only the c
 - Until they're done, opening a subject (a shop, a library, a museum, the Nature Center or the Reading Log, from a tile or a Go button) shows the warm-up card instead.
 - Class setting `game_settings.extrasFirst`: on unless a teacher turns it off (Quick setup and Settings → ☀️ Warm-up first).
 
-### Timed challenge (Oct 27, 2026)
+### Timed rounds (Oct 27, 2026)
 
-An extra can start with a **hard-timed challenge** (teacher app → her page → extras: tick "⏱️ Start with a timed challenge of 5 min" when adding, or tap **⏱️ Make it a 5-min challenge** on an extra she already has; **Turn off the challenge** undoes it). The extra's `challenge` is the length in minutes.
+Every extra is a **timed round** (owner: "how many can you get in X minutes?"). In the teacher app → her page → extras, each extra has **⏱️ Timed round** (default 5 minutes for a Fact Sprint, 7 for Word Workshop) and **More practice later** (default 0).
 
-- **The warm-up is one round** that stops by itself when the clock runs out: "how many can you get in 5 minutes?" A Fact Sprint extra runs one long sprint; a Word Workshop extra runs a Word sprint. Her score shows on the row (✅ 23 right), with her best. Quitting early doesn't count.
-- **The rest of the minutes** (the extra's minutes minus the challenge) become a separate row, **➕ … more practice**, after her plan items. It doesn't block subjects; it's there for later in the day, and it must be done before "I'm done for today" counts the extra as finished.
+- **The warm-up is one round** that stops by itself when the clock runs out; not finishing is fine. A Fact Sprint extra runs one long sprint; a Word Workshop extra is the day's word puzzle (see `VOCAB.md`, "Weekly words"), and on Friday the mastery check.
+- **Bragging on progress:** the end screen shows her score, how it compares with last time ("📈 4 more than last time!"), her best, how far she's come since her first rounds, and a bar chart of her last 7 rounds (`S.challengeLog`; per minute when the round length changed). The start screen says "Last time: 19 · Your best: 23. Can you beat it?"
+- **More practice later:** minutes beyond the round are a separate **➕ … more practice** row after her plan items. It doesn't block subjects, and it must be done before "I'm done for today" counts the extra as finished.
+- An older extra with no round length keeps its minutes: a 5-minute (or 7-minute) round, then the rest as more practice.
 - The day log shows "⏱️ 5-minute challenge: …" with the score.
-- A Word Workshop extra counts every minute spent in Word Workshop that day, in any mode (practice cards, sprint or spelling), whether or not she finishes a round. It uses the same active time as "Time by subject". Before this, only finished rounds in the assigned mode counted, so a student could spend 25 minutes spelling and still see "0 of 5".
-- **Grown-up: skip the warm-up today** at the bottom of the warm-up card takes the grown-up PIN and opens the subjects for the rest of the day (`S.warmupSkipped`).
 
 ## ⭐ Start here, tests last
 

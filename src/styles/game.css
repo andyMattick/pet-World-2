@@ -1344,3 +1344,54 @@ a.btn{display:inline-block; text-decoration:none}
 .khan-videos{display:flex; flex-direction:column; gap:4px; margin:6px 0}
 .khan-video{display:block; padding:6px 10px; border-radius:10px; background:#fff3f6; border:1px solid #f3c2d0; color:inherit; text-decoration:none; font-weight:600}
 .khan-video:hover{background:#ffe6ee}
+
+/* ⏱️ today's time inside each assignment */
+.today-time{margin:4px 0 8px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--butter) 30%,var(--surface));border:1px solid var(--edge);font-size:.92rem;display:inline-block}
+.brag{margin:8px auto;max-width:360px}
+.brag p{margin:4px 0}
+.brag-bars{display:flex;align-items:flex-end;justify-content:center;gap:6px;height:64px;margin-top:8px}
+.brag-bars span{position:relative;width:22px;border-radius:6px 6px 2px 2px;background:color-mix(in srgb,var(--mint,#7fd1b9) 60%,var(--surface))}
+.brag-bars span.now{background:var(--berry,#e2557a)}
+.brag-bars i{position:absolute;top:-16px;left:0;right:0;font-size:.7rem;font-style:normal;text-align:center}
+/* 🧩 Word Workshop puzzles (docs/VOCAB.md, "Weekly words") */
+.pz-wrap{text-align:left}
+.pz-tiles{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}
+.pz-tiles span{min-width:34px;height:40px;display:grid;place-items:center;border-radius:8px;background:var(--butter);color:#3a2a00;font-weight:800;font-size:1.25rem;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+.pz-code span{background:color-mix(in srgb,var(--mint) 55%,var(--surface));color:var(--ink,inherit)}
+.pz-key{display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:center;font-size:.9rem;margin-bottom:8px}
+.pz-key b{width:100%;text-align:center}
+.pz-key i{font-style:normal;font-size:1.1rem}
+.pz-cross{display:grid;gap:2px;justify-content:center;margin:8px auto}
+.pz-sq{position:relative;background:var(--surface);border:1.5px solid var(--edge);border-radius:3px;display:grid;place-items:center;font-weight:800;text-transform:uppercase}
+.pz-sq.on{background:color-mix(in srgb,var(--butter) 55%,var(--surface))}
+.pz-sq sup{position:absolute;top:0;left:2px;font-size:.55rem;font-weight:600}
+.pz-black{background:transparent}
+.pz-entry{margin:6px 0}
+.pz-entry label{display:block;margin-bottom:4px}
+.pz-entry .row,.fix-it .row{display:flex;gap:6px;flex-wrap:nowrap}
+.pz-entry input{flex:1;min-width:0;font-size:1.1rem;padding:8px;border-radius:8px;border:2px solid var(--edge);text-transform:lowercase}
+.pz-clue-wrap{display:grid;gap:8px;grid-template-columns:1fr}
+@media (min-width:640px){.pz-clue-wrap{grid-template-columns:1fr 1fr}}
+.pz-clues{display:flex;flex-direction:column;gap:4px}
+.pz-clues p{margin:2px 0}
+.pz-clue{text-align:left;background:var(--surface);border:1px solid var(--edge);border-radius:8px;padding:6px 8px;color:inherit;font:inherit}
+.pz-clue.on{border-color:var(--berry);box-shadow:0 0 0 2px color-mix(in srgb,var(--berry) 35%,transparent)}
+.pz-search{display:grid;gap:3px;max-width:360px;margin:8px auto}
+.pz-let{aspect-ratio:1;border:1px solid var(--edge);border-radius:6px;background:var(--surface);color:inherit;font-weight:800;font-size:1rem;padding:0}
+.pz-let.found{background:color-mix(in srgb,var(--mint) 65%,var(--surface))}
+.pz-let.sel{background:var(--berry);color:#fff}
+.pz-match{display:grid;grid-template-columns:2fr 3fr;gap:8px}
+.pz-match>div{display:flex;flex-direction:column;gap:6px}
+.pz-mw,.pz-md{text-align:left;border:1px solid var(--edge);border-radius:8px;background:var(--surface);color:inherit;font:inherit;padding:8px}
+.pz-mw{font-weight:800}
+.pz-mw.sel{background:var(--berry);color:#fff}
+.pz-mw.found,.pz-md.found{background:color-mix(in srgb,var(--mint) 55%,var(--surface));opacity:.75}
+.fix-it{margin-top:8px;padding:8px;border:2px dashed var(--berry);border-radius:10px}
+.fix-it p{margin:0 0 6px}
+.fix-it .row{display:flex;gap:6px;flex-wrap:nowrap}
+.fix-it input{flex:1;min-width:0;font-size:1.1rem;padding:8px;border-radius:8px;border:2px solid var(--edge)}
+.vocab-grid.mastered .vocab-chip{font-size:1.05rem}
+.theme-ways{display:grid;gap:8px;margin:8px 0}
+.theme-way{display:flex;flex-direction:column;gap:2px;text-align:left;padding:10px 12px;border:2px solid rgba(255,255,255,.35);border-radius:12px;background:rgba(255,255,255,.08);color:inherit;font:inherit;cursor:pointer}
+.theme-way.on{border-color:var(--butter);background:rgba(255,255,255,.22);box-shadow:0 0 0 2px var(--butter)}
+.theme-way span{font-size:.92rem}

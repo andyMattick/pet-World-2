@@ -15,6 +15,7 @@ import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkT
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
+import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
@@ -202,12 +203,14 @@ function normalize(raw){
     if (!s.extrasLog || typeof s.extrasLog !== 'object' || typeof s.extrasLog.day !== 'string' || !s.extrasLog.secs || typeof s.extrasLog.secs !== 'object') s.extrasLog = {day:'', secs:{}};   // today's minutes on assigned extras
     if (s.extrasLog.challenge !== undefined && (typeof s.extrasLog.challenge !== 'object' || !s.extrasLog.challenge)) delete s.extrasLog.challenge;   // ⏱️ today's challenge scores
     s.challengeBest = Object.fromEntries(Object.entries(s.challengeBest && typeof s.challengeBest === 'object' ? s.challengeBest : {}).filter(([k, v]) => typeof k === 'string' && Number.isFinite(+v)).slice(-20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));   // ⏱️ best challenge score per extra
+    s.challengeLog = Object.fromEntries(Object.entries(s.challengeLog && typeof s.challengeLog === 'object' ? s.challengeLog : {}).filter(([k, v]) => typeof k === 'string' && Array.isArray(v)).slice(-20).map(([k, v]) => [k, v.filter(r => r && Number.isFinite(+r.n)).slice(-40).map(r => ({d:String(r.d || '').slice(0, 10), n:Math.max(0, Math.round(+r.n)), m:Math.max(0, Math.round(+r.m || 0))}))]));   // ⏱️ every timed round, for bragging on progress
   if (!validHood(s.home)) s.home = DEFAULT_HOME;                 // every save from before neighborhoods is 6th grade
   if (!['cafe','park','stars','arcade'].includes(s.musicTrack)) s.musicTrack = 'cafe';
   s.musicVolume = Number.isFinite(Number(s.musicVolume)) ? Math.min(100, Math.max(0, Math.round(Number(s.musicVolume)))) : 70;
   s.sentBackSeen = Array.isArray(s.sentBackSeen) ? s.sentBackSeen.filter(key => typeof key === 'string').slice(-60) : [];   // sent-back items already announced (renderSentBack)
   s.subjectTime = normalizeSubjectTime(s.subjectTime);   // active seconds per day and subject (src/shared/subjectTime.ts)
   s.brain = normalizeBrainState(s.brain);   // brain stretches: results, levels, stretches (docs/BRAIN-GAMES.md)
+  s.themeWay = s.themeWay && typeof s.themeWay.day === 'string' && (s.themeWay.way === 'quick' || s.themeWay.way === 'long') ? {day:s.themeWay.day, way:s.themeWay.way} : null;   // ⚡ quick or 🛠️ longer way to join the theme
   s.themeSeen = typeof s.themeSeen === 'string' ? s.themeSeen : '';   // the last day its theme was announced (docs/THEME-DAYS.md)
   s.themeAsk = s.themeAsk && typeof s.themeAsk.day === 'string' && ['yes', 'no'].includes(s.themeAsk.answer) ? {day:s.themeAsk.day, answer:s.themeAsk.answer, ...(typeof s.themeAsk.id === 'string' ? {id:s.themeAsk.id} : {})} : null;   // today's grown-up answer, and the theme it earned
   s.planStart = s.planStart && typeof s.planStart.day === 'string' && typeof s.planStart.id === 'string' ? s.planStart : null;   // today's ⭐ Start here
@@ -6083,7 +6086,7 @@ function show(id){
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
   if (id === 'library') { renderEnglishLibrary(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-library').hidden && $('#libraryWrap .ela-layout')) renderEnglishLibrary(); }); }
   if (id === 'arcade') renderArcade();
-  if (id === 'vocab') renderVocab(); else if (vocabRun) { stopVocabTimer(); vocabRun = null; }
+  if (id === 'vocab') renderVocab(); else { if (vocabRun) { stopVocabTimer(); vocabRun = null; } if (puzzleRun || checkRun) stopPuzzleRun(); }
   syncRoom(id);
   window.scrollTo(0,0);
   if (brainRun && (id === 'join' || id === 'name' || id === 'loading')) closeBrainStretch(false);   // signed out: the stretch waits in the save
@@ -6338,7 +6341,7 @@ function brainItemName(x){
 function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
-  if (on('vocab') && vocabRun) return false;
+  if (on('vocab') && (vocabRun || puzzleRun || checkRun)) return false;
   if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap'))) return false;
   return true;
 }
@@ -6352,23 +6355,17 @@ function brainCheck(){
   if (LOOK_ID) return;   // look only: no pop-ups
   if (bibleFirst()) return;   // ✝️ Bible comes first, before the morning brain stretch
   if (brainRun || moveRun || !S?.brain || !brainAllowed().length) return;
-  const day = logDayKey(), stretched = S.brain.stretched[day] || (S.brain.stretched[day] = []);
+  const day = logDayKey();
   if (S.brain.active && brainStretch()?.day !== day) S.brain.active = '';   // left unfinished on an earlier day
   if (!S.brain.active) {   // a stretch from today that lost its place (e.g. a save from another device came in): pick it back up
     const open = S.brain.stretches.find(x => x.day === day && x.done < x.games.length);
     if (open) { S.brain.active = open.id; save(); }
   }
-  if (!S.brain.active) {
-    const core = planItems(day).filter(x => x.kind === 'subject' || x.kind === 'unit');
-    if (S.brain.morning !== day) {
-      if (!brainBreakNow()) return;
-      S.brain.morning = day;
-      core.filter(x => planItemInfo(x, day).status === 'done').forEach(x => { if (!stretched.includes(x.id)) stretched.push(x.id); });   // done before today's first stretch: no catch-up stretches
-      newBrainStretch('morning', 'Morning brain stretch');
-    } else {
-      const next = core.find(x => !stretched.includes(x.id) && planItemInfo(x, day).status === 'done');
-      if (next) { stretched.push(next.id); newBrainStretch('subject', `Brain stretch after ${brainItemName(next)}`, next.id); }
-    }
+  /* the break order (owner, Oct 27, 2026): Bible → warm-up → subject 1 → 🧠 brain break → subjects 2 and 3 → 🤸 exercise
+     break → last subject. So one brain stretch a day, after her first subject (no morning stretch, no stretch after every
+     subject). */
+  if (!S.brain.active && subjectsFinished(day) >= 1 && !S.brain.stretches.some(x => x.day === day)) {
+    newBrainStretch('subject', 'Brain break after your first subject');
   }
   if (S.brain.active && brainBreakNow()) openBrainStretch();
 }
@@ -6455,7 +6452,13 @@ setInterval(() => { if (Backend.me) brainCheck(); }, 15000);   // notices a plan
 let moveRun = null;   // {el, ids, step, left, after, to, timer}
 const MOVE_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', reading:'📖 Reading', history:'🏛️ History', science:'🦁 Science'};
 const movePolicy = () => (gamesOnlyMode || !Backend.me) ? moveSettings(null) : moveSettings(Backend.me.game_settings?.move);
-function moveNewDay(){ const m = S.move, day = logDayKey(); if (m.day !== day) Object.assign(m, {day, subject:'', secs:0, due:''}); }
+function moveNewDay(){ const m = S.move, day = logDayKey(); if (m.day !== day) Object.assign(m, {day, subject:'', secs:0, due:'', worked:[]}); }
+/* how many subjects she has finished today: plan rows done, or (with no plan) subjects she spent the class's minutes in */
+function subjectsFinished(day = logDayKey()){
+  const core = planItems(day).filter(x => x.kind === 'subject' || x.kind === 'unit'), done = core.filter(x => planItemInfo(x, day).status === 'done').length;
+  const worked = S.move?.day === day ? S.move.worked.length + (S.move.subject && S.move.secs >= movePolicy().minutes * 60 && !S.move.worked.includes(S.move.subject) ? 1 : 0) : 0;
+  return Math.max(done, worked);
+}
 /* from the town tracker: active seconds in the subject on screen */
 function moveTrack(subject, seconds){
   if (!S?.move) return;
@@ -6468,12 +6471,14 @@ function moveCheck(){
   if (moveRun || brainRun || $('.theme-card') || !S?.move || !allowedMoves(movePolicy()).length) return;
   moveNewDay();
   const m = S.move, subject = subjectOnScreen();
-  if (!MOVE_SUBJECTS.includes(subject)) return;
-  if (subject !== m.subject) {   // she has gone to start a different subject
-    if (m.subject && m.secs >= movePolicy().minutes * 60) m.due = m.subject;
+  if (MOVE_SUBJECTS.includes(subject) && subject !== m.subject) {   // she has gone to start a different subject
+    if (m.subject && m.secs >= movePolicy().minutes * 60 && !m.worked.includes(m.subject)) m.worked = [...m.worked, m.subject];
     m.subject = subject; m.secs = 0; save();
   }
-  if (m.due && brainBreakNow()) openMoveBreak(m.due, subject);
+  /* one exercise break a day, after her third subject (the break order above brainCheck) */
+  const day = logDayKey();
+  if (!m.due && subjectsFinished(day) >= 3 && !m.breaks.some(b => logDayKey(new Date(b.t)) === day)) { m.due = m.subject || m.worked[m.worked.length - 1] || 'math'; save(); }
+  if (m.due && brainBreakNow()) openMoveBreak(m.due, MOVE_SUBJECTS.includes(subject) ? subject : '');
 }
 function openMoveBreak(after, to){
   const ids = pickMoves(allowedMoves(movePolicy()), S.move.recent); if (!ids.length) { S.move.due = ''; save(); return; }
@@ -6639,7 +6644,7 @@ function themeCheck(){
   ensureCarry(day);   // what she didn't get to last time is on today's plan, even without "I'm done for today"
   if (bibleFirst()) return;   // ✝️ Bible first, then the brain stretch, the theme question and the warm-up
   if (brainRun || moveRun || $('.theme-card')) return;
-  if (brainAllowed().length && (S.brain.morning !== day || S.brain.active)) return;   // the morning brain stretch comes first
+  if (brainRun || moveRun) return;
   if (!brainBreakNow()) return;
   /* then the theme day (the grown-up's question first), then the warm-up */
   if (policy.enabled) {
@@ -6696,22 +6701,34 @@ function openThemeAsk(prev){
 }
 function openThemeCard(theme, first){
   if ($('.theme-card')) return;
-  const el = document.createElement('div');
+  const el = document.createElement('div'), day = logDayKey(), way = S.themeWay?.day === day ? S.themeWay.way : '';
   el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', theme.name);
+  /* two ways to join in (owner, Oct 27, 2026): a quick way (wear it) or a longer way (make it) */
+  const opt = (w, icon, name, text) => `<button type="button" class="theme-way${way === w ? ' on' : ''}" data-theme-way="${w}"><b>${icon} ${name}</b><span>${esc(text)}</span></button>`;
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${first ? 'Today is…' : 'Today’s theme'}</p><div class="theme-emoji" aria-hidden="true">${theme.emoji}</div><h2>${esc(theme.name)}</h2>
-    <p><b>Wear it:</b> ${esc(theme.wear)}</p><p><b>Today’s challenge:</b> ${esc(theme.challenge)}</p>
-    <button type="button" class="btn berry" data-theme-close>${first ? 'Let’s go! 🎉' : 'Got it'}</button></div>`;
+    <p>${way ? 'Your pick:' : 'How do you want to join in? Pick one:'}</p>
+    <div class="theme-ways">${opt('quick', '⚡', 'Quick way', theme.wear)}${opt('long', '🛠️', 'Longer way', theme.make || theme.wear)}</div>
+    <p><b>Today’s challenge:</b> ${esc(theme.challenge)}</p>
+    <button type="button" class="btn berry" data-theme-close ${way ? '' : 'disabled'}>${first ? 'Let’s go! 🎉' : 'Got it'}</button></div>`;
   document.body.appendChild(el);
+  el.addEventListener('click', event => {
+    const b = event.target.closest('[data-theme-way]'); if (!b) return;
+    S.themeWay = {day, way:b.dataset.themeWay}; save();
+    el.querySelectorAll('[data-theme-way]').forEach(x => x.classList.toggle('on', x === b));
+    el.querySelector('[data-theme-close]').disabled = false; sfx('tick');
+  });
   el.querySelector('[data-theme-close]').addEventListener('click', () => {
     el.remove();
-    const day = logDayKey();
-    if (S.themeSeen !== day) { S.themeSeen = day; logEvent({k:'theme', title:theme.name}); save(); if (!$('#scr-home').hidden) renderHome(); setTimeout(() => { moveCheck(); themeCheck(); }, 300); }
+    const w = S.themeWay?.day === day ? S.themeWay.way : '';
+    if (S.themeSeen !== day) { S.themeSeen = day; logEvent({k:'theme', title:`${theme.name}${w ? ` (${w === 'long' ? '🛠️ the longer way' : '⚡ the quick way'})` : ''}`}); save(); if (!$('#scr-home').hidden) renderHome(); setTimeout(() => { moveCheck(); themeCheck(); }, 300); }
+    else if (!$('#scr-home').hidden) renderHome();
   });
   if (first) sfx('unlock');
 }
 function themePlanRows(){
   const theme = todayTheme(); if (!theme) return [];
-  return [`<div class="row extras-row"><span style="flex:1">${theme.emoji} Today is <b>${esc(theme.name)}</b></span><button type="button" class="btn small" data-theme-open>See it</button></div>`];
+  const w = S.themeWay?.day === logDayKey() ? S.themeWay.way : '';
+  return [`<div class="row extras-row"><span style="flex:1">${theme.emoji} Today is <b>${esc(theme.name)}</b>${w ? ` · ${w === 'long' ? `🛠️ ${esc(theme.make || '')}` : `⚡ ${esc(theme.wear)}`}` : ''}</span><button type="button" class="btn small" data-theme-open>See it</button></div>`];
 }
 document.addEventListener('click', event => { if (event.target.closest('[data-theme-open]')) { const theme = todayTheme(); if (theme) openThemeCard(theme, S.themeSeen !== logDayKey()); } });
 setInterval(() => { if (Backend.me) themeCheck(); }, 15000);
@@ -8880,12 +8897,35 @@ function addExtraTime(id, secs){ extraSecs(id); S.extrasLog.secs[id] = Math.roun
 /* ⏱️ timed challenge (owner, Oct 27, 2026; docs/DAILY-PLAN.md "Timed challenge"): a grown-up can make an extra start with
    a hard N-minute challenge (x.challenge, usually 5): one round that stops when the clock runs out, "how many can you get".
    That's the warm-up. The rest of the extra's minutes become a separate row later in the day, after the plan items. */
-const challengeMin = x => +x?.challenge > 0 ? Math.max(1, Math.min(Math.round(+x.challenge), Math.round(+x.minutes))) : 0;
+/* every extra is now a timed round (owner, Oct 27, 2026): the grown-up's round length (x.challenge), or by default 5 minutes
+   for a Fact Sprint and 7 for Word Workshop; any minutes beyond the round are the "more practice" row later in the day.
+   Not finishing is fine: the round counts how many she gets. */
+const ROUND_DEFAULT = {sprint:5, vocab:7};
+const challengeMin = x => !x ? 0 : Math.max(1, Math.min(Math.round(+x.challenge > 0 ? +x.challenge : ROUND_DEFAULT[x.kind] || 5), Math.max(1, Math.round(+x.minutes || 0))));
 function challengeScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[x.id]; return Number.isFinite(v) ? v : null; }
-function recordChallenge(id, right){
+function recordChallenge(id, right, min = 0){
   extraSecs(id); S.extrasLog.challenge = {...(S.extrasLog.challenge || {}), [id]:right};
   const best = S.challengeBest?.[id] || 0; S.challengeBest = {...(S.challengeBest || {}), [id]:Math.max(best, right)};
+  const log = S.challengeLog?.[id] || [];
+  S.challengeLog = {...(S.challengeLog || {}), [id]:[...log, {d:logDayKey(), n:right, m:min}].slice(-40)};
   save(); return right > best;
+}
+/* bragging on progress: today against last time, her best, and where she started (per minute when the round length changed) */
+function challengeBragHTML(id, right, min, unit = 'right'){
+  const log = (S.challengeLog?.[id] || []), prev = log.slice(0, -1), last = prev[prev.length - 1], first = log[0];
+  const rate = r => r.m ? r.n / r.m : r.n, same = r => !r.m || !min || r.m === min;
+  const lines = [];
+  if (!prev.length) lines.push('🎉 Your first round! Next time, try to beat it.');
+  else {
+    if (last && same(last)) { const d = right - last.n; lines.push(d > 0 ? `📈 <b>${d} more</b> than last time (${last.n})! 🎉` : d === 0 ? `Same as last time (${last.n}). Steady! 💪` : `Last time was ${last.n}. Every round builds your speed 💪`); }
+    else if (last) { const d = Math.round((right / (min || 1) - rate(last)) * 10) / 10; lines.push(d > 0 ? `📈 ${d} more ${unit} a minute than last time! 🎉` : `Last time: ${Math.round(rate(last) * 10) / 10} a minute. Keep going 💪`); }
+    if (right > 0 && right >= (S.challengeBest?.[id] || 0) && prev.some(r => r.n < right)) lines.push('🏆 <b>Your best ever!</b>');
+    else lines.push(`Your best: ${S.challengeBest?.[id] || right}`);
+    if (first && first !== last && log.length >= 4 && rate(first) < right / (min || 1)) lines.push(`🚀 When you started you got ${first.n}. Look how far you’ve come!`);
+  }
+  const recent = log.slice(-7), top = Math.max(1, ...recent.map(r => r.n));
+  const bars = recent.length > 1 ? `<div class="brag-bars" aria-label="Your last ${recent.length} rounds">${recent.map((r, i) => `<span style="height:${Math.max(8, Math.round(r.n / top * 48))}px" class="${i === recent.length - 1 ? 'now' : ''}" title="${r.n}"><i>${r.n}</i></span>`).join('')}</div>` : '';
+  return `<div class="brag">${lines.map(l => `<p>${l}</p>`).join('')}${bars}</div>`;
 }
 const restMin = x => challengeMin(x) ? Math.max(0, Math.round(+x.minutes) - challengeMin(x)) : 0;
 const restDone = x => Math.max(0, Math.floor(extraSecs(x.id) / 60) - challengeMin(x));
@@ -8902,15 +8942,16 @@ function extraRowHTML(x, part = 'warm', lead = ''){
   }
   if (challengeMin(x)) {
     const score = challengeScore(x), best = S.challengeBest?.[x.id] || 0;
-    return `<div class="row extras-row"><span style="flex:1">${score !== null ? '✅' : '⬜'} ${lead}⏱️ ${challengeMin(x)}-minute challenge: ${esc(extraLabel(x))} · <b>${score !== null ? `${score} right` : best ? `best ${best}` : 'how many can you get?'}</b></span>${score !== null ? '' : start('challenge')}</div>`;
+    const vocab = x.kind === 'vocab', check = vocab && checkDue() && score === null, label = vocab ? vocabWarmLabel() : extraLabel(x);
+    return `<div class="row extras-row"><span style="flex:1">${score !== null ? '✅' : '⬜'} ${lead}${check ? '' : `⏱️ ${challengeMin(x)}-minute `}${check ? '' : 'challenge: '}${esc(label)} · <b>${score !== null ? `${score} ${vocab ? (score === 1 ? 'word' : 'words') : 'right'}` : check ? 'show what you know!' : best ? `best ${best}` : 'how many can you get?'}</b></span>${score !== null ? '' : start('challenge')}</div>`;
   }
   const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
   return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${lead}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : start('all')}</div>`;
 }
-const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it'};
+const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it', puzzle:'Word puzzle', check:'Friday mastery check'};
 function extraTypes(x){ const t = (x.skills || []).filter(type => DRILL_IMPL[type]?.sprintItem); return t.length ? t : ['times']; }
 function extraLabel(x){
-  if (x.kind === 'vocab') return `🔤 Word Workshop: ${VOCAB_MODE_NAME[x.mode] || 'Practice cards'}`;
+  if (x.kind === 'vocab') return `🔤 Word Workshop${x.mode && VOCAB_MODE_NAME[x.mode] ? `: ${VOCAB_MODE_NAME[x.mode]}` : ''}`;
   const tables = (x.tables || []).length ? ` (${x.tables.join(', ')}s)` : '';
   return `⚡ Fact Sprint: ${extraTypes(x).map(type => DRILLS[type]?.name || type).join(' + ')}${tables}`;
 }
@@ -8923,7 +8964,7 @@ document.addEventListener('click', event => {
   const b = event.target.closest('[data-extra-start]'); if (!b) return;
   const x = assignedExtras().find(e => e.id === b.dataset.extraStart); if (!x) return;
   const challenge = b.dataset.extraPart === 'challenge' && challengeMin(x) > 0;
-  if (x.kind === 'vocab' && challenge) { vocabTab = 'sprint'; show('vocab'); startVocab('sprint', x); }
+  if (x.kind === 'vocab' && challenge) { vocabTab = 'week'; show('vocab'); if (checkDue()) startCheck(x.id); else startPuzzle({timed:true, min:challengeMin(x), extraId:x.id}); }
   else if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
   else { pendingExtra = challenge ? {...x, challengeRun:true} : x; openSprint(); }
 });
@@ -8944,6 +8985,18 @@ function goalsCardHTML(){
 const PLAN_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const PLAN_SUBJECT_TIME = {math:'math', english:'english', history:'history', biology:'science', reading:'reading'};
 const PLAN_SUBJECT_NAME = {math:'➗ Math', english:'📚 English', history:'🏛️ History', biology:'🦁 Biology', reading:'📖 Reading Log'};
+/* ⏱️ today's time, shown inside each assignment so she (and a grown-up) don't have to go back to the plan (owner, Oct 27,
+   2026): the subject's minutes today, out of the plan's minutes when the plan has them, and this unit's minutes */
+const TIME_SUBJECT_PLAN = {math:'math', english:'english', history:'history', science:'biology', reading:'reading'};
+const TIME_SUBJECT_NAME = {math:'Math', english:'English', history:'History', science:'Science', reading:'Reading', words:'Word Workshop', facts:'Fact Sprint'};
+function todayTimeText(subject, unit = ''){
+  const day = logDayKey(), mins = Math.floor(((S.subjectTime?.[day] || {})[subject] || 0) / 60);
+  const planSubject = TIME_SUBJECT_PLAN[subject], row = planSubject ? dayPlan(day).items.find(x => x.kind === 'subject' && x.subject === planSubject) : null;
+  const goal = row ? Math.max(1, Math.round(+row.minutes || 15)) : 0, here = unit ? Math.floor(unitSecs(unit, day) / 60) : 0;
+  return `⏱️ Today in ${TIME_SUBJECT_NAME[subject] || subject}: <b>${mins}${goal ? ` of ${goal}` : ''} min</b>${goal && mins >= goal ? ' ✅' : ''}${unit && here !== mins ? ` · ${here} min in this unit` : ''}`;
+}
+const todayTimeHTML = (subject, unit = '') => `<p class="today-time" data-today-time="${esc(subject)}" data-today-unit="${esc(unit)}">${todayTimeText(subject, unit)}</p>`;
+setInterval(() => { if (S) $$('[data-today-time]').forEach(el => { el.innerHTML = todayTimeText(el.dataset.todayTime, el.dataset.todayUnit); }); }, 20000);
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
 const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions', elaPunct:'punctuation'};
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
@@ -10371,7 +10424,7 @@ function renderEnglishLibrary(){
     ${chapter.submittedAt ? grownUpCheckHTML('chapter', `${active.book.id}|${chapter.id}`, readingChapterState(active.book,chapter)) : ''}
     <form id="elaChapterForm"><div class="ela-prompts">${fields.map(([key,label]) => `<label>${label}<textarea name="${key}" maxlength="600" rows="2">${esc(chapter[key] || '')}</textarea></label>`).join('')}</div><div class="row"><button class="btn" type="submit" data-save-mode="draft">Save chapter notes</button>${readingChapterState(active.book,chapter) === 'verified' || readingChapterState(active.book,chapter) === 'submitted' ? '' : '<button class="btn berry" type="submit" data-save-mode="submit">Save and send to a grown-up to check</button>'}</div><p class="muted">Changing notes after they are checked means a grown-up checks them again.</p></form>
     <div class="ela-start"><p>The game does not check whether notes match the book.</p></div></div>` : `<div class="ela-empty"><span>📖</span><h3>Reading Log</h3><p>Add a book, then add a chapter to save your notes.</p></div>`;
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📖 Reading Log</h2><button class="btn small" data-go="home">Back to town</button></div>
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📖 Reading Log</h2><button class="btn small" data-go="home">Back to town</button></div>${todayTimeHTML('reading')}
     <p class="muted">Build your own book report one chapter at a time. Save your notes and return to them whenever you read more. Notes are not checked for accuracy; a parent can review them with you.</p>
     ${readTimerHTML()}
     <div class="ela-layout"><aside class="ela-shelf"><h3>My books</h3>${bookList || '<p class="muted">No books added yet.</p>'}<form id="elaBookForm" class="ela-add-book"><label>Book title<input name="title" maxlength="120" required></label><label>Author <span class="muted">(optional)</span><input name="author" maxlength="120"></label><button class="btn" type="submit">Add a book</button></form></aside>
@@ -10910,7 +10963,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div><p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -11276,7 +11329,7 @@ $('#libraryWrap').addEventListener('click', event => {
 /* ---------- Word Workshop: vocabulary (docs: VOCAB.md) ----------
    Practice cards (meaning, use it in a sentence, spell it), a 60-second Sprint, Spell it, and a mastery chart like the
    times-tables heat map. Words: Pet World's list + the class's (teacher) + the family's (grown-up, behind the PIN). */
-let vocabRun = null, vocabTab = 'practice', vocabTimer = null;
+let vocabRun = null, vocabTab = 'week', vocabTimer = null;
 /* the student's words: the lists (vocabList), plus every word they looked up with 📌 (a known word, or a flagged word
    a grown-up has since defined) added to the focus words even if a grown-up picked other focus words */
 /* words a teacher picked to practice a spelling pattern (quiz_overrides.spellFocus, a JSON list): from the word lists
@@ -11291,7 +11344,8 @@ const vocabWords = () => {
   const list = vocabList({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
   const mine = lookedUpWords(list.all), spell = spellFocusWords(list.all), have = new Set(list.focus.map(v => wordKey(v.w)));
   const extra = [...mine, ...spell].filter(v => { const k = wordKey(v.w); if (have.has(k)) return false; have.add(k); return true; });
-  return {...list, all:[...list.all, ...spell.filter(v => !list.all.some(a => wordKey(a.w) === wordKey(v.w)))], focus:[...list.focus, ...extra], lookedUp:mine, spellFocus:new Set(spell.map(v => wordKey(v.w)))};
+  const hall = new Set((S.vocab.hall || []).map(h => h.w)), focus = [...list.focus, ...extra], left = focus.filter(v => !hall.has(wordKey(v.w)));   // mastered words leave the focus list
+  return {...list, all:[...list.all, ...spell.filter(v => !list.all.some(a => wordKey(a.w) === wordKey(v.w)))], focus:left.length ? left : focus, lookedUp:mine, spellFocus:new Set(spell.map(v => wordKey(v.w)))};
 };
 function lookedUpWords(all){
   const seen = new Set(), out = [];
@@ -11341,10 +11395,11 @@ function vocabCard(kind, word, all){
 }
 function renderVocab(){
   const {all, focus} = vocabWords();
-  const tabs = [['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
+  const tabs = [['week','📅 This week'],['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
   const solid = focus.filter(v => wordStatus(vocabStat(v.w)) === 'solid').length;
   let body = '';
-  if (vocabTab === 'chart') {
+  if (vocabTab === 'week') body = weekTabHTML();
+  else if (vocabTab === 'chart') {
     const looked = new Set(vocabWords().lookedUp.map(v => wordKey(v.w))), groups = [...(looked.size ? [['📌 Words you looked up', v => looked.has(wordKey(v.w))]] : []),
       ...[...new Set(focus.filter(v => !looked.has(wordKey(v.w))).map(v => v.set))].map(set => [set, v => v.set === set && !looked.has(wordKey(v.w))])];
     body = `<p class="muted">${solid} of ${focus.length} focus words are solid. Tap a word to see what it means.</p>${groups.map(([set, inGroup]) => `<h4 class="vocab-set">${esc(set)}</h4><div class="vocab-grid">${focus.filter(inGroup).map(v => {
@@ -11363,7 +11418,7 @@ function renderVocab(){
     ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: ${flaggedWaiting().map(f => `<b>${esc(f.w)}</b> ${dictLinkHTML(f.w)}`).join(' · ')} · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, or want to keep a word from your own writing, highlight it (double-click, or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
 }
 function startVocab(mode, challengeExtra = null){
-  const {all, focus} = vocabWords(); if (all.length < 4) { toast('Add at least 4 words first.'); return; }
+  const {all} = vocabWords(), week = weekWordObjs(), focus = week.length >= 4 ? week : vocabWords().focus; if (all.length < 4) { toast('Add at least 4 words first.'); return; }
   stopVocabTimer();
   const cmin = challengeExtra ? challengeMin(challengeExtra) : 0;
   vocabRun = {mode, challengeId:cmin ? challengeExtra.id : null, challengeMin:cmin, all, focus, spellFocus:vocabWords().spellFocus, index:0, total:mode === 'sprint' ? Infinity : 8, correct:0, missed:[], last:null, end:mode === 'sprint' ? performance.now() + (cmin ? cmin * 60 : 60) * 1000 : 0, started:performance.now()};
@@ -11458,9 +11513,24 @@ function answerVocab(ok, shownAnswer, typed = ''){
   $$('#vocabWrap [data-vocab-answer]').forEach(b => { b.disabled = true; if (+b.dataset.vocabAnswer === c.answer) b.classList.add('correct'); });
   $('#vocabWrap .typed-input')?.classList.add(ok ? 'correct' : 'incorrect'); const inp = $('#vocabWrap .typed-input'); if (inp) inp.disabled = true;
   run.index++;
-  if (run.mode === 'sprint') setTimeout(() => { if (vocabRun === run) nextVocabCard(); }, ok ? 250 : 1200);
-  else $('#vocabWrap .vocab-card').insertAdjacentHTML('beforeend', '<button type="button" class="btn berry" data-vocab-next>Next</button>');
+  const goOn = () => { if (vocabRun !== run) return; if (run.mode === 'sprint') nextVocabCard(); else $('#vocabWrap .vocab-card').insertAdjacentHTML('beforeend', '<button type="button" class="btn berry" data-vocab-next>Next</button>'); };
+  if (ok) { if (run.mode === 'sprint') setTimeout(goOn, 250); else goOn(); return; }
+  askFix($('#vocabWrap .vocab-card'), c.word.w, goOn);   // a miss: she types the word correctly before moving on (owner, Oct 27, 2026)
 }
+/* "type it correctly to keep going": a box under a wrong answer; then() runs once she has typed the word right */
+let fixThen = null;
+function askFix(host, word, then){
+  fixThen = then;
+  host.insertAdjacentHTML('beforeend', `<form class="fix-it" data-fix-word="${esc(word)}"><p>✍️ Type <b>${esc(word)}</b> to keep going:</p><div class="row"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type ${esc(word)}"><button type="submit" class="btn berry">OK</button></div></form>`);
+  setTimeout(() => host.querySelector('.fix-it input')?.focus(), 30);
+}
+document.addEventListener('submit', event => {
+  const f = event.target.closest('.fix-it'); if (!f) return;
+  event.preventDefault(); event.stopPropagation();
+  const inp = f.querySelector('input'), want = f.dataset.fixWord;
+  if (normalizeTyped(inp.value) !== normalizeTyped(want)) { inp.classList.add('incorrect'); toast(`Copy it exactly: ${want}`); inp.select(); return; }
+  sfx('good'); f.remove(); const then = fixThen; fixThen = null; then?.();
+}, true);
 function finishVocab(){
   stopVocabTimer(); const run = vocabRun; vocabRun = null; if (!run) return;
     assignedExtras().filter(x => x.kind === 'vocab').forEach(x => addExtraTime(x.id, (performance.now() - run.started) / 1000));   // time on an assigned Word Workshop extra, in any mode
@@ -11477,6 +11547,214 @@ function finishVocab(){
     ${missed.length ? `<p class="muted">Words to look at again</p><dl class="vocab-missed">${missed.map(v => `<dt>${esc(v.w)}</dt><dd>${esc(v.d)}</dd>`).join('')}</dl>` : '<p>No misses. Great job!</p>'}
     <div class="row"><button class="btn berry" data-vocab-start="${run.mode}">Again</button><button class="btn" data-vocab-tab="chart">See my words</button></div></div>`;
 }
+/* ---------- 📅 this week's words, 🧩 daily puzzles, 🏁 Friday mastery check (owner, Oct 27, 2026; docs/VOCAB.md "Weekly words") ----------
+   She works on the same words all week: the words she didn't master last week, plus up to 25 new ones from her list in
+   order. Each school day has a puzzle on them (Mon scramble, Tue secret code, Wed crossword, Thu word search, weekends a
+   match-up); the warm-up is a timed round on it (7 minutes unless a grown-up picks another length). A puzzle she doesn't
+   finish is saved and finished the next day (one day only). Friday is the mastery check: type each word from its
+   meaning; the ones she gets right are celebrated, go in her Word Hall of Fame and leave her focus list. A wrong answer
+   anywhere means typing the word correctly before moving on. */
+const WEEK_NEW_WORDS = 25, PUZZLE_SIZE = {scramble:8, decode:6, crossword:8, search:8, match:6};
+const weekdayNum = () => new Date(`${localDay()}T12:00:00`).getDay();
+const dayBefore = day => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const hallKeys = () => new Set((S.vocab.hall || []).map(h => h.w));
+function ensureWeek(){
+  const id = weekOf(localDay()), cur = S.vocab.week;
+  if (cur?.id === id) return cur;
+  const base = vocabWords(), next = nextWeekWords(cur?.words || [], cur?.mastered || [], base.focus, [...hallKeys()], WEEK_NEW_WORDS);
+  S.vocab.week = {id, words:next.words, kept:next.kept.length, added:next.added.length, mastered:[], check:null};
+  save(); return S.vocab.week;
+}
+/* this week's words still being worked on (not mastered yet), as word objects */
+function weekWordObjs(all = vocabWords().all){
+  const wk = ensureWeek(), map = new Map(all.map(v => [wordKey(v.w), v])), done = new Set(wk.mastered);
+  return wk.words.filter(k => !done.has(k)).map(k => map.get(k)).filter(Boolean);
+}
+const checkDay = () => [5, 6, 0].includes(weekdayNum());   // Friday, or the weekend if Friday was missed
+const checkDue = () => checkDay() && !ensureWeek().check?.done && weekWordObjs().length > 0;
+function vocabWarmLabel(){ if (checkDue()) return '🏁 Friday mastery check'; const t = todayPuzzleType(); return `${PUZZLE_INFO[t].emoji} Word puzzle: ${PUZZLE_INFO[t].name}`; }
+function todayPuzzleType(){ const p = S.vocab.puzzle, day = localDay(); if (p && !p.done && (p.day === day || (p.first === p.day && p.day === dayBefore(day)))) return p.type; const t = puzzleForDay(weekdayNum()); return t === 'check' ? 'match' : t; }
+/* today's puzzle: yesterday's unfinished one (one more day only), or a new one */
+function todayPuzzle(){
+  const day = localDay(), p = S.vocab.puzzle;
+  if (p && p.day === day) return p;
+  if (p && !p.done && p.first === p.day && p.day === dayBefore(day)) { p.day = day; save(); return p; }
+  const type = todayPuzzleType(), size = PUZZLE_SIZE[type] || 8;
+  const fit = weekWordObjs().filter(v => puzzleWord(v.w) && v.w.length <= (type === 'search' ? 10 : 12));
+  const pool = fit.length >= 4 ? fit : vocabWords().focus.filter(v => puzzleWord(v.w) && v.w.length <= 10);
+  const picked = [];
+  while (picked.length < Math.min(size, pool.length)) { const v = weightedPick(pool.filter(x => !picked.includes(x)), x => wordWeight(vocabStat(x.w))); if (!v) break; picked.push(v); }
+  let words = picked.map(v => wordKey(v.w)), data = {};
+  if (type === 'scramble') data = {mix:Object.fromEntries(words.map(w => [w, scrambleWord(w, Math.random)]))};
+  else if (type === 'decode') data = makeCode(words, Math.random);
+  else if (type === 'crossword') { const cw = buildCrossword(words, Math.random); words = cw.entries.map(e => e.word); data = {w:cw.w, h:cw.h, entries:cw.entries}; }
+  else if (type === 'search') { const ws = buildWordSearch(words, Math.random, 10); words = ws.placed.map(x => x.word); data = {size:ws.size, grid:ws.grid.map(r => r.join('')), placed:ws.placed}; }
+  else if (type === 'match') data = {order:shuffle(words.slice())};
+  S.vocab.puzzle = {day, first:day, type, words, solved:[], helped:[], done:false, data}; save();
+  return S.vocab.puzzle;
+}
+const wordObj = k => vocabWords().all.find(v => wordKey(v.w) === k) || {w:k, d:''};
+let puzzleRun = null, checkRun = null, puzzleTimer = null;   // puzzleRun {timed, end, min, extraId, startedAt, startSolved, sel, active}
+function stopPuzzleRun(){ if (puzzleTimer) { clearInterval(puzzleTimer); puzzleTimer = null; } if (puzzleRun) addVocabExtraTime(puzzleRun.startedAt); if (checkRun) addVocabExtraTime(checkRun.startedAt); puzzleRun = null; checkRun = null; fixThen = null; save(); }
+function addVocabExtraTime(startedAt){ assignedExtras().filter(x => x.kind === 'vocab').forEach(x => addExtraTime(x.id, (performance.now() - startedAt) / 1000)); }
+function startPuzzle({timed = false, min = 7, extraId = null} = {}){
+  const p = todayPuzzle(); if (!p.words.length) { toast('Add a few more words first.'); return; }
+  if (vocabRun) { stopVocabTimer(); vocabRun = null; }
+  puzzleRun = {timed, min, extraId, end:performance.now() + min * 60000, startedAt:performance.now(), startSolved:p.solved.length, sel:null, active:0};
+  if (puzzleTimer) clearInterval(puzzleTimer);
+  if (timed) puzzleTimer = setInterval(() => { if (!puzzleRun) return; const left = Math.max(0, puzzleRun.end - performance.now()), t = $('#puzzleTime'); if (t) t.textContent = fmtCountdown(left); if (left <= 0) finishPuzzle('time'); }, 250);
+  renderPuzzle();
+}
+const fmtCountdown = ms => { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const pzLeft = p => p.words.filter(w => !p.solved.includes(w) && !p.helped.includes(w));
+function renderPuzzle(){
+  const p = S.vocab.puzzle, run = puzzleRun; if (!p || !run) return;
+  if (!pzLeft(p).length) { finishPuzzle('done'); return; }
+  const info = PUZZLE_INFO[p.type], got = p.solved.length - run.startSolved;
+  const head = `<div class="backrow"><h2>${info.emoji} ${esc(info.name)}</h2><button class="btn small" data-pz-stop>${run.timed ? 'Stop' : 'Back'}</button></div>
+    <p class="sprint-stats"><span>✅ ${p.solved.length + p.helped.length} of ${p.words.length} words${got ? ` · ${got} today` : ''}</span>${run.timed ? `<span>⏱️ <b id="puzzleTime">${fmtCountdown(Math.max(0, run.end - performance.now()))}</b></span>` : ''}</p>
+    ${p.first !== p.day ? '<p class="muted">📌 Yesterday’s puzzle: finish it today!</p>' : ''}<p class="muted">${esc(info.how)}</p>`;
+  let body = '';
+  if (p.type === 'scramble' || p.type === 'decode') {
+    const k = pzLeft(p)[0], v = wordObj(k);
+    const shown = p.type === 'scramble' ? `<div class="pz-tiles">${[...p.data.mix[k]].map(ch => `<span>${esc(ch.toUpperCase())}</span>`).join('')}</div>`
+      : `<div class="pz-tiles pz-code">${encodeWord(k, p.data.code).map(sym => `<span>${esc(sym)}</span>`).join('')}</div>
+        <div class="pz-key"><b>Code key</b>${p.data.shown.map(ch => `<span><i>${esc(p.data.code[ch])}</i>=${ch.toUpperCase()}</span>`).join('')}</div>`;
+    body = `<div class="pz-card"><p class="vocab-ask">Which word means:</p><div class="fact vocab-prompt long">${esc(v.d)}</div>${shown}
+      <form class="typed-fill" data-pz-answer="${esc(k)}"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form></div>`;
+  } else if (p.type === 'crossword') {
+    const cw = p.data, cells = crosswordCells(cw), done = new Set([...p.solved, ...p.helped]), open = new Set();
+    cw.entries.forEach(e => { if (done.has(e.word)) for (let i = 0; i < e.word.length; i++) open.add(`${e.row + (e.dir === 'down' ? i : 0)},${e.col + (e.dir === 'across' ? i : 0)}`); });
+    const act = cw.entries[run.active] && !done.has(cw.entries[run.active].word) ? run.active : cw.entries.findIndex(e => !done.has(e.word)); run.active = act;
+    const actCells = new Set(act >= 0 ? Array.from({length:cw.entries[act].word.length}, (_, i) => `${cw.entries[act].row + (cw.entries[act].dir === 'down' ? i : 0)},${cw.entries[act].col + (cw.entries[act].dir === 'across' ? i : 0)}`) : []);
+    const size = Math.max(20, Math.min(32, Math.floor(330 / cw.w)));
+    const grid = `<div class="pz-cross" style="grid-template-columns:repeat(${cw.w},${size}px);grid-auto-rows:${size}px">${cells.flatMap((row, r) => row.map((cell, c) => cell ? `<span class="pz-sq${actCells.has(`${r},${c}`) ? ' on' : ''}">${cell.num ? `<sup>${cell.num}</sup>` : ''}${open.has(`${r},${c}`) ? esc(cell.ch.toUpperCase()) : ''}</span>` : '<span class="pz-black"></span>')).join('')}</div>`;
+    const clues = ['across', 'down'].map(dir => `<div class="pz-clues"><b>${dir === 'across' ? 'Across' : 'Down'}</b>${cw.entries.map((e, i) => e.dir !== dir ? '' : `<button type="button" class="pz-clue${i === act ? ' on' : ''}" data-pz-clue="${i}" ${done.has(e.word) ? 'disabled' : ''}>${done.has(e.word) ? '✅' : e.num} ${esc(wordObj(e.word).d)} (${e.word.length})${done.has(e.word) ? ` <b>${esc(e.word)}</b>` : ''}</button>`).join('')}</div>`).join('');
+    const e = cw.entries[act];
+    body = `${grid}${e ? `<form class="pz-entry" data-pz-answer="${esc(e.word)}"><label><b>${e.num} ${e.dir === 'across' ? 'Across' : 'Down'}</b> (${e.word.length} letters): ${esc(wordObj(e.word).d)}</label><div class="row"><input type="text" class="typed-input" maxlength="${e.word.length}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></div></form>` : ''}<div class="pz-clue-wrap">${clues}</div>`;
+  } else if (p.type === 'search') {
+    const found = new Set(), done = new Set([...p.solved, ...p.helped]);
+    p.data.placed.forEach(x => { if (done.has(x.word)) wordCells(x).forEach(k => found.add(k)); });
+    body = `<div class="pz-search" style="grid-template-columns:repeat(${p.data.size},1fr)">${p.data.grid.flatMap((row, r) => [...row].map((ch, c) => `<button type="button" class="pz-let${found.has(`${r},${c}`) ? ' found' : ''}${run.sel && run.sel[0] === r && run.sel[1] === c ? ' sel' : ''}" data-pz-cell="${r},${c}">${esc(ch.toUpperCase())}</button>`)).join('')}</div>
+      <p class="muted">${run.sel ? 'Now tap the last letter of the word.' : 'Tap the first letter of a word.'}</p>
+      <div class="pz-clues">${p.words.map(w => `<p>${done.has(w) ? `✅ <b>${esc(w)}</b>: ` : '🔎 '}${esc(wordObj(w).d)}</p>`).join('')}</div>`;
+  } else if (p.type === 'match') {
+    const done = new Set([...p.solved, ...p.helped]);
+    body = `<div class="pz-match"><div>${p.words.map(w => `<button type="button" class="pz-mw${done.has(w) ? ' found' : ''}${run.sel === w ? ' sel' : ''}" data-pz-word="${esc(w)}" ${done.has(w) ? 'disabled' : ''}>${esc(w)}</button>`).join('')}</div>
+      <div>${p.data.order.map(w => `<button type="button" class="pz-md${done.has(w) ? ' found' : ''}" data-pz-def="${esc(w)}" ${done.has(w) ? 'disabled' : ''}>${esc(wordObj(w).d)}</button>`).join('')}</div></div>
+      <p class="muted">${run.sel ? `Now tap what “${esc(run.sel)}” means.` : 'Tap a word first.'}</p>`;
+  }
+  $('#vocabWrap').innerHTML = `${head}<div class="sprint-card vocab-card pz-wrap">${body}</div>`;
+  $('#vocabWrap .pz-wrap form[data-pz-answer] input')?.focus();
+}
+/* a word answered: right the first time is ✅ solved; wrong means typing it correctly first (then it counts as helped) */
+function puzzleAnswer(k, ok){
+  const p = S.vocab.puzzle; if (!p || !puzzleRun) return;
+  recordVocab(k, ok);
+  if (ok) { if (!p.solved.includes(k)) p.solved.push(k); sfx('good'); save(); renderPuzzle(); return; }
+  sfx('bad');
+  const host = $('#vocabWrap .pz-wrap'); host.querySelector('form[data-pz-answer]')?.remove();
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>`);
+  askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); save(); renderPuzzle(); });
+}
+function finishPuzzle(why){
+  const p = S.vocab.puzzle, run = puzzleRun; if (!p || !run) return;
+  if (puzzleTimer) { clearInterval(puzzleTimer); puzzleTimer = null; }
+  puzzleRun = null; fixThen = null;
+  const n = p.solved.length - run.startSolved, complete = !pzLeft(p).length, info = PUZZLE_INFO[p.type];
+  if (complete) p.done = true;
+  addVocabExtraTime(run.startedAt);
+  logEvent({k:'vocab', mode:'puzzle', s:n, title:info.name, ...(run.timed ? {min:run.min} : {})});
+  if (run.extraId) recordChallenge(run.extraId, n, run.min);
+  const best = n > (S.vocab.puzzleBest || 0); if (best) S.vocab.puzzleBest = n;
+  const coins = Math.floor(n / 2); S.coins += coins; save(); updateHeader();
+  const later = !complete && p.first === p.day ? '<p>📌 Your puzzle is saved. You can finish it tomorrow.</p>' : !complete ? '<p class="muted">Tomorrow is a brand-new puzzle.</p>' : '';
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>${info.emoji} ${esc(info.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="sprint-card vocab-card"><div class="big-emoji">${complete ? '🎉' : '⏱️'}</div><h2>${n} word${n === 1 ? '' : 's'} solved${run.timed && why === 'time' ? ` in ${run.min} minute${run.min === 1 ? '' : 's'}!` : '!'}</h2>
+    ${complete ? `<p><b>Puzzle complete!</b>${p.helped.length ? ` (${p.helped.length} with a little help)` : ''}</p>` : ''}${later}
+    ${run.extraId ? challengeBragHTML(run.extraId, n, run.min, 'words') : best && n ? '<p><b>Your best puzzle yet!</b></p>' : ''}
+    ${coins ? `<p>You earned <b>🪙 ${coins}</b>.</p>` : ''}
+    <div class="row"><button class="btn" data-vocab-tab="week">📅 This week’s words</button></div></div>`;
+  sfx(complete ? 'coin' : 'good');
+}
+/* ---------- 🏁 Friday mastery check ---------- */
+function startCheck(extraId = null){
+  const wk = ensureWeek(); if (vocabRun) { stopVocabTimer(); vocabRun = null; }
+  wk.check = wk.check && !wk.check.done ? wk.check : {day:localDay(), done:false, results:{}};
+  checkRun = {extraId, startedAt:performance.now()}; save(); renderCheck();
+}
+function renderCheck(){
+  const wk = S.vocab.week, words = weekWordObjs(), left = words.filter(v => !(wordKey(v.w) in wk.check.results));
+  if (!left.length) { finishCheck(); return; }
+  const v = left[0], i = words.length - left.length + 1;
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Save and stop</button></div>
+    <div class="sprint-card vocab-card pz-wrap"><p class="muted">Word ${i} of ${words.length}. Spell each word from its meaning. Words you get right are mastered!</p>
+    <p class="vocab-ask">Which word means:</p><div class="fact vocab-prompt long">${esc(v.d)}</div>${v.s ? `<p class="muted">${esc(v.s)}</p>` : ''}
+    <div class="row syl-row"><button type="button" class="btn small" data-check-hear="${esc(v.w)}">🔊 Hear the word</button></div>
+    <form class="typed-fill" data-check-answer="${esc(wordKey(v.w))}"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form></div>`;
+  $('#vocabWrap .typed-input').focus();
+}
+function finishCheck(){
+  const wk = S.vocab.week, run = checkRun; checkRun = null; fixThen = null;
+  const all = vocabWords().all, map = new Map(all.map(v => [wordKey(v.w), v]));
+  const mastered = Object.entries(wk.check.results).filter(([, v]) => v).map(([k]) => k), stay = Object.entries(wk.check.results).filter(([, v]) => !v).map(([k]) => k);
+  wk.mastered = [...new Set([...wk.mastered, ...mastered])]; wk.check.done = true;
+  S.vocab.hall = [...(S.vocab.hall || []).filter(h => !mastered.includes(h.w)), ...mastered.map(w => ({w, wk:wk.id}))].slice(-VOCAB_LIMITS.list);
+  if (run) addVocabExtraTime(run.startedAt);
+  if (run?.extraId) recordChallenge(run.extraId, mastered.length, 0);
+  logEvent({k:'vocab', mode:'check', s:mastered.length, n:mastered.length + stay.length, title:`mastered ${mastered.join(', ') || 'none yet'}`});
+  S.coins += mastered.length; save(); updateHeader();
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Mastery check done!</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="sprint-card vocab-card"><div class="big-emoji">${mastered.length ? '🎉🏆🎉' : '💪'}</div>
+    <h2>${mastered.length ? `You mastered ${mastered.length} word${mastered.length === 1 ? '' : 's'}!` : 'Keep going!'}</h2>
+    ${mastered.length ? `<div class="vocab-grid mastered">${mastered.map(k => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(k)?.w || k)}</span>`).join('')}</div><p>They go in your <b>Word Hall of Fame</b> (${S.vocab.hall.length} words so far) and leave your practice list. ${mastered.length >= 10 ? 'WOW! 🚀' : 'Amazing work!'}</p>` : ''}
+    ${stay.length ? `<p>${stay.length} word${stay.length === 1 ? ' stays' : 's stay'} for next week, with up to ${WEEK_NEW_WORDS} new ones: ${stay.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')}.</p>` : '<p>Every word mastered! Next week brings new ones.</p>'}
+    ${mastered.length ? `<p>You earned <b>🪙 ${mastered.length}</b>.</p>` : ''}</div>`;
+  sfx('unlock');
+}
+/* the 📅 This week tab */
+function weekTabHTML(){
+  const wk = ensureWeek(), map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), done = new Set(wk.mastered);
+  const chip = k => { const v = map.get(k); if (!v) return ''; const st = done.has(k) ? 'solid' : wordStatus(vocabStat(v.w)); return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}">${done.has(k) ? '⭐ ' : ''}${esc(v.w)}</button>`; };
+  const day = weekdayNum(), p = S.vocab.puzzle, today = localDay();
+  const puzzleLine = (checkDue() ? '<button type="button" class="btn berry" data-check-start>🏁 Start the mastery check</button>' : '')
+    + (p && p.day === today && p.done ? `<p>✅ Today’s ${esc(PUZZLE_INFO[p.type].name)} is done!</p>` : `<button type="button" class="btn${checkDue() ? '' : ' berry'}" data-pz-start>${PUZZLE_INFO[todayPuzzleType()].emoji} ${checkDue() ? 'Puzzle' : 'Today’s puzzle'}: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}</button>`);
+  return `<p>This week: <b>${wk.words.length} words</b>${wk.kept ? ` (${wk.kept} from last week, ${wk.added} new)` : ''}. Practice them all week. <b>Friday</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
+    <div class="row">${puzzleLine}</div>
+    ${wk.check?.done ? `<p>🏁 Mastery check done: <b>${wk.mastered.length} mastered</b> this week! 🎉</p>` : day >= 1 && day <= 4 ? `<p class="muted">Mastery check in ${5 - day} day${5 - day === 1 ? '' : 's'} (Friday).</p>` : ''}
+    <div class="vocab-grid">${wk.words.map(chip).join('')}</div><p class="vocab-peek muted" aria-live="polite"></p>
+    ${(S.vocab.hall || []).length ? `<details><summary>🏆 Word Hall of Fame: ${S.vocab.hall.length} mastered</summary><div class="vocab-grid">${S.vocab.hall.map(h => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(h.w)?.w || h.w)}</span>`).join('')}</div></details>` : ''}`;
+}
+document.addEventListener('submit', event => {
+  const f = event.target.closest('form[data-pz-answer], form[data-check-answer]'); if (!f) return;
+  event.preventDefault(); event.stopPropagation();
+  const typed = f.querySelector('input').value; if (!typed.trim()) return;
+  if (f.dataset.pzAnswer) { puzzleAnswer(f.dataset.pzAnswer, normalizeTyped(typed) === normalizeTyped(f.dataset.pzAnswer)); return; }
+  const k = f.dataset.checkAnswer, ok = normalizeTyped(typed) === normalizeTyped(k), wk = S.vocab.week;
+  recordVocab(k, ok); wk.check.results[k] = ok ? 1 : 0; save();
+  if (ok) { sfx('good'); toast('⭐ Mastered!'); renderCheck(); return; }
+  sfx('bad'); const host = $('#vocabWrap .pz-wrap'); f.remove();
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on next week’s list.</p>`);
+  askFix(host, k, renderCheck);
+}, true);
+$('#vocabWrap').addEventListener('click', event => {
+  const b = event.target.closest('button'); if (!b) return;
+  if (b.hasAttribute('data-pz-start')) { startPuzzle({timed:false}); return; }
+  if (b.hasAttribute('data-check-start')) { startCheck(); return; }
+  if (b.hasAttribute('data-pz-stop')) { if (puzzleRun?.timed) { finishPuzzle('stop'); return; } stopPuzzleRun(); vocabTab = 'week'; renderVocab(); return; }
+  if (b.dataset.checkHear) { void speakWord(b.dataset.checkHear); return; }
+  const p = S.vocab.puzzle; if (!puzzleRun || !p) return;
+  if (b.dataset.pzClue) { puzzleRun.active = +b.dataset.pzClue; renderPuzzle(); return; }
+  if (b.dataset.pzCell) {
+    const at = b.dataset.pzCell.split(',').map(Number);
+    if (!puzzleRun.sel) { puzzleRun.sel = at; renderPuzzle(); return; }
+    const w = wordAt({placed:p.data.placed}, puzzleRun.sel, at); puzzleRun.sel = null;
+    if (w && !p.solved.includes(w) && !p.helped.includes(w)) { puzzleAnswer(w, true); return; }
+    toast(w ? 'You found that one already!' : 'That’s not one of the words. Try again!'); renderPuzzle(); return;
+  }
+  if (b.dataset.pzWord) { puzzleRun.sel = b.dataset.pzWord; renderPuzzle(); return; }
+  if (b.dataset.pzDef && puzzleRun.sel) { const w = puzzleRun.sel; puzzleRun.sel = null; if (b.dataset.pzDef === w) puzzleAnswer(w, true); else { renderPuzzle(); puzzleAnswer(w, false); } }
+});
 /* grown-ups: add or import words and choose focus words, behind the grown-up PIN (the class's words come from the teacher) */
 function vocabGrownUpHTML(all){
   const v = S.vocab.home, classWords = Backend.me?.game_settings?.vocab?.words?.length || 0;
@@ -11672,6 +11950,7 @@ function renderShopFloor(shop){
   const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   currentShop = config.id;
   $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
+  { let t = $('#shopTodayTime'); if (!t) { t = document.createElement('div'); t.id = 'shopTodayTime'; $('#scr-cafe > p').after(t); } t.innerHTML = todayTimeHTML('math', config.id); }
   $('#scr-cafe > p').textContent = settings.requireQuiz ? `${config.unitLabel}. Pass each station quiz to open the next station.` : `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
   const allStationsBuilt = config.stations.every(st => st.skills.length > 0);
   const allStationQuizzesPassed = allStationsBuilt && (unitOpenedByGrownUp(config.id) || config.stations.every(st => {
@@ -12822,7 +13101,7 @@ function sprintPicked(){
 }
 function renderSprintPick(){
   const types = sprintDrillTypes(), picked = sprintPicked(), wrap = $('#spPick');
-    if (activeExtra?.challengeRun) { const best = S.challengeBest?.[activeExtra.id] || 0; wrap.innerHTML = `<p class="sp-pick-q">⏱️ ${challengeMin(activeExtra)}-minute challenge: <b>${esc(extraLabel(activeExtra))}</b>${best ? ` · your best is ${best}` : ''}</p>`; return; }
+    if (activeExtra?.challengeRun) { const best = S.challengeBest?.[activeExtra.id] || 0, log = S.challengeLog?.[activeExtra.id] || [], last = log[log.length - 1]; wrap.innerHTML = `<p class="sp-pick-q">⏱️ ${challengeMin(activeExtra)}-minute challenge: <b>${esc(extraLabel(activeExtra))}</b></p>${last ? `<p class="sp-bonus">Last time: <b>${last.n}</b> · Your best: <b>${best}</b>. Can you beat it? 💪</p>` : '<p class="sp-bonus">How many can you get? It’s OK not to finish: just keep going until the clock stops.</p>'}`; return; }
     if (activeExtra) { wrap.innerHTML = `<p class="sp-pick-q">📋 Today’s extra: <b>${esc(extraLabel(activeExtra))}</b> · ${Math.floor(extraSecs(activeExtra.id) / 60)} of ${Math.round(+activeExtra.minutes)} min</p>`; return; }
   const n = picked.length;
   wrap.innerHTML = `${types.length > 1 ? `<p class="sp-pick-q">Which skills do you want in this sprint?</p>
@@ -12930,7 +13209,7 @@ function endSprint(){
   stopSprintTimer(); if (!sp) return;
   const run = sp; sp = null;
   logEvent({k:'sprint', s:run.correct, skills:run.types, ...(run.challengeId ? {min:run.challengeMin} : {})});   // day log
-  const challengeBest = run.challengeId ? recordChallenge(run.challengeId, run.correct) : false;
+  if (run.challengeId) recordChallenge(run.challengeId, run.correct, run.challengeMin);
   if (run.extraId) addExtraTime(run.extraId, (performance.now() - run.started) / 1000);   // a sprint started from the extras card
   const pw = Math.round((1 + Math.min(run.correct, 20)*0.05)*100)/100;
   S.power = Math.max(S.power, pw);
@@ -12942,7 +13221,7 @@ function endSprint(){
   const seen = new Set(), chips = [];
   run.missed.forEach(entry => { const id = Array.isArray(entry) ? fkey(entry[0], entry[1]) : `${entry.type}:${entry.key}`; if (!seen.has(id)) { seen.add(id); chips.push(Array.isArray(entry) ? `<span>${entry[0]} × ${entry[1]} = ${entry[0]*entry[1]}</span>` : `<span>${esc(entry.reveal || `${entry.prompt} = ${entry.answer}`)}</span>`); } });
   $('#summaryCard').innerHTML = `<div class="big-emoji">${run.challengeId ? '⏱️' : '⚡'}</div><h2>${run.correct} ${run.challengeId ? `right in ${run.challengeMin} minute${run.challengeMin === 1 ? '' : 's'}!` : 'correct!'}</h2>
-    ${run.challengeId ? (challengeBest ? '<p><b>New challenge best!</b></p>' : `<p class="muted">Your challenge best is ${S.challengeBest?.[run.challengeId] || run.correct}</p>`) : best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.sprintBest}</p>`}
+    ${run.challengeId ? challengeBragHTML(run.challengeId, run.correct, run.challengeMin) : best ? '<p><b>New personal best!</b></p>' : `<p class="muted">Your best is ${S.sprintBest}</p>`}
     ${coins ? `<p>You earned <b>🪙 ${coins}</b> (${skills} skill${skills === 1 ? '' : 's'}).</p>` : ''}
     <p>Your tips are powered up <b>×${fmtPow(S.power)}</b> for your next café shift.</p>
     ${chips.length ? `<p class="muted">Tricky ones</p><div class="factchips">${chips.join('')}</div>` : ''}

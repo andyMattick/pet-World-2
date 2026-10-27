@@ -4,7 +4,7 @@
 
 ## Owner decisions
 
-- **When:** a stretch the first time the town opens each day ("morning"), and one after each core subject on the daily plan.
+- **When (owner, Oct 27, 2026):** one stretch a day, after her **first** subject (see the break order in `MOVE-BREAKS.md`). There's no morning stretch and no stretch after every subject any more.
 - **What:** 3 games in a row, picked at random from the games the teacher left in the cycle. No game repeats within a stretch, and games from the last two stretches come back only when nothing else is left.
 - **No skipping.** There is no close button. A stretch left unfinished comes back after a reload or sign-in (same day).
 - **Levels:** every game starts at its easiest level and moves up one level after 3 results in a row at 85% or better.

@@ -83,6 +83,7 @@ export interface MoveState {
   due: string;          // the subject she just finished, when a break is waiting ('' = none)
   recent: string[];     // moves from the last breaks, so the next one mixes it up
   breaks: MoveBreak[];  // the last 60 finished breaks
+  worked: string[];     // subjects she spent the class's minutes in today (the break order counts them)
 }
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const subj = (v: unknown) => (typeof v === 'string' && MOVE_SUBJECTS.includes(v) ? v : '');
@@ -95,6 +96,7 @@ export function normalizeMoveState(raw: unknown): MoveState {
     secs: Number.isFinite(+r.secs) ? Math.max(0, Math.min(86400, Math.round(+r.secs))) : 0,
     due: subj(r.due),
     recent: (Array.isArray(r.recent) ? r.recent : []).filter((id: unknown) => typeof id === 'string' && ids.has(id)).slice(-MOVES_PER_BREAK * 3),
+    worked: (Array.isArray(r.worked) ? r.worked : []).map(subj).filter(Boolean).slice(0, 10),
     breaks: (Array.isArray(r.breaks) ? r.breaks : []).filter((x: any) => x && Number.isFinite(+x.t) && Array.isArray(x.moves)).slice(-60)
       .map((x: any) => ({ t: +x.t, after: subj(x.after), to: subj(x.to), moves: x.moves.filter((id: unknown) => typeof id === 'string' && ids.has(id)).slice(0, MOVES.length) }))
   };
