@@ -169,3 +169,7 @@ a.btn{display:inline-block; text-decoration:none}
 .vb-list{border:1px solid var(--line); border-radius:8px; padding:8px; min-width:0}
 .vb-list h3{margin:0 0 6px; font-size:1rem}
 .vb-scroll{max-height:340px; overflow:auto}
+.vb-student{border-top:1px solid var(--line); padding:6px 0}
+.vb-student > summary{cursor:pointer; padding:4px 0}
+.vb-classwords{margin:10px 0}
+.vb-classwords > summary{cursor:pointer; padding:6px 0}
