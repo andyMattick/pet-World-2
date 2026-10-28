@@ -10357,6 +10357,45 @@ async function gatedKhanTest(key, title, url){
   if (!w) toast('Your browser blocked the new tab. Allow pop-ups for Pet World, then try again.');
   if (!$('#scr-library').hidden && activeEnglishCourse === key) rerenderLibraryPage();
 }
+/* 🔐 Fix a score (owner, Oct 27, 2026): a grown-up corrects a unit test or quiz score, e.g. when she took the test in
+   another window and the wrong score was kept. PIN first; the new score replaces her last try, and the day log says so. */
+function scoreFixRows(course){
+  const rows = [{key:course.finalKey, title:`${course.title} Test`, kind:'final', n:testSize(course), pass:course.finalPass}];
+  if (!course.noQuizzes) course.groups.filter(g => !g.noQuiz && g.skills.length).forEach(g => rows.push({key:englishQuizKey(g.id, course.id), title:g.quizName || `${g.name} Quiz`, kind:'quiz', n:4, pass:3}));
+  return rows.map(r => { const rec = englishRecord(r.key, course.id); return {...r, rec, n:rec.questionCount || r.n}; }).filter(r => r.rec.tries > 0);
+}
+async function fixScore(courseId){
+  const course = englishCourse(courseId), rows = scoreFixRows(course);
+  if (!rows.length) { toast('There’s no test or quiz score in this unit yet.'); return; }
+  if (!await askGrownUp({title:`Fix a score: ${course.title}`, text:'A grown-up can change a test or quiz score, for example when she took it in another window.', ok:'Fix a score'})) return;
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Fix a score');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><h2>✏️ Fix a score</h2>
+    <form class="fix-score"><label>Test or quiz <select name="key">${rows.map(r => `<option value="${esc(r.key)}">${esc(r.title)} (last ${r.rec.lastScore ?? r.rec.best} of ${r.n})</option>`).join('')}</select></label>
+      <label>Her real score <span class="row"><input name="score" type="number" inputmode="numeric" min="0" max="${rows[0].n}" value="${rows[0].n}" required> <span data-fix-of>of ${rows[0].n}</span></span></label>
+      <p class="muted">It replaces her last try. Pass mark: <b data-fix-pass>${rows[0].pass}</b>.</p>
+      <div class="row"><button type="submit" class="btn berry">Save the score</button><button type="button" class="btn" data-fix-cancel>Cancel</button></div></form></div>`;
+  document.body.appendChild(el);
+  const form = el.querySelector('form'), pick = () => rows.find(r => r.key === form.key.value);
+  form.key.addEventListener('change', () => { const r = pick(); form.score.max = r.n; form.score.value = r.n; el.querySelector('[data-fix-of]').textContent = `of ${r.n}`; el.querySelector('[data-fix-pass]').textContent = r.pass; });
+  el.querySelector('[data-fix-cancel]').addEventListener('click', () => el.remove());
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const r = pick(), score = Math.round(+form.score.value);
+    if (!(score >= 0 && score <= r.n)) { toast(`Pick a score from 0 to ${r.n}.`); return; }
+    applyScoreFix(course, r, score); el.remove();
+  });
+}
+function applyScoreFix(course, r, score){
+  const store = progressStore(course.id), prev = englishRecord(r.key, course.id), old = prev.lastScore ?? prev.best;
+  const recent = [...(prev.recentScores || [])]; if (recent.length) recent[recent.length - 1] = score; else recent.push(score);
+  const best = prev.best === old ? Math.max(score, ...recent) : Math.max(prev.best || 0, score), passed = best >= r.pass, firstPass = passed && !prev.passed;
+  store[r.key] = {...prev, best, lastScore:score, recentScores:recent, tries:Math.max(1, prev.tries || 0), questionCount:r.n, passed:!!prev.passed || passed, ...(firstPass ? {lastPassAt:Date.now()} : {})};
+  logEvent({k:'gate', title:`🔐 Grown-up fixed a score: ${r.title}, ${old} → ${score} of ${r.n}`});
+  logEvent({k:'course', course:course.id, title:r.title, kind:r.kind, s:score, n:r.n, passed:score >= r.pass, fixed:true, ...(firstPass ? {first:true} : {})});
+  save(); toast(`✅ ${r.title}: ${score} of ${r.n}${firstPass ? '. Passed!' : ''}`);
+  renderEnglishUnit(course.id);
+}
 function startTestReview(courseId, khan = false){
   const cards = termCards(courseId); if (!cards.length) { startReviewCheck(courseId, khan); return; }
   const missedBefore = c => (S.cardStats[cardStatKey(courseId, c.term)]?.[1] || 0) > 0;
@@ -11149,7 +11188,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button></div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -11271,6 +11310,7 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.elaPractice) { const skillId = button.dataset.elaPractice, courseId = button.dataset.elaCourse || activeEnglishCourse; watchFirstThen(courseId, skillId, () => { if (watching?.kind === 'khan') stopWatching(); startEnglishPractice(skillId, courseId); }); return; }
   if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-ela-final')) { void gatedPetWorldTest(button.dataset.elaCourse || activeEnglishCourse); return; }
+  if (button.hasAttribute('data-fix-score')) { void fixScore(button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
@@ -13878,7 +13918,7 @@ function eventText(e){
   if (e.k === 'assess') return `${stationLabel(e.shop, e.station, e.mode)}${score}${e.passed ? ' ✅ passed' : ''}`;
   if (e.k === 'sprint') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
   if (e.k === 'vocab') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
-  if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through', review:'test review'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}`;
+  if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through', review:'test review'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}${e.fixed ? ' (score fixed by a grown-up)' : ''}`;
   if (e.k === 'review') return `📇 ${englishCourse(e.course)?.title || e.course}: test review flashcards · ${e.s} of ${e.n} known on the first try`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;
   if (e.k === 'dig') return `⛏️ Finished the ${e.title}: ${e.s} of ${e.n} placed on the map on the first try`;

@@ -28,3 +28,13 @@ The grown-up PIN (the same as the progress report and the theme question). If th
 ## What a quiz or test step shows
 
 Quizzes and tests show only the answer steps (`answerStepsFor`), with no helper or Hint. Their prompts go through `testPrompt` in `game.js`: a prompt that works part of the problem (like "42 ÷ 7 = ?") becomes "Your answer = ?" or the step's own `test:` wording, so a test never does a step for her. See `MATH-CHECK.md`.
+
+## 🔐 Fix a score (Oct 27, 2026)
+
+On a unit page, a **🔐 Fix a score** button sits next to the test buttons once she has taken a test or quiz in that unit. This works for English, History and Biology.
+
+1. A grown-up enters the PIN.
+2. They pick the unit test or a quiz. Each one shows her last score.
+3. They type her real score. It replaces her last try, so `best`, `passed` and the Khan test step all update.
+
+Use it when the wrong score was kept, for example when she took the test in another window. The day log gets two lines: "🔐 Grown-up fixed a score: … 8 → 11 of 11", and the corrected result marked "(score fixed by a grown-up)". Code: `fixScore`, `applyScoreFix`.

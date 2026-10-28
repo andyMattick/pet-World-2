@@ -1428,3 +1428,9 @@ a.btn{display:inline-block; text-decoration:none}
 @media (max-width:380px){.web-effects{columns:1}}
 .pz-key .learned{background:#D6F0D2; border-radius:6px; padding:0 4px}
 .pz-key-note{text-align:center; margin:-4px 0 8px; font-size:.85rem}
+.fix-score{display:grid; gap:10px; text-align:left}
+.fix-score label{display:grid; gap:4px; font-weight:700}
+.fix-score select, .fix-score input{font-size:16px; padding:6px; max-width:100%; box-sizing:border-box}
+.fix-score select{width:100%}
+.fix-score .muted{color:inherit; opacity:.85}
+.fix-score input{width:80px}
