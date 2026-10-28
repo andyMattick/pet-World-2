@@ -204,6 +204,12 @@ need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
 need('src/teacher/main.ts', 'p_tz', "the teacher's time zone for practice time");
 for (const m of ['const TRACKS = {', 'musicTrack', 'function openMusicMenu(', 'function musicAllowed(']) need('src/game/game.js', m);
 need('src/teacher/main.ts', 'allowMusic', 'the teacher Allow music switch');
+// 📈 Insights (docs/INSIGHTS.md): the analysis stays import-free so the daily-insights email function can use a copy of it
+need('src/shared/insights.ts', 'export function computeInsights(', 'the Insights analysis (INSIGHTS.md)');
+if (/^\s*import\s/m.test(read('src/shared/insights.ts'))) problems.push('src/shared/insights.ts must not import other files: the daily-insights Edge Function uses a copy of it (INSIGHTS.md)');
+need('src/teacher/report.ts', 'renderInsightsCard(', 'the 📈 Insights section on the student page (INSIGHTS.md)');
+need('supabase/functions/daily-insights/index.ts', "from '../_shared/insights.ts'", 'the daily insights email function (INSIGHTS.md)');
+need('src/game/game.js', 'S.missLog', 'the missed-prompt log Insights reads (INSIGHTS.md)');
 
 const allSrc = ['src/game/game.js', 'src/teacher/main.ts', 'src/lib/supabase.ts', 'src/lib/studentBackend.ts'].map(p => existsSync(p) ? readFileSync(p, 'utf8') : '').join('\n');
 if (allSrc.includes('learning_events')) problems.push('Code writes to a "learning_events" table, which is not part of this project\'s database. This is a sign of a placeholder rewrite.');

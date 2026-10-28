@@ -173,3 +173,61 @@ a.btn{display:inline-block; text-decoration:none}
 .vb-student > summary{cursor:pointer; padding:4px 0}
 .vb-classwords{margin:10px 0}
 .vb-classwords > summary{cursor:pointer; padding:6px 0}
+
+/* 📈 Insights: first section of a student's page (src/teacher/insightsCard.ts, docs/INSIGHTS.md) */
+.insights-card h3{margin:14px 0 6px; font-size:1rem}
+.insights-card h4{margin:10px 0 4px; font-size:.92rem}
+.ins-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px}
+.ins-head h2{margin:0}
+.ins-head .btn{margin-left:auto}
+.ins-status:empty{display:none}
+.ins-today{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px}
+.ins-kpi{border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--bg); min-width:0}
+.ins-kpi b{display:block; font-family:var(--head); font-size:1.4rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.ins-kpi span{font-size:.8rem; color:var(--soft)}
+.ins-line{margin:6px 0}
+.ins-charts{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.ins-chart{margin:0; min-width:0}
+.ins-chart figcaption{font-size:.8rem; color:var(--soft); margin-bottom:2px}
+.ins-chart svg{display:block; width:100%; height:auto; overflow:visible}
+.ins-bar-min{fill:var(--mint)} .ins-bar-pct{fill:var(--berry)}
+.ins-base{stroke:var(--line); stroke-width:1}
+.ins-val{font-size:10px; fill:var(--ink); font-weight:700}
+.ins-axis,.ins-nil{font-size:10px; fill:var(--soft)}
+.ins-fold{border-top:1px solid var(--line); padding:8px 0}
+.ins-fold>summary{cursor:pointer; list-style-position:inside; overflow:hidden; text-overflow:ellipsis}
+.ins-fold[open]>summary{margin-bottom:6px}
+.ins-list{margin:0; padding-left:20px} .ins-list li{margin:0 0 6px}
+.ins-wins{list-style:none; padding-left:0}
+.ins-conf{font-size:.75rem; letter-spacing:1px; color:var(--berry-deep); white-space:nowrap}
+.ins-patterns{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px 18px}
+.ins-pattern p{margin:4px 0 0; font-size:.88rem}
+.ins-hrow{display:grid; grid-template-columns:minmax(90px,9.5em) 1fr auto; gap:8px; align-items:center; font-size:.85rem; margin:3px 0}
+.ins-hrow.dim{opacity:.45}
+.ins-hl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.ins-track{position:relative; height:10px; border-radius:5px; background:var(--new)}
+.ins-track i{display:block; height:100%; border-radius:5px; background:var(--berry)}
+.ins-goal{position:absolute; top:-3px; width:2px; height:16px; background:var(--ink); border-radius:1px}
+.ins-hv{white-space:nowrap; color:var(--soft); font-size:.8rem}
+.ins-share{display:flex; gap:2px; height:12px; margin:10px 0 4px}
+.ins-share i{display:block; border-radius:4px}
+.ins-s-lessons{background:var(--mint)} .ins-s-games{background:var(--butter)} .ins-s-arcade{background:var(--berry)} .ins-s-town{background:var(--soft)}
+.ins-legend{display:flex; flex-wrap:wrap; gap:4px 12px; font-size:.8rem; color:var(--soft); margin:0 0 6px}
+.ins-legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px}
+.ins-order{display:grid; gap:2px; font-size:.85rem}
+.ins-tools{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px}
+.ins-tool{display:flex; gap:8px; align-items:flex-start; border:1px solid var(--line); border-radius:10px; padding:6px 8px; font-size:.85rem}
+.ins-tool.unused{border-style:dashed; color:var(--soft)}
+.ins-te{font-size:1.2rem; line-height:1.2}
+.ins-rec-cols{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.ins-recs{margin:0; padding-left:18px} .ins-recs li{margin:0 0 8px} .ins-recs small{display:block}
+.ins-key{margin:8px 0 0; font-size:.8rem}
+@media (max-width:700px){
+  .ins-today{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ins-charts,.ins-rec-cols{grid-template-columns:1fr}
+  .ins-head .btn{margin-left:0; width:100%}
+  .ins-hrow{grid-template-columns:minmax(70px,7.5em) 1fr auto}
+  .ins-tools{grid-template-columns:1fr 1fr}
+  .ins-tool{flex-direction:column; gap:2px}
+}
+@media print{ .ins-fold{display:block} .ins-fold>*{display:block} }

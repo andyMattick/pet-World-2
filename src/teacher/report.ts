@@ -10,6 +10,7 @@ import { startRightNow } from './live';
 import { renderCourses } from './courses';
 import { renderTranscript } from './transcript';
 import { renderPlanCard } from './plan';
+import { renderInsightsCard, refreshInsights } from './insightsCard';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, DRILLS, type DrillSettings } from '../shared/registry';
 /* extras a grown-up assigns one student (ROADMAP F7) */
 interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string; challenge?: number }
@@ -46,6 +47,9 @@ export interface StudentReport {
   chat?: { replies?: { id: string; at: number; text: string }[]; seenAt?: number } | null;   // 💬 her replies (docs/CHAT.md)
   brain?: unknown; brainOn?: BrainSettings;   // brain stretches: S.brain from the save, and the class setting
   mathThink?: Record<string, { best?: number; tries?: number; passed?: boolean; lastScore?: number; questionCount?: number; lastMissed?: string[] }>;   // 🧠 Think it through sets, from the save   // active seconds per day and subject, from the student's save
+  /* 📈 Insights (docs/INSIGHTS.md): more of the save, and the last few days of math orders and first-try misses */
+  vocab?: unknown; videosWatched?: Record<string, string>; cardStats?: unknown; missLog?: unknown;
+  rp?: Record<string, unknown>[]; ra?: Record<string, unknown>[];
 }
 /* a short answer or paragraph from the student's save (docs: QUESTION-TYPES.md) */
 interface WrittenEntry { id: string; courseId: string; skillId: string; type: string; prompt: string; rubric: string[]; model: string; text: string; at: number; where: string; parentReview?: { points: number[]; comment: string; redo: boolean } }
@@ -222,6 +226,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => { if (b.dataset.subject) detailSubject = b.dataset.subject; openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride); }));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
+  refreshInsights(list);   // a student's page that is open gets the new numbers too
 }
 
 export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDrills, onResetStudent?: ResetStudent, onSaveQuizOverride?: SaveQuizOverride) {
@@ -232,6 +237,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   Object.values(r.s || {}).forEach(steps => Object.values(steps).forEach(v => { if (v[3] === 's') { setupA += v[0]; setupC += v[1]; } }));
   let h = `<div class="row noprint" style="justify-content:space-between; margin-top:0"><h2 id="dTitle" style="margin:0">${esc(r.n)}</h2>
     <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dReset">Reset</button> <button class="btn small" id="dClose">Close</button></span></div><div id="studentResetPanel" class="reset-panel" hidden></div>
+    <div id="insightsCard"></div>
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
     <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
   h += '<div id="helpQCard" class="noprint"></div>';   // ✋ questions (docs/QUESTIONS.md)
@@ -461,6 +467,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     }));
   }
   $('#detailSheet').innerHTML = h; $('#detail').hidden = false;
+  renderInsightsCard($('#insightsCard'), r);   // 📈 Insights, the first section (docs/INSIGHTS.md)
   $('#detailSheet').querySelectorAll<HTMLButtonElement>('[data-subject-tab]').forEach(b => b.addEventListener('click', () => {
     detailSubject = b.dataset.subjectTab!;
     $('#detailSheet').querySelectorAll<HTMLButtonElement>('[data-subject-tab]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));

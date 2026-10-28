@@ -137,6 +137,7 @@ function normalize(raw){
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
   s.vocab = normalizeVocabState(s.vocab);   // Word Workshop: answer history per word, sprint best, the family's own words and focus
   s.mathThink = s.mathThink && typeof s.mathThink === 'object' ? s.mathThink : {};   // math Think it through sets, by station ("cafe:1")
+  s.missLog = (Array.isArray(s.missLog) ? s.missLog : []).filter(m => m && Number.isFinite(+m.t) && typeof m.q === 'string').slice(-80);   // missed lesson prompts with when (docs/INSIGHTS.md)
   s.writtenAnswers = normalizeWrittenAnswers(s.writtenAnswers);   // short answers and paragraphs, with a parent's check (docs: QUESTION-TYPES.md)
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
@@ -11443,6 +11444,7 @@ function recordQuestionStat(question, correct){
 }
 function recordEnglishAnswer(run, question, correct){
   recordQuestionStat(question, correct);
+  if (!correct) S.missLog = [...(S.missLog || []), {t:Date.now(), c:String(run.courseId || '').slice(0, 20), k:String(question.skillId || '').slice(0, 40), w:String(run.retryType || '').slice(0, 12), q:String(question.prompt || question.sentence || '').slice(0, 140)}].slice(-80);   // the teacher's 📈 Insights: which prompts she missed, and when (docs/INSIGHTS.md)
   const store = progressStore(run.courseId), record = englishRecord(question.skillId,run.courseId);
   store[question.skillId] = {
     ...record, answered:(record.answered || 0) + 1, misses:(record.misses || 0) + (correct ? 0 : 1),
@@ -14365,6 +14367,7 @@ function mergeWork(base, other){
   base.writtenAnswers.sort((a, b) => a.at - b.at);
   for (const f of other.vocab?.flagged || []) if (!base.vocab.flagged.some(x => x.w === f.w)) { base.vocab.flagged = [...base.vocab.flagged, f].slice(-60); n++; }
   for (const f of other.vocab?.lookedUp || []) if (!base.vocab.lookedUp.some(x => x.w === f.w)) { base.vocab.lookedUp = [...base.vocab.lookedUp, f].slice(-60); n++; }
+  if (Array.isArray(other.missLog)) base.missLog = [...(base.missLog || []), ...other.missLog.filter(m => m && Number.isFinite(+m.t) && typeof m.q === 'string' && !(base.missLog || []).some(x => x.t === m.t && x.q === m.q))].sort((a, b) => a.t - b.t).slice(-80);   // Insights only: not counted as new work
   n += mergeProgress(base, other);
   return n;
 }

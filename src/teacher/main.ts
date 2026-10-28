@@ -14,6 +14,8 @@ import { messagesPanel } from './chat';
 import { renderApprovals, waitingCount } from './approvals';
 import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus } from './vocab';
 import { installWordPick } from './wordPick';
+import { insightsSaveFields, rowsByStudent, insightsSince } from '../shared/insights';
+import { setInsightsEmailer } from './insightsCard';
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
@@ -199,7 +201,14 @@ async function renderDashboard() {
   if (error) { pane.innerHTML = `<p class="err">${esc(error.message)}</p>`; return; }
   const reports = (data || []) as StudentReport[];
   const ids = reports.map(student => student.id);
-  const {data:saves, error:saveError} = ids.length ? await sb!.from('saves').select('student_id,state').in('student_id', ids) : {data:[], error:null};
+  /* 📈 Insights (docs/INSIGHTS.md): the last few days of math orders and first-try misses, next to the saves */
+  const since = insightsSince();
+  const [{data:saves, error:saveError}, recentProblems, recentMisses] = await Promise.all([
+    ids.length ? sb!.from('saves').select('student_id,state').in('student_id', ids) : Promise.resolve({data:[], error:null}),
+    ids.length ? sb!.from('problems').select('student_id,created_at,skill,shop,station,perfect').eq('class_id', cls.id).gte('created_at', since).order('created_at').limit(5000) : Promise.resolve({data:[], error:null}),
+    ids.length ? sb!.from('attempts').select('student_id,created_at,skill,shop,step,answer,expected,misconception,context').eq('class_id', cls.id).eq('first_try', true).eq('correct', false).gte('created_at', since).order('created_at').limit(3000) : Promise.resolve({data:[], error:null})
+  ]);
+  const problemsBy = recentProblems.error ? null : rowsByStudent(recentProblems.data), missesBy = recentMisses.error ? null : rowsByStudent(recentMisses.data);
   if (current?.id !== cls.id || tab !== 'dashboard') return;
   const savedByStudent = new Map<string, Record<string, unknown>>();
   (saves || []).forEach(row => { if (row.state && typeof row.state === 'object') savedByStudent.set(row.student_id, row.state as Record<string, unknown>); });
@@ -220,7 +229,12 @@ async function renderDashboard() {
     student.chat = state?.chat && typeof state.chat === 'object' ? state.chat as NonNullable<StudentReport['chat']> : null;   // 💬 her replies (docs/CHAT.md)
     student.brain = state?.brain ?? null;   // brain stretches (the 🧠 Brain tab)
     student.brainOn = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
+    const more = insightsSaveFields(state);   // 📈 Insights reads these too
+    student.vocab = more.vocab; student.videosWatched = more.videosWatched as Record<string, string>; student.cardStats = more.cardStats; student.missLog = more.missLog;
+    if (problemsBy) student.rp = problemsBy.get(student.id) || [];
+    if (missesBy) student.ra = missesBy.get(student.id) || [];
   });
+  setInsightsEmailer(studentId => emailInsights(cls.id, studentId));
   const msgs = messagesPanel(reports, async (id, value) => {   // 💬 Messages (docs/CHAT.md): kept across live refreshes
     const r = reports.find(x => x.id === id), next = { ...(r?.qx || {}) };
     if (value) next.chat = value; else delete next.chat;
@@ -242,6 +256,28 @@ async function saveQuizOverride(id: string, overrides: Record<string, string> | 
   const { error } = await sb!.from('students').update({ quiz_overrides: overrides }).eq('id', id);
   if (error) throw error;
 }
+/* ✉️ Email me this now (docs/INSIGHTS.md): the daily-insights Edge Function builds the same Insights and sends them
+   to this account's email. Before the function is deployed, the call fails and the page says where the setup steps are. */
+async function emailInsights(classId: string, studentId: string): Promise<{ ok: boolean; message: string }> {
+  const { data, error } = await sb!.functions.invoke('daily-insights', { body: { mode: 'now', classId, studentId, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } });
+  if (!error) { const d = (data || {}) as { sent?: number; to?: string; error?: string }; return d.sent ? { ok: true, message: `Sent to ${d.to || 'your email'}. It can take a minute to arrive.` } : { ok: false, message: d.error || 'Nothing was sent.' }; }
+  let why = error.message || 'the email function did not answer';
+  const ctx = (error as { context?: Response }).context;
+  if (ctx && typeof ctx.status === 'number') {
+    if (ctx.status === 404) why = 'the daily-insights function is not deployed yet';
+    else { try { const body = await ctx.clone().json() as { error?: string }; if (body?.error) why = body.error; } catch { /* not JSON */ } }
+  }
+  return { ok: false, message: why };
+}
+/* class setting: game_settings.insightsEmail = {on, hour, tz}; the hourly job sends when the hour matches (docs/INSIGHTS.md) */
+interface InsightsEmailSetting { on: boolean; hour: number; tz: string }
+const browserTz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York'; } catch { return 'America/New_York'; } };
+function insightsEmailSetting(g: ClassRow['game_settings']): InsightsEmailSetting {
+  const v = (g?.insightsEmail || {}) as Partial<InsightsEmailSetting>;
+  const hour = Number.isInteger(v.hour) && v.hour! >= 0 && v.hour! <= 23 ? v.hour! : 19;
+  return { on: v.on === true, hour, tz: typeof v.tz === 'string' && v.tz ? v.tz : browserTz() };
+}
+const hourLabel = (h: number) => `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`;
 async function resetStudent(id: string, clearHistory: boolean) {
   const { error } = await sb!.rpc('reset_student', { p_student: id, p_clear_history: clearHistory });
   if (error) throw error;
@@ -461,7 +497,8 @@ const SETUP_CHOICES: SetupChoice[] = [
   { id: 'allowMusic', emoji: '🎵', name: 'Background music', what: 'Students can turn music on. Sound effects stay up to each student.', on: g => g?.allowMusic !== false },
   { id: 'requireThink', emoji: '💭', name: 'Require Think it through', what: 'Each math station’s reasoning set must be passed before the next station opens.', on: g => g?.requireThink !== false },
   { id: 'khan', emoji: '🎓', name: 'Khan Academy links', what: 'Khan videos and the Khan unit test check. Off keeps students inside Pet World.', on: g => g?.khan !== false },
-  { id: 'youtube', emoji: '▶️', name: 'YouTube video searches', what: 'A backup "Find videos on YouTube" link on each lesson.', on: g => g?.youtube !== false }
+  { id: 'youtube', emoji: '▶️', name: 'YouTube video searches', what: 'A backup "Find videos on YouTube" link on each lesson.', on: g => g?.youtube !== false },
+  { id: 'insightsEmail', emoji: '✉️', name: 'Daily insights email', what: 'Each evening (7 PM unless you change it in Settings), an email with every student’s 📈 Insights: struggles, when they struggle, time, and recommendations. Needs the one-time setup in docs/INSIGHTS.md.', on: g => insightsEmailSetting(g).on }
 ];
 function renderSetup() {
   const pane = $('#pane'), cls = current!, g = cls.game_settings;
@@ -485,7 +522,8 @@ function renderSetup() {
       brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
       move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: val('move') },
       themes: { ...themeSettings(old.themes as Partial<ThemeSettings> | undefined), enabled: val('themes') }, extrasFirst: val('extrasFirst'),
-      arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') } };
+      arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') },
+      insightsEmail: { ...insightsEmailSetting(old), on: val('insightsEmail') } };
     $('#setupMsg').textContent = 'Saving…';
     const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
     if (error) { $('#setupMsg').textContent = error.message; return; }
@@ -506,6 +544,7 @@ function renderSettings() {
   const brain = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   const move = moveSettings(cls.game_settings?.move as Partial<MoveSettings> | undefined);
   const themes = themeSettings(cls.game_settings?.themes as Partial<ThemeSettings> | undefined);
+  const insightsMail = insightsEmailSetting(cls.game_settings);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
   pane.innerHTML = `<div class="card setup-callout"><div class="row" style="margin:0; align-items:center"><span style="flex:1"><b>🧭 Quick setup</b> <span class="muted">· everything you can turn on or off, on one page</span></span><button type="button" class="btn small primary" id="openSetup">Open quick setup</button></div></div><div class="two">
@@ -547,6 +586,10 @@ function renderSettings() {
       <p class="muted" style="margin-top:0">Once a day, after the student’s third subject, their pet leads ${MOVES_PER_BREAK} moves (half stretches, half fun ones like a staring contest or sock basketball), about ${MOVE_SECONDS} seconds each, before the new subject. There's no skip button. Walking around town or the Arcade in between doesn't count as a new subject, and break time doesn't count toward any subject.</p>
       <label for="moveMinutes">Minutes in a subject before it counts as one of the three (0 = any time)</label><input type="number" id="moveMinutes" min="0" max="${MOVE_MINUTES_MAX}" step="1" value="${move.minutes}">
       <h4>Moves in the cycle</h4><div class="row"><button type="button" class="btn small" data-move-all="1">Use all</button><button type="button" class="btn small" data-move-all="0">Block all</button></div>${([['stretch', 'Stretches'], ['fun', 'Fun ones']] as const).map(([kind, title]) => `<p style="margin:8px 0 2px"><b>${title}</b></p>${MOVES.filter(m => m.kind === kind).map(m => `<label style="display:flex; gap:8px; align-items:center" title="${esc(m.cue)}"><input type="checkbox" data-move="${m.id}" ${move.moves[m.id] ? 'checked' : ''}> ${m.emoji} ${esc(m.name)}</label>`).join('')}`).join('')}
+      <h3>✉️ Daily insights email</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="insightsOn" ${insightsMail.on ? 'checked' : ''}> Email me each student’s 📈 Insights every day</label>
+      <label for="insightsHour">Send at</label><select id="insightsHour">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === insightsMail.hour ? 'selected' : ''}>${hourLabel(h)}</option>`).join('')}</select>
+      <p class="muted" style="margin-top:0">Time zone: ${esc(insightsMail.tz)}${insightsMail.tz !== browserTz() ? ` (this computer is on ${esc(browserTz())}; saving switches to it)` : ''}. It goes to the email you sign in with. The same summary is at the top of each student’s page, with ✉️ Email me this now. The email needs a one-time setup (a free Resend account and one deploy): see docs/INSIGHTS.md.</p>
       <h3>Arcade</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Open the Arcade</label>
       <p class="muted" style="margin-top:0">When it's off, the Arcade is closed and students see a lock on its town tile. Students already playing are sent back within a minute.</p>
@@ -625,7 +668,8 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, planShuffle: ($('#planShuffle') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}) };
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, planShuffle: ($('#planShuffle') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}),
+      insightsEmail: { on: ($('#insightsOn') as HTMLInputElement).checked, hour: +($('#insightsHour') as HTMLSelectElement).value, tz: browserTz() } };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }
     await loadClasses(cls.id);

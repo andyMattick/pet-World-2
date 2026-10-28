@@ -11,7 +11,8 @@
     "verify": "node scripts/verify.mjs",
     "check-links": "node scripts/check-links.mjs --online",
     "smoke": "node scripts/smoke.mjs",
-    "check-math": "node scripts/check-math.mjs"
+    "check-math": "node scripts/check-math.mjs",
+    "deploy:insights": "node scripts/copy-insights.mjs && npx supabase functions deploy daily-insights --no-verify-jwt"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0"
