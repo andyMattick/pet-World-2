@@ -12398,7 +12398,35 @@ function grownUpCheckHTML(kind, id, state){
   if (!parentReadingUnlocked) return `<div class="grownup-check"><b>Grown-up check</b><span class="muted">Parents can check this here.</span><span class="row"><input type="password" class="grownup-pin" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="${S.parentPin ? 'Grown-up PIN' : 'Make a 4-digit grown-up PIN'}" placeholder="${S.parentPin ? 'PIN' : 'New PIN'}"><button type="button" class="btn small" data-grownup-unlock>${S.parentPin ? 'Unlock' : 'Save PIN'}</button></span></div>`;
   return `<div class="grownup-check"><b>Grown-up check</b><span class="row"><button type="button" class="btn small primary" data-grownup-review="verified" data-kind="${kind}" data-id="${esc(id)}" ${state === 'verified' ? 'disabled' : ''}>${state === 'verified' ? '✓ ' : ''}${label[0]}</button><button type="button" class="btn small" data-grownup-review="revise" data-kind="${kind}" data-id="${esc(id)}" ${state === 'revise' ? 'disabled' : ''}>${label[1]}</button><button type="button" class="btn small" data-grownup-lock>Lock</button></span></div>`;
 }
-function rerenderLibraryPage(){ const project = $('#historyProjectForm'); if (project) renderHistoryProject(project.dataset.course); else renderEnglishLibrary(); }
+/* Drafts are kept as she types (owner, Oct 28, 2026: she changed her lab notes, highlighted a word, and the page came back
+   with her old answers). Project and hands-on lab notes are copied into the save a moment after each change, when the tab
+   is hidden (looking a word up in the dictionary opens a new tab), and before any reload (a new Pet World version or
+   another sign-in), so a redraw or a reload never brings back older answers. */
+function captureDrafts(){
+  let changed = false;
+  const form = $('#historyProjectForm'), courseId = form?.dataset.course, project = courseId && HISTORY_PROJECTS[courseId];
+  if (project) {
+    const p = projectStore(courseId)[courseId];
+    const state = historyProjectState(courseId).state;
+    if (p && state !== 'submitted' && state !== 'verified') project.steps.forEach(step => {
+      if (step.kind === 'draw' || step.kind === 'photo') return;   // pictures are saved by their own steps
+      const el = form.elements.namedItem(step.key); if (!el || el.disabled || typeof el.value !== 'string') return;
+      const v = el.value.trim().slice(0, 1500); if (p.answers[step.key] !== v) { p.answers[step.key] = v; changed = true; }
+    });
+    if (changed) p.updatedAt = Date.now();
+  }
+  const ho = $('#libraryWrap [data-ho-save]');
+  if (ho && $('#libraryWrap [data-ho-field]')) {
+    const e = S.handsOn.entries[handsOnKey(ho.dataset.hoSave)];
+    if (!e?.sentAt && $$('#libraryWrap [data-ho-field]').some(t => (e?.answers?.[t.dataset.hoField] || '') !== t.value.slice(0, 1500))) { handsOnSaveDraft(ho.dataset.hoSave); return; }   // it saves
+  }
+  if (changed) save();
+}
+let draftTimer = 0;
+$('#libraryWrap').addEventListener('input', e => { if (e.target.closest('#historyProjectForm, [data-ho-field], [data-ho-minutes]')) { clearTimeout(draftTimer); draftTimer = setTimeout(captureDrafts, 800); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { clearTimeout(draftTimer); captureDrafts(); } });
+window.addEventListener('pagehide', () => captureDrafts());
+function rerenderLibraryPage(){ const project = $('#historyProjectForm'); if (project) { captureDrafts(); renderHistoryProject(project.dataset.course); } else renderEnglishLibrary(); }
 function unlockGrownUp(input){
   const pin = String(input?.value || '');
   if (!/^\d{4}$/.test(pin)) { toast('Use 4 digits.'); return false; }
@@ -14453,6 +14481,7 @@ function applyClears(state){
 /* another tab on this browser signed in as a different student: this tab stops saving at once (studentBackend) and
    reloads, so it opens as whoever is signed in now and never mixes the two towns */
 Backend.onAccountSwitch = () => {
+  try { captureDrafts(); } catch(e){}
   try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){}   // keep this student's own work in her own key on this device
   toast('Someone else signed in on this browser. Reloading…');
   setTimeout(() => location.reload(), 1500);
@@ -14481,6 +14510,7 @@ async function tabIsStale(){
     const live = (html.match(/\/assets\/(game-[\w-]+\.js)/) || [])[1];
     if (live && live !== RUNNING_BUILD) {
       buildStale = true;
+      if (!LOOK_ID) captureDrafts();   // her unsaved lab or project notes go into this copy first
       Backend.pause();
       if (!LOOK_ID) try { localStorage.setItem(storeKey, JSON.stringify(S)); } catch(e){}
       toast('Pet World was updated. Reloading…');
