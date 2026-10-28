@@ -157,13 +157,20 @@ export function weekOf(day){
   d.setDate(d.getDate() - back);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-/** A new week's words: last week's words that weren't mastered, then up to `fresh` new ones from her list in order
-    (skipping words already mastered). Returns {words, kept, added}. */
-export function nextWeekWords(prevWords, prevMastered, list, retired, fresh = 25){
-  const key = w => String(w).trim().toLowerCase();
-  const done = new Set([...retired, ...prevMastered].map(key)), have = new Set(list.map(v => key(v.w)));
-  const kept = prevWords.map(key).filter(k => !done.has(k) && have.has(k));
-  const keptSet = new Set(kept);
-  const added = list.map(v => key(v.w)).filter(k => !done.has(k) && !keptSet.has(k)).slice(0, fresh);
-  return { words: [...kept, ...added], kept, added };
+/** A new week's words (owner, Oct 28, 2026; docs/VOCAB.md "The weekly draw"): up to `fresh` (20) unmastered words plus
+    up to `review` (5) mastered words to review.
+    - Carried over: last week's words that are still unmastered (not mastered on Friday, or a review word she missed, which
+      went back to unmastered) come first and count toward the 20, in last week's order; if there are more than 20, the
+      first 20 carry and the rest wait in the unmastered pool.
+    - New: the rest of the 20, picked at random from the other unmastered words.
+    - Review: picked at random from the mastered words, preferring ones that weren't on last week's list.
+    `unmastered` and `mastered` are word keys (or {w} entries). Returns {words, carried, added, review} as keys. */
+export function nextWeekWords(prevWords, unmastered, mastered, { fresh = 20, review = 5, rand = Math.random } = {}){
+  const key = w => String(typeof w === 'object' && w ? w.w : w).trim().toLowerCase();
+  const pool = [...new Set(unmastered.map(key))], poolSet = new Set(pool), prev = [...new Set(prevWords.map(key))];
+  const carried = prev.filter(k => poolSet.has(k)).slice(0, fresh), carriedSet = new Set(carried);
+  const added = shuffleWith(rand, pool.filter(k => !carriedSet.has(k))).slice(0, Math.max(0, fresh - carried.length));
+  const prevSet = new Set(prev), done = shuffleWith(rand, [...new Set(mastered.map(key))].filter(k => !poolSet.has(k)));
+  const reviewed = [...done.filter(k => !prevSet.has(k)), ...done.filter(k => prevSet.has(k))].slice(0, review);
+  return { words: [...carried, ...added, ...reviewed], carried, added, review: reviewed };
 }

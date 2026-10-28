@@ -40,8 +40,12 @@ If you won't use Khan, skip this page and turn Khan off (see KHAN.md).
 | Nile Valley Museum | World history | [Early agrarian societies](https://www.khanacademy.org/humanities/world-history/x66f79d8a:early-agrarian-societies) |
 | Rome Museum | World history | [Empires and belief systems](https://www.khanacademy.org/humanities/world-history/x66f79d8a:empires-and-belief-systems). Every lesson links to its start on Khan, with each video as its own button. |
 | Silk Road Museum | World history | [Regional webs](https://www.khanacademy.org/humanities/world-history/x66f79d8a:regional-webs). Every lesson links to its start on Khan, with each video as its own button. |
+| Age of Sail Museum | World history | [The first global age](https://www.khanacademy.org/humanities/world-history/x66f79d8a:the-first-global-age). Every lesson links to its start on Khan, with each video as its own button. |
+| London Museum | World history | [The long nineteenth century](https://www.khanacademy.org/humanities/world-history/x66f79d8a:the-long-nineteenth-century). Every lesson links to its start on Khan, with each video as its own button. |
+| Singapore Museum | World history | [Globalization](https://www.khanacademy.org/humanities/world-history/x66f79d8a:globalization). Every lesson links to its start on Khan, with each video as its own button. |
 | Nature Center (Biology) | Grade 6 science | [Life sciences](https://www.khanacademy.org/science/grade-6-science/x88f5990a7622d8f5:life-sciences) |
 | Petting Zoo (Biology Unit 2) | Middle school biology | Organism growth and reproduction (a teacher can still paste their own links in Lessons) |
+| War and Peace Museum (History Unit 8) | World history | [Global conflict](https://www.khanacademy.org/humanities/world-history/x66f79d8a:global-conflict). Every lesson links to its start on Khan, with each video as its own button. The unit test is Khan's Global Conflict unit test. |
 
 A few math stations borrow one exercise from another Khan course, such as 7th grade math or Algebra basics. Pet World links straight to that exercise, so you don't need to add those courses.
 

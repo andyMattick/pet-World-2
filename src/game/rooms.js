@@ -56,7 +56,7 @@ const ROOMS = {
   histWebs:    {wall:'#F7E2C6', wall2:'#C9473D', pattern:'gallery', floor:'#C8A26B', floor2:'#B48E58', floorKind:'sand', frame:'#9E2B25', awning:['#C9473D','#F2C94C'],
                 props:['🏮','🐫','🧭','🧵','🫖','🏮'], hero:'🐫', float:['🏮'], motion:'drift'},
   histGlobal1: {wall:'#DDF1EE', wall2:'#BFE3DC', pattern:'gallery', floor:'#A68A64', floor2:'#8F7552', floorKind:'planks', frame:'#2F7D6D', awning:['#2F7D6D','#F2C94C'],
-                props:['🌺','🌽','⛵','🗺️','🦜','🌺'], hero:'⛵', float:['🦜'], motion:'drift'},
+                props:['🧭','🌽','⛵','🗺️','🐎','🍫'], hero:'⛵', float:['🦜'], motion:'drift'},
   histLong19:  {wall:'#E4E0DA', wall2:'#C8C1B8', pattern:'bricks', floor:'#6E6A66', floor2:'#5C5854', floorKind:'stone', frame:'#4A4A4A', awning:['#4A4A4A','#C9A227'],
                 props:['🏭','🚂','🎩','⚙️','💡','🕰️'], hero:'⚙️', float:['☁️'], motion:'drift'},
   histConflict:{wall:'#E8EAE0', wall2:'#D2D6C4', pattern:'gallery', floor:'#9C9A8A', floor2:'#878574', floorKind:'stone', frame:'#556B2F', awning:['#556B2F','#F4F1E6'],

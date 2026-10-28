@@ -1461,3 +1461,15 @@ a.btn{display:inline-block; text-decoration:none}
 .pc-level{display:flex; gap:12px; align-items:center; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); color:var(--ink); border-radius:14px; padding:10px 12px; font:inherit; cursor:pointer}
 .pc-level-e{font-size:2em}
 .pc-level b{display:block}
+
+/* 📚 Words of the Week card under Today's plan (docs/VOCAB.md "Words of the week") */
+.wow-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.wow-head h2{margin:0; font-size:1.35rem}
+.wow-stats{display:flex; flex-wrap:wrap; gap:4px 12px; margin:8px 0 6px}
+.wow-bar{height:10px; border-radius:999px; background:var(--st-new); overflow:hidden}
+.wow-bar i{display:block; height:100%; background:var(--st-solid)}
+.wow-fri{margin:8px 0 4px}
+.wow-fri .btn{margin-left:6px; vertical-align:middle}
+.wow-all summary{cursor:pointer; font-weight:700; margin:4px 0}
+.wow-chip{cursor:default; padding:3px 8px; font-size:.9rem}
+.wow-legend{margin:8px 0 0; font-size:.85rem}

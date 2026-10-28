@@ -441,7 +441,7 @@ function renderVocabularyTab() {
     const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[] } }[]).map(row => [row.student_id, row.vocab || {}]));
     const focusOf = (k: typeof list[number]) => { try { const v = JSON.parse(k.quiz_overrides?.spellFocus || '[]'); return Array.isArray(v) ? v.map(String) : []; } catch { return []; } };
     roster = list.map(k => ({ id: k.id, name: k.display_name, stats: byStudent.get(k.id)?.stats || {}, flagged: Array.isArray(byStudent.get(k.id)?.flagged) ? byStudent.get(k.id)!.flagged! : [],
-      mistakes: Array.isArray(byStudent.get(k.id)?.mistakes) ? byStudent.get(k.id)!.mistakes! : [], spellFocus: focusOf(k) }));
+      mistakes: Array.isArray(byStudent.get(k.id)?.mistakes) ? byStudent.get(k.id)!.mistakes! : [], spellFocus: focusOf(k), saved: byStudent.has(k.id) ? byStudent.get(k.id) : null }));   // saved: her whole Word Workshop state (week, Hall of Fame, home words) for the three lists
     draw();
   })();
 }

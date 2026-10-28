@@ -62,8 +62,11 @@ const DEFAULT_KHAN_PASS = 80;
 export const UNIT_TESTS: Record<string, [string, string]> = {
   nouns: ['elaProgress', 'final-test'], verbs: ['elaProgress', 'verbs:final-test'], pronouns: ['elaProgress', 'pronouns:final-test'], modifiers: ['elaProgress', 'modifiers:final-test'], prepositions: ['elaProgress', 'prepositions:final-test'], punctuation: ['elaProgress', 'punctuation:final-test'],
   history: ['historyProgress', 'history:final-test'], history2: ['historyProgress', 'history2:final-test'],
-  history3: ['historyProgress', 'history3:final-test'], history4: ['historyProgress', 'history4:final-test'], history5: ['historyProgress', 'history5:final-test'],
-  bio1: ['scienceProgress', 'bio1:final-test'], bio2: ['scienceProgress', 'bio2:final-test']
+  history3: ['historyProgress', 'history3:final-test'], history4: ['historyProgress', 'history4:final-test'], history5: ['historyProgress', 'history5:final-test'], history7: ['historyProgress', 'history7:final-test'],
+  bio1: ['scienceProgress', 'bio1:final-test'], bio2: ['scienceProgress', 'bio2:final-test'],
+  history6: ['historyProgress', 'history6:final-test'],
+  history8: ['historyProgress', 'history8:final-test'],
+  history9: ['historyProgress', 'history9:final-test']
 };
 /* the Khan topics for a course: one per block, keyed like lesson_links ("<courseId>:<groupId>") */
 const khanTopics = (courseId: string) => (lessonLinkSlots(courseId) as LinkSlot[]).filter(slot => slot.key.split(':').length === 2);

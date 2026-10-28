@@ -1,7 +1,8 @@
 /* Teacher app: Vocabulary tab (docs: VOCAB.md). The class word list lives in classes.game_settings.vocab
    ({builtIn, words, focus}), which students already receive, so no new database column is needed. */
 import { esc } from './report';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets } from '../shared/vocab';
+import { weekOf } from '../shared/wordPuzzles';
 import { patternSummary, patternById } from '../shared/spellingPatterns';
 import { dictLinkHTML } from './wordPick';
 
@@ -10,7 +11,7 @@ export interface ClassVocab { builtIn?: boolean; words?: VocabWord[]; focus?: st
 interface VocabClass { id: string; name: string; game_settings: { vocab?: ClassVocab; [key: string]: unknown } | null }
 type SaveVocab = (vocab: ClassVocab) => Promise<string | null>;
 /* each student's answer history per word (state.vocab.stats), or null if it couldn't be loaded */
-export type VocabRoster = { id?: string; name: string; stats: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[]; spellFocus?: string[] }[] | null | undefined;
+export type VocabRoster = { id?: string; name: string; stats: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[]; spellFocus?: string[]; saved?: unknown }[] | null | undefined;
 /** saves the words picked for one student's spelling patterns (students.quiz_overrides.spellFocus); [] clears them */
 export type SaveSpellFocus = (studentId: string, words: string[]) => Promise<string | null>;
 
@@ -20,16 +21,15 @@ let leftover = '';   /* words that still need a meaning, put back in the import 
 export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVocab, roster: VocabRoster, saveSpellFocus?: SaveSpellFocus) {
   const vocab: ClassVocab = cls.game_settings?.vocab || {};
   const builtIn = vocab.builtIn !== false, words = (vocab.words || []).map(validWord).filter(Boolean) as VocabWord[];
-  const { all, focus } = vocabList({ classVocab: vocab }) as { all: VocabWord[]; focus: VocabWord[] };
-  const focusSet = new Set((vocab.focus || []).map(wordKey)), allFocus = !focusSet.size;
-  const sets = [...new Set(all.map(v => v.set || 'My words'))];
+  const { all } = vocabList({ classVocab: vocab }) as { all: VocabWord[] };
+  const focusSet = new Set((vocab.focus || []).map(wordKey));
   const message = flash; flash = '';
   const refill = leftover; leftover = '';
   const progress = roster === undefined ? '<p class="muted">Loading students…</p>' : roster === null ? '<p class="err">Students’ progress could not be loaded right now.</p>'
     : !roster.length ? '<p class="muted">No students yet.</p>'
     : `<table class="steptable"><tr><th>Student</th><th>Solid</th><th>Getting there</th><th>Needs practice</th><th>Not seen</th><th>Words to reteach</th></tr>${roster.map(st => {
-        const count = (s: string) => focus.filter(v => wordStatus(st.stats[wordKey(v.w)]) === s).length;
-        const weak = focus.filter(v => wordStatus(st.stats[wordKey(v.w)]) === 'work').slice(0, 6).map(v => esc(v.w)).join(', ');
+        const count = (s: string) => all.filter(v => wordStatus(st.stats[wordKey(v.w)]) === s).length;
+        const weak = all.filter(v => wordStatus(st.stats[wordKey(v.w)]) === 'work').slice(0, 6).map(v => esc(v.w)).join(', ');
         return `<tr><td>${esc(st.name)}</td><td>${count('solid')}</td><td>${count('close')}</td><td>${count('work')}</td><td>${count('new')}</td><td>${weak || '<span class="muted">–</span>'}</td></tr>`; }).join('')}</table>`;
   /* words students flagged (📌) that no list has yet: one row per word, with who flagged it and where */
   const flaggedMap = new Map<string, { names: string[]; ctx: string }>(), dismissedSet = new Set((vocab.dismissed || []).map(wordKey));
@@ -61,21 +61,17 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
   <h3>Hardest words for the class</h3>${hardest.length ? `<table class="steptable"><tr><th>Word</th><th>Right / tried</th><th>Students who missed it</th></tr>${hardest.map(([w, t]) => `<tr><td><b>${esc(w)}</b></td><td>${t.right}/${t.tried}</td><td>${esc([...t.who].join(', '))}</td></tr>`).join('')}</table>` : '<p class="muted">No missed words yet.</p>'}
   <h3>Each student</h3>${perStudent}</div>` : '';
     pane.innerHTML = `${message ? `<p class="status">${esc(message)}</p>` : ''}
+    ${studentListsHTML(roster, vocab)}
     <div class="card"><h2>Vocabulary (Word Workshop)</h2>
       <p class="muted" style="margin-top:0">Students practice these words with cards, a 60-second sprint and spelling in the 🔤 Word Workshop. Changes apply to <b>${esc(cls.name)}</b>. Parents can also add words at home behind the grown-up PIN.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="vbBuiltIn" ${builtIn ? 'checked' : ''}> Include Pet World’s word list (${VOCAB_WORDS.length} grade 4–6 academic words, written for Pet World)</label>
-      <h3>Add or import words</h3><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>, with an optional example sentence that uses ___ for the word: <code>word - meaning - The ___ was here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them; use an existing name such as <code>Set: Set 3</code> to add to one of Pet World’s sets (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can paste two or three columns from a spreadsheet, or a JSON list with a <code>"set"</code> field. Use your own wording or your curriculum’s word list; Pet World doesn’t include published programs’ definitions.</p>
+      <h3>Add or import words</h3><p class="muted" style="margin-top:0">Words you add go in every student’s <b>Unmastered</b> list and can be drawn the next Monday. One per line: <code>word - meaning</code>, with an optional example sentence that uses ___ for the word: <code>word - meaning - The ___ was here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them; use an existing name such as <code>Set: Set 3</code> to add to one of Pet World’s sets (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can paste two or three columns from a spreadsheet, or a JSON list with a <code>"set"</code> field. Use your own wording or your curriculum’s word list; Pet World doesn’t include published programs’ definitions.</p>
       <textarea id="vbImport" rows="6" style="width:100%; font-family:inherit">${esc(refill)}</textarea>
       <div class="row"><button class="btn primary" id="vbAdd">Add these words</button><span class="status" id="vbMsg"></span></div>
       ${words.length ? `<h3>Class words (${words.length})</h3><table class="steptable"><tr><th>Word</th><th>Meaning</th><th>Sentence</th><th></th></tr>${words.map(v => `<tr><td><b>${esc(v.w)}</b><br>${dictLinkHTML(v.w)}</td><td>${esc(v.d)}</td><td class="muted">${esc(v.s || '')}</td><td><button class="btn small" data-vb-remove="${esc(v.w)}">Remove</button></td></tr>`).join('')}</table>` : ''}
     </div>
-    <div class="card"><h2>Focus words</h2><p class="muted" style="margin-top:0">${allFocus ? 'All words are in focus (the default).' : `${focusSet.size} of ${all.length} words are in focus.`} Students practice only focus words. A parent’s focus choice at home wins on that student’s device.</p>
-      <div class="row"><button class="btn small" id="vbAll">Tick all</button><button class="btn small" id="vbNone">Untick all</button></div>
-      ${sets.map(set => `<details${set === 'My words' ? ' open' : ''}><summary><b>${esc(set)}</b></summary><div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:4px; margin:6px 0">${all.filter(v => (v.set || 'My words') === set).map(v => `<label title="${esc(v.d)}" style="display:flex; gap:6px; align-items:center"><input type="checkbox" data-vb-focus="${esc(v.w)}" ${allFocus || focusSet.has(wordKey(v.w)) ? 'checked' : ''}> ${esc(v.w)}</label>`).join('')}</div></details>`).join('')}
-      <div class="row"><button class="btn primary" id="vbSaveFocus">Save focus words</button></div>
-    </div>
     ${flaggedCard}${spellingCard(roster, all, focusSet)}
-    <div class="card"><h2>Class progress on focus words</h2>${progress}</div>${wordsCard}`;
+    <div class="card"><h2>Class progress on all words</h2>${progress}</div>${wordsCard}`;
   /* spelling patterns: practice the suggested words */
   /* spelling patterns: the ticked words go on the student's practice list, and any that aren't on the class list or in
      the focus words are added there too, so she practices them in every mode */
@@ -132,14 +128,35 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
       const dismissed = [...new Set([...(vocab.dismissed || []), wordKey(b.dataset.vbFlagDismiss)])].slice(-300);
       void commit({ ...vocab, dismissed }, `${b.dataset.vbFlagDismiss} dismissed.`);
     }));
-    const boxes = () => [...pane.querySelectorAll<HTMLInputElement>('[data-vb-focus]')];
-  pane.querySelector('#vbAll')!.addEventListener('click', () => boxes().forEach(x => { x.checked = true; }));
-  pane.querySelector('#vbNone')!.addEventListener('click', () => boxes().forEach(x => { x.checked = false; }));
-  pane.querySelector('#vbSaveFocus')!.addEventListener('click', () => {
-    const picked = boxes().filter(x => x.checked).map(x => wordKey(x.dataset.vbFocus));
-    if (picked.length < 4) { alert('Pick at least 4 focus words.'); return; }
-    void commit({ ...vocab, focus: picked.length === boxes().length ? [] : picked }, 'Focus words saved.');
-  });
+}
+
+/* ---------- each student's three lists (owner, Oct 28, 2026; docs/VOCAB.md "Words of the week") ----------
+   All her words are one list: Mastered (her 🏆 Hall of Fame), Unmastered (everything else, including words just
+   added), and This week's words (up to 20 unmastered, carried-over first, plus 5 mastered to review), read from her save
+   (saves.state->vocab). The old focus-word picker is gone: the game no longer narrows practice to focus words. */
+const TAG_TEXT: Record<string, string> = { carried: '🔁 carried over', new: '🆕 new', review: '🔄 review' };
+function studentListsHTML(roster: VocabRoster, vocab: ClassVocab): string {
+  const intro = `<p class="muted" style="margin-top:0">Each student’s words are one list. <b>This week’s words</b>: up to 20 unmastered words (the ones she didn’t master last week carry over first and count toward the 20; the rest are drawn at random) plus 5 mastered words to review. Friday’s check (📇 flashcards, then she types each word from its meaning) moves the ones she gets right to <b>Mastered</b>; a review word she misses goes back to <b>Unmastered</b>. Words you add below go in <b>Unmastered</b>.</p>`;
+  if (roster === undefined) return `<div class="card"><h2>📚 Each student’s words</h2>${intro}<p class="muted">Loading students…</p></div>`;
+  if (roster === null) return `<div class="card"><h2>📚 Each student’s words</h2>${intro}<p class="err">Students’ words could not be loaded right now.</p></div>`;
+  if (!roster.length) return `<div class="card"><h2>📚 Each student’s words</h2>${intro}<p class="muted">No students yet.</p></div>`;
+  const thisWeek = weekOf(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10));
+  const rows = roster.map(st => {
+    const saved = normalizeVocabState(st.saved && typeof st.saved === 'object' ? JSON.parse(JSON.stringify(st.saved)) : {}) as Parameters<typeof wordBuckets>[0] & { home?: { builtIn?: boolean; words?: VocabWord[] } };
+    const list = vocabList({ classVocab: vocab, home: saved.home }) as { all: VocabWord[] };
+    const extra = (st.spellFocus || []).map(w => findWord([...list.all, ...(PATTERN_WORDS as VocabWord[])], w)).filter((v): v is VocabWord => !!v && !findWord(list.all, v.w));
+    const b = wordBuckets(saved, [...list.all, ...extra]) as { mastered: VocabWord[]; unmastered: VocabWord[]; week: (VocabWord & { tag: string; right: boolean; result: number | null })[]; weekId: string; checkDone: boolean; cards: { first: number; n: number; skipped?: boolean } | null };
+    const n = (tag: string) => b.week.filter(x => x.tag === tag).length, right = b.week.filter(x => x.right).length;
+    const friday = b.checkDone ? `⭐ ${b.week.filter(x => x.result === 1 && x.tag !== 'review').length} mastered, ${b.week.filter(x => x.result === 0).length} stay${b.cards && !b.cards.skipped ? ` · 📇 ${b.cards.first}/${b.cards.n} cards first try` : ''}` : 'Friday check not done yet';
+    const stale = b.weekId && b.weekId !== thisWeek ? ` <span class="muted">(week of ${esc(b.weekId)}; her new list is drawn when she next opens Pet World)</span>` : '';
+    const st3 = (v: VocabWord) => { const s = wordStatus(st.stats[wordKey(v.w)]); return s === 'solid' ? '✅' : s === 'close' ? '🟡' : s === 'work' ? '🔴' : ''; };
+    const box = (title: string, body: string) => `<div class="vb-list"><h3>${title}</h3><div class="vb-scroll">${body}</div></div>`;
+    const weekBody = b.week.length ? `<table class="steptable"><tr><th>Word</th><th>Kind</th><th>Right this week</th><th>Friday</th></tr>${b.week.map(x => `<tr><td title="${esc(x.d)}"><b>${esc(x.w)}</b></td><td>${TAG_TEXT[x.tag]}</td><td>${x.right ? '✅' : '<span class="muted">–</span>'}</td><td>${x.result === 1 ? '⭐ mastered' : x.result === 0 ? (x.tag === 'review' ? '↩️ back to unmastered' : '↩️ stays') : '<span class="muted">–</span>'}</td></tr>`).join('')}</table>` : '<p class="muted">No list yet: it’s drawn the first time she opens Pet World this week.</p>';
+    const chips = (xs: VocabWord[], mark: (v: VocabWord) => string) => xs.length ? xs.map(v => `<span class="chip" title="${esc(v.d || '')}">${mark(v)} ${esc(v.w)}</span>`).join(' ') : '<span class="muted">None yet.</span>';
+    return `<details${roster.length === 1 ? ' open' : ''}><summary><b>${esc(st.name)}</b> <span class="muted">⭐ ${b.mastered.length} mastered · ${b.unmastered.length} unmastered · this week ${b.week.length} (${n('carried')} carried over, ${n('new')} new, ${n('review')} review) · ✅ ${right} right this week · ${friday}</span></summary>${stale}
+      <div class="vb-lists">${box(`This week’s words (${b.week.length})`, weekBody)}${box(`Unmastered (${b.unmastered.length})`, `<p class="muted" style="margin:0 0 4px">✅ solid · 🟡 getting there · 🔴 needs practice</p>${chips(b.unmastered, st3)}`)}${box(`⭐ Mastered (${b.mastered.length})`, chips(b.mastered, () => '⭐'))}</div></details>`;
+  }).join('');
+  return `<div class="card"><h2>📚 Each student’s words</h2>${intro}${rows}</div>`;
 }
 
 /* ---------- spelling patterns (docs/VOCAB.md, "Spelling patterns") ----------

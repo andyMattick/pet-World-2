@@ -229,8 +229,13 @@ const keys = (list, max = VOCAB_LIMITS.list) => (Array.isArray(list) ? list : []
 function weeklyState(out){
   const wk = out.week && typeof out.week === 'object' && DAY_KEY.test(out.week.id) ? out.week : null;
   const ck = wk?.check && typeof wk.check === 'object' ? wk.check : null;
-  const week = wk ? { id: wk.id, words: keys(wk.words, 80), kept: Math.max(0, Math.round(+wk.kept || 0)), added: Math.max(0, Math.round(+wk.added || 0)), mastered: keys(wk.mastered, 80),
-    check: ck ? { day: DAY_KEY.test(ck.day) ? ck.day : '', done: !!ck.done, results: Object.fromEntries(Object.entries(ck.results && typeof ck.results === 'object' ? ck.results : {}).filter(([k]) => k.length <= VOCAB_LIMITS.word).slice(0, 80).map(([k, v]) => [wordKey(k), v ? 1 : 0])) } : null } : null;
+  /* carried: last week's unmastered words; review: mastered words drawn to review; right: words she answered right this
+     week anywhere in Word Workshop; check.cards: the Friday flashcard warm-up (first: known on the first try, n: cards) */
+  const words = wk ? keys(wk.words, 80) : [], inWeek = list => keys(list, 80).filter(k => words.includes(k));
+  const cards = ck?.cards && typeof ck.cards === 'object' ? { first: Math.max(0, Math.round(+ck.cards.first || 0)), n: Math.max(0, Math.round(+ck.cards.n || 0)), skipped: !!ck.cards.skipped } : null;
+  const week = wk ? { id: wk.id, words, kept: Math.max(0, Math.round(+wk.kept || 0)), added: Math.max(0, Math.round(+wk.added || 0)), mastered: keys(wk.mastered, 80),
+    carried: Array.isArray(wk.carried) ? inWeek(wk.carried) : words.slice(0, Math.max(0, Math.round(+wk.kept || 0))), review: inWeek(wk.review), right: inWeek(wk.right),
+    check: ck ? { day: DAY_KEY.test(ck.day) ? ck.day : '', done: !!ck.done, ...(cards ? { cards } : {}), results: Object.fromEntries(Object.entries(ck.results && typeof ck.results === 'object' ? ck.results : {}).filter(([k]) => k.length <= VOCAB_LIMITS.word).slice(0, 80).map(([k, v]) => [wordKey(k), v ? 1 : 0])) } : null } : null;
   const hall = (Array.isArray(out.hall) ? out.hall : []).filter(h => h && typeof h.w === 'string' && h.w.length <= VOCAB_LIMITS.word).map(h => ({ w: wordKey(h.w), wk: DAY_KEY.test(h.wk) ? h.wk : '' })).slice(-VOCAB_LIMITS.list);
   const pz = out.puzzle && typeof out.puzzle === 'object' && DAY_KEY.test(out.puzzle.day) && typeof out.puzzle.type === 'string' ? out.puzzle : null;
   const puzzle = pz ? { day: pz.day, first: DAY_KEY.test(pz.first) ? pz.first : pz.day, type: pz.type.slice(0, 12), words: keys(pz.words, 12), solved: keys(pz.solved, 12), helped: keys(pz.helped, 12),
@@ -260,6 +265,23 @@ export function normalizeVocabState(v){
     home: { builtIn: home.builtIn !== false, words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) },
     ...weeklyState(out)
+  };
+}
+
+/* The three lists the teacher app and the Words of the Week card show (docs/VOCAB.md, "Words of the week"): mastered
+   (the Hall of Fame), unmastered (every other word on her list, including words just added), and this week's words, each
+   tagged carried (from last week), new (drawn this week) or review (a mastered word), with whether she has answered it
+   right this week and, after Friday's check, its result (1 mastered, 0 stays). `vocab` is a normalized state. */
+export function wordBuckets(vocab, all){
+  const v = vocab || {}, hall = new Set((v.hall || []).map(h => wordKey(h.w))), wk = v.week || null;
+  const byKey = new Map((all || []).map(x => [wordKey(x.w), x])), word = k => byKey.get(k) || { w: k, d: '' };
+  const carried = new Set(wk?.carried || []), review = new Set(wk?.review || []), right = new Set(wk?.right || []), results = wk?.check?.results || {};
+  const week = (wk?.words || []).map(k => ({ ...word(k), key: k, tag: review.has(k) ? 'review' : carried.has(k) ? 'carried' : 'new', right: right.has(k), result: k in results ? results[k] : null }));
+  const sortW = list => list.sort((a, b) => a.w.localeCompare(b.w));
+  return {
+    mastered: sortW([...hall].map(word)),
+    unmastered: sortW((all || []).filter(x => !hall.has(wordKey(x.w)))),
+    week, weekId: wk?.id || '', checkDone: !!wk?.check?.done, cards: wk?.check?.cards || null
   };
 }
 

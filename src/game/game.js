@@ -13,7 +13,7 @@ import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS, wordBuckets } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
@@ -28,7 +28,8 @@ import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, 
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
-import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
+import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
+import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -9433,6 +9434,37 @@ function planCardHTML(){
   }), brainRows);
   return `<div class="card extras-card plan-card" style="grid-column:1/-1"><h2>📋 Today’s plan</h2>${helpHTML}${outsidePlanHTML()}${warm ? '<p class="muted" style="margin:0 0 6px">☀️ Warm-up first: finish the warm-up (Fact Sprint, Word Workshop), then pick a subject.</p>' : ''}${first.length ? `<p class="muted" style="margin:0 0 6px">⏪ ${warm ? 'After the warm-up, finish' : 'Finish'} what’s left from before, then the rest of today’s plan.</p>` : ''}${fixHTML}${bibleRow}${wheelPlanRow()}${rows.join('')}${outsideRowsHTML()}</div>`;
 }
+/* 📚 Words of the Week card, under Today's plan (owner, Oct 28, 2026; docs/VOCAB.md "Words of the week"): this week's
+   words, how many she has answered right this week (anywhere in Word Workshop), which carried over from last week, the
+   review words, and Friday's result. Compact for a phone: counts and a bar, with "See all words" for the lists. */
+let wowOpen = false;
+function wordsWeekCardHTML(){
+  const all = vocabWords().all; if (all.length < 4) return '';
+  ensureWeek();
+  const b = wordBuckets(S.vocab, all), n = b.week.length; if (!n) return '';
+  const group = tag => b.week.filter(x => x.tag === tag), carried = group('carried'), fresh = group('new'), review = group('review');
+  const right = b.week.filter(x => x.right).length, day = weekdayNum(), ck = S.vocab.week.check;
+  let fri;
+  if (b.checkDone) {
+    const won = b.week.filter(x => x.result === 1 && x.tag !== 'review').length, stays = b.week.filter(x => x.result === 0).length, revDone = review.filter(x => x.result !== null);
+    fri = `🏁 <b>Friday check:</b> ⭐ ${won} mastered · ${stays} stay${stays === 1 ? 's' : ''}${revDone.length ? ` · 🔄 ${revDone.filter(x => x.result === 1).length} of ${revDone.length} review kept` : ''}${b.cards && !b.cards.skipped ? ` · 📇 ${b.cards.first} of ${b.cards.n} cards first try` : ''}`;
+  } else if (checkDue()) {
+    const did = Object.keys(ck?.results || {}).length;
+    fri = `🏁 <b>Mastery check ${did ? `under way: ${did} of ${weekWordObjs().length} done` : 'today'}!</b> ${did ? '' : '📇 Flashcards first, then type each word.'}<button type="button" class="btn small berry" data-open="vocab" data-wk-check>${did ? 'Finish it' : 'Start'}</button>`;
+  } else fri = `🏁 Mastery check ${day >= 1 && day <= 4 ? `in ${5 - day} day${5 - day === 1 ? '' : 's'} (Friday)` : 'on Friday'}: 📇 flashcards, then type each word.`;
+  const chip = x => { const mark = x.result === 1 ? '⭐' : x.result === 0 ? '↩️' : x.right ? '✅' : '';
+    return `<span class="vocab-chip wow-chip st-${x.result === 1 ? 'solid' : x.result === 0 ? 'work' : x.right ? 'close' : 'new'}" title="${esc(x.d)}">${mark ? `${mark} ` : ''}${esc(x.w)}</span>`; };
+  const list = (title, xs) => xs.length ? `<h4 class="vocab-set">${title} (${xs.length})</h4><div class="vocab-grid">${xs.map(chip).join('')}</div>` : '';
+  return `<div class="card extras-card wow-card" style="grid-column:1/-1"><div class="wow-head"><h2>📚 Words of the Week</h2><button type="button" class="btn small${checkDue() ? '' : ' berry'}" data-open="vocab">Practice</button></div>
+    <p class="wow-stats"><span><b>${n}</b> words</span><span>✅ <b>${right}</b> right this week</span>${carried.length ? `<span>🔁 <b>${carried.length}</b> carried over</span>` : ''}${review.length ? `<span>🔄 <b>${review.length}</b> review</span>` : ''}</p>
+    <div class="wow-bar" role="img" aria-label="${right} of ${n} words right this week"><i style="width:${Math.round(100 * right / n)}%"></i></div>
+    <p class="wow-fri">${fri}</p>
+    <details class="wow-all"${wowOpen ? ' open' : ''}><summary>See all words</summary>
+      ${list('🔁 Carried over from last week', carried)}${list('🆕 New this week', fresh)}${list('🔄 Review (mastered before)', review)}
+      <p class="muted wow-legend">✅ right this week · ⭐ mastered on Friday · ↩️ stays for next week</p></details></div>`;
+}
+document.addEventListener('toggle', e => { if (e.target.classList?.contains('wow-all')) wowOpen = e.target.open; }, true);
+document.addEventListener('click', e => { if (e.target.closest('[data-wk-check]') && !$('#scr-vocab').hidden && checkDue() && !checkRun) { vocabTab = 'week'; renderVocab(); startCheck(); } });
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
   const ownedDecor = S.decor.map(id => REWARDS.find(reward => reward.id === id)).filter(Boolean);
@@ -9444,7 +9476,7 @@ function renderHome(){
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = planCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">${dayLogToday().sent ? '📅 Today’s record (saved) · save again' : '✅ I’m done for today'}</button>` + hoodSwitchHTML();
+  let h = planCardHTML() + wordsWeekCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">${dayLogToday().sent ? '📅 Today’s record (saved) · save again' : '✅ I’m done for today'}</button>` + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {
@@ -9919,8 +9951,8 @@ $('#town').addEventListener('click', e => {
   else if (id === 'bible') openBible('today');
 });
 
-const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5';
-const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2'};
+const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5' || id === 'history6' || id === 'history7' || id === 'history8' || id === 'history9';
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
 const isScienceCourse = id => /^bio\d+$/.test(id);
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id) || id === 'prepositions';
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
@@ -9970,6 +10002,23 @@ const ROLE_CARDS = {
   silkRoad:{emoji:'🐫',who:'a Sogdian caravan merchant',where:'Samarkand, about 700 CE',intro:'Your camels carry silk west and silver east. Every oasis brings new goods, languages, and beliefs.'},
   expandingRoutes:{emoji:'⛵',who:'Ibn Battuta, a traveler from Morocco',where:'the Indian Ocean and Africa, about 1350 CE',intro:'You have traveled by ship and by camel from Morocco to China and down to Mali. People ask what you have seen.'},
   songChina:{emoji:'🏮',who:'a merchant in Song China',where:'Kaifeng, China, about 1100 CE',intro:'Your shop sells porcelain and silk, you are paid in paper money, and your son is studying for the exams.'},
+  enlightenRev:{emoji:'🖨️',who:'a printer of books and pamphlets',where:'Paris, about 1770',intro:'Your press prints the newest books about reason, rights, and who should rule. Customers stop by your shop to ask what the books say.'},
+  atlanticRevs:{emoji:'⛵',who:'a free Black sailor carrying news around the Atlantic',where:'the Atlantic world, 1776 to 1825',intro:'Your ship sails between Philadelphia, Bordeaux, Cap-Français, and Cartagena. In every port, people crowd around to hear the news of revolution you carry.'},
+  nationalism19:{emoji:'🗺️',who:'a volunteer in Garibaldi’s Red Shirts',where:'Italy, 1848 to 1861',intro:'You marched for a free Rome in 1849 and sailed to Sicily with Garibaldi in 1860. People ask why you would risk everything for a country called Italy.'},
+  industrialRev:{emoji:'🚂',who:'an apprentice engineer',where:'Manchester, England, about 1830',intro:'You help build and repair the steam engines that run the cotton mills, and you just rode the new railway to Liverpool. Visitors ask how your city changed so fast.'},
+  egyptJapan:{emoji:'📖',who:'Rifa’a al-Tahtawi, an Egyptian scholar',where:'Cairo and Paris, 1826 to 1870',intro:'Muhammad Ali sent you to study in Paris, and you came home to translate books and run a school. Now you follow the news from Japan, which is trying to modernize too.'},
+  workingClass:{emoji:'🧵',who:'Ottilie Baader, a seamstress and labor organizer',where:'Berlin, about 1890',intro:'You have sewn shirt collars on a machine since you were a teenager, often from early morning until late at night. Now you speak at meetings about workers’ rights.'},
+  reformMovements:{emoji:'🖋️',who:'Harriet Forten Purvis, an abolitionist',where:'Philadelphia, about 1840',intro:'You and the women of your family helped start an anti-slavery society, and your home shelters people escaping slavery. Visitors ask why you speak out.'},
+  newImperialism:{emoji:'📜',who:'Lin Zexu, a Chinese official',where:'Canton (Guangzhou), China, 1839',intro:'The emperor sent you to stop the British opium trade that is harming millions of Chinese people. You have just written a letter to Queen Victoria.'},
+  resistColonial:{emoji:'🪑',who:'Yaa Asantewaa, Queen Mother of Ejisu',where:'the Asante kingdom (Ghana), 1900',intro:'The British have sent your king into exile, and now their governor demands the Golden Stool, the sacred symbol of the Asante nation. Your people look to you.'},
+  /* History Unit 8: Global Conflict. Witnesses and workers only; 8.7 The Holocaust has no role card (docs/HARD-LESSONS.md). */
+  wwiCauses:{emoji:'🗞️',who:'a newspaper reporter in Sarajevo',where:'Bosnia, Austria-Hungary, June 1914',intro:'You were on the street when the archduke’s car took a wrong turn. Now readers want to know how one killing could start a war.'},
+  wwiTotalWar:{emoji:'🩺',who:'a nurse at a field hospital',where:'France, 1917',intro:'You care for wounded soldiers near the front, and letters from home say the whole country is working for the war. Visitors ask what this war is like.'},
+  worldRemade:{emoji:'✒️',who:'a reporter at the Paris Peace Conference',where:'Paris, 1919',intro:'Leaders of the winning countries are redrawing the map of the world. Readers back home ask what the peace will mean.'},
+  interwarIdeologies:{emoji:'📻',who:'a radio reporter covering Europe',where:'Europe, the 1930s',intro:'The Depression has left millions out of work, and new leaders promise to fix everything. Listeners ask you what is happening and why.'},
+  secondWorldWar:{emoji:'🏭',who:'a worker in a wartime factory',where:'the home front, 1943',intro:'You build airplane parts on the night shift while news of the war comes over the radio. Neighbors ask how the war began and how it is going.'},
+  coldWar:{emoji:'📡',who:'a journalist covering the Cold War',where:'Berlin, Havana, and beyond, 1946 to 1991',intro:'From the Berlin Wall to the Cuban Missile Crisis, you report on a world split between two superpowers.'},
+  decolonization:{emoji:'🗳️',who:'a student in Accra',where:'Ghana, March 1957',intro:'Tonight the Gold Coast becomes the independent nation of Ghana. Friends ask how colonies around the world are winning their freedom.'},
   cellsOrganisms:{emoji:'🔬',who:'a tour guide at the Nature Center’s Microscope Corner',where:'Pet World Nature Center',intro:'Your tour group is peeking through microscopes at pond water and onion skin.'},
   cellPartsU:{emoji:'🧫',who:'a tour guide at the Giant Cell Model',where:'Pet World Nature Center',intro:'Your group walks right inside a model cell as big as a room.'},
   cellPartsA:{emoji:'🧩',who:'a tour guide running the Cell Detective game',where:'Pet World Nature Center',intro:'Visitors describe a cell problem, and you figure out which part is involved.'},
@@ -9988,7 +10037,24 @@ const ROLE_CARDS = {
   plantStructuresU:{emoji:'🌻',who:'a tour guide in the Petting Zoo’s Pollinator Patch',where:'Pet World Petting Zoo',intro:'Bees buzz around squash flowers and sunflowers next to the goat pen.'},
   plantStructuresA:{emoji:'🐿️',who:'a tour guide on the Petting Zoo’s Orchard Walk',where:'Pet World Petting Zoo',intro:'Squirrels bury acorns, burrs stick to the goats, and students are running a bee experiment.'},
   growthEnvU:{emoji:'📏',who:'a tour guide at the Petting Zoo’s Weigh-In Station',where:'Pet World Petting Zoo',intro:'Keepers weigh and measure the young animals and the garden seedlings every week.'},
-  growthEnvA:{emoji:'🦆',who:'a tour guide at the Petting Zoo’s Duck Pond',where:'Pet World Petting Zoo',intro:'This summer the pond turned bright green, and your group wants to know why.'}
+  growthEnvA:{emoji:'🦆',who:'a tour guide at the Petting Zoo’s Duck Pond',where:'Pet World Petting Zoo',intro:'This summer the pond turned bright green, and your group wants to know why.'},
+  /* History Unit 6 (Oct 28, 2026). The Transatlantic Slave Trade (slaveTrade) has no role card on purpose (docs/HARD-LESSONS.md). */
+  mongolEmpire:{emoji:'🐎',who:'a rider in the yam, the Mongol relay post',where:'the Mongol Empire, about 1260 CE',intro:'You carry messages and travelers’ passes from station to station across the empire. People along the road ask you about the Mongols.'},
+  blackDeath:{emoji:'🕯️',who:'a shopkeeper in Florence',where:'Florence, Italy, 1348 CE',intro:'A terrible sickness has reached your city from the ports. Neighbors and travelers ask you what you know about it.'},
+  afroEurasia:{emoji:'📚',who:'a bookseller in Venice',where:'Venice, about 1520 CE',intro:'Your shop sells printed books, and ships bring spices, news, and ideas from all over Afro-Eurasia. Customers ask you about the changing world.'},
+  americasStates:{emoji:'🌽',who:'a Mexica farmer who tends chinampa fields',where:'Tenochtitlan, about 1500 CE',intro:'Your family grows maize and beans on raised fields in the lake around the great city. Travelers ask how your world is organized.'},
+  americasTrade:{emoji:'🎒',who:'a pochteca, a Mexica long-distance trader',where:'Tenochtitlan and beyond, about 1500 CE',intro:'You lead porters carrying cloth, cacao, and feathers to faraway markets. Travelers ask you how trade works across the Americas.'},
+  empiresExpand:{emoji:'🗺️',who:'a mapmaker at the Ottoman court',where:'Istanbul, about 1550 CE',intro:'Sultan Süleyman’s empire stretches across three continents. Visitors ask you about the great land empires of your time.'},
+  ageExploration:{emoji:'⛵',who:'a merchant in the Swahili port of Malindi',where:'the East African coast, 1498 CE',intro:'Ships from Arabia, India, and China have traded in your port for centuries. Now strange ships from Portugal have arrived.'},
+  columbianExchange:{emoji:'🍠',who:'a farmer in southern China',where:'Fujian, China, about 1600 CE',intro:'Your family has started planting sweet potatoes and maize, new crops that came across the oceans from the Americas.'},
+  exploreColumbian:{emoji:'📜',who:'a Nahua scribe recording the history of the conquest',where:'Mexico City, about 1570 CE',intro:'Elders tell you what they saw when the Spanish arrived, and you write their memories down in Nahuatl.'},
+  /* History Unit 9 (Oct 28, 2026). Global Conflicts (9.6) has no role card on purpose: plain feedback for genocide and 9/11. */
+  globalGoodBad:{emoji:'📦',who:'a dockworker at the Port of Singapore',where:'Singapore, 1999',intro:'Huge container ships come and go all day, carrying goods between dozens of countries. Visitors ask what all this trade means.'},
+  globalEconomy:{emoji:'📰',who:'a reporter who covers the world economy',where:'around the world, 2009',intro:'You are writing a series about how products, money, and jobs move between countries. Your readers send in questions.'},
+  greatAccel:{emoji:'🌾',who:'a retired plant scientist who worked on the Green Revolution',where:'New Delhi, India, 2023',intro:'In the 1960s you helped breed new wheat. Now students ask how fast the world has changed in your lifetime.'},
+  globalCommunities:{emoji:'🇺🇳',who:'a tour guide at United Nations headquarters',where:'New York City, today',intro:'Visitors from around the world ask you about the UN, human rights, and the people who fought for them.'},
+  experiencingGlobal:{emoji:'🏛️',who:'a museum curator',where:'a museum of migration and culture, 2023',intro:'Your exhibits tell the stories of people on the move and of objects returning home. Visitors stop to ask questions.'},
+  anthropocene:{emoji:'🧊',who:'a scientist who drills ice cores',where:'a research station in Antarctica, 2024',intro:'Your ice cores hold air bubbles thousands of years old. Visitors ask how humans have changed the planet.'}
 };
 /* Difficulty-aware picking. Untagged questions count as level 1, so untagged banks still pick at random. */
 const questionLevel = question => question.difficulty || 1;
@@ -10003,6 +10069,22 @@ function leanHard(pool){
     .sort((a, b) => b.key - a.key).map(item => item.question);
 }
 const HISTORY_PROJECTS = {
+  /* History Unit 7: pick one project (docs/HISTORY-UNIT7.md, docs/HARD-LESSONS.md) */
+  history7:{pick:true,title:'Front Page',summary:'Pick one year from the long nineteenth century and write the front page of a newspaper from that year: the big story, how it felt to an ordinary person, and someone who disagreed.',steps:[
+    {key:'year',label:'1. Pick your year and place: 1789 (Paris), 1804 (Haiti), 1848 (Europe), 1868 (Japan), 1893 (New Zealand), or another year from this unit. Name your newspaper.'},
+    {key:'headline',label:'2. Write the headline and the lead story: what happened, who was involved, and why it matters. Use at least two facts from the unit.'},
+    {key:'people',label:'3. Write a second story about how this change felt to an ordinary person of the time: a worker, a soldier, a reformer, a student, or a family.'},
+    {key:'letter',label:'4. Write a letter to the editor from someone who disagreed with the change. What did they fear, and why?'},
+    {key:'lookback',label:'5. Add a “Looking back” box: how does this event still shape the world today?'},
+    {key:'sources',label:'6. List the sources you used (the unit’s videos, articles, or books) so your teacher can check them.'}]},
+  history7lab:{pick:true,title:'Engines of Change Exhibit',summary:'Curate a museum exhibit about one idea or machine that changed the world between 1750 and 1914, and follow it all the way to today.',steps:[
+    {key:'subject',label:'1. Choose one idea (natural rights, nationalism, socialism, abolition, women’s suffrage) or one machine (the steam engine, the railway, the power loom, the telegraph). Say where and when it began.'},
+    {key:'spread',label:'2. Explain how it spread from 1750 to 1914: which places, which people, and how.'},
+    {key:'effects',label:'3. Name two groups of people it affected. Who gained from it, and who was hurt or left out?'},
+    {key:'evidence',label:'4. Give at least three pieces of evidence (a source, a picture, a map, or a video from the unit) and what each shows.'},
+    {key:'today',label:'5. Follow it to today: where can we still see this idea or machine (or what came after it) in our world?'},
+    {key:'card',kind:'photo',label:'6. Make an exhibit card on paper with a title, a drawing, and a short caption. Take a photo and add it here.'},
+    {key:'sources',label:'7. List the sources you used so your teacher can check them.'}]},
   /* "historylab" shows up next to the Unit 1 project (projectKeys adds "<course>lab"); it is open from the start.
      Two rounds: the student sends the painting alone, the teacher writes what they think it shows (like a historian
      with no one to ask), and then steps 2 and 3 (after:'guess') open. */
@@ -10071,6 +10153,21 @@ const HISTORY_PROJECTS = {
     {key:'comic',kind:'photo',label:'2. Draw the comic on paper with speech bubbles. Use at least 4 interjections (at least 2 strong ones with an exclamation point and 2 mild ones with a comma) and at least 3 prepositional phrases. Take a photo and add it here.'},
     {key:'lines',label:'3. Type the words from your speech bubbles, exactly as you wrote them.'},
     {key:'explain',label:'4. Pick one strong and one mild interjection from your comic. Explain how you chose the punctuation for each.'}]},
+  /* History Unit 6: she picks one (pick:true; docs/HARD-LESSONS.md) */
+  history6:{title:'Global Meal Map',pick:true,summary:'Trace the foods in one real meal back to where they first grew, and show how the Columbian Exchange and other trade brought them to your table.',steps:[
+    {key:'meal',label:'1. Choose one real meal you ate this week. List every ingredient you can find.'},
+    {key:'origins',kind:'table',cols:['Ingredient','Where it first grew or was first raised','How it reached you (route or exchange)'],rows:6,label:'2. For at least 5 ingredients, find where each first grew and how it traveled.'},
+    {key:'map',kind:'photo',label:'3. Draw a world map on paper with arrows from each ingredient’s homeland to your table. Take a photo and add it here.'},
+    {key:'effects',label:'4. Pick one ingredient. Explain one way its spread helped people, and one way the exchange that carried it harmed people.'},
+    {key:'claim',label:'5. Make a claim: how global is your meal? Defend it with evidence from your table.'},
+    {key:'sources',label:'6. List the sources you used so a teacher can check them.'}]},
+  history6lab:{title:'Curate a Museum Exhibit',pick:true,summary:'Pick one good or one idea and build a small museum exhibit that traces it across the hemispheres between 1200 and 1750.',steps:[
+    {key:'subject',label:'1. Choose one good (silver, sugar, maize, chocolate, horses, porcelain) or one idea (printing, a faith, a new invention). Say where and when it began.'},
+    {key:'route',label:'2. Trace its journey: which places, which routes or voyages, and who carried it.'},
+    {key:'objects',kind:'table',cols:['Object or source','What it is','What it shows'],rows:4,label:'3. Choose 3 or 4 objects or sources for your exhibit (a picture, a map, a quote, or a video from the unit). Explain what each one shows.'},
+    {key:'label',label:'4. Write the main exhibit label (4 to 6 sentences) that a museum visitor would read.'},
+    {key:'people',label:'5. Whose lives did it change? Name one group that gained and one group that was harmed, and explain.'},
+    {key:'sources',label:'6. List the sources you used so a teacher can check them.'}]},
   history5:{title:'Trade Web Travel Journal',summary:'Follow one trade good or traveler across a regional web and show what moved along with it.',steps:[
     {key:'subject',label:'1. Choose one trade good (silk, paper, gold, salt, porcelain, spices) or one traveler (Ibn Battuta, Zheng He, a Sogdian merchant). Say where and when.'},
     {key:'route',label:'2. Describe the route: which places, which network (Silk Roads, Indian Ocean, Sahara), and how people traveled.'},
@@ -10078,6 +10175,21 @@ const HISTORY_PROJECTS = {
     {key:'spread',label:'4. Besides goods, what else moved along the route (a religion, an idea, an invention, a disease)? Explain one.'},
     {key:'claim',label:'5. Make a claim: how did this web connect people after the fall of Rome and the Han? Defend it with evidence.'},
     {key:'sources',label:'6. List the sources you used so a teacher can check them.'}]},
+  /* History Unit 8: she picks one of these two (docs/HARD-LESSONS.md, "Projects: pick one") */
+  history8:{title:'Peace Museum Exhibit Card',pick:true,summary:'Pick one turning point from 1914 to 1991 and make an exhibit card for the War and Peace Museum.',steps:[
+    {key:'subject',label:'1. Choose one turning point (for example the Treaty of Versailles, the founding of the United Nations, an independence day, or the fall of the Berlin Wall). Say where and when it happened.'},
+    {key:'causes',label:'2. What caused it? Explain at least two causes.'},
+    {key:'people',label:'3. Who was affected, and how? Name real people or groups.'},
+    {key:'evidence',label:'4. Give at least three pieces of evidence (a source, an object, a photo, a map, or a video from the unit) and what each shows.'},
+    {key:'claim',label:'5. What changed afterward? Make a claim about why this turning point mattered and defend it with evidence.'},
+    {key:'sources',label:'6. List the sources you used so a teacher can check them.'}]},
+  history8lab:{title:'Voices of the Century Interview',pick:true,summary:'Interview an older relative or family friend about the Cold War, decolonization, or another part of the century, and connect their story to this unit.',steps:[
+    {key:'plan',label:'1. Choose who you will interview and the topic (the Cold War, decolonization, a war, or another event from 1914 to 1991). Write at least five questions to ask.'},
+    {key:'interview',label:'2. Do the interview with a grown-up’s help. Write down the answers, or record them if the person agrees.'},
+    {key:'story',label:'3. Tell their story in your own words: where they were, what they saw or heard, and how it felt.'},
+    {key:'connect',label:'4. Connect their story to at least two things you learned in this unit.'},
+    {key:'compare',label:'5. How is a memory like theirs different from a textbook or a Khan video? What can each one tell a historian?'},
+    {key:'sources',label:'6. List the interview and any other sources you used.'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -10101,7 +10213,29 @@ const HISTORY_PROJECTS = {
     {key:'evidence',label:'2. List at least three pieces of evidence (artifacts, art, remains, or reliable sources) and what each shows.'},
     {key:'tradeoffs',label:'3. Explain advantages and disadvantages of this way of life for different people.'},
     {key:'claim',label:'4. Answer “Was agriculture a mistake?” with a claim, supporting evidence, and a counterargument.'},
-    {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]}
+    {key:'sources',label:'5. List the sources you used so a teacher can check them.'}]},
+  /* History Unit 9 (Oct 28, 2026): she picks one of three. Contested topics are researched, never graded on her opinion. */
+  history9:{pick:true,title:'Follow the Product',summary:'Pick something you own, like sneakers, a phone, or chocolate, and trace its trip around the world to you.',steps:[
+    {key:'product',label:'1. Choose one product you own or use. Read its label: where does it say it was made? Take a photo of the label or write it down.'},
+    {key:'chain',kind:'table',cols:['Step','Country or place','What happens there'],rows:5,label:'2. Map its supply chain with a grown-up: where do the raw materials come from, where is it made or put together, and how does it travel to your store? Fill in at least four steps.'},
+    {key:'people',label:'3. Who are the people along this chain (farmers, miners, factory workers, sailors, truck drivers, store clerks)? Describe two of them and the work they do.'},
+    {key:'research',label:'4. 🔎 Research it: what do supporters of global trade say about products like yours, and what do critics say (about prices, jobs, wages, or the environment)? Describe both views fairly, with a source for each.'},
+    {key:'think',label:'5. What surprised you most about your product’s trip? What questions would you still like to ask?'},
+    {key:'sources',label:'6. List the sources you used so a grown-up can check them.'}]},
+  history9lab:{pick:true,title:'Then and Now Interview',summary:'Interview a grown-up about how the world has changed since they were your age.',steps:[
+    {key:'who',label:'1. Who are you interviewing? About what year were they your age, and where did they live?'},
+    {key:'questions',label:'2. Write at least five questions to ask, about things like phones and computers, travel, food, music, news, or how they talked to friends far away.'},
+    {key:'answers',label:'3. Do the interview. Write down the most interesting answers in their words.'},
+    {key:'compare',kind:'table',cols:['Topic','When they were 12','Today'],rows:4,label:'4. Compare then and now on at least three topics.'},
+    {key:'acceleration',label:'5. Pick one change they described. How does it connect to the Great Acceleration or to globalization from this unit?'},
+    {key:'thanks',label:'6. Write one sentence you would say to thank them, and one question you still want to ask.'}]},
+  history9lab2:{pick:true,title:'Curate a Museum Exhibit',summary:'Design a small museum exhibit about one global connection since 1900.',steps:[
+    {key:'topic',label:'1. Choose one global connection since 1900: for example the shipping container, the internet, the United Nations, the Green Revolution, the end of smallpox, or a group of people who migrated. Say where and when.'},
+    {key:'objects',kind:'table',cols:['Object or picture','What it is','What it shows visitors'],rows:4,label:'2. Choose at least three objects, photos, or documents for your exhibit, and explain what each one shows.'},
+    {key:'labels',label:'3. Write the big label for the entrance (3–5 sentences): what is this connection, and how did it link people in different parts of the world?'},
+    {key:'voices',label:'4. 🔎 Research it: find what two different people or groups have said about this connection (for example, someone it helped and someone who raised concerns). Describe each view fairly.'},
+    {key:'photo',kind:'photo',label:'5. Draw or build your exhibit (on paper or a shelf at home) and take a photo of it.'},
+    {key:'sources',label:'6. List the sources you used so a grown-up can check them.'}]}
 };
 const englishCourse = course => course === 'punctuation'
   ? {id:'punctuation',building:'elaPunct',title:'English Unit 6: Punctuation',skills:ENGLISH_UNIT6,groups:ENGLISH_GROUPS6,finalKey:'punctuation:final-test',finalPass:11}
@@ -10123,10 +10257,18 @@ const englishCourse = course => course === 'punctuation'
     ? {id:'history4',building:'histEmpires',title:'History Unit 4: Empires and Belief Systems',skills:HISTORY_UNIT4,groups:HISTORY_GROUPS4,finalKey:'history4:final-test',testPer:2,finalPass:19}   // Khan's four quizzes (HISTORY_GROUPS4 quizName/quizSkills; docs/HISTORY-UNIT4.md)
   : course === 'history5'
     ? {id:'history5',building:'histWebs',title:'History Unit 5: Regional Webs',skills:HISTORY_UNIT5,groups:HISTORY_GROUPS5,finalKey:'history5:final-test',testPer:2,finalPass:17}   // Khan's two quizzes (docs/HISTORY-UNIT5.md)
+  : course === 'history6'
+    ? {id:'history6',building:'histGlobal1',title:'History Unit 6: The First Global Age',skills:HISTORY_UNIT6,groups:HISTORY_GROUPS6,finalKey:'history6:final-test',testPer:2,finalPass:16}   // Khan's three quizzes (docs/HISTORY-UNIT6.md)
+  : course === 'history7'
+    ? {id:'history7',building:'histLong19',title:'History Unit 7: The Long Nineteenth Century',skills:HISTORY_UNIT7,groups:HISTORY_GROUPS7,finalKey:'history7:final-test',testPer:2,finalPass:14}   // Khan's three quizzes (docs/HISTORY-UNIT7.md)
+  : course === 'history8'
+    ? {id:'history8',building:'histConflict',title:'History Unit 8: Global Conflict',skills:HISTORY_UNIT8,groups:HISTORY_GROUPS8,finalKey:'history8:final-test',testPer:2,finalPass:12}   // Khan's three quizzes (docs/HISTORY-UNIT8.md)
   : course === 'bio1'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : course === 'bio2'
     ? {id:'bio2',building:'bioCells',title:'Biology Unit 2: Organism Growth and Reproduction',skills:BIO_UNIT2,groups:BIO_GROUPS2,finalKey:'bio2:final-test',testPer:3,finalPass:20}
+  : course === 'history9'
+    ? {id:'history9',building:'histGlobal2',title:'History Unit 9: Globalization',skills:HISTORY_UNIT9,groups:HISTORY_GROUPS9,finalKey:'history9:final-test',testPer:2,finalPass:11}   // Khan's two quizzes (docs/HISTORY-UNIT9.md)
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
 const testSize = course => course.skills.length * (course.testPer || 1);
 /* ---------- Pet World lesson videos (docs: LESSON-VIDEOS.md) ----------
@@ -10224,8 +10366,12 @@ const KHAN_UNIT_TESTS = {
   history3:`${KHAN}humanities/world-history/x66f79d8a:early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/test/x66f79d8a:early-agrarian-societies-unit-test`,
   history4:`${KHAN}humanities/world-history/x66f79d8a:empires-and-belief-systems/x66f79d8a:women-in-the-ancient-world-4-15/test/x66f79d8a:empires-and-belief-systems-unit-test`,
   history5:`${KHAN}humanities/world-history/x66f79d8a:regional-webs/x66f79d8a:expanding-the-silk-roads-5-8/test/x66f79d8a:regional-webs-unit-test`,
+  history7:`${KHAN}humanities/world-history/x66f79d8a:the-long-nineteenth-century/x66f79d8a:resisting-colonialism-7-10/test/x66f79d8a:the-long-nineteenth-century-unit-test`,
   bio1:`${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:human-digestive-system/test/x88f5990a7622d8f5:life-sciences-unit-test`,
-  bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`
+  bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`,
+  history6:`${KHAN}humanities/world-history/x66f79d8a:the-first-global-age/x66f79d8a:the-transatlantic-slave-trade-6-9/test/x66f79d8a:the-first-global-age-unit-test`,
+  history8:`${KHAN}humanities/world-history/x66f79d8a:global-conflict/x66f79d8a:decolonization-8-9/test/x66f79d8a:global-conflict-unit-test`,   // History Unit 8, checked Oct 28 2026
+  history9:`${KHAN}humanities/world-history/x66f79d8a:globalization/x66f79d8a:the-anthropocene-9-8/test/x66f79d8a:globalization-unit-test`   // checked on khanacademy.org, Oct 28 2026
 };
 /* math: the Khan unit(s) that go with each shop (KHAN-SETUP.md); each Khan unit ends with its unit test */
 const KHAN_MATH = 'https://www.khanacademy.org/math/';
@@ -10481,7 +10627,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','history','history2','history3','history4','history5','bio1','bio2'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','history','history2','history3','history4','history5','bio1','bio2','history6','history7','history8','history9'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -10624,7 +10770,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (isHistoryCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'history5' ? HISTORY5_QUESTIONS : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS : courseId === 'history2' ? HISTORY2_QUESTIONS : HISTORY_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (isHistoryCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'history6' ? HISTORY6_QUESTIONS : courseId === 'history7' ? HISTORY7_QUESTIONS : courseId === 'history5' ? HISTORY5_QUESTIONS : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS : courseId === 'history2' ? HISTORY2_QUESTIONS : courseId === 'history8' ? HISTORY8_QUESTIONS : courseId === 'history9' ? HISTORY9_QUESTIONS : HISTORY_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -11609,6 +11755,7 @@ const vocabStat = word => S.vocab.stats[wordKey(word)];
 function recordVocab(word, ok){
   const key = wordKey(word), stat = S.vocab.stats[key] || {r:[]};
   delete S.vocab.stats[key]; S.vocab.stats[key] = {r:[...stat.r, ok ? 1 : 0].slice(-8)};   // newest last, so old words drop off first
+  const wk = S.vocab.week; if (ok && wk?.id === weekOf(localDay()) && wk.words.includes(key) && !(wk.right ||= []).includes(key)) wk.right.push(key);   // ✅ right this week (Words of the Week card)
   const keys = Object.keys(S.vocab.stats); for (let i = 0; i < keys.length - VOCAB_LIMITS.list; i++) delete S.vocab.stats[keys[i]];
   const day = arcadeDateKey(); S.mathMinutes[day] = (S.mathMinutes[day] || 0) + 0.25;   // four answers earn one arcade minute
   save();
@@ -11655,7 +11802,7 @@ function renderVocab(){
   else if (vocabTab === 'chart') {
     const hall = new Set((S.vocab.hall || []).map(h => h.w)), un = all.filter(v => !hall.has(wordKey(v.w))).sort((a, b) => a.w.localeCompare(b.w)), won = all.filter(v => hall.has(wordKey(v.w))).sort((a, b) => a.w.localeCompare(b.w));
     const chip = (v, st) => `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st] || 'Mastered')}">${st === 'solid' && hall.has(wordKey(v.w)) ? '⭐ ' : ''}${esc(v.w)}</button>`;
-    body = `<p class="muted">All your words in one list. Tap a word to see what it means. Each week 25 more are picked at random from the unmastered ones.</p>
+    body = `<p class="muted">All your words in one list. Tap a word to see what it means. Each week’s list has 20 unmastered words (last week’s leftovers first, the rest picked at random) and 5 mastered words to review.</p>
       <h4 class="vocab-set">Unmastered (${un.length})</h4><div class="vocab-grid">${un.map(v => chip(v, wordStatus(vocabStat(v.w)))).join('')}</div>
       ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>` : ''}
       <p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
@@ -11802,21 +11949,24 @@ function finishVocab(){
     <div class="row"><button class="btn berry" data-vocab-start="${run.mode}">Again</button><button class="btn" data-vocab-tab="chart">See my words</button></div></div>`;
 }
 /* ---------- 📅 this week's words, 🧩 daily puzzles, 🏁 Friday mastery check (owner, Oct 27, 2026; docs/VOCAB.md "Weekly words") ----------
-   She works on the same words all week: the words she didn't master last week, plus up to 25 new ones from her list in
-   order. Each school day has a puzzle on them (Mon scramble, Tue secret code, Wed crossword, Thu word search, weekends a
+   She works on the same words all week: 20 unmastered words (the ones she didn't master last week first, the rest at
+   random) plus 5 mastered words to review (nextWeekWords). Each school day has a puzzle on them (Mon scramble, Tue secret code, Wed crossword, Thu word search, weekends a
    match-up); the warm-up is a timed round on it (7 minutes unless a grown-up picks another length). A puzzle she doesn't
    finish is saved and finished the next day (one day only). Friday is the mastery check: type each word from its
    meaning; the ones she gets right are celebrated, go in her Word Hall of Fame and leave her focus list. A wrong answer
    anywhere means typing the word correctly before moving on. */
-const WEEK_NEW_WORDS = 25, PUZZLE_SIZE = {scramble:8, decode:6, crossword:8, search:8, match:6};
+const WEEK_NEW_WORDS = 20, WEEK_REVIEW_WORDS = 5, PUZZLE_SIZE = {scramble:8, decode:6, crossword:8, search:8, match:6};
 const weekdayNum = () => new Date(`${localDay()}T12:00:00`).getDay();
 const dayBefore = day => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const hallKeys = () => new Set((S.vocab.hall || []).map(h => h.w));
 function ensureWeek(){
   const id = weekOf(localDay()), cur = S.vocab.week;
   if (cur?.id === id) return cur;
-  const base = vocabWords(), next = nextWeekWords(cur?.words || [], cur?.mastered || [], shuffle(base.focus.slice()), [...hallKeys()], WEEK_NEW_WORDS);   // the new ones drawn at random from the unmastered list
-  S.vocab.week = {id, words:next.words, kept:next.kept.length, added:next.added.length, mastered:[], check:null};
+  /* the weekly draw (owner, Oct 28, 2026): last week's unmastered words carry over and count toward 20 unmastered words,
+     the rest of the 20 drawn at random from the unmastered list, plus 5 random mastered words to review */
+  const {all} = vocabWords(), hall = hallKeys(), keys = all.map(v => wordKey(v.w));
+  const next = nextWeekWords(cur?.words || [], keys.filter(k => !hall.has(k)), keys.filter(k => hall.has(k)), {fresh:WEEK_NEW_WORDS, review:WEEK_REVIEW_WORDS});
+  S.vocab.week = {id, words:next.words, kept:next.carried.length, added:next.added.length, carried:next.carried, review:next.review, right:[], mastered:[], check:null};
   save(); return S.vocab.week;
 }
 /* this week's words still being worked on (not mastered yet), as word objects */
@@ -11945,14 +12095,61 @@ function finishPuzzle(why){
 function startCheck(extraId = null){
   const wk = ensureWeek(); if (vocabRun) { stopVocabTimer(); vocabRun = null; }
   wk.check = wk.check && !wk.check.done ? wk.check : {day:localDay(), done:false, results:{}};
-  checkRun = {extraId, startedAt:performance.now()}; save(); renderCheck();
+  checkRun = {extraId, startedAt:performance.now()}; save();
+  /* step 1, "with the flashcard quiz" (owner, Oct 28, 2026): a flashcard warm-up of the week's words, like the test
+     review's 📇 cards; step 2 is the typed check that decides mastery. A check already under way skips the cards. */
+  if (!wk.check.cards && !Object.keys(wk.check.results).length) { startCheckCards(); return; }
+  renderCheck();
 }
+/* ---------- 📇 the Friday flashcard warm-up (step 1 of the mastery check) ----------
+   The meaning (and sentence) on the front, the word on the back. "Still learning" cards come back after a few cards
+   until she knows them all. It doesn't decide mastery; the result (known on the first try) shows on the check's end
+   screen and on the Words of the Week card. */
+function startCheckCards(){
+  const words = weekWordObjs(); if (!checkRun || !words.length) { renderCheck(); return; }
+  checkRun.cards = {deck:shuffle(words.slice()), total:words.length, known:0, firstTry:0, missed:[], flipped:false};
+  renderCheckCards();
+}
+function renderCheckCards(){
+  const c = checkRun?.cards; if (!c) return;
+  const v = c.deck[0]; if (!v) { finishCheckCards(false); return; }
+  const front = `<span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s)}</span>` : ''}<span class="card-ask">What’s the word? Say it, then flip.</span>`;
+  const back = `<span class="card-term">${esc(v.w)}</span><span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s.replace(/___/g, v.w))}</span>` : ''}`;
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Stop</button></div>
+    <div class="sprint-card vocab-card"><p class="muted">Step 1 of 2: 📇 flashcards of this week’s ${c.total} words. Cards you’re still learning come back. Step 2: type each word to master it.</p>
+    <div class="row card-tools"><span><b>${c.known}</b> of ${c.total} known</span><button type="button" class="btn small" data-check-hear="${esc(v.w)}">🔊 Hear it</button><button type="button" class="btn small" data-ccard-skip>Skip to the check</button></div>
+    <div class="flashcard${c.flipped ? ' flipped' : ''}" role="button" tabindex="0" data-ccard-flip aria-live="polite" aria-label="${c.flipped ? 'Card answer' : 'Flip the card'}">${c.flipped ? back : front}${c.flipped ? '' : '<span class="card-hint">Tap to flip</span>'}</div>
+    ${c.flipped ? '<div class="row card-grade"><button type="button" class="btn" data-ccard-grade="again">😕 Still learning</button><button type="button" class="btn berry" data-ccard-grade="knew">✅ I knew it</button></div>' : ''}</div>`;
+  $('#vocabWrap .flashcard').focus();
+}
+function gradeCheckCard(knew){
+  const c = checkRun?.cards; if (!c?.flipped) return;
+  const v = c.deck.shift(), k = wordKey(v.w);
+  if (knew) { c.known++; if (!c.missed.includes(k)) c.firstTry++; }
+  else { if (!c.missed.includes(k)) c.missed.push(k); c.deck.splice(Math.min(3, c.deck.length), 0, v); }
+  c.flipped = false; renderCheckCards();
+}
+function finishCheckCards(skipped){
+  const c = checkRun?.cards, wk = S.vocab.week; if (!c || !wk?.check) return;
+  wk.check.cards = {first:c.firstTry, n:c.total, ...(skipped ? {skipped:true} : {})}; checkRun.cards = null; save();
+  if (!skipped) toast(`📇 You knew ${c.firstTry} of ${c.total} on the first try. Now step 2!`);
+  renderCheck();
+}
+document.addEventListener('click', event => {
+  if (!checkRun?.cards || !event.target.closest('#vocabWrap')) return;
+  if (event.target.closest('[data-ccard-flip]')) { if (!checkRun.cards.flipped) { checkRun.cards.flipped = true; renderCheckCards(); } return; }
+  const g = event.target.closest('[data-ccard-grade]'); if (g) { gradeCheckCard(g.dataset.ccardGrade === 'knew'); return; }
+  if (event.target.closest('[data-ccard-skip]')) finishCheckCards(true);
+});
+document.addEventListener('keydown', event => {
+  if (checkRun?.cards && !checkRun.cards.flipped && event.target.closest?.('[data-ccard-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); checkRun.cards.flipped = true; renderCheckCards(); }
+});
 function renderCheck(){
   const wk = S.vocab.week, words = weekWordObjs(), left = words.filter(v => !(wordKey(v.w) in wk.check.results));
   if (!left.length) { finishCheck(); return; }
-  const v = left[0], i = words.length - left.length + 1;
+  const v = left[0], i = words.length - left.length + 1, isReview = (wk.review || []).includes(wordKey(v.w));
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Save and stop</button></div>
-    <div class="sprint-card vocab-card pz-wrap"><p class="muted">Word ${i} of ${words.length}. Spell each word from its meaning. Words you get right are mastered!</p>
+    <div class="sprint-card vocab-card pz-wrap"><p class="muted">${wk.check.cards ? 'Step 2 of 2: ' : ''}Word ${i} of ${words.length}. Spell each word from its meaning. Words you get right are mastered!${isReview ? ' <b>🔄 Review word:</b> one you mastered before.' : ''}</p>
     <p class="vocab-ask">Which word means:</p><div class="fact vocab-prompt long">${esc(v.d)}</div>${v.s ? `<p class="muted">${esc(v.s)}</p>` : ''}
     <div class="row syl-row"><button type="button" class="btn small" data-check-hear="${esc(v.w)}">🔊 Hear the word</button></div>
     <form class="typed-fill" data-check-answer="${esc(wordKey(v.w))}"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form></div>`;
@@ -11961,29 +12158,40 @@ function renderCheck(){
 function finishCheck(){
   const wk = S.vocab.week, run = checkRun; checkRun = null; fixThen = null;
   const all = vocabWords().all, map = new Map(all.map(v => [wordKey(v.w), v]));
-  const mastered = Object.entries(wk.check.results).filter(([, v]) => v).map(([k]) => k), stay = Object.entries(wk.check.results).filter(([, v]) => !v).map(([k]) => k);
+  const results = Object.entries(wk.check.results), review = new Set(wk.review || []);
+  const mastered = results.filter(([, v]) => v).map(([k]) => k), stay = results.filter(([, v]) => !v).map(([k]) => k);
+  /* review words: right = still mastered; missed = back to unmastered (out of the Hall of Fame, carried to next week) */
+  const fresh = mastered.filter(k => !review.has(k)), kept = mastered.filter(k => review.has(k)), slipped = stay.filter(k => review.has(k));
   wk.mastered = [...new Set([...wk.mastered, ...mastered])]; wk.check.done = true;
-  S.vocab.hall = [...(S.vocab.hall || []).filter(h => !mastered.includes(h.w)), ...mastered.map(w => ({w, wk:wk.id}))].slice(-VOCAB_LIMITS.list);
+  S.vocab.hall = [...(S.vocab.hall || []).filter(h => !fresh.includes(h.w) && !slipped.includes(h.w)), ...fresh.map(w => ({w, wk:wk.id}))].slice(-VOCAB_LIMITS.list);
   if (run) addVocabExtraTime(run.startedAt);
-  if (run?.extraId) recordChallenge(run.extraId, mastered.length, 0);
-  logEvent({k:'vocab', mode:'check', s:mastered.length, n:mastered.length + stay.length, title:`mastered ${mastered.join(', ') || 'none yet'}`});
-  S.coins += mastered.length; save(); updateHeader();
+  if (run?.extraId) recordChallenge(run.extraId, fresh.length, 0);
+  logEvent({k:'vocab', mode:'check', s:mastered.length, n:mastered.length + stay.length, title:`mastered ${fresh.join(', ') || 'none yet'}${review.size ? ` · review ${kept.length} of ${kept.length + slipped.length} kept` : ''}`});
+  S.coins += fresh.length; save(); updateHeader();
+  const cards = wk.check.cards, chip = k => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(k)?.w || k)}</span>`;
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Mastery check done!</h2><button class="btn small" data-go="home">Back to town</button></div>
-    <div class="sprint-card vocab-card"><div class="big-emoji">${mastered.length ? '🎉🏆🎉' : '💪'}</div>
-    <h2>${mastered.length ? `You mastered ${mastered.length} word${mastered.length === 1 ? '' : 's'}!` : 'Keep going!'}</h2>
-    ${mastered.length ? `<div class="vocab-grid mastered">${mastered.map(k => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(k)?.w || k)}</span>`).join('')}</div><p>They go in your <b>Word Hall of Fame</b> (${S.vocab.hall.length} words so far) and leave your practice list. ${mastered.length >= 10 ? 'WOW! 🚀' : 'Amazing work!'}</p>` : ''}
-    ${stay.length ? `<p>${stay.length} word${stay.length === 1 ? ' stays' : 's stay'} for next week, with up to ${WEEK_NEW_WORDS} new ones: ${stay.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')}.</p>` : '<p>Every word mastered! Next week brings new ones.</p>'}
-    ${mastered.length ? `<p>You earned <b>🪙 ${mastered.length}</b>.</p>` : ''}</div>`;
+    <div class="sprint-card vocab-card"><div class="big-emoji">${fresh.length ? '🎉🏆🎉' : '💪'}</div>
+    <h2>${fresh.length ? `You mastered ${fresh.length} word${fresh.length === 1 ? '' : 's'}!` : 'Keep going!'}</h2>
+    ${cards && !cards.skipped ? `<p>📇 Flashcards: you knew <b>${cards.first} of ${cards.n}</b> on the first try.</p>` : ''}
+    ${fresh.length ? `<div class="vocab-grid mastered">${fresh.map(chip).join('')}</div><p>They go in your <b>Word Hall of Fame</b> (${S.vocab.hall.length} words so far) and leave your practice list. ${fresh.length >= 10 ? 'WOW! 🚀' : 'Amazing work!'}</p>` : ''}
+    ${kept.length + slipped.length ? `<p>🔄 Review words: <b>${kept.length} of ${kept.length + slipped.length}</b> still mastered.${slipped.length ? ` ${slipped.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')} ${slipped.length === 1 ? 'goes' : 'go'} back on your practice list.` : ''}</p>` : ''}
+    ${stay.length ? `<p>${stay.length} word${stay.length === 1 ? ' stays' : 's stay'} for next week: ${stay.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')}.</p>` : '<p>Every word mastered! Next week brings new ones.</p>'}
+    ${fresh.length ? `<p>You earned <b>🪙 ${fresh.length}</b>.</p>` : ''}</div>`;
   sfx('unlock');
+}
+/* "(4 carried over, 16 new, 5 review)" */
+function weekMixText(wk){
+  const parts = [(wk.carried || []).length ? `🔁 ${wk.carried.length} carried over` : '', `${wk.words.length - (wk.carried || []).length - (wk.review || []).length} new`, (wk.review || []).length ? `🔄 ${wk.review.length} review` : ''].filter(Boolean);
+  return parts.length > 1 ? ` (${parts.join(', ')})` : '';
 }
 /* the 📅 This week tab */
 function weekTabHTML(){
   const wk = ensureWeek(), map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), done = new Set(wk.mastered);
-  const chip = k => { const v = map.get(k); if (!v) return ''; const st = done.has(k) ? 'solid' : wordStatus(vocabStat(v.w)); return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}">${done.has(k) ? '⭐ ' : ''}${esc(v.w)}</button>`; };
+  const chip = k => { const v = map.get(k); if (!v) return ''; const st = done.has(k) ? 'solid' : wordStatus(vocabStat(v.w)), tag = (wk.review || []).includes(k) ? ' title="Review: a word you mastered before"' : (wk.carried || []).includes(k) ? ' title="Carried over from last week"' : ''; return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}"${tag}>${done.has(k) ? '⭐ ' : ''}${(wk.review || []).includes(k) ? '🔄 ' : (wk.carried || []).includes(k) ? '🔁 ' : ''}${esc(v.w)}</button>`; };
   const day = weekdayNum(), p = S.vocab.puzzle, today = localDay();
   const puzzleLine = (checkDue() ? '<button type="button" class="btn berry" data-check-start>🏁 Start the mastery check</button>' : '')
     + (p && p.day === today && p.done ? `<p>✅ Today’s ${esc(PUZZLE_INFO[p.type].name)} is done!</p>` : `<button type="button" class="btn${checkDue() ? '' : ' berry'}" data-pz-start>${PUZZLE_INFO[todayPuzzleType()].emoji} ${checkDue() ? 'Puzzle' : 'Today’s puzzle'}: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}</button>`);
-  return `<p>This week: <b>${wk.words.length} words</b>${wk.kept ? ` (${wk.kept} from last week, ${wk.added} new)` : ''}. Practice them all week. <b>Friday</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
+  return `<p>This week: <b>${wk.words.length} words</b>${weekMixText(wk)}. Practice them all week. <b>Friday</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
     <div class="row">${puzzleLine}</div>
     <h4 class="vocab-set">🎮 All 5 word games (7 minutes each, on this week’s words)</h4>
     <div class="row pz-games">${['scramble', 'decode', 'crossword', 'search', 'match'].map(t => `<button type="button" class="btn small${t === todayPuzzleType() ? ' butter' : ''}" data-pz-play="${t}">${PUZZLE_INFO[t].emoji} ${esc(PUZZLE_INFO[t].name)}${t === todayPuzzleType() ? ' (today’s)' : ''}</button>`).join('')}</div>
@@ -12040,7 +12248,7 @@ function vocabGrownUpHTML(all){
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
     ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
-    <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each Monday she gets the words she didn’t master last week plus 25 more picked at random from the unmastered ones; Friday’s mastery check moves the ones she spells right to her 🏆 Hall of Fame.</p>
+    <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each Monday she gets 20 unmastered words (the ones she didn’t master last week first, the rest picked at random) plus 5 mastered words to review; Friday’s mastery check moves the ones she spells right to her 🏆 Hall of Fame, and a review word she misses goes back to unmastered.</p>
     <div class="row"><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
 }
 $('#vocabWrap').addEventListener('submit', event => {
