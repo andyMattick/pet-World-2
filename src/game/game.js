@@ -139,7 +139,8 @@ function normalize(raw){
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
   s.scienceProgress = s.scienceProgress && typeof s.scienceProgress === 'object' ? s.scienceProgress : {};
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
-  s.historyProjects = normalizeProjectStore(s.historyProjects, ['history','historylab','history2','history3','history4','history5','prepositions','prepositionslab','prepositionslab2']);   // English projects are kept here too
+  s.historyProjects = normalizeProjectStore(s.historyProjects, [...new Set(['history','historylab','history2','history3','history4','history5','prepositions','prepositionslab','prepositionslab2', ...[6, 7, 8, 9].flatMap(n => ['', 'lab', 'lab2', 'lab3'].map(x => `history${n}${x}`))])]);   // Units 6–9: each unit's projects (pick-one choices use the lab keys)
+  s.gateOpen = Object.fromEntries(Object.entries(s.gateOpen && typeof s.gateOpen === 'object' ? s.gateOpen : {}).filter(([k, v]) => typeof k === 'string' && v === true));   // lessons a grown-up previewed and unlocked (skill gate:true)   // English projects are kept here too
   s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
@@ -10995,7 +10996,15 @@ function historyProjectState(courseId){
   return {...p, state:review || 'submitted'};
 }
 const PROJECT_STATE_TEXT = {draft:'Draft', submitted:'Submitted \u00b7 waiting for review', verified:'\u2705 Verified', revise:'\ud83d\udd01 Revision requested'};
-function historyProjectCardHTML(courseId){ return projectKeys(courseId).map(historyProjectCardOne).join(''); }
+/* pick one (owner, Oct 28, 2026): projects with pick:true in a unit are choices; she does one. Once one is sent, the
+   others step aside (they come back if she never sent one, or if a grown-up asks for a redo on the one she picked) */
+function historyProjectCardHTML(courseId){
+  const keys = projectKeys(courseId), picks = keys.filter(k => HISTORY_PROJECTS[k].pick);
+  const chosen = picks.find(k => ['submitted', 'verified', 'revise'].includes(historyProjectState(k).state));
+  const shown = keys.filter(k => !chosen || !HISTORY_PROJECTS[k].pick || k === chosen || historyProjectState(k).state !== 'draft');
+  const head = picks.length > 1 ? `<section class="ela-final-assessment project-pick"><div><h3>📁 Pick one project</h3><p class="muted">${chosen ? `You picked “${esc(HISTORY_PROJECTS[chosen].title)}.”` : `Choose the one you like best. You only need to do one of these ${picks.length}.`}</p></div></section>` : '';
+  return head + shown.map(historyProjectCardOne).join('');
+}
 function historyProjectCardOne(courseId){
   const project = HISTORY_PROJECTS[courseId], info = historyProjectState(courseId);
   return `<section class="ela-final-assessment"><div><h3>${esc(project.title)}</h3><p class="muted">${esc(project.summary)} \u00b7 ${PROJECT_STATE_TEXT[info.state]}</p></div><button type="button" class="btn small berry" data-history-project="${courseId}">${info.state === 'draft' ? 'Open project' : 'View project'}</button></section>`;
@@ -11234,6 +11243,17 @@ function renderEnglishQuestion(){
   addCrossOuts($('#libraryWrap'), '.ela-option:not([data-typed-place]):not([data-typed-unplace])');
   const talkLog = $('#libraryWrap .stage-history'); if (talkLog) talkLog.scrollTop = talkLog.scrollHeight;   // newest exchange in view
 }
+/* Hard lessons (owner, Oct 28, 2026: the Transatlantic Slave Trade and the Holocaust). A skill can say
+   gate:true: a grown-up previews it first and unlocks its practice once with the PIN (S.gateOpen), and
+   quiet:true: progress saves as usual, but no arcade minutes, no "Passed!" celebration, and calm wording. */
+const skillOf = (courseId, skillId) => englishCourse(courseId)?.skills?.find(x => x.id === skillId);
+const skillQuiet = (courseId, skillId) => !!skillOf(courseId, skillId)?.quiet;
+async function gateThen(courseId, skillId, go){
+  const skill = skillOf(courseId, skillId), key = `${courseId}:${skillId}`;
+  if (!skill?.gate || S.gateOpen[key]) { go(); return; }
+  if (!await askGrownUp({title:`Preview first: ${skill.name}`, text:'This lesson covers a very hard part of history. A grown-up previews it first (its questions are in the unit’s review list), then unlocks it here with the PIN. It stays unlocked after that.', ok:'Unlock this lesson', log:`🔐 Grown-up unlocked: ${skill.name}`})) return;
+  S.gateOpen[key] = true; save(); go();
+}
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
   if (!skill || pool.length < 4) return;
@@ -11269,7 +11289,7 @@ function recordEnglishAnswer(run, question, correct){
     recentAnswers:[...(record.recentAnswers || []),correct ? 1 : 0].slice(-12)
   };
   const day = arcadeDateKey();
-  S.mathMinutes[day] = (S.mathMinutes[day] || 0) + 0.25;   // four answers earn one arcade minute, like one math order
+  if (!skillQuiet(run.courseId, question.skillId)) S.mathMinutes[day] = (S.mathMinutes[day] || 0) + 0.25;   // four answers earn one arcade minute, like one math order (none in a quiet lesson)
   save();
 }
 function commitEnglishRun(run){
@@ -11299,7 +11319,8 @@ function finishEnglishRun(){
     : run.retryType === 'practice' ? `<button class="btn berry" type="button" data-ela-practice="${run.retryId}" data-ela-course="${run.courseId}">Practice again</button>`
     : run.retryType === 'quiz' ? `<button class="btn berry" type="button" data-ela-quiz="${run.retryId}" data-ela-course="${run.courseId}">Retake quiz</button>`
       : `<button class="btn berry" type="button" data-ela-final data-ela-course="${run.courseId}">Retake test</button>`;
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${passed ? '✅ Passed!' : '📖 Keep practicing'}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to ${esc(SHOPS[run.shop].name)}</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button>`}</div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${store[run.progressKey].best} of ${run.questions.length} · Attempts: ${store[run.progressKey].tries}</p>${run.writtenSent ? `<p>✍️ Your written answer was sent. Its review shows under “My written answers” on the ${run.shop ? 'shop' : 'unit'} page.</p>` : ''}${retry}</div>`;
+  const quiet = run.questions.every(q => skillQuiet(run.courseId, q.skillId));
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${quiet ? '📖 Lesson practice done' : passed ? '✅ Passed!' : '📖 Keep practicing'}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to ${esc(SHOPS[run.shop].name)}</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId}">Back to ${esc(englishCourse(run.courseId).title)}</button>`}</div><div class="ela-question ela-result"><p>${esc(run.title)}</p><p><strong>${resultText}</strong></p><p>Best: ${store[run.progressKey].best} of ${run.questions.length} · Attempts: ${store[run.progressKey].tries}</p>${run.writtenSent ? `<p>✍️ Your written answer was sent. Its review shows under “My written answers” on the ${run.shop ? 'shop' : 'unit'} page.</p>` : ''}${retry}</div>`;
 }
 $('#libraryWrap').addEventListener('click', event => {
   const button = event.target.closest('button'); if (!button) return;
@@ -11310,7 +11331,7 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.cardGrade && cardRun) { gradeCard(button.dataset.cardGrade === 'knew'); return; }
   if (button.hasAttribute('data-card-side') && cardRun) { cardRun.meaningFirst = !cardRun.meaningFirst; cardRun.flipped = false; renderCard(); return; }
   if (button.hasAttribute('data-card-skip') && cardRun) { finishCards(); return; }
-  if (button.dataset.elaPractice) { const skillId = button.dataset.elaPractice, courseId = button.dataset.elaCourse || activeEnglishCourse; watchFirstThen(courseId, skillId, () => { if (watching?.kind === 'khan') stopWatching(); startEnglishPractice(skillId, courseId); }); return; }
+  if (button.dataset.elaPractice) { const skillId = button.dataset.elaPractice, courseId = button.dataset.elaCourse || activeEnglishCourse; void gateThen(courseId, skillId, () => watchFirstThen(courseId, skillId, () => { if (watching?.kind === 'khan') stopWatching(); startEnglishPractice(skillId, courseId); })); return; }
   if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-ela-final')) { void gatedPetWorldTest(button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-fix-score')) { void fixScore(button.dataset.elaCourse || activeEnglishCourse); return; }
