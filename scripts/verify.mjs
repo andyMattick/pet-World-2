@@ -252,6 +252,7 @@ for (const [fn, what] of [['async function gatedTestReview(', 'the PIN before a 
   ['async function gatedKhanTest(', 'the review + PIN before a Khan test'], ['async function gatedUnitReview(', 'the PIN before a math unit review'], ['async function gatedUnitTest(', 'the review + PIN before a math Unit Test'],
   ['function askGrownUp(', 'the grown-up PIN card'], ['function reviewTeachHTML(', 'the lesson shown for a missed review question'],
   ['shift.unitReview.needs', 'the math review fix-up orders'], ['data-written-hint', 'the written-answer hint behind the grown-up PIN']]) need('src/game/game.js', fn, what);
+need('src/game/game.js', 'function roleSceneHTML(', 'History role scenes: picture, map pin and timeline (ROLE-SCENES.md)');
 if (/data-ela-final'\)\) \{ startEnglishAssessment/.test(game)) problems.push('src/game/game.js starts a Pet World test without the review and grown-up PIN (use gatedPetWorldTest)');
 if (/data-unit-test\]'\);\s*if \(unitTest && !unitTest\.disabled\) \{ void startAssessment/.test(game)) problems.push('src/game/game.js starts a math Unit Test without the review and grown-up PIN (use gatedUnitTest)');
 if (/<a [^>]*>Open the Khan test<\/a>/.test(game)) problems.push('src/game/game.js links straight to a Khan test without the review and grown-up PIN (use data-khan-open)');
