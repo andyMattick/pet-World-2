@@ -26,6 +26,8 @@ The game cards sit under their block.
 - Three stars in all three games makes her a **🏅 Link Library Master** (+50, once).
 - Each finished game goes in the day log, under English.
 
+**Since Oct 28, 2026, Pet Hide-and-Seek has two versions with 4 levels each**: 📍 Find and place and ✍️ Say where. The living room below is level 1 of each, and the circus levels bring in many more prepositions. See `HIDE-AND-SEEK.md`.
+
 **🐾 Pet Hide-and-Seek** (10 rounds) uses a living room with 10 hiding spots. Each spot accepts every correct phrase for it, for example under / beneath / below the table. The rounds take turns:
 - **Find:** read where her pet is hiding and tap the spot.
 - **Tell:** see her pet and build the phrase from two drop-downs (preposition + object).

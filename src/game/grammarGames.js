@@ -5,7 +5,7 @@
 
 export const GGAMES = [
   {id:'hide', course:'prepositions', group:'prepositions', emoji:'🐾', name:'Pet Hide-and-Seek',
-    intro:'Your pet loves hide-and-seek. Read where it’s hiding and tap the spot, or find it yourself and say where it is with a prepositional phrase. 10 rounds.'},
+    intro:'Two ways to play, 4 levels each. 📍 Find and place: read the clues and put your pet, then the circus animals, in the right spot. ✍️ Say where: pick the animal and the preposition that tell where everyone is. Lots of prepositions: beneath, atop, alongside, through, toward, beyond, among and more.'},
   {id:'cross', course:'prepositions', group:'prepositions', emoji:'✂️', name:'Cross It Out',
     intro:'The subject of a sentence is never inside a prepositional phrase. Tap every word of each prepositional phrase to cross it out, then pick the verb that agrees with the subject. 10 sentences, each harder than the last.'},
   {id:'comic', course:'prepositions', group:'interjections', emoji:'💥', name:'Comic Strip Studio',
@@ -44,7 +44,7 @@ export const SPOTS = [
 export const HIDE_PREPS = ['in', 'inside', 'on', 'on top of', 'under', 'beneath', 'below', 'behind', 'between', 'next to', 'beside', 'near', 'in front of'];
 export const HIDE_OBJECTS = ['the table', 'the box', 'the couch', 'the plant', 'the shelf', 'the basket', 'the window', 'the rug', 'the couch and the table'];
 export const HIDE_ROUNDS = 10;
-/* rounds take turns: "find" (read a clue, tap the spot) and "tell" (see the pet, build the phrase) */
+/* the living room levels (hideSeek.js: p1 find, s1 say). newHideRounds is the first version's 10 mixed rounds */
 export function newHideRounds(rand = Math.random){
   const order = [...SPOTS].sort(() => rand() - 0.5);
   return Array.from({length:HIDE_ROUNDS}, (_, i) => {

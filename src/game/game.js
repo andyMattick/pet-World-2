@@ -26,7 +26,8 @@ import { HANDS_ON, NATURE_JOURNAL, handsOnById, weekHandsOn } from '../shared/ha
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS, SIM_MISSIONS, CELL_PARTS, CELLS, cellPart, cellPick, GENOTYPES, furOf, punnettGrid, whiteShare, litter, PUNNETT_MISSIONS, WEB, webById, WEB_ANIMALS, WEB_LIVING, sameSet, removeEffect, effectLabel, WEB_MISSIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
-import { GGAMES, ggameById, starsFor, ROOM, SPOTS, HIDE_PREPS, HIDE_OBJECTS, HIDE_ROUNDS, newHideRounds, spotById, tellIsRight, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
+import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
+import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
 import { ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink } from '../shared/questionBanks';
 
 /* ===================== CORE (no DOM) ===================== */
@@ -170,7 +171,7 @@ function normalize(raw){
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries((SIM_MISSIONS[id] || []).filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.heroLab = {packs:Object.fromEntries(HERO_PACKS.map(p => [p.id, s.heroLab?.packs?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.heroLab?.master};   // ⚡ Punctuation Power Lab (docs/ENGLISH-UNIT6.md)
-    s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
+    s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0), ...(id === 'hide' ? {levels:hideLevelsFrom(v)} : {})}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
       games:(Array.isArray(s.chefRush?.games) ? s.chefRush.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, served:Math.max(0, +g.served || 0), perfect:Math.max(0, +g.perfect || 0), level:Math.max(1, +g.level || 1), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🍳 Chef's Rush (docs/CHEFS-RUSH.md)
@@ -7815,12 +7816,13 @@ let ggRun = null;
 function ggState(id){ return S.grammarGames[id] || (S.grammarGames[id] = {best:0, plays:0}); }
 function ggameCardsHTML(courseId, groupId){
   return GGAMES.filter(g => g.course === courseId && g.group === groupId).map(g => {
-    const st = S.grammarGames[g.id], stars = st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)}` : 'Not played yet';
+    const st = S.grammarGames[g.id], stars = g.id === 'hide' ? (st?.plays ? `${Object.keys(st.levels || {}).length} of ${HIDE_LEVELS.length} levels · ${Object.values(st.levels || {}).reduce((a, n) => a + n, 0)} of ${HIDE_LEVELS.length * 3} ⭐` : 'Not played yet')
+      : st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)}` : 'Not played yet';
     return `<section class="ela-final-assessment sim-card"><div><h3>🎮 ${g.emoji} ${esc(g.name)}</h3><p class="muted">${esc(g.intro)} · ${stars}</p></div><button type="button" class="btn small berry" data-gg-open="${g.id}">${st?.plays ? 'Play again' : 'Play'}</button></section>`;
   }).join('');
 }
 function ggStart(id){
-  if (id === 'hide') ggRun = {id, rounds:newHideRounds(), i:0, first:0, tries:0, msg:'', done:false, prep:'', obj:''};
+  if (id === 'hide') ggRun = {id, run:null, done:false};
   if (id === 'cross') ggRun = {id, i:0, first:0, tries:0, msg:'', done:false, crossed:[], step:'cross', missed:false};
   if (id === 'comic') ggRun = {id, i:0, first:0, tries:0, msg:'', done:false, word:'', mark:'', lines:[], missed:false};
   renderGgame();
@@ -7839,33 +7841,6 @@ function ggDoneHTML(total){
     <p>${ggRun.stars === 3 ? 'Perfect detective work!' : ggRun.stars === 2 ? 'So close to three stars. Try again?' : 'Every round makes you sharper. Try again for more stars!'}${ggRun.coins ? ` +${ggRun.coins} 🪙` : ''}</p>
     ${ggRun.master ? '<p class="review-banner">🏅 Link Library Master! Three stars in every game. +50 🪙</p>' : ''}
     <div class="row"><button type="button" class="btn berry" data-gg-again>🔁 Play again</button></div></section>`;
-}
-/* 🐾 */
-function hideHTML(){
-  const r = ggRun.rounds[ggRun.i], spot = spotById(r.spot), pet = petEmoji();
-  const furniture = ROOM.map(f => f.table ? `<div class="hs-table" style="left:${f.x}%;top:${f.y}%"></div>`
-    : f.rug ? `<div class="hs-rug" style="left:${f.x}%;top:${f.y}%"></div>`
-    : `<span class="hs-item${f.shelf ? ' hs-shelf' : ''}" style="left:${f.x}%;top:${f.y}%;font-size:${f.size}em" aria-hidden="true">${f.emoji}</span>`).join('');
-  const showPet = r.mode === 'tell' || ggRun.reveal;
-  const petHTML = showPet ? `<span class="hs-pet${spot.behind ? ' behind' : ''}" style="left:${spot.x}%;top:${spot.y}%" aria-label="Your pet">${pet}</span>` : '';
-  const taps = r.mode === 'find' && !ggRun.reveal ? SPOTS.map(s => `<button type="button" class="hs-spot" style="left:${s.x}%;top:${s.y}%" data-hs-spot="${s.id}" aria-label="Look here"></button>`).join('') : '';
-  const ask = r.mode === 'find'
-    ? `<p class="gg-ask">🔎 Your pet is hiding <b>${esc(r.clue)}</b>. Tap the spot!</p>`
-    : `<p class="gg-ask">✍️ Where is your pet? Finish the sentence.</p><div class="row hs-tell"><span>My pet is</span>
-        <select data-hs-prep aria-label="Preposition"><option value="">preposition…</option>${HIDE_PREPS.map(p => `<option${ggRun.prep === p ? ' selected' : ''}>${p}</option>`).join('')}</select>
-        <select data-hs-obj aria-label="Object"><option value="">object…</option>${HIDE_OBJECTS.map(o => `<option${ggRun.obj === o ? ' selected' : ''}>${o}</option>`).join('')}</select><span>.</span>
-        <button type="button" class="btn berry" data-hs-tell ${ggRun.reveal ? 'disabled' : ''}>Check</button></div>`;
-  return `<p><b>Round ${ggRun.i + 1} of ${HIDE_ROUNDS}</b> · ⭐ ${ggRun.first} on the first try</p>${ask}
-    <div class="hs-room">${furniture}${petHTML}${taps}</div>
-    ${ggRun.msg ? `<p class="${ggRun.ok ? 'sim-news' : 'dig-hint'}">${ggRun.msg}</p>` : ''}
-    ${ggRun.reveal ? `<button type="button" class="btn berry" data-gg-next>${ggRun.i + 1 < HIDE_ROUNDS ? 'Next round' : 'Finish'}</button>` : ''}`;
-}
-function hideAnswer(right, shown){
-  ggRun.tries++;
-  if (right) { if (ggRun.tries === 1) ggRun.first++; ggRun.ok = true; ggRun.reveal = true; ggRun.msg = `✅ ${ggRun.tries === 1 ? 'First try! ' : ''}${shown}`; sfx('good'); }
-  else if (ggRun.tries >= 2) { ggRun.ok = false; ggRun.reveal = true; ggRun.msg = `Not quite. ${shown}`; sfx('bad'); }
-  else { ggRun.ok = false; ggRun.msg = 'Not quite. Read it again and look closely. One more try!'; sfx('bad'); }
-  renderGgame();
 }
 /* ✂️ */
 function crossHTML(){
@@ -7897,34 +7872,62 @@ function comicHTML(){
       <div class="row"><button type="button" class="btn berry" data-cm-check ${ggRun.word && ggRun.mark ? '' : 'disabled'}>Add to my comic</button></div>
       ${ggRun.msg ? `<p class="dig-hint">${ggRun.msg}</p>` : ''}</section>`;
 }
+/* 🐾 Pet Hide-and-Seek (docs/HIDE-AND-SEEK.md): two versions of 4 levels (hideSeek.js); stars per level in
+   S.grammarGames.hide.levels. Coins: 5 the first time a level is finished and 5 for each new star. The game's best is
+   its lowest level's stars, so Link Library Master needs every level at 3 stars. */
+function hideLevelsFrom(v){
+  const levels = Object.fromEntries(HIDE_LEVELS.map(l => [l.id, Math.max(0, Math.min(3, Math.floor(+v?.levels?.[l.id]) || 0))]).filter(([, n]) => n));
+  const old = Math.max(0, Math.min(3, Math.floor(+v?.best) || 0));   // stars from the first Hide-and-Seek (find + say in one game)
+  if (old && !v?.levels) { levels.p1 = old; levels.s1 = old; }
+  return levels;
+}
+function hideFinish(){
+  const r = ggRun.run, st = ggState('hide'), stars = starsFor(r.first, r.total), before = st.levels?.[r.level] || 0, L = HIDE_LEVELS.find(l => l.id === r.level);
+  st.levels = {...(st.levels || {}), [r.level]:Math.max(before, stars)};
+  const coins = (before ? 0 : 5) + Math.max(0, stars - before) * 5;
+  st.plays++; st.best = HIDE_LEVELS.every(l => st.levels[l.id]) ? Math.min(...HIDE_LEVELS.map(l => st.levels[l.id])) : 0;
+  r.stars = stars; r.coins = coins;
+  if (coins) { S.coins += coins; updateHeader(); }
+  logEvent({k:'ggame', title:`Pet Hide-and-Seek, ${L.mode === 'place' ? 'Find and place' : 'Say where'}: ${L.name}`, s:r.first, n:r.total});
+  if (!S.grammarGames.master && GGAMES.every(x => (S.grammarGames[x.id]?.best || 0) >= 3)) { S.grammarGames.master = true; S.coins += 50; updateHeader(); r.master = true; }
+  sfx('good'); save();
+}
+function hideBodyHTML(){
+  const r = ggRun.run;
+  if (!r) return hideMenuHTML(ggState('hide').levels || {}, esc);
+  if (!r.finished) return hideLevelHTML(r, esc);
+  const L = HIDE_LEVELS.find(l => l.id === r.level), next = HIDE_LEVELS[HIDE_LEVELS.indexOf(L) + 1];
+  return `<section class="card"><h3>🏁 ${esc(L.name)}: ${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)} ${r.first} of ${r.total} right on the first try</h3>
+    <p>${r.stars === 3 ? 'Perfect detective work!' : r.stars === 2 ? 'So close to three stars. Try again?' : 'Every round teaches new words. Try again for more stars!'}${r.coins ? ` +${r.coins} 🪙` : ''}</p>
+    ${r.master ? '<p class="review-banner">🏅 Link Library Master! Three stars everywhere. +50 🪙</p>' : ''}
+    <div class="row"><button type="button" class="btn berry" data-pc-level="${r.level}">🔁 Play again</button>${next && next.mode === L.mode ? `<button type="button" class="btn" data-pc-level="${next.id}">Next level →</button>` : ''}<button type="button" class="btn" data-pc-menu>All levels</button></div></section>`;
+}
 function renderGgame(){
-  const g = ggameById(ggRun.id), total = g.id === 'hide' ? HIDE_ROUNDS : g.id === 'cross' ? CROSS_SENTENCES.length : COMIC_PANELS.length;
+  const g = ggameById(ggRun.id), total = g.id === 'cross' ? CROSS_SENTENCES.length : COMIC_PANELS.length;
   activeEnglishCourse = g.course;
-  const body = ggRun.done ? (g.id === 'comic' ? `<h3>📰 Your comic</h3><div class="comic-strip">${ggRun.lines.map(l => `<div class="comic-panel"><div class="comic-scene">${l.scene}</div><div class="comic-bubble">${petEmoji()} ${esc(l.line)}</div></div>`).join('')}</div>` : '') + ggDoneHTML(total)
-    : g.id === 'hide' ? hideHTML() : g.id === 'cross' ? crossHTML() : comicHTML();
+  const body = g.id === 'hide' ? hideBodyHTML() : ggRun.done ? (g.id === 'comic' ? `<h3>📰 Your comic</h3><div class="comic-strip">${ggRun.lines.map(l => `<div class="comic-panel"><div class="comic-scene">${l.scene}</div><div class="comic-bubble">${petEmoji()} ${esc(l.line)}</div></div>`).join('')}</div>` : '') + ggDoneHTML(total)
+    : g.id === 'cross' ? crossHTML() : comicHTML();
   $('#libraryWrap').innerHTML = `<div id="ggWrap" class="sim gg"><div class="backrow"><h2>🎮 ${g.emoji} ${esc(g.name)}</h2><button class="btn small" data-dig-back="${g.course}">Back to unit</button></div><p class="muted">${esc(g.intro)}</p>${body}</div>`;
 }
-$('#libraryWrap').addEventListener('change', e => {
-  if (!ggRun || ggRun.id !== 'hide') return;
-  if (e.target.matches('[data-hs-prep]')) ggRun.prep = e.target.value;
-  if (e.target.matches('[data-hs-obj]')) ggRun.obj = e.target.value;
-});
 $('#libraryWrap').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.ggOpen) { ggStart(b.dataset.ggOpen); return; }
   if (!ggRun || !b.closest('#ggWrap')) return;
   if (b.hasAttribute('data-gg-again')) { ggStart(ggRun.id); return; }
-  const total = ggRun.id === 'hide' ? HIDE_ROUNDS : CROSS_SENTENCES.length;
-  if (b.hasAttribute('data-gg-next')) {
-    ggRun.i++; ggRun.tries = 0; ggRun.msg = ''; ggRun.reveal = false; ggRun.prep = ''; ggRun.obj = ''; ggRun.crossed = []; ggRun.step = 'cross'; ggRun.verb = ''; ggRun.missed = false;
-    if (ggRun.i >= total) ggFinish(total);
+  if (ggRun.id === 'hide') {
+    if (b.dataset.pcLevel) { ggRun.run = newHideRun(b.dataset.pcLevel, Math.random, petEmoji()); renderGgame(); return; }
+    if (b.hasAttribute('data-pc-menu')) { ggRun.run = null; renderGgame(); return; }
+    if (!ggRun.run) return;
+    const picks = Object.fromEntries([...document.querySelectorAll('#ggWrap [data-pick]')].map(x => [x.dataset.pick, x.value]));
+    const sound = hideAct(ggRun.run, {...b.dataset, picks}); if (sound) sfx(sound);
+    if (ggRun.run.finished && ggRun.run.stars == null) hideFinish();
     renderGgame(); return;
   }
-  /* 🐾 */
-  if (b.dataset.hsSpot) { const r = ggRun.rounds[ggRun.i]; hideAnswer(b.dataset.hsSpot === r.spot, `Your pet was ${r.clue}.`); return; }
-  if (b.hasAttribute('data-hs-tell')) {
-    const r = ggRun.rounds[ggRun.i]; if (!ggRun.prep || !ggRun.obj) { toast('Pick a preposition and an object.'); return; }
-    hideAnswer(tellIsRight(r.spot, ggRun.prep, ggRun.obj), `${tellIsRight(r.spot, ggRun.prep, ggRun.obj) ? 'Yes: ' : 'Your pet is '}${spotById(r.spot).phrases.join(', or ')}.`); return;
+  const total = CROSS_SENTENCES.length;
+  if (b.hasAttribute('data-gg-next')) {
+    ggRun.i++; ggRun.tries = 0; ggRun.msg = ''; ggRun.reveal = false; ggRun.crossed = []; ggRun.step = 'cross'; ggRun.verb = ''; ggRun.missed = false;
+    if (ggRun.i >= total) ggFinish(total);
+    renderGgame(); return;
   }
   /* ✂️ */
   if (b.dataset.cx != null && ggRun.step === 'cross') { const i = +b.dataset.cx; ggRun.crossed = ggRun.crossed.includes(i) ? ggRun.crossed.filter(x => x !== i) : [...ggRun.crossed, i]; ggRun.msg = ''; renderGgame(); return; }

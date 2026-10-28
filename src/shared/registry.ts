@@ -372,7 +372,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'shape-asteroids', name: 'Shape Asteroids', emoji: '☄️', description: 'Shape asteroids are flying at the ship! Tap one to freeze space, turn it to see it, and find its area or a missing side to blast it.', src: '/arcade/shape-asteroids/', available: true },
   { id: 'carnival', name: 'Carnival Midway', emoji: '🎪', description: 'Six carnival booths: pop balloons, toss rings, check riders’ heights and more, with equations and inequalities.', src: '/arcade/carnival/', available: true },
   { id: 'power-lab', name: 'Punctuation Power Lab', emoji: '⚡', description: 'Tap the glowing spots to change the punctuation and watch your superhero change. Build the hero each mission needs!', src: '/arcade/power-lab/', available: true },
-  { id: 'link-games', name: 'Link Library Games', emoji: '🔗', description: 'Pet Hide-and-Seek, Cross It Out and the Comic Strip Studio: prepositions and interjections from English Unit 5.', src: '/arcade/link-games/', available: true },
+  { id: 'link-games', name: 'Link Library Games', emoji: '🔗', description: 'Pet Hide-and-Seek (8 levels), Cross It Out and the Comic Strip Studio: prepositions and interjections from English Unit 5.', src: '/arcade/link-games/', available: true },
   { id: 'prep-recall', name: 'Name All 48 Prepositions', emoji: '🔗', description: 'Race the clock to type every preposition you can remember. (During English Unit 5 it is on Today’s plan instead.)', src: '/prep-recall/', available: true }
 ];
 
