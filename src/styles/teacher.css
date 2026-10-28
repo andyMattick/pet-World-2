@@ -160,3 +160,6 @@ a.btn{display:inline-block; text-decoration:none}
 .word-pick-pop input{width:100%}
 .word-pick-pop .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
 .dict-link{font-size:.85em; white-space:nowrap; text-decoration:none}
+.setup-always{margin:0 0 14px; padding:10px 12px; border:2px dashed var(--line); border-radius:12px}
+.setup-always ul{margin:8px 0; padding-left:18px}
+.setup-always li{margin:4px 0}

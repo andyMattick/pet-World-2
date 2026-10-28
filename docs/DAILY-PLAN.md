@@ -73,7 +73,7 @@ Every extra is a **timed round** (owner: "how many can you get in X minutes?"). 
 
 - Each day one subject on the plan (time in a subject or a unit's practice, still to do) is picked at random and goes first, marked **⭐ Start here**. It's picked once a day, so it doesn't change while she works.
 - "Pass the quiz" and "pass the unit test" items go to the end of the list.
-- Class setting `game_settings.planShuffle`: on unless a teacher turns it off (Settings → ⭐ Order of the day).
+- Class setting `game_settings.planShuffle`: on unless a teacher turns it off (Quick setup, or Settings → ⭐ Order of the day).
 
 ## Fix first
 
