@@ -1491,3 +1491,21 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .scene-dot{position:absolute; top:50%; width:18px; height:18px; transform:translate(-50%, -50%); border-radius:50%; background:var(--berry, #E4577A); border:3px solid #fff; box-shadow:0 1px 3px #0006}
 .scene-ends{display:flex; justify-content:space-between; gap:6px; font-size:.75rem; margin-top:6px}
 .scene-ends b{font-size:.85rem}
+
+/* 🎬 today's video and 🛑 time to get help (docs/VIDEO-GATE.md) */
+.video-pass{display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:8px 0; padding:10px 12px; border:3px solid var(--berry, #E4577A); border-radius:14px; background:#fff3f6; font-size:1rem}
+.video-pass.done{border-color:#3a9a5b; background:#effaf2}
+.video-pass .btn{margin:0}
+.station-videos{display:block; margin:6px 0}
+.video-picker .theme-box{max-height:88vh; overflow:auto; text-align:left}
+.video-picker h2, .video-picker .theme-kicker, .video-picker .theme-emoji{text-align:center}
+.pick-steps{margin:6px 0 10px 1.2em; padding:0; line-height:1.4}
+.pick-list{display:grid; gap:10px; margin:8px 0}
+.pick-section{display:grid; gap:6px}
+.pick-section b{font-size:.95rem}
+.pick-video{display:block; text-align:left; white-space:normal; text-decoration:none}
+.pick-more summary{cursor:pointer; font-weight:800; margin:4px 0 8px}
+.pick-more .pick-section{margin-bottom:10px}
+.pick-now{margin:8px 0; padding:8px 10px; border-radius:10px; background:#fff3c4; color:#3a2a10}
+.help-stop .theme-box{border-color:#c0392b}
+.pick-skip{text-align:center !important; margin:10px 0 0}

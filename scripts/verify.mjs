@@ -252,6 +252,9 @@ try {
 need('src/game/game.js', 'function khanVideosHTML(', 'the lesson video buttons (History and Science videos come first)');
 need('src/game/game.js', 'ActivityTracker.watching = ', 'video time counted as class time');
 need('src/game/game.js', 'function watchFirstThen(', 'the watch-first prompt before practice');
+need('src/game/game.js', 'function videoGateThen(', 'today’s video, signed by a grown-up, before practice (docs/VIDEO-GATE.md)');
+need('src/game/game.js', 'function helpBlocks(', 'the 🛑 Time to get help stop (docs/VIDEO-GATE.md)');
+need('src/shared/mathVideos.js', 'export function struggleCheck(', 'the 🛑 Time to get help rule');
 
 // Tests: review first, a grown-up's PIN, every unit (CLAUDE.md, "Tests: review first"; docs/TEST-GATE.md)
 for (const [fn, what] of [['async function gatedTestReview(', 'the PIN before a test review'], ['async function gatedPetWorldTest(', 'the review + PIN before a Pet World test'],

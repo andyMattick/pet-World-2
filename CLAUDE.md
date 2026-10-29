@@ -95,6 +95,8 @@ Every time the owner says something is a game, it goes in **both** places: insid
 
 In History and Science (Biology), the lesson videos are the most important part. Encourage her to watch them (the 🎬 Watch first button and prompt), and count watching as time for that class (`ActivityTracker.watching`). See `docs/PRACTICE-TIME.md`.
 
+**Today’s video (owner, Oct 28, 2026):** the first practice each day in a Math, History or Biology unit waits for her to pick a video, watch it, and get a grown-up’s PIN signature (`videoGateThen`). A grown-up can open practice without one. Too many misses stop practice in that subject until a grown-up signs her back in (`helpBlocks`, `struggleCheck`). Never add a skip button for her. See `docs/VIDEO-GATE.md`.
+
 **Standard for every new History or Science unit:** check Khan's lesson pages and list every video in each lesson in `KHAN_VIDEOS` (src/shared/questionBanks.js; `[]` for a lesson with none), so each one shows as its own ▶ button. Each lesson's `KHAN_LINKS` entry opens the start of that lesson. `npm run verify` fails if a lesson has no video list. Units built before this rule (History 1–3, Biology 1–2) are listed in `scripts/verify.mjs` until their videos are added.
 
 ## Reading Quiz

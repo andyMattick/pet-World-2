@@ -28,6 +28,7 @@ import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, 
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { ROLE_SCENES, COURSE_ERAS, commonsThumb, WORLD_MAP, yearText } from '../shared/roleScenes.js';
+import { mathSkillVideos, struggleCheck, HELP_WINDOW } from '../shared/mathVideos.js';
 import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
 import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
@@ -137,6 +138,12 @@ function normalize(raw){
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
   s.vocab = normalizeVocabState(s.vocab);   // Word Workshop: answer history per word, sprint best, the family's own words and focus
   s.mathThink = s.mathThink && typeof s.mathThink === 'object' ? s.mathThink : {};   // math Think it through sets, by station ("cafe:1")
+  s.videoPass = Object.fromEntries(Object.entries(s.videoPass && typeof s.videoPass === 'object' && !Array.isArray(s.videoPass) ? s.videoPass : {})   // 🎬 today's video per unit: {day, title, picked, signed} (docs/VIDEO-GATE.md)
+    .filter(([k, v]) => k.length <= 40 && v && typeof v.day === 'string' && typeof v.title === 'string').slice(-60).map(([k, v]) => [k, {day:v.day.slice(0, 10), title:v.title.slice(0, 120), picked:+v.picked || 0, signed:+v.signed || 0}]));
+  s.helpWatch = Object.fromEntries(Object.entries(s.helpWatch && typeof s.helpWatch === 'object' && !Array.isArray(s.helpWatch) ? s.helpWatch : {})   // 🛑 last practice answers per subject, 1 right 0 missed
+    .filter(([k, v]) => k.length <= 20 && Array.isArray(v)).map(([k, v]) => [k, v.slice(-10).map(x => x ? 1 : 0)]));
+  s.helpLock = Object.fromEntries(Object.entries(s.helpLock && typeof s.helpLock === 'object' && !Array.isArray(s.helpLock) ? s.helpLock : {})   // 🛑 a subject stopped until a grown-up signs her back in
+    .filter(([k, v]) => k.length <= 20 && v && typeof v === 'object').map(([k, v]) => [k, {at:+v.at || 0, missed:+v.missed || 0, total:+v.total || 0, where:String(v.where || '').slice(0, 80)}]));
   s.missLog = (Array.isArray(s.missLog) ? s.missLog : []).filter(m => m && Number.isFinite(+m.t) && typeof m.q === 'string').slice(-80);   // missed lesson prompts with when (docs/INSIGHTS.md)
   s.writtenAnswers = normalizeWrittenAnswers(s.writtenAnswers);   // short answers and paragraphs, with a parent's check (docs: QUESTION-TYPES.md)
   s.historyProgress = s.historyProgress && typeof s.historyProgress === 'object' ? s.historyProgress : {};
@@ -10443,26 +10450,152 @@ document.addEventListener('visibilitychange', () => {
     toast(`🎬 Welcome back! Your video time counts as ${classWord(id)} time.`);
   }
 });
-/* before practice in a History or Biology lesson she hasn't opened: watch the video first */
+/* before practice in a History or Biology lesson: today's video for the unit, signed by a grown-up (videoGateThen;
+   owner, Oct 28, 2026: the old prompt had an "I already watched it" button, and she skipped the videos) */
 function watchFirstThen(courseId, skillId, go){
   const course = englishCourse(courseId), group = (course?.groups || []).find(g => (g.skills || []).includes(skillId));
   if (!videoFirstCourse(courseId) || !group || LOOK_ID) return go();
-  const key = `${course.id}:${group.id}`, video = studentVideo(key), url = KHAN_LINKS[course.id]?.[group.id];
-  if (lessonOpened(key) || (!video && !(url && khanOn()))) return go();
-  const el = document.createElement('div');
-  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Watch the lesson first');
-  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(group.name)}</p><div class="theme-emoji" aria-hidden="true">🎬</div><h2>Watch the lesson first!</h2>
-    <p>In ${classWord(courseId)}, the videos are the most important part. Watching counts as ${classWord(courseId)} time.</p>
-    <div class="row" style="justify-content:center"><button type="button" class="btn berry" data-watch-now>🎬 Watch it now</button><button type="button" class="btn small" data-watch-done>I already watched it</button></div></div>`;
-  document.body.appendChild(el);
-  el.querySelector('[data-watch-now]').addEventListener('click', () => {
-    el.remove();
-    if (video) { openLessonVideo(key); return; }
-    markKhanOpened(key); if (!window.open(url, '_blank', 'noopener')) toast('Your browser blocked the new tab. Use the Watch button on the lesson.');
-  });
-  el.querySelector('[data-watch-done]').addEventListener('click', () => { el.remove(); S.videosWatched = {...S.videosWatched, [`khan:${key}`]:arcadeDateKey()}; save(); go(); });
-  el.querySelector('[data-watch-now]').focus();
+  videoGateThen(course.id, group.id, go);
 }
+/* ---------- 🎬 Today's video and 🛑 Time to get help (owner, Oct 28, 2026; docs/VIDEO-GATE.md) ----------
+   Math, History and Biology: the first practice in a unit each day waits for a video. She picks one of the unit's
+   videos, watches it, and a grown-up signs it off with the PIN (S.videoPass[unit] = {day, title, picked, signed}).
+   The pass is per unit, per day. Tests and quizzes keep their own gates. */
+const gateUnitName = unit => SHOPS[unit]?.name || englishCourse(unit)?.title || unit;
+const videoGateUnit = unit => !!SHOPS[unit] || videoFirstCourse(unit);
+/* the unit's videos in sections: {name, focus, videos:[{title, url} | {title, key} (a video that plays in Pet World)]} */
+function unitVideoSections(unit, focus = null){
+  if (SHOPS[unit]) return SHOPS[unit].stations.filter(st => st.skills.length).map(st => {
+    const own = lessonVideo(`math:${unit}:${st.id}`), seen = new Set(), videos = own ? [{title:own.title, key:own.key}] : [];
+    for (const sk of st.skills) { const v = lessonVideo(`math:${sk}`); if (v && !seen.has(v.key)) { seen.add(v.key); videos.push({title:v.title, key:v.key}); }
+      for (const m of khanOn() ? mathSkillVideos(SKILLS[sk]?.url) : []) if (!seen.has(m.url)) { seen.add(m.url); videos.push(m); } }
+    return {name:`${st.emoji} ${st.id}. ${st.name}`, focus:st.id === focus, videos};
+  }).filter(s => s.videos.length);
+  const course = englishCourse(unit);
+  return (course?.groups || []).map(group => {
+    const key = `${course.id}:${group.id}`, mine = studentVideo(key), list = khanOn() && !validLessonLink(Backend.me?.lesson_links?.[key]) ? KHAN_VIDEOS[course.id]?.[group.id] : null;
+    const videos = mine ? [{title:mine.title, key}] : list?.length ? list.map(([title, url]) => ({title, url, watchKey:key}))
+      : KHAN_LINKS[course.id]?.[group.id] && khanOn() ? [{title:`The lesson on Khan Academy: ${group.name}`, url:KHAN_LINKS[course.id][group.id], watchKey:key}] : [];
+    return {name:group.name, focus:group.id === focus, videos};
+  }).filter(s => s.videos.length);
+}
+const videoPassToday = unit => S.videoPass?.[unit]?.day === arcadeDateKey() && !!S.videoPass[unit].signed;
+function videoPassBannerHTML(unit){
+  if (!videoGateUnit(unit) || LOOK_ID || !unitVideoSections(unit).length) return '';
+  const p = S.videoPass?.[unit], today = p?.day === arcadeDateKey();
+  if (videoPassToday(unit)) return `<div class="video-pass done">✅ <b>Today’s video:</b> ${esc(p.title)} · signed by a grown-up <button type="button" class="btn small" data-video-pass="${esc(unit)}">🎬 Watch another</button></div>`;
+  return `<div class="video-pass"><b>🎬 Before practice today:</b> pick a video, watch all of it, then get Mom’s signature.${today && p.title ? ` <span class="muted">You picked: ${esc(p.title)}</span>` : ''}<button type="button" class="btn berry" data-video-pass="${esc(unit)}">🎬 ${today && p.title ? 'Get Mom’s signature' : 'Pick today’s video'}</button></div>`;
+}
+/* go() runs right away when the pass is signed today (or there is nothing to watch); otherwise the picker opens */
+function videoGateThen(unit, focus, go){
+  if (LOOK_ID || !videoGateUnit(unit) || videoPassToday(unit) || !unitVideoSections(unit).length) return go();
+  openVideoPicker(unit, focus, go);
+}
+function openVideoPicker(unit, focus = null, go = null){
+  const sections = unitVideoSections(unit, focus); if (!sections.length) return;
+  if (!sections.some(s => s.focus)) sections[0].focus = true;
+  const shown = [...sections.filter(s => s.focus), ...sections.filter(s => !s.focus)];
+  const all = shown.flatMap(s => s.videos), signed = videoPassToday(unit);
+  const videoHTML = (v, i) => v.url ? `<a class="btn pick-video" href="${esc(v.url)}" target="_blank" rel="noopener" data-pick-video="${i}">▶ ${esc(v.title)}</a>` : `<button type="button" class="btn pick-video" data-pick-video="${i}">▶ ${esc(v.title)}</button>`;
+  let n = 0; const sectionHTML = s => `<div class="pick-section"><b>${esc(s.name)}</b>${s.videos.map(v => videoHTML(v, n++)).join('')}</div>`;
+  const focusHTML = shown.filter(s => s.focus).map(sectionHTML).join(''), restHTML = shown.filter(s => !s.focus).map(sectionHTML).join('');
+  const el = document.createElement('div');
+  el.className = 'theme-card video-picker'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Pick today’s video');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(gateUnitName(unit))}</p><div class="theme-emoji" aria-hidden="true">🎬</div><h2>${signed ? 'Watch another video' : 'Pick today’s video'}</h2>
+    <ol class="pick-steps"><li><b>Pick a video</b> from this unit (it opens in a new tab).</li><li><b>Watch all of it.</b> Watching counts as class time.</li><li><b>Get Mom’s signature.</b> Then practice opens for today.</li></ol>
+    <div class="pick-list">${focusHTML}${restHTML ? `<details class="pick-more"><summary>More videos in this unit</summary>${restHTML}</details>` : ''}</div>
+    <p class="pick-now" hidden></p>
+    <div class="row" style="justify-content:center"><button type="button" class="btn berry" data-sign-video${S.videoPass?.[unit]?.day === arcadeDateKey() && S.videoPass[unit].title ? '' : ' disabled'}>✍️ Mom’s signature: I watched it</button><button type="button" class="btn small" data-pick-close>Not now</button></div>
+    ${signed ? '' : '<p class="pick-skip"><button type="button" class="btn small" data-skip-video>🔐 Grown-up: no good video today, open practice</button></p>'}</div>`;
+  document.body.appendChild(el);
+  const now = el.querySelector('.pick-now'), sign = el.querySelector('[data-sign-video]');
+  const showPicked = () => { const p = S.videoPass?.[unit]; if (p?.day === arcadeDateKey() && p.title) { now.hidden = false; now.innerHTML = `Watching: <b>${esc(p.title)}</b>. When it’s over, bring Mom here to sign.`; sign.disabled = false; } };
+  showPicked();
+  el.addEventListener('click', e => {
+    const pick = e.target.closest('[data-pick-video]');
+    if (pick) {
+      const v = all[+pick.dataset.pickVideo]; if (!v) return;
+      S.videoPass = {...S.videoPass, [unit]:{...(signed ? S.videoPass[unit] : {}), day:arcadeDateKey(), title:String(v.title).slice(0, 120), picked:Date.now()}};
+      if (v.key) { openLessonVideo(v.key); el.style.display = "none"; const back = setInterval(() => { if (!videoSession || !el.isConnected) { clearInterval(back); el.style.display = ""; } }, 500); }   // the video plays in Pet World, under this card
+      else if (v.watchKey) markKhanOpened(v.watchKey);
+      else { startWatching('khan', `math:${unit}`); logEvent({k:'watch', title:`🎬 Opened the Khan Academy video: ${String(v.title).slice(0, 80)}`}); }
+      save(); showPicked(); return;   // a link opens its new tab by itself
+    }
+    if (e.target.closest('[data-pick-close]')) { el.remove(); rerenderGateUnit(unit); return; }
+    if (e.target.closest('[data-skip-video]')) void (async () => {   // a parent override, when none of the unit's videos is a good fit
+      if (!await askGrownUp({title:'Open practice without a video', text:`None of the ${esc(gateUnitName(unit))} videos fits today? Your PIN opens practice for today without one.`, ok:'Open practice', log:`🔐 Grown-up opened practice without a video today: ${gateUnitName(unit)}`})) return;
+      S.videoPass = {...S.videoPass, [unit]:{day:arcadeDateKey(), title:'No video today (a grown-up said OK)', picked:0, signed:Date.now()}}; save();
+      el.remove(); toast('🔐 Practice is open for today.');
+      if (go) go(); else rerenderGateUnit(unit);
+    })();
+    if (e.target.closest('[data-sign-video]') && !sign.disabled) void (async () => {
+      const p = S.videoPass?.[unit];
+      if (!await askGrownUp({title:'Sign off today’s video', text:`She watched <b>${esc(p.title)}</b> (${esc(gateUnitName(unit))}). Your PIN says she watched all of it, and practice opens for today.`, ok:'✍️ Sign', log:`✍️ Grown-up signed off today’s video: ${p.title} (${gateUnitName(unit)})`})) return;
+      S.videoPass = {...S.videoPass, [unit]:{...p, signed:Date.now()}}; save();
+      el.remove(); toast('✍️ Signed! Practice is open for today.');
+      if (go) go(); else rerenderGateUnit(unit);
+    })();
+  });
+  setTimeout(() => el.querySelector('[data-pick-video]')?.focus(), 50);
+}
+function rerenderGateUnit(unit){
+  if (SHOPS[unit] && !$('#scr-cafe').hidden) renderShopFloor(unit);
+  else if (!SHOPS[unit] && !$('#scr-library').hidden && activeEnglishCourse === unit && !englishRun) renderEnglishUnit(unit);
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-video-pass]'); if (b) openVideoPicker(b.dataset.videoPass, +b.dataset.videoFocus || b.dataset.videoFocus || null); });
+
+/* 🛑 Time to get help: practice answers in each subject (S.helpWatch[subject], newest last). When struggleCheck says
+   stop, that subject locks (S.helpLock[subject]) until a grown-up signs her back in with the PIN, after she got help
+   or watched a video. Practice and station quizzes lock; the lock stays across days until a grown-up signs. */
+const courseSubject = id => SHOPS[id] || id === 'math' ? 'math' : isHistoryCourse(id) ? 'history' : isScienceCourse(id) ? 'science' : 'english';
+const subjectName = s => ({math:'Math', history:'History', science:'Biology', english:'English'})[s] || s;
+const helpLocked = subject => !LOOK_ID && !!S.helpLock?.[subject];
+function noteAnswer(subject, right, where = ''){
+  if (LOOK_ID || helpLocked(subject)) return;
+  const recent = [...(S.helpWatch?.[subject] || []), right ? 1 : 0].slice(-HELP_WINDOW), stop = struggleCheck(recent);
+  S.helpWatch = {...S.helpWatch, [subject]:stop ? [] : recent};
+  if (!stop) return;
+  S.helpLock = {...S.helpLock, [subject]:{at:Date.now(), missed:stop.missed, total:stop.total, where:String(where).slice(0, 80)}};
+  logEvent({k:'gate', title:`🛑 Stopped ${subjectName(subject)} to get help: missed ${stop.missed} of the last ${stop.total}${where ? ` (${where})` : ''}`});
+  setTimeout(() => showHelpStop(subject, true), 1400);   // she sees the answer first
+}
+function showHelpStop(subject, endRun = false){
+  const lock = S.helpLock?.[subject]; if (!lock || document.querySelector('.help-stop')) return;
+  if (endRun) {   // the practice she was in ends here
+    if (subject === 'math' && shift && shift.mode === 'practice') { stopOrderSpeech(); cancelReadFirst(order); freezePatience(); currentShop = shift.shop; shift = null; order = null; show('cafe'); }
+    else if (subject !== 'math' && englishRun && !englishRun.assessment) { const id = englishRun.courseId; englishRun = null; if (!$('#scr-library').hidden) renderEnglishUnit(id); }
+  }
+  const el = document.createElement('div');
+  el.className = 'theme-card help-stop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Time to get help');
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(subjectName(subject))}</p><div class="theme-emoji" aria-hidden="true">🛑</div><h2>Time to get help</h2>
+    <p>You missed <b>${lock.missed} of your last ${lock.total}</b>${lock.where ? ` in ${esc(lock.where)}` : ''}. That means this is tricky right now, and that’s OK.</p>
+    <p><b>Stop ${esc(subjectName(subject))} here.</b> Go find Mom, Dad or your teacher and show them what’s hard. Get help or watch a video together. Then a grown-up signs you back in.</p>
+    <p class="muted">Other subjects are still open.</p>
+    <div class="row" style="justify-content:center"><button type="button" class="btn berry" data-help-signin>🔐 Grown-up: sign her back in</button><button type="button" class="btn small" data-help-close>OK</button></div></div>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-help-close]').addEventListener('click', () => el.remove());
+  el.querySelector('[data-help-signin]').addEventListener('click', () => { el.remove(); void helpSignIn(subject); });
+  el.querySelector('[data-help-close]').focus();
+}
+async function helpSignIn(subject){
+  const lock = S.helpLock?.[subject]; if (!lock) return true;
+  const how = await new Promise(resolve => {
+    const el = document.createElement('div');
+    el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'What helped?');
+    el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up</p><div class="theme-emoji" aria-hidden="true">🤝</div><h2>What did she do?</h2><p>She missed ${lock.missed} of her last ${lock.total} in ${esc(subjectName(subject))}${lock.where ? ` (${esc(lock.where)})` : ''}.</p>
+      <div class="row" style="justify-content:center;flex-wrap:wrap">${[['help', 'Got help from a grown-up'], ['video', 'Watched a video'], ['both', 'Both']].map(([id, t]) => `<button type="button" class="btn" data-how="${id}">${t}</button>`).join('')}<button type="button" class="btn small" data-how="">Cancel</button></div></div>`;
+    document.body.appendChild(el);
+    el.addEventListener('click', e => { const b = e.target.closest('[data-how]'); if (b) { el.remove(); resolve(b.dataset.how); } });
+  });
+  if (!how) return false;
+  const what = {help:'got help', video:'watched a video', both:'got help and watched a video'}[how];
+  if (!await askGrownUp({title:`Sign her back in to ${subjectName(subject)}`, text:`She ${what}. Your PIN opens ${esc(subjectName(subject))} practice again.`, ok:'Sign her back in', log:`🔐 Grown-up signed her back in to ${subjectName(subject)}: she ${what}`})) return false;
+  const rest = {...S.helpLock}; delete rest[subject]; S.helpLock = rest; S.helpWatch = {...S.helpWatch, [subject]:[]}; save();
+  toast(`✅ Back in! ${subjectName(subject)} is open again.`);
+  return true;
+}
+/* practice and station quizzes check this first; true means stop (the 🛑 card shows) */
+function helpBlocks(subject){ if (!helpLocked(subject)) return false; showHelpStop(subject); return true; }
 function khanLinkHTML(url, name, key){
   const search = `${KHAN}search?page_search_query=${encodeURIComponent(String(name).replace(/\s*[|\u00b7].*$/, ''))}`, href = url || search;
   /* a fixed link can break if Khan moves a page, so it always comes with a search for the lesson as a backup (docs: KHAN.md) */
@@ -11361,7 +11494,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -11416,6 +11549,7 @@ async function gateThen(courseId, skillId, go){
   S.gateOpen[key] = true; save(); go();
 }
 function startEnglishPractice(skillId,courseId=activeEnglishCourse){
+  if (helpBlocks(courseSubject(englishCourse(courseId).id))) return;
   const course = englishCourse(courseId), pool = englishQuestions(skillId,course.id), skill = course.skills.find(item => item.id === skillId);
   if (!skill || pool.length < 4) return;
   const review = reviewDue(course.id, skillId);   // a Khan review leans toward the harder questions, still easiest first
@@ -11424,6 +11558,7 @@ function startEnglishPractice(skillId,courseId=activeEnglishCourse){
 }
 function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
+  if (!final && helpBlocks(courseSubject(course.id))) return;
   if (final ? !englishFinalReady(course) : !group || !(unitOpenedByGrownUp(course.building) || group.skills.every(skillId => englishRecord(skillId,course.id).passed))) return;
   const questions = final
     ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
@@ -11444,6 +11579,7 @@ function recordQuestionStat(question, correct){
 }
 function recordEnglishAnswer(run, question, correct){
   recordQuestionStat(question, correct);
+  if (!run.assessment) noteAnswer(courseSubject(run.courseId), correct, englishCourse(run.courseId)?.skills.find(sk => sk.id === question.skillId)?.name || '');   // 🛑 Time to get help
   if (!correct) S.missLog = [...(S.missLog || []), {t:Date.now(), c:String(run.courseId || '').slice(0, 20), k:String(question.skillId || '').slice(0, 40), w:String(run.retryType || '').slice(0, 12), q:String(question.prompt || question.sentence || '').slice(0, 140)}].slice(-80);   // the teacher's 📈 Insights: which prompts she missed, and when (docs/INSIGHTS.md)
   const store = progressStore(run.courseId), record = englishRecord(question.skillId,run.courseId);
   store[question.skillId] = {
@@ -11493,7 +11629,7 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.cardGrade && cardRun) { gradeCard(button.dataset.cardGrade === 'knew'); return; }
   if (button.hasAttribute('data-card-side') && cardRun) { cardRun.meaningFirst = !cardRun.meaningFirst; cardRun.flipped = false; renderCard(); return; }
   if (button.hasAttribute('data-card-skip') && cardRun) { finishCards(); return; }
-  if (button.dataset.elaPractice) { const skillId = button.dataset.elaPractice, courseId = button.dataset.elaCourse || activeEnglishCourse; void gateThen(courseId, skillId, () => watchFirstThen(courseId, skillId, () => { if (watching?.kind === 'khan') stopWatching(); startEnglishPractice(skillId, courseId); })); return; }
+  if (button.dataset.elaPractice) { const skillId = button.dataset.elaPractice, courseId = button.dataset.elaCourse || activeEnglishCourse; if (helpBlocks(courseSubject(englishCourse(courseId).id))) return; void gateThen(courseId, skillId, () => watchFirstThen(courseId, skillId, () => { if (watching?.kind === 'khan') stopWatching(); startEnglishPractice(skillId, courseId); })); return; }
   if (button.dataset.elaQuiz) { startEnglishAssessment(button.dataset.elaQuiz,button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-ela-final')) { void gatedPetWorldTest(button.dataset.elaCourse || activeEnglishCourse); return; }
   if (button.hasAttribute('data-fix-score')) { void fixScore(button.dataset.elaCourse || activeEnglishCourse); return; }
@@ -12467,7 +12603,7 @@ function renderShopFloor(shop){
   const settings = quizSettings(Backend.me ? Backend.me.quiz_settings : S.quizSettings || QUIZ_DEFAULTS);
   currentShop = config.id;
   $('#scr-cafe h2').textContent = `${config.emoji} ${config.name}`;
-  { let t = $('#shopTodayTime'); if (!t) { t = document.createElement('div'); t.id = 'shopTodayTime'; $('#scr-cafe > p').after(t); } t.innerHTML = todayTimeHTML('math', config.id); }
+  { let t = $('#shopTodayTime'); if (!t) { t = document.createElement('div'); t.id = 'shopTodayTime'; $('#scr-cafe > p').after(t); } t.innerHTML = todayTimeHTML('math', config.id) + videoPassBannerHTML(config.id); }
   $('#scr-cafe > p').textContent = settings.requireQuiz ? `${config.unitLabel}. Pass each station quiz to open the next station.` : `${config.unitLabel}. Each station opens after ${UNLOCK_AT} orders at the one before it.`;
   const allStationsBuilt = config.stations.every(st => st.skills.length > 0);
   const allStationQuizzesPassed = allStationsBuilt && (unitOpenedByGrownUp(config.id) || config.stations.every(st => {
@@ -12503,7 +12639,7 @@ function renderShopFloor(shop){
     else if (quiz?.tries) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">Retake quiz</button>`;
     else if (open && (mastered || unitOpenedByGrownUp(config.id))) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">📝 Station Quiz</button>`;
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
-    return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}
+    return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}${open && unitVideoSections(config.id).some(sec => sec.name.includes(`${st.id}. ${st.name}`)) ? `<button type="button" class="btn ${videoPassToday(config.id) ? 'small' : 'berry'} station-videos" data-video-pass="${config.id}" data-video-focus="${st.id}">🎬 Lesson videos</button>` : ''}
       <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
       <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}${open && config.id === 'post' && st.id === 4 ? parcelButtonHTML() : ''}${open && config.id === 'show' && st.id === 6 ? petShowButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
@@ -12527,11 +12663,11 @@ $('#stations').addEventListener('click', e => {
   const mathKhan = e.target.closest('[data-math-khan]');
   if (mathKhan) { const units = mathKhanUnits(mathKhan.dataset.shop); void gatedKhanTest(mathKhan.dataset.shop, `${SHOPS[mathKhan.dataset.shop]?.name || ''} (${units.map(u => u[0]).join(', ')})`, units[+mathKhan.dataset.mathKhan]?.[1]); return; }
   const review = e.target.closest('[data-review-key]');
-  if (review && !review.disabled) { void startShift(review.dataset.shop, +review.dataset.reviewStation, review.dataset.reviewKey); return; }
+  if (review && !review.disabled) { if (helpBlocks('math')) return; videoGateThen(review.dataset.shop, +review.dataset.reviewStation, () => void startShift(review.dataset.shop, +review.dataset.reviewStation, review.dataset.reviewKey)); return; }
   const quiz = e.target.closest('[data-quiz]');
-  if (quiz && !quiz.disabled) { void startAssessment(quiz.dataset.shop, +quiz.dataset.quiz); return; }
+  if (quiz && !quiz.disabled) { if (helpBlocks('math')) return; void startAssessment(quiz.dataset.shop, +quiz.dataset.quiz); return; }
   const station = e.target.closest('[data-station]');
-  if (station && !station.disabled) void startShift(station.dataset.shop, +station.dataset.station);
+  if (station && !station.disabled) { if (helpBlocks('math')) return; videoGateThen(station.dataset.shop, +station.dataset.station, () => void startShift(station.dataset.shop, +station.dataset.station)); }
 });
 
 /* math unit review (docs/TEST-GATE.md): 8 practice orders from every station of the unit, before the Unit Test or the
@@ -13088,6 +13224,7 @@ function completeOrder(){
   checkUnlocks({announce:true});
   if (shift.mode === 'practice') Backend.log('problems', {shop:shift.shop, station:shift.station, skill:p.skill, perfect, steps:p.steps.length, secs:Math.round(secs)});
     if (shift.mode === 'practice') logCount(`shop:${shift.shop}:${shift.station}`, perfect);   // day log
+  if (shift.mode === 'practice') noteAnswer('math', order.tries === 0, `${SHOPS[shift.shop]?.name || ''}: ${SKILLS[p.skill]?.name || ''}`);   // 🛑 Time to get help (a wrong try counts as a miss; hints don't)
   save(); updateHeader();
   const n = $('#chalkNote'); n.className = 'chalk-note good';
   n.textContent = perfect ? 'Perfect order!' + (S.streak > 1 ? ` ${S.streak} in a row!` : '') : 'Order up!';
