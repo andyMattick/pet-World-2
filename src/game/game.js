@@ -20,17 +20,20 @@ import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
 import { teacherLock, setTeacherLock, markUnlocked, pinMatchesLock } from '../shared/grownupLock';
-import { themeFor, themeSettings, rotationTheme, themeById } from '../shared/themeDays';
+import { themeFor, themeSettings, rotationTheme, themeById, ALL_THEMES } from '../shared/themeDays';
+import { revealStyleFor, runReveal } from './reveals/index.js';
+import { themeSceneHTML, addThemeSceneCSS } from './reveals/themeScenes.js';
 import { termCards } from '../shared/termCards';
 import { HANDS_ON, NATURE_JOURNAL, handsOnById, weekHandsOn } from '../shared/handsOn';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS, SIM_MISSIONS, CELL_PARTS, CELLS, cellPart, cellPick, GENOTYPES, furOf, punnettGrid, whiteShare, litter, PUNNETT_MISSIONS, WEB, webById, WEB_ANIMALS, WEB_LIVING, sameSet, removeEffect, effectLabel, WEB_MISSIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
+import { REPAIR_SHELVES, booksOn, repairSentenceHTML, choiceLabel } from './bookRepair.js';
 import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { ROLE_SCENES, COURSE_ERAS, commonsThumb, WORLD_MAP, yearText } from '../shared/roleScenes.js';
 import { mathSkillVideos, struggleCheck, HELP_WINDOW } from '../shared/mathVideos.js';
 import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
-import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
+import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
 
 /* ===================== CORE (no DOM) ===================== */
@@ -151,7 +154,7 @@ function normalize(raw){
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
   s.historyProjects = normalizeProjectStore(s.historyProjects, [...new Set(['history','historylab','history2','history3','history4','history5','prepositions','prepositionslab','prepositionslab2', ...[6, 7, 8, 9].flatMap(n => ['', 'lab', 'lab2', 'lab3'].map(x => `history${n}${x}`))])]);   // Units 6–9: each unit's projects (pick-one choices use the lab keys)
   s.gateOpen = Object.fromEntries(Object.entries(s.gateOpen && typeof s.gateOpen === 'object' ? s.gateOpen : {}).filter(([k, v]) => typeof k === 'string' && v === true));   // lessons a grown-up previewed and unlocked (skill gate:true)   // English projects are kept here too
-  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3']);
+  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3','bio3','bio3lab']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
@@ -182,6 +185,7 @@ function normalize(raw){
     s.digs = normalizeDigs(s.digs);   // Dig Sites (F12)
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries((SIM_MISSIONS[id] || []).filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.heroLab = {packs:Object.fromEntries(HERO_PACKS.map(p => [p.id, s.heroLab?.packs?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.heroLab?.master};   // ⚡ Punctuation Power Lab (docs/ENGLISH-UNIT6.md)
+    s.bookRepair = {shelves:Object.fromEntries(REPAIR_SHELVES.map(p => [p.id, s.bookRepair?.shelves?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.bookRepair?.master};   // 📚 Book Repair Desk (docs/ENGLISH-UNIT7.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0), ...(id === 'hide' ? {levels:hideLevelsFrom(v)} : {})}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
@@ -207,6 +211,8 @@ function normalize(raw){
       games:(Array.isArray(s.petshow?.games) ? s.petshow.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), ribbons:Math.max(0, +g.ribbons || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🏆 Pet Show Awards (docs/PET-SHOW-AWARDS.md)
     s.pax = {day:typeof s.pax?.day === 'string' ? s.pax.day : '', coinsToday:Math.max(0, Math.round(+s.pax?.coinsToday || 0)),
       games:(Array.isArray(s.pax?.games) ? s.pax.games : []).filter(g => g && Number.isFinite(+g.t) && (g.course === 'history4' || g.course === 'history5')).slice(-30).map(g => ({t:+g.t, course:g.course, id:String(g.id || '').slice(0, 20), stars:Math.max(1, Math.min(3, Math.round(+g.stars || 1))), rank:Math.max(1, Math.min(4, Math.round(+g.rank || 1))), empires:Math.max(2, Math.min(4, Math.round(+g.empires || 2))), prestige:Math.max(0, Math.min(5000, Math.round(+g.prestige || 0))), rounds:Math.max(1, Math.min(40, Math.round(+g.rounds || 1)))}))};   // ⚖️ Pax Oeconomica (docs/PAX-OECONOMICA.md)
+    s.greenhouse = {best:Math.max(0, Math.min(3, Math.round(+s.greenhouse?.best || 0))), day:typeof s.greenhouse?.day === 'string' ? s.greenhouse.day : '', coinsToday:Math.max(0, Math.round(+s.greenhouse?.coinsToday || 0)),
+      games:(Array.isArray(s.greenhouse?.games) ? s.greenhouse.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), jobs:Math.max(0, Math.min(8, +g.jobs || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🌺 Greenhouse Keeper (docs/GREENHOUSE-KEEPER.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -404,7 +410,7 @@ function unitLockedText(building){
     return building.open && prev ? `Pass the ${prev.name} Unit Test to open the ${building.name}.` : `Opens with the ${building.name}.`; // Display the unit test requirement
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
-const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test', elaPunct:'punctuation:final-test'};
+const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test', elaPunct:'punctuation:final-test', elaColon:'colons:final-test'};
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (ELA_FINAL_KEYS[unit]) {
@@ -6231,9 +6237,11 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'book-repair') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));   // 1 ticket per 2 books fixed on the first try, up to 3 a shelf (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
   else if (run.gameId === 'pax-oeconomica') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/PAX-OECONOMICA.md)
+  else if (run.gameId === 'greenhouse-keeper') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/GREENHOUSE-KEEPER.md)
   else if (run.gameId === 'parcel-post') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/PARCEL-POST.md)
   else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
   else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
@@ -6358,7 +6366,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && (vocabRun || puzzleRun || checkRun)) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap') || $('#brWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -6715,13 +6723,31 @@ function openThemeAsk(prev){
   });
   setTimeout(() => el.querySelector('input[name="pin"]')?.focus(), 50);
 }
-function openThemeCard(theme, first){
+/* the first time today: a show (a different one from the class show) lands on today's theme among a few others, then the
+   card. The theme is already decided (todayTheme); the show only reveals it. */
+function themeRevealStyle(day){ const classes = revealStyleFor(day).id, a = revealStyleFor(day, 1); return a.id !== classes ? a : revealStyleFor(day, 2); }
+function openThemeReveal(theme){
+  const day = logDayKey(), style = themeRevealStyle(day);
+  const others = shuffle(ALL_THEMES.filter(t => t.id !== theme.id && !t.date && t.id !== 'hundredDay')).slice(0, 3);
+  const all = shuffle([theme, ...others]), labels = all.map(t => `${t.emoji} ${t.name}`), pick = all.indexOf(theme);
+  const el = document.createElement('div');
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Today’s theme');
+  el.innerHTML = `<div class="theme-box wheel-box"><p class="theme-kicker">It’s a theme day!</p><h2>${esc(style.title.replace(/class(es)?/gi, 'theme'))}</h2>
+    <p class="reveal-round"></p><div class="reveal-stage"></div><p class="reveal-hint" aria-live="polite"></p><div class="reveal-go"></div></div>`;
+  document.body.appendChild(el);
+  const done = () => { el.remove(); openThemeCard(theme, true, true); };
+  runReveal(style, el.querySelector('.theme-box'), [{caption:'', labels, picks:[pick]}], {quick:matchMedia('(prefers-reduced-motion: reduce)').matches, esc, sfx, pet:petEmoji(), reveal:() => sfx('unlock')})
+    .then(() => new Promise(ok => setTimeout(ok, 1100)), () => {}).finally(done);
+}
+function openThemeCard(theme, first, revealed = false){
   if ($('.theme-card')) return;
+  if (first && !revealed && S.themeSeen !== logDayKey()) { openThemeReveal(theme); return; }
+  addThemeSceneCSS();
   const el = document.createElement('div'), day = logDayKey(), way = S.themeWay?.day === day ? S.themeWay.way : '';
   el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', theme.name);
   /* two ways to join in (owner, Oct 27, 2026): a quick way (wear it) or a longer way (make it) */
   const opt = (w, icon, name, text) => `<button type="button" class="theme-way${way === w ? ' on' : ''}" data-theme-way="${w}"><b>${icon} ${name}</b><span>${esc(text)}</span></button>`;
-  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${first ? 'Today is…' : 'Today’s theme'}</p><div class="theme-emoji" aria-hidden="true">${theme.emoji}</div><h2>${esc(theme.name)}</h2>
+  el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${first ? 'Today is…' : 'Today’s theme'}</p>${themeSceneHTML(theme.id, petEmoji(), esc)}<h2>${theme.emoji} ${esc(theme.name)}</h2>
     <p>${way ? 'Your pick:' : 'How do you want to join in? Pick one:'}</p>
     <div class="theme-ways">${opt('quick', '⚡', 'Quick way', theme.wear)}${opt('long', '🛠️', 'Longer way', theme.make || theme.wear)}</div>
     <p><b>Today’s challenge:</b> ${esc(theme.challenge)}</p>
@@ -6782,7 +6808,7 @@ const handsOnKey = id => (id === 'nature' ? `nature:${handsOnWeek()}` : id);
 const handsOnEntry = id => S.handsOn.entries[handsOnKey(id)] || null;
 const handsOnSentIds = () => Object.values(S.handsOn.entries).filter(e => e.sentAt && e.id !== 'nature').map(e => e.id);
 const handsOnDoneThisWeek = () => Object.values(S.handsOn.entries).some(e => e.sentAt && weekOf(logDayKey(new Date(e.sentAt))) === handsOnWeek());
-const bioOpen = () => ['bioChem', 'bioCells'].some(id => unitOpen(id));
+const bioOpen = () => ['bioChem', 'bioCells', 'bioEnergy'].some(id => unitOpen(id));
 const currentBioCourse = () => unitCourse(nextUnit('biology')?.id || 'bioChem') || 'bio1';
 function handsOnPick(){ return weekHandsOn(currentBioCourse(), handsOnSentIds()); }
 function handsOnPlanRow(){
@@ -8408,6 +8434,45 @@ window.addEventListener('message', e => {
   save();
   toast(`⚖️ ${g.rank === 1 ? 'Your empire won!' : `Your empire finished #${g.rank}.`} ${'⭐'.repeat(g.stars)}${coins ? ` +${coins} 🪙` : c.coinsToday >= PAX_COINS_PER_DAY ? ' (Today’s Pax Oeconomica coins are all earned.)' : ''}`);
 });
+/* ---------- 🌺 Greenhouse Keeper (public/arcade/greenhouse-keeper, docs/GREENHOUSE-KEEPER.md) ----------
+   Biology Unit 3's game: a shift of 8 greenhouse jobs (run photosynthesis or cellular respiration in a leaf or a cell,
+   sort who does which, read a day-and-night gas sensor, trace where a plant's mass came from, follow the energy). It
+   opens from a card on the Greenhouse unit page and is also an Arcade game. Played from the unit it pays Pet World
+   coins: 1 per job done right, up to GREENHOUSE_COINS_PER_DAY a day. It never counts toward practice, quizzes, tests
+   or unlocks. */
+const GREENHOUSE_COINS_PER_DAY = 20;
+function greenhouseCardHTML(courseId){
+  if (courseId !== 'bio3') return '';
+  const best = S.greenhouse?.best || 0, n = S.greenhouse?.games?.length || 0;
+  return `<section class="ela-final-assessment"><div><h3>🌺 Greenhouse Keeper</h3><p class="muted">Run the Greenhouse for a day: power up leaves and cells, read the gas sensor, and follow the energy from the sun to a hummingbird · ${n ? `${n} shift${n === 1 ? '' : 's'} played${best ? `, best ${'⭐'.repeat(best)}` : ''}` : 'Not played yet'}</p></div><button type="button" class="btn small berry" data-greenhouse-open>Play</button></section>`;
+}
+function openGreenhouse(){
+  if ($('#greenhouseWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'greenhouseWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Greenhouse Keeper');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🌺 Greenhouse Keeper</b><button type="button" class="btn small" data-greenhouse-close>Done</button></div><iframe src="/arcade/greenhouse-keeper/?from=bio3" title="Greenhouse Keeper"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-greenhouse-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-library').hidden && $('#libraryWrap [data-greenhouse-open]')) renderEnglishUnit('bio3'); });
+}
+$('#libraryWrap').addEventListener('click', e => { if (e.target.closest('[data-greenhouse-open]')) openGreenhouse(); });
+window.addEventListener('message', e => {
+  const frame = $('#greenhouseWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'greenhouse:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), jobs = Math.max(0, Math.min(8, Math.round(+r.jobs || 0)));
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, jobs, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.greenhouse, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), stars, jobs, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, GREENHOUSE_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const practice = Object.keys(missed).map(k => BIO_UNIT3.find(x => x.id === k)?.name || k).join(', ');
+  logEvent({k:'greenhouse', course:'bio3', s:right, n:jobs, title:`${right} of ${jobs} jobs done right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🌺 ${right} of ${jobs} greenhouse jobs done right!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= GREENHOUSE_COINS_PER_DAY ? ' (Today’s Greenhouse Keeper coins are all earned.)' : ''}`);
+});
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
    every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
@@ -8915,6 +8980,74 @@ $('#libraryWrap').addEventListener('click', e => {
     renderHeroLab();
   }
 });
+/* 📚 Book Repair Desk (English Unit 7, the Pause Library; src/game/bookRepair.js, docs/ENGLISH-UNIT7.md)
+   One shelf of 7 books per block. Each book has a mark torn out of a sentence; she picks the fix. A wrong pick says why
+   that mark doesn't fit and sends the book to the back of the cart, so the shift ends with every book fixed. Stars from
+   books fixed on the first try. Coins like the Power Lab: 10 + 5 a star the first time, then 5 for each new star; 3 stars
+   on all four shelves is "Head Librarian" (+50 once). S.bookRepair = {shelves:{shelfId:{best, plays}}, master}. */
+let brRun = null;
+function bookRepairCardHTML(courseId, groupId){
+  if (courseId !== 'colons') return '';
+  const shelf = REPAIR_SHELVES.find(p => p.id === groupId); if (!shelf) return '';
+  const st = S.bookRepair.shelves[shelf.id], stars = st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)}` : 'Not played yet';
+  return `<section class="ela-final-assessment sim-card"><div><h3>📚 Book Repair Desk: ${esc(shelf.name)}</h3><p class="muted">Books came back with marks torn out. Pick the mark that fixes each sentence, and shelve every book! ${booksOn(shelf.id).length} books · ${stars}</p></div><button type="button" class="btn small berry" data-br-open="${shelf.id}">${st?.plays ? 'Play again' : 'Play'}</button></section>`;
+}
+function brNextBook(r){ r.cur = r.queue.shift(); r.order = shuffle(r.list[r.cur].choices.map((_, i) => i)); r.pick = null; r.msg = ''; r.ok = false; }
+function brStart(shelf){
+  const list = booksOn(shelf);
+  brRun = {shelf, list, queue:list.map((_, i) => i), missed:new Set(), fixed:0, first:0, done:false};
+  brNextBook(brRun); renderBookRepair();
+}
+function renderBookRepair(){
+  const r = brRun, shelf = REPAIR_SHELVES.find(p => p.id === r.shelf), total = r.list.length;
+  activeEnglishCourse = 'colons';
+  let body;
+  if (r.done) {
+    body = `<section class="card"><h3>🏁 ${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)} ${r.first} of ${total} books fixed on the first try</h3>
+      <p>${r.stars === 3 ? 'Every book fixed on the first try. The shelf looks perfect!' : r.stars === 2 ? 'So close to three stars. Try the shelf again?' : 'Every book is back on the shelf. Try again for more stars!'}${r.coins ? ` +${r.coins} 🪙` : ''}</p>
+      ${r.master ? '<p class="review-banner">📚 Head Librarian! Three stars on every shelf. +50 🪙</p>' : ''}
+      <div class="row"><button type="button" class="btn berry" data-br-again>🔁 Play again</button></div></section>`;
+  } else {
+    const b = r.list[r.cur], answered = r.ok;
+    const buttons = r.order.map(i => `<button type="button" class="btn${answered && i === 0 ? ' berry' : ''}" data-br-pick="${i}" ${answered || r.pick != null ? 'disabled' : ''}>${choiceLabel(b.choices[i][0], esc)}</button>`).join('');
+    body = `<p><b>📚 ${r.fixed} of ${total} shelved</b> · ⭐ ${r.first} on the first try${r.queue.length ? ` · 🛒 ${r.queue.length} on the cart` : ''}</p>
+      <p class="gg-ask">📖 <b>${esc(b.title)}</b>${r.missed.has(r.cur) ? ' <span class="muted">(back from the cart)</span>' : ''}</p>
+      ${b.note ? `<p class="muted">${esc(b.note)}</p>` : ''}
+      <p class="br-sentence">${repairSentenceHTML(b, answered ? b.choices[0][0] : null, esc)}</p>
+      <p class="muted" style="margin:0">${answered ? '' : 'Which fix belongs in the gap?'}</p>
+      <div class="row br-choices">${buttons}</div>
+      ${r.msg ? `<p class="${r.ok ? 'sim-news' : 'dig-hint'}">${esc(r.msg)}</p>` : ''}
+      ${answered || r.pick != null ? `<div class="row"><button type="button" class="btn berry" data-br-next>${answered ? (r.queue.length ? 'Shelve it! Next book' : 'Shelve it! Finish') : 'Put it on the cart. Next book'}</button></div>` : ''}`;
+  }
+  $('#libraryWrap').innerHTML = `<div id="brWrap" class="sim gg br"><div class="backrow"><h2>📚 Book Repair Desk</h2><button class="btn small" data-dig-back="colons">Back to unit</button></div><p class="muted">${shelf.emoji} ${esc(shelf.name)}</p>${body}</div>`;
+}
+function brFinish(){
+  const r = brRun, total = r.list.length, st = S.bookRepair.shelves[r.shelf] || (S.bookRepair.shelves[r.shelf] = {best:0, plays:0}), stars = starsFor(r.first, total), before = st.best;
+  const coins = st.plays ? Math.max(0, stars - before) * 5 : 10 + 5 * stars;
+  st.plays++; st.best = Math.max(before, stars); r.done = true; r.stars = stars; r.coins = coins;
+  if (coins) { S.coins += coins; updateHeader(); }
+  logEvent({k:'repair', title:REPAIR_SHELVES.find(p => p.id === r.shelf)?.name || 'Book Repair Desk', s:r.first, n:total});
+  if (!S.bookRepair.master && REPAIR_SHELVES.every(p => (S.bookRepair.shelves[p.id]?.best || 0) >= 3)) { S.bookRepair.master = true; S.coins += 50; updateHeader(); r.master = true; }
+  sfx('good'); save();
+}
+$('#libraryWrap').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.brOpen) { brStart(btn.dataset.brOpen); return; }
+  if (!brRun || !btn.closest('#brWrap')) return;
+  const r = brRun;
+  if (btn.hasAttribute('data-br-again')) { brStart(r.shelf); return; }
+  if (btn.dataset.brPick != null && !r.ok && r.pick == null) {
+    const i = +btn.dataset.brPick, b = r.list[r.cur];
+    r.pick = i;
+    if (i === 0) { r.ok = true; r.fixed++; if (!r.missed.has(r.cur)) r.first++; r.msg = `✅ ${b.choices[0][1]}`; sfx('good'); }
+    else { r.missed.add(r.cur); r.queue.push(r.cur); r.msg = `Not this one: ${b.choices[i][1]} This book goes back on the cart to fix again.`; sfx('bad'); }
+    renderBookRepair(); return;
+  }
+  if (btn.hasAttribute('data-br-next')) {
+    if (!r.queue.length) brFinish(); else brNextBook(r);
+    renderBookRepair();
+  }
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -9198,7 +9331,7 @@ function todayTimeText(subject, unit = ''){
 const todayTimeHTML = (subject, unit = '') => `<p class="today-time" data-today-time="${esc(subject)}" data-today-unit="${esc(unit)}">${todayTimeText(subject, unit)}</p>`;
 setInterval(() => { if (S) $$('[data-today-time]').forEach(el => { el.innerHTML = todayTimeText(el.dataset.todayTime, el.dataset.todayUnit); }); }, 20000);
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
-const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions', elaPunct:'punctuation'};
+const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions', elaPunct:'punctuation', elaColon:'colons'};
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
@@ -9260,49 +9393,32 @@ function wheelPick(day = logDayKey()){
   return S.wheelLog[day];
 }
 const wheelNames = w => [...w.c.map(id => WHEEL_CORE_NAME[id] || id), ...w.e.map(e => `${electiveEmoji(e)} ${e}`)].join(', ');
-const WHEEL_COLORS = ['#f6b8c8', '#bfe3c9', '#bcd7f5', '#f8dc9b', '#d8c6f2', '#f5c3a3', '#b9e6e6', '#e6e2a8'];
-function wheelFace(labels){
-  const seg = 360 / labels.length;
-  return `<div class="wheel-spin" style="background:conic-gradient(${labels.map((_, i) => `${WHEEL_COLORS[i % WHEEL_COLORS.length]} ${i * seg}deg ${(i + 1) * seg}deg`).join(', ')})">${labels.map((t, i) => `<span class="wheel-label" data-seg="${i}" style="transform:rotate(${(i + .5) * seg}deg) translateY(-62px) rotate(${-(i + .5) * seg}deg)">${esc(t)}</span>`).join('')}</div>`;
-}
+/* she sees one show a day (a wheel, darts, a claw machine, cups…), picked at random by the day: src/game/reveals/.
+   The classes are already picked above (wheelPick); the show only lands on them. */
 function openWheel(){
   if ($('.theme-card')) return;
-  const day = logDayKey(), w = wheelPick(day), rules = wheelPolicy();
-  const rounds = [{labels:rules.core.map(id => WHEEL_CORE_NAME[id] || id), picks:shuffle([...w.c]).map(id => rules.core.indexOf(id)).filter(i => i >= 0)},
-    {labels:rules.electives.map(e => `${electiveEmoji(e)} ${e}`), picks:shuffle([...w.e]).map(e => rules.electives.indexOf(e)).filter(i => i >= 0)}].filter(r => r.labels.length && r.picks.length);
+  const day = logDayKey(), w = wheelPick(day), rules = wheelPolicy(), style = revealStyleFor(day);
+  const rounds = [{caption:'On Pet World', labels:rules.core.map(id => WHEEL_CORE_NAME[id] || id), picks:shuffle([...w.c]).map(id => rules.core.indexOf(id)).filter(i => i >= 0)},
+    {caption:'Away from Pet World', labels:rules.electives.map(e => `${electiveEmoji(e)} ${e}`), picks:shuffle([...w.e]).map(e => rules.electives.indexOf(e)).filter(i => i >= 0)}].filter(r => r.labels.length && r.picks.length);
   const el = document.createElement('div');
-  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Spin for today’s classes');
-  el.innerHTML = `<div class="theme-box wheel-box"><p class="theme-kicker">Today’s classes</p><h2>🎡 Spin the class wheel!</h2>
-    <div class="wheel-wrap"><div class="wheel-pointer" aria-hidden="true">▼</div><div class="wheel-holder" aria-hidden="true">${rounds[0] ? wheelFace(rounds[0].labels) : ''}</div></div>
+  el.className = 'theme-card'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Today’s classes');
+  el.innerHTML = `<div class="theme-box wheel-box"><p class="theme-kicker">Today’s classes</p><h2>${esc(style.title)}</h2>
+    <p class="reveal-round"></p><div class="reveal-stage"></div><p class="reveal-hint" aria-live="polite"></p><div class="reveal-go"></div>
     <ul class="wheel-picks" aria-live="polite"></ul>
-    <div class="row wheel-actions"><button type="button" class="btn berry" data-wheel-spin>Spin! 🎡</button></div></div>`;
+    <div class="row wheel-actions"></div></div>`;
   document.body.appendChild(el);
-  const list = el.querySelector('.wheel-picks'), actions = el.querySelector('.wheel-actions'), holder = el.querySelector('.wheel-holder');
-  const quick = matchMedia('(prefers-reduced-motion: reduce)').matches, wait = ms => new Promise(ok => setTimeout(ok, ms));
+  const list = el.querySelector('.wheel-picks'), actions = el.querySelector('.wheel-actions');
   const finish = () => {
     actions.innerHTML = `<button type="button" class="btn berry" data-wheel-done>Let’s go! 🎉</button><button type="button" class="btn small" data-wheel-change>Grown-up: change today’s classes</button>`;
     actions.querySelector('[data-wheel-done]').addEventListener('click', () => closeWheel(el));
     actions.querySelector('[data-wheel-change]').addEventListener('click', async () => { closeWheel(el, false); await changeWheel(); });
     actions.querySelector('[data-wheel-done]').focus();
   };
-  actions.querySelector('[data-wheel-spin]').addEventListener('click', async e => {
-    e.target.disabled = true;
-    for (const [ri, round] of rounds.entries()) {
-      if (ri) { holder.innerHTML = wheelFace(round.labels); await wait(400); }
-      const wheel = holder.querySelector('.wheel-spin'), seg = 360 / round.labels.length; let turned = 0;
-      for (const i of round.picks) {
-        const target = 360 - (i + .5) * seg + (Math.random() - .5) * seg * .6;
-        turned += 360 * (quick ? 1 : 4) + ((target - turned) % 360 + 360) % 360;
-        wheel.style.transition = `transform ${quick ? .3 : 2.4}s cubic-bezier(.15,.7,.2,1)`; wheel.style.transform = `rotate(${turned}deg)`;
-        await wait(quick ? 350 : 2500);
-        wheel.querySelector(`[data-seg="${i}"]`)?.classList.add('picked');
-        list.insertAdjacentHTML('beforeend', `<li>${esc(round.labels[i])}${ri ? ' <small class="muted">(away from Pet World: write what you did)</small>' : ''}</li>`); sfx('coin');
-        await wait(quick ? 100 : 500);
-      }
-    }
-    finish();
-  });
-  if (!rounds.length) finish();
+  if (!rounds.length) { finish(); return; }
+  runReveal(style, el.querySelector('.wheel-box'), rounds, {quick:matchMedia('(prefers-reduced-motion: reduce)').matches, esc, sfx, pet:petEmoji(),
+    reveal:(ri, i) => { list.insertAdjacentHTML('beforeend', `<li>${esc(rounds[ri].labels[i])}${rounds[ri].caption === 'Away from Pet World' ? ' <small class="muted">(away from Pet World: write what you did)</small>' : ''}</li>`); sfx('coin'); }})
+    .catch(() => rounds.forEach(r => r.picks.forEach(i => list.insertAdjacentHTML('beforeend', `<li>${esc(r.labels[i])}</li>`))))
+    .finally(finish);
 }
 function closeWheel(el, again = true){
   el.remove();
@@ -9664,7 +9780,7 @@ function helpPlace(){
   const where = placeOnScreen(), [kind, a = ''] = where.split(':');
   const open = kind === 'shop' ? a : ['vocab', 'sprint', 'arcade', 'reading'].includes(kind) ? kind
     : kind === 'course' ? (a === 'math' ? currentShop || '' : courseBuilding(a)) : kind === 'project' ? projectBuilding(a)
-    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
+    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'repair' ? courseBuilding('colons') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
   return {where, label:String(placeLabel(where)), open};
 }
 const helpBtn = document.createElement('button');
@@ -9961,7 +10077,7 @@ $('#town').addEventListener('click', e => {
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5' || id === 'history6' || id === 'history7' || id === 'history8' || id === 'history9';
-const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',bioEnergy:'bio3',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
 const isScienceCourse = id => /^bio\d+$/.test(id);
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id) || id === 'prepositions';
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
@@ -10060,6 +10176,10 @@ const ROLE_CARDS = {
   plantStructuresA:{emoji:'🐿️',who:'a tour guide on the Petting Zoo’s Orchard Walk',where:'Pet World Petting Zoo',intro:'Squirrels bury acorns, burrs stick to the goats, and students are running a bee experiment.'},
   growthEnvU:{emoji:'📏',who:'a tour guide at the Petting Zoo’s Weigh-In Station',where:'Pet World Petting Zoo',intro:'Keepers weigh and measure the young animals and the garden seedlings every week.'},
   growthEnvA:{emoji:'🦆',who:'a tour guide at the Petting Zoo’s Duck Pond',where:'Pet World Petting Zoo',intro:'This summer the pond turned bright green, and your group wants to know why.'},
+  photoOrgU:{emoji:'🌻',who:'a tour guide at the Greenhouse’s Sunlight Bench',where:'Pet World Greenhouse',intro:'Sunflowers and tomato plants soak up the light under the glass roof, and your group wants to know how plants make food.'},
+  photoOrgA:{emoji:'🔬',who:'a tour guide at the Greenhouse’s Plant Lab',where:'Pet World Greenhouse',intro:'Visiting students are running experiments with lamps, water plants, and sealed jars, and they keep asking you what their results mean.'},
+  foodEnergyU:{emoji:'🐦',who:'a tour guide at the Greenhouse’s Hummingbird Feeder',where:'Pet World Greenhouse',intro:'Hummingbirds zip between the flowers and the feeder. Visitors want to know where all that energy comes from.'},
+  foodEnergyA:{emoji:'🏃',who:'a tour guide leading the Greenhouse Fitness Trail',where:'Pet World Greenhouse',intro:'Your group is jogging the path between the plant beds and checking their breathing and heart rates at each stop.'},
   /* History Unit 6 (Oct 28, 2026). The Transatlantic Slave Trade (slaveTrade) has no role card on purpose (docs/HARD-LESSONS.md). */
   mongolEmpire:{emoji:'🐎',who:'a rider in the yam, the Mongol relay post',where:'the Mongol Empire, about 1260 CE',intro:'You carry messages and travelers’ passes from station to station across the empire. People along the road ask you about the Mongols.'},
   blackDeath:{emoji:'🕯️',who:'a shopkeeper in Florence',where:'Florence, Italy, 1348 CE',intro:'A terrible sickness has reached your city from the ports. Neighbors and travelers ask you what you know about it.'},
@@ -10212,6 +10332,22 @@ const HISTORY_PROJECTS = {
     {key:'connect',label:'4. Connect their story to at least two things you learned in this unit.'},
     {key:'compare',label:'5. How is a memory like theirs different from a textbook or a Khan video? What can each one tell a historian?'},
     {key:'sources',label:'6. List the interview and any other sources you used.'}]},
+  /* Biology Unit 3: an energy-and-matter poster and a kitchen lab (docs/SCIENCE-UNIT3.md) */
+  bio3:{title:'Greenhouse Poster: Follow the Energy and the Matter',summary:'Make a poster for the Pet World Greenhouse that follows energy and matter from the sun, through a plant, to an animal and back to the air. Draw it by hand, then add a photo of it.',steps:[
+    {key:'choose',label:'1. Choose one plant and one animal that eats it (or eats its fruit or nectar), like a sunflower and a finch, or clover and a rabbit. Say where they live.'},
+    {key:'photosyn',label:'2. Photosynthesis: what goes into the plant’s leaves, what comes out, and where in the cell does it happen? Where does the energy come from?'},
+    {key:'food',label:'3. Food: how does the matter and energy in the plant get to the animal’s cells?'},
+    {key:'respire',label:'4. Cellular respiration: what goes into the animal’s cells, what comes out, and what does the animal use the energy for?'},
+    {key:'cycle',label:'5. The atoms are rearranged, not destroyed. Explain how the carbon dioxide the animal breathes out can end up back in a plant.'},
+    {key:'poster',kind:'photo',label:'6. Draw your poster on paper with arrows for energy (one color) and for matter (another color), and labels for the inputs and outputs. Take a photo and add it here.'},
+    {key:'sources',label:'7. List the sources you used (the Khan videos, books, websites) so your teacher can check them.'}]},
+  bio3lab:{title:'Experiment: Yeast Balloons at Three Temperatures',summary:'Yeast are tiny living fungi. When they break down sugar to release energy, they give off carbon dioxide gas, which can blow up a balloon. Test how the water temperature changes how fast they do it. Ask an adult to help: use warm tap water only (never boiling), and wash your hands afterward. Don’t drink the yeast water.',steps:[
+    {key:'question',label:'1. Write your question and a hypothesis (“If ... then ... because ...”). Which bottle will blow up its balloon the most: cold, warm, or hot tap water?'},
+    {key:'setup',label:'2. Describe your setup. In each of three small bottles, put 1 packet (or 2 teaspoons) of yeast, 2 teaspoons of sugar and the same amount of water: cold, warm, and hot from the tap. Stretch a balloon over each top. Name three things you kept the same.'},
+    {key:'sizes',kind:'table',cols:['Minutes','Cold: around the balloon (cm)','Warm: around the balloon (cm)','Hot: around the balloon (cm)'],num:[1,2,3],rows:7,rowLabels:['0','5','10','15','20','25','30'],label:'3. Every 5 minutes, wrap a string around the widest part of each balloon and measure it with a ruler. Write 0 if the balloon is still flat.'},
+    {key:'photo',kind:'photo',label:'4. At 30 minutes, take a photo of the three bottles side by side.'},
+    {key:'results',label:'5. Use your numbers: which balloon grew the most, and by how much more than the others?'},
+    {key:'conclusion',label:'6. Was your hypothesis supported? Which gas filled the balloons, and what process made it? Name one source of error and how you would fix it.'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -10259,7 +10395,9 @@ const HISTORY_PROJECTS = {
     {key:'photo',kind:'photo',label:'5. Draw or build your exhibit (on paper or a shelf at home) and take a photo of it.'},
     {key:'sources',label:'6. List the sources you used so a grown-up can check them.'}]}
 };
-const englishCourse = course => course === 'punctuation'
+const englishCourse = course => course === 'colons'
+  ? {id:'colons',building:'elaColon',title:'English Unit 7: Colons, Semicolons, and More',skills:ENGLISH_UNIT7,groups:ENGLISH_GROUPS7,finalKey:'colons:final-test',testPer:2,finalPass:15}   // Khan's Quiz 1 and unit test (docs/ENGLISH-UNIT7.md)
+  : course === 'punctuation'
   ? {id:'punctuation',building:'elaPunct',title:'English Unit 6: Punctuation',skills:ENGLISH_UNIT6,groups:ENGLISH_GROUPS6,finalKey:'punctuation:final-test',finalPass:11}
   : course === 'prepositions'
   ? {id:'prepositions',building:'elaConj',title:'English Unit 5: Prepositions and Interjections',skills:ENGLISH_UNIT5,groups:ENGLISH_GROUPS5,finalKey:'prepositions:final-test',testPer:2,finalPass:13}
@@ -10289,6 +10427,8 @@ const englishCourse = course => course === 'punctuation'
     ? {id:'bio1',building:'bioChem',title:'Biology Unit 1: Life Sciences',skills:BIO_UNIT1,groups:BIO_GROUPS,finalKey:'bio1:final-test',testPer:2,finalPass:18}
   : course === 'bio2'
     ? {id:'bio2',building:'bioCells',title:'Biology Unit 2: Organism Growth and Reproduction',skills:BIO_UNIT2,groups:BIO_GROUPS2,finalKey:'bio2:final-test',testPer:3,finalPass:20}
+  : course === 'bio3'
+    ? {id:'bio3',building:'bioEnergy',title:'Biology Unit 3: Matter and Energy in Organisms',skills:BIO_UNIT3,groups:BIO_GROUPS3,finalKey:'bio3:final-test',testPer:5,finalPass:16}   // Khan's one quiz after lesson 3.2 (docs/SCIENCE-UNIT3.md)
   : course === 'history9'
     ? {id:'history9',building:'histGlobal2',title:'History Unit 9: Globalization',skills:HISTORY_UNIT9,groups:HISTORY_GROUPS9,finalKey:'history9:final-test',testPer:2,finalPass:11}   // Khan's two quizzes (docs/HISTORY-UNIT9.md)
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
@@ -10381,6 +10521,7 @@ const KHAN_UNIT_TESTS = {
   modifiers:`${KHAN}humanities/grammar/parts-of-speech-the-modifier/test/parts-of-speech-the-modifier-unit-test`,
   prepositions:`${KHAN}ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/test/x90cef5375e9bcad6:prepositions-and-interjections-5-unit-test`,
   punctuation:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/its-vs-its/test/punctuation-the-comma-and-the-apostrophe-unit-test`,
+  colons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/hyphens-dashes-and-ellipses/test/punctuation-the-colon-semicolon-and-more-unit-test`,   // checked on khanacademy.org, Oct 29 2026
   /* History follows Khan's World History Project (Origins to the Present), Biology Unit 1 Grade 6 Science: Life sciences,
      Biology Unit 2 Middle school biology: Organism growth and reproduction (checked on khanacademy.org, Oct 20 2026) */
   history:`${KHAN}humanities/world-history/x66f79d8a:origins-of-history/x66f79d8a:history-and-memory-1-4/test/x66f79d8a:origins-of-history-unit-test`,
@@ -10391,6 +10532,7 @@ const KHAN_UNIT_TESTS = {
   history7:`${KHAN}humanities/world-history/x66f79d8a:the-long-nineteenth-century/x66f79d8a:resisting-colonialism-7-10/test/x66f79d8a:the-long-nineteenth-century-unit-test`,
   bio1:`${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:human-digestive-system/test/x88f5990a7622d8f5:life-sciences-unit-test`,
   bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`,
+  bio3:`${KHAN}science/ms-biology/x0c5bb03129646fd6:matter-and-energy-in-organisms/x0c5bb03129646fd6:unit-3-phenomenon-based-activities/test/x0c5bb03129646fd6:matter-and-energy-in-organisms-unit-test`,   // Middle school biology Unit 3 (Oct 29 2026)
   history6:`${KHAN}humanities/world-history/x66f79d8a:the-first-global-age/x66f79d8a:the-transatlantic-slave-trade-6-9/test/x66f79d8a:the-first-global-age-unit-test`,
   history8:`${KHAN}humanities/world-history/x66f79d8a:global-conflict/x66f79d8a:decolonization-8-9/test/x66f79d8a:global-conflict-unit-test`,   // History Unit 8, checked Oct 28 2026
   history9:`${KHAN}humanities/world-history/x66f79d8a:globalization/x66f79d8a:the-anthropocene-9-8/test/x66f79d8a:globalization-unit-test`   // checked on khanacademy.org, Oct 28 2026
@@ -10775,7 +10917,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','history','history2','history3','history4','history5','bio1','bio2','history6','history7','history8','history9'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','colons','history','history2','history3','history4','history5','bio1','bio2','bio3','history6','history7','history8','history9'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -10914,7 +11056,7 @@ function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S
 function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId)]; }
 function englishBankQuestions(skillId, courseId='nouns'){
   const edits = Backend.me?.question_edits || {};   // this class's hidden, edited and added questions (docs: LESSON-CONTENT.md)
-  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio3' ? BIO3_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -10922,7 +11064,7 @@ function englishBankQuestions(skillId, courseId='nouns'){
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
-  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'prepositions' || courseId === 'punctuation') return applyQuestionEdits(courseId, skillId, (courseId === 'punctuation' ? PUNCTUATION_QUESTIONS : courseId === 'prepositions' ? PREPOSITION_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'prepositions' || courseId === 'punctuation' || courseId === 'colons') return applyQuestionEdits(courseId, skillId, (courseId === 'colons' ? COLON_QUESTIONS : courseId === 'punctuation' ? PUNCTUATION_QUESTIONS : courseId === 'prepositions' ? PREPOSITION_QUESTIONS : courseId === 'modifiers' ? MODIFIER_QUESTIONS : courseId === 'pronouns' ? PRONOUN_QUESTIONS : VERB_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -11242,7 +11384,7 @@ function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' || courseId === 'colons' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
@@ -11487,14 +11629,14 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${bookRepairCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -14277,6 +14419,7 @@ function placeOnScreen(){
   if ($('#parcelWrap')) return 'parcel';
   if ($('#petshowWrap')) return 'petshow';
   if ($('#paxWrap')) return `course:${$('#paxWrap').dataset.course}:⚖️ Pax Oeconomica`;   // counts for its history unit
+  if ($('#greenhouseWrap')) return 'course:bio3:🌺 Greenhouse Keeper';   // counts for Biology Unit 3
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -14292,6 +14435,7 @@ function placeOnScreen(){
   if ($('#simWrap') && simRun) return `sim:${simRun.id}`;
   if ($('#ggWrap') && ggRun) return `ggame:${ggRun.id}`;
   if ($('#hlWrap') && hlRun) return `hero:${hlRun.pack}`;
+  if ($('#brWrap') && brRun) return `repair:${brRun.shelf}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun?.retryType === 'think' && englishRun.shop && $('#libraryWrap .ela-question')) return `shop:${englishRun.progressKey}:think`;   // Think it through counts for its unit
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
@@ -14323,6 +14467,7 @@ function placeLabel(key){
   if (kind === 'bible') return '✝️ Bible';
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
+  if (kind === 'repair') return `📚 Book Repair Desk · ${REPAIR_SHELVES.find(p => p.id === a)?.name || ''}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -14347,12 +14492,14 @@ function eventText(e){
   if (e.k === 'parcel') return `📮 Parcel Post: ${e.title}`;
   if (e.k === 'petshow') return `🏆 Pet Show Awards: ${e.title}`;
   if (e.k === 'pax') return `⚖️ Pax Oeconomica: ${e.title}`;
+  if (e.k === 'greenhouse') return `🌺 Greenhouse Keeper: ${e.title}`;
   if (e.k === 'handson') return `🔬 Hands-on Biology: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
   if (e.k === 'bible') return `✝️ ${e.title}`;
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
+  if (e.k === 'repair') return `📚 Book Repair Desk, ${e.title}: ${e.s} of ${e.n} books fixed on the first try`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;
@@ -14444,6 +14591,7 @@ function subjectOnScreen(){
   if ($('#parcelWrap')) return 'math';   // Parcel Post is Pet Post Office practice
   if ($('#petshowWrap')) return 'math';   // Pet Show Awards is Pet Show practice
   if ($('#paxWrap')) return 'history';   // Pax Oeconomica is History Unit 4 and 5's game
+  if ($('#greenhouseWrap')) return 'science';   // Greenhouse Keeper is Biology Unit 3's game
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

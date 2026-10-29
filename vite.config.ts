@@ -10,7 +10,8 @@ export default defineConfig({
         game: resolve(__dirname, 'index.html'),
         teacher: resolve(__dirname, 'teacher.html'),
         powerLab: resolve(__dirname, 'arcade/power-lab/index.html'),
-        linkGames: resolve(__dirname, 'arcade/link-games/index.html')
+        linkGames: resolve(__dirname, 'arcade/link-games/index.html'),
+        bookRepair: resolve(__dirname, 'arcade/book-repair/index.html')
       }
     }
   }

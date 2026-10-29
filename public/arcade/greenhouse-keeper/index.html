@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greenhouse Keeper</title>
+<!-- Pet World: served at /arcade/greenhouse-keeper/ (docs/GREENHOUSE-KEEPER.md). Played from the Biology Unit 3 page at the
+     Greenhouse (?from=bio3, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets). Science: Khan
+     middle school biology Unit 3, matter and energy in organisms (photosynthesis and cellular respiration).
+     A shift is 8 greenhouse jobs: power up a leaf or a cell with the right inputs and outputs, sort who does
+     photosynthesis, read the gas sensor, explain an experiment, follow the energy, and check the fitness trail.
+     It never counts toward practice, quizzes, tests or unlocks. -->
+<style>
+  :root{
+    --bg:#EEF8F1; --card:#FFFFFF; --ink:#16301F; --muted:#4F6B58; --edge:#BFDCC8; --accent:#2F8F4E; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --slot:#E1F2E6; --gold:#F2C94C; --in:#2E7BC0; --out:#C2410C; --glass:#D7EEF7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0F1D14; --card:#18291E; --ink:#E5F4EA; --muted:#A9C7B3; --edge:#2E4A37; --accent:#69DB7C; --accent-ink:#0F1D14;
+      --ok:#69DB7C; --bad:#FF8787; --slot:#1F3527; --gold:#F2C94C; --in:#74B9F0; --out:#FFA94D; --glass:#1C3340; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button,input{font:inherit; color:inherit}
+  button{cursor:pointer}
+  .wrap{max-width:760px; margin:0 auto; padding:10px 16px 28px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.1em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:disabled{opacity:.55; cursor:default}
+  .btn:focus-visible, .tok:focus-visible, .opt:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .how{padding-left:20px} .how li{margin:4px 0}
+  .hud{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0 6px}
+  .pill{background:var(--card); border:1px solid var(--edge); border-radius:999px; padding:3px 10px; font-weight:700; font-size:.92em}
+  .grow{font-size:1.5em; letter-spacing:2px}
+  .job{background:linear-gradient(180deg, var(--glass), var(--card)); border:3px solid var(--accent); border-radius:16px; padding:10px 12px; margin-top:8px}
+  .job h2{margin:0 0 2px; font-size:1.15em}
+  .q{font-size:1.05em; font-weight:600; margin:8px 0 4px}
+  .slots{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px}
+  .slot{border:2px dashed var(--edge); border-radius:12px; padding:6px; min-height:64px; background:var(--slot)}
+  .slot h3{margin:0 0 4px; font-size:.95em}
+  .slot.in h3{color:var(--in)} .slot.out h3{color:var(--out)}
+  .tray{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .tok{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:6px 10px; font-weight:700; font-size:.95em}
+  .tok.in{border-color:var(--in)} .tok.out{border-color:var(--out)}
+  .tok.sel{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent)}
+  .tok.bad{border-color:var(--bad)} .tok.good{border-color:var(--ok)}
+  .opts{display:grid; gap:6px; margin-top:6px}
+  .opt{text-align:left; border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 12px; font-weight:600}
+  .opt.good{border-color:var(--ok); box-shadow:0 0 0 2px var(--ok)} .opt.bad{border-color:var(--bad)}
+  .answer{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:6px}
+  .answer input{flex:1 1 110px; min-width:0; font-size:1.25em; padding:6px 10px; border:3px solid var(--edge); border-radius:12px; background:var(--card)}
+  .answer input:focus{outline:3px solid var(--gold); outline-offset:1px}
+  .fb{min-height:1.4em; margin:6px 0 0; font-weight:600}
+  .fb.bad{color:var(--bad)} .fb.ok{color:var(--ok)}
+  .explain{background:var(--slot); border-left:4px solid var(--accent); border-radius:8px; padding:8px 10px; margin-top:8px}
+  .sorter{display:grid; gap:6px; margin-top:8px}
+  .sorter .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; border:2px solid var(--edge); border-radius:12px; padding:6px 8px; background:var(--card)}
+  .sorter .row b{flex:1 1 120px}
+  .seg{display:flex; gap:4px; flex-wrap:wrap}
+  .seg .tok{font-size:.85em; padding:4px 8px}
+  .order{display:grid; gap:6px; margin-top:8px}
+  .done-list{margin:6px 0 0; padding-left:22px}
+  .plot{display:block; width:100%; max-width:440px; height:auto; margin:6px auto}
+  .plot .ln{stroke:var(--ink); stroke-width:1.5} .plot .tx{fill:var(--ink); font-size:10px; text-anchor:middle}
+  .plot .co2{fill:none; stroke:var(--out); stroke-width:3} .plot .night{fill:var(--ink); opacity:.12}
+  table.dt{border-collapse:collapse; margin:8px auto; font-size:1em}
+  table.dt th, table.dt td{border:2px solid var(--edge); padding:4px 9px; text-align:center}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:8px; margin:10px 0}
+  .stats div{background:var(--card); border:2px solid var(--edge); border-radius:12px; padding:8px; text-align:center}
+  .stats b{display:block; font-size:1.3em}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_UNIT = params.get('from') === 'bio3';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const TRIES = 2;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let best = 0; try { best = +localStorage.getItem('greenhouse-keeper:best') || 0; } catch(e){}
+const SKILL_NAMES = {photoOrgU:'Understand: Photosynthesis in organisms', photoOrgA:'Apply: Photosynthesis in organisms', foodEnergyU:'Understand: Food and energy in organisms', foodEnergyA:'Apply: Food and energy in organisms'};
+const GROW = ['🌱', '🌿', '🪴', '🌷', '🌻', '🌺', '🍅', '🐦'];
+
+/* ---------- the matter and energy tokens ---------- */
+const TOKENS = {light:'☀️ Light energy', water:'💧 Water', co2:'🌫️ Carbon dioxide', o2:'🫧 Oxygen', sugar:'🍬 Sugar (glucose)', energy:'⚡ Energy for the cell', soil:'🪨 Soil minerals'};
+const PROCESS = {
+  photo:{name:'photosynthesis', where:'chloroplast', in:['light', 'water', 'co2'], out:['sugar', 'o2'],
+    explain:'Photosynthesis: light energy + water + carbon dioxide go in; sugar and oxygen come out. It happens in the chloroplasts.'},
+  resp:{name:'cellular respiration', where:'mitochondrion', in:['sugar', 'o2'], out:['co2', 'water', 'energy'],
+    explain:'Cellular respiration: sugar + oxygen go in; carbon dioxide, water and energy the cell can use come out. It happens in the mitochondria, in plant and animal cells.'}
+};
+const PLACES = [['chloroplast', '🟢 Chloroplast'], ['mitochondrion', '🔋 Mitochondrion'], ['nucleus', '🟣 Nucleus']];
+const SCENES = {
+  photo:[['🍅', 'The tomato plants are in bright sunshine and need to make food.'], ['🟢', 'Algae in the lily pond are floating in the afternoon sun.'], ['🌻', 'A sunflower seedling just pushed its first leaves into the light.']],
+  resp:[['🐦', 'A hummingbird needs energy to hover at the feeder.'], ['🏃', 'A visitor is jogging the fitness trail. Her leg muscles need energy.'], ['🐛', 'A caterpillar needs energy to grow a little bigger.']],
+  twist:[['🌙', 'It is midnight and dark. The orchid’s root cells need energy to grow.', 'resp'], ['🥔', 'A sprouting potato in a dark cellar needs energy to grow its shoot.', 'resp'], ['🌿', 'The fern under the grow lights is making food for itself.', 'photo']]
+};
+function buildJob(kind){
+  const [e, text, proc] = kind === 'twist' ? pick(SCENES.twist) : [...pick(SCENES[kind]), kind];
+  const P = PROCESS[proc];
+  return {type:'build', sk:kind === 'twist' ? 'foodEnergyU' : proc === 'photo' ? 'photoOrgU' : 'foodEnergyU', title:`${e} Power up the ${proc === 'photo' ? 'leaf' : 'cell'}`,
+    blurb:`${esc(text)} Tap each item to load it: tap once for <b style="color:var(--in)">goes in</b>, again for <b style="color:var(--out)">comes out</b>, a third time to put it back. Then pick where it happens.`,
+    proc, P, state:Object.fromEntries(Object.keys(TOKENS).map(k => [k, 0])), place:'', explain:P.explain + (kind === 'twist' && proc === 'resp' ? ' With no light, the plant can’t do photosynthesis, but its cells still need energy, so they do cellular respiration.' : '')};
+}
+
+/* ---------- who does which ---------- */
+const BOTH = [['🌻', 'Sunflower'], ['🌳', 'Oak tree'], ['🟢', 'Pond algae'], ['🌵', 'Cactus'], ['🌿', 'Fern'], ['🍅', 'Tomato plant']];
+const RESP = [['🐛', 'Caterpillar'], ['🍄', 'Mushroom'], ['🐝', 'Bee'], ['🐦', 'Hummingbird'], ['🐸', 'Frog'], ['🐇', 'Rabbit']];
+function sortJob(){
+  const items = shuffle([...shuffle(BOTH).slice(0, 3).map(x => [...x, 'both']), ...shuffle(RESP).slice(0, 3).map(x => [...x, 'resp'])]);
+  return {type:'sort', sk:'foodEnergyU', title:'🏷️ Label the greenhouse residents', blurb:'The new signs need to say which process each living thing does. Choose for each one.',
+    items, groups:[['both', 'Photosynthesis AND cellular respiration'], ['resp', 'Cellular respiration only']], picks:{},
+    explain:'Plants and algae do both: photosynthesis to make sugar, and cellular respiration to release its energy. Animals and fungi like mushrooms can’t make their own food, so they do cellular respiration only.'};
+}
+
+/* ---------- the gas sensor (a sealed room, lights on 6 am to 8 pm) ---------- */
+function co2Path(){
+  // carbon dioxide level by hour: rises in the dark (respiration only), falls in the light (photosynthesis is faster)
+  const pts = []; let v = 900;
+  for (let h = 0; h <= 24; h++) { pts.push([h, v]); v += (h >= 6 && h < 20) ? -45 : 50; }
+  return pts;
+}
+function sensorSVG(){
+  const pts = co2Path(), W = 340, H = 170, L = 34, R = W - 10, T = 12, B = H - 30, lo = 200, hi = 1300;
+  const X = h => L + h * (R - L) / 24, Y = v => B - (v - lo) * (B - T) / (hi - lo);
+  let g = `<rect class="night" x="${X(0)}" y="${T}" width="${X(6) - X(0)}" height="${B - T}"/><rect class="night" x="${X(20)}" y="${T}" width="${X(24) - X(20)}" height="${B - T}"/>`;
+  g += `<line class="ln" x1="${L}" y1="${B}" x2="${R}" y2="${B}"/><line class="ln" x1="${L}" y1="${T}" x2="${L}" y2="${B}"/>`;
+  [0, 6, 12, 18, 24].forEach(h => { g += `<text class="tx" x="${X(h)}" y="${B + 13}"${h === 24 ? ' style="text-anchor:end"' : ''}>${h === 0 || h === 24 ? 'midnight' : h === 12 ? 'noon' : h === 6 ? '6 am' : '6 pm'}</text>`; });
+  g += `<text class="tx" x="${L - 4}" y="${T + 8}" style="text-anchor:end">high</text><text class="tx" x="${L - 4}" y="${B}" style="text-anchor:end">low</text>`;
+  g += `<polyline class="co2" points="${pts.map(([h, v]) => `${X(h).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>`;
+  g += `<text class="tx" x="${(L + R) / 2}" y="${H - 2}">Shaded = grow lights off (dark)</text>`;
+  return `<svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Carbon dioxide in a sealed greenhouse room over one day: it rises from 8 pm to 6 am while the lights are off and falls from 6 am to 8 pm while they are on">${g}</svg>`;
+}
+const SENSOR_QS = [
+  {q:'Why does the carbon dioxide go DOWN while the grow lights are on?', opts:['The plants use it for photosynthesis faster than respiration makes it', 'The plants stop doing cellular respiration in the light', 'The light breaks the carbon dioxide apart', 'Carbon dioxide leaks out when the room warms up'],
+    explain:'In the light, plants do photosynthesis and take in carbon dioxide faster than their respiration gives it off, so the level falls. They still respire all day long.'},
+  {q:'Why does the carbon dioxide go UP while the lights are off?', opts:['The plants keep respiring but can’t do photosynthesis', 'The plants make carbon dioxide out of the light they saved', 'Cold night air turns the oxygen into carbon dioxide', 'The soil makes carbon dioxide only when it is dark'],
+    explain:'With no light there is no photosynthesis, but every living cell keeps doing cellular respiration, which gives off carbon dioxide. So the level rises all night.'},
+  {q:'What would the oxygen level do while the lights are on?', opts:['Go up, because photosynthesis gives off oxygen', 'Go down, because the plants breathe it in', 'Stay flat, because plants don’t use oxygen', 'Go up, because respiration gives off oxygen'],
+    explain:'Oxygen does the opposite of carbon dioxide here: photosynthesis gives off oxygen faster than respiration uses it, so it rises in the light and falls in the dark.'}
+];
+function sensorJob(){
+  const Q = pick(SENSOR_QS);
+  return {type:'mc', sk:'photoOrgA', title:'📈 Read the gas sensor', blurb:'A sensor in a sealed growing room measured the carbon dioxide in the air for one whole day.', show:sensorSVG(), q:Q.q, correct:Q.opts[0], opts:shuffle(Q.opts), explain:Q.explain};
+}
+
+/* ---------- experiments (photosynthesis, apply) ---------- */
+function labJob(){
+  const kinds = [
+    () => { const near = rnd(34, 46), mid = rnd(18, 26), far = rnd(6, 12);
+      return {q:'Which conclusion do the data support?', table:[['Lamp distance', '10 cm', '20 cm', '30 cm'], ['Bubbles per minute', near, mid, far]],
+        blurb:'Visiting students put a water plant under a lamp and counted the oxygen bubbles it gave off at three distances.',
+        opts:['More light made the plant do more photosynthesis', 'More light made the plant do less photosynthesis', 'The bubbles were carbon dioxide from respiration', 'Distance from the lamp didn’t change the bubbles'],
+        explain:`Closer lamp = more light = more bubbles (${near} vs. ${far} a minute). The bubbles are oxygen from photosynthesis.`}; },
+    () => ({q:'What does van Helmont’s result show?', blurb:'In the 1600s, van Helmont grew a 5-pound willow in 200 pounds of soil, giving it only water. After 5 years the tree weighed about 169 pounds, and the soil had lost only about 2 ounces.',
+      opts:['The tree’s mass did not come mainly from the soil', 'Trees take most of their mass from the minerals in soil', 'The willow grew without using any water', 'The soil was too dry to feed the tree'],
+      explain:'The soil barely changed, so the tree didn’t get its mass from soil. Today we know most of a tree’s dry matter is built from carbon dioxide in the air (with water).'}),
+    () => ({q:'What is the best explanation?', blurb:'In 1771, Joseph Priestley put a mouse in a sealed jar with a mint plant. It lived much longer than a mouse in a sealed jar with no plant.',
+      opts:['The plant gave off oxygen the mouse needed', 'The plant gave the mouse food to eat', 'The plant soaked up the heat in the jar', 'The smell of mint kept the mouse calm'],
+      explain:'In the light, the plant’s photosynthesis gave off oxygen, which the mouse needed for its own cellular respiration.'}),
+    () => { const d = [[2, 3], [4, 6], [6, 9], [8, 9]];
+      return {q:'Which conclusion do the data support?', table:[['Hours of light a day', ...d.map(x => x[0])], ['Growth in 2 weeks (cm)', ...d.map(x => x[1])]],
+        blurb:'Four matching bean plants got different hours of grow-light each day.',
+        opts:['More light helped up to 6 hours, then stopped helping', 'Growth kept rising with every extra hour of light', 'Light did not change how much the plants grew', 'The plants grew best with 2 hours of light'],
+        explain:'Growth rose from 3 to 6 to 9 cm, then stayed at 9 cm. More light helped only up to a point; something else (like carbon dioxide or water) became the limit.'}; }
+  ];
+  const J = pick(kinds)();
+  return {type:'mc', sk:'photoOrgA', title:'🔬 Help at the Plant Lab', blurb:J.blurb, show:J.table ? `<table class="dt">${J.table.map((r, i) => `<tr>${r.map(c => i ? `<td>${c}</td>` : `<th>${c}</th>`).join('')}</tr>`).join('')}</table>` : '', q:J.q, correct:J.opts[0], opts:shuffle(J.opts), explain:J.explain};
+}
+
+/* ---------- follow the energy (put in order) ---------- */
+const TRAILS = [
+  ['Sunlight shines on a patch of clover', 'The clover makes sugar by photosynthesis', 'A rabbit eats the clover', 'The rabbit’s cells break down the sugar in respiration', 'The rabbit’s muscles use the energy to hop'],
+  ['Sunlight shines on a red flower', 'The flower makes sugar and stores some in its nectar', 'A hummingbird drinks the nectar', 'Its cells break down the sugar in respiration', 'Its wing muscles use the energy to hover'],
+  ['Sunlight shines on the pond', 'Algae make sugar by photosynthesis', 'A tadpole eats the algae', 'The tadpole’s cells break down the sugar in respiration', 'The tadpole uses the energy to swim and grow']
+];
+function orderJob(){
+  const steps = pick(TRAILS);
+  return {type:'order', sk:'foodEnergyA', title:'⚡ Follow the energy', blurb:'Make the trail sign for the visitors. Tap the steps in order, from the sun to the animal.', steps, shown:shuffle(steps.map((_, i) => i)), done:[], slips:0,
+    explain:'Light energy is stored in sugar by photosynthesis. When an animal eats the plant, its cells release that energy in cellular respiration and use it to move and grow.'};
+}
+
+/* ---------- the fitness trail (food and energy, apply) ---------- */
+function fitnessJob(){
+  if (Math.random() < .5) {
+    const rest = rnd(13, 18), after = rest + rnd(10, 18);
+    return {type:'num', sk:'foodEnergyA', title:'🏃 Fitness Trail check-in', blurb:`A visitor counted <b>${rest}</b> breaths a minute while resting, then <b>${after}</b> breaths a minute after jogging the trail.`,
+      q:'How many more breaths a minute did she take after jogging?', ans:after - rest, u:'breaths',
+      explain:`${after} − ${rest} = ${after - rest} more breaths a minute. Her working muscle cells were doing more cellular respiration, so they needed more oxygen and made more carbon dioxide to breathe out.`};
+  }
+  const rest = rnd(68, 80), after = rest + rnd(40, 60);
+  const opts = ['To bring oxygen and sugar to her muscle cells faster', 'To carry extra carbon dioxide into her muscles', 'Because her lungs were making sugar for her legs', 'Because her muscles needed less blood while moving'];
+  return {type:'mc', sk:'foodEnergyA', title:'🏃 Fitness Trail check-in', blurb:`A visitor’s heart rate was <b>${rest}</b> beats a minute at rest and <b>${after}</b> after a fast lap of the trail.`,
+    q:'Why did her heart beat faster?', correct:opts[0], opts:shuffle(opts),
+    explain:'Moving muscles do more cellular respiration. A faster heart delivers oxygen and sugar to them faster and carries the extra carbon dioxide away to the lungs.'};
+}
+
+/* ---------- a shift: 8 jobs ---------- */
+const PLAN = [() => buildJob('photo'), sortJob, sensorJob, () => buildJob('resp'), labJob, orderJob, fitnessJob, () => buildJob('twist')];
+let G = null;
+function newGame(){ G = {i:0, right:0, tries:0, missed:{}, started:Date.now(), done:false}; nextJob(); }
+function nextJob(){
+  if (G.i >= PLAN.length) return finish();
+  G.J = {...PLAN[G.i](), triesLeft:TRIES, fb:'', fbKind:'', over:false, won:false};
+  render(true);
+}
+function solved(){ G.right++; G.J.won = true; G.J.over = true; G.J.fb = `✅ ${pick(['Nice work, keeper!', 'The plants are thriving!', 'Exactly right!', 'The visitors are impressed!'])}`; G.J.fbKind = 'ok'; }
+function failed(msg){
+  const J = G.J; J.triesLeft--; G.tries++;
+  if (J.triesLeft > 0) { J.fb = msg || 'Not quite. Try again.'; J.fbKind = 'bad'; return false; }
+  G.missed[J.sk] = (G.missed[J.sk] || 0) + 1; J.over = true; J.fb = `Not quite. ${msg ? msg + ' ' : ''}Here’s how it works:`; J.fbKind = 'bad'; return true;
+}
+const bodyOf = {
+  build(J){
+    const st = J.state, tok = k => `<button type="button" class="tok${st[k] === 1 ? ' in' : st[k] === 2 ? ' out' : ''}${J.over ? ((J.P.in.includes(k) ? 1 : J.P.out.includes(k) ? 2 : 0) === st[k] ? '' : ' bad') : ''}" data-tok="${k}" ${J.over ? 'disabled' : ''} aria-label="${esc(TOKENS[k])}: ${['not used', 'goes in', 'comes out'][st[k]]}">${esc(TOKENS[k])}</button>`;
+    const showAns = J.over && !J.won;
+    const list = (want) => Object.keys(TOKENS).filter(k => st[k] === want).map(tok).join('') || '<span class="muted">tap items below</span>';
+    return `<div class="slots"><div class="slot in"><h3>➡️ Goes in</h3><div class="tray">${list(1)}</div></div><div class="slot out"><h3>Comes out ➡️</h3><div class="tray">${list(2)}</div></div></div>
+      <p class="q" style="margin-bottom:0">Items</p><div class="tray">${Object.keys(TOKENS).filter(k => !st[k]).map(tok).join('') || '<span class="muted">all loaded</span>'}</div>
+      <p class="q">Where in the cell does it happen?</p><div class="tray">${PLACES.map(([id, label]) => `<button type="button" class="tok${J.place === id ? ' sel' : ''}${J.over && id === J.P.where ? ' good' : ''}" data-place="${id}" ${J.over ? 'disabled' : ''} aria-pressed="${J.place === id}">${label}</button>`).join('')}</div>
+      ${J.over ? '' : '<div style="margin-top:10px"><button type="button" class="btn go" data-check>⚡ Power it up</button></div>'}
+      ${showAns ? `<p class="muted" style="margin:8px 0 0">The answer: <b>${esc(J.P.name)}</b> · in: ${J.P.in.map(k => esc(TOKENS[k])).join(', ')} · out: ${J.P.out.map(k => esc(TOKENS[k])).join(', ')}</p>` : ''}`;
+  },
+  sort(J){
+    return `<div class="sorter">${J.items.map(([e, nm, g], i) => `<div class="row"><b>${e} ${esc(nm)}</b><div class="seg" role="group" aria-label="${esc(nm)}">${J.groups.map(([gid, label]) => `<button type="button" class="tok${J.picks[i] === gid ? ' sel' : ''}${J.over ? (gid === g ? ' good' : J.picks[i] === gid ? ' bad' : '') : ''}" data-sortpick="${i}" data-group="${gid}" ${J.over ? 'disabled' : ''} aria-pressed="${J.picks[i] === gid}">${esc(label)}</button>`).join('')}</div></div>`).join('')}</div>
+      ${J.over ? '' : `<div style="margin-top:10px"><button type="button" class="btn go" data-check ${Object.keys(J.picks).length < J.items.length ? 'disabled' : ''}>🏷️ Put up the signs</button></div>`}`;
+  },
+  mc(J){
+    return `${J.show || ''}<p class="q">${esc(J.q)}</p><div class="opts">${J.opts.map(o => `<button type="button" class="opt${J.over && o === J.correct ? ' good' : ''}${J.wrong?.includes(o) ? ' bad' : ''}" data-opt="${esc(o)}" ${J.over || J.wrong?.includes(o) ? 'disabled' : ''}>${esc(o)}</button>`).join('')}</div>`;
+  },
+  num(J){
+    return `<p class="q">${esc(J.q)}</p>${J.over ? `<p><b>${J.ans} ${esc(J.u)}</b></p>` : `<form class="answer" id="f"><input id="an" inputmode="numeric" autocomplete="off" aria-label="Your answer"><span class="muted">${esc(J.u)}</span><button class="btn go" type="submit">Check</button></form>`}`;
+  },
+  order(J){
+    const next = J.done.length;
+    return `${J.done.length ? `<ol class="done-list">${J.done.map(i => `<li>${esc(J.steps[i])}</li>`).join('')}</ol>` : ''}
+      ${J.over ? '' : `<p class="q">Step ${next + 1} of ${J.steps.length}: tap the one that comes next.</p><div class="order">${J.shown.filter(i => !J.done.includes(i)).map(i => `<button type="button" class="opt${J.lastBad === i ? ' bad' : ''}" data-step="${i}">${esc(J.steps[i])}</button>`).join('')}</div>`}`;
+  }
+};
+function render(focus){
+  const J = G.J;
+  app.innerHTML = `<div class="hud"><span class="pill">🌺 Job ${G.i + 1} of ${PLAN.length}</span><span class="pill">✅ ${G.right} done right</span><span class="grow" aria-label="${G.right} plants grown">${GROW.slice(0, G.right).join('')}</span></div>
+    <div class="job"><h2>${J.title}</h2><div>${J.blurb}</div></div>
+    <div class="card">${bodyOf[J.type](J)}<p class="fb ${J.fbKind}" role="status">${esc(J.fb)}</p>${J.over ? `<div class="explain">${esc(J.explain)}</div><div style="margin-top:10px"><button type="button" class="btn go" data-next>${G.i + 1 >= PLAN.length ? 'End the shift ▶' : 'Next job ▶'}</button></div>` : ''}</div>`;
+  if (focus) (document.getElementById('an') || document.querySelector('[data-next]') || app.querySelector('.card button:not([disabled])'))?.focus();
+}
+function checkBuild(){
+  const J = G.J, st = J.state;
+  const wrongIn = Object.keys(TOKENS).filter(k => (J.P.in.includes(k) ? 1 : J.P.out.includes(k) ? 2 : 0) !== st[k]);
+  if (!wrongIn.length && J.place === J.P.where) { G.tries++; return solved(); }
+  const hint = !Object.values(st).some(Boolean) ? 'Load the items first.' : st.soil ? 'Soil minerals aren’t part of either process.'
+    : J.place !== J.P.where && !wrongIn.length ? 'The items are right. Check where it happens.'
+    : st.light && J.proc === 'resp' ? 'Cellular respiration doesn’t use light. It runs day and night.' : st.energy === 1 && J.proc === 'photo' ? 'In photosynthesis the energy comes from light.'
+    : st.o2 === 1 && J.proc === 'photo' ? 'Oxygen comes out of photosynthesis, it doesn’t go in.' : st.co2 === 1 && J.proc === 'resp' ? 'Cells give off carbon dioxide in respiration; they don’t take it in.'
+    : `${wrongIn.length} item${wrongIn.length === 1 ? ' is' : 's are'} in the wrong place.`;
+  failed(hint);
+}
+function checkSort(){
+  const J = G.J, bad = J.items.filter(([, , g], i) => J.picks[i] !== g).length;
+  if (!bad) { G.tries++; return solved(); }
+  failed(`${bad} sign${bad === 1 ? ' is' : 's are'} wrong. Remember: plants need energy too.`);
+}
+app.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.matches('[data-start]')) return newGame();
+  if (!G || G.done) return;
+  const J = G.J;
+  if (b.matches('[data-next]')) { G.i++; return nextJob(); }
+  if (J.over) return;
+  if (b.dataset.tok) { J.state[b.dataset.tok] = (J.state[b.dataset.tok] + 1) % 3; J.fb = ''; render(false); app.querySelector(`[data-tok="${b.dataset.tok}"]`)?.focus(); return; }
+  if (b.dataset.place) { J.place = b.dataset.place; render(false); return; }
+  if (b.dataset.sortpick != null) { J.picks[+b.dataset.sortpick] = b.dataset.group; render(false); return; }
+  if (b.matches('[data-check]')) { if (J.type === 'build') checkBuild(); else checkSort(); return render(true); }
+  if (b.dataset.opt != null) {
+    if (b.dataset.opt === J.correct) { G.tries++; solved(); }
+    else { J.wrong = [...(J.wrong || []), b.dataset.opt]; failed('That’s not it. Think about what goes in and comes out.'); }
+    return render(true);
+  }
+  if (b.dataset.step != null) {
+    const i = +b.dataset.step;
+    if (i === J.done.length) { J.done.push(i); J.lastBad = null; J.fb = ''; if (J.done.length === J.steps.length) { G.tries++; if (J.slips <= 1) solved(); else { G.missed[J.sk] = (G.missed[J.sk] || 0) + 1; J.over = true; J.fb = 'The trail is finished, but with more than one slip.'; J.fbKind = 'bad'; } } }
+    else { J.slips++; J.lastBad = i; J.fb = J.slips <= 1 ? 'Not that one yet. What has to happen first?' : 'Another slip. Keep going!'; J.fbKind = 'bad'; }
+    return render(true);
+  }
+});
+app.addEventListener('submit', e => {
+  e.preventDefault(); const J = G?.J; if (!J || J.type !== 'num' || J.over) return;
+  const raw = document.getElementById('an').value.trim().replace(/[^\d.-]/g, ''), v = parseFloat(raw);
+  if (!raw || !Number.isFinite(v)) { J.fb = 'Type a number, like 12.'; J.fbKind = 'bad'; return render(true); }
+  if (v === J.ans) { G.tries++; solved(); } else failed('Subtract the resting number from the number after jogging.');
+  render(true);
+});
+
+/* ---------- start and end ---------- */
+const starsFor = r => r >= PLAN.length ? 3 : r >= PLAN.length - 2 ? 2 : r >= PLAN.length / 2 ? 1 : 0;
+function intro(){
+  G = null;
+  app.innerHTML = `<h1>🌺 Greenhouse Keeper</h1>
+    <p>You’re the keeper of the Pet World Greenhouse today! Keep every plant and animal powered up with photosynthesis and cellular respiration.</p>
+    <div class="card"><h2>How to play</h2><ol class="how">
+      <li>${PLAN.length} jobs: power up leaves and cells, label who does what, read the gas sensor, help at the Plant Lab, follow the energy, and check the fitness trail.</li>
+      <li>To power up a leaf or a cell, load what <b style="color:var(--in)">goes in</b> and what <b style="color:var(--out)">comes out</b>, then pick where it happens.</li>
+      <li>You get 2 tries on each job. Every job done right grows a new plant. All ${PLAN.length} is ⭐⭐⭐.</li></ol>
+      <p class="muted" style="margin:0">Photosynthesis stores the sun’s energy in sugar. Cellular respiration releases it. Plants do both!</p>
+      ${FROM_UNIT ? '<p class="muted">Each job done right earns Pet World coins. The game doesn’t count toward practice, quizzes, or tests.</p>' : ''}</div>
+    <p style="margin-top:14px"><button type="button" class="btn go" data-start>🌱 Start the shift</button>${best ? ` <span class="muted">Best: ${'⭐'.repeat(best)}</span>` : ''}</p>`;
+}
+function finish(){
+  if (!G || G.done) return; G.done = true;
+  const stars = starsFor(G.right);
+  const result = {stars, jobs:PLAN.length, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('greenhouse-keeper:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_UNIT) window.parent.postMessage({type:'greenhouse:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'greenhouse-keeper', runId:ARCADE_RUN, roundId:`shift-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<li>${esc(SKILL_NAMES[s] || s)} (${n})</li>`).join('');
+  app.innerHTML = `<h1>${stars === 3 ? '🏆 Keeper of the Year!' : '🌺 The shift is over'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${stars === 3 ? 'Every job done right. The greenhouse is glowing!' : 'Nice work! Can you get every job next time?'}</p>
+    <div class="stats"><div><b>${G.right} of ${PLAN.length}</b>jobs done right</div><div><b>${GROW.slice(0, G.right).join('') || '🌱'}</b>grown today</div><div><b>${'⭐'.repeat(best) || '—'}</b>best${newBest && stars ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    <p><button type="button" class="btn go" data-start>Play another shift</button></p>`;
+}
+window.__greenhouse = {PLAN, PROCESS, TOKENS, get G(){ return G; }, buildJob, sortJob, sensorJob, labJob, orderJob, fitnessJob, co2Path};   // for tests
+intro();
+})();
+</script>
+</body>
+</html>

@@ -5,7 +5,7 @@ The owner asked to make Biology more hands-on, with at least one hands-on activi
 ## 1. 🔬 This week's experiment (`src/shared/handsOn.js`)
 
 - **The plan row:** the daily plan has one row for the week, "🔬 Hands-on Biology this week: …". It turns ✅ once she sends one experiment or nature journal page that week (Monday to Sunday). It shows only while a Biology unit is open.
-- **The week's pick:** `weekHandsOn` chooses the next experiment she hasn't sent from her current Biology unit, then any experiment she hasn't sent. After all 14 are done, it picks the 🌿 Nature Journal, which can be done every week.
+- **The week's pick:** `weekHandsOn` chooses the next experiment she hasn't sent from her current Biology unit, then any experiment she hasn't sent. After all 17 are done, it picks the 🌿 Nature Journal, which can be done every week.
 - **On the unit page:** the "Hands-on at home" cards show all the experiments for each lesson, so she can do more than one in a week.
 
 **The experiments.** Each one has what you need, a safety line, steps, and three lab notes: predict, what happened, and explain.
@@ -17,6 +17,8 @@ The owner asked to make Biology more hands-on, with at least one hands-on activi
 | Biology 1 | Digestion | 🛍️ Stomach in a Bag, 🍘 Chew a Cracker, 📏 How Long Are Your Intestines? |
 | Biology 2 | Traits | 👪 Family Traits Survey, 🔍 Fingerprint Detective |
 | Biology 2 | Growth | 🥔 Potato Sprouts, 🧂 Salty Seeds, 🍞 Bread Mold Race |
+| Biology 3 | Photosynthesis | 🫧 Leaf Bubbles in the Sun, 🍃 The Leaf in the Shade |
+| Biology 3 | Food and energy | 🥬 Red Cabbage Breath Test |
 
 **Sending it.**
 - She writes all three notes, with at least 3 words each. Signed in, she also adds 1 to 3 photos.

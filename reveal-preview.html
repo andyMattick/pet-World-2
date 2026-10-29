@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reveal preview</title>
+<link rel="stylesheet" href="/src/styles/game.css">
+<style>
+  body{padding:12px}
+  .bar{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px}
+  .bar button{font-size:13px}
+  .demo{position:static; background:none; padding:0}
+</style>
+</head>
+<body>
+<!-- A preview page for the class reveal styles and the theme-day scenes (docs/CLASS-WHEEL.md). Not part of the build:
+     open /reveal-preview.html with npm run dev. ?style=darts&auto=1 runs one style with no taps (for screenshots). -->
+<div class="bar" id="bar"></div>
+<div class="theme-card demo"><div class="theme-box wheel-box" id="box"></div></div>
+<script type="module">
+import { REVEAL_STYLES, revealStyle, runReveal } from './src/game/reveals/index.js';
+import { themeSceneHTML, addThemeSceneCSS, THEME_SCENES } from './src/game/reveals/themeScenes.js';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+const q = new URLSearchParams(location.search), box = document.getElementById('box'), bar = document.getElementById('bar');
+const AUTO = q.get('auto') === '1';
+function shell(title){
+  box.innerHTML = `<p class="theme-kicker">Today’s classes</p><h2>${esc(title)}</h2><p class="reveal-round"></p><div class="reveal-stage"></div><p class="reveal-hint" aria-live="polite"></p><div class="reveal-go"></div><ul class="wheel-picks" aria-live="polite"></ul>`;
+}
+async function play(id){
+  const style = revealStyle(id); shell(style.title); window.__done = false; window.__picked = [];
+  const rounds = [{caption:'On Pet World', labels:['➗ Math', '📚 English', '🏛️ History', '🦁 Biology'], picks:[2, 0, 3]},
+    {caption:'Away from Pet World', labels:['🇪🇸 Spanish', '🎨 Art', '💻 Computer Science'], picks:[1]}];
+  const list = box.querySelector('.wheel-picks');
+  if (AUTO) {   // click every button and tappable thing for her
+    const t = setInterval(() => { const b = box.querySelector('.reveal-go button'); if (b) b.click(); const tap = box.querySelector('.reveal-stage [data-tap]:not([data-done])'); if (tap) { tap.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true})); tap.click(); } }, 400);
+    window.__stop = () => clearInterval(t);
+  }
+  await runReveal(style, box, rounds, {quick:q.get('quick') === '1', esc, pet:'🐶', sfx:() => {}, reveal:(ri, i) => { window.__picked.push([ri, i]); list.insertAdjacentHTML('beforeend', `<li>${esc(rounds[ri].labels[i])}</li>`); }});
+  window.__done = true;
+}
+function scene(id){
+  addThemeSceneCSS();
+  box.innerHTML = `<p class="theme-kicker">Today is…</p>${themeSceneHTML(id, '🐶', esc)}<h2>${esc(id)}</h2>`;
+}
+REVEAL_STYLES.forEach(s => { const b = document.createElement('button'); b.className = 'btn small'; b.textContent = s.title; b.onclick = () => play(s.id); bar.appendChild(b); });
+Object.keys(THEME_SCENES).forEach(id => { const b = document.createElement('button'); b.className = 'btn small'; b.textContent = `🎉 ${id}`; b.onclick = () => scene(id); bar.appendChild(b); });
+if (q.get('scene')) scene(q.get('scene')); else play(q.get('style') || 'wheel');
+</script>
+</body>
+</html>

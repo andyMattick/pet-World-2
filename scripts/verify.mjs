@@ -192,12 +192,16 @@ need('src/game/game.js', 'townTracker', 'practice time kept in the town');
 need('src/game/game.js', 'function renderSim(', 'Biology Unit 2 science labs (SCIENCE-UNIT2.md)');
 need('src/game/game.js', "step.kind === 'table' ? tableStepHTML", 'project data tables and photos (SCIENCE-UNIT2.md)');
 need('src/shared/questionBanks.js', 'const BIO2_QUESTIONS', 'Biology Unit 2 questions');
+need('src/shared/questionBanks.js', 'const BIO3_QUESTIONS', 'Biology Unit 3 questions (SCIENCE-UNIT3.md)');
+need('public/arcade/greenhouse-keeper/index.html', 'greenhouse:result', 'Greenhouse Keeper tells Pet World its score (GREENHOUSE-KEEPER.md)');
 need('src/game/game.js', 'function openHelpCard(', '✋ I have a question (QUESTIONS.md)');
 need('src/teacher/report.ts', 'function questionsWaitingHTML(', 'teacher sees ✋ questions waiting (QUESTIONS.md)');
 need('src/shared/questionBanks.js', 'const PREPOSITION_QUESTIONS', 'English Unit 5 questions (ENGLISH-UNIT5.md)');
 need('src/game/game.js', 'function renderGgame(', 'English Unit 5 grammar games (ENGLISH-UNIT5.md)');
 need('src/shared/questionBanks.js', 'const PUNCTUATION_QUESTIONS', 'English Unit 6 questions (ENGLISH-UNIT6.md)');
 need('src/game/game.js', 'function renderHeroLab(', 'English Unit 6 Punctuation Power Lab (ENGLISH-UNIT6.md)');
+need('src/shared/questionBanks.js', 'const COLON_QUESTIONS', 'English Unit 7 questions (ENGLISH-UNIT7.md)');
+need('src/game/game.js', 'function renderBookRepair(', 'English Unit 7 Book Repair Desk (ENGLISH-UNIT7.md)');
 need('public/prep-recall/index.html', 'prep:result', 'the preposition recall game tells Pet World its score (ENGLISH-UNIT5.md)');
 need('src/game/game.js', 'function openPrepRecall(', 'the preposition recall game on Today’s plan during Unit 5 (ENGLISH-UNIT5.md)');
 need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
@@ -226,7 +230,7 @@ for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', avail
 }
 
 // Owner rule (CLAUDE.md, "Games go in the unit and in the Arcade"): every unit game is also an Arcade game
-for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML('})) {
+for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'greenhouse-keeper':'function openGreenhouse(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML(', 'book-repair':'function bookRepairCardHTML('})) {
   if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
   if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
 }

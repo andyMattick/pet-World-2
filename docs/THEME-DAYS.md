@@ -15,6 +15,9 @@ A fun theme for the school day, with something to wear and a small challenge, of
 
 ## How it works
 
+- **The reveal (Oct 29, 2026):** the first time today's theme shows, a fun show (darts, cups, a claw machine… a different one from the class show that day) lands on today's theme among 3 others. Then the theme card shows an animated scene for that theme starring her pet (`src/game/reveals/themeScenes.js`, one per theme). The theme itself is picked exactly as before; the show doesn't change it. See docs/CLASS-WHEEL.md, "How she sees it".
+
+
 - **Shared code:** `src/shared/themeDays.ts` (the themes, `themeSettings`, `themeFor`). The game and the teacher app both use it.
 - **Class setting** `game_settings.themes = {enabled, when, special, themes}`: off until a teacher turns it on, and on for new classes. `when` is `earned` (the default), `every` (every school day, Monday to Friday) or `fri` (Fridays only). `special` turns the special days on or off together. Every rotating theme is in the cycle unless unchecked.
 - **Which theme:** earned theme days go through the rotation in order, one step each time she earns one (`S.themeTurn`). With every day or Fridays, the date picks it, so everyone in the class gets the same theme.

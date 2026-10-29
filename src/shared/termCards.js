@@ -95,6 +95,25 @@ export const TERM_CARDS = {
     { term: 'algae bloom', means: 'Algae growing so fast they cover the water, often because of extra nutrients and warm weather.', example: 'Lake Erie near Toledo, Ohio, in 2014', skill: 'growthEnvA' },
     { term: 'decomposer', means: 'A living thing (like bacteria) that breaks down dead matter. In water, decomposers use up oxygen.', example: 'Bacteria breaking down dead algae', skill: 'growthEnvA' }
   ],
+  bio3: [
+    { term: 'photosynthesis', means: 'How plants, algae, and some bacteria use light energy to turn carbon dioxide and water into sugar, giving off oxygen.', example: 'A tomato leaf in the greenhouse making sugar in the sunshine', skill: 'photoOrgU' },
+    { term: 'chloroplast', means: 'The part of a plant or algae cell where photosynthesis happens.', example: 'Leaf cells are packed with green chloroplasts.', skill: 'photoOrgU' },
+    { term: 'chlorophyll', means: 'The green substance in chloroplasts that captures light energy.', example: 'Chlorophyll is why leaves look green.', skill: 'photoOrgU' },
+    { term: 'glucose', means: 'A sugar made in photosynthesis. Its atoms are carbon, hydrogen, and oxygen, and it stores energy.', example: 'Plants build starch and wood out of glucose.', skill: 'photoOrgU' },
+    { term: 'carbon dioxide', means: 'A gas in the air. Plants take it in for photosynthesis; cells give it off in cellular respiration.', example: 'You breathe out carbon dioxide.', skill: 'photoOrgU' },
+    { term: 'producer', means: 'A living thing that makes its own food from simple materials, usually by photosynthesis.', example: 'grass, trees, algae', skill: 'photoOrgU' },
+    { term: 'stomata', means: 'Tiny openings, mostly on the underside of leaves, that let carbon dioxide in and oxygen and water vapor out.', example: 'A leaf’s stomata open in the daytime.', skill: 'photoOrgA' },
+    { term: 'matter', means: 'Anything that has mass and takes up space. In living things its atoms are rearranged, never made or destroyed.', example: 'The carbon in a tree’s wood came from carbon dioxide in the air.', skill: 'photoOrgA' },
+    { term: 'variable', means: 'Something that can change in an experiment. Change one on purpose and keep the others the same.', example: 'Moving the lamp closer changes the amount of light.', skill: 'photoOrgA' },
+    { term: 'cellular respiration', means: 'How cells use oxygen to break down sugar, releasing energy and giving off carbon dioxide and water.', example: 'Your muscle cells doing respiration while you run', skill: 'foodEnergyU' },
+    { term: 'mitochondria', means: 'The parts of a cell where cellular respiration releases energy from sugar. Plant and animal cells both have them.', example: 'Muscle cells have lots of mitochondria.', skill: 'foodEnergyU' },
+    { term: 'energy', means: 'What living things need to move, grow, and stay warm. It is stored in food and released by respiration.', example: 'A hummingbird uses a lot of energy to hover.', skill: 'foodEnergyU' },
+    { term: 'digestion', means: 'Breaking food into small molecules that the blood can carry to cells.', example: 'Pasta is digested into sugars.', skill: 'foodEnergyU' },
+    { term: 'breathing', means: 'Moving air into and out of the lungs. It brings in the oxygen for cellular respiration and gets rid of carbon dioxide.', example: 'You breathe faster after a sprint.', skill: 'foodEnergyU' },
+    { term: 'breathing rate', means: 'How many breaths you take in one minute. It goes up when your cells need more oxygen.', example: '16 breaths a minute resting, 32 after jumping jacks', skill: 'foodEnergyA' },
+    { term: 'heart rate', means: 'How many times your heart beats in one minute. A faster heart moves oxygen and sugar to cells faster.', example: 'Count your pulse for 15 seconds and multiply by 4.', skill: 'foodEnergyA' },
+    { term: 'fair test', means: 'An experiment that changes only one thing and keeps everything else the same.', example: 'Same person, same counting time, before and after exercise', skill: 'foodEnergyA' }
+  ],
   punctuation: [
     { term: 'end mark', means: "The punctuation mark that ends a sentence: a period, a question mark, or an exclamation point.", example: "The robot is ready. Is the robot ready? The robot is ready!", skill: 'endMarks' },
     { term: 'indirect question', means: "A sentence that reports a question someone asked. It is a statement, so it ends with a period.", example: "Comet asked if the jet was fueled.", skill: 'endMarks' },
@@ -112,6 +131,21 @@ export const TERM_CARDS = {
     { term: 'possessive noun', means: "A noun that shows ownership. One owner: add ’s. A plural ending in s: add ’ only.", example: "the hero’s cape, the heroes’ capes", skill: 'possessive' },
     { term: 'irregular plural possessive', means: "A plural that doesn’t end in s takes ’s.", example: "the children’s heroes, the people’s choice", skill: 'pluralPossessive' },
     { term: 'its or it’s', means: "It’s means it is or it has. Its means belonging to it.", example: "It’s ready, and its battery is full.", skill: 'itsVsIts' }
+  ],
+  colons: [
+    { term: 'colon', means: "A mark (:) that comes after a complete sentence and points ahead to a list, an example, or an explanation.", example: "The library has one rule: whisper.", skill: 'introColons' },
+    { term: 'colon as a separator', means: "A colon also separates hours from minutes, the parts of a ratio, a title from its subtitle, and the greeting of a business letter.", example: "4:15 · a 2:1 ratio · Dear Ms. Ruiz:", skill: 'introColons' },
+    { term: 'semicolon', means: "A mark (;) that joins two closely related complete sentences without a joining word.", example: "The lights went out; the readers kept reading.", skill: 'introSemicolons' },
+    { term: 'semicolons in a list', means: "Semicolons separate list items that already have commas inside them.", example: "Austin, Texas; Boise, Idaho; and Mobile, Alabama", skill: 'introSemicolons' },
+    { term: 'comma splice', means: "The mistake of joining two complete sentences with a comma alone. Fix it with a semicolon, or a comma plus and, but, or so.", example: "Not: The bell rang, we left. Yes: The bell rang; we left.", skill: 'semicolonsCommas' },
+    { term: 'colon or semicolon?', means: "A colon points to what explains or lists the first part. A semicolon joins two separate, equal sentences.", example: "I need one thing: sleep. / I read; Sam drew.", skill: 'semicolonsColons' },
+    { term: 'italics (or underline)', means: "Slanted type for titles of whole works: books, movies, TV series, albums, magazines, newspapers, plays, video games. By hand, underline them.", example: "a book like Charlotte’s Web", skill: 'italicsQuotes' },
+    { term: 'quotation marks for titles', means: "Titles of short works or parts of a bigger work: songs, poems, short stories, chapters, articles, TV episodes.", example: "the song “Happy Birthday”", skill: 'italicsQuotes' },
+    { term: 'parentheses', means: "A pair of marks ( ) around extra information the sentence could do without.", example: "My cousin (the one who sings) is visiting.", skill: 'parentheses' },
+    { term: 'dash', means: "A long line (—) that sets off an interruption or sets up a surprise or a sudden change.", example: "I opened the box and found—a frog!", skill: 'introDashes' },
+    { term: 'hyphen', means: "A short line (-) that joins words or word parts into one word.", example: "forty-two, a well-known song, self-control", skill: 'dashesHyphens' },
+    { term: 'hyphenated describing word', means: "Two or more words joined by hyphens to describe a noun that comes after them. After the noun, no hyphens.", example: "a ten-year-old dog / the dog is ten years old", skill: 'dashesHyphens' },
+    { term: 'ellipsis', means: "Three dots (…) that show words were left out of a quotation, or that a speaker pauses or trails off.", example: "“The zoo … has over two hundred animals.”", skill: 'ellipses' }
   ],
   prepositions: [
     { term: 'preposition', means: 'A word that shows how a noun or pronoun is related to the rest of the sentence: where, when, or how.', example: 'under the bed, after lunch, with a spoon', skill: 'meetPreposition' },

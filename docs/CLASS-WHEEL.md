@@ -6,6 +6,14 @@ Each school day (Monday to Friday) she spins a wheel for the day's classes. It l
 
 Bible → morning brain stretch → the grown-up's theme and end-of-day question → **🎡 the wheel** → ☀️ warm-up → today's plan. She taps **Spin!**, and the wheel lands on each class in turn. Then she taps **Let's go!**. On a weekend there's no wheel, and the plan stays as it is.
 
+## How she sees it
+
+She sees **one show a day**, picked at random by the date and the same all day: 🎡 the wheel, 🎯 darts, 🎠 a merry-go-round, 🥤 cups (shell game), 🎣 fishing, 🕹️ a claw machine, 🍬 a gumball machine, 🎈 balloon pop, 🏖️ a treasure dig, 🔻 Plinko, 🪙 a scratch-off ticket, 🥚 hatching eggs, 🎰 a slot machine, 🥠 fortune cookies, or 📬 mail call. The days go through all 15 before any comes back, and never the same one two days in a row. The classes are picked first (the rules below); the show only lands on them. In the tap-to-pick shows (cups, balloons, fish, eggs…), whatever she taps shows the next picked class.
+
+Theme days get a show too: a different one from the classes that day lands on today's theme among 3 others, then the theme card shows an animated scene for that theme with her pet (`src/game/reveals/themeScenes.js`).
+
+To preview every show and scene: `npm run dev`, then open `/reveal-preview.html` (`?style=darts`, `?scene=pajamas`).
+
 ## The classes
 
 - **Core** (on Pet World): ➗ Math, 📚 English, 🏛️ History, 🦁 Biology. By default, 3 meet each day.
@@ -42,4 +50,5 @@ A simulation of 60 weeks with no tests came out 4-4-4-3 for core and 2-2-1 for e
 
 - `src/shared/classWheel.ts`: `WheelRules` / `wheelRules` / `DEFAULT_WHEEL`, `pickClasses(day, log, rules, tests)`, `normalizeWheelLog`, `isSchoolDay`.
 - `src/game/game.js`: `wheelPolicy`, `wheelPick`, `openWheel`, `changeWheel`, `wheelItems` (in `planItems`), `wheelSatOut` (time goals), `testWaiting`, `wheelPlanRow`, the `elective` plan item, `openOutsideForm(row, preset)`. Save: `S.wheelLog["YYYY-MM-DD"] = {c, e, t?, o?}` (the last 40 days), `S.wheelSeen`.
+- `src/game/reveals/`: `index.js` (`REVEAL_STYLES`, `revealStyleFor(day, salt)`, `runReveal`; the style interface is in its top comment), `wheel.js`, `throwers.js` (darts, balloons, plinko, slots), `machines.js` (merry-go-round, claw, gumball, mail), `hidden.js` (cups, fishing, dig, scratch, eggs, fortune), `themeScenes.js` (`themeSceneHTML`, one scene per theme id). `openThemeReveal` in game.js plays the theme-day show.
 - `src/teacher/plan.ts`: the 🎡 Class wheel rules, saved in the plan JSON (`quiz_overrides.plan.wheel`).

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book Repair Desk</title>
+<!-- Pet World Arcade copy of the 📚 Book Repair Desk (English Unit 7, docs/ENGLISH-UNIT7.md, docs/ARCADE-GAMES.md).
+     Served at /arcade/book-repair/. It is a Vite page (vite.config.ts), not a public/ file, so it uses the same books as
+     the unit: src/game/bookRepair.js. In the Arcade (?arcadeRun=…) it pays tickets; it never pays coins or counts toward
+     the unit's stars, quizzes or tests. -->
+<style>
+  :root{ --bg:#EAF1FB; --surface:#FFFFFF; --ink:#2F3A4A; --ink-soft:#5E6B7D; --edge:#2F3A4A; --berry:#E4577A; --berry-deep:#B83659; --butter:#FFD76A; --dot:#CBD8EA; --ok:#2E7D57; --bad:#B83659; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#1B2230; --surface:#283244; --ink:#E9EEF7; --ink-soft:#B4BFD0; --edge:#0E131C; --berry:#EE7394; --berry-deep:#FF9DB6; --butter:#6B5520; --dot:#3A475C; --ok:#7FD1B9; --bad:#FF9DB6; } }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button{font:inherit; color:inherit; cursor:pointer}
+  button:disabled{cursor:default; opacity:.75}
+  .wrap{max-width:760px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.2em; margin:0 0 6px}
+  .muted{color:var(--ink-soft)}
+  .card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:14px; margin-top:12px}
+  .btn{border:3px solid var(--edge); background:var(--surface); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--berry); color:#fff; border-color:var(--berry-deep)}
+  .shelves{display:grid; gap:10px}
+  .shelf{display:flex; gap:12px; align-items:center; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); border-radius:14px; padding:10px 12px}
+  .shelf .e{font-size:1.8em} .shelf b{display:block}
+  .sentence{font-size:1.35em; line-height:1.9; margin:10px 0 4px; overflow-wrap:anywhere}
+  .br-gap{display:inline-block; min-width:1.8em; padding:0 .3em; border:3px dashed var(--berry); border-radius:10px; background:var(--butter); color:var(--ink-soft); text-align:center}
+  .br-fix{color:var(--berry-deep); background:var(--butter); border-radius:8px; padding:0 .2em}
+  .choices .btn{min-width:3em; font-size:1.15em}
+  .msg{font-weight:700} .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import { REPAIR_SHELVES, booksOn, repairSentenceHTML, choiceLabel } from '../../src/game/bookRepair.js';
+import { starsFor } from '../../src/game/grammarGames.js';
+const params = new URLSearchParams(location.search), ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let best = {}; try { best = JSON.parse(localStorage.getItem('book-repair:best') || '{}') || {}; } catch(e){}
+const stars = n => `${'⭐'.repeat(n)}${'☆'.repeat(3 - n)}`;
+let run = null;
+
+function renderShelves(){
+  run = null;
+  app.innerHTML = `<h1>📚 Book Repair Desk</h1>
+    <p class="muted">Welcome to the Pause Library! Books came back with marks torn out of their sentences. Pick the fix for each one. A wrong fix sends the book back to the cart to try again.</p>
+    <div class="shelves">${REPAIR_SHELVES.map(p => `<button type="button" class="shelf" data-shelf="${p.id}"><span class="e">${p.emoji}</span><span><b>${esc(p.name)}</b><span class="muted">${booksOn(p.id).length} books · ${best[p.id] ? stars(best[p.id]) : 'Not played yet'}</span></span></button>`).join('')}</div>`;
+}
+function nextBook(r){ r.cur = r.queue.shift(); r.order = shuffle(r.list[r.cur].choices.map((_, i) => i)); r.pick = null; r.msg = ''; r.ok = false; }
+function start(shelf){
+  const list = booksOn(shelf);
+  run = {shelf, list, queue:list.map((_, i) => i), missed:new Set(), fixed:0, first:0, done:false};
+  nextBook(run); render();
+}
+function render(){
+  const r = run, shelf = REPAIR_SHELVES.find(p => p.id === r.shelf), total = r.list.length;
+  let body;
+  if (r.done) {
+    body = `<div class="card"><h2>🏁 ${stars(r.stars)} ${r.first} of ${total} books fixed on the first try</h2>
+      <p>${r.stars === 3 ? 'Every book fixed on the first try. The shelf looks perfect!' : r.stars === 2 ? 'So close to three stars. Try the shelf again?' : 'Every book is back on the shelf. Try again for more stars!'}</p>
+      <div class="row"><button type="button" class="btn go" data-again>🔁 Play again</button><button type="button" class="btn" data-shelves>Pick another shelf</button></div></div>`;
+  } else {
+    const b = r.list[r.cur], answered = r.ok;
+    const buttons = r.order.map(i => `<button type="button" class="btn${answered && i === 0 ? ' go' : ''}" data-pick="${i}" ${answered || r.pick != null ? 'disabled' : ''}>${choiceLabel(b.choices[i][0], esc)}</button>`).join('');
+    body = `<div class="card"><p><b>📚 ${r.fixed} of ${total} shelved</b> · ⭐ ${r.first} on the first try${r.queue.length ? ` · 🛒 ${r.queue.length} on the cart` : ''}</p>
+      <p>📖 <b>${esc(b.title)}</b>${r.missed.has(r.cur) ? ' <span class="muted">(back from the cart)</span>' : ''}</p>
+      ${b.note ? `<p class="muted">${esc(b.note)}</p>` : ''}
+      <p class="sentence">${repairSentenceHTML(b, answered ? b.choices[0][0] : null, esc)}</p>
+      ${answered ? '' : '<p class="muted" style="margin:0">Which fix belongs in the gap?</p>'}
+      <div class="row choices">${buttons}</div>
+      ${r.msg ? `<p class="msg ${r.ok ? 'ok' : 'bad'}" role="status">${esc(r.msg)}</p>` : ''}
+      ${answered || r.pick != null ? `<div class="row"><button type="button" class="btn go" data-next>${answered ? (r.queue.length ? 'Shelve it! Next book' : 'Shelve it! Finish') : 'Put it on the cart. Next book'}</button></div>` : ''}</div>`;
+  }
+  app.innerHTML = `<div class="row"><h1 style="flex:1">📚 Book Repair Desk</h1><button type="button" class="btn" data-shelves>All shelves</button></div><p class="muted">${shelf.emoji} ${esc(shelf.name)}</p>${body}`;
+}
+function finish(){
+  const r = run, total = r.list.length;
+  r.stars = starsFor(r.first, total); r.done = true;
+  best[r.shelf] = Math.max(best[r.shelf] || 0, r.stars); try { localStorage.setItem('book-repair:best', JSON.stringify(best)); } catch(e){}
+  try { if (ARCADE_RUN && window.parent !== window) window.parent.postMessage({type:'arcade:round-complete', gameId:'book-repair', runId:ARCADE_RUN, roundId:`${r.shelf}-${Date.now()}`, score:r.first}, location.origin); } catch(e){}
+}
+app.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.shelf) { start(btn.dataset.shelf); return; }
+  if (btn.hasAttribute('data-shelves')) { renderShelves(); return; }
+  const r = run; if (!r) return;
+  if (btn.hasAttribute('data-again')) { start(r.shelf); return; }
+  if (btn.dataset.pick != null && !r.ok && r.pick == null) {
+    const i = +btn.dataset.pick, b = r.list[r.cur];
+    r.pick = i;
+    if (i === 0) { r.ok = true; r.fixed++; if (!r.missed.has(r.cur)) r.first++; r.msg = `✅ ${b.choices[0][1]}`; }
+    else { r.missed.add(r.cur); r.queue.push(r.cur); r.msg = `Not this one: ${b.choices[i][1]} This book goes back on the cart to fix again.`; }
+    render(); return;
+  }
+  if (btn.hasAttribute('data-next')) {
+    if (!r.queue.length) finish(); else nextBook(r);
+    render();
+  }
+});
+renderShelves();
+</script>
+</body>
+</html>
