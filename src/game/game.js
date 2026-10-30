@@ -9875,19 +9875,23 @@ function renderHome(){
     });
     h += labTile;
   }
-  if (bibleOn()) { const st = bibleStatus(); h += `<button class="tile service" data-open="bible"><span class="te">✝️</span><span class="tn">Bible</span><span class="tu">${st.done ? '✅ Done today' : 'Journal, verse and books'}</span></button>`; }
-  h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
-  h += `<button class="tile service" data-open="vocab"><span class="te">🔤</span><span class="tn">Word Workshop</span><span class="tu">Vocabulary practice and sprint</span></button>`;
-  h += `<button class="tile service" data-open="reading"><span class="te">📖</span><span class="tn">Reading Log</span><span class="tu">${S.readingBooks.length} book${S.readingBooks.length === 1 ? '' : 's'} · Reading Quizzes</span></button>`;
-  h += `<button class="tile service" data-open="artstudio"><span class="te">🎨</span><span class="tn">Art Studio</span><span class="tu">Paint, frame and hang your art</span></button>`;
-  h += `<button class="tile service" data-open="room"><span class="te">🏠</span><span class="tn">My Pet Room</span><span class="tu">${S.room.initialized ? S.room.placements.length : S.displayed.filter(Boolean).length} decorations · Dress-up</span></button>`;
-  const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
-  h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
-  h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
-  const arcade = arcadePolicy();
-  h += arcade.enabled
-    ? `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcade.freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`
-    : `<button class="tile service locked" data-open="arcade" aria-disabled="true"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">Closed by your teacher</span><span class="soon">🔒</span></button>`;
+  /* a class page shows only that class's units; Bible, Sprint Track, Word Workshop, Reading Log and the other town spots
+     stay on the All classes page (owner, Oct 30, 2026) */
+  if (!selectedSubject) {
+    if (bibleOn()) { const st = bibleStatus(); h += `<button class="tile service" data-open="bible"><span class="te">✝️</span><span class="tn">Bible</span><span class="tu">${st.done ? '✅ Done today' : 'Journal, verse and books'}</span></button>`; }
+    h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
+    h += `<button class="tile service" data-open="vocab"><span class="te">🔤</span><span class="tn">Word Workshop</span><span class="tu">Vocabulary practice and sprint</span></button>`;
+    h += `<button class="tile service" data-open="reading"><span class="te">📖</span><span class="tn">Reading Log</span><span class="tu">${S.readingBooks.length} book${S.readingBooks.length === 1 ? '' : 's'} · Reading Quizzes</span></button>`;
+    h += `<button class="tile service" data-open="artstudio"><span class="te">🎨</span><span class="tn">Art Studio</span><span class="tu">Paint, frame and hang your art</span></button>`;
+    h += `<button class="tile service" data-open="room"><span class="te">🏠</span><span class="tn">My Pet Room</span><span class="tu">${S.room.initialized ? S.room.placements.length : S.displayed.filter(Boolean).length} decorations · Dress-up</span></button>`;
+    const bookNew = REWARDS.some(reward => owns(reward) && !S.seenCollection.includes(reward.id));
+    h += `<button class="tile service" data-open="book"><span class="tile-new" ${bookNew ? '' : 'hidden'}>New!</span><span class="te">🛍️</span><span class="tn">Pet Shop & Sticker Book</span><span class="tu">${REWARDS.filter(owns).length} stickers filled</span></button>`;
+    h += `<button class="tile service" data-open="hall"><span class="te">🏛️</span><span class="tn">Town Hall</span><span class="tu">Backups and progress</span></button>`;
+    const arcade = arcadePolicy();
+    h += arcade.enabled
+      ? `<button class="tile service" data-open="arcade"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">${arcade.freePlay ? 'Free Play' : S.arcade.tickets + ' arcade tickets'}</span></button>`
+      : `<button class="tile service locked" data-open="arcade" aria-disabled="true"><span class="te">🕹️</span><span class="tn">Arcade</span><span class="tu">Closed by your teacher</span><span class="soon">🔒</span></button>`;
+  }
   $('#town').innerHTML = h;
   renderSentBack();
 }
@@ -10285,7 +10289,7 @@ function openCarryCard(){
   document.body.appendChild(el);
   el.addEventListener('click', event => {
     const go = event.target.closest('[data-carry-go]');
-    if (go) { el.remove(); $(`#town [data-open="${CSS.escape(go.dataset.carryGo)}"]`)?.click(); return; }
+    if (go) { el.remove(); openTownSpot(go.dataset.carryGo); return; }
     if (event.target.closest('[data-carry-close]')) el.remove();
   });
   el.querySelector('[data-carry-skip]').addEventListener('submit', event => {
@@ -10296,6 +10300,14 @@ function openCarryCard(){
     if (!S.parentPin) S.parentPin = pinHash(pin);
     S.carrySkipped = logDayKey(); save(); el.remove(); renderHome(); toast('Skipped for today. Pick a subject!');
   });
+}
+/* open a town tile by id even when it isn't on screen (a class page shows only its units, and All classes shows no
+   unit tiles): a hidden button goes through the same town click handlers */
+function openTownSpot(id){
+  const tile = $(`#town [data-open="${CSS.escape(id)}"]`);
+  if (tile) { tile.click(); return; }
+  const btn = document.createElement('button'); btn.type = 'button'; btn.hidden = true; btn.dataset.open = id;
+  $('#town').appendChild(btn); btn.click(); btn.remove();
 }
 $('#town').addEventListener('click', e => {
   const opens = e.target.closest('[data-open]'); if (!opens) return;
