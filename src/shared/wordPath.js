@@ -175,7 +175,7 @@ valuable|a|The gold ring is ___, so keep it in a safe place.
 visible|a|On a clear night, many stars are ___ in the sky.
 terrible|a|The storm was ___ and knocked down three trees.
 reliable|a|Our old car is ___; it starts every single morning.
-question|n|Mia wrote her ___ on a sticky note for the scientist: “Why do cats purr?”
+question|n|Mia raised her hand with one ___ for the scientist: she wanted to know why cats purr.
 vacation|n|We went camping for a week on our summer ___.
 decision|n|Choosing between the two puppies was a hard ___.
 television|n|We watched the parade on ___ because it was too cold to go.
@@ -194,7 +194,7 @@ export const NEAR = [
   ['migrate', 'migration'], ['migrate', 'wander'], ['data', 'evidence'], ['conflict', 'debate'], ['essential', 'significant'], ['essential', 'require'],
   ['determine', 'identify'], ['determine', 'investigate'], ['determine', 'locate'], ['identify', 'locate'], ['analyze', 'investigate'], ['analyze', 'observe'], ['investigate', 'observe'],
   ['explain', 'interpret'], ['explain', 'demonstrate'], ['explain', 'describe'], ['reveal', 'demonstrate'], ['reluctant', 'hesitate'], ['timid', 'reluctant'],
-  ['patient', 'patience'], ['eager', 'curious'], ['peculiar', 'distinct'], ['civilization', 'culture'], ['civilization', 'empire'], ['culture', 'empire'],
+  ['patient', 'patience'], ['eager', 'curious'], ['peculiar', 'distinct'], ['peculiar', 'curious'], ['peculiar', 'different'], ['civilization', 'culture'], ['civilization', 'empire'], ['culture', 'empire'],
   ['culture', 'tradition'], ['habitat', 'environment'], ['adapt', 'transform'], ['accomplish', 'perform'], ['accomplish', 'success'], ['opinion', 'perspective'],
   ['cooperate', 'compromise'], ['prevent', 'protect'], ['persuade', 'influence'], ['necessary', 'essential'], ['necessary', 'require'],
   ['important', 'essential'], ['important', 'significant'], ['different', 'distinct'], ['visible', 'distinct'], ['reliable', 'honest'], ['reliable', 'responsible'],

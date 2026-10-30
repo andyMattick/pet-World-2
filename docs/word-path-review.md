@@ -140,7 +140,7 @@ Each is the "Which word fits best?" item for its word in Use it (never shown as 
 | visible | adjective | On a clear night, many stars are **visible** in the sky. |
 | terrible | adjective | The storm was **terrible** and knocked down three trees. |
 | reliable | adjective | Our old car is **reliable**; it starts every single morning. |
-| question | noun (also verb) | Mia wrote her **question** on a sticky note for the scientist: “Why do cats purr?” |
+| question | noun (also verb) | Mia raised her hand with one **question** for the scientist: she wanted to know why cats purr. |
 | vacation | noun (also verb) | We went camping for a week on our summer **vacation**. |
 | decision | noun (also adjective) | Choosing between the two puppies was a hard **decision**. |
 | television | noun (also adjective) | We watched the parade on **television** because it was too cold to go. |
@@ -227,7 +227,25 @@ A fresh agent that never saw the keys or the repo solved the keyless view (`/hom
 | 85 | investigate | two-right | **FIX** | “came to determine why…” also fit. Now “will ___ the lake, testing the water and studying the sick fish…”, and determine / investigate is added to the near-synonym pairs, so they’re never wrong answers for each other. |
 | 116 | tomorrow | too-easy, giveaway | **FIX** | “Today is Monday, so ___ will be Tuesday” restated the meaning. Now “we leave for the beach ___ morning.” |
 | 128 | possible | giveaway | **FIX** | “Yes, it can happen!” restated the meaning. Now the moon in the daytime: “you might spot it.” |
-| 133 | question | giveaway, too-easy | **FIX** | “ask your ___” gave it away. Now “Mia wrote her ___ on a sticky note: “Why do cats purr?”” |
+| 133 | question | giveaway, too-easy | **FIX** | “ask your ___” gave it away. Now “Mia wrote her ___ on a sticky note: “Why do cats purr?”” (rewritten again after round 2, below) |
 | 155 | cautious | note | **KEEP** | “timid” is the planned look-alike; “to stay safe” is the clue to cautious, and the reason shown after she answers says so. |
 
-Items fixed: 8 (ids stable; each is still the word’s one second sentence). No judgment calls for Andy. Every other same-part-of-speech word that can be drawn as a wrong answer was checked by hand against the 8 new sentences. After the fixes: `check-word-path` (its test-wise bot included), verify, check-content, the build and smoke pass. The rewritten sentences haven’t had a second blind solve.
+Items fixed: 8 (ids stable; each is still the word’s one second sentence). No judgment calls for Andy. Every other same-part-of-speech word that can be drawn as a wrong answer was checked by hand against the 8 new sentences. After the fixes: `check-word-path` (its test-wise bot included), verify, check-content, the build and smoke pass.
+
+### Round 2: the 8 rewritten sentences
+
+A second fresh agent solved the 8 rewritten second sentences blind (`/home/claude/blind/paw-path/round2-view.md`, each as a 4-choice "Which word fits best?" with wrong answers drawn the way the path draws them, plus the 30 meanings she has studied; it read only that file). Answers: `/home/claude/blind/paw-path/round2-answers.jsonl`; key: `/home/claude/blind/paw-path/round2-key.json`.
+
+**Blind score: 8/8**, confidence 5 on every item. No key mismatches. Flags: too-easy ×4 (expand, improve, tomorrow, question), giveaway ×1 (question); no two-right, none-right, ambiguous, factually wrong, unrealistic or grammar flags.
+
+| word | flags | decision | what changed / why |
+|---|---|---|---|
+| question | giveaway, too-easy | **FIX** | The quoted “Why do cats purr?” gave it away by its question mark. Now “Mia raised her hand with one ___ for the scientist: she wanted to know why cats purr.” She has to infer it from *wanted to know why*. (“with a ___” failed `check-word-path`'s no-article-before-the-blank rule, so it's “one”.) Every noun in the bank was checked by hand: only question fits; survey is already a near-synonym pair and never drawn; opinion and conclusion contradict “wanted to know”. |
+| expand | too-easy | **KEEP** | “to twice its size” is a meaning clue, not a restatement, and only expand fits. It was easy because the drawn wrong answers (adapt, decide, infer) are far off; the path draws them from her week's verbs, so a different week gives different ones. A harder sentence would let more verbs fit. |
+| improve | too-easy | **KEEP** | Same: “from 6 out of 10 to 9 out of 10” is the clue, and the wrong answers (locate, prepare, survive) are a draw from her week. |
+| tomorrow | too-easy | **KEEP** | Only tomorrow can sit before “morning”, so grammar helps. But the bank has just three adverbs (perhaps, eventually, tomorrow), so wrong answers are often other parts of speech whatever the sentence; a sentence without “morning” would let “perhaps” fit. |
+| peculiar | note (a teacup counted as one of “the bowls”) | **KEEP**, plus a guard | The nit doesn't change the answer. Checking every adjective against the sentence found two words a careful reader could argue: “curious habits” and “different habits” are both said in real English for strange ones. curious and different are now near-synonym pairs with peculiar (`NEAR` in `src/shared/wordPath.js`), so they're never its wrong answers. |
+| possible | note | **KEEP** | The reviewer saw that “Is it peculiar to see the moon in the daytime?” works on the first sentence alone, but the second (“you might spot it”) rules it out, and the item shows both sentences. The reviewer didn't flag it. |
+| investigate, reluctant | none | **KEEP** | Clear, one right answer. |
+
+After the changes: `check-word-path` passes (its test-wise bot included). The new question sentence hasn't had its own blind solve.
