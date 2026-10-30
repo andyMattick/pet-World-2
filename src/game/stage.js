@@ -39,7 +39,7 @@ const SCENES = {
 
 // first matching rule picks the scene, tested against who + where + intro
 const SCENE_RULES = [
-  [/microscope/i,'lab'], [/cell model|cell detective/i,'cell'], [/pollinator/i,'garden'], [/greenhouse/i,'greenhouse'],
+  [/microscope/i,'lab'], [/cell model|cell detective/i,'cell'], [/pollinator/i,'garden'], [/greenhouse/i,'greenhouse'], [/butterfly house garden/i,'garden'], [/butterfly house/i,'greenhouse'],
   [/seed trail/i,'trail'], [/digestion/i,'tunnel'], [/nature center/i,'garden'],
   [/duck pond/i,'pond'], [/feed garden|orchard/i,'garden'], [/petting zoo/i,'barn'],
   [/battuta|envoy|xuanzang|traveling merchant|monk and traveler/i,'travel'],

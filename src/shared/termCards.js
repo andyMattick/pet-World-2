@@ -95,6 +95,27 @@ export const TERM_CARDS = {
     { term: 'algae bloom', means: 'Algae growing so fast they cover the water, often because of extra nutrients and warm weather.', example: 'Lake Erie near Toledo, Ohio, in 2014', skill: 'growthEnvA' },
     { term: 'decomposer', means: 'A living thing (like bacteria) that breaks down dead matter. In water, decomposers use up oxygen.', example: 'Bacteria breaking down dead algae', skill: 'growthEnvA' }
   ],
+  bio4: [
+    { term: 'chromosome', means: 'A long, coiled strand of DNA wrapped around proteins. Human body cells have 46.', example: 'You got 23 chromosomes from each parent.', skill: 'chromosomes4' },
+    { term: 'sister chromatids', means: 'The two identical halves of a copied chromosome, joined at the centromere.', example: 'A copied chromosome looks like an X.', skill: 'chromosomes4' },
+    { term: 'homologous pair', means: 'Two matching chromosomes that carry genes for the same traits, one from each parent.', example: 'Your two copies of chromosome 7', skill: 'chromosomes4' },
+    { term: 'diploid and haploid', means: 'Diploid cells have two sets of chromosomes (body cells); haploid cells have one set (eggs and sperm).', example: 'Human skin cell: 46 (diploid); human egg: 23 (haploid)', skill: 'chromosomes4' },
+    { term: 'cell cycle', means: 'The life of a cell: interphase (grow and copy the DNA), then mitosis and cytokinesis.', example: 'Skin cells go through the cell cycle again and again.', skill: 'mitosis4' },
+    { term: 'interphase', means: 'The longest part of the cell cycle, when the cell grows and copies its DNA.', example: 'Most cells under a microscope are in interphase.', skill: 'mitosis4' },
+    { term: 'mitosis', means: 'Dividing the copied chromosomes so each new cell gets an identical full set: prophase, metaphase, anaphase, telophase.', example: 'A scraped knee heals by mitosis.', skill: 'mitosis4' },
+    { term: 'cytokinesis', means: 'The step that splits the cytoplasm, turning one cell into two.', example: 'The cell membrane pinches in at the middle.', skill: 'mitosis4' },
+    { term: 'meiosis', means: 'Two divisions that make four sex cells, each with half the chromosomes and its own mix of genes.', example: 'Making egg and sperm cells', skill: 'meiosis4' },
+    { term: 'crossing over', means: 'Partner chromosomes trading pieces during meiosis I, which mixes up the genes.', example: 'One reason siblings look different', skill: 'meiosis4' },
+    { term: 'asexual reproduction', means: 'One parent makes offspring that are genetically identical to it.', example: 'A potato sprouting from its eye; a bacterium splitting', skill: 'reproTypes4' },
+    { term: 'sexual reproduction', means: 'An egg and a sperm from two parents join, so the offspring is a new mix of genes.', example: 'Two monarchs mating', skill: 'reproTypes4' },
+    { term: 'fertilization', means: 'A sperm cell joining an egg cell to make a zygote.', example: 'In frogs it happens outside the body, in water.', skill: 'development4' },
+    { term: 'zygote', means: 'The single cell made by fertilization. It has the full number of chromosomes.', example: 'Every person started as one zygote.', skill: 'development4' },
+    { term: 'differentiation', means: 'Cells becoming specialized, like nerve or muscle cells, by using different genes.', example: 'Stem cells can still differentiate into many kinds of cells.', skill: 'development4' },
+    { term: 'complete metamorphosis', means: 'A life cycle with four very different stages: egg, larva, pupa, adult.', example: 'Butterflies, beetles, bees, and flies', skill: 'lifeCycles4' },
+    { term: 'incomplete metamorphosis', means: 'A life cycle of egg, nymph, adult. The nymph looks like a small adult without wings.', example: 'Grasshoppers, crickets, and dragonflies', skill: 'lifeCycles4' },
+    { term: 'molting', means: 'Shedding the old outer skin so the animal can grow bigger.', example: 'A monarch caterpillar molts 4 times, then once more into a chrysalis.', skill: 'lifeCycles4' },
+    { term: 'host plant', means: 'The plant a caterpillar eats, so the mother butterfly lays her eggs on it.', example: 'Milkweed for monarchs; parsley and dill for black swallowtails', skill: 'lifeCycles4' }
+  ],
   bio3: [
     { term: 'photosynthesis', means: 'How plants, algae, and some bacteria use light energy to turn carbon dioxide and water into sugar, giving off oxygen.', example: 'A tomato leaf in the greenhouse making sugar in the sunshine', skill: 'photoOrgU' },
     { term: 'chloroplast', means: 'The part of a plant or algae cell where photosynthesis happens.', example: 'Leaf cells are packed with green chloroplasts.', skill: 'photoOrgU' },

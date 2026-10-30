@@ -37,7 +37,7 @@ import { ROLE_SCENES, COURSE_ERAS, commonsThumb, WORLD_MAP, yearText } from '../
 import { mathSkillVideos, struggleCheck, HELP_WINDOW } from '../shared/mathVideos.js';
 import { kidVideoList, cleanKidEdits, kidEditToggle, kidEditMove, kidEditAdd, kidEditRemove, kidEditReset, kidThumb } from '../shared/kidVideos';
 import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
-import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
+import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS, BIO_UNIT4, BIO_GROUPS4, BIO4_QUESTIONS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
 import { ENGLISH_UNIT9, ENGLISH_GROUPS9, RULE_QUESTIONS } from '../shared/questionBanks';   // English Unit 9, the Rule Library (docs/ENGLISH-UNIT9.md)
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
 
@@ -160,7 +160,7 @@ function normalize(raw){
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
   s.historyProjects = normalizeProjectStore(s.historyProjects, [...new Set(['history','historylab','history2','history3','history4','history5','prepositions','prepositionslab','prepositionslab2', ...[6, 7, 8, 9].flatMap(n => ['', 'lab', 'lab2', 'lab3'].map(x => `history${n}${x}`))])]);   // Units 6–9: each unit's projects (pick-one choices use the lab keys)
   s.gateOpen = Object.fromEntries(Object.entries(s.gateOpen && typeof s.gateOpen === 'object' ? s.gateOpen : {}).filter(([k, v]) => typeof k === 'string' && v === true));   // lessons a grown-up previewed and unlocked (skill gate:true)   // English projects are kept here too
-  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3','bio3','bio3lab']);
+  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3','bio3','bio3lab','bio4','bio4lab']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
@@ -221,6 +221,8 @@ function normalize(raw){
       games:(Array.isArray(s.pax?.games) ? s.pax.games : []).filter(g => g && Number.isFinite(+g.t) && (g.course === 'history4' || g.course === 'history5')).slice(-30).map(g => ({t:+g.t, course:g.course, id:String(g.id || '').slice(0, 20), stars:Math.max(1, Math.min(3, Math.round(+g.stars || 1))), rank:Math.max(1, Math.min(4, Math.round(+g.rank || 1))), empires:Math.max(2, Math.min(4, Math.round(+g.empires || 2))), prestige:Math.max(0, Math.min(5000, Math.round(+g.prestige || 0))), rounds:Math.max(1, Math.min(40, Math.round(+g.rounds || 1)))}))};   // ⚖️ Pax Oeconomica (docs/PAX-OECONOMICA.md)
     s.greenhouse = {best:Math.max(0, Math.min(3, Math.round(+s.greenhouse?.best || 0))), day:typeof s.greenhouse?.day === 'string' ? s.greenhouse.day : '', coinsToday:Math.max(0, Math.round(+s.greenhouse?.coinsToday || 0)),
       games:(Array.isArray(s.greenhouse?.games) ? s.greenhouse.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), jobs:Math.max(0, Math.min(8, +g.jobs || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🌺 Greenhouse Keeper (docs/GREENHOUSE-KEEPER.md)
+    s.lifecycle = {best:Math.max(0, Math.min(3, Math.round(+s.lifecycle?.best || 0))), day:typeof s.lifecycle?.day === 'string' ? s.lifecycle.day : '', coinsToday:Math.max(0, Math.round(+s.lifecycle?.coinsToday || 0)),
+      games:(Array.isArray(s.lifecycle?.games) ? s.lifecycle.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, room:['monarch','cycles','cells'].includes(g.room) ? g.room : 'monarch', stars:Math.max(0, Math.min(3, +g.stars || 0)), steps:Math.max(0, Math.min(12, +g.steps || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🦋 Life Cycle Lab (docs/LIFE-CYCLE-LAB.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -6263,6 +6265,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
   else if (run.gameId === 'pax-oeconomica') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/PAX-OECONOMICA.md)
+  else if (run.gameId === 'life-cycle-lab') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a round (docs/LIFE-CYCLE-LAB.md)
   else if (run.gameId === 'greenhouse-keeper') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/GREENHOUSE-KEEPER.md)
   else if (run.gameId === 'parcel-post') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/PARCEL-POST.md)
   else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
@@ -6830,7 +6833,7 @@ const handsOnKey = id => (id === 'nature' ? `nature:${handsOnWeek()}` : id);
 const handsOnEntry = id => S.handsOn.entries[handsOnKey(id)] || null;
 const handsOnSentIds = () => Object.values(S.handsOn.entries).filter(e => e.sentAt && e.id !== 'nature').map(e => e.id);
 const handsOnDoneThisWeek = () => Object.values(S.handsOn.entries).some(e => e.sentAt && weekOf(logDayKey(new Date(e.sentAt))) === handsOnWeek());
-const bioOpen = () => ['bioChem', 'bioCells', 'bioEnergy'].some(id => unitOpen(id));
+const bioOpen = () => ['bioChem', 'bioCells', 'bioEnergy', 'bioDivide'].some(id => unitOpen(id));
 const currentBioCourse = () => unitCourse(nextUnit('biology')?.id || 'bioChem') || 'bio1';
 function handsOnPick(){ return weekHandsOn(currentBioCourse(), handsOnSentIds()); }
 function handsOnPlanRow(){
@@ -8494,6 +8497,47 @@ window.addEventListener('message', e => {
   logEvent({k:'greenhouse', course:'bio3', s:right, n:jobs, title:`${right} of ${jobs} jobs done right${practice ? `; missed: ${practice}` : ''}`});
   save();
   toast(`🌺 ${right} of ${jobs} greenhouse jobs done right!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= GREENHOUSE_COINS_PER_DAY ? ' (Today’s Greenhouse Keeper coins are all earned.)' : ''}`);
+});
+/* ---------- 🦋 Life Cycle Lab (public/arcade/life-cycle-lab, docs/LIFE-CYCLE-LAB.md) ----------
+   Biology Unit 4's game, in three rooms: raise a monarch from egg to butterfly (host plants, molting, the chrysalis, the
+   wings), the Life Cycle Ring (frogs, grasshoppers, ladybugs, plants: complete vs incomplete metamorphosis) and the
+   Chromosome Dance (animated mitosis and meiosis). It opens from a card on the Butterfly House unit page and is also an
+   Arcade game. Played from the unit it pays Pet World coins: 1 per step done right, up to LIFECYCLE_COINS_PER_DAY a
+   day. It never counts toward practice, quizzes, tests or unlocks. */
+const LIFECYCLE_COINS_PER_DAY = 20;
+function lifeCycleCardHTML(courseId){
+  if (courseId !== 'bio4') return '';
+  const best = S.lifecycle?.best || 0, n = S.lifecycle?.games?.length || 0;
+  return `<section class="ela-final-assessment"><div><h3>🦋 Life Cycle Lab</h3><p class="muted">Raise a butterfly from a tiny egg to an adult, spin the Life Cycle Ring, and make the chromosomes dance through mitosis and meiosis · ${n ? `${n} round${n === 1 ? '' : 's'} played${best ? `, best ${'⭐'.repeat(best)}` : ''}` : 'Not played yet'}</p></div><button type="button" class="btn small berry" data-lifecycle-open>Play</button></section>`;
+}
+function openLifeCycle(){
+  if ($('#lifecycleWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'lifecycleWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Life Cycle Lab');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🦋 Life Cycle Lab</b><button type="button" class="btn small" data-lifecycle-close>Done</button></div><iframe src="/arcade/life-cycle-lab/?from=bio4" title="Life Cycle Lab"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-lifecycle-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-library').hidden && $('#libraryWrap [data-lifecycle-open]')) renderEnglishUnit('bio4'); });
+}
+$('#libraryWrap').addEventListener('click', e => { if (e.target.closest('[data-lifecycle-open]')) openLifeCycle(); });
+window.addEventListener('message', e => {
+  const frame = $('#lifecycleWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'lifecycle:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, room = ['monarch', 'cycles', 'cells'].includes(r.room) ? r.room : 'monarch';
+  const stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), steps = Math.max(0, Math.min(12, Math.round(+r.steps || 0)));
+  const tries = Math.max(0, Math.min(100, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, steps, Math.round(+r.right || 0)));
+  const missed = Object.fromEntries(Object.entries(r.missed && typeof r.missed === 'object' ? r.missed : {}).filter(([k, v]) => /^[a-zA-Z0-9]{2,20}$/.test(k) && Number.isFinite(+v)).slice(0, 20).map(([k, v]) => [k, Math.max(0, Math.round(+v))]));
+  const c = S.lifecycle, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), room, stars, steps, right, tries, missed}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, LIFECYCLE_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const roomName = {monarch:'Raise a Monarch', cycles:'Life Cycle Ring', cells:'Chromosome Dance'}[room];
+  const practice = Object.keys(missed).map(k => BIO_UNIT4.find(x => x.id === k)?.name || k).join(', ');
+  logEvent({k:'lifecycle', course:'bio4', s:right, n:steps, title:`${roomName}: ${right} of ${steps} steps right${practice ? `; missed: ${practice}` : ''}`});
+  save();
+  toast(`🦋 ${roomName}: ${right} of ${steps} right!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= LIFECYCLE_COINS_PER_DAY ? ' (Today’s Life Cycle Lab coins are all earned.)' : ''}`);
 });
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
@@ -10193,7 +10237,7 @@ $('#town').addEventListener('click', e => {
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5' || id === 'history6' || id === 'history7' || id === 'history8' || id === 'history9';
-const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',bioEnergy:'bio3',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',bioEnergy:'bio3',bioDivide:'bio4',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
 const isScienceCourse = id => /^bio\d+$/.test(id);
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id) || id === 'prepositions';
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
@@ -10296,6 +10340,13 @@ const ROLE_CARDS = {
   photoOrgA:{emoji:'🔬',who:'a tour guide at the Greenhouse’s Plant Lab',where:'Pet World Greenhouse',intro:'Visiting students are running experiments with lamps, water plants, and sealed jars, and they keep asking you what their results mean.'},
   foodEnergyU:{emoji:'🐦',who:'a tour guide at the Greenhouse’s Hummingbird Feeder',where:'Pet World Greenhouse',intro:'Hummingbirds zip between the flowers and the feeder. Visitors want to know where all that energy comes from.'},
   foodEnergyA:{emoji:'🏃',who:'a tour guide leading the Greenhouse Fitness Trail',where:'Pet World Greenhouse',intro:'Your group is jogging the path between the plant beds and checking their breathing and heart rates at each stop.'},
+  /* Biology Unit 4: the Butterfly House (Oct 30, 2026; docs/SCIENCE-UNIT4.md) */
+  chromosomes4:{emoji:'🔬',who:'a tour guide at the Butterfly House’s Microscope Window',where:'Pet World Butterfly House',intro:'A big screen shows dyed chromosomes from a butterfly cell, and visitors keep asking you what all those X shapes are.'},
+  mitosis4:{emoji:'🧫',who:'a tour guide at the Butterfly House’s Growth Lab',where:'Pet World Butterfly House',intro:'A time-lapse movie shows onion root cells splitting in two, and your group wants to know how one cell becomes many.'},
+  meiosis4:{emoji:'🥚',who:'a tour guide at the Butterfly House’s Egg Lab',where:'Pet World Butterfly House',intro:'Tiny monarch eggs dot the milkweed leaves. Visitors want to know how a butterfly makes egg cells and why every caterpillar is a little different.'},
+  reproTypes4:{emoji:'🌱',who:'a tour guide in the Butterfly House Garden',where:'Pet World Butterfly House',intro:'Gardeners are rooting plant cuttings next to bean seeds sprouting in trays, and your group asks which new plants are copies.'},
+  development4:{emoji:'🐣',who:'a tour guide at the Butterfly House’s Egg Lab',where:'Pet World Butterfly House',intro:'Under the microscope, a frog egg has just been fertilized and is starting to divide, and the visitors can’t stop watching.'},
+  lifeCycles4:{emoji:'🦋',who:'a tour guide at the Butterfly House’s Chrysalis Window',where:'Pet World Butterfly House',intro:'Green chrysalises hang in rows behind the glass, and one is turning see-through. Your group wants to know what happens next.'},
   /* History Unit 6 (Oct 28, 2026). The Transatlantic Slave Trade (slaveTrade) has no role card on purpose (docs/HARD-LESSONS.md). */
   mongolEmpire:{emoji:'🐎',who:'a rider in the yam, the Mongol relay post',where:'the Mongol Empire, about 1260 CE',intro:'You carry messages and travelers’ passes from station to station across the empire. People along the road ask you about the Mongols.'},
   blackDeath:{emoji:'🕯️',who:'a shopkeeper in Florence',where:'Florence, Italy, 1348 CE',intro:'A terrible sickness has reached your city from the ports. Neighbors and travelers ask you what you know about it.'},
@@ -10464,6 +10515,20 @@ const HISTORY_PROJECTS = {
     {key:'photo',kind:'photo',label:'4. At 30 minutes, take a photo of the three bottles side by side.'},
     {key:'results',label:'5. Use your numbers: which balloon grew the most, and by how much more than the others?'},
     {key:'conclusion',label:'6. Was your hypothesis supported? Which gas filled the balloons, and what process made it? Name one source of error and how you would fix it.'}]},
+  bio4:{title:'Butterfly House Life Cycle Wheel',summary:'Make a life cycle wheel for one animal or plant for the Pet World Butterfly House, and show where mitosis, meiosis, and fertilization happen in it. Draw it by hand, then add a photo of it.',steps:[
+    {key:'choose',label:'1. Choose one living thing with an interesting life cycle, like a monarch, a ladybug, a frog, a grasshopper, or a bean plant. Say where it lives.'},
+    {key:'stages',label:'2. List every stage of its life cycle in order, with one detail about each (what it eats, how it moves, or how long the stage lasts).'},
+    {key:'meta',label:'3. Is its life cycle complete metamorphosis, incomplete metamorphosis, or neither? Explain how you know.'},
+    {key:'cells',label:'4. Where in the cycle does meiosis happen, where does fertilization happen, and where does mitosis help it grow?'},
+    {key:'wheel',kind:'photo',label:'5. Draw your wheel on paper: the stages around a circle with arrows, and the words meiosis, fertilization, and mitosis where they belong. Take a photo and add it here.'},
+    {key:'sources',label:'6. List the sources you used (the Khan videos, books, websites) so your teacher can check them.'}]},
+  bio4lab:{title:'Experiment: Mealworm Metamorphosis',summary:'Mealworms are the larvae of darkling beetles, and they go through complete metamorphosis in a few weeks. Raise some in two places, one warm and one cool, and count how many are larvae, pupae, and beetles every few days. Ask an adult to help: get mealworms from a pet store, keep them in a container with air holes, oats, and a slice of carrot, wash your hands after touching them, and never let them loose outside.',steps:[
+    {key:'question',label:'1. Write your question and a hypothesis (“If ... then ... because ...”). Will the mealworms in the warm spot or the cool spot turn into pupae first?'},
+    {key:'setup',label:'2. Describe your setup: two containers with the same number of mealworms (10 each is good), the same oats and carrot, one somewhere warm and one somewhere cool. Name three things you kept the same.'},
+    {key:'counts',kind:'table',cols:['Day','Warm: larvae','Warm: pupae','Warm: beetles','Cool: larvae','Cool: pupae','Cool: beetles'],num:[1,2,3,4,5,6],rows:8,rowLabels:['0','3','6','9','12','15','18','21'],label:'3. Every 3 days, count the larvae, pupae, and adult beetles in each container.'},
+    {key:'photo',kind:'photo',label:'4. Take a photo of a larva, a pupa, and a beetle side by side (a spoon or a dish works).'},
+    {key:'results',label:'5. Use your numbers: on which day did each container get its first pupa and its first beetle? How many days apart were they?'},
+    {key:'conclusion',label:'6. Was your hypothesis supported? Which kind of metamorphosis did you see, and how do you know? Name one source of error and how you would fix it.'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -10549,6 +10614,8 @@ const englishCourse = course => course === 'sentences'
     ? {id:'bio2',building:'bioCells',title:'Biology Unit 2: Organism Growth and Reproduction',skills:BIO_UNIT2,groups:BIO_GROUPS2,finalKey:'bio2:final-test',testPer:3,finalPass:20}
   : course === 'bio3'
     ? {id:'bio3',building:'bioEnergy',title:'Biology Unit 3: Matter and Energy in Organisms',skills:BIO_UNIT3,groups:BIO_GROUPS3,finalKey:'bio3:final-test',testPer:5,finalPass:16}   // Khan's one quiz after lesson 3.2 (docs/SCIENCE-UNIT3.md)
+  : course === 'bio4'
+    ? {id:'bio4',building:'bioDivide',title:'Biology Unit 4: Cell Division and Life Cycles',skills:BIO_UNIT4,groups:BIO_GROUPS4,finalKey:'bio4:final-test',testPer:4,finalPass:20}   // a quiz after each lesson (docs/SCIENCE-UNIT4.md)
   : course === 'history9'
     ? {id:'history9',building:'histGlobal2',title:'History Unit 9: Globalization',skills:HISTORY_UNIT9,groups:HISTORY_GROUPS9,finalKey:'history9:final-test',testPer:2,finalPass:11}   // Khan's two quizzes (docs/HISTORY-UNIT9.md)
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
@@ -10656,6 +10723,7 @@ const KHAN_UNIT_TESTS = {
   bio1:`${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:human-digestive-system/test/x88f5990a7622d8f5:life-sciences-unit-test`,
   bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`,
   bio3:`${KHAN}science/ms-biology/x0c5bb03129646fd6:matter-and-energy-in-organisms/x0c5bb03129646fd6:unit-3-phenomenon-based-activities/test/x0c5bb03129646fd6:matter-and-energy-in-organisms-unit-test`,   // Middle school biology Unit 3 (Oct 29 2026)
+  bio4:`${KHAN}science/hs-bio/x230b3ff252126bb6:the-cell-cycle-and-differentiation`,   // Biology Unit 4: Khan's High school biology unit; its unit test is at the end of the unit page (docs/SCIENCE-UNIT4.md)
   history6:`${KHAN}humanities/world-history/x66f79d8a:the-first-global-age/x66f79d8a:the-transatlantic-slave-trade-6-9/test/x66f79d8a:the-first-global-age-unit-test`,
   history8:`${KHAN}humanities/world-history/x66f79d8a:global-conflict/x66f79d8a:decolonization-8-9/test/x66f79d8a:global-conflict-unit-test`,   // History Unit 8, checked Oct 28 2026
   history9:`${KHAN}humanities/world-history/x66f79d8a:globalization/x66f79d8a:the-anthropocene-9-8/test/x66f79d8a:globalization-unit-test`   // checked on khanacademy.org, Oct 28 2026
@@ -11100,6 +11168,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
 });
 const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','colons','sentences','history','history2','history3','history4','history5','bio1','bio2','bio3','history6','history7','history8','history9'];
 REPORT_COURSES.push('conventions');   // English Unit 9 (docs/ENGLISH-UNIT9.md)
+REPORT_COURSES.push('bio4');   // Biology Unit 4 (docs/SCIENCE-UNIT4.md)
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -11238,7 +11307,7 @@ function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S
 function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId)]; }
 function englishBankQuestions(skillId, courseId='nouns'){
   const edits = Backend.me?.question_edits || {};   // this class's hidden, edited and added questions (docs: LESSON-CONTENT.md)
-  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio3' ? BIO3_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio4' ? BIO4_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -11826,7 +11895,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + lifeCycleCardHTML(course.id) + handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -14612,6 +14681,7 @@ function placeOnScreen(){
   if ($('#petshowWrap')) return 'petshow';
   if ($('#paxWrap')) return `course:${$('#paxWrap').dataset.course}:⚖️ Pax Oeconomica`;   // counts for its history unit
   if ($('#greenhouseWrap')) return 'course:bio3:🌺 Greenhouse Keeper';   // counts for Biology Unit 3
+  if ($('#lifecycleWrap')) return 'course:bio4:🦋 Life Cycle Lab';   // counts for Biology Unit 4
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -14689,6 +14759,7 @@ function eventText(e){
   if (e.k === 'petshow') return `🏆 Pet Show Awards: ${e.title}`;
   if (e.k === 'pax') return `⚖️ Pax Oeconomica: ${e.title}`;
   if (e.k === 'greenhouse') return `🌺 Greenhouse Keeper: ${e.title}`;
+  if (e.k === 'lifecycle') return `🦋 Life Cycle Lab: ${e.title}`;
   if (e.k === 'handson') return `🔬 Hands-on Biology: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
@@ -14790,6 +14861,7 @@ function subjectOnScreen(){
   if ($('#petshowWrap')) return 'math';   // Pet Show Awards is Pet Show practice
   if ($('#paxWrap')) return 'history';   // Pax Oeconomica is History Unit 4 and 5's game
   if ($('#greenhouseWrap')) return 'science';   // Greenhouse Keeper is Biology Unit 3's game
+  if ($('#lifecycleWrap')) return 'science';   // the Life Cycle Lab is Biology Unit 4's game
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

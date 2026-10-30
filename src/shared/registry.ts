@@ -367,6 +367,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'potion-detective', name: 'Potion Detective', emoji: '🔍', description: 'Someone keeps stealing potions! Solve expression clues to gather evidence, rule out suspects, and catch the thief.', src: '/arcade/potion-detective/', available: true },
   { id: 'pet-show', name: 'Pet Show Awards', emoji: '🏆', description: 'You’re the head judge! Find the mean, the median or a quartile of the pets’ stats, then pin each ribbon on the pet closest to it.', src: '/arcade/pet-show/', available: true },
   { id: 'greenhouse-keeper', name: 'Greenhouse Keeper', emoji: '🌺', description: 'Run the Pet World Greenhouse for a day: power up leaves and cells with the right inputs, read the gas sensor, sort who does photosynthesis, and follow the energy from the sun to a hummingbird.', src: '/arcade/greenhouse-keeper/', available: true },
+  { id: 'life-cycle-lab', name: 'Life Cycle Lab', emoji: '🦋', description: 'Raise a monarch from egg to butterfly, spin the Life Cycle Ring, and make chromosomes dance through mitosis and meiosis (Biology Unit 4).', src: '/arcade/life-cycle-lab/', available: true },
   { id: 'pax-oeconomica', name: 'Pax Oeconomica', emoji: '⚖️', description: 'Lead an empire of the Classical or Medieval world. Every empire is rich in some goods and short of others: trade wisely at the market, keep your people fed, deal with barbarians and earn the most prestige.', src: '/arcade/pax-oeconomica/', available: true },
   { id: 'parcel-post', name: 'Parcel Post', emoji: '📮', description: 'The holiday rush is on! Spin each 3D parcel to sort it, count its faces, pack it (volume) and wrap it (surface area) before the truck leaves.', src: '/arcade/parcel-post/', available: true },
   { id: 'harbor-battleship', name: 'Harbor Battleship', emoji: '⚓', description: 'Pirates are hiding ships on a coordinate plane! Name your target’s coordinates to fire, plot the pirates’ shots, and use sonar to find their fleet.', src: '/arcade/harbor-battleship/', available: true },
@@ -685,7 +686,9 @@ const LIBRARY_SETS: [string, [string,string][], [string,string][]][] = [
   ['elaSent',  [['🐊','Clause the crocodile'],['🦥','Pause the sloth'],['🦨','Fragment the skunk'],['🦏','Subject the rhino'],['🦖','Rex the sentence-saurus']],
                [['🪑','Reading chair'],['🗂️','Card catalog'],['🔖','Bookmark banner'],['🖋️','Fountain pen'],['🗝️','Golden library key']]],
   ['elaRules', [['🦛','Judge Hippo'],['🐦‍⬛','Gavel the raven'],['🐜','Clerk the ant'],['🦂','Rulebreaker the scorpion'],['🐆','Chief Justice Cheetah']],
-               [['🛎️','Court bell'],['🪵','Witness bench'],['🎖️','Medal of order'],['💼','Case briefcase'],['🕮','Golden rule book']]]
+               [['🛎️','Court bell'],['🪵','Witness bench'],['🎖️','Medal of order'],['💼','Case briefcase'],['🕮','Golden rule book']]],
+  ['bioDivide', [['🪱','Loamy the earthworm'],['🪰','Zippy the hoverfly'],['🪲','Scarab the beetle'],['🕷️','Webster the garden spider'],['🧚','Flutter the garden fairy']],
+               [['🪻','Lavender pots'],['🎐','Wind chime'],['🪷','Lotus pond'],['🔭','Butterfly-spotting scope'],['🏵️','Golden rosette']]]   // 🦋 Butterfly House, Biology Unit 4 (docs/SCIENCE-UNIT4.md)
 ];
 const SLOTS = ['welcome','s2','s3','s4','legend'] as const;
 // a unit with only 3 stations (Clock Tower, Pet Harbor) unlocks its 4th-slot reward at its last station
@@ -753,7 +756,7 @@ export const BUILDINGS: Building[] = [
   {id:'bioChem',    emoji:'🌿', name:'Nature Center',   unit:'Unit 1: Life Sciences (cells, plants, digestion)', hood:'g6', subject:'biology', open:true},
   {id:'bioCells',   emoji:'🐑', name:'Petting Zoo',     unit:'Unit 2: Organism growth and reproduction', hood:'g6', subject:'biology', open:true},
   {id:'bioEnergy',  emoji:'🌺', name:'Greenhouse',      unit:'Unit 3: Matter and energy in organisms (photosynthesis and cellular respiration)', hood:'g6', subject:'biology', open:true},
-  {id:'bioDivide',  emoji:'🦋', name:'Butterfly House', unit:'Cell division and life cycles', hood:'g6', subject:'biology'},
+  {id:'bioDivide',  emoji:'🦋', name:'Butterfly House', unit:'Unit 4: Cell division and life cycles (mitosis, meiosis, and metamorphosis)', hood:'g6', subject:'biology', open:true},
   {id:'bioGenes',   emoji:'🐄', name:'Farm Barn',       unit:'Heredity and genes', hood:'g6', subject:'biology'},
   {id:'bioEvolve',  emoji:'🦜', name:'Aviary',          unit:'Evolution and natural selection', hood:'g6', subject:'biology'},
   {id:'bioEco',     emoji:'🐠', name:'Aquarium',        unit:'Ecosystems and energy flow', hood:'g6', subject:'biology'},

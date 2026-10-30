@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life Cycle Lab</title>
+<!-- Pet World: served at /arcade/life-cycle-lab/ (docs/LIFE-CYCLE-LAB.md). Played from the Biology Unit 4 page at the
+     Butterfly House (?from=bio4, pays Pet World coins) and from the Arcade (?arcadeRun=…, pays arcade tickets).
+     Three rooms: 🐛 Raise a Butterfly (a monarch, black swallowtail or painted lady from egg to adult: host plants, the
+     first meal, feeding and molting through 5 instars, defenses, pupating, inside the chrysalis, the wings, and the
+     season), 🔄 the Life Cycle Ring (frogs, grasshoppers, ladybugs, mosquitoes, cockroaches, beans, chickens: build the
+     cycle and name the kind of metamorphosis) and 🧬 the Chromosome Dance (animated mitosis and meiosis).
+     It never counts toward practice, quizzes, tests or unlocks. -->
+<style>
+  :root{
+    --bg:#F6F0FB; --card:#FFFFFF; --ink:#241A33; --muted:#5E5270; --edge:#D9CCEA; --accent:#7B4FC9; --accent-ink:#FFFFFF;
+    --ok:#2B8A3E; --bad:#C92A2A; --soft:#EFE6FA; --gold:#F2B705; --leaf:#4C9A2A; --leaf2:#7CC24E; --sky:#E4F3FB; --sky2:#FBFDFF;
+    --mom:#E8590C; --dad:#1C7ED6; --mem:#9B7FCF; --orange:#F08C00; --wingline:#1B1B1B; --soil:#8B5E3C;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#17121F; --card:#221A2E; --ink:#EEE6F8; --muted:#BBAED0; --edge:#3D3150; --accent:#B197FC; --accent-ink:#17121F;
+      --ok:#69DB7C; --bad:#FF8787; --soft:#2C2240; --gold:#FCC419; --leaf:#5FAE3A; --leaf2:#8FD45E; --sky:#1B2A38; --sky2:#22313F;
+      --mom:#FF922B; --dad:#4DABF7; --mem:#B197FC; --orange:#FFA94D; --wingline:#0B0B0B; --soil:#6B4A2E; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; overflow-x:hidden}
+  button{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:760px; margin:0 auto; padding:10px 16px 28px}
+  h1{font-size:1.6em; margin:6px 0 4px} h2{font-size:1.1em; margin:0 0 6px}
+  .muted{color:var(--muted)}
+  .btn{border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+  .btn:disabled{opacity:.5; cursor:default}
+  .btn:focus-visible, .opt:focus-visible, .chip:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+  .card{background:var(--card); border:2px solid var(--edge); border-radius:16px; padding:12px 14px; margin-top:10px}
+  .rooms{display:grid; gap:10px; margin-top:10px}
+  .room{display:flex; gap:12px; align-items:center; text-align:left; background:var(--card); border:3px solid var(--edge); border-radius:16px; padding:10px 12px}
+  .room:hover{border-color:var(--accent)}
+  .room .big{font-size:2.2em; line-height:1}
+  .room b{display:block; font-size:1.08em}
+  .hud{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0 6px}
+  .pill{background:var(--card); border:1px solid var(--edge); border-radius:999px; padding:3px 10px; font-weight:700; font-size:.9em}
+  .step{background:var(--card); border:3px solid var(--accent); border-radius:16px; padding:10px 12px; margin-top:6px}
+  .step h2{margin:0 0 2px; font-size:1.12em}
+  .q{font-size:1.04em; font-weight:600; margin:8px 0 4px}
+  .opts{display:grid; gap:6px; margin-top:6px}
+  .opts.two{grid-template-columns:1fr 1fr}
+  .opt{text-align:left; border:2px solid var(--edge); background:var(--card); border-radius:12px; padding:8px 12px; font-weight:600}
+  .opt.good{border-color:var(--ok); box-shadow:0 0 0 2px var(--ok)} .opt.bad{border-color:var(--bad); animation:shake .35s}
+  .opt .em{font-size:1.5em; margin-right:6px; vertical-align:middle}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+  .chip{border:2px solid var(--edge); background:var(--card); border-radius:999px; padding:6px 12px; font-weight:700; font-size:.95em}
+  .chip.used{opacity:.35} .chip.bad{border-color:var(--bad); animation:shake .35s}
+  .fb{min-height:1.4em; margin:6px 0 0; font-weight:600}
+  .fb.bad{color:var(--bad)} .fb.ok{color:var(--ok)}
+  .explain{background:var(--soft); border-left:4px solid var(--accent); border-radius:8px; padding:8px 10px; margin-top:8px}
+  .scene{display:block; width:100%; height:auto; max-height:260px; border-radius:14px; background:linear-gradient(180deg, var(--sky), var(--sky2)); border:2px solid var(--edge)}
+  .meter{height:14px; border-radius:999px; background:var(--soft); border:2px solid var(--edge); overflow:hidden; margin:6px 0}
+  .meter i{display:block; height:100%; background:linear-gradient(90deg, var(--leaf2), var(--gold)); transition:width .35s}
+  .meter.full i{background:var(--bad); animation:pulse .6s infinite alternate}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin:10px 0}
+  .stats div{background:var(--card); border:2px solid var(--edge); border-radius:12px; padding:8px; text-align:center}
+  .stats b{display:block; font-size:1.3em}
+  .order-done{margin:6px 0 0; padding-left:22px} .order-done li{margin:2px 0}
+  @keyframes shake{25%{transform:translateX(-4px)} 75%{transform:translateX(4px)}}
+  @keyframes pulse{from{opacity:.55} to{opacity:1}}
+  /* scene animations */
+  .flap{transform-box:fill-box; transform-origin:center; animation:flap .35s ease-in-out infinite alternate}
+  @keyframes flap{from{transform:scaleX(1)} to{transform:scaleX(.25)}}
+  .bob{animation:bob 1.2s ease-in-out infinite alternate}
+  @keyframes bob{from{transform:translateY(0)} to{transform:translateY(-4px)}}
+  .crawl circle{animation:crawl .9s ease-in-out infinite alternate}
+  @keyframes crawl{from{transform:translateY(0)} to{transform:translateY(-3px)}}
+  .fly{transition:transform 1.4s cubic-bezier(.45,.05,.4,1)}
+  .fade-in{animation:fadein .8s both} @keyframes fadein{from{opacity:0} to{opacity:1}}
+  .grow-in{transform-box:fill-box; transform-origin:center; animation:growin 1.1s both} @keyframes growin{from{transform:scale(.1); opacity:0} to{transform:scale(1); opacity:1}}
+  .shed{animation:shed 1.3s ease-in both} @keyframes shed{to{transform:translate(-40px, 60px) rotate(-30deg); opacity:0}}
+  .unfurl{transform-box:fill-box; transform-origin:50% 0; animation:unfurl 2.2s ease-out both} @keyframes unfurl{from{transform:scale(.25, .2)} to{transform:scale(1)}}
+  .swirl{transform-box:fill-box; transform-origin:center; animation:swirl 3s linear infinite} @keyframes swirl{to{transform:rotate(360deg)}}
+  .glow{animation:glow 1.4s ease-in-out infinite alternate} @keyframes glow{from{opacity:.35} to{opacity:.9}}
+  .ct{transition:transform .9s ease-in-out}
+  .mem{transition:opacity .6s}
+  .ring-dot{transition:transform .5s ease-in-out}
+  @media (prefers-reduced-motion: reduce){ .flap,.bob,.crawl circle,.swirl,.glow,.meter.full i{animation:none} .ct,.fly,.ring-dot{transition:none} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+(() => {
+'use strict';
+const params = new URLSearchParams(location.search);
+const FROM_UNIT = params.get('from') === 'bio4';
+const ARCADE_RUN = params.get('arcadeRun') || '';
+const TRIES = 2;
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {get(k){ try { return +localStorage.getItem('life-cycle-lab:' + k) || 0; } catch(e){ return 0; } }, set(k, v){ try { localStorage.setItem('life-cycle-lab:' + k, String(v)); } catch(e){} }};
+const SKILL_NAMES = {chromosomes4:'Chromosome structure and numbers', mitosis4:'The cell cycle and mitosis', meiosis4:'Meiosis', reproTypes4:'Types of reproduction', development4:'Fertilization and development', lifeCycles4:'Life cycles and metamorphosis'};
+const ROOMS = {
+  monarch:{emoji:'🐛', name:'Raise a Butterfly', blurb:'Pick the right host plant, feed and molt through 5 instars, survive predators, pupate, and send your butterfly into the world.'},
+  cycles:{emoji:'🔄', name:'The Life Cycle Ring', blurb:'Build the life cycles of frogs, grasshoppers, ladybugs, beans and more, and name each kind of metamorphosis.'},
+  cells:{emoji:'🧬', name:'The Chromosome Dance', blurb:'Watch chromosomes move through mitosis and meiosis. Name the phases, count the chromosomes, and tell the two apart.'}
+};
+
+/* =====================================================================================================
+   🐛 Raise a Butterfly: three real North American butterflies, each with its own host plant, defense,
+   way of pupating and winter plan (docs/LIFE-CYCLE-LAB.md has the sources)
+   ===================================================================================================== */
+const PLANTS = {
+  milkweed:{emoji:'🌿', name:'Milkweed', who:'monarchs'}, parsley:{emoji:'🌱', name:'Parsley and dill', who:'black swallowtails'},
+  thistle:{emoji:'🌸', name:'Thistle', who:'painted ladies'}, passion:{emoji:'🌺', name:'Passionflower vine', who:'gulf fritillaries'},
+  grass:{emoji:'🌾', name:'Lawn grass', who:'grass-eating caterpillars like skippers'}
+};
+const SPECIES = {
+  monarch:{name:'monarch', Name:'Monarch', host:'milkweed', wing:'#F08C00', spot:'#FFFFFF', cat:['#FFFFFF', '#1B1B1B', '#F2D200'], chrys:'#4CB782', chrysDays:'about 10 to 14',
+    defense:['Toxins from the milkweed it eats make it taste terrible, and its bright stripes warn birds', 'It spins a thick silk cocoon around itself and hides inside until the hungry bird leaves', 'Its hard outer shell is far too tough for a bird’s beak to break through', 'It flies away quickly on the strong wings it grows as a young caterpillar'],
+    defenseWhy:'Monarch caterpillars store bitter toxins from milkweed in their bodies. Birds that taste one learn that the yellow, black and white stripes mean “yuck” and leave others alone.',
+    pupate:['Stops eating and wanders off the plant', 'Spins a silk pad under a twig', 'Hangs upside down in a J shape', 'Its skin splits, and the chrysalis forms underneath'],
+    season:{q:'It’s late August, and your monarch is part of the fall generation. What will it most likely do?', a:'Fly south to the mountain forests of central Mexico for the winter', w:['Lay eggs on milkweed right away and die within a few weeks, like summer monarchs', 'Stay in its chrysalis until spring', 'Dig into the soil to sleep until spring'],
+      why:'The fall generation of eastern monarchs flies as far as 3,000 miles to central Mexico and can live about 8 months. In spring it heads north, lays eggs on milkweed, and the cycle starts again.'}},
+  swallowtail:{name:'black swallowtail', Name:'Black swallowtail', host:'parsley', wing:'#2B2B2B', spot:'#F2C200', cat:['#6BBF59', '#1B1B1B', '#F2C200'], chrys:'#8C7A4B', chrysDays:'about 10 to 18',
+    defense:['It looks like a bird dropping when young, and later shows a smelly orange fork', 'It stores bitter milkweed toxins in its body that make it taste terrible to birds', 'It rolls itself up into a hard, tight ball, the way a pill bug does', 'It hides inside a thick silk cocoon until the bird gives up and leaves'],
+    defenseWhy:'Young black swallowtail caterpillars are black and white, like a bird dropping that no bird wants to eat. Older ones have a hidden orange forked organ (the osmeterium) that pops out with a bad smell.',
+    pupate:['Stops eating and wanders off the plant', 'Spins a silk button and a silk belt (a girdle)', 'Rests upright on a stem, held by the silk belt', 'Its skin splits, and the chrysalis forms underneath'],
+    season:{q:'It’s October, and your last caterpillars of the year just made their chrysalises. How do black swallowtails get through a cold winter?', a:'They stay inside the chrysalis all winter and come out as adults in spring', w:['They fly south to central Mexico, like monarchs', 'The caterpillars hide under the snow and keep eating parsley leaves until spring', 'The adults sleep in the soil until spring'],
+      why:'In places with cold winters, the last black swallowtails of the year spend the winter as a chrysalis and the adults come out when spring arrives.'}},
+  lady:{name:'painted lady', Name:'Painted lady', host:'thistle', wing:'#E8833A', spot:'#FFF4E0', cat:['#4A3B2A', '#1B1B1B', '#E3C567'], chrys:'#9C8E7A', chrysDays:'about 7 to 11',
+    defense:['It spins a loose silk nest on the leaves and feeds hidden inside it', 'It stores bitter milkweed toxins in its body that make it taste terrible to birds', 'It flies away quickly on its strong wings', 'Its hard shell is too tough for a beak'],
+    defenseWhy:'Painted lady caterpillars tie leaves together with silk and feed inside the little tent, out of sight of birds and wasps.',
+    pupate:['Stops eating and wanders off the plant', 'Spins a silk pad under a leaf or twig', 'Hangs upside down in a J shape', 'Its skin splits, and the chrysalis forms underneath'],
+    season:{q:'It’s fall, and freezing weather is coming. Painted ladies can’t survive a hard freeze at any stage. What do many of them do?', a:'Fly south to warmer places for the winter', w:['Stay inside the chrysalis all winter', 'Dig into the soil and sleep until spring', 'Lay eggs that can hatch in the snow next spring'],
+      why:'Painted ladies are long-distance fliers. Many fly south in fall, and their offspring fly north again in spring.'}}
+};
+const LENGTH_CM = ['0.3', '0.8', '1.3', '2', '4'];   // about how long a caterpillar is in each instar
+
+function butterflySVG(color, cls, spot){
+  spot = spot || '#fff';
+  return `<g class="${cls || ''}"><g class="flap"><path d="M0,0 C-26,-30 -44,-12 -36,4 C-30,16 -10,10 0,4 Z" fill="${color}" stroke="var(--wingline)" stroke-width="2.5"/><path d="M0,4 C-16,10 -26,30 -12,30 C-4,30 0,16 0,8 Z" fill="${color}" stroke="var(--wingline)" stroke-width="2.5"/>
+    <path d="M0,0 C26,-30 44,-12 36,4 C30,16 10,10 0,4 Z" fill="${color}" stroke="var(--wingline)" stroke-width="2.5"/><path d="M0,4 C16,10 26,30 12,30 C4,30 0,16 0,8 Z" fill="${color}" stroke="var(--wingline)" stroke-width="2.5"/>
+    <g fill="${spot}"><circle cx="-30" cy="0" r="2.4"/><circle cx="30" cy="0" r="2.4"/><circle cx="-24" cy="8" r="2"/><circle cx="24" cy="8" r="2"/><circle cx="-14" cy="24" r="2.2"/><circle cx="14" cy="24" r="2.2"/><circle cx="-18" cy="18" r="1.8"/><circle cx="18" cy="18" r="1.8"/></g></g>
+    <ellipse cx="0" cy="8" rx="3.2" ry="15" fill="#1B1B1B"/><path d="M-1,-6 q-6,-10 -10,-12 M1,-6 q6,-10 10,-12" stroke="#1B1B1B" stroke-width="1.5" fill="none"/></g>`;
+}
+function caterpillarSVG(sp, size, extra){
+  const [a, b, c] = SPECIES[sp].cat, n = 9, r = 4 + size * 1.6;
+  let segs = '';
+  for (let i = 0; i < n; i++) segs += `<circle cx="${i * r * 1.45}" cy="0" r="${r}" fill="${i % 3 === 0 ? b : i % 3 === 1 ? a : c}" stroke="#1B1B1B" stroke-width="1" style="animation-delay:${i * 0.08}s"/>`;
+  return `<g class="crawl" ${extra || ''}>${segs}<circle cx="${n * r * 1.45}" cy="-2" r="${r * 1.1}" fill="#1B1B1B"/><path d="M${n * r * 1.45 - 2},${-r} l-4,-${r} M${n * r * 1.45 + 3},${-r} l4,-${r}" stroke="#1B1B1B" stroke-width="2"/></g>`;
+}
+function plantSVG(kind, x, y, s){
+  const leaf = (dx, dy, rot, rx, ry, col) => `<ellipse cx="${dx}" cy="${dy}" rx="${rx}" ry="${ry}" fill="${col || 'var(--leaf)'}" transform="rotate(${rot} ${dx} ${dy})"/>`;
+  let g = `<rect x="-2" y="-70" width="4" height="70" fill="var(--leaf)"/>`;
+  if (kind === 'milkweed') g += leaf(-14, -50, -30, 16, 7) + leaf(14, -40, 30, 16, 7) + leaf(-14, -22, -25, 16, 7) + leaf(14, -14, 25, 16, 7) + `<g fill="#E599B7">${[-8, 0, 8].map(dx => `<circle cx="${dx}" cy="-74" r="5"/>`).join('')}</g>`;
+  if (kind === 'parsley') g += [[-12, -55], [12, -48], [-14, -30], [12, -22], [0, -68]].map(([dx, dy]) => `<g fill="var(--leaf2)">${[0, 1, 2].map(k => `<circle cx="${dx + k * 4 - 4}" cy="${dy + (k % 2) * 3}" r="4"/>`).join('')}</g>`).join('');
+  if (kind === 'thistle') g += leaf(-12, -40, -40, 14, 4, 'var(--leaf2)') + leaf(12, -28, 40, 14, 4, 'var(--leaf2)') + `<ellipse cx="0" cy="-70" rx="8" ry="6" fill="var(--leaf)"/><g stroke="#C2255C" stroke-width="2">${[-6, -3, 0, 3, 6].map(dx => `<line x1="${dx}" y1="-74" x2="${dx * 1.6}" y2="-86"/>`).join('')}</g>`;
+  if (kind === 'passion') g += leaf(-12, -45, -30, 12, 8) + leaf(12, -30, 30, 12, 8) + `<circle cx="0" cy="-74" r="10" fill="#B197FC"/><circle cx="0" cy="-74" r="4" fill="#FCC419"/>`;
+  if (kind === 'grass') g = [-10, -4, 2, 8].map(dx => `<path d="M${dx},0 q${dx / 2},-40 ${dx},-60" stroke="var(--leaf2)" stroke-width="4" fill="none"/>`).join('');
+  return `<g transform="translate(${x} ${y}) scale(${s || 1})">${g}</g>`;
+}
+function chrysalisSVG(sp, mode){
+  const S = SPECIES[sp], col = mode === 'clear' ? '#3B2A1E' : S.chrys;
+  const wings = mode === 'clear' ? `<path d="M-8,-6 q-6,14 0,26 M8,-6 q6,14 0,26" stroke="${S.wing}" stroke-width="5" fill="none" class="glow"/>` : '';
+  const dots = sp === 'swallowtail' ? '' : `<g fill="var(--gold)"><circle cx="-6" cy="-12" r="1.8"/><circle cx="6" cy="-12" r="1.8"/><circle cx="0" cy="18" r="1.8"/></g>`;
+  return `<g class="grow-in"><path d="M0,-28 C14,-24 16,10 6,30 C2,36 -2,36 -6,30 C-16,10 -14,-24 0,-28 Z" fill="${col}" stroke="#1B1B1B" stroke-width="1.5"/>${wings}${dots}</g>`;
+}
+function monarchPlan(sp){
+  const S = SPECIES[sp];
+  const plants = shuffle([S.host, ...shuffle(Object.keys(PLANTS).filter(k => k !== S.host)).slice(0, 3)]);
+  return [
+    {kind:'host', sk:'lifeCycles4', title:`🥚 Lay the egg`, plants},
+    {kind:'choice', sk:'lifeCycles4', title:'🐣 Hatching day', scene:'hatch',
+      q:`About 4 days later, the egg turns dark at the top: you can see the caterpillar’s black head inside! It chews its way out. What is its very first meal?`,
+      a:'Its own eggshell', w:['A sip of flower nectar', 'Pollen from a nearby flower', 'Nothing for the first week'],
+      why:'A newly hatched caterpillar usually eats the shell of its own egg first, then starts on the leaves of its host plant.'},
+    {kind:'feed', sk:'lifeCycles4', title:'🍃 Grow, grow, grow'},
+    {kind:'choice', sk:'lifeCycles4', title:'🐦 A hungry bird lands nearby!', scene:'bird',
+      q:`How does a ${S.name} caterpillar keep from being eaten?`, a:S.defense[0], w:S.defense.slice(1), why:S.defenseWhy},
+    {kind:'choice', sk:'lifeCycles4', title:'😱 The food is running out', scene:'bare',
+      q:`Your caterpillars have eaten the ${PLANTS[S.host].name.toLowerCase()} down to bare stems, and they are still growing. What do you do?`,
+      a:`Move them to a fresh ${PLANTS[S.host].name.toLowerCase().replace(' and dill', '')} plant`, w:['Give them lettuce from the kitchen', 'Put out a dish of sugar water for them', 'Let them pupate now so they don’t need food'],
+      why:`Caterpillars can only eat their host plant: ${S.name} caterpillars won’t eat lettuce, and sugar water is food for adults. They have to finish growing before they can pupate.`},
+    {kind:'order', sk:'lifeCycles4', title:'🪢 Time to pupate', items:S.pupate,
+      q:`Your caterpillar is in its 5th instar and about 4 cm long. It stops eating. Tap what happens next, in order.`,
+      why:sp === 'swallowtail' ? 'Black swallowtails pupate upright, held by a silk belt. The last molt (the 5th) uncovers the chrysalis.' : 'It hangs from a silk pad in a J shape. Its last molt (the 5th) uncovers the chrysalis.'},
+    {kind:'choice', sk:'lifeCycles4', title:'🔬 X-ray the chrysalis', scene:'xray',
+      q:'The chrysalis hangs still for days. What is happening inside?',
+      a:'Much of the caterpillar’s body breaks down, and groups of cells build wings, legs, and eyes', w:['The caterpillar is just asleep, growing bigger and bigger, while its body parts stay the same', 'The caterpillar spins a second silk cocoon inside', 'The caterpillar lays eggs that will hatch into butterflies'],
+      why:'Inside the pupa, much of the larva’s body is broken down. Small groups of cells (imaginal discs) that were waiting since the caterpillar was in the egg multiply and build the adult’s wings, legs, eyes, and antennae.'},
+    {kind:'choice', sk:'lifeCycles4', title:'⏳ Watch the chrysalis', scene:'clear',
+      q:`After ${S.chrysDays} days, the chrysalis turns see-through, and you can see the folded ${sp === 'swallowtail' ? 'black' : 'orange'} wings inside. When will the butterfly come out?`,
+      a:'Within about a day', w:['In about two more weeks', 'Next spring', 'It won’t come out: the dark color means it died'],
+      why:'When the chrysalis turns clear and the wing colors show through, the adult is almost ready. It usually comes out within about a day.'},
+    {kind:'choice', sk:'lifeCycles4', title:'🦋 It’s out!', scene:'emerge',
+      q:'The butterfly crawls out with small, crumpled, wet wings. What does it need to do before it can fly?',
+      a:'Hang still and pump fluid into its wings until they are full size and dry', w:['Fly right away, so the wind can stretch its wet wings out to their full size', `Eat ${PLANTS[S.host].name.toLowerCase()} leaves to grow its wings`, 'Molt one more time to get bigger wings'],
+      why:'A new butterfly pumps fluid from its body into the veins of its wings, then hangs for a few hours while they dry and harden. Adult butterflies never molt or grow bigger.'},
+    {kind:'choice', sk:'lifeCycles4', title:'🍂 The season changes', scene:'season', q:S.season.q, a:S.season.a, w:S.season.w, why:S.season.why}
+  ];
+}
+
+/* =====================================================================================================
+   🔄 The Life Cycle Ring
+   ===================================================================================================== */
+const ORGANISMS = [
+  {emoji:'🐸', name:'Frog', stages:['Egg in the water', 'Tadpole with gills and a tail', 'Froglet with legs and a short tail', 'Adult frog with lungs'], fake:'Pupa', type:'notInsect',
+    why:'A frog changes form as it grows (metamorphosis), but it is an amphibian, not an insect: a tadpole breathes with gills, and the adult breathes with lungs and its skin.'},
+  {emoji:'🦗', name:'Grasshopper', stages:['Egg in the soil', 'Nymph: a small grasshopper with no wings', 'Adult with wings'], fake:'Pupa', type:'incomplete',
+    why:'Grasshoppers have incomplete metamorphosis: the nymph looks like a small adult without wings, and it molts several times. There is no pupa.'},
+  {emoji:'🐞', name:'Ladybug', stages:['Egg', 'Larva: a spiky, crawling eater of aphids', 'Pupa stuck to a leaf', 'Adult beetle'], fake:'Nymph', type:'complete',
+    why:'Ladybugs are beetles with complete metamorphosis: the alligator-shaped larva looks nothing like the adult, and it rebuilds its body as a pupa.'},
+  {emoji:'🦟', name:'Mosquito', stages:['Egg on the water', 'Larva (a “wriggler”) in the water', 'Pupa (a “tumbler”) in the water', 'Adult that flies'], fake:'Nymph', type:'complete',
+    why:'Mosquitoes have complete metamorphosis. Their larvae and pupae live in still water, which is why emptying old buckets and flowerpots cuts down on mosquitoes.'},
+  {emoji:'🪳', name:'Cockroach', stages:['Egg case with many eggs', 'Nymph with no wings', 'Adult'], fake:'Larva', type:'incomplete',
+    why:'Cockroaches have incomplete metamorphosis: the nymphs look like small, wingless adults and molt as they grow.'},
+  {emoji:'🫘', name:'Bean plant', stages:['Seed', 'Seedling', 'Plant with flowers', 'Pod full of new seeds'], fake:'Cocoon', type:'none',
+    why:'Plants don’t go through metamorphosis. A bean seed sprouts into a seedling, grows flowers, and after pollination and fertilization makes pods of seeds.'},
+  {emoji:'🐔', name:'Chicken', stages:['Fertilized egg', 'Chick', 'Adult hen or rooster'], fake:'Larva', type:'none',
+    why:'Chickens don’t go through metamorphosis: a chick hatches with the same body plan as an adult and simply grows bigger.'}
+];
+const TYPES = [['complete', 'Complete metamorphosis'], ['incomplete', 'Incomplete metamorphosis'], ['notInsect', 'Metamorphosis, but not an insect'], ['none', 'No metamorphosis']];
+
+/* =====================================================================================================
+   🧬 The Chromosome Dance: chromatids are SVG groups that glide between poses
+   ===================================================================================================== */
+const PAIR_LEN = [42, 30, 22];
+const CX = 180, CY = 110;
+function chromatids(P, cross){
+  const list = [];
+  for (let p = 0; p < P; p++) for (let h = 0; h < 2; h++) for (let s = 0; s < 2; s++)
+    list.push({id:`${p}${h}${s}`, p, h, s, len:PAIR_LEN[p], tip:cross && p === 0 && s === 1 ? 1 - h : null});
+  return list;
+}
+function chromatidSVG(c){
+  const col = c.h ? 'var(--dad)' : 'var(--mom)', L = c.len;
+  const tip = c.tip === null ? '' : `<rect x="-3.5" y="${-L / 2}" width="7" height="${L * 0.32}" rx="3.5" fill="${c.tip ? 'var(--dad)' : 'var(--mom)'}"/>`;
+  return `<g class="ct" data-ct="${c.id}"><rect x="-3.5" y="${-L / 2}" width="7" height="${L}" rx="3.5" fill="${col}" stroke="rgba(0,0,0,.35)" stroke-width="1"/>${tip}<circle cx="0" cy="0" r="2.3" fill="var(--ink)"/></g>`;
+}
+/* poses: id -> [x, y, rotation] */
+function poseFor(phase, P, seed){
+  const pos = {}, chroms = [];
+  for (let p = 0; p < P; p++) for (let h = 0; h < 2; h++) chroms.push([p, h]);
+  const rows = (n, top, bottom) => Array.from({length:n}, (_, i) => n === 1 ? (top + bottom) / 2 : top + i * (bottom - top) / (n - 1));
+  if (phase === 'interphase' || phase === 'prophase') {
+    const spots = seed;   // fixed random spots for this round
+    chroms.forEach(([p, h], i) => { const [x, y, r] = spots[i]; for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [x + (s ? 3.6 : -3.6), y, r]; });
+  } else if (phase === 'metaphase') {
+    const ys = rows(chroms.length, 52, 168);
+    chroms.forEach(([p, h], i) => { for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [CX + (s ? 3.6 : -3.6), ys[i], 0]; });
+  } else if (phase === 'anaphase') {
+    const ys = rows(chroms.length, 64, 156);
+    chroms.forEach(([p, h], i) => { for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [s ? 238 : 122, ys[i], s ? 90 : -90]; });
+  } else if (phase === 'telophase' || phase === 'mitosisDone') {
+    const done = phase === 'mitosisDone', ys = rows(chroms.length, 80, 140);
+    chroms.forEach(([p, h], i) => { for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [(s ? (done ? 268 : 250) : (done ? 92 : 110)) + (i % 2 ? 9 : -9), ys[i], s ? 70 : -70]; });
+  } else if (phase === 'metaphase1') {   // homologous pairs side by side across the middle
+    const ys = rows(P, 60, 160);
+    for (let p = 0; p < P; p++) { const left = seed[p]; for (let h = 0; h < 2; h++) for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [CX + (h === left ? -11 : 11) + (s ? 3.6 : -3.6), ys[p], 0]; }
+  } else if (phase === 'anaphase1' || phase === 'telophase1') {
+    const ys = rows(P, 75, 145), xl = phase === 'anaphase1' ? 128 : 105, xr = phase === 'anaphase1' ? 232 : 255;
+    for (let p = 0; p < P; p++) { const left = seed[p]; for (let h = 0; h < 2; h++) for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [(h === left ? xl : xr) + (s ? 3.6 : -3.6), ys[p], 0]; }
+  } else if (phase === 'meiosisDone') {   // four cells; sister 0 goes up, sister 1 goes down
+    for (let p = 0; p < P; p++) { const left = seed[p]; for (let h = 0; h < 2; h++) for (let s = 0; s < 2; s++) pos[`${p}${h}${s}`] = [(h === left ? 92 : 268) + (p - (P - 1) / 2) * 16, s ? 172 : 50, 0]; }
+  }
+  return pos;
+}
+function membranesFor(phase){
+  const cell = `<circle cx="${CX}" cy="${CY}" r="96" fill="var(--soft)" stroke="var(--mem)" stroke-width="3"/>`;
+  const nucleus = (x, y, r, dash) => `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="var(--accent)" stroke-width="2"${dash ? ' stroke-dasharray="5 6" opacity=".55"' : ''}/>`;
+  const spindle = (lx, rx, ys) => ys.map(y => `<path d="M${lx},${CY} Q${CX},${y} ${rx},${CY}" stroke="var(--muted)" stroke-width="1" fill="none" opacity=".45"/>`).join('') + `<circle cx="${lx}" cy="${CY}" r="4" fill="var(--muted)"/><circle cx="${rx}" cy="${CY}" r="4" fill="var(--muted)"/>`;
+  const pinched = `<path d="M${CX},26 C120,10 70,40 70,110 C70,180 120,210 ${CX},194 C240,210 290,180 290,110 C290,40 240,10 ${CX},26 Z" fill="var(--soft)" stroke="var(--mem)" stroke-width="3"/><path d="M${CX},26 C170,70 170,150 ${CX},194" stroke="var(--mem)" stroke-width="3" fill="none"/>`;
+  if (phase === 'interphase') return cell + `<circle cx="${CX}" cy="${CY}" r="62" fill="var(--card)" stroke="var(--accent)" stroke-width="2.5"/>`;
+  if (phase === 'prophase') return cell + nucleus(CX, CY, 62, true);
+  if (phase === 'metaphase' || phase === 'metaphase1') return cell + spindle(96, 264, [40, 80, 140, 180]);
+  if (phase === 'anaphase' || phase === 'anaphase1') return cell + spindle(96, 264, [60, 160]);
+  if (phase === 'telophase' || phase === 'telophase1') return pinched + nucleus(110, CY, 40) + nucleus(250, CY, 40);
+  if (phase === 'mitosisDone') return `<circle cx="92" cy="${CY}" r="74" fill="var(--soft)" stroke="var(--mem)" stroke-width="3"/><circle cx="268" cy="${CY}" r="74" fill="var(--soft)" stroke="var(--mem)" stroke-width="3"/>` + nucleus(92, CY, 42) + nucleus(268, CY, 42);
+  if (phase === 'meiosisDone') return [[92, 50], [92, 172], [268, 50], [268, 172]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="46" fill="var(--soft)" stroke="var(--mem)" stroke-width="3"/>` + nucleus(x, y, 32)).join('');
+  return cell;
+}
+const PHASE_NAMES = {interphase:'Interphase', prophase:'Prophase', metaphase:'Metaphase', anaphase:'Anaphase', telophase:'Telophase'};
+const PHASE_CLUES = {
+  interphase:'Interphase: the nucleus is whole and the DNA is long and thin (you can’t see separate chromosomes). This is when the cell grows and copies its DNA.',
+  prophase:'Prophase: the copied chromosomes coil up into thick X shapes, and the nuclear membrane breaks apart.',
+  metaphase:'Metaphase: the chromosomes line up in a single row across the middle, with spindle fibers attached.',
+  anaphase:'Anaphase: the sister chromatids are pulled apart toward opposite ends of the cell.',
+  telophase:'Telophase: two new nuclei form at the ends, and the cell starts pinching in two (cytokinesis).'
+};
+const PREV_PHASE = {interphase:'interphase', prophase:'interphase', metaphase:'prophase', anaphase:'metaphase', telophase:'anaphase'};
+function cellRound(type){
+  const P = type === 'count' ? pick([2, 3]) : pick([2, 2, 3]);
+  const spots = Array.from({length:2 * P}, (_, i) => [CX - 40 + (i % 3) * 40 + rnd(-8, 8), CY - 26 + Math.floor(i / 3) * 52 + rnd(-8, 8), rnd(-50, 50)]);
+  const seed = type === 'which' || type === 'count' ? Array.from({length:P}, () => rnd(0, 1)) : spots;
+  const R = {kind:'cells', type, P, spots, seed, cross:false};
+  if (type === 'phase') {
+    R.phase = pick(['prophase', 'metaphase', 'anaphase', 'telophase', 'interphase']);
+    R.sk = 'mitosis4'; R.title = '🔎 Name that phase';
+    R.q = 'This cell is going through the cell cycle. Which phase is it in right now?';
+    R.a = PHASE_NAMES[R.phase]; R.w = shuffle(Object.values(PHASE_NAMES).filter(n => n !== R.a)).slice(0, 3); R.why = PHASE_CLUES[R.phase];
+  } else if (type === 'order') {
+    R.sk = 'mitosis4'; R.title = '🎬 Put the movie in order';
+    R.items = ['prophase', 'metaphase', 'anaphase', 'telophase'];
+    R.q = 'These four pictures are from one cell dividing by mitosis. Tap them in the order they happen.';
+    R.why = 'Prophase (chromosomes coil up), metaphase (they line up in the middle), anaphase (sister chromatids are pulled apart), telophase (two nuclei form).';
+  } else if (type === 'count') {
+    R.proc = pick(['mitosis', 'meiosis']); R.sk = R.proc === 'mitosis' ? 'mitosis4' : 'meiosis4'; R.title = '🔢 Count the chromosomes';
+    R.n = 2 * P;
+    R.q = `This cell has ${R.n} chromosomes (count the ${P} orange ones from the mother and the ${P} blue ones from the father). It divides by ${R.proc}. How many chromosomes will each new cell have?`;
+    const right = R.proc === 'mitosis' ? R.n : R.n / 2;
+    R.a = String(right); R.w = shuffle([...new Set([R.n, R.n / 2, R.n * 2, R.n + 2].filter(v => v !== right).map(String))]).slice(0, 3);
+    R.why = R.proc === 'mitosis' ? `Mitosis makes 2 identical cells, each with the full set: ${R.n} chromosomes, the same as the parent.` : `Meiosis makes 4 cells, each with one chromosome from every pair: ${R.n / 2}, half of the parent’s ${R.n}.`;
+  } else {   // which: watch the movie and name the process
+    R.proc = pick(['mitosis', 'meiosis']); R.sk = 'meiosis4'; R.title = '🎥 Which division is it?'; R.cross = R.proc === 'meiosis';
+    R.q = 'Watch the cell divide (tap ▶ Replay to see it again). Which kind of cell division is this?';
+    R.a = R.proc === 'mitosis' ? 'Mitosis: two identical cells with the full set' : 'Meiosis: four different cells, each with half the chromosomes';
+    R.w = R.proc === 'mitosis' ? ['Meiosis: four different cells, each with half the chromosomes', 'Meiosis: two identical cells with the full set', 'Mitosis: four cells, each with half the chromosomes'] : ['Mitosis: two identical cells with the full set', 'Mitosis: four different cells, each with half the chromosomes', 'Meiosis: two identical cells with the full set'];
+    R.why = R.proc === 'mitosis' ? 'Mitosis splits each copied chromosome once, so the two new cells match the parent exactly.' : 'Meiosis separates the partner chromosomes first (with some crossing over, see the striped one), then the sister chromatids, making 4 cells with one chromosome from each pair.';
+  }
+  return R;
+}
+function cellSVG(R, phase, opts){
+  const list = chromatids(R.P, R.cross), pose = poseFor(phase, R.P, phase.startsWith('meta') && phase !== 'metaphase' || phase.includes('1') || phase === 'meiosisDone' ? R.seed : R.spots);
+  const faint = phase === 'interphase';
+  return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="${esc(opts?.label || 'a dividing cell')}"><g class="mems">${membranesFor(phase)}</g><g class="cts" style="opacity:${faint ? '.18' : '1'}">${list.map(c => {
+    const [x, y, r] = pose[c.id] || [CX, CY, 0];
+    return chromatidSVG(c).replace('class="ct"', `class="ct" style="transform:translate(${x}px,${y}px) rotate(${r}deg)"`);
+  }).join('')}</g><g class="squig" style="opacity:${faint ? '.7' : '0'}; transition:opacity .6s"><g stroke="var(--accent)" fill="none" stroke-width="1.5"><path d="M150,92 q10,-14 22,0 t22,0 t20,6"/><path d="M146,118 q12,12 24,0 t24,0 t18,-4"/><path d="M160,136 q8,-10 18,0 t18,2"/></g></g></svg>`;
+}
+function animateCell(container, R, phases, gap){
+  let i = 0; const svg = container.querySelector('svg');
+  const step = () => {
+    if (!svg.isConnected || i >= phases.length) return;
+    const phase = phases[i++], pose = poseFor(phase, R.P, phase.includes('1') || phase === 'meiosisDone' || phase === 'metaphase1' ? R.seed : R.spots);
+    svg.querySelector('.mems').innerHTML = membranesFor(phase);
+    svg.querySelector('.cts').style.opacity = phase === 'interphase' ? '.18' : '1';
+    const sq = svg.querySelector('.squig'); if (sq) sq.style.opacity = phase === 'interphase' ? '.7' : '0';
+    svg.querySelectorAll('.ct').forEach(g => { const [x, y, r] = pose[g.dataset.ct] || [CX, CY, 0]; g.style.transform = `translate(${x}px,${y}px) rotate(${r}deg)`; });
+    setTimeout(step, gap || 1100);
+  };
+  step();
+}
+
+/* =====================================================================================================
+   the game loop
+   ===================================================================================================== */
+let G = null;
+function newRoom(room){
+  const sp = pick(Object.keys(SPECIES));
+  let plan;
+  if (room === 'monarch') plan = monarchPlan(sp);
+  else if (room === 'cycles') plan = shuffle(ORGANISMS).slice(0, 6).map(o => ({kind:'ring', sk:'lifeCycles4', title:`${o.emoji} ${o.name}`, o, placed:[], cls:'', clsTries:0}));
+  else plan = shuffle(['phase', 'phase', 'order', 'count', 'count', 'which']).map(cellRound);
+  G = {room, sp, plan, i:0, right:0, tries:0, missed:{}, started:Date.now(), done:false};
+  startStep();
+}
+function startStep(){
+  const S = G.plan[G.i];
+  Object.assign(S, {misses:0, fb:'', fbKind:'', solved:false, failed:false, picked:[], instar:S.instar || 1, meter:0, feedMistakes:0, ordered:[]});
+  if (S.kind === 'choice' || (S.kind === 'cells' && S.type !== 'order')) S.opts = shuffle([S.a, ...S.w]);
+  if (S.kind === 'order') S.chips = shuffle(S.items);
+  if (S.kind === 'cells' && S.type === 'order') S.chips = shuffle(S.items);
+  if (S.kind === 'ring') { S.chips = shuffle([...S.o.stages, S.o.fake]); S.typeOpts = shuffle(TYPES); }
+  if (S.kind === 'feed') { S.need = rnd(3, 5); S.bites = 0; }
+  render();
+}
+function solved(){ const S = G.plan[G.i]; S.solved = true; G.right++; G.tries++; S.fb = pick(['Nice work!', 'Exactly right!', 'You’ve got it!', 'Great tour-guide thinking!']); S.fbKind = 'ok'; }
+function missOnce(msg){
+  const S = G.plan[G.i]; S.misses++; G.tries++;
+  if (S.misses >= TRIES) { S.failed = true; G.missed[S.sk] = (G.missed[S.sk] || 0) + 1; S.fb = 'Not this time. Here’s the answer:'; S.fbKind = 'bad'; }
+  else { S.fb = msg || 'Not quite. Try once more!'; S.fbKind = 'bad'; }
+}
+const over = S => S.solved || S.failed;
+function nextStep(){ if (G.i < G.plan.length - 1) { G.i++; startStep(); } else finish(); }
+
+/* ---------- scenes ---------- */
+function monarchScene(S){
+  const sp = G.sp, Sp = SPECIES[sp], host = Sp.host;
+  const ground = `<rect x="0" y="196" width="360" height="26" fill="var(--soil)" opacity=".35"/>`;
+  if (S.kind === 'host') {
+    const xs = [55, 140, 225, 310], target = S.solved ? xs[S.plants.indexOf(host)] : null;
+    const bf = target !== null ? `<g class="fly" style="transform:translate(180px,50px) scale(.7)" data-to="translate(${target - 6}px,90px) scale(.7)">${butterflySVG(Sp.wing, '', Sp.spot)}</g><g class="fade-in" style="animation-delay:1.3s"><ellipse cx="${target + 10}" cy="150" rx="3" ry="4" fill="#FFF3BF" stroke="#C9A400"/></g>`
+      : `<g style="transform:translate(180px,50px)"><g class="bob"><g style="transform:scale(.7)">${butterflySVG(Sp.wing, '', Sp.spot)}</g></g></g>`;
+    return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="a ${esc(Sp.name)} looking for a plant">${ground}${S.plants.map((k, i) => plantSVG(k, xs[i], 196, 1.15)).join('')}${bf}</svg>`;
+  }
+  if (S.kind === 'feed') {
+    const size = S.instar - 1, leafR = 60 - (S.bites % 6) * 8;
+    const shed = S.justMolted ? `<g transform="translate(60 150)" opacity=".6"><g class="shed">${caterpillarSVG(sp, Math.max(0, size - 1)).replace(/fill="[^"]*"/g, 'fill="#B8B8B8"')}</g></g>` : '';
+    return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="a caterpillar eating a leaf">${ground}${plantSVG(host, 300, 196, 1.4)}<ellipse cx="200" cy="168" rx="${leafR + 40}" ry="22" fill="var(--leaf)" opacity=".85"/>${shed}<g transform="translate(${110 - size * 6} 150)">${caterpillarSVG(sp, size, S.meter >= 100 && S.instar < 5 ? 'style="filter:drop-shadow(0 0 6px var(--bad))"' : '')}</g>
+      <text x="12" y="22" font-size="14" font-weight="700" fill="var(--ink)">Instar ${S.instar} of 5 · about ${LENGTH_CM[S.instar - 1]} cm</text></svg>`;
+  }
+  if (S.kind === 'order') {
+    const done = S.solved || S.failed;
+    const stem = `<rect x="194" y="30" width="8" height="170" rx="3" fill="var(--leaf)"/>`;
+    const body = done ? (sp === 'swallowtail' ? `${stem}<g transform="translate(184 112) rotate(-8)">${chrysalisSVG(sp)}</g><path d="M176,110 q12,8 24,0" stroke="#EEE" stroke-width="2" fill="none"/>`
+      : `<line x1="120" y1="40" x2="250" y2="40" stroke="var(--soil)" stroke-width="8" stroke-linecap="round"/><g transform="translate(185 100)">${chrysalisSVG(sp)}</g><line x1="185" y1="44" x2="185" y2="72" stroke="#ddd" stroke-width="2"/>`)
+      : sp === 'swallowtail' ? `${stem}<g transform="translate(205 170) rotate(-90)">${caterpillarSVG(sp, 3)}</g>` : `<line x1="120" y1="40" x2="250" y2="40" stroke="var(--soil)" stroke-width="8" stroke-linecap="round"/><g transform="translate(150 130)">${caterpillarSVG(sp, 4)}</g>`;
+    return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="a caterpillar getting ready to pupate">${ground}${body}</svg>`;
+  }
+  const sc = S.scene, upright = sp === 'swallowtail', stemV = `<rect x="194" y="20" width="8" height="180" rx="3" fill="var(--leaf)"/>`, twig = `<line x1="120" y1="30" x2="250" y2="30" stroke="var(--soil)" stroke-width="8" stroke-linecap="round"/>`;
+  if (sc === 'hatch') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="an egg hatching">${ground}${plantSVG(host, 180, 196, 1.9)}<g transform="translate(150 120)"><ellipse cx="0" cy="0" rx="9" ry="12" fill="#FFF3BF" stroke="#C9A400"/><circle cx="0" cy="-7" r="3.5" fill="#1B1B1B" class="glow"/></g>${S.solved || S.failed ? `<g class="fade-in" transform="translate(166 130) scale(.6)">${caterpillarSVG(G.sp, 0)}</g>` : ''}</svg>`;
+  if (sc === 'bird') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="a bird near a caterpillar">${ground}${plantSVG(host, 120, 196, 1.9)}<g transform="translate(70 120)">${caterpillarSVG(G.sp, 3)}</g><text x="250" y="110" font-size="62" class="bob">🐦</text></svg>`;
+  if (sc === 'bare') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="bare stems">${ground}${[90, 180, 270].map(x => `<rect x="${x - 2}" y="110" width="4" height="86" fill="var(--leaf)"/>`).join('')}<g transform="translate(120 180)">${caterpillarSVG(G.sp, 3)}</g>${S.solved ? `<g class="fade-in">${plantSVG(host, 320, 196, 1.3)}</g>` : ''}</svg>`;
+  if (sc === 'xray') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="inside a chrysalis">${ground}<g transform="translate(180 110) scale(2.6)">${chrysalisSVG(G.sp)}</g><g transform="translate(180 110)" opacity=".9"><g class="swirl">${[0, 60, 120, 180, 240, 300].map(a => `<circle cx="${Math.cos(a * Math.PI / 180) * 26}" cy="${Math.sin(a * Math.PI / 180) * 40}" r="5" fill="#FFF" opacity=".7"/>`).join('')}</g>${S.solved || S.failed ? `<g class="grow-in"><path d="M-4,-20 q-26,6 -14,34 M4,-20 q26,6 14,34" stroke="${Sp.wing}" stroke-width="7" fill="none"/></g>` : ''}</g></svg>`;
+  if (sc === 'clear') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="a see-through chrysalis">${ground}${upright ? stemV : twig}<g transform="translate(${upright ? 168 : 185} 110) scale(2.2)${upright ? ' rotate(-6)' : ''}">${chrysalisSVG(G.sp, 'clear')}</g></svg>`;
+  if (sc === 'emerge') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="a butterfly drying its wings">${ground}${upright ? stemV : twig}<g transform="translate(${upright ? 186 : 150} ${upright ? 120 : 56}) scale(.9)" opacity=".55"><path d="M0,-28 C14,-24 16,10 6,30 C2,36 -2,36 -6,30 C-16,10 -14,-24 0,-28 Z" fill="none" stroke="var(--muted)" stroke-width="2"/></g>${upright ? '' : '<line x1="205" y1="34" x2="205" y2="62" stroke="#1B1B1B" stroke-width="1.5"/>'}<g transform="translate(${upright ? 250 : 205} ${upright ? 70 : 66}) scale(1.7)"><g class="${S.solved || S.failed ? 'unfurl' : ''}" style="${S.solved || S.failed ? '' : 'transform:scale(.3,.25); transform-box:fill-box; transform-origin:50% 0'}">${butterflySVG(Sp.wing, '', Sp.spot).replace('class="flap"', '')}</g></g></svg>`;
+  if (sc === 'season') return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="fall leaves">${ground}${[40, 110, 300].map((x, i) => `<text x="${x}" y="${60 + i * 30}" font-size="34" class="bob" style="animation-delay:${i * .3}s">🍂</text>`).join('')}${upright ? `${stemV}<g transform="translate(184 110) rotate(-8)">${chrysalisSVG(sp)}</g>${S.solved ? [60, 130, 270, 320].map((x, i) => `<text x="${x}" y="${50 + (i % 2) * 50}" font-size="26" class="bob" style="animation-delay:${i * .25}s">❄️</text>`).join('') : ''}` : `<g class="fly" style="transform:translate(180px,110px) scale(.8)" data-to="translate(${S.solved && sp !== 'swallowtail' ? 330 : 180}px,${S.solved && sp !== 'swallowtail' ? 30 : 110}px) scale(.8)">${butterflySVG(Sp.wing, '', Sp.spot)}</g>`}</svg>`;
+  return '';
+}
+function ringSVG(S){
+  const n = S.o.stages.length, R = 78, cx = 180, cy = 112;
+  const at = i => [cx + R * Math.sin(2 * Math.PI * i / n), cy - R * Math.cos(2 * Math.PI * i / n)];
+  let g = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--edge)" stroke-width="10"/>`;
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = at(i), [x2, y2] = at(i + 0.5);
+    const [x3, y3] = at(i + 1), on = S.placed.length === n || i + 1 < S.placed.length;
+    g += `<path d="M${x1},${y1} A${R},${R} 0 0 1 ${x2},${y2} A${R},${R} 0 0 1 ${x3},${y3}" stroke="${on ? 'var(--accent)' : 'transparent'}" stroke-width="10" fill="none"/>`;
+  }
+  S.o.stages.forEach((st, i) => {
+    const [x, y] = at(i), on = i < S.placed.length;
+    g += `<circle cx="${x}" cy="${y}" r="20" fill="${on ? 'var(--accent)' : 'var(--card)'}" stroke="var(--accent)" stroke-width="2.5"/><text x="${x}" y="${y + 5}" text-anchor="middle" font-size="15" font-weight="800" fill="${on ? 'var(--accent-ink)' : 'var(--muted)'}">${i + 1}</text>`;
+  });
+  const full = S.placed.length === n;
+  g += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-size="46" class="${full ? 'bob' : ''}">${S.o.emoji}</text>`;
+  if (full) { const [x, y] = at(0); g += `<g class="swirl" style="transform-origin:${cx}px ${cy}px; transform-box:view-box"><circle cx="${x}" cy="${y}" r="7" fill="var(--gold)"/></g>`; }
+  return `<svg class="scene" viewBox="0 0 360 222" role="img" aria-label="the life cycle ring for the ${esc(S.o.name)}">${g}</svg>`;
+}
+
+/* ---------- rendering ---------- */
+function hudHTML(){
+  const r = ROOMS[G.room];
+  return `<div class="hud"><span class="pill">${r.emoji} ${esc(r.name)}${G.room === 'monarch' ? ` · ${esc(SPECIES[G.sp].Name)}` : ''}</span><span class="pill">Step ${G.i + 1} of ${G.plan.length}</span><span class="pill">✅ ${G.right}</span><button type="button" class="btn" data-quit style="margin-left:auto; padding:3px 10px">Leave</button></div>`;
+}
+const fbHTML = S => `<p class="fb ${S.fbKind}" role="status">${esc(S.fb)}</p>`;
+const explainHTML = (S, text) => over(S) ? `<div class="explain">${esc(text)}</div><p><button type="button" class="btn go" data-next>${G.i < G.plan.length - 1 ? 'Next ➜' : 'See how you did'}</button></p>` : '';
+function optsHTML(S, a){
+  return `<div class="opts">${S.opts.map((o, i) => `<button type="button" class="opt${over(S) && o === a ? ' good' : ''}${S.picked.includes(o) && o !== a ? ' bad' : ''}" data-opt="${i}" ${over(S) || S.picked.includes(o) ? 'disabled' : ''}>${esc(o)}</button>`).join('')}</div>`;
+}
+function render(){
+  if (!G) return intro();
+  const S = G.plan[G.i];
+  let body = '';
+  if (S.kind === 'host') {
+    const Sp = SPECIES[G.sp];
+    body = `${monarchScene(S)}<p class="q">You’re a mother ${esc(Sp.name)}, ready to lay an egg. Your caterpillar won’t be able to travel far to find food. Which plant do you lay it on?</p>
+      <div class="opts two">${S.plants.map(k => `<button type="button" class="opt${over(S) && k === Sp.host ? ' good' : ''}${S.picked.includes(k) && k !== Sp.host ? ' bad' : ''}" data-plant="${k}" ${over(S) || S.picked.includes(k) ? 'disabled' : ''}><span class="em">${PLANTS[k].emoji}</span>${esc(PLANTS[k].name)}</button>`).join('')}</div>${fbHTML(S)}
+      ${explainHTML(S, `${Sp.Name} caterpillars eat ${PLANTS[Sp.host].name.toLowerCase()}, their host plant, so the mother lays her eggs right on it. ${S.picked.filter(k => k !== Sp.host).map(k => `${PLANTS[k].name} is food for ${PLANTS[k].who}.`).join(' ')}`)}`;
+  } else if (S.kind === 'feed') {
+    const full = S.meter >= 100, grown = S.instar === 5 && full;
+    body = `${monarchScene(S)}<p class="q">${grown ? 'Full grown!' : 'Feed your caterpillar. Its skin can’t stretch much: when the skin meter is full, it has to molt before it can grow. Get it to the 5th instar, full size.'}</p>
+      <div class="meter${full && !grown ? ' full' : ''}" aria-label="skin meter"><i style="width:${Math.min(100, S.meter)}%"></i></div>
+      <p class="muted" style="margin:0">Skin: ${grown ? 'full size' : full ? '<b>too tight!</b>' : `${Math.round(S.meter)}% full`} · Molts so far: ${S.instar - 1} of 4 · Mistakes: ${S.feedMistakes}</p>
+      ${over(S) ? '' : `<div class="row" style="margin-top:8px"><button type="button" class="btn go" data-feed>🍃 Feed</button><button type="button" class="btn" data-molt>🧥 Molt</button></div>`}${fbHTML(S)}
+      ${explainHTML(S, 'A caterpillar’s outer skin (its exoskeleton) can only stretch a little. When it gets tight, the caterpillar molts: it grows a new, looser skin underneath and wriggles out of the old one. Each stage between molts is an instar. Most caterpillars, like these, have 5 instars, and the 5th molt uncovers the chrysalis.')}`;
+  } else if (S.kind === 'order') {
+    const next = S.ordered.length;
+    body = `${monarchScene(S)}<p class="q">${esc(S.q)}</p>${S.ordered.length ? `<ol class="order-done">${S.ordered.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : ''}
+      <div class="opts">${S.chips.map((t, i) => S.ordered.includes(t) ? '' : `<button type="button" class="opt${S.lastBad === t ? ' bad' : ''}" data-ord="${i}" ${over(S) ? 'disabled' : ''}>${esc(t)}</button>`).join('')}</div>${fbHTML(S)}
+      ${over(S) ? `<div class="explain"><b>The order:</b><ol class="order-done">${S.items.map(t => `<li>${esc(t)}</li>`).join('')}</ol>${esc(S.why)}</div><p><button type="button" class="btn go" data-next>Next ➜</button></p>` : `<p class="muted">Step ${next + 1} of ${S.items.length}</p>`}`;
+  } else if (S.kind === 'choice') {
+    body = `${monarchScene(S)}<p class="q">${esc(S.q)}</p>${optsHTML(S, S.a)}${fbHTML(S)}${explainHTML(S, S.why)}`;
+  } else if (S.kind === 'ring') {
+    const n = S.o.stages.length, built = S.placed.length === n;
+    body = `${ringSVG(S)}<p class="q">${built ? `Now, what kind of life cycle does the ${esc(S.o.name.toLowerCase())} have?` : `Build the ${esc(S.o.name.toLowerCase())}’s life cycle. Tap the stages in order, starting from the beginning of the cycle. One stage doesn’t belong!`}</p>
+      ${S.placed.length ? `<ol class="order-done">${S.placed.map(t => `<li>${esc(t)}</li>`).join('')}</ol>` : ''}
+      ${built ? `<div class="opts">${S.typeOpts.map(([k, l]) => `<button type="button" class="opt${over(S) && k === S.o.type ? ' good' : ''}${S.typePicked?.includes(k) && k !== S.o.type ? ' bad' : ''}" data-type="${k}" ${over(S) || S.typePicked?.includes(k) ? 'disabled' : ''}>${esc(l)}</button>`).join('')}</div>`
+        : `<div class="chips">${S.chips.map((t, i) => `<button type="button" class="chip${S.placed.includes(t) ? ' used' : ''}${S.lastBad === t ? ' bad' : ''}" data-ring="${i}" ${S.placed.includes(t) || over(S) ? 'disabled' : ''}>${esc(t)}</button>`).join('')}</div>`}
+      ${fbHTML(S)}${explainHTML(S, `${S.o.fake} isn’t part of this life cycle. ${S.o.why}`)}`;
+  } else if (S.kind === 'cells') {
+    if (S.type === 'order') {
+      body = `<p class="q">${esc(S.q)}</p><div class="opts two">${S.chips.map((ph, i) => S.ordered.includes(ph) ? `<div class="opt" style="opacity:.45">${S.ordered.indexOf(ph) + 1}. ${PHASE_NAMES[ph]}</div>` : `<button type="button" class="opt${S.lastBad === ph ? ' bad' : ''}" data-cord="${i}" ${over(S) ? 'disabled' : ''} aria-label="picture ${i + 1}">${cellSVG(S, ph, {label:'a cell in one phase of mitosis'}).replace('class="scene"', 'class="scene" style="max-height:120px"')}</button>`).join('')}</div>${fbHTML(S)}
+        ${over(S) ? `<div class="explain">${esc(S.why)}</div><div id="movie" style="margin-top:8px">${cellSVG(S, 'interphase', {label:'mitosis from start to finish'})}</div><p><button type="button" class="btn go" data-next>${G.i < G.plan.length - 1 ? 'Next ➜' : 'See how you did'}</button></p>` : ''}`;
+    } else {
+      const phase = S.type === 'phase' ? S.phase : S.type === 'count' ? 'metaphase' : 'interphase';
+      body = `<div id="movie">${cellSVG(S, S.type === 'phase' ? PREV_PHASE[S.phase] : phase, {label:'a cell with chromosomes'})}</div>${S.type === 'which' ? '<p><button type="button" class="btn" data-replay>▶ Replay</button></p>' : ''}
+        <p class="q">${esc(S.q)}</p>${optsHTML(S, S.a)}${fbHTML(S)}${explainHTML(S, S.why)}`;
+    }
+  }
+  app.innerHTML = `${hudHTML()}<div class="step"><h2>${esc(S.title)}</h2>${body}</div>`;
+  if (S.kind === 'cells') playCells(S);
+  flyNow();
+}
+function flyNow(){ setTimeout(() => app.querySelectorAll('[data-to]').forEach(g => { g.style.transform = g.dataset.to; }), 60); }
+function playCells(S){
+  const movie = document.getElementById('movie'); if (!movie) return;
+  if (S.type === 'phase') animateCell(movie, S, [PREV_PHASE[S.phase], S.phase], 700);
+  else if (S.type === 'order' && over(S)) animateCell(movie, S, ['interphase', 'prophase', 'metaphase', 'anaphase', 'telophase', 'mitosisDone'], 1000);
+  else if (S.type === 'which' && !S.played) { S.played = true; playWhich(S); }
+  else if (S.type === 'which') animateCell(movie, S, [S.proc === 'mitosis' ? 'mitosisDone' : 'meiosisDone'], 10);
+  else if (S.type === 'count' && over(S)) animateCell(movie, S, S.proc === 'mitosis' ? ['metaphase', 'anaphase', 'telophase', 'mitosisDone'] : ['metaphase1', 'anaphase1', 'telophase1', 'meiosisDone'], 1000);
+}
+function playWhich(S){
+  const movie = document.getElementById('movie'); if (!movie) return;
+  movie.innerHTML = cellSVG(S, 'interphase');
+  animateCell(movie, S, S.proc === 'mitosis' ? ['interphase', 'prophase', 'metaphase', 'anaphase', 'telophase', 'mitosisDone'] : ['interphase', 'prophase', 'metaphase1', 'anaphase1', 'telophase1', 'meiosisDone'], 1000);
+}
+
+/* ---------- input ---------- */
+app.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.room) return newRoom(b.dataset.room);
+  if (b.matches('[data-home]')) { G = null; return intro(); }
+  if (!G) return;
+  if (b.matches('[data-quit]')) { G = null; return intro(); }
+  if (b.matches('[data-next]')) return nextStep();
+  const S = G.plan[G.i];
+  if (b.matches('[data-replay]')) return playWhich(S);
+  if (over(S)) return;
+  S.lastBad = '';
+  if (b.dataset.plant) {
+    const k = b.dataset.plant; S.picked.push(k);
+    if (k === SPECIES[G.sp].host) solved(); else missOnce(`${PLANTS[k].name} is food for ${PLANTS[k].who}, not ${SPECIES[G.sp].name}s. Try again!`);
+    return render();
+  }
+  if (b.dataset.opt !== undefined) {
+    const o = S.opts[+b.dataset.opt]; S.picked.push(o);
+    if (o === S.a) solved(); else missOnce();
+    return render();
+  }
+  if (b.matches('[data-feed]')) {
+    S.justMolted = false;
+    if (S.meter >= 100) {
+      if (S.instar === 5) return render();
+      S.feedMistakes++; G.tries++; S.fb = 'It can’t grow any bigger in this skin. It needs to molt!'; S.fbKind = 'bad';
+    } else {
+      S.bites++; S.meter = Math.min(100, S.meter + 100 / S.need + rnd(-6, 6)); if (S.bites % S.need === 0) S.meter = 100;
+      S.fb = S.meter >= 100 ? (S.instar === 5 ? '' : 'Its skin is stretched tight!') : 'Munch, munch…'; S.fbKind = '';
+      if (S.meter >= 100 && S.instar === 5) {
+        if (S.feedMistakes <= 1) { S.solved = true; G.right++; G.tries++; S.fb = `Full grown at about 4 cm, with ${S.feedMistakes ? 'just 1 mistake' : 'no mistakes'}!`; S.fbKind = 'ok'; }
+        else { S.failed = true; G.tries++; G.missed[S.sk] = (G.missed[S.sk] || 0) + 1; S.fb = `Full grown, but with ${S.feedMistakes} mistakes. Watch the skin meter next time.`; S.fbKind = 'bad'; }
+      }
+    }
+    return render();
+  }
+  if (b.matches('[data-molt]')) {
+    if (S.meter < 100) { S.feedMistakes++; G.tries++; S.fb = 'Too soon! It molts when its skin is too tight to grow any more.'; S.fbKind = 'bad'; S.justMolted = false; return render(); }
+    if (S.instar === 5) { S.feedMistakes++; G.tries++; S.fb = 'It has finished its 5th instar. Its next molt will be into the chrysalis, so keep feeding it until it’s full size.'; S.fbKind = 'bad'; return render(); }
+    S.instar++; S.meter = 0; S.bites = 0; S.need = rnd(3, 5); S.justMolted = true; S.fb = `Molted! Now in instar ${S.instar}. It even eats its old skin.`; S.fbKind = 'ok';
+    return render();
+  }
+  if (b.dataset.ord !== undefined) {
+    const t = S.chips[+b.dataset.ord];
+    if (t === S.items[S.ordered.length]) { S.ordered.push(t); S.fb = ''; if (S.ordered.length === S.items.length) { if (S.misses === 0) solved(); else { S.solved = true; G.right++; G.tries++; S.fb = 'Got it on the second try!'; S.fbKind = 'ok'; } } }
+    else { S.lastBad = t; missOnce('That doesn’t come next. Think about the order.'); }
+    return render();
+  }
+  if (b.dataset.ring !== undefined) {
+    const t = S.chips[+b.dataset.ring];
+    if (t === S.o.stages[S.placed.length]) { S.placed.push(t); S.fb = S.placed.length === S.o.stages.length ? 'The ring is complete!' : ''; S.fbKind = S.fb ? 'ok' : ''; if (S.fb) S.misses = 0; }
+    else {
+      S.lastBad = t; S.misses++; G.tries++;
+      if (S.misses >= TRIES) { S.failed = true; G.missed[S.sk] = (G.missed[S.sk] || 0) + 1; S.placed = [...S.o.stages]; S.fb = 'Not this time. Here’s the whole cycle:'; S.fbKind = 'bad'; }
+      else { S.fb = t === S.o.fake ? `A ${S.o.name.toLowerCase()} doesn’t have a ${t.toLowerCase()} stage!` : 'That stage doesn’t come next.'; S.fbKind = 'bad'; }
+    }
+    return render();
+  }
+  if (b.dataset.type) {
+    const k = b.dataset.type; S.typePicked = [...(S.typePicked || []), k];
+    if (k === S.o.type) solved(); else missOnce('Not that kind. Look at the stages again.');
+    return render();
+  }
+  if (b.dataset.cord !== undefined) {
+    const ph = S.chips[+b.dataset.cord];
+    if (ph === S.items[S.ordered.length]) { S.ordered.push(ph); S.fb = ''; if (S.ordered.length === 4) { if (S.misses === 0) solved(); else { S.solved = true; G.right++; G.tries++; S.fb = 'Got it on the second try!'; S.fbKind = 'ok'; } } }
+    else { S.lastBad = ph; missOnce('That picture doesn’t come next.'); if (S.failed) S.ordered = [...S.items]; }
+    return render();
+  }
+});
+
+/* ---------- start and end ---------- */
+const starsFor = (r, n) => r >= n ? 3 : r >= n - 2 ? 2 : r >= Math.ceil(n / 2) ? 1 : 0;
+function intro(){
+  G = null;
+  const best = Math.max(...Object.keys(ROOMS).map(k => store.get('best-' + k)));
+  app.innerHTML = `<h1>🦋 Life Cycle Lab</h1>
+    <p>Welcome to the lab behind the Pet World Butterfly House! You’re the tour guide in charge today. Pick a room.</p>
+    <div class="rooms">${Object.entries(ROOMS).map(([k, r]) => `<button type="button" class="room" data-room="${k}"><span class="big">${r.emoji}</span><span><b>${esc(r.name)}</b><span class="muted">${esc(r.blurb)}</span>${store.get('best-' + k) ? `<br><span class="muted">Best: ${'⭐'.repeat(store.get('best-' + k))}</span>` : ''}</span></button>`).join('')}</div>
+    <div class="card"><h2>How it works</h2><ul style="padding-left:20px; margin:0">
+      <li>Every question gives you 2 tries. A miss shows the answer and why.</li>
+      <li>Get every step right for ⭐⭐⭐.</li>
+      <li>The science is real: real butterflies, real host plants, real chromosomes.</li></ul>
+      ${FROM_UNIT ? '<p class="muted" style="margin-bottom:0">Each step done right earns Pet World coins. The lab doesn’t count toward practice, quizzes, or tests.</p>' : ''}</div>
+    ${best ? '' : '<p class="muted">Tip: start with Raise a Butterfly.</p>'}`;
+}
+function finish(){
+  if (!G || G.done) return; G.done = true;
+  const n = G.plan.length, stars = starsFor(G.right, n), key = 'best-' + G.room, best = store.get(key), newBest = stars > best;
+  if (newBest) store.set(key, stars);
+  const result = {room:G.room, stars, steps:n, right:G.right, tries:G.tries, missed:G.missed, ms:Date.now() - G.started};
+  try {
+    if (window.parent !== window) {
+      if (FROM_UNIT) window.parent.postMessage({type:'lifecycle:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'life-cycle-lab', runId:ARCADE_RUN, roundId:`${G.room}-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  const practice = Object.entries(G.missed).sort((a, b) => b[1] - a[1]).map(([s, k]) => `<li>${esc(SKILL_NAMES[s] || s)} (${k})</li>`).join('');
+  const r = ROOMS[G.room], Sp = SPECIES[G.sp];
+  app.innerHTML = `<h1>${stars === 3 ? '🏆 Head Tour Guide!' : `${r.emoji} ${esc(r.name)}: done`}</h1>
+    ${G.room === 'monarch' ? `<svg class="scene" viewBox="0 0 360 160" role="img" aria-label="your butterfly flying away"><g class="fly" style="transform:translate(60px,120px) scale(.6)" data-to="translate(300px,40px) scale(.9)"><g class="bob">${butterflySVG(Sp.wing, '', Sp.spot)}</g></g></svg>` : ''}
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${stars === 3 ? 'Every step right. The visitors are amazed!' : 'Nice work! Can you get every step next time?'}</p>
+    <div class="stats"><div><b>${G.right} of ${n}</b>steps right</div><div><b>${'⭐'.repeat(Math.max(best, stars)) || '—'}</b>best${newBest && stars ? ' 🎉' : ''}</div></div>
+    ${practice ? `<div class="card"><b>Worth another look:</b><ul>${practice}</ul></div>` : ''}
+    <p class="row"><button type="button" class="btn go" data-room="${G.room}">Play this room again</button><button type="button" class="btn" data-home>Pick another room</button></p>`;
+  flyNow();
+}
+window.__lifecycle = {SPECIES, ORGANISMS, PLANTS, monarchPlan, cellRound, poseFor, chromatids, newRoom, get G(){ return G; }, render, finish};   // for tests
+intro();
+})();
+</script>
+</body>
+</html>

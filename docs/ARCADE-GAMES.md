@@ -20,6 +20,7 @@
 | 🧩 Sentence Snap | English Unit 8, a card under each block (`sentenceSnapCardHTML`) | `sentence-snap`, `arcade/sentence-snap/index.html` | 1 per star, up to 3 a shift |
 | ⚖️ Rule Court (🔨 in the Arcade) | English Unit 9, a docket card under each block, plus the Supreme Court under the last block (`ruleCourtCardHTML`) | `rule-court`, `arcade/rule-court/index.html` | 1 per 2 cases closed with no mistakes, up to 3 a docket |
 | 🌺 Greenhouse Keeper | Biology Unit 3, a card at the bottom of the unit page (`openGreenhouse`) | `greenhouse-keeper`, `public/arcade/greenhouse-keeper/` | 1 per star, up to 3 a shift |
+| 🦋 Life Cycle Lab | Biology Unit 4, a card at the bottom of the unit page (`openLifeCycle`) | `life-cycle-lab`, `public/arcade/life-cycle-lab/` | 1 per star, up to 3 a round |
 | ⚖️ Pax Oeconomica | History Units 4 and 5, a card at the bottom of the unit page (`openPax`; Unit 4 plays the Classical empires, Unit 5 the Medieval ones) | `pax-oeconomica`, `public/arcade/pax-oeconomica/` (React source in `src/arcade/pax-oeconomica/`; both eras) | 1 per star, up to 3 a game |
 
 ## Two ways to build the Arcade copy

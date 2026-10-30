@@ -19,6 +19,9 @@ The owner asked to make Biology more hands-on, with at least one hands-on activi
 | Biology 2 | Growth | 🥔 Potato Sprouts, 🧂 Salty Seeds, 🍞 Bread Mold Race |
 | Biology 3 | Photosynthesis | 🫧 Leaf Bubbles in the Sun, 🍃 The Leaf in the Shade |
 | Biology 3 | Food and energy | 🥬 Red Cabbage Breath Test |
+| Biology 4 | Chromosomes and the cell cycle | 🧬 Pipe-Cleaner Mitosis |
+| Biology 4 | Meiosis and reproduction | 🧦 Sock Chromosomes: Meiosis on the Floor |
+| Biology 4 | Fertilization, development, and life cycles | 🔎 Life Cycle Hunt |
 
 **Sending it.**
 - She writes all three notes, with at least 3 words each. Signed in, she also adds 1 to 3 photos.
