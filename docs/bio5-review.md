@@ -485,7 +485,7 @@ Six lessons × 6 reserved against 4 per lesson: try 2 is half fresh and try 3 is
 
 - **sexVarU:t2** (`bio5:sexVarU:9xkzip`), FIX (giveaway): “They are a new mix” and “Each daughter has a new mix of her mother’s genes” said the same thing, so both could be crossed off, “like clones” pointed at the key, and the key was the longest choice. Now: **Their genes are almost exactly the same as hers** · Their genes are a reshuffled mix of their mother’s · Half their genes come from a father aphid · They carry only half as many genes as their mother. The key is now a middle length, and each wrong answer is a different misconception.
 
-The question(s) changed in this round were not blind-solved again: this run could not start a fresh agent, so a fresh reviewer still needs to solve them.
+**Round 3: blind solve of the rewrite, Oct 30, 2026. Blind score: 1/1.** A fresh reviewer solved the rewritten **sexVarU:t2** from a keyless view (`/home/claude/pool/round3-view.md`, shuffled together with two rewritten Unit 10 questions; answers in `round3-blind.jsonl`): right (B, confidence 5), no flags. The reviewer confirmed the biology (summer aphids reproduce without mating, so the daughters are near-clones, and “almost exactly” rightly allows for mutations) and found each wrong answer a clear misconception. **KEEP**; no change.
 
 ### Test-wise bot, final (after round 2)
 

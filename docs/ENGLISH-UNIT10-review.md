@@ -383,7 +383,14 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
 - **styleTechnique:t3** (`style:styleTechnique:1p095d6`), FIX (too-easy at level 3): every wrong answer used obvious slang (“kinda”, “gonna”, “whole deal”). Now each wrong answer slips in a subtler way: talking to the reader (“Stay tuned for the big vote next month!”), adding the writer’s feelings (“…next month, thank goodness.”), or adding an opinion (“Honestly, the council should vote…”). The key is a middle length.
 - **styleTechnique:t13** (new), FIX (too-easy at level 3): “chilled for a bit” was the only slang in the lab report. Now the slip is a quieter one, “After an hour, it was down to a nice, cool 22°C.”, beside formal sentences with numbers and a longer formal one, so the key is neither the longest nor the shortest choice.
 
-The question(s) changed in this round were not blind-solved again: this run could not start a fresh agent, so a fresh reviewer still needs to solve them.
+**Round 3: blind solve of the rewrites, Oct 30, 2026. Blind score: 2/2.** A fresh reviewer solved the two rewritten questions from a keyless view (`/home/claude/pool/round3-view.md`, shuffled together with the rewritten bio5 question; answers in `round3-blind.jsonl`). No key disagreements.
+
+- **styleTechnique:t3**: right (C, confidence 5), no flags. The reviewer found the stem phrase “keeps this news report at one level of formality” a little clunky but clear. **KEEP.**
+- **styleTechnique:t13**: right (D, confidence 5), flagged **too-easy**: the wrong answers are the report’s own plain sentences, so the one casual sentence stands out. **JUDGMENT** for Andy, because toughening it means rewriting the passage, and the passage is part of the prompt, so the question’s id would change (it is reserved and new today, so no class has a hide or edit saved for it) and the rewrite would need another blind solve. The two readings:
+  - *Keep it:* spotting the one sentence that slips (“a nice, cool 22°C”) is exactly the level-3 skill, and the slip is already a quiet one, not slang.
+  - *Toughen it:* every “which sentence slips” item has one odd sentence out, so make the slip subtler and the formal sentences look less plain. A draft: “We heated 200 mL of water to 100°C. Every ten minutes, we recorded its temperature with a thermometer. **The temperature dropped pretty fast at first.** After one hour, the water had cooled to 22°C.” (the slip is “pretty fast”). If Andy picks this, it needs a fresh blind solve before it goes in.
+
+No question changed in round 3.
 
 ### Test-wise bot, final (after round 2)
 
