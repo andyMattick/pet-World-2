@@ -14,7 +14,7 @@ _Lesson:_ A verb has to match its subject: one subject takes a singular verb (Th
 1. (level 1) Which verb fits? The puppies in the window ___ at everyone who walks by.
    **bark** · barks · is barking · has barked
 2. (level 1) Which sentence has correct subject-verb agreement?
-   **My sister plays the drums.** · My sister play the drums. · My sisters plays the drums. · My sister are playing the drums.
+   **My sister plays the drums.** · My sister play the drums. · My sisters plays drums. · My sister are drumming.
 3. (level 1) Which word is the subject that the verb has to agree with? The box of crayons is on the table.
    **box** · crayons · table · crayons and table
 4. (level 2) Which verb fits? Each of the kittens ___ its own blanket.
@@ -22,13 +22,13 @@ _Lesson:_ A verb has to match its subject: one subject takes a singular verb (Th
 5. (level 2) Which verb fits? Neither my brothers nor my dad ___ seafood.
    **likes** · like · are liking · were liking
 6. (level 2) Which sentence is correct in formal writing?
-   **There are three eggs in the nest.** · There is three eggs in the nest. · There’s three eggs in the nest. · Here is three eggs in the bird’s nest.
+   **There are three eggs in the nest.** · There is three eggs in the nest. · There’s three eggs in the nest. · Here is three eggs in the nest.
 7. (level 2) Which verb fits? Maya and her cousin ___ to the library every Saturday.
    **walk** · walks · is walking · has walked
 8. (level 2) Which word is the subject of this sentence? Along the fence grow three tall sunflowers.
    **sunflowers** · fence · grow · tall
 9. (level 3) Which sentence has a subject-verb agreement error?
-   **The list of chores are taped to the fridge.** · The chores on the list are easy. · One of my chores on weekends is feeding the fish. · Everyone in my family has a chore.
+   **The list of chores are taped to the fridge.** · The chores on the list are easy. · One of my chores is feeding the fish. · Everyone in my family has a chore.
 10. (level 3) Which verb fits? One of the girls who sing in the choir ___ a solo tonight.
    **has** · have · are having · were having
 11. (level 3) Which verb fits? Either the twins or their older sister ___ the dog every morning.
@@ -65,7 +65,7 @@ _Lesson:_ A pronoun has to match the word it stands for, its antecedent: one thi
 7. (level 2) Which pronoun fits? Neither the cat nor the puppies ate ___ food.
    **their** · its · her · his
 8. (level 2) Which sentence has a pronoun that doesn’t agree with its antecedent?
-   **One of the lamps lost their shade.** · Both lamps lost their shades. · The lamp lost its shade. · Each lamp in the shop has its own price tag.
+   **One of the lamps lost their shade.** · Both lamps lost their shades. · The lamp lost its shade. · Each lamp has its own price tag.
 9. (level 3) Which pronoun fits? Either Grandpa’s old trucks or his new car will need ___ tires checked.
    **its** · their · it’s · they’re
 10. (level 3) Which revision fixes the pronoun error? Every one of the trees dropped their leaves by November.
@@ -75,7 +75,7 @@ _Lesson:_ A pronoun has to match the word it stands for, its antecedent: one thi
 12. (level 3) Which pronoun fits? The museum and the zoo both lowered ___ prices for kids.
    **their** · its · her · his
 13. (level 3) Which sentence has a pronoun error?
-   **Neither of the windows had their screen in place.** · Both windows had their screens in place. · Each window in the hall had its own screen. · The windows in the hall had lost their screens in the storm.
+   **Neither of the windows had their screen in place.** · Both windows had their screens in place. · No window in the hall had its screen. · The windows had lost their screens.
 14. (level 3) Which pronoun fits? Not one of the forty paintings in the gallery had ___ price on the wall.
    **its** · their · it’s · his
 
@@ -92,17 +92,17 @@ _Newer types:_
 _Lesson:_ A complete sentence needs a subject, a verb, and a complete thought. A fragment is missing one of them: it has no subject (Ran to the bus.), no verb (The puppy with the spotted ears.), or it starts with a word like because, when, or although and never finishes the thought (Because the bus was late.). A command like “Close the door.” is complete, because its subject, you, is understood. Fix a fragment by adding what is missing or by joining it to a complete sentence.
 
 1. (level 1) Which is a complete sentence?
-   **The bus stopped at the corner.** · Stopped at the corner. · The bus at the corner. · The yellow bus at the corner by the school.
+   **The bus stopped at the corner.** · Stopped at the corner. · The bus at the corner. · The yellow bus by the school.
 2. (level 1) What is missing from this fragment? Ran all the way to the park.
    **A subject** · A verb · An end mark · A capital letter
 3. (level 1) Which word group is a fragment?
    **After the game ended.** · The game ended. · We left after the game ended. · The game ended at noon.
 4. (level 2) What is missing from this fragment? The tall girl with the red backpack.
-   **A verb that tells what she did** · A subject that tells who · A word like because at the start · A comma after girl
+   **A verb that tells what she did** · A subject that tells who · A word like because · A comma after girl
 5. (level 2) Why is this a fragment? When the lights went out.
-   **It starts with when and doesn’t finish the thought.** · It has no subject. · It is missing a verb. · It is too short to be a complete sentence with a subject.
+   **It starts with when and doesn’t finish the thought.** · It has no subject. · It is missing a verb. · It is too short to be a sentence.
 6. (level 2) Which revision fixes the fragment? Because it was raining.
-   **Because it was raining, we played inside.** · Because it was raining outside. · Because it was raining and cold. · Because it was raining very hard all afternoon.
+   **Because it was raining, we played inside.** · Because it was raining outside. · Because it was cold, wet, and raining. · Because it rained all afternoon.
 7. (level 2) Which is a complete sentence?
    **Running down the hall, Mia slipped.** · Running down the hall to the gym after lunch. · Mia, running down the hall. · The girl running down the hall.
 8. (level 2) How many fragments are in this passage? We went to the zoo. Saw the lions. The baby giraffe was my favorite. Because it was so tall.
@@ -118,7 +118,7 @@ _Lesson:_ A complete sentence needs a subject, a verb, and a complete thought. A
 13. (level 3) Which is a fragment?
    **Hoping to see a shooting star.** · We hoped to see a shooting star. · Hope for a shooting star. · We were hoping to see one.
 14. (level 3) Which revision fixes the fragment? Our dog, a shaggy mutt named Biscuit.
-   **Our dog is a shaggy mutt named Biscuit.** · Our dog, who is a shaggy mutt named Biscuit. · A shaggy mutt named Biscuit, our dog. · Our dog and a shaggy mutt named Biscuit.
+   **Our dog is a shaggy mutt named Biscuit.** · Our dog, who is a shaggy mutt named Biscuit. · A shaggy mutt named Biscuit, our pet dog. · Our dog and a shaggy mutt named Biscuit.
 
 _Newer types:_
 - Sort: Is each one a complete sentence or a fragment? Close the door. → **Complete sentence**; After the long hike. → **Fragment**; The tired hikers rested. → **Complete sentence**; Hoping for sunshine. → **Fragment**; Who left the gate open? → **Complete sentence**; The bird that sang all morning. → **Fragment**
@@ -133,15 +133,15 @@ _Lesson:_ A run-on sentence jams two complete sentences together with nothing be
 1. (level 1) Which is a run-on sentence?
    **The sun came out we went swimming.** · The sun came out, and we went swimming. · The sun came out. We went swimming. · When the sun came out, we went swimming.
 2. (level 1) What is a comma splice?
-   **Two sentences joined with only a comma** · A list with too many commas in it · A sentence that is missing its subject or its verb · A comma between a city and a state
+   **Two sentences joined with only a comma** · A list with too many commas in it · A sentence missing its verb · A comma between a city and a state
 3. (level 1) Which sentence is a comma splice?
    **I love soup, it warms me up.** · I love soup because it warms me up. · I love soup; it warms me up. · I love soup, for it warms me up.
 4. (level 2) Which revision fixes the run-on? The movie was long I fell asleep.
    **The movie was long, so I fell asleep.** · The movie was long, I fell asleep. · The movie was long so, I fell asleep. · The movie, was long I fell asleep.
 5. (level 2) Which revision does NOT fix the comma splice? We packed the car, we drove to the lake.
-   **We packed the car, then we drove to the lake.** · We packed the car; we drove to the lake. · We packed the car, and we drove to the lake. · After we packed the car, we drove to the lake.
+   **We packed the car, then we drove to the lake.** · We packed the car; we drove to the lake. · We packed the car, and we drove to the lake. · After packing the car, we drove to the lake.
 6. (level 2) Which sentence is correct?
-   **My cat is shy; she hides under the bed.** · My cat is shy, she hides under the bed. · My cat is shy she hides under the bed. · My cat is shy and, she hides under the bed.
+   **My cat is shy; she hides under the bed.** · My cat is shy, she hides under the bed. · My cat is shy she hides under the bed. · My cat is shy; and she hides under the bed.
 7. (level 2) What kind of error is in this sentence? Grandma baked bread, it smelled amazing.
    **A comma splice** · A fragment · A dangling modifier · A pronoun error
 8. (level 2) Which mark fixes the run-on? The bell rang___ the students rushed out.
@@ -157,7 +157,7 @@ _Lesson:_ A run-on sentence jams two complete sentences together with nothing be
 13. (level 3) How many complete sentences are jammed into this run-on? My brother plays soccer my sister swims I take karate.
    **3** · 2 · 1 · 4
 14. (level 3) Which sentence is a comma splice?
-   **Mr. Diaz smiled at the class, everyone had passed.** · Mr. Diaz smiled at the class, for everyone had passed. · Mr. Diaz, our teacher, smiled because everyone had passed. · Smiling at the class, Mr. Diaz said that everyone had passed.
+   **Mr. Diaz smiled at the class, everyone had passed.** · Mr. Diaz smiled at the class, for everyone had passed. · Mr. Diaz smiled; everyone had passed. · Smiling at the class, Mr. Diaz said that everyone had passed.
 
 _Newer types:_
 - Sort: Is each one correct, a run-on, or a comma splice? The rain stopped, and the sun came out. → **Correct**; The rain stopped the sun came out. → **Run-on**; The rain stopped, the sun came out. → **Comma splice**; The rain stopped; the sun came out. → **Correct**; We ran inside we were soaked. → **Run-on**; We ran inside, we were soaked. → **Comma splice**
@@ -172,7 +172,7 @@ _Newer types:_
 _Lesson:_ A describing phrase at the start of a sentence, like “Running to the bus,” describes whoever comes right after the comma. If that word can’t be doing the action, the modifier is dangling: “Running to the bus, my backpack fell open” says the backpack was running. Fix it by putting the real doer right after the comma (Running to the bus, I felt my backpack fall open) or by giving the phrase its own subject (While I was running to the bus, …).
 
 1. (level 1) An opening phrase like “Walking home,” describes which part of the sentence?
-   **The subject right after the comma** · The noun or verb at the very end of the sentence · The verb in the sentence · The noun right before the comma
+   **The subject right after the comma** · The noun at the very end · The verb in the sentence · The noun right before the comma
 2. (level 1) Which sentence has a dangling modifier?
    **Barking loudly, the mail was dropped.** · Barking loudly, the dog scared the mail carrier. · The dog barked loudly at the mail carrier. · The mail carrier dropped the mail.
 3. (level 1) Which sentence is correct?
@@ -180,13 +180,13 @@ _Lesson:_ A describing phrase at the start of a sentence, like “Running to the
 4. (level 2) Read it the way it is written: who or what is eating popcorn? Eating popcorn, the movie seemed even better to Jada.
    **The movie** · Jada · The popcorn · The theater
 5. (level 2) The dog, not Mom, is muddy. Which revision fixes the sentence? Covered in mud, Mom washed the dog.
-   **Mom washed the dog, which was covered in mud.** · Covered in mud, Mom washed the dog right away. · Covered in mud, the dog was washing Mom. · Mom, covered in mud, washed the dog.
+   **Mom washed the dog, which was covered in mud.** · Covered in mud, Mom washed the dog. · Covered in mud, the dog was washing Mom. · Mom, covered in mud, washed the dog.
 6. (level 2) Which sentence has a dangling modifier?
-   **After finishing my homework, the TV was turned on.** · After finishing my homework, I turned on the TV. · After I had finished all of my homework, I turned on the TV. · I turned on the TV after finishing my homework.
+   **After finishing my homework, the TV was turned on.** · After finishing my homework, I turned on the TV. · After I finished my homework, I turned on the TV. · I turned on the TV after finishing my homework.
 7. (level 2) Which sentence is correct?
-   **While I was hiking up the hill, my legs got tired.** · Hiking up the hill, my legs got tired. · Hiking up the hill, tiredness hit my legs. · While hiking up the steep hill behind the school, my legs got tired.
+   **While I was hiking up the hill, my legs got tired.** · Hiking up the hill, my legs got tired. · Hiking up the hill, tiredness hit my legs. · While hiking up the hill, my legs got tired.
 8. (level 2) Why is this a dangling modifier? Flying over the city, the buildings looked tiny.
-   **It says the buildings were flying.** · It needs a semicolon instead of the comma. · The verb looked should be look. · Flying should be the word flew.
+   **It says the buildings were flying.** · It needs a semicolon. · The verb looked should be look. · Flying should be the word flew.
 9. (level 3) Which revision fixes the dangling modifier? Having lost the key, the door wouldn’t open.
    **Having lost the key, we couldn’t open the door.** · Having lost the key, the door couldn’t be opened. · The door wouldn’t open, having lost the key. · Having lost the key, the door wouldn’t open for us.
 10. (level 3) Which sentence does NOT have a dangling modifier?
@@ -198,7 +198,7 @@ _Lesson:_ A describing phrase at the start of a sentence, like “Running to the
 13. (level 3) In which sentence does the opening phrase describe the right person?
    **Holding the trophy high, Coach Kim smiled for the camera.** · Holding the trophy high, the camera flashed at Coach Kim. · Holding the trophy high, a smile spread across Coach Kim’s face. · Holding the trophy high, the photo showed Coach Kim smiling.
 14. (level 3) Which sentence is correct?
-   **Once covered with frosting, the cake sat on the table.** · Once covered with frosting, Dad set the cake on the table. · Once covered with frosting, the table held the cake. · Once covered with frosting, we set out plates for the cake.
+   **Once covered with frosting, the cake sat on the table.** · Once covered with frosting, Dad set the cake on the table. · Once covered with frosting, the table held the birthday cake. · Once covered with frosting, we set out plates for the cake.
 
 _Newer types:_
 - Two-part: Part A: Which sentence has a dangling modifier? Purring softly, the kitten curled up in my lap. · **Purring softly, my lap was warm from the kitten.** · The kitten, purring softly, curled up in my lap. / Part B: Which rule does that sentence break? **An opening phrase has to describe the subject right after the comma.** · Items in a list have to be in the same form. · A verb has to agree in number with its subject, even when other words come between them.
@@ -213,15 +213,15 @@ _Lesson:_ Parallel structure means the ideas in a list or a pair are written in 
 1. (level 1) Which sentence has parallel structure?
    **I like hiking, swimming, and biking.** · I like hiking, swimming, and to bike. · I like to hike, swimming, and biking. · I like hiking, to swim, and bike rides.
 2. (level 1) What does parallel structure mean?
-   **Items in a list or pair use the same form.** · Every sentence in a paragraph is the same length. · Two sentences are joined by a semicolon. · Each item in a list starts with a capital.
+   **Items in a list or pair use the same form.** · Every sentence in a paragraph is about the same length. · Two sentences are joined by a semicolon. · Each item in a list starts with a capital.
 3. (level 1) Which word keeps the list parallel? Our dog likes running, digging, and ___.
    **napping** · to nap · naps · a nap
 4. (level 2) Which sentence is NOT parallel?
-   **The coach told us to stretch, to drink water, and that we should rest.** · The coach told us to stretch, drink water, and rest. · The coach told us to stretch, to drink water, and to rest. · The coach told us that we should stretch first, drink some water, and then rest.
+   **The coach told us to stretch, to drink water, and that we should rest.** · The coach told us to stretch, drink water, and rest. · The coach told us to stretch, to drink water, and to rest. · The coach told us that we should stretch, drink water, and rest.
 5. (level 2) Which revision fixes the faulty parallelism? Mia is smart, funny, and has kindness.
    **Mia is smart, funny, and kind.** · Mia is smart, funny, and acts kindly. · Mia is smart, being funny, and kind. · Mia is smart, funny, and kindly.
 6. (level 2) Which sentence is parallel?
-   **We can walk to the park or ride our bikes.** · We can walk to the park or riding our bikes. · We can walk to the park or by bike. · We can walk to the park, or bike riding.
+   **We can walk to the park or ride our bikes.** · We can walk to the park or riding bikes. · We can walk to the park or by bike. · We can walk to the park, or bike riding.
 7. (level 2) Which choice completes the sentence with parallel structure? The recipe says to chop the onions, stir the sauce, and ___.
    **boil the pasta** · you should boil the pasta · boiling the pasta · boils the pasta
 8. (level 2) Which sentence uses either… or correctly?
@@ -307,3 +307,49 @@ A separate reviewer answered all 96 scored items from the student view, without 
 Fixed (8): The rule “an opening phrase describes the word right after the comma” was wrong, since in “Walking home, the tired girl…” that word is “the”. It now says *the subject* right after the comma, in the level-1 item (1712tp8 → 7vocek), the Purring-softly Part B (1l4pcyo → 16onlwg), the lesson text and the term card. In the snow-day fragment two-part (1ljc4wy → 9jjs2b), Part A gets a longer wrong choice and Part B says “a subject and a main verb”. The run-on mark “-” could be read as a dash, which is a fair fix, so it is now “?”. “Leo and Sam forgot ___ jackets” now uses the homophones there and they’re. The three level-2 parallel-structure items lost their broken-on-sight choices. The but/yet fill was already right, since it accepts both.
 
 Judgment calls for Andy: (1) “Each of the kittens ___ its own blanket”: “its” in the stem cues the singular, and removing it changes the id. (2) In “Tired after the long game, the bus ride…”, the key names “the players”, while “we” fits the original just as well. (3) “The class… finished ___ mural” and “The team won its…” key the American singular “its”, where British English allows “their”.
+
+## Difficulty and test-wise bot, Oct 30, 2026
+
+Done under the owner rule in docs/BLIND-REVIEW.md. The bot is `node scripts/test-wise-bot.mjs --courses conventions --attempts 1500`, run against all five new units together. Chance is about 20–24%, not 25%, because the select-all, order, sort, tap, typed and Punnett items are almost impossible to guess. A strategy **fails the unit** if it comes within 15 points of the pass mark or beats chance by more than 10. “Before” is the same bot run on this branch before the fixes.
+
+### Difficulty by level
+
+| level | items | share | blind right | mean confidence | too-easy flags | trained bot (learnedXU) per item, before → after |
+|---|---|---|---|---|---|---|
+| L1 | 18 | 19% | 18/18 | 5.00 | 0 | .28 → .33 |
+| L2 | 37 | 39% | 37/37 | 4.89 | 4 | .31 → .37 |
+| L3 | 41 | 43% | 41/41 | 4.95 | 0 | .30 → .13 |
+
+Is L3 harder? Yes. Its stems are longer and its errors are hidden in longer sentences, and after the fixes the trained bot gets .13 at L3 against .37 at L2. Compared with Khan: about the same.
+
+### Test-wise bot, before and after
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Agreement Quiz (4 q) | 75% | 20.5 | shortest 35.4 (FAIL: shortest) | shortest 29.3 | holds (45.7 below pass, +8.8 over chance) |
+| Fragments and run-ons Quiz (4 q) | 75% | 24 | middle 36.1 (FAIL: middle, learnedXU) | learnedXU 29.7 | holds (45.3 below pass, +5.7 over chance) |
+| Dangling modifiers and parallel structure Quiz (4 q) | 75% | 21.7 | middle 34.4 (FAIL: middle) | shortest 25.5 | holds (49.5 below pass, +3.8 over chance) |
+| Unit test (18 q) | 83.3% | 22 | middle 30.3 | shortest 25.4 | holds (57.9 below pass, +3.4 over chance) |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 59.6 / 71.3 / 79.4 (FAIL) | 53.8 / 56.9 / 58.8 | holds |
+
+Single-attempt quiz pass chance (best bot) after: Agreement Quiz 6%, Fragments and run-ons Quiz 7%, Dangling modifiers and parallel structure Quiz 5%; before: 11%, 13%, 12%. Test-only items per lesson: {"subjVerbAgree":6,"pronAntecedent":6,"fragments":6,"runOns":6,"danglingMods":6,"parallelStructure":6}.
+
+“Best bot” is the highest-scoring of the bot’s strategies on that assessment. The bot also tried longest, shortest, middle-length, most specific, prompt overlap, absolute words, grammar agreement, odd one out, both/all, letter A, majority vote and its opposite, the two trained bots and generated-answer patterns. The memorizer remembers every right answer it was shown in one practice per lesson, each quiz, the 8-question review before every try and the test itself, and uses its best trick on anything new. Position is still clean: the key is spread evenly over A–D, a retake redraws the items, and a repeated item keeps its letter only about 25% of the time.
+
+### What was fixed
+
+23 multiple-choice items got new wrong answers. Many keys had been the shortest choice, because the wrong forms add letters (“has” vs “are having”). Some wrong answers were shortened so the key is sometimes the longest. “Which is a dependent clause?” no longer has two wrong answers using “all”. No ids changed.
+
+**Systemic changes (all units):**
+- **Key lengths balanced.** The old rule “the right answer is never the longest” had made the key the middle-length choice. Dropping the longest and shortest choices and guessing scored 29–37%. Wrong answers were shortened or lengthened so that in each lesson the key is the longest choice about 1 time in 4 and the shortest about 1 time in 4, in both the practice pool and the test-only pool. Only wrong answers changed, so ids are stable.
+- **Odd-one-out cues removed.** Where the key was the only choice with a comma, “can”, “because”, “never”, a parenthesis or a semicolon, one wrong answer now shares that feature.
+- **Test-only questions.** About 2 in 5 of each lesson’s fixed questions (6–7 here) are now kept for the unit test (`testOnlyIds`, src/shared/questionTypes.js). Practice, quizzes and the review never show them.
+- **No answers after a unit-test miss.** A unit-test miss now names the lesson to go back to and doesn’t show or highlight the right answer (`testMissText`, game.js; stage.js skips the “I read that it’s…” bubble). Practice, quizzes and the review still teach the answer.
+- The bot (`scripts/test-wise-bot.mjs`) and the exporter (`scripts/blind-export.mjs`) are in the repo; see docs/BLIND-REVIEW.md.
+
+### Judgment calls for Andy
+
+- The earlier judgment calls stand (blind review section above).
+- **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
+- **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
+- **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.

@@ -95,7 +95,7 @@ function historyHTML(history, science, crowd){
     const {npc, speaker, said} = askerFor(h.prompt, science, h.index, crowd);
     return `<div class="talk-bubble ask past"><span class="speaker">${npc} ${esc(speaker)}</span>${esc(said)}</div>
       <div class="talk-bubble reply past${h.correct ? '' : ' missed'}"><span class="speaker">You</span>${esc(h.text)}</div>
-      ${h.correct ? '' : `<div class="talk-bubble ask past fix"><span class="speaker">${npc} ${esc(speaker)}</span>Hmm, I read that it's: ${esc(h.answer)}</div>`}`;
+      ${h.correct || h.answer == null ? '' : `<div class="talk-bubble ask past fix"><span class="speaker">${npc} ${esc(speaker)}</span>Hmm, I read that it's: ${esc(h.answer)}</div>`}`;
   }).join('')}</div>`;
 }
 

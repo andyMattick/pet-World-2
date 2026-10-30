@@ -87,6 +87,10 @@ This applies to **every unit in every subject, now and in the future** (English,
 
 `npm run verify` checks all of this. Never remove or weaken these steps to make a check pass.
 
+## Blind review and test-wise bot (owner rule, Oct 30, 2026)
+
+Every time questions are written or changed in any unit, subject or grade: export the keyless test view (`node scripts/blind-export.mjs --courses <ids> --out <folder outside the repo>`), have **fresh** agents (never the builder) blind-solve it, score it against the key (FIX / KEEP / JUDGMENT), check difficulty by level (L3 clearly harder, about 40% L3, compared with Khan), and run the test-wise bot (`node scripts/test-wise-bot.mjs --courses <ids>`: longest, shortest, middle-length, specific, overlap, absolute words, grammar, odd one out, both/all, position, vote, trained bots, generated-answer patterns, memorizer). **Any strategy within 15 points of the pass mark or more than about 10 points above chance fails the unit**; fix and rerun until the bot exits 0. Keep the systems it relies on: test-only questions (`testOnlyIds` in `src/shared/questionTypes.js`; `englishQuestions(..., {test:true})` only for the unit test) and no right answer shown after a unit-test miss (`testMissText`). See `docs/BLIND-REVIEW.md` and `CONTENT-RULES.md`.
+
 ## Games go in the unit and in the Arcade (owner rule, Oct 26, 2026)
 
 Every time the owner says something is a game, it goes in **both** places: inside its unit (or shop station) **and** in the 🕹️ Arcade (`ARCADE_GAMES` in `src/shared/registry.ts`, with a ticket payout in `arcadeModuleMessage`). Add it to the unit-game list in `scripts/verify.mjs` and the table in `docs/ARCADE-GAMES.md`. `npm run verify` checks the list. See `docs/ARCADE-GAMES.md` for the two ways to build the Arcade copy.

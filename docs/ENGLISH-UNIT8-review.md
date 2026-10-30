@@ -16,29 +16,29 @@ _Lesson:_ A declarative sentence makes a statement (The bus is late.). An interr
 2. (level 1) What kind of sentence is this? Please return your books by Friday.
    **Imperative** · Declarative · Interrogative · Exclamatory
 3. (level 1) Which sentence is interrogative?
-   **Where did you leave the map?** · Leave the map on the table. · I left the map on the table. · The map is on the table, I think.
+   **Where did you leave the map?** · Please leave the map on the table. · The map is on the table, I think. · I left the map over there today.
 4. (level 2) What kind of sentence is this? Hand me the scissors, please.
-   **Imperative** · Interrogative · Declarative · Exclamatory
+   **Imperative** · Interrogative · Declarative · Fragment
 5. (level 2) Who is the subject of this sentence? Close the door quietly.
    **you** · door · Close · quietly
 6. (level 2) Which sentence is declarative?
    **I wonder whether the bus is late.** · Is the bus late? · Call the bus company and ask about the delay. · How late the bus is!
 7. (level 2) Which sentence is imperative?
-   **Watch out for the falling books!** · The falling books scared us! · Did the books fall on you? · What a loud crash the books made!
+   **Watch out for the falling books!** · The falling books scared all of us! · Did the falling books land on you? · What a loud crash the books made!
 8. (level 2) Which end mark belongs in the blank? Can you tell me where the gym is___
    **?** · . · ! · ;
 9. (level 3) What kind of sentence is this? Tell me why the sky is blue.
-   **Imperative** · Interrogative · Declarative · Exclamatory
+   **Imperative** · Interrogative · Declarative · Fragment
 10. (level 3) Which sentence should end with a period, not a question mark?
    **Maya asked whether the pool was open** · Is the pool open · Did Maya ask if the pool was open today · Why is the pool closed
 11. (level 3) How many of these are imperative sentences? (1) Sit down. (2) You sat down. (3) Please sit here. (4) Where should I sit?
    **Two** · One · Three · Four
 12. (level 3) Which sentence is exclamatory?
-   **What a huge dog that is!** · Look at that huge dog. · Is that dog huge? · That dog is huge, isn’t it?
+   **What a huge dog that is!** · Look at that huge dog. · Is that dog huge? · That dog’s huge, right?
 13. (level 3) Ana wrote, “Turn left at the bakery.” She wants to ask for directions instead of giving them. Which sentence does that?
    **Where should I turn after the bakery?** · Turn left at the bakery, okay? · Please turn left when you get to the bakery. · Did you turn left at the bakery?
 14. (level 3) Which sentence has the wrong end mark?
-   **Do you know who wrote this book.** · Tell me who wrote this book before the bell rings. · I know who wrote this book. · Who wrote this book?
+   **Do you know who wrote this book.** · Tell me who wrote this book, please. · I know who wrote this book. · Who wrote this book for our class?
 
 _Newer types:_
 - Sort: What kind of sentence is each one? The bus is late. → **Declarative**; Is the bus late? → **Interrogative**; Wait here for the next bus. → **Imperative**; I wonder when the bus will come. → **Declarative**; Please sit down. → **Imperative**; Where is your ticket? → **Interrogative**; Watch your step! → **Imperative**
@@ -53,7 +53,7 @@ _Newer types:_
 _Lesson:_ A simple sentence has one independent clause: one subject-and-verb pair that can stand alone. It can still have a compound subject or a compound verb (Jo and Max ran and jumped.). A compound sentence joins two or more independent clauses, either with a comma and a joining word (for, and, nor, but, or, yet, so) or with a semicolon: The rain stopped, and the sun came out.
 
 1. (level 1) Which sentence is compound?
-   **The dog barked, and the cat ran away.** · The big brown dog barked loudly at the frightened cat. · The dog and the cat ran away. · The dog barked and ran away.
+   **The dog barked, and the cat ran away.** · When the dog barked, the cat ran. · The dog and the cat ran away. · The dog barked and ran away.
 2. (level 1) How many independent clauses does a simple sentence have?
    **One** · Two · At least two · Three
 3. (level 1) Which word can join two independent clauses after a comma?
@@ -61,23 +61,23 @@ _Lesson:_ A simple sentence has one independent clause: one subject-and-verb pai
 4. (level 2) Is this sentence simple or compound? My aunt and my uncle drove to the beach and swam all day.
    **Simple, with a compound subject and a compound verb** · Compound, with a compound subject and a compound verb · Compound, because it uses the word and twice · Simple, with a compound subject and just one verb
 5. (level 2) Which sentence is a compound sentence?
-   **I wanted to swim, but the pool was closed.** · I wanted to swim in the pool after lunch. · After lunch, I wanted to swim in the pool. · My brother and I wanted to swim but stayed home.
+   **I wanted to swim, but the pool was closed.** · I wanted to swim in the big pool after lunch. · After lunch, I really wanted to swim in the pool. · My brother and I wanted to swim but stayed home.
 6. (level 2) Which compound sentence is punctuated correctly?
    **We packed lunch, and we drove to the lake.** · We packed lunch and, we drove to the lake. · We packed lunch, we drove to the lake. · We packed, lunch and we drove to the lake.
 7. (level 2) Which joining word fits best? I studied hard, ___ I passed the test.
    **so** · but · or · nor
 8. (level 2) Which pair could be joined into a compound sentence?
-   **The bell rang. Everyone ran outside.** · The bell rang. Because it was noon. · When the bell rang. Everyone ran outside. · The bell. Rang loudly at noon.
+   **The bell rang. Everyone ran outside.** · The bell rang. Because it was noon by then. · When the bell rang. Everyone ran outside. · The bell. It rang very loudly at noon.
 9. (level 3) Which sentence is simple?
-   **Lena and her cousins baked bread and sold it at the fair.** · Lena baked bread, and then her cousins sold all of it at the fair. · Lena baked bread; her cousins sold it at the fair. · Lena baked bread, so her cousins sold it at the fair.
+   **Lena and her cousins baked bread and sold it at the fair.** · Lena baked bread, and her cousins sold it. · Lena baked bread; her cousins sold it at the fair. · Lena baked bread, so her cousins sold it at the fair.
 10. (level 3) Which sentence correctly joins two independent clauses?
-   **The game ended; the fans went home.** · The game ended, the fans went home. · The game ended the fans went home. · The game ended, the fans, went home.
+   **The game ended; the fans went home.** · The game ended, the fans then went home. · The game ended the fans all went home. · The game ended; and the fans went home.
 11. (level 3) How many independent clauses are in this sentence? The storm knocked out the power, so we lit candles, and Dad told stories.
    **Three** · Two · One · Four
 12. (level 3) Why is this sentence simple, not compound? The puppy chased the ball and brought it back.
    **It has one subject doing two actions.** · It has two separate subject-and-verb pairs. · It has a comma before the word and. · It has a helping verb.
 13. (level 3) Which sentence is compound?
-   **Sam had no pencil, nor did Ty have one.** · Neither Sam nor Ty had a pencil. · Sam and Ty both forgot their pencils. · Sam forgot his pencil and borrowed one.
+   **Sam had no pencil, nor did Ty have one.** · Neither Sam nor Ty had a pencil. · Sam, like Ty, forgot his pencil. · Sam forgot his pencil and borrowed one from Ty.
 14. (level 3) Which sentence is compound?
    **The movie was long, yet nobody left early.** · The long movie kept everybody in their seats. · Nobody left the long movie early. · Although the movie was long, nobody left early.
 
@@ -106,7 +106,7 @@ _Lesson:_ Join two simple sentences into a compound sentence with a comma and a 
 7. (level 2) Which sentence combines these correctly with a semicolon? Owls hunt at night. Hawks hunt during the day.
    **Owls hunt at night; hawks hunt during the day.** · Owls hunt at night; and hawks hunt during the day. · Owls hunt; at night hawks hunt during the day. · Owls hunt at night, hawks; hunt during the day.
 8. (level 2) Which pair of sentences could become one simple sentence with a compound subject?
-   **Lin plays the drums. Kofi plays the drums.** · Lin plays the drums. Kofi plays soccer. · Lin plays the drums. She practices daily. · Lin plays the drums. The drums are very loud.
+   **Lin plays the drums. Kofi plays the drums.** · Lin plays the drums. Kofi plays soccer. · Lin plays the drums. She practices daily. · Lin plays the drums. They are loud.
 9. (level 3) Original: The bridge was closed. We took the long way home. Which combination changes the meaning?
    **The bridge was closed, yet we took the long way home.** · The bridge was closed, so we took the long way home. · The bridge was closed; we took the long way home. · We took the long way home, for the bridge was closed.
 10. (level 3) Which sentence combines these into a simple sentence with a compound verb? The museum opens at nine. The museum closes at five.
@@ -114,7 +114,7 @@ _Lesson:_ Join two simple sentences into a compound sentence with a comma and a 
 11. (level 3) Which is NOT a correct way to combine these? Jamal set the table. His sister cooked dinner.
    **Jamal set the table, his sister cooked dinner.** · Jamal set the table, and his sister cooked dinner. · Jamal set the table; his sister cooked dinner. · Jamal set the table while his sister cooked dinner.
 12. (level 3) Which correctly splits this into two simple sentences? The cat climbed the tree, but it couldn’t get down.
-   **The cat climbed the tree. It couldn’t get down.** · The cat climbed the tree. Couldn’t get down. · The cat climbed the tree, it couldn’t get down. · The cat climbed the tree. But couldn’t get down.
+   **The cat climbed the tree. It couldn’t get down.** · The cat climbed the tree. Couldn’t get down. · The cat climbed the tree, it couldn’t get down. · The cat climbed up. But couldn’t get down.
 13. (level 3) Which joining word fits? Maya didn’t like the soup, ___ did she like the salad.
    **nor** · or · but · so
 14. (level 3) Which rewrite turns this compound sentence into a simple sentence with the same meaning? Theo grabbed his coat, and he ran out the door.
@@ -131,11 +131,11 @@ _Newer types:_
 _Lesson:_ A dependent clause has a subject and a verb but can’t stand alone, because it starts with a word like because, when, although, if, since, after or until. A complex sentence has one independent clause and at least one dependent clause (When the bell rang, we left.). A compound-complex sentence has at least two independent clauses and at least one dependent clause (When the bell rang, we left, and the hall got quiet.). Put a comma after a dependent clause that starts the sentence.
 
 1. (level 1) Which sentence is complex?
-   **Because it was cold, we wore mittens.** · It was cold, so we wore mittens. · It was cold; we wore mittens. · We wore mittens and hats in the cold.
+   **Because it was cold, we wore mittens.** · It was cold, so all of us wore mittens. · It was very cold outside; we wore mittens. · We wore warm mittens and hats in the cold.
 2. (level 1) Which word often begins a dependent clause?
    **because** · and · but · or
 3. (level 1) What does a complex sentence have?
-   **One independent clause and at least one dependent clause** · Two independent clauses joined by a comma and a joining word · One subject and one verb, and nothing else · Two dependent clauses and no independent clause
+   **One independent clause and at least one dependent clause** · Two independent clauses and a joining word · One subject and one verb, and nothing else · Two dependent clauses and no independent clause
 4. (level 2) What is the dependent clause? We stayed inside until the storm passed.
    **until the storm passed** · We stayed inside until · We stayed · the storm
 5. (level 2) Which sentence is compound-complex?
@@ -151,11 +151,11 @@ _Lesson:_ A dependent clause has a subject and a verb but can’t stand alone, b
 10. (level 3) Which sentence is complex, not compound?
    **Since the store was closed, we went home.** · The store was closed, so we went home. · The store was closed; we went home. · The store was closed, and we went home early.
 11. (level 3) Which sentence is NOT complex?
-   **We waited for an hour, but the bus never came.** · We waited until the bus came. · If the bus comes, we’ll wave. · The bus that we waited for all morning finally came.
+   **We waited for an hour, but the bus never came.** · We waited until the bus came. · If the bus never comes, we’ll walk. · The bus that we waited for all morning finally came.
 12. (level 3) How many dependent clauses are in this sentence? When Grandpa visits, he tells stories that make us laugh.
    **Two** · One · Three · Zero
 13. (level 3) Which revision turns this compound sentence into a complex sentence? The power went out, so we played board games.
-   **Because the power went out, we played board games.** · The power went out; we played board games. · The power went out, and we played board games. · The power went out, so we played many board games.
+   **Because the power went out, we played board games.** · The power went out at night; we played board games. · The power went out, and then we played board games. · The power went out, so we played many fun board games.
 14. (level 3) Which sentence is punctuated correctly?
    **Although Kim was nervous, she sang, and the crowd loved it.** · Although Kim was nervous she sang and, the crowd loved it. · Although, Kim was nervous, she sang and the crowd loved it. · Although Kim was nervous, she sang the crowd loved it.
 
@@ -198,7 +198,7 @@ _Lesson:_ The complete subject is who or what the sentence is about (The tall gi
 13. (level 3) What is the complete subject? Lions, tigers, and bears live at the city zoo.
    **Lions, tigers, and bears** · Lions · Lions, tigers, and bears live · the city zoo
 14. (level 3) Which sentence has a compound subject?
-   **The coach and the players cheered.** · The coach cheered and clapped. · The coach cheered for the players. · The coach’s players cheered loudly.
+   **The coach and the players cheered.** · The coach cheered and clapped loudly. · The coach cheered for all the players. · The coach’s players cheered loudly.
 
 _Newer types:_
 - Tap the words: Tap the simple subject. The tiny **kitten** under the porch meowed all night.
@@ -229,11 +229,11 @@ _Lesson:_ The direct object receives the action of the verb: it answers “what?
 9. (level 3) What is the indirect object? Will you lend me your bike?
    **me** · bike · you · lend
 10. (level 3) Which sentence has a direct object but no indirect object?
-   **Lila told a funny story to us.** · Lila told us a funny story. · Lila told her friends a story. · Lila gave the dog a bath.
+   **Lila told a funny story to us.** · Lila told us a really funny story. · Lila told her best friends a story. · Lila gave the muddy dog a bath.
 11. (level 3) What is the direct object? Whom did you invite?
    **Whom** · you · invite · did
 12. (level 3) Which sentence has no direct object?
-   **The baby slept all afternoon.** · The baby grabbed my finger. · The baby threw her rattle across the room. · The baby gave me a smile.
+   **The baby slept all afternoon.** · The baby grabbed my finger. · The baby threw her rattle. · The baby gave me a smile.
 13. (level 3) In which sentence is “Sam” an indirect object?
    **We bought Sam a new hat.** · We bought a new hat for Sam. · Sam bought a new hat. · We saw Sam at the hat store.
 14. (level 3) Which words are the direct objects? The waiter brought my parents their menus and some water.
@@ -256,23 +256,23 @@ _Lesson:_ A clause is a group of words with a subject and its verb (the dog bark
 2. (level 1) Which group of words is a phrase?
    **under the bed** · the cat hid · she slept · we left early
 3. (level 1) What does every clause have?
-   **A subject and a verb** · A comma and a period · A joining word like and · At least ten words
+   **A subject and a verb** · A comma and a period at the end · A joining word like and · At least ten words in a row
 4. (level 2) Which group of words is a phrase?
-   **after the long, boring meeting** · after the meeting ended · the meeting ended · because the meeting ran very late
+   **after the long, boring meeting** · after the meeting ended · the meeting ended · because the meeting ran late
 5. (level 2) Is “running through the sprinklers” a phrase or a clause?
    **A phrase, because nobody in it is doing the running** · A clause, because running is an action verb · A clause, because it has a subject and a verb in it · A phrase, because it has no nouns
 6. (level 2) Which group of words is a clause?
-   **until the sun came up** · before sunrise · at the crack of dawn · with the bright rising sun above
+   **until the sun came up** · before sunrise · at the crack of dawn · with the rising sun
 7. (level 2) How many clauses are in this sentence? We ate lunch after the show ended.
    **Two** · One · Three · Four
 8. (level 2) Which group of words can stand alone as a sentence?
    **The phone rang.** · When the phone rang. · Ringing loudly. · The ringing phone in the kitchen.
 9. (level 3) Which group of words is a clause, even though it can’t stand alone?
-   **because we were late** · because of the heavy rain outside · during the storm · after a long nap
+   **because we were late** · because of the rain · during the storm · after a long nap
 10. (level 3) Which group of words is a prepositional phrase? The kite that I built flew over the trees.
    **over the trees** · that I built · The kite that I built · I built
 11. (level 3) Which group of words is NOT a clause?
-   **to win the race** · she won the race · if she wins the race · who won the race
+   **to win the race** · she won · if she wins the race · who won the race
 12. (level 3) Which of these is a sentence fragment?
    **Hoping for a snow day.** · We hoped for a snow day. · Hope for a snow day. · It snowed.
 13. (level 3) How many clauses are in this sentence? The book that you lent me was so good that I read it twice.
@@ -293,19 +293,19 @@ _Lesson:_ An independent clause can stand alone as a sentence (we went inside). 
 1. (level 1) Which is an independent clause?
    **the pizza arrived** · when the pizza arrived · because the pizza was late · after the pizza
 2. (level 1) Which is a dependent clause?
-   **if you finish early** · you finish early · you can finish your work early · finish early
+   **if you finish early** · you finish your part early · you can finish your work early · finish your part early
 3. (level 1) Why can’t “Because my alarm didn’t ring” stand alone?
-   **It starts with because, so the thought is unfinished.** · It is too short to be a sentence, since it has only five words. · It has no subject. · It has no verb.
+   **It starts with because, so the thought is unfinished.** · It is too short to be a sentence. · It has no subject. · It has no verb.
 4. (level 2) What is the independent clause? Unless it rains, we will hike tomorrow.
    **we will hike tomorrow** · Unless it rains · it rains · Unless it rains, we will hike
 5. (level 2) What is the dependent clause? The movie that we watched last night was scary.
    **that we watched last night** · The movie was scary · The movie · The movie that we watched last night
 6. (level 2) Which sentence has a dependent clause?
-   **I smiled when I saw the puppy.** · I smiled and petted the puppy. · I smiled at the cute puppy. · I saw the puppy, and I smiled.
+   **I smiled when I saw the puppy.** · I smiled and then petted the puppy. · I smiled at the cute little puppy. · I saw the puppy, and I smiled.
 7. (level 2) Which word turns “the bus stopped” into a dependent clause?
    **after** · and · the · so
 8. (level 2) Which is a complete sentence?
-   **We cheered when the team scored.** · When the team scored. · Because our team scored the winning goal at last. · The team that scored the goal.
+   **We cheered when the team scored.** · When the team scored. · Because our team scored. · The team that scored the goal.
 9. (level 3) Which group of words is a dependent clause?
    **who lives next door** · next to the door · the woman next door · she lives next door
 10. (level 3) Which is a fragment?
@@ -317,7 +317,7 @@ _Lesson:_ An independent clause can stand alone as a sentence (we went inside). 
 13. (level 3) Which of these is an independent clause?
    **then the bell rang** · when the bell rang · as soon as the bell rang · until the bell rang
 14. (level 3) What does the dependent clause tell? We stayed inside because it was freezing.
-   **Why we stayed inside** · When we stayed inside · Where we stayed · Who stayed inside
+   **Why we stayed inside** · When we stayed inside · Where we stayed all day · Who stayed inside with us
 
 _Newer types:_
 - Sort: Is each clause independent or dependent? we packed the car → **Independent**; before we left → **Dependent**; since it was late → **Dependent**; the trip was long → **Independent**; although we were tired → **Dependent**; then we sang songs → **Independent**
@@ -332,11 +332,11 @@ _Lesson:_ Put a describing phrase or clause right next to the word it describes.
 1. (level 1) Which sentence is clear?
    **Riding my bike, I saw a deer.** · I saw a deer riding my bike. · A deer, riding my bike, I saw. · Riding my bike, a deer was seen by me.
 2. (level 1) What is wrong with this sentence? The boy fed the goat wearing a red cap.
-   **It sounds like the goat is wearing the cap.** · It needs a comma after boy and another comma after goat. · It is missing a verb. · It has two subjects.
+   **It sounds like the goat is wearing the cap.** · It needs commas after boy and goat. · It is missing a verb. · It has two subjects.
 3. (level 1) Where should a describing phrase go?
-   **Right next to the word it describes** · As far as possible from the word it describes · At the very start of the sentence · Right after the verb
+   **Right next to the word it describes** · Far from the word it describes · At the very start of the sentence · Right after the verb
 4. (level 2) Which sentence is clear?
-   **Dad found his old coat hanging in the closet.** · Hanging in the closet, Dad found his old coat. · Dad, hanging in the closet, found his old coat. · Hanging in the closet, his old coat Dad found.
+   **Dad found his old coat hanging in the closet.** · Hanging in the closet, Dad found his old coat. · Dad, hanging in the closet, found his old coat. · Dad hanging in the closet found his old coat.
 5. (level 2) Which revision fixes this sentence? We gave the cookies to the neighbors that we baked.
    **We gave the cookies that we baked to the neighbors.** · We gave the neighbors that we baked the cookies. · That we baked, we gave the cookies to the neighbors. · We gave the cookies to the neighbors, which we baked.
 6. (level 2) Read it word for word. What does this sentence accidentally say? Covered in mud, Mom washed the dog.
@@ -344,9 +344,9 @@ _Lesson:_ Put a describing phrase or clause right next to the word it describes.
 7. (level 2) Which sentence is clear?
    **Barking loudly, the dog chased the mail truck.** · Barking loudly, the mail truck was chased by the dog. · The mail truck, barking loudly, was chased by the dog. · Barking loudly, the mail truck sped away from the dog.
 8. (level 2) Which sentence puts “with a long tail” in the right place?
-   **The monkey with a long tail ate a banana.** · The monkey ate a banana with a long tail. · With a long tail, a banana was eaten by the monkey. · The monkey ate with a long tail a banana.
+   **The monkey with a long tail ate a banana.** · The monkey ate a banana with its long tail. · With a long tail, a banana was eaten by the monkey. · The monkey ate with a long tail a banana.
 9. (level 3) Which sentence is clear?
-   **While I walked to the park, a dog followed me.** · Walking to the park, a dog followed me. · While walking to the park, a dog followed me. · Walking to the park, a dog behind me followed along.
+   **While I walked to the park, a dog followed me.** · Walking to the park, a dog followed me. · While walking to the park, a dog followed me. · Walking to the park, a dog trailed me.
 10. (level 3) Which revision fixes this sentence? I read about the bear that escaped in the newspaper.
    **I read in the newspaper about the bear that escaped.** · I read about the bear in the newspaper that escaped. · I read about the bear, which escaped in the newspaper. · I read about the bear in the newspaper, which escaped.
 11. (level 3) Which sentence is clear?
@@ -373,7 +373,7 @@ _Lesson:_ A relative clause is a dependent clause that describes a noun. It star
 2. (level 1) Which relative pronoun fits? The girl ___ won the race is my cousin.
    **who** · which · whose · whom
 3. (level 1) What does a relative clause do?
-   **It describes a noun.** · It names the action. · It ends the sentence. · It joins two verbs.
+   **It describes a noun.** · It names the action. · It ends the sentence. · It joins two verbs together.
 4. (level 2) What is the relative clause? The bike that I wanted was sold out.
    **that I wanted** · The bike · was sold out · I wanted was sold
 5. (level 2) Which relative pronoun fits? That’s the boy ___ backpack fell in the pond.
@@ -383,17 +383,17 @@ _Lesson:_ A relative clause is a dependent clause that describes a noun. It star
 7. (level 2) Which noun does the relative clause describe? The man who fixed our roof is my uncle’s friend.
    **man** · roof · uncle’s · friend
 8. (level 2) Which sentence has a relative clause?
-   **The dog that lives next door barks at birds.** · The dog next door barks at birds. · The dog barks at birds, and then the birds fly away. · The dog barks at birds in the yard.
+   **The dog that lives next door barks at birds.** · The dog next door barks at birds. · The dog barks, and the birds fly away. · The dog barks at birds in the yard.
 9. (level 3) Which sentence is punctuated correctly?
    **My grandpa, who was born in Peru, loves soccer.** · My grandpa who was born in Peru, loves soccer. · My grandpa, who was born in Peru loves soccer. · My grandpa who, was born in Peru, loves soccer.
 10. (level 3) Which relative pronoun is correct? The coach ___ we thanked gave a speech.
    **whom** · which · whose · what
 11. (level 3) Which sentence needs NO commas around its relative clause?
-   **The students who finished early may read.** · My mom who is a nurse works at night. · The Eiffel Tower which is in Paris is tall. · Lake Superior which is very cold is huge.
+   **The students who finished early may read.** · My mom who is a nurse may work late at night. · The Eiffel Tower which is in Paris is tall. · Lake Superior which is very cold is truly huge.
 12. (level 3) What is the relative clause? The house whose roof blew off is being fixed.
-   **whose roof blew off** · The house whose roof · is being fixed · roof blew off
+   **whose roof blew off** · The house whose · is being fixed · roof blew off
 13. (level 3) Which sentence uses “which” correctly?
-   **Our car, which is ten years old, still runs well.** · Our neighbor, which is ten years old, likes cars. · The car which, is ten years old, still runs. · The boy which owns the toy car is ten.
+   **Our car, which is ten years old, still runs well.** · Our neighbor, which is ten years old, likes cars. · The car which, is ten years old, still runs very well. · The boy which owns the little red toy car is ten years old.
 14. (level 3) How many relative clauses are in this sentence? The girl who sits next to me has a cat that can open doors.
    **Two** · One · Three · Four
 
@@ -532,3 +532,51 @@ A separate reviewer answered all 160 scored items from the student view, without
 Fixed (12): the “Which sentence is exclamatory?” choice “Stop that huge dog!” (some texts call a forceful command exclamatory) is now “Look at that huge dog.” The phrase/clause item no longer has silly reasons. Garbled or absurd distractors are replaced with real mistakes in the bakery-directions, compound-terms, Rosa, cat-and-tree, cookies, barking-dog, bear-in-the-newspaper, blue-dress and water-bowl items. “What does this sentence seem to say?” now asks what it *accidentally* says, word for word, and its id changes (1i7dkkm → 1n1wdc8).
 
 Judgment calls for Andy: (1) The phrase/clause key reads “A phrase, because nobody in it is doing the running.” “…because it has no subject” is plainer, but changing it would change the id. (2) The simple predicate of “My sister and I have been practicing all week” is keyed as “have been practicing”, which matches Khan; some older texts take the main verb only.
+
+## Difficulty and test-wise bot, Oct 30, 2026
+
+Done under the owner rule in docs/BLIND-REVIEW.md. The bot is `node scripts/test-wise-bot.mjs --courses sentences --attempts 1500`, run against all five new units together. Chance is about 20–24%, not 25%, because the select-all, order, sort, tap, typed and Punnett items are almost impossible to guess. A strategy **fails the unit** if it comes within 15 points of the pass mark or beats chance by more than 10. “Before” is the same bot run on this branch before the fixes.
+
+### Difficulty by level
+
+| level | items | share | blind right | mean confidence | too-easy flags | trained bot (learnedXU) per item, before → after |
+|---|---|---|---|---|---|---|
+| L1 | 32 | 20% | 32/32 | 5.00 | 0 | .39 → .18 |
+| L2 | 61 | 38% | 61/61 | 4.97 | 6 | .28 → .27 |
+| L3 | 67 | 42% | 67/67 | 4.94 | 5 | .35 → .18 |
+
+Is L3 harder? It has more steps and longer prompts (clause counting, inverted subjects, compound-complex). After the fixes, its wrong answers are also harder to game than L2’s: the trained bot gets .18 at L3 against .27 at L2. Compared with Khan: about the same at L1–L2 and a little harder at L3.
+
+### Test-wise bot, before and after
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Sentence types Quiz (4 q) | 75% | 22.5 | learnedXU 36.8 (FAIL: learnedCV, learnedXU) | middle 31.6 | holds (43.4 below pass, +9.1 over chance) |
+| Types of sentences Quiz (4 q) | 75% | 24 | learnedXU 31.5 | shortest 27.5 | holds (47.5 below pass, +3.5 over chance) |
+| Subjects and predicates Quiz (4 q) | 75% | 22.3 | learnedXU 37.3 (FAIL: learnedCV, learnedXU) | notVote 28.7 | holds (46.3 below pass, +6.4 over chance) |
+| Phrases and clauses Quiz (4 q) | 75% | 20.9 | learnedCV 31.6 | shortest 30.5 | holds (44.5 below pass, +9.6 over chance) |
+| Unit test (20 q) | 85% | 22.1 | learnedXU 32.7 (FAIL: learnedXU) | middle 23.7 | holds (61.3 below pass, +1.6 over chance) |
+| Memorizer, test tries 1 / 2 / 3 | 85% | | 58.1 / 65.7 / 71.9 (FAIL) | 49.4 / 52.4 / 55.8 | holds |
+
+Single-attempt quiz pass chance (best bot) after: Sentence types Quiz 8%, Types of sentences Quiz 6%, Subjects and predicates Quiz 7%, Phrases and clauses Quiz 8%; before: 11%, 9%, 13%, 9%. Test-only items per lesson: {"sentenceTypes":6,"simpleCompound":6,"rearrangeSentences":6,"complexSentences":6,"subjectPredicate":6,"subjectObjects":6,"phrasesClauses":6,"depIndepClauses":6,"clausePlacement":6,"relativeClauses":7}.
+
+“Best bot” is the highest-scoring of the bot’s strategies on that assessment. The bot also tried longest, shortest, middle-length, most specific, prompt overlap, absolute words, grammar agreement, odd one out, both/all, letter A, majority vote and its opposite, the two trained bots and generated-answer patterns. The memorizer remembers every right answer it was shown in one practice per lesson, each quiz, the 8-question review before every try and the test itself, and uses its best trick on anything new. Position is still clean: the key is spread evenly over A–D, a retake redraws the items, and a repeated item keeps its letter only about 25% of the time.
+
+### What was fixed
+
+41 multiple-choice items got new wrong answers, for length balance or to remove a cue. In “What kind of sentence is this?” for “Hand me the scissors, please.” and “Tell me why the sky is blue.”, the wrong answer “Exclamatory” became “Fragment”: an imperative with no stated subject is a real fragment mix-up, and it keeps “Imperative” from always being the shortest choice. No ids changed.
+
+**Systemic changes (all units):**
+- **Key lengths balanced.** The old rule “the right answer is never the longest” had made the key the middle-length choice. Dropping the longest and shortest choices and guessing scored 29–37%. Wrong answers were shortened or lengthened so that in each lesson the key is the longest choice about 1 time in 4 and the shortest about 1 time in 4, in both the practice pool and the test-only pool. Only wrong answers changed, so ids are stable.
+- **Odd-one-out cues removed.** Where the key was the only choice with a comma, “can”, “because”, “never”, a parenthesis or a semicolon, one wrong answer now shares that feature.
+- **Test-only questions.** About 2 in 5 of each lesson’s fixed questions (6–7 here) are now kept for the unit test (`testOnlyIds`, src/shared/questionTypes.js). Practice, quizzes and the review never show them.
+- **No answers after a unit-test miss.** A unit-test miss now names the lesson to go back to and doesn’t show or highlight the right answer (`testMissText`, game.js; stage.js skips the “I read that it’s…” bubble). Practice, quizzes and the review still teach the answer.
+- The bot (`scripts/test-wise-bot.mjs`) and the exporter (`scripts/blind-export.mjs`) are in the repo; see docs/BLIND-REVIEW.md.
+
+### Judgment calls for Andy
+
+- KEEP: `rearrangeSentences:2jxjla` (“nor”, the only negative joining word), `complexSentences:v49kfq` (“because”, the only subordinating conjunction) and `depIndepClauses:11adb2d` (“because”): in each, the cue is the skill being tested.
+- KEEP: `subjectPredicate:c0gu1s` (“chased” is the only -ed choice). Fixing it would mean a new sentence and a new id.
+- **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
+- **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
+- **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.

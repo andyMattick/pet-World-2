@@ -271,3 +271,20 @@ export function normalizeWrittenAnswers(list){
     ...(entry.parentReview && Array.isArray(entry.parentReview.points) ? { parentReview: { points: entry.parentReview.points.slice(0, 4).map(p => (p ? 1 : 0)), comment: text(entry.parentReview.comment, 500), redo: !!entry.parentReview.redo, at: +entry.parentReview.at || 0 } } : {})
   })).slice(-WRITTEN_MAX);
 }
+/* Test-only questions (owner rule, Oct 30, 2026; docs/BLIND-REVIEW.md). About 2 in 5 of a lesson's fixed questions, spread
+   over the levels, are kept for the unit test: practice, quizzes and the test review never show them (or their answers),
+   so a student can't pass the test by remembering answers from practice. Picked by a hash of the id, so the same
+   questions stay test-only for everyone and between visits. Generated questions (new every time) are never held back,
+   and a lesson always keeps at least 8 questions to practice. Returns the set of held-back ids. */
+export const TEST_ONLY_SHARE = 0.4, TEST_ONLY_MIN_PRACTICE = 8;
+const idHash = id => { let h = 0x811c9dc5; for (const c of String(id)) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193); } return h >>> 0; };
+export function testOnlyIds(pool){
+  const fixed = pool.filter(q => typeof q?.id === 'string' && !q.gen && q.source !== 'added');
+  const byLevel = {};
+  for (const q of fixed) (byLevel[q.difficulty || 1] = byLevel[q.difficulty || 1] || []).push(q);
+  let held = [];
+  for (const list of Object.values(byLevel)) held.push(...list.sort((a, b) => idHash(a.id) - idHash(b.id)).slice(0, Math.round(list.length * TEST_ONLY_SHARE)));
+  held.sort((a, b) => idHash(a.id) - idHash(b.id));
+  const room = Math.max(0, pool.length - TEST_ONLY_MIN_PRACTICE);
+  return new Set(held.slice(0, room).map(q => q.id));
+}

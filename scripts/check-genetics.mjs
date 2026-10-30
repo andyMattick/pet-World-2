@@ -81,7 +81,10 @@ const S = {
     whichCell:q => { const n = +q.prompt.match(/body cells have (\d+)/)[1], c = +q.prompt.match(/cell has (\d+) chromosomes/)[1]; return pickOpt(q, o => (c * 2 === n ? /^A sex cell \(egg or sperm\) with one/.test(o) : c === n && /^A body cell with two/.test(o))); },
     spermAllele:q => { const g = q.prompt.match(/\b[Aa]n? (\w\w) (?:bull|ram|rooster)’s two alleles/)[1], which = q.prompt.match(/carry the (\w) allele/)[1];
       return {value:[...g].filter(c => c === which).length / 2}; },   // one chromosome of the pair goes to each sperm
-    mule:q => { const [h, d] = [...q.prompt.matchAll(/(\d+) chromosomes|have (\d+)/g)].map(m => +(m[1] || m[2])); return {num:h / 2 + d / 2}; }
+    mule:q => { const m = q.prompt.match(/^(.+?) have (\d+) chromosomes in each body cell and (.+?) have (\d+)\. A \w+ has an? (.+?) mother and an? (.+?) father\./); if (!m) return {error:'unread'};
+      const count = name => (m[1].toLowerCase().startsWith(name) ? +m[2] : m[3].toLowerCase().startsWith(name) ? +m[4] : NaN), mom = count(m[5]), dad = count(m[6]);
+      if (!(mom > 0 && dad > 0)) return {error:'parent not in the prompt'};
+      return {num:/came from its mother/.test(q.prompt) ? mom / 2 : /came from its father/.test(q.prompt) ? dad / 2 : mom / 2 + dad / 2}; }
   },
   mutA:{
     kind:q => { const {orig, mut} = readDNA(q.figure); const k = mut.length === orig.length ? (([...orig].filter((c, i) => c !== mut[i]).length === 1) ? 'swapped' : 'bad') : mut.length > orig.length ? 'added' : 'removed';
@@ -108,9 +111,9 @@ const S = {
       const r = readRule(q.prompt), want = r.look(g); return pickOpt(q, o => o === want || (want === 'white' && /feather/.test(q.prompt) && o === 'splash white')); },
     zyg:q => { const g = q.prompt.match(/is (\w\w)\./)[1]; return pickOpt(q, o => o.startsWith(g[0] === g[1] ? 'Homozygous' : 'Heterozygous')); },
     sortZyg:q => ({sort:q.items.map(([g]) => (g[0] === g[1] ? 0 : 1))}),
-    genoFromPheno:q => { const r = readRule(q.prompt), has = q.prompt.match(/ has (.+?)\. Nobody/)[1]; const AA = r.A + r.A, Aa = r.A + r.a, aa = r.a + r.a;
-      return pickOpt(q, o => o === (has === r.rec ? aa : has === r.dom ? `${AA} or ${Aa}` : '??')); },
-    carrier:q => { const r = readRule(q.prompt); return pickOpt(q, o => { const [m, d] = [...o.matchAll(/\b(\w\w) (?:cow|ewe|hen|bull|ram|rooster)/g)].map(x => x[1]); return kids(m, d).some(k => r.look(k) === r.rec); }); },
+    genoFromPheno:q => { const r = readRule(q.prompt), has = q.prompt.match(/ has (.+?)\. (?:Nobody|Her mother)/)[1], mom = (q.prompt.match(/Her mother had (.+?)\./) || [])[1]; const AA = r.A + r.A, Aa = r.A + r.a, aa = r.a + r.a;
+      return pickOpt(q, o => o === (has === r.rec ? aa : has === r.dom ? (mom === r.rec ? Aa : `${AA} or ${Aa}`) : '??')); },
+    carrier:q => { const r = readRule(q.prompt); return pickOpt(q, o => { const [m, d] = [...o.matchAll(/\b(\w\w) (?:cow|ewe|hen|bull|ram|rooster)/g)].map(x => x[1]); return kids(m, d).some(k => r.look(k) === r.rec) !== /could NOT/.test(q.prompt); }); },
     alleleCount:q => { const m = q.prompt.match(/has (\d+) (\w\w) animals?, (\d+) (\w\w) animals?, and (\d+) (\w\w) animals?\. How many copies of the (\w) allele/);
       if (/\b1 \w\w animals\b/.test(q.prompt) || /herd of (?:sheep|chickens)/.test(q.prompt)) return {error:'grammar: 1 … animals, or a herd of sheep/chickens'};
       const which = m[7]; return {num:[[+m[1], m[2]], [+m[3], m[4]], [+m[5], m[6]]].reduce((s, [n, g]) => s + n * [...g].filter(c => c === which).length, 0)}; }
@@ -146,7 +149,7 @@ const S = {
       if (a.length !== 1 || b.length !== 1) return {error:'parents not forced'}; return {value:kids(a[0], b[0]).filter(k => k === 'aa').length / 4}; }
   },
   sexVarU:{
-    clone:q => { if (/\b(hen|rooster|chick)\b/.test(q.prompt)) return {error:'no bird has ever been cloned'}; const g = q.prompt.match(/cloned an? (\w\w) /)[1]; return pickOpt(q, o => o === `${g}, the same as her`); },
+    clone:q => { if (/\b(hen|rooster|chick)\b/.test(q.prompt)) return {error:'no bird has ever been cloned'}; const g = q.prompt.match(/cloned an? (\w\w) /)[1]; return pickOpt(q, o => { const gs = (o.match(/\b[A-Za-z]{2}\b/g) || []).filter(x => [...x].every(c => c.toLowerCase() === g[0].toLowerCase())); return gs.length === 1 && gs[0] === g && !/^Just /.test(o); }); },
     eggTypes:q => ({num:2 ** q.prompt.match(/: ((?:\w\w(?:, )?)+)\. Each gene/)[1].split(', ').length})
   }
 };
@@ -195,7 +198,7 @@ for (const skill of G.GENETICS_SKILLS) for (const [kind, level] of G.geneticsKin
     }
   }
   const msg = `${skill}:${kind} (level ${level}): ${N} checked, ${seen.size} different`;
-  if (longest) { warns++; console.log(`⚠️ ${msg}; the right choice is the longest in ${longest}`); }
+  if (longest > N * 0.4) { warns++; console.log(`⚠️ ${msg}; the right choice is the longest in ${longest} (more than 2 in 5: length gives it away)`); }   // about 1 in 4 is the balance (docs/BLIND-REVIEW.md)
   else if (absolutes) { warns++; console.log(`⚠️ ${msg}; a wrong choice uses an absolute word in ${absolutes}`); }
   else console.log(`✅ ${msg}`);
 }

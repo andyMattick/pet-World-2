@@ -17,7 +17,7 @@ Why care? Doctors count chromosomes to find conditions like Down syndrome, which
 1. (level 1) A visitor at the Microscope Window asks what a chromosome is made of. What do you say?
    - **DNA wrapped around proteins**
    - Sugar wrapped around fat
-   - Water held inside a membrane
+   - Water inside a membrane
    - Tiny cells packed together
 2. (level 1) How many chromosomes are in a typical human body cell, like a skin cell?
    - **46**
@@ -27,13 +27,13 @@ Why care? Doctors count chromosomes to find conditions like Down syndrome, which
 3. (level 1) Where in an animal cell are the chromosomes kept?
    - **In the nucleus**
    - In the cell membrane
-   - In the vacuole
+   - In the central vacuole
    - In the ribosomes
 4. (level 2) Human body cells have 23 pairs of chromosomes. Where did the two chromosomes in each pair come from?
    - **One from the mother and one from the father**
    - Both from the mother
    - Both from the father
-   - One from each grandparent on the mother’s side
+   - One from each grandparent
 5. (level 2) A copied chromosome looks like an X. What are its two identical halves called?
    - **Sister chromatids**
    - Homologous pairs
@@ -46,14 +46,14 @@ Why care? Doctors count chromosomes to find conditions like Down syndrome, which
    - 76
 7. (level 2) Two chromosomes that carry genes for the same traits, one from each parent, are called what?
    - **A homologous pair**
-   - Sister chromatids
-   - A centromere
+   - A pair of sister chromatids
+   - A centromere and two arms
    - Daughter chromosomes
 8. (level 2) Which cell is haploid (it has one set of chromosomes instead of two)?
    - **A sperm cell**
-   - A skin cell
+   - A cheek skin cell
    - A muscle cell
-   - A liver cell
+   - A cell from the liver
 9. (level 3) A cat has 38 chromosomes in each body cell, and a potato has 48. What can you conclude?
    - **The number of chromosomes doesn’t show how complex a living thing is**
    - Potatoes are more complex living things than cats
@@ -61,7 +61,7 @@ Why care? Doctors count chromosomes to find conditions like Down syndrome, which
    - Potato cells must be bigger, because they need room for extra chromosomes
 10. (level 3) A chromosome in a skin cell has just been copied. How many DNA molecules does it hold now?
    - **2, one in each sister chromatid**
-   - 1, because it is still one chromosome
+   - 1, since it is one chromosome
    - 4, two from each parent
    - 46, one for each chromosome
 11. (level 3) A human cell is getting ready to divide, and all 46 of its chromosomes have been copied. How many sister chromatids does it have?
@@ -111,7 +111,7 @@ Why care? Every scraped knee heals by mitosis, and cancer is what happens when c
    - Two cells that are each different
 2. (level 1) Which is a job of mitosis in your body?
    - **Healing a cut on your knee**
-   - Making egg or sperm cells
+   - Making new egg or sperm cells
    - Digesting your lunch
    - Pumping blood to your muscles
 3. (level 1) Which step finally splits one cell into two separate cells?
@@ -151,7 +151,7 @@ Why care? Every scraped knee heals by mitosis, and cancer is what happens when c
    - Metaphase
 10. (level 3) A cut on a lizard’s side heals, and new skin covers it. Why is the new skin’s DNA the same as the old skin’s?
    - **The DNA is copied exactly, then mitosis gives each cell a full set**
-   - The new cells each get half of their DNA from each of the lizard’s two parents
+   - Each new cell gets half its DNA from each parent lizard
    - Meiosis shuffles the chromosomes into a new mix
    - Skin cells don’t have any DNA in them
 11. (level 3) An onion root tip has many cells in mitosis, but a grown onion leaf has very few. What does this tell you?
@@ -173,7 +173,7 @@ Why care? Every scraped knee heals by mitosis, and cancer is what happens when c
    - **One cell with two nuclei**
    - Two cells with one nucleus each
    - Four cells with half the DNA
-   - One cell with no nucleus
+   - One cell with no nucleus at all
 
 **Newer types**
 
@@ -210,7 +210,7 @@ Why care? Meiosis is why brothers and sisters with the same parents can look so 
 1. (level 1) A visitor at the Egg Lab asks what meiosis makes in animals. What do you say?
    - **Egg and sperm cells**
    - Skin and muscle cells
-   - New blood cells
+   - Brand-new blood cells
    - Cells that heal cuts
 2. (level 1) In a male butterfly, meiosis turns one starting cell into sperm cells. How many cells does it make?
    - **4**
@@ -221,7 +221,7 @@ Why care? Meiosis is why brothers and sisters with the same parents can look so 
    - **Half as many**
    - The same number
    - Twice as many
-   - One more
+   - A quarter as many
 4. (level 2) A human egg cell has 23 chromosomes. A sperm cell joins it. How many chromosomes are in the fertilized egg?
    - **46**
    - 23
@@ -231,17 +231,17 @@ Why care? Meiosis is why brothers and sisters with the same parents can look so 
    - **Crossing over**
    - Cytokinesis
    - Fertilization
-   - Interphase
+   - DNA copying
 6. (level 2) Which is true of meiosis but NOT mitosis?
    - **Homologous pairs are separated into different cells**
    - The DNA is copied before division begins
-   - The cell membrane pinches inward to split the cell into two cells
+   - The cell membrane pinches the cell in two
    - Chromosomes line up in the middle of the cell
 7. (level 2) Why is it important that egg and sperm cells have half the usual number of chromosomes?
    - **So the baby ends up with the normal number after fertilization**
    - So the egg and sperm can swim faster
    - So the cells use less energy
-   - So the baby has fewer chromosomes than either of its parents has
+   - So the baby has fewer chromosomes than its parents
 8. (level 2) Which cells in a person’s body go through meiosis?
    - **Cells in the ovaries or testes**
    - Cells in the skin
@@ -260,17 +260,17 @@ Why care? Meiosis is why brothers and sisters with the same parents can look so 
 11. (level 3) Two sisters have the same parents but look different. Which part of meiosis helps explain this?
    - **Crossing over mixes pieces of partner chromosomes**
    - Mitosis copies the DNA exactly
-   - Cytokinesis splits each cell in half in exactly the same way
+   - Cytokinesis splits each cell in half
    - The chromosomes double in number
 12. (level 3) A mule has 63 chromosomes, an odd number. Why can’t its cells usually finish meiosis normally?
    - **Some chromosomes have no partner to pair with**
    - Mules have no DNA in their sex cells
-   - Mules can’t copy any of their chromosomes during interphase
+   - Mules can’t copy their chromosomes
    - Mitosis stops working in mules
 13. (level 3) A human cell with 46 chromosomes finishes meiosis I. How many chromosomes are in each of the two new cells?
    - **23, each still 2 chromatids**
-   - 46, each now 1 chromatid
-   - 92, each still 2 chromatids
+   - 46, each now just 1 chromatid
+   - 92, each one still 2 chromatids
    - 23, each now just 1 chromatid
 14. (level 3) Which statement compares mitosis and meiosis correctly?
    - **Mitosis makes identical body cells; meiosis makes different sex cells**
@@ -307,7 +307,7 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
    - **A potato sprouting new plants from its eyes**
    - Two monarch butterflies mating
    - A bee carrying pollen to a flower
-   - A frog laying eggs that a male frog fertilizes
+   - A frog laying eggs that get fertilized
 2. (level 1) How many parents does asexual reproduction need?
    - **1**
    - 2
@@ -317,7 +317,7 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
    - **From two parents, mixed together**
    - From one parent, copied exactly
    - From the food the parents eat
-   - From the place where they grow up
+   - From where they grow up
 4. (level 2) A bacterium splits into two identical cells. What is this called?
    - **Binary fission**
    - Budding
@@ -331,16 +331,16 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
 6. (level 2) Which is an advantage of asexual reproduction?
    - **One parent can make many offspring quickly**
    - The offspring are each different from one another
-   - Two parents can share the work
-   - It mixes the genes of two parents
+   - Two parents can share the work of raising them
+   - It mixes the genes of two different parents together
 7. (level 2) Which is an advantage of sexual reproduction?
    - **Variety in the offspring helps some survive a new disease**
    - It is faster than asexual reproduction
    - It needs just one parent
-   - The offspring are identical copies of their parents, so they are strong
+   - The offspring are copies, so they are strong
 8. (level 2) Which offspring would be genetically identical to its parent?
    - **A new plant grown from a cutting**
-   - A puppy from two dogs
+   - A puppy born to a mother and father dog
    - A seed from a flower that pollinated itself
    - A twin calf that grew from the same egg as its twin
 9. (level 3) A sea star loses an arm, and the arm (with part of the center) grows into a whole new sea star. What kind of reproduction is this?
@@ -350,7 +350,7 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
    - Binary fission, like bacteria
 10. (level 3) A farm grows a field of identical banana plants (clones). A new fungus kills one plant. What is most likely to happen?
    - **The fungus can kill the rest, because they have the same weakness**
-   - The other plants survive, because each clone grows its own defenses
+   - The other plants survive, because each clone grows its own new defenses
    - The plants switch to sexual reproduction to escape it
    - The fungus can’t spread from one plant to another
 11. (level 3) Aphids reproduce asexually all summer, then sexually in the fall, laying eggs that last the winter. Why might switching help?
@@ -408,14 +408,14 @@ Why care? Scientists study stem cells, which haven’t specialized yet, to try t
 
 1. (level 1) A visitor at the Egg Lab asks what fertilization is. What do you say?
    - **A sperm cell joining with an egg cell**
-   - A cell splitting in two by mitosis
+   - A cell splitting into two new cells by mitosis
    - A caterpillar turning into a butterfly
    - A seed sprouting in the soil
 2. (level 1) What is the single cell made by fertilization called?
    - **A zygote**
-   - A gamete
+   - A gamete (sex cell)
    - A chromatid
-   - A larva
+   - A young larva
 3. (level 1) After fertilization, how does the zygote grow into an embryo with many cells?
    - **By dividing again and again by mitosis**
    - By dividing by meiosis to make sex cells
@@ -433,7 +433,7 @@ Why care? Scientists study stem cells, which haven’t specialized yet, to try t
    - They came from different zygotes
 6. (level 2) What is a cell called when it can still become many kinds of cells?
    - **A stem cell**
-   - A sex cell
+   - A sex cell (egg or sperm)
    - A nerve cell
    - A red blood cell
 7. (level 2) What is it called when cells become specialized, like turning into muscle or nerve cells?
@@ -449,16 +449,16 @@ Why care? Scientists study stem cells, which haven’t specialized yet, to try t
 9. (level 3) Identical twins form when one early embryo splits into two. Why do identical twins have the same DNA?
    - **Both came from the same zygote, copied by mitosis**
    - Each came from a different egg and sperm
-   - Meiosis made two identical sex cells
-   - They got the same food and the same blood before they were born
+   - Meiosis made two sex cells, both identical
+   - Both got the same food and the same blood before birth
 10. (level 3) Fraternal twins form when two eggs are fertilized by two different sperm. How alike are their genes?
    - **About as alike as any brother and sister**
-   - Exactly the same, like identical twins
+   - Exactly the same as each other, like identical twins
    - Totally different, with no genes in common
    - Half the same as their mother’s, half random
 11. (level 3) In 1996, scientists put the nucleus from an adult sheep’s udder cell into an egg whose own nucleus was removed, and it grew into Dolly the lamb. What does this show?
    - **A specialized cell still has all the DNA needed to make a whole animal**
-   - Udder cells contain a special extra set of chromosomes for making lambs
+   - Udder cells contain a special extra set of chromosomes just for making new lambs
    - Meiosis is needed to make every animal
    - Eggs make their own DNA after fertilization
 12. (level 3) Which order shows how a chick develops?
@@ -507,12 +507,12 @@ Why care? Monarch caterpillars eat milkweed and almost nothing else, so planting
    - Adult
 3. (level 1) What do monarch caterpillars eat?
    - **Milkweed leaves**
-   - Flower nectar
+   - Nectar from flowers
    - Parsley and dill
-   - Smaller insects
+   - Small insects and aphids
 4. (level 2) A caterpillar’s skin can’t stretch much. How does it keep growing?
    - **It molts, shedding its old skin for a bigger one**
-   - It splits into two smaller caterpillars
+   - It splits in two, making smaller caterpillars
    - It spins a silk chrysalis after each meal to have room to grow
    - Its skin grows new cells by meiosis
 5. (level 2) Which animal goes through incomplete metamorphosis (egg, nymph, adult)?
@@ -522,14 +522,14 @@ Why care? Monarch caterpillars eat milkweed and almost nothing else, so planting
    - Housefly
 6. (level 2) What happens inside a butterfly’s chrysalis?
    - **Much of the caterpillar’s body breaks down and is rebuilt into adult parts**
-   - The caterpillar sleeps and grows much bigger, but its body parts stay the same
+   - The caterpillar sleeps and grows, but its parts stay the same
    - The butterfly lays its eggs
    - The caterpillar eats leaves stored inside
 7. (level 2) How is a tadpole different from an adult frog?
    - **A tadpole breathes with gills and has a tail**
    - A tadpole breathes with lungs and has four legs
-   - A tadpole flies and lays eggs
-   - A tadpole is a different species
+   - A tadpole flies away and lays eggs of its own
+   - A tadpole is a different species from the adult frog
 8. (level 2) Which stage of a flowering plant’s life cycle comes right after pollination?
    - **Fertilization**
    - Germination
@@ -539,10 +539,10 @@ Why care? Monarch caterpillars eat milkweed and almost nothing else, so planting
    - **The chrysalis (pupa)**
    - A bigger caterpillar
    - An adult butterfly
-   - A nymph
+   - A nymph (young insect)
 10. (level 3) Why don’t a monarch caterpillar and an adult monarch compete for food?
    - **The caterpillar chews leaves, and the adult sips nectar**
-   - They eat the same leaves, but at different times of the day
+   - They eat the same leaves, just at different times
    - Adult butterflies don’t eat
    - Caterpillars eat other insects
 11. (level 3) Ladybugs, bees, and flies go through complete metamorphosis. What is one way this can help an insect species?
@@ -553,7 +553,7 @@ Why care? Monarch caterpillars eat milkweed and almost nothing else, so planting
 12. (level 3) A milkweed patch is mowed down while monarch caterpillars are still eating. What is most likely to happen to them?
    - **Many will starve, because they can’t eat other plants**
    - They’ll switch to eating the grass and weeds that are left behind
-   - They’ll eat the nectar from nearby flowers instead
+   - They’ll sip nectar instead, because they can’t find leaves
    - They’ll turn into butterflies right away
 13. (level 3) Which life cycle is matched with the right stages?
    - **Frog: egg, tadpole, froglet, adult**
@@ -564,7 +564,7 @@ Why care? Monarch caterpillars eat milkweed and almost nothing else, so planting
    - **Her caterpillars can’t travel far and must eat the right host plant**
    - Thistle flowers have the sweetest nectar for her to drink when she’s older
    - Milkweed leaves are too smooth for eggs to stick
-   - Eggs need prickly leaves to hatch
+   - Eggs can only hatch on prickly leaves
 
 **Newer types**
 
@@ -606,3 +606,54 @@ Fixed (10):
 - The cutting, rose, aphid and matched-pair items have stronger distractors: self-pollinated seeds, an identical twin, and pairs that are half right.
 
 No judgment calls are left.
+
+## Difficulty and test-wise bot, Oct 30, 2026
+
+Done under the owner rule in docs/BLIND-REVIEW.md. The bot is `node scripts/test-wise-bot.mjs --courses bio4 --attempts 1500`, run against all five new units together. Chance is about 20–24%, not 25%, because the select-all, order, sort, tap, typed and Punnett items are almost impossible to guess. A strategy **fails the unit** if it comes within 15 points of the pass mark or beats chance by more than 10. “Before” is the same bot run on this branch before the fixes.
+
+### Difficulty by level
+
+| level | items | share | blind right | mean confidence | too-easy flags | trained bot (learnedXU) per item, before → after |
+|---|---|---|---|---|---|---|
+| L1 | 19 | 20% | 19/19 | 5.00 | 0 | .39 → .37 |
+| L2 | 38 | 40% | 38/38 | 5.00 | 3 | .39 → .25 |
+| L3 | 39 | 41% | 39/39 | 4.95 | 1 | .36 → .19 |
+
+Is L3 harder? Yes. L3 prompts are about 50% longer, with multi-step chromosome arithmetic, cloning and life-cycle reasoning. After the fixes the trained bot gets .19 at L3 against .25 at L2. Compared with Khan: harder, since Khan’s middle-school items are one step.
+
+### Test-wise bot, before and after
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Quiz 1 (4 q) | 75% | 23.1 | learnedCV 44.2 (FAIL: learnedCV) | learnedCV 29.3 | holds (45.7 below pass, +6.2 over chance) |
+| Quiz 2 (4 q) | 75% | 23.5 | learnedXU 46.1 (FAIL: middle, learnedCV, learnedXU) | shortest 27.9 | holds (47.1 below pass, +4.4 over chance) |
+| Quiz 3 (4 q) | 75% | 22.9 | learnedCV 45 (FAIL: oddOne, middle, learnedCV, learnedXU) | middle 27.3 | holds (47.7 below pass, +4.4 over chance) |
+| Unit test (24 q) | 83.3% | 22.2 | learnedCV 41.9 (FAIL: middle, learnedCV, learnedXU) | middle 23.1 | holds (60.2 below pass, +0.9 over chance) |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 66.3 / 78.3 / 85.6 (FAIL) | 51 / 56 / 59.4 | holds |
+
+Single-attempt quiz pass chance (best bot) after: Quiz 1 7%, Quiz 2 6%, Quiz 3 6%; before: 23%, 25%, 20%. Test-only items per lesson: {"chromosomes4":6,"mitosis4":6,"meiosis4":6,"reproTypes4":7,"development4":6,"lifeCycles4":6}.
+
+“Best bot” is the highest-scoring of the bot’s strategies on that assessment. The bot also tried longest, shortest, middle-length, most specific, prompt overlap, absolute words, grammar agreement, odd one out, both/all, letter A, majority vote and its opposite, the two trained bots and generated-answer patterns. The memorizer remembers every right answer it was shown in one practice per lesson, each quiz, the 8-question review before every try and the test itself, and uses its best trick on anything new. Position is still clean: the key is spread evenly over A–D, a retake redraws the items, and a repeated item keeps its letter only about 25% of the time.
+
+### What was fixed
+
+37 multiple-choice items have new wrong answers. In bio4 the key had been the longest choice in only 2% of items and the shortest in only 4%. Some changes beyond length:
+- `meiosis4:dlexg1`: “One more” became “A quarter as many”, so “Half as many” is no longer the only fraction.
+- `meiosis4:iccrfx`: “Interphase” became “DNA copying”.
+- `development4:12jj136`: a second “Both…” choice was added.
+
+No ids changed.
+
+**Systemic changes (all units):**
+- **Key lengths balanced.** The old rule “the right answer is never the longest” had made the key the middle-length choice. Dropping the longest and shortest choices and guessing scored 29–37%. Wrong answers were shortened or lengthened so that in each lesson the key is the longest choice about 1 time in 4 and the shortest about 1 time in 4, in both the practice pool and the test-only pool. Only wrong answers changed, so ids are stable.
+- **Odd-one-out cues removed.** Where the key was the only choice with a comma, “can”, “because”, “never”, a parenthesis or a semicolon, one wrong answer now shares that feature.
+- **Test-only questions.** About 2 in 5 of each lesson’s fixed questions (6–7 here) are now kept for the unit test (`testOnlyIds`, src/shared/questionTypes.js). Practice, quizzes and the review never show them.
+- **No answers after a unit-test miss.** A unit-test miss now names the lesson to go back to and doesn’t show or highlight the right answer (`testMissText`, game.js; stage.js skips the “I read that it’s…” bubble). Practice, quizzes and the review still teach the answer.
+- The bot (`scripts/test-wise-bot.mjs`) and the exporter (`scripts/blind-export.mjs`) are in the repo; see docs/BLIND-REVIEW.md.
+
+### Judgment calls for Andy
+
+- The earlier judgment calls stand (blind review section above).
+- **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
+- **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
+- **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.

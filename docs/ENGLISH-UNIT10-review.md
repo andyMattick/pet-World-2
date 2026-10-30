@@ -1,10 +1,10 @@
 # English Unit 10 (Style Library): review list
 
-Every question, with the right answer in **bold**. Read before applying. 46 scored items (42 multiple choice and 4 newer-type), 2 short answers, the unit paragraph, and the 32 WPET Style Radio calls.
+Every question, with the right answer in **bold**. Read before applying. 58 scored items (54 multiple choice and 4 newer-type; 12 multiple choice added Oct 30, 2026), 2 short answers, the unit paragraph, and the 32 WPET Style Radio calls.
 
 Review: no independent second reviewer was available in this session, so the 42 multiple-choice questions were dumped in a shuffled order with no keys and solved again from that view; every key agreed. Changed after that pass: (1) “Which line has two examples of onomatopoeia?”: the wrong choice “…all day long” used a give-away word, so it became “…until sunset.” (2) “Which is the best example of situational irony?”: the wrong choice “…every single day” became “…on Monday mornings” for the same reason. (3) The two-part question’s Part B (“The lake froze solid, which is much colder than chilly”) explained the Part A answer, so Part B now asks only for the detail that shows the real weather. A grown-up read-through of this list is still the real blind check.
 
-Judgment calls to look at: (1) Mia misspells her own last name after spelling every hard word right: keyed **situational irony** (the easiest word is the one she misses), with “no irony, just bad luck” as a wrong choice. (2) Sound items assume American pronunciation (for example, the long a in “late” and “came,” and that “wood” and “moon” don’t share a vowel). (3) “Which line is built mainly on assonance?”: the wrong choice “Wild wolves wander the woods” also has a small vowel echo (wolves, woods); the word “mainly” covers it, since its main device is alliteration. (4) Understatement is sometimes taught as a kind of verbal irony, so no question offers both as choices for the same line.
+Judgment calls to look at: (1) Mia misspells her own last name after spelling every hard word right: keyed **situational irony** (the easiest word is the one she misses), with “overstatement” now in place of the old “no irony, just bad luck” choice (the blind review, Oct 30, 2026, found that one defensible). (2) Sound items assume American pronunciation (for example, the long a in “late” and “came,” and that “wood” and “moon” don’t share a vowel). (3) “Which line is built mainly on assonance?”: the wrong choice “Wild wolves wander the woods” also has a small vowel echo (wolves, woods); the word “mainly” covers it, since its main device is alliteration. (4) Understatement is sometimes taught as a kind of verbal irony, so no question offers both as choices for the same line.
 
 ## The sound of language (The sound of language Quiz)
 
@@ -17,16 +17,16 @@ _Lesson:_ Writers use sound to make words stick. Alliteration repeats the same f
    **thud** · fall · heavy · floor
 3. (level 1) What is assonance?
    **The same vowel sound repeated in words close together** · The same first consonant sound repeated in words close together · A word that sounds like the noise it describes · Saying something big as if it were small
-4. (level 1) Which word in this sentence is onomatopoeia? The bees buzzed around the garden all afternoon.
-   **buzzed** · bees · garden · afternoon
+4. (level 1) Which word in this sentence is onomatopoeia? The bees buzzed and hovered over the garden all afternoon.
+   **buzzed** · hovered · garden · afternoon
 5. (level 2) Which word starts with the same sound as “phone”?
    **fish** · pony · hope · pail
 6. (level 2) Which line is built mainly on assonance?
-   **The rain came late to the valley.** · Wild wolves wander the woods. · Bang! The door slammed shut. · Penny packed popcorn for the trip.
+   **The rain came late to the valley.** · Wild wolves wander the woods. · Bang! The door slammed shut. · Penny packed popcorn.
 7. (level 2) Why is “hiss” an example of onomatopoeia?
    **It sounds like the noise it names.** · It starts with the same sound as the words near it. · It repeats a vowel sound from a nearby word. · It makes something sound much bigger than it is.
 8. (level 2) Which sentence uses onomatopoeia?
-   **The kettle hissed on the stove.** · The kettle sat on the stove. · The kettle was hot on the stove. · The kettle was full of tea.
+   **The kettle hissed on the stove.** · The kettle sang on the stove. · The kettle was loud tonight. · The kettle made a noise.
 9. (level 2) Which device does this line use? Bright kites glide high in the sky.
    **assonance** · alliteration · onomatopoeia · overstatement
 10. (level 2) Which word would add alliteration to the sentence? The ___ snake slid across the sand.
@@ -34,9 +34,9 @@ _Lesson:_ Writers use sound to make words stick. Alliteration repeats the same f
 11. (level 2) Why might a writer use onomatopoeia in a story?
    **To let the reader hear what is happening** · To make the story sound more formal and serious · To show a character means the opposite of what she says · To make a small problem sound like a huge one
 12. (level 2) Which line has two examples of onomatopoeia?
-   **The cows mooed while the farmer hummed.** · The cows ate while the farmer sang. · The cows mooed while the farmer slept. · The cows stood by the fence until sunset.
-13. (level 3) Which words in this line alliterate? Clever crows cawed from the kitchen roof.
-   **clever, crows, cawed, and kitchen** · clever, crows, and cawed · crows, cawed, and roof · clever, crows, cawed, kitchen, and roof
+   **The cows mooed while the gate creaked.** · The cows ate while the farmer sang. · The cows mooed as the farmer slept. · The cows stood by the fence.
+13. (level 3) Which words in this line alliterate? Clever crows cawed, cackling from the roof.
+   **clever, crows, cawed, and cackling** · clever, crows, and cawed · crows, cawed, and roof · crows, cawed, cackling, and roof
 14. (level 3) Which line has NO alliteration, even though its words start with the same letter?
    **Cindy chose cake.** · Cindy sold cider. · Kate kept cookies. · Chris collected crabs.
 15. (level 3) Which pair of words shows assonance?
@@ -48,11 +48,23 @@ _Lesson:_ Writers use sound to make words stick. Alliteration repeats the same f
 18. (level 3) Which of these words is NOT onomatopoeia?
    **shout** · crash · thump · sizzle
 19. (level 3) Which devices does this line use? “Splish, splash, the puppies played in puddles.”
-   **onomatopoeia and alliteration** · alliteration and overstatement · onomatopoeia and irony · assonance and understatement
+   **onomatopoeia and alliteration** · alliteration and irony · onomatopoeia and irony · assonance and understatement
 20. (level 3) Which word could fill the blank to add assonance? The old boat ___ low in the water.
    **rode** · bobbed · sat · dipped
 21. (level 3) In which line does the alliteration use two different spellings for the same sound?
-   **Funny photos fill the frame.** · Pink peppers popped up. · Cool cats clapped. · Silly geese sang songs at sunset.
+   **Funny photos fill the frame.** · Pink peppers popped up. · Cool cats clapped. · Silly seals sang songs at sunset.
+22. (level 2) Which line repeats the same vowel sound in nearby words?
+   **Sweet green leaves need sleep.** · Big brown bears bounced around. · Crunch! The dry leaves broke apart. · The tired fox ran all the way home.
+23. (level 2) Which word in this sentence is onomatopoeia? The rain pattered and trickled down the tin roof all night.
+   **pattered** · trickled · roof · night
+24. (level 3) Which line uses alliteration, assonance and onomatopoeia all at once?
+   **Buzz! Busy bees seek sweet treats.** · Busy bees seek sweet treats. · Buzz! The bees found some flowers. · Bees buzz near the blue bush.
+25. (level 3) Which pair of words does NOT alliterate?
+   **“giant” and “goat”** · “city” and “center” · “game” and “gold” · “chef” and “shoe”
+26. (level 3) Which word could fill the blank to add onomatopoeia? The bacon ___ in the pan.
+   **sizzled** · cooked · browned · curled
+27. (level 3) Which device is this line built on? The low tone of the foghorn rolled over the boats.
+   **assonance (the long o sound)** · alliteration (the f sound) · onomatopoeia (the word rolled) · overstatement (the foghorn is huge)
 
 **Newer types and short answer**
 
@@ -66,7 +78,7 @@ _Lesson:_ Writers use sound to make words stick. Alliteration repeats the same f
 _Lesson:_ Match your words to your reader. The scale of formality runs from casual (a text to a friend: slang like “gonna” or “kinda”) to formal (a letter to a principal: complete sentences, no slang), and a piece of writing should stay at one level. Overstatement makes something sound much bigger than it is (my backpack weighs a ton); understatement makes something big sound small (calling a blizzard “a bit chilly”). Irony is a gap between what is said or expected and what is true: verbal irony says the opposite of what you mean, situational irony is when the opposite of what you expect happens (not just bad luck), and dramatic irony is when the reader knows something a character doesn’t.
 
 1. (level 1) Which sentence is the most formal?
-   **I would like to request a meeting with you on Friday.** · Hey, can we meet up Friday? · Wanna hang out Friday or what? · Yo, so can we maybe meet up on Friday after school or whatever?
+   **I would like to request a meeting with you on Friday.** · Hey, can we meet up Friday? · Let’s meet up Friday after school. · Yo, so can we maybe meet up on Friday after school or whatever?
 2. (level 1) Which sentence is an overstatement?
    **My backpack weighs a ton.** · My backpack is heavy today. · My backpack has six books in it. · I carried my backpack to school.
 3. (level 1) What is verbal irony?
@@ -86,39 +98,51 @@ _Lesson:_ Match your words to your reader. The scale of formality runs from casu
 10. (level 2) It is pouring rain. Max looks outside and says, “Great day for a picnic.” What is this?
    **verbal irony** · dramatic irony · situational irony · onomatopoeia
 11. (level 2) Which reader would expect the most formal writing?
-   **A judge reading a letter about a court case** · Your best friend reading a text · Your little cousin reading a birthday card · Your team reading a group chat about practice
+   **A judge reading a letter about a court case** · Your best friend reading a text · Your little cousin reading a birthday card · Your team reading a group chat about Saturday’s practice
 12. (level 2) What does the overstatement really mean? “I’m so hungry I could eat a horse.”
-   **The speaker is very hungry.** · The speaker wants to eat a horse. · The speaker just ate a big meal. · The speaker doesn’t like horses.
+   **The speaker is very hungry.** · The speaker is joking. · The speaker is a little hungry. · The speaker would truly eat a horse.
 13. (level 3) Which sentence does NOT fit the style of this letter? Dear Principal Ortiz, I am writing to ask for a longer lunch period. Many students do not have enough time to finish eating. Honestly, the lines are bonkers. Thank you for considering this request.
    **Honestly, the lines are bonkers.** · I am writing to ask for a longer lunch period. · Many students do not have enough time to finish eating. · Thank you for considering this request.
 14. (level 3) Which revision of “Honestly, the lines are bonkers.” fits a formal letter?
-   **The lunch lines are often very long.** · The lunch lines are super long, for real. · Honestly, the lunch lines are way too long. · The lines are bonkers, if you ask me.
+   **The lunch lines are often very long.** · The lunch lines are often super long, for real. · The lunch lines are way too long. · The lines are bonkers, if you ask me.
 15. (level 3) Mia studies all week for the spelling bee. She spells every hard word right, then misspells her own last name. What kind of irony is this?
-   **situational irony** · verbal irony · dramatic irony · no irony, just bad luck
+   **situational irony** · verbal irony · dramatic irony · overstatement
 16. (level 3) Which is the best example of situational irony?
-   **A swimming coach who is afraid of water** · A rainy day on the morning of a picnic · A girl who loses her keys at the mall · A dog that barks at the mail carrier on Monday mornings
+   **A swimming coach who is afraid of water** · A rainy day on the morning of a picnic · A girl who loses her keys at the mall · A dog that barks at the mail carrier
 17. (level 3) Which sentence is an understatement?
    **After running a marathon, Leo said, “My legs are a little tired.”** · After a short walk, Leo said, “My legs are a little tired.” · After running a marathon, Leo said, “I could run a hundred more miles!” · After running a marathon, Leo said, “My legs are so sore that I can barely stand.”
 18. (level 3) Which sentence is an overstatement, not a literal statement?
    **The line for the roller coaster stretched to the moon.** · The line for the roller coaster took forty minutes. · The line for the roller coaster wrapped around the fence twice. · The line for the roller coaster was the longest in the park.
 19. (level 3) In which situation would “Nice job” most likely be verbal irony?
-   **Your brother drops all the groceries, and you say, “Nice job.”** · Your brother scores a goal, and you say, “Nice job.” · Your brother cleans his room, and you say, “Nice job.” · Your brother finishes the whole puzzle by himself, and you say, “Nice job.”
+   **Your brother drops all the groceries, and you say, “Nice job.”** · Your brother scores a goal, and you say, “Nice job.” · Your brother cleans his room, and you say, “Nice job.” · Your brother finishes a puzzle, and you say, “Nice job.”
 20. (level 3) A text to a friend says, “Can’t make it, sry!” Which version fits an email to a teacher?
-   **I’m sorry, but I won’t be able to attend.** · Sorry!! Can’t make it, my bad. · Can’t make it, sorry, see ya. · Sorry, I can’t make it to that thing, so just count me out.
+   **I’m sorry, but I won’t be able to attend.** · Sorry!! I’m busy then, my bad. · Can’t make it, sorry, see ya. · Sorry, I can’t make it to that thing, so just count me out.
 21. (level 3) In a play, Theo plans a surprise party for his sister. Which detail creates dramatic irony?
-   **The audience saw his sister find the invitation, but Theo thinks she has no clue.** · Theo drops the cake and says, “Well, that went perfectly,” to his friends. · Theo’s sister, who plans parties for a living, forgets her own party. · Theo bakes a big chocolate cake for the party and hides it behind the boxes in the garage.
+   **The audience saw his sister find the invitation, but Theo thinks she has no clue.** · Theo drops the cake and says, “Well, that went perfectly,” to his friends. · Theo’s sister, who plans parties for a living, forgets her own party. · Theo bakes a cake and hides it in the garage.
+22. (level 2) Which sentence is an understatement?
+   **Winning the state title was pretty nice.** · Winning the state title was the best thing ever. · We won the state title on Saturday. · Winning the state title made the whole world shake.
+23. (level 2) Which word fits best in a report for your science teacher? The results were ___.
+   **surprising** · totally wild · super weird · nuts
+24. (level 3) A sign at the library says “Quiet, please!” in huge letters, and the librarian shouts it across the room. What kind of irony is this?
+   **situational irony** · verbal irony · dramatic irony · understatement
+25. (level 3) In a story, readers know the bridge ahead is out, but the driver is happily singing. What kind of irony is this, and why?
+   **Dramatic, because readers know what the driver doesn’t** · Situational, because a bridge being out is unexpected · Verbal, because the driver says the opposite of what he means · Dramatic, because something bad is about to happen
+26. (level 3) Which revision keeps this email to a coach formal? “hey coach, gonna miss practice, sorry!!”
+   **Dear Coach Lee, I will miss practice today. I apologize.** · Dear Coach Lee, gonna miss practice today, sorry!! · Hey Coach Lee, I am going to miss practice today, sorry about that! · Coach Lee, can’t make it today. Sorry about that!
+27. (level 3) After a three-hour storm knocked out the power, Dad said, “Well, that was a little breezy.” What is Dad using?
+   **understatement** · overstatement · dramatic irony · onomatopoeia
 
 **Newer types and short answer**
 
 - Put in order (level 2): Put these from the most casual to the most formal. **Yo, gimme that book! → Hey, can I borrow that book? → Could I please borrow that book? → May I please borrow that book when you have finished reading it?**
-- Two-part (level 3): Part A: The lake froze solid, and Grandpa said, “Looks a bit chilly out there.” What is Grandpa’s comment? **An understatement** · An overstatement · Situational irony / Part B: Which detail from the story tells you what the weather is really like? **The lake froze solid.** · Grandpa spoke about the weather. · Grandpa said “out there.”
+- Two-part (level 3): Part A: The lake froze solid, and Grandpa said, “Looks a bit chilly out there.” What is Grandpa’s comment? **An understatement** · An overstatement · Situational irony / Part B: Which detail from the story tells you what the weather is really like? **The lake froze solid.** · Grandpa calls it “a bit chilly.” · Grandpa is talking about the weather outside.
 - Short answer (30+ words): Your class wants a pet fish. Write one sentence asking a friend to help, in casual language, and one sentence asking the principal for permission, in formal language. Then explain two changes you made to sound formal. Rubric: Writes a casual sentence that fits a friend; Writes a formal sentence that fits the principal (no slang, complete sentence); Explains two real changes (for example, no slang, full words instead of contractions, polite phrases). Model: Hey, wanna help me talk Mr. Lee into getting a fish? Dear Principal Lee, our class would like to request permission to keep a pet fish in our classroom. To sound formal, I took out slang like “wanna” and “hey,” and I used polite words like “request permission.”
 
 ## Unit test paragraph
 
 WPET, the Style Library’s radio station, wants a short story to read on the air. Write a paragraph about a storm, a busy pet shop, or a day at the beach. Use alliteration, onomatopoeia, and assonance, one overstatement or understatement, and one example of irony, and keep the same level of formality all the way through. (60+ words)
 
-Rubric: Writes a clear paragraph that tells one short story; Uses alliteration, onomatopoeia and assonance correctly; Uses an overstatement or an understatement, and an example of irony that fits the story; Keeps one level of formality all the way through.
+Rubric: Writes a clear paragraph that tells one short story; Uses alliteration, onomatopoeia and assonance correctly, each one easy to point to; Uses an overstatement or an understatement, and an example of irony that fits the story; Keeps one level of formality all the way through.
 
 Model: The storm started on the sunniest day of the summer, right after Dad said, “No need for umbrellas today.” First the wind whistled and the windows rattled. Then the rain came late in the day and drummed on the roof. Thunder boomed so loud it shook the whole state. My little brother peeked out and said, “Looks a little damp,” while water poured down the street. By dinner, the sky was clear, and Dad was the only one who was soaked.
 
@@ -230,3 +254,70 @@ Right answers in **bold**; tap steps list the words to tap, order steps the righ
    - Tap every word that is onomatopoeia. **boom, boom, boom,**
    - Band, blasted and brassy add which device? **Alliteration** · Assonance · Understatement
    - The DJ says the crowd was “a little excited” while they screamed for three hours. What is that? **An understatement** · An overstatement · Situational irony
+
+## Difficulty and test-wise bot, Oct 30, 2026
+
+Done under the owner rule in docs/BLIND-REVIEW.md. The bot is `node scripts/test-wise-bot.mjs --courses style --attempts 1500`, run against all five new units together. Chance is about 20–24%, not 25%, because the select-all, order, sort, tap, typed and Punnett items are almost impossible to guess. A strategy **fails the unit** if it comes within 15 points of the pass mark or beats chance by more than 10. “Before” is the same bot run on this branch before the fixes.
+
+### Difficulty by level
+
+| level | items now | share | blind right (46 reviewed items) | mean confidence | too-easy flags | trained bot (learnedXU) per item, before → after |
+|---|---|---|---|---|---|---|
+| L1 | 8 | 14% | 7/7 | 5.00 | 2 | .19 → .00 |
+| L2 | 22 | 38% | 17/17 | 5.00 | 2 | .16 → .31 |
+| L3 | 28 | 48% | 19/19 | 4.95 | 1 | .57 → .24 |
+
+Is L3 harder? Yes. L3 has two devices per line, sounds rather than letters, irony against bad luck, and the slip in a formal letter. Before the fixes, the trained bot did best at L3 (.57), because the L3 keys were the short, plain choice. Now it gets .24 at L3. Compared with Khan: Khan’s one style lesson is single-step identification, so this unit is about the same at L1–L2 and harder at L3.
+
+### Test-wise bot, before and after
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| The sound of language Quiz (4 q) | 75% | 21.8 | learnedXU 45.9 (FAIL: learnedXU) | learnedCV 27 | holds (48.0 below pass, +5.2 over chance) |
+| Style and technique Quiz (4 q) | 75% | 23 | learnedCV 38.5 (FAIL: learnedCV, learnedXU) | middle 28.2 | holds (46.8 below pass, +5.2 over chance) |
+| Unit test (18 q) | 83.3% | 23.5 | learnedXU 39.7 (FAIL: learnedXU) | longest 28.9 | holds (54.4 below pass, +5.4 over chance) |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 66.6 / 82.9 / 90.8 (FAIL) | 56.6 / 62.4 / 66.8 | holds |
+
+Single-attempt quiz pass chance (best bot) after: The sound of language Quiz 5%, Style and technique Quiz 6%; before: 24%, 14%. Test-only items per lesson: {"soundOfLanguage":12,"styleTechnique":12}.
+
+“Best bot” is the highest-scoring of the bot’s strategies on that assessment. The bot also tried longest, shortest, middle-length, most specific, prompt overlap, absolute words, grammar agreement, odd one out, both/all, letter A, majority vote and its opposite, the two trained bots and generated-answer patterns. The memorizer remembers every right answer it was shown in one practice per lesson, each quiz, the 8-question review before every try and the test itself, and uses its best trick on anything new. Position is still clean: the key is spread evenly over A–D, a retake redraws the items, and a repeated item keeps its letter only about 25% of the time.
+
+### What was fixed
+
+**Blind review (fresh reviewer, 49 items).** 46/46 scored items match the key. The 4 raw mismatches (the sort, tap, order and two-part items) differ only in how the answer is written. Decisions:
+
+| # | id | flag | decision | what changed |
+|---|---|---|---|---|
+| Q2 | `soundOfLanguage:j1sm0f` | too-easy | **KEEP** | Level 1 recognition of “thud”. |
+| Q4 | `soundOfLanguage:1118om0` | bot: grammar cue | **FIX** | “buzzed” was the only -ed word; the line now has “buzzed and hovered”, and “hovered” is a wrong choice (id → `126ekjz`). |
+| Q8 | `soundOfLanguage:n7v2ru` | too-easy | **FIX** | The wrong answers now also describe sound (“sang”, “was loud”, “made a noise”) without being onomatopoeia. |
+| Q12 | `soundOfLanguage:c8yigw` | note: “hummed” | **FIX** | The key is now “The cows mooed while the gate creaked.” (id → `yzut7b`). |
+| Q13 | `soundOfLanguage:20xnza` | ambiguous-wording | **FIX** | The line is now “Clever crows cawed, cackling from the roof.”, so the four k-words sit next to each other (id → `kexzhm`). |
+| Q15, Q20 | `1m87wwm`, `d46gt1` | dialect note | **KEEP** | The same answer in American and British pronunciation. |
+| Q17 | `soundOfLanguage:sprwst` | dialect note | **KEEP** | “blue” is right in American and standard British English (Scottish English merges wood/moon). |
+| Q21 | `soundOfLanguage:14xpz1o` | odd s-sound | **FIX** | “Silly geese…” became “Silly seals…”. |
+| Q24 | `styleTechnique:gyd3vj` | too-easy | **KEEP** | Level 1. The odd-one-out cue (the only choice that isn’t a question) is fixed. |
+| Q30 | `styleTechnique:ood28u` | loose stem | **KEEP** | Understatement is offered as a labeled non-irony; the labels teach. |
+| Q35 | `styleTechnique:1jkk8fh` | too-easy | **FIX** | The wrong answers are now “The speaker is joking.”, “…a little hungry.” and “…would truly eat a horse.” |
+| Q38 | `styleTechnique:1kr4sin` | defensible D | **FIX** | “no irony, just bad luck” became “overstatement” (see the judgment calls). |
+| Q46 | `styleTechnique:qj1ou7` | too-easy, Part B gives it away | **FIX** | Both wrong Part B choices are now about the weather: “Grandpa calls it ‘a bit chilly.’” and “Grandpa is talking about the weather outside.” |
+| Q49 | unit paragraph | demanding, rubric | **FIX / KEEP** | The rubric now says each device must be “easy to point to”. The 60-word length is kept. |
+
+**Bot fixes.** 14 items have new wrong answers. To give the test-only rule room, **12 new multiple-choice questions** were added, 6 per lesson (2 at L2 and 4 at L3 each; listed above as questions 22–27 in each lesson). Ids that changed: `1118om0` → `126ekjz`, `c8yigw` → `yzut7b`, `20xnza` → `kexzhm`.
+
+**Still needed:** the 12 new questions and the 3 rewritten ones have **not** been blind-solved by a fresh agent. This session could not start one. Run docs/BLIND-REVIEW.md steps 1–3 on `style` before applying.
+
+**Systemic changes (all units):**
+- **Key lengths balanced.** The old rule “the right answer is never the longest” had made the key the middle-length choice. Dropping the longest and shortest choices and guessing scored 29–37%. Wrong answers were shortened or lengthened so that in each lesson the key is the longest choice about 1 time in 4 and the shortest about 1 time in 4, in both the practice pool and the test-only pool. Only wrong answers changed, so ids are stable.
+- **Odd-one-out cues removed.** Where the key was the only choice with a comma, “can”, “because”, “never”, a parenthesis or a semicolon, one wrong answer now shares that feature.
+- **Test-only questions.** About 2 in 5 of each lesson’s fixed questions (6–7 here) are now kept for the unit test (`testOnlyIds`, src/shared/questionTypes.js). Practice, quizzes and the review never show them.
+- **No answers after a unit-test miss.** A unit-test miss now names the lesson to go back to and doesn’t show or highlight the right answer (`testMissText`, game.js; stage.js skips the “I read that it’s…” bubble). Practice, quizzes and the review still teach the answer.
+- The bot (`scripts/test-wise-bot.mjs`) and the exporter (`scripts/blind-export.mjs`) are in the repo; see docs/BLIND-REVIEW.md.
+
+### Judgment calls for Andy
+
+- **Mia and the spelling bee** (`1kr4sin`). “She spells every hard word right, then misspells her own last name.” Reading A: situational irony (the keyed answer); the easiest word is the one she misses. Reading B: just bad luck, and the reviewer said a sharp student could defend that. The “no irony, just bad luck” choice was replaced with “overstatement”. If you want that trap back, `4grdow` (rain on picnic day) already tests irony against bad luck.
+- **The unit paragraph** asks for five devices and one formality level in 60 words. That is demanding for a 6th grader. The rubric is clarified; whether to lower the device count is your call.
+- **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
+- **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
+- **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.

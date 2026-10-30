@@ -44,7 +44,7 @@ import { ENGLISH_UNIT10, ENGLISH_GROUPS10, STYLE_QUESTIONS } from '../shared/que
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
 import { BIO_UNIT5, BIO_GROUPS5, BIO5_QUESTIONS } from '../shared/questionBanks';   // Biology Unit 5: Inheritance and variation (the Farm Barn)
 import { geneticsQuestions } from '../shared/genetics';   // the Farm Barn's generated genetics problems (docs/SCIENCE-UNIT5.md)
-import { punnettSlots, punnettMarks } from '../shared/questionTypes';   // 🐄 Build a Punnett square answers
+import { punnettSlots, punnettMarks, testOnlyIds } from '../shared/questionTypes';   // testOnlyIds: questions kept for the unit test (docs/BLIND-REVIEW.md)   // 🐄 Build a Punnett square answers
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -11494,7 +11494,11 @@ function selectedReading(){
 }
 function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S.readingSelection?.bookId) || null; }
 /* a lesson's questions: the multiple-choice bank plus the scored questions of the newer types */
-function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId), ...(courseId === 'bio5' ? geneticsQuestions(skillId) : [])]; }   // the Farm Barn adds new generated problems every time (src/shared/genetics.js)
+function englishQuestions(skillId, courseId='nouns', {test=false}={}){   // test:true = the unit test's whole pool; practice, quizzes and the review leave out the test-only questions
+  const pool = [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId), ...(courseId === 'bio5' ? geneticsQuestions(skillId) : [])];
+  if (test) return pool;
+  const held = testOnlyIds(pool); return pool.filter(question => !held.has(question.id));
+}   // the Farm Barn adds new generated problems every time (src/shared/genetics.js)
 function englishBankQuestions(skillId, courseId='nouns'){
   const edits = Backend.me?.question_edits || {};   // this class's hidden, edited and added questions (docs: LESSON-CONTENT.md)
   if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio5' ? BIO5_QUESTIONS : courseId === 'bio4' ? BIO4_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
@@ -12156,7 +12160,7 @@ function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   if (!final && helpBlocks(courseSubject(course.id))) return;
   if (final ? !englishFinalReady(course) : !group || !(unitOpenedByGrownUp(course.building) || group.skills.every(skillId => englishRecord(skillId,course.id).passed))) return;
   const questions = final
-    ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id)).slice(0,course.testPer || 1)))
+    ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id,{test:true})).slice(0,course.testPer || 1)))
     : englishAssessmentQuestions(group.quizSkills || group.skills, 4,course.id);
   activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true,written:final ? unitEssay(course.id) : null};
   renderEnglishQuestion();
@@ -12231,13 +12235,14 @@ $('#libraryWrap').addEventListener('click', event => {
   if (button.dataset.elaAnswer != null && englishRun && !englishRun.answered) {
     const question = englishRun.questions[englishRun.index], answer = +button.dataset.elaAnswer, correct = answer === question.answer;
     englishRun.answered = true; englishRun.outcomes[englishRun.index] = correct; if (correct) englishRun.score++;
-    (englishRun.replies = englishRun.replies || [])[englishRun.index] = {text:question.options[answer], correct, answer:question.options[question.answer]};   // kept on stage as the conversation goes on
+    const hideKey = englishRun.retryType === 'final' && !correct;   // the unit test never shows the right answer after a miss (docs/BLIND-REVIEW.md): retakes can't be passed by remembering answers
+    (englishRun.replies = englishRun.replies || [])[englishRun.index] = {text:question.options[answer], correct, answer:hideKey ? null : question.options[question.answer]};   // kept on stage as the conversation goes on
     recordEnglishAnswer(englishRun, question, correct);
     if (englishRun.index === englishRun.questions.length - 1) commitEnglishRun(englishRun);
-    button.closest('.ela-options').querySelectorAll('[data-ela-answer]').forEach((option,index) => { option.disabled = true; if (index === question.answer) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
+    button.closest('.ela-options').querySelectorAll('[data-ela-answer]').forEach((option,index) => { option.disabled = true; if (index === question.answer && !hideKey) option.classList.add('correct'); else if (index === answer) option.classList.add('incorrect'); });
     const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(englishRun.courseId);
     if (role) stageReact($('#libraryWrap'), correct, question.options[answer]);
-    feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
+    feedback.textContent = hideKey ? testMissText(englishRun, question) : !role ? (correct ? 'That is right.' : `Not quite. The answer is ${question.options[question.answer]}.`)
       : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
       : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${question.options[question.answer]}.`;
     if (!correct && englishRun.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(englishRun.courseId, question.skillId)); }
@@ -12296,10 +12301,16 @@ function typedBodyHTML(question, run){
   return '';
 }
 /* after Check: show what was right and wrong, item by item where the type allows it */
-function markTyped(host, question, response){
+/* a miss on the unit test: no right answer, just the lesson to go back to (docs/BLIND-REVIEW.md) */
+function testMissText(run, question){
+  const skill = englishCourse(run.courseId).skills.find(item => item.id === question.skillId);
+  return `Not this time. ${skill ? `This one is from “${skill.name}”. ` : ''}The test doesn’t show answers; the review will go over it.`;
+}
+function markTyped(host, question, response, hideKey = false){
   const type = typeOf(question);
   host.querySelectorAll('button, input').forEach(el => { if (!el.hasAttribute('data-ela-next')) el.disabled = true; });
   host.querySelector('[data-typed-check]')?.remove();
+  if (hideKey) { host.querySelector('.typed-input')?.classList.add('incorrect'); return; }   // unit-test miss: don't mark which parts were right
   if (type === 'multi') host.querySelectorAll('[data-typed-toggle]').forEach(el => { const i = +el.dataset.typedToggle, right = question.answers.includes(i), picked = response.includes(i); if (right) el.classList.add('correct'); else if (picked) el.classList.add('incorrect'); if (right && !picked) el.classList.add('missed'); });
   if (type === 'pick') host.querySelectorAll('[data-typed-toggle]').forEach(el => { const i = +el.dataset.typedToggle, right = question.answers.includes(i), picked = response.includes(i); if (right) el.classList.add(picked ? 'correct' : 'missed'); else if (picked) el.classList.add('incorrect'); });
   if (type === 'two') host.querySelectorAll('[data-typed-choice]').forEach(el => { const part = +el.dataset.typedPart, i = +el.dataset.typedChoice, key = part ? question.partB.answer : question.answer; if (i === key) el.classList.add('correct'); else if (response[part] === i) el.classList.add('incorrect'); });
@@ -12366,13 +12377,14 @@ $('#libraryWrap').addEventListener('submit', event => {
 function answerTyped(){
   const run = englishRun, question = run.questions[run.index], response = run.response, correct = checkTyped(question, response);
   run.answered = true; run.outcomes[run.index] = correct; if (correct) run.score++;
-  (run.replies = run.replies || [])[run.index] = {text:responseText(question, response), correct, answer:answerText(question)};
+  const hideKey = run.retryType === 'final' && !correct;   // the unit test never shows the right answer after a miss
+  (run.replies = run.replies || [])[run.index] = {text:responseText(question, response), correct, answer:hideKey ? null : answerText(question)};
   recordEnglishAnswer(run, question, correct);
   if (run.index === run.questions.length - 1) commitEnglishRun(run);
-  const host = $('#libraryWrap .typed'); markTyped(host, question, response);
+  const host = $('#libraryWrap .typed'); markTyped(host, question, response, hideKey);
   const feedback = $('#libraryWrap .ela-feedback'), role = ROLE_CARDS[question.skillId], guide = isScienceCourse(run.courseId);
   if (role) stageReact($('#libraryWrap'), correct, responseText(question, response));
-  feedback.textContent = !role ? (correct ? 'That is right.' : `Not quite. The answer is ${answerText(question)}.`)
+  feedback.textContent = hideKey ? testMissText(run, question) : !role ? (correct ? 'That is right.' : `Not quite. The answer is ${answerText(question)}.`)
     : correct ? (guide ? 'Great explaining! Your tour group nods along.' : 'Well answered! Your visitor nods and writes it down.')
     : `${guide ? 'Your tour group looks confused.' : 'Your visitor looks puzzled.'} The answer is ${answerText(question)}.`;
   if (!correct && run.retryType === 'review') { feedback.insertAdjacentHTML('afterend', reviewTeachHTML(run.courseId, question.skillId)); }

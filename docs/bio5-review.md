@@ -15,17 +15,17 @@ Every question with the right answer in **bold**, for the teacher to read before
 1. [1] A visitor at the Barn Microscope asks where an animal’s chromosomes are found. What do you say?  
    **In the nucleus of its cells** · In the blood plasma between its cells · In the mitochondria of its muscle cells · In the cell membrane
 2. [1] A kid asks what a chromosome is made of. What do you say?  
-   **A long, tightly coiled strand of DNA** · A chain of sugar molecules stored for energy · A bundle of muscle fibers · A small bubble of water and salt
+   **A long, tightly coiled strand of DNA** · A chain of sugar molecules · A bundle of thin, stretchy fibers · A small bubble of water and salt
 3. [1] A visitor asks what a gene is. What do you say?  
-   **A section of DNA with instructions for a protein** · A whole chromosome made of many cells · A protein that carries oxygen in the blood · The part of a cell that makes sugar from light, water, and air
+   **A section of DNA with instructions for a protein** · A whole chromosome made of many cells · A protein that carries oxygen in the blood · The part of a cell that makes sugar
 4. [1] A grandparent asks how many copies of each chromosome a cow’s body cells have. What do you say?  
    **Two, one from each parent** · One, from its mother · Four, two from each parent · It depends on how big the cow grows
 5. [2] A kid asks what proteins do in a calf’s body. Which answer is best?  
-   **They do much of the cell’s work and build body parts** · They store the DNA instructions in the nucleus · They carry sunlight energy to the calf’s muscles and bones · They are the chromosomes the calf got from its father
+   **They do much of the cell’s work and build body parts** · They store all the DNA instructions inside the nucleus · They carry sunlight energy to the calf’s muscles and bones · They are the chromosomes the calf got from its father
 6. [2] Two chromosomes in a pair have the same genes in the same places. A visitor asks if they must carry the same alleles. What do you say?  
-   **No, each can carry a different version of a gene** · Yes, the two chromosomes in a pair are exact copies · No, the two chromosomes in a pair carry different genes · Yes, unless the animal is a clone made in a lab
+   **No, each can carry a different version of a gene** · Yes, the two chromosomes in a pair are exact copies · No, the two chromosomes in a pair can carry different genes · Yes, unless the animal is a clone made in a science lab
 7. [2] A kid asks what an allele is. What do you say?  
-   **One version of a gene, such as red or black coat** · A whole pair of chromosomes from one parent · A cell that has half the usual chromosomes · The protein a coat-color gene makes after it is copied
+   **One version of a gene, such as red or black coat** · A whole pair of chromosomes from one parent · A cell that has half the usual chromosomes · The protein a coat-color gene makes
 8. [2] A sheep’s body cells have 54 chromosomes. A visitor asks how many pairs that is. What do you say?  
    **27 pairs** · 54 pairs · 108 pairs · 13 pairs
 9. [3] A visitor asks how a change in a gene can change a trait. Which chain is right?  
@@ -33,7 +33,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 10. [3] A kid asks why a calf looks a bit like its mother and a bit like its father. What do you explain?  
    **It has one chromosome of each pair from each parent** · It has all of its mother’s genes and none of its father’s · It copies the traits it sees while it grows up · Its father’s genes take over half of its body cells
 11. [3] Two calves have the same parents but look different. A visitor asks why. What do you explain?  
-   **Each got a different mix of its parents’ chromosomes** · One of them got genes from a third animal in the herd · Brothers and sisters share almost none of their genes · The older calf used up the best genes first
+   **Each got a different mix of its parents’ chromosomes** · One of them got genes from a third animal in the herd · Brothers and sisters share almost none of their genes · The older calf was born first and used up the best genes
 12. [3] A gene for coat color sits on one chromosome pair. How many copies of that gene are in one of a cow’s body cells?  
    **Two, one on each chromosome of the pair** · One, on the chromosome from her mother · Sixty, one on each of her chromosomes · One, made by mixing her mother’s and father’s copies
 13. [3] A visitor asks why a cow’s skin cells and muscle cells both have the coat-color gene. What do you explain?  
@@ -64,25 +64,25 @@ Every question with the right answer in **bold**, for the teacher to read before
 4. [1] A visitor sees two chromosomes with the same size, shape, and list of genes. What are they?  
    **A chromosome pair** · Two alleles · Two proteins · Two copies of one sex cell
 5. [2] A goat is born with an extra copy of one chromosome. Why might that cause health problems?  
-   **Extra genes can mean too much of some proteins** · An extra chromosome erases some of the goat’s other genes · Chromosomes take up space the blood needs · The extra chromosome turns into a second nucleus
+   **Extra genes can mean too much of some proteins** · An extra chromosome erases some of the goat’s other genes · The extra chromosomes take up space the blood needs · The extra chromosome turns into a second nucleus
 6. [2] A lamb has a white body like its mother and a dark face like its father. What explains this best?  
-   **It got alleles from both parents, and in each trait a different one showed** · It picked which parent to look like before birth · Its mother’s genes build its body, and its father’s genes build its head and face · It copied its father by staying near him
+   **It got alleles from both parents, and in each trait a different one showed** · It picked which parent to look like before birth · Its mother’s genes build its body, and its father’s build its head · It copied its father by staying near him
 7. [2] Each egg from a hen gets one chromosome from each pair. Why does that matter when the egg joins a sperm?  
    **The chick ends up with full pairs again** · The chick ends up with twice the normal number · The chick gets no chromosomes from the hen · The egg can then grow without a sperm cell
 8. [2] Holstein cattle are black and white. A breeder says the pattern comes from the calf’s genes. Where are those genes?  
    **On chromosomes in the nucleus of its cells** · On chromosomes in its skin cells, but not in its other cells · In its blood, which carries the genes out to the skin · In the milk the calf drinks from its mother
 9. [3] A mule has 63 chromosomes, from a horse (64) and a donkey (62). Why can mules almost never have foals?  
-   **Their chromosomes can’t pair up evenly to make sex cells** · Mules have no genes for making eggs or sperm · Horses and donkeys have totally different genes · Their chromosomes are too long to fit in a sex cell nucleus
+   **Their chromosomes can’t pair up evenly to make sex cells** · Mules have no genes for making eggs or sperm · Horses and donkeys have totally different genes · Their chromosomes are too long to fit in a sex cell
 10. [3] A Bb bull has B on one chromosome of a pair and b on the other. What fraction of his sperm cells get the b allele?  
    **1/2** · 1/4 · 3/4 · All of them
 11. [3] The polled (no horns) gene is on chromosome 1 in cattle. A Pp bull passes P to some calves and p to others. Why?  
-   **Each sperm gets just one chromosome 1 from his pair** · He passes the gene to bull calves but not to heifers · The P allele is used up after his first few calves · Each calf chooses which of his alleles it wants
+   **Each sperm gets just one chromosome 1 from his pair** · He passes it to bull calves but not heifers · The P allele is used up after his first few calves · Each calf chooses which of his alleles it wants
 12. [3] A pig has 38 chromosomes in each body cell. After an egg and a sperm join, how many chromosomes does the piglet’s first cell have?  
    **38** · 19 · 76 · 57
 13. [3] Which two cells from the same ram both have 54 chromosomes?  
-   **A skin cell and a muscle cell** · A sperm cell and a skin cell · Two of his sperm cells · A sperm cell and a muscle cell
+   **A skin cell and a muscle cell** · A sperm cell and a skin cell · Two of his sperm cells · A sperm and a muscle cell
 14. [3] A breeder says, “Genes decide a lot, but the environment matters too.” Which example shows the environment changing a trait?  
-   **A calf with genes for large size stays small on poor feed** · A red calf is born to two black parents · A calf gets the polled allele from one parent and the horned one from the other · A lamb gets 27 chromosomes from its mother
+   **A calf with genes for large size stays small on poor feed** · A red calf is born to two black parents · A calf gets one allele from each parent · A lamb gets 27 chromosomes from its mother
 
 **Newer types and short answer**
 
@@ -116,15 +116,15 @@ Every question with the right answer in **bold**, for the teacher to read before
 **Multiple choice** (level in brackets)
 
 1. [1] A visitor asks what a mutation is. What do you say?  
-   **A change in the DNA of a gene** · A brand-new chromosome that appears from nowhere · An injury, like a broken leg · A trait an animal learns while growing
+   **A change in the DNA of a gene** · A brand-new chromosome that appears from nowhere · An injury, like a broken leg or a cut · A trait an animal learns while growing
 2. [1] A kid asks if mutations are harmful. What do you say?  
-   **They can be harmful, helpful, or have no effect** · Yes, mutations make animals sick · No, mutations make animals stronger · Yes, because a changed gene makes a protein that cannot work
+   **They can be harmful, helpful, or have no effect** · Yes, mutations make animals sick · No, mutations make animals stronger · Yes, because a changed protein can’t work
 3. [1] A visitor asks what can cause a mutation. What do you say?  
-   **A mistake when DNA is copied, or things like UV light** · Eating food that has a lot of protein in it · Exercising the muscles very hard every day for a month · Living in a barn with many other animals
+   **A mistake when DNA is copied, or things like UV light** · Eating food that has a lot of protein in it · Exercising the muscles very hard · Living in a barn with many other animals
 4. [1] A mutation happens in one of a cow’s skin cells. A kid asks if her calves can inherit it. What do you say?  
-   **No, only mutations in egg or sperm cells pass on** · Yes, mutations in any cell pass to the calves · Yes, but just to her female calves · No, because mutations in cows disappear before calving
+   **No, only mutations in egg or sperm cells pass on** · Yes, mutations in any cell pass to the calves · Yes, but just to her female calves · No, mutations in cows fade before calving
 5. [2] Belgian Blue cattle have a mutation that breaks the gene for myostatin, a protein that limits muscle growth. What trait do they show?  
-   **Extra-large muscles** · Very small muscles · No horns · A coat with red and white hairs mixed
+   **Extra-large muscles** · Very small muscles · No horns · A roan coat
 6. [2] A mutation changes one DNA letter, but the protein comes out the same. How can that be?  
    **The new three-letter code stands for the same amino acid** · The cell fixes the protein after it is made by checking it · Proteins are not made from the instructions in genes · One letter is too small for the cell to read
 7. [2] A mutation was in the egg that became a calf. A visitor asks why the mutation is in nearly every cell of the calf. What do you explain?  
@@ -136,13 +136,13 @@ Every question with the right answer in **bold**, for the teacher to read before
 10. [3] Polled (hornless) Holsteins carry a natural mutation. A dairy farmer chooses polled bulls. What is one benefit?  
    **Calves won’t need their horns removed** · Calves will grow twice as fast · The cows will produce milk with more protein · The bulls can’t pass on any other mutations
 11. [3] A mutation changes the shape of a protein. Which outcome could happen?  
-   **The protein may work worse, better, or about the same** · The protein will turn into a different chromosome · The animal’s other genes will mutate too · The protein will travel to the nucleus and change the DNA
+   **The protein may work worse, better, or about the same** · The protein will turn into a different chromosome · The animal’s other genes may mutate too · The protein will change the DNA in the nucleus
 12. [3] A cow has a mutation in her udder cells. Which of her calves could inherit that mutation?  
-   **None of them, since udder cells aren’t sex cells** · The female calves, because they will grow udders too · Half of them, like any other allele · The ones born after the mutation happened
+   **None of them, since udder cells aren’t sex cells** · The female calves, which grow udders too · Half of them, like any other allele · The ones born after the mutation happened
 13. [3] A mutation gives some cattle a short, slick hair coat that helps them stay cool. Where would cattle with this mutation most likely do better?  
    **Herds in hot places, where slick-coated cows stay cool** · Herds in cold places, where cows need thick, warm winter hair · Any herd, since cows everywhere need to stay cool in summer · Herds kept in cool barns with fans, where the cows stay cool
 14. [3] Which change is NOT a mutation?  
-   **A cow’s muscles getting bigger from exercise** · A DNA letter swapped in a sperm cell · A DNA letter lost while a cell copies its DNA · UV light changing a DNA letter in a cow’s skin cell
+   **A cow’s muscles getting bigger from exercise** · A DNA letter swapped in one of a bull’s sperm cells · A DNA letter lost while a cell copies its DNA · UV light changing a DNA letter in a cow’s skin cell
 
 **Newer types and short answer**
 
@@ -178,19 +178,19 @@ Every question with the right answer in **bold**, for the teacher to read before
 4. [1] A strawberry plant by the barn sends out a runner that grows into a new plant. What kind of reproduction is this?  
    **Asexual** · Sexual · Pollination · Fertilization
 5. [2] A visitor asks why the piglets in one litter look different from each other. What do you explain?  
-   **Each got a different mix of genes from the two parents** · The biggest piglet took the best genes first · Piglets copy the look of the piglet next to them · They each got food from a different part of the mother first
+   **Each got a different mix of genes from the two parents** · The biggest piglet took the best genes first · Piglets copy the look of the piglet next to them · They each got different food first
 6. [2] What is one advantage of sexual reproduction for a herd?  
-   **Variety makes it likelier that some survive a new disease** · It needs just one parent to make offspring · Offspring are exact copies of a strong parent · It is faster and makes many more offspring in a shorter time
+   **Variety makes it likelier that some survive a new disease** · It needs just one parent to make offspring · Some offspring are exact copies of a strong parent · It is faster and makes more offspring
 7. [2] What is one advantage of asexual reproduction?  
-   **One parent can make many offspring quickly** · Offspring are more varied · Offspring can survive any new disease that reaches the field · It needs a male and a female
+   **One parent can make many offspring quickly** · Offspring are more varied · Offspring can survive any new disease · It needs a male and a female
 8. [2] Dolly the sheep (born 1996) was cloned from a body cell of a ewe. How did the genes in Dolly’s nucleus compare with that ewe’s?  
-   **They were the same as that ewe’s genes** · Half came from the ewe and half from a ram · They were a new mix, like any lamb’s · She had no genes until she was born
+   **They were the same as that ewe’s genes** · Half from the ewe, half from a ram · They were a new mix, like any lamb’s · She had no genes until she was born
 9. [3] A farmer grows one kind of potato, and every plant is a clone. A new fungus arrives. Why is the farm at high risk?  
    **The plants have the same genes, so all could get sick** · Clones grow too slowly and stay too small to fight off a fungus · Clones can’t make the proteins plants use to fight a fungus · Plants grown from pieces of a potato have weaker cells than seedlings
 10. [3] Two black Angus parents have a red calf. A visitor asks how. What do you say?  
    **Each parent passed on a hidden red allele** · The calf’s coat changed color after it was born · Red calves come from a new mutation in the calf · The calf got all its genes from one parent
 11. [3] Why is a calf not an exact copy of either parent?  
-   **It got half its chromosomes from each, in a new mix** · It got its chromosomes from the stronger parent · Calves make new chromosomes as they grow · It got a copy of each of its four grandparents’ chromosomes
+   **It got half its chromosomes from each, in a new mix** · From the stronger parent, it got its chromosomes · Calves make new chromosomes as they grow · It got its four grandparents’ chromosomes
 12. [3] A hen has two alleles for a gene, B and b. Each egg gets one of them. What does this mean for her chicks?  
    **Some chicks can get B and others b** · Each chick gets both B and b from her · Each chick gets B, since it is the dominant one · The chicks get no alleles from the hen
 13. [3] Which group of offspring is most likely to have a lot of genetic variety?  
@@ -201,7 +201,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 **Newer types and short answer**
 
 - Sort [1]: Sexual or asexual reproduction? Lambs born to a ram and a ewe → **Sexual**; A potato sprouting from an eye → **Asexual**; A strawberry runner taking root → **Asexual**; Chicks hatching from fertilized eggs → **Sexual**; Dolly the sheep, cloned from a body cell → **Asexual**; Seeds from pollinated pumpkin flowers → **Sexual**
-- Two-part [3]: Part A: A herd of identical cloned cows and a herd from many different parents both face a new disease. Which herd is more likely to have survivors? **The herd from many parents** · The cloned herd · Both herds have the same chance — Part B: Why? **Varied genes make it likely some cows can resist it** · Clones are bigger and stronger than other cows · Diseases spread more slowly among cows that are identical clones
+- Two-part [3]: Part A: A herd of identical cloned cows and a herd from many different parents both face a new disease. Which herd is more likely to have survivors? **The herd from many parents** · The cloned herd · Both herds have the same chance — Part B: Why? **Varied genes make it likely some cows can resist it** · Clones are usually bigger and stronger than other cows · Diseases spread more slowly among cows that are identical clones
 - Short answer: Explain why two piglets from the same parents can look different, but two clones of one pig look almost the same.  
   Rubric: Says each piglet gets a different mix of alleles (half from each parent); Says clones have copies of one parent’s genes; Uses the idea of genetic variation (or no variation for clones)  
   Model: *Each piglet gets half its chromosomes from its mother and half from its father, and each egg and sperm carries a different mix of alleles, so brothers and sisters vary. Clones are made from one pig’s body cells, so they have copies of the same genes and look almost the same.* (at least 20 words)
@@ -219,11 +219,11 @@ Every question with the right answer in **bold**, for the teacher to read before
 **Multiple choice** (level in brackets)
 
 1. [1] A calf’s genotype is Pp. A kid asks what “genotype” means. What do you say?  
-   **The two alleles it has for a gene** · What the calf looks like · How many chromosomes it has in total · The kind of food its mother ate
+   **The two alleles it has for a gene** · What the calf looks like · How many chromosomes it has · The kind of food its mother ate
 2. [1] A calf has no horns. Is “no horns” a genotype or a phenotype?  
-   **A phenotype, because it is a trait you can see** · A genotype, because it is a trait you can see and count · An allele, because it is passed on · A chromosome, because it is in every cell
+   **A phenotype, because it is a trait you can see** · A genotype, because you can count it · An allele, because it is passed on · A chromosome, because it is in every cell
 3. [1] A visitor asks what “dominant allele” means. What do you say?  
-   **An allele that shows its trait even with one copy** · An allele that is stronger and makes the animal bigger · An allele found in more animals than any other · An allele that comes from the father
+   **An allele that shows its trait even with one copy** · An allele that makes the animal bigger · An allele found in more animals than any other · An allele that comes from the father
 4. [1] Which genotype is heterozygous?  
    **Bb** · BB · bb
 5. [2] In sheep, white wool (W) is dominant over black wool (w). A ewe’s genotype is ww. What is her phenotype?  
@@ -241,7 +241,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 11. [3] In Shorthorn cattle, red (R) and white (W) are codominant. A breeder wants every calf to be roan. Which pair should she breed?  
    **A red cow and a white bull** · Two roan cattle · A roan cow and a red bull · A roan cow and a white bull
 12. [3] Why does a roan × roan cross give some red, some roan, and some white calves?  
-   **Each parent can pass on either R or W** · Roan is a mutation that comes and goes · The calves mix colors as they grow up · Roan parents carry three alleles each
+   **Each parent can pass on either R or W** · Roan is a mutation that comes and goes · The calves mix colors as they grow up · Roan parents can carry three alleles each
 13. [3] Which statement about dominant alleles is true?  
    **A dominant allele can be rare in a herd** · A dominant allele is the most common one in a herd · A dominant allele makes an animal healthier · A dominant allele turns recessive alleles into copies of itself
 14. [3] In chickens, a rose comb (R) is dominant over a single comb (r). A rose-comb hen has a single-comb chick. What is the hen’s genotype?  
@@ -276,9 +276,9 @@ Every question with the right answer in **bold**, for the teacher to read before
 **Multiple choice** (level in brackets)
 
 1. [1] A visitor asks what each box of a Punnett square shows. What do you say?  
-   **One possible genotype for an offspring** · One parent’s whole set of chromosomes and genes · The exact number of babies born · A different trait the parents have
+   **One possible genotype for an offspring** · One parent’s whole set of genes · The exact number of babies born · A different trait the parents have
 2. [1] What goes along the top and the side of a Punnett square?  
-   **The alleles each parent can pass on** · The phenotypes of the grandparents · The number of offspring expected · The genotypes of the four offspring
+   **The alleles each parent can pass on** · The phenotypes of all the grandparents · The number of offspring they can expect · The genotypes of the four offspring born
 3. [1] A Bb × bb Punnett square has 2 boxes of Bb and 2 boxes of bb. What is the chance of a bb calf?  
    **1/2** · 1/4 · 3/4 · 0
 4. [1] In cattle, P (polled, no horns) is dominant over p (horns). A Pp × Pp square has PP, Pp, Pp, and pp. How many of the 4 boxes have no horns?  
@@ -294,7 +294,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 9. [3] Two blue Andalusian chickens (BW) have 40 chicks. BB chicks are black. About how many chicks are black?  
    **10** · 20 · 30 · 0
 10. [3] A Punnett square says 1/2 of the lambs should be black, but 3 of 4 lambs were black. Is the square wrong?  
-   **No, small groups often differ from the prediction by chance** · Yes, the square should have shown 3/4 · Yes, Punnett squares work for cattle but not sheep · Yes, the parents’ genotypes must have changed since the square was drawn
+   **No, small groups often differ from the prediction by chance** · Yes, the square should have shown 3/4 · Yes, Punnett squares work for cattle but not sheep · Yes, the parents’ genotypes must have changed
 11. [3] Two Pp cattle have a calf with no horns. What is the chance this calf is Pp?  
    **2/3** · 1/2 · 3/4 · 1/4
 12. [3] A horned cow (pp) and a polled bull have a horned calf. What must the bull’s genotype be?  
@@ -302,7 +302,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 13. [3] A Pp cow and a Pp bull have two calves. What is the chance that both have horns?  
    **1/16** · 1/4 · 1/8 · 1/2
 14. [3] In Angus cattle, black (B) is dominant over red (b). A black bull is bred to 20 red cows, and all 20 calves are black. What is the best conclusion?  
-   **He is most likely BB** · He must be Bb · He must be bb · Red cows carry a hidden black allele
+   **He is most likely BB** · He must be Bb, a carrier · He must be bb, like the cows · He is most likely Bb
 
 **Newer types and short answer**
 
@@ -357,3 +357,59 @@ Fixed (26):
 - **Distractors.** Ten level-2 and level-3 bank items have stronger wrong choices, and the 3/4 → 75% item is now level 1.
 
 No judgment calls are left. Kept: “compare to” is standard. Repeated generated samples come from the export drawing six per kind, while a quiz uses one per kind. “Married into the family” is only in the export’s picture description.
+
+## Difficulty and test-wise bot, Oct 30, 2026
+
+Done under the owner rule in docs/BLIND-REVIEW.md. The bot is `node scripts/test-wise-bot.mjs --courses bio5 --attempts 1500`, run against all five new units together. Chance is about 20–24%, not 25%, because the select-all, order, sort, tap, typed and Punnett items are almost impossible to guess. A strategy **fails the unit** if it comes within 15 points of the pass mark or beats chance by more than 10. “Before” is the same bot run on this branch before the fixes.
+
+### Difficulty by level
+
+| level | items (fixed + generated kinds) | share | blind right | mean confidence | too-easy flags | trained bot (learnedXU) per item, before → after |
+|---|---|---|---|---|---|---|
+| L1 | 29 + 7 kinds | 29% | 71/71 (incl. 6 samples per kind) | 4.97 | 1 | .29 → .11 |
+| L2 | 27 + 6 kinds | 27% | 79/79 | 4.96 | 6 | .30 → .22 |
+| L3 | 40 + 11 kinds | 41% | 98/98 | 5.00 | 13 (6 sperm-allele, fixed earlier; 4 clone, fixed now) | .22 → .15 |
+
+Is L3 harder? Yes. Pedigrees, F2 crosses, two-child probability, 2ⁿ eggs and frameshift counting are all multi-step, and the trained bot gets .15 at L3 against .22 at L2. Compared with Khan: clearly harder, with several items at high-school level.
+
+### Test-wise bot, before and after
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Quiz 1 (4 q) | 75% | 20.2 | middle 33.7 (FAIL: middle, learnedXU) | overlap 27.4 | holds (47.6 below pass, +7.2 over chance) |
+| Quiz 2 (4 q) | 75% | 20 | learnedCV 39.8 (FAIL: learnedCV) | kindMemo 27.6 | holds (47.4 below pass, +7.6 over chance) |
+| Unit test (24 q) | 79.2% | 20.1 | learnedCV 31.5 (FAIL: learnedCV) | kindMemo 24.9 | holds (54.3 below pass, +4.8 over chance) |
+| Memorizer, test tries 1 / 2 / 3 | 79.2% | | 48.1 / 58.2 / 64.6 (FAIL) | 42.2 / 47.1 / 51 | holds |
+
+Single-attempt quiz pass chance (best bot) after: Quiz 1 5%, Quiz 2 7%; before: 11%, 15%. Test-only items per lesson: {"chromU":6,"chromA":7,"mutA":7,"sexVarU":7,"vocabA":6,"punnettA":6}.
+
+“Best bot” is the highest-scoring of the bot’s strategies on that assessment. The bot also tried longest, shortest, middle-length, most specific, prompt overlap, absolute words, grammar agreement, odd one out, both/all, letter A, majority vote and its opposite, the two trained bots and generated-answer patterns. The memorizer remembers every right answer it was shown in one practice per lesson, each quiz, the 8-question review before every try and the test itself, and uses its best trick on anything new. Position is still clean: the key is spread evenly over A–D, a retake redraws the items, and a repeated item keeps its letter only about 25% of the time.
+
+### What was fixed
+
+**Generated genetics (src/shared/genetics.js; scripts/check-genetics.mjs updated, with its --break proof):**
+- `chromA.mule`: now one of six real hybrids (mule, hinny, zorse, zonkey, liger, cama) with real counts, asking for the total or how many came from the mother or the father. The answer used to be 63 every time.
+- `punnettA.testcross`: half the time 0 of the offspring show the recessive trait, so the key is the homozygote. The stem now asks for the “most likely genotype”.
+- `sexVarU.clone`: the key’s wording varies (“…, the same as her” / “…, because all its alleles come from her body cell” / “…, copied from her body cell”), so neither the wording nor the length gives it away.
+- `vocabA.carrier`: the right pair varies (Aa × Aa, Aa × aa, aa × Aa), and 2 in 5 questions ask which pair could NOT have the recessive calf.
+- `vocabA.zyg`: half heterozygous, half homozygous.
+- `vocabA.genoFromPheno`: a third case (“Her mother had horns”, key Aa), and every choice set holds both of the other cases’ answers.
+- `punnettA.pedigree`: forced carriers are now picked 35% of the time (was 70%).
+- `punnettA.prob`: AA × aa and Aa × AA crosses were added, so the answers spread over 0, 1/4, 1/2, 3/4 and 1 (the most common answer is now about 20%; it was 66%).
+- `punnettA.ratio`: the longest wrong ratio is no longer always a choice.
+
+**Fixed items:** 34 multiple-choice items and the two-part `sexVarU:cx5s8k` Part B have new wrong answers. In `punnettA:1d4vfvd`, “Red cows carry a hidden black allele” became “He is most likely Bb”. No ids changed.
+
+**Systemic changes (all units):**
+- **Key lengths balanced.** The old rule “the right answer is never the longest” had made the key the middle-length choice. Dropping the longest and shortest choices and guessing scored 29–37%. Wrong answers were shortened or lengthened so that in each lesson the key is the longest choice about 1 time in 4 and the shortest about 1 time in 4, in both the practice pool and the test-only pool. Only wrong answers changed, so ids are stable.
+- **Odd-one-out cues removed.** Where the key was the only choice with a comma, “can”, “because”, “never”, a parenthesis or a semicolon, one wrong answer now shares that feature.
+- **Test-only questions.** About 2 in 5 of each lesson’s fixed questions (6–7 here) are now kept for the unit test (`testOnlyIds`, src/shared/questionTypes.js). Practice, quizzes and the review never show them.
+- **No answers after a unit-test miss.** A unit-test miss now names the lesson to go back to and doesn’t show or highlight the right answer (`testMissText`, game.js; stage.js skips the “I read that it’s…” bubble). Practice, quizzes and the review still teach the answer.
+- The bot (`scripts/test-wise-bot.mjs`) and the exporter (`scripts/blind-export.mjs`) are in the repo; see docs/BLIND-REVIEW.md.
+
+### Judgment calls for Andy
+
+- The earlier judgment calls stand (blind review section above).
+- **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
+- **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
+- **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.

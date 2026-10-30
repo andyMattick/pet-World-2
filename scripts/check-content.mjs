@@ -1,7 +1,8 @@
 // Checks the content rules a script can check (docs: CONTENT-RULES.md). Run: node scripts/check-content.mjs
 // Errors (exit 1): a lesson without its 2 scored newer-type questions and 1 short answer, a course without a unit-test
-// paragraph, or straight apostrophes in the newer-type questions. Warnings: multiple-choice questions whose right answer
-// is the longest choice, or whose wrong answers use give-away words.
+// paragraph, or straight apostrophes in the newer-type questions. Warnings: a course whose right answers are the longest
+// (or the shortest) choice much more or less often than about 1 in 4 (a test-wise student can play the length; see
+// docs/BLIND-REVIEW.md), or multiple-choice questions whose wrong answers use give-away words.
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -17,16 +18,21 @@ const GIVEAWAY = /\b(only|always|never|all|none|every|completely|nothing)\b/i;
 for (const course of Banks.LESSON_COURSES) {
   if (!UNIT_ESSAYS[course.id] || T.typedProblems(UNIT_ESSAYS[course.id]).length) errors.push(`${course.id}: needs a unit-test paragraph in UNIT_ESSAYS`);
   const bank = Banks.builtInBank(course.id);
+  let sets = 0, keyLongest = 0, keyShortest = 0;
   for (const skill of course.skills) {
     const typed = (TYPED_QUESTIONS[course.id]?.[skill.id] || []).filter(q => !T.typedProblems(q).length);
     const scored = typed.filter(q => !T.isWritten(q)).length, written = typed.filter(T.isWritten).length;
     if (scored < 2 || written < 1) errors.push(`${course.id}/${skill.id}: has ${scored} scored newer-type question(s) and ${written} short answer(s); needs 2 and 1`);
     for (const q of bank[skill.id] || []) {
       const right = q.options[q.answer], wrong = q.options.filter((_, i) => i !== q.answer);
-      if (right.length > Math.max(...wrong.map(w => w.length)) && !/^\S+$/.test(right)) warnings.push(`${course.id}/${skill.id}: right answer is the longest choice: "${q.prompt.slice(0, 60)}"`);
+      sets++;
+      if (right.length > Math.max(...wrong.map(w => w.length))) keyLongest++;
+      if (right.length < Math.min(...wrong.map(w => w.length))) keyShortest++;
       if (!GIVEAWAY.test(right) && wrong.filter(w => GIVEAWAY.test(w)).length >= 2) warnings.push(`${course.id}/${skill.id}: two or more wrong answers use give-away words: "${q.prompt.slice(0, 60)}"`);
     }
   }
+  const share = n => n / Math.max(1, sets);   // aim for about 25% each (owner rule, Oct 30, 2026)
+  if (sets >= 20 && (share(keyLongest) < 0.15 || share(keyLongest) > 0.35 || share(keyShortest) < 0.15 || share(keyShortest) > 0.35)) warnings.push(`${course.id}: the right answer is the longest choice in ${Math.round(100 * share(keyLongest))}% and the shortest in ${Math.round(100 * share(keyShortest))}% of ${sets} questions (aim for about 25% each)`);
 }
 const textOf = q => JSON.stringify(q);
 for (const [course, lessons] of Object.entries(TYPED_QUESTIONS)) for (const [skill, list] of Object.entries(lessons)) for (const q of list) {
