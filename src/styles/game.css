@@ -1602,3 +1602,135 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .wp-gloss{margin-top:4px !important}
 .wp-guess{border-style:dotted}
 .vocab-peek .word-parts{margin:6px 0 0}
+/* ---------- 🐾 This Week's Paw Path (docs/VOCAB.md "This week's word path") ---------- */
+:root{ --pp-green:#58C76B; --pp-green-deep:#3A9A4C; --pp-gold:#FFC83D; --pp-gold-deep:#D99A12; --pp-lock:#E4DCDF; --pp-lock-deep:#B8ABB0; --pp-good-bg:#DDF6DF; --pp-bad-bg:#FFE1E6; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --pp-lock:#4E3C46; --pp-lock-deep:#2E2229; --pp-good-bg:#1F3B26; --pp-bad-bg:#4A2430; } }
+:root[data-theme="dark"]{ --pp-lock:#4E3C46; --pp-lock-deep:#2E2229; --pp-good-bg:#1F3B26; --pp-bad-bg:#4A2430; }
+.pp-head{display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap}
+.pp-head h3{margin:4px 0 0; font-size:1.25rem}
+.pp-head p{margin:2px 0 0}
+.pp-stats{display:flex; gap:6px}
+.pp-stats span{background:var(--surface); border:2px solid var(--edge); border-radius:999px; padding:2px 10px; font-weight:800; white-space:nowrap}
+.pp-xp{color:#8A5A00} .pp-streak{color:#C2410C}
+:root[data-theme="dark"] .pp-xp,:root[data-theme="dark"] .pp-streak{color:var(--ink)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pp-xp,:root:not([data-theme="light"]) .pp-streak{color:var(--ink)} }
+.pp-week{display:flex; justify-content:space-between; gap:4px; margin:10px 0 4px; max-width:360px}
+.pp-week span{flex:1; text-align:center; font-weight:800; font-size:.8rem; color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; gap:2px}
+.pp-week i{display:flex; width:28px; height:28px; border-radius:50%; background:var(--pp-lock); align-items:center; justify-content:center; font-style:normal; font-size:.95rem}
+.pp-week span.on i{background:#FFE7C2}
+.pp-week span.today{color:var(--berry-deep)} .pp-week span.today i{box-shadow:0 0 0 2px var(--berry)}
+.pp-path{display:flex; flex-direction:column; align-items:center; padding:8px 0 14px; overflow:hidden}
+.pp-step{position:relative; display:flex; flex-direction:column; align-items:center; transform:translateX(var(--x)); width:100%; max-width:300px}
+.pp-link{width:8px; height:22px; border-radius:4px; background:var(--pp-lock); margin:2px 0}
+.pp-node{position:relative; width:84px; height:84px; border-radius:50%; border:0; padding:0; cursor:pointer; background:transparent; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent}
+.pp-node .pp-face{position:relative; z-index:1; width:66px; height:62px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.9rem; background:var(--pp-green); box-shadow:0 7px 0 var(--pp-green-deep); transition:transform .08s, box-shadow .08s; margin-top:-6px}
+.pp-node:active .pp-face{transform:translateY(5px); box-shadow:0 2px 0 var(--pp-green-deep)}
+.pp-node.pp-done .pp-face{background:var(--pp-gold); box-shadow:0 7px 0 var(--pp-gold-deep)}
+.pp-node.pp-locked .pp-face{background:var(--pp-lock); box-shadow:0 7px 0 var(--pp-lock-deep); filter:grayscale(.3); font-size:1.5rem}
+.pp-node.pp-current .pp-face{animation:pp-bob 1.6s ease-in-out infinite}
+.pp-node.pp-trophy .pp-face{width:74px; height:70px; font-size:2.2rem}
+.pp-node.pp-trophy.pp-current .pp-face{background:var(--berry); box-shadow:0 7px 0 var(--berry-deep)}
+.pp-ring{position:absolute; inset:0; width:100%; height:100%}
+.pp-ring-bg{fill:none; stroke:var(--pp-lock); stroke-width:7}
+.pp-ring-fg{fill:none; stroke:var(--pp-gold); stroke-width:7; stroke-linecap:round}
+.pp-current .pp-ring-fg{stroke:var(--pp-green)}
+.pp-label{font-weight:800; font-size:.9rem; margin-top:6px; text-align:center}
+.pp-pet{position:absolute; top:6px; display:flex; flex-direction:column; align-items:center; pointer-events:none; z-index:2}
+.pp-pet.right{left:calc(50% + 52px)} .pp-pet.left{right:calc(50% + 52px)}
+.pp-pet-emoji{font-size:2.3rem; animation:pp-hop 1.2s ease-in-out infinite}
+.pp-pet-say{background:var(--surface); border:2px solid var(--edge); border-radius:12px; padding:1px 8px; font-weight:800; font-size:.78rem; max-width:96px; text-align:center; line-height:1.15; margin-bottom:2px}
+@keyframes pp-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes pp-hop{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+@media (prefers-reduced-motion: reduce){ .pp-node.pp-current .pp-face,.pp-pet-emoji{animation:none} }
+.pp-bubble{margin-top:10px; width:min(300px,calc(100vw - 64px)); background:var(--pp-green); color:#fff; border-radius:16px; padding:12px 14px; text-align:left; box-shadow:0 5px 0 var(--pp-green-deep); position:relative; z-index:3}
+.pp-bubble p{margin:6px 0}
+.pp-bubble .muted{color:rgba(255,255,255,.88)}
+.pp-bubble.pp-b-done{background:var(--pp-gold); color:#4A2E2A; box-shadow:0 5px 0 var(--pp-gold-deep)} .pp-bubble.pp-b-done .muted{color:#6B4B2A}
+.pp-bubble.pp-b-locked{background:var(--pp-lock); color:var(--ink); box-shadow:0 5px 0 var(--pp-lock-deep)}
+.pp-bubble.pp-b-locked .muted{color:var(--ink-soft)}
+.pp-step .pp-bubble{transform:translateX(calc(-1 * var(--x)))}   /* the bubble sits in the middle of the column, not under a node that's off to the side */
+@media (max-width:520px){ .vocab-tabs{flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; padding-bottom:6px; scrollbar-width:thin} .vocab-tabs .btn{flex:0 0 auto} }
+.pp-bubble .pp-go{width:100%; background:#fff; color:var(--pp-green-deep); font-weight:800; font-size:1.05rem; min-height:46px; border-radius:12px}
+.pp-bubble.pp-b-done .pp-go{color:#8A5A00}
+.pp-lessons{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+.pp-lesson-btn{border:2px solid rgba(255,255,255,.8); background:rgba(255,255,255,.18); color:inherit; border-radius:10px; padding:4px 10px; font-weight:800; min-height:36px}
+.pp-b-done .pp-lesson-btn{border-color:#8A5A00}
+.pp-lesson-btn:disabled{opacity:.55}
+.pp-bonus{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:4px}
+.pp-summary{margin:4px 0 8px}
+.wow-path{margin:4px 0}
+/* a lesson */
+.pp-lesson{display:flex; flex-direction:column; min-height:70vh}
+.pp-top{display:flex; align-items:center; gap:10px}
+.pp-x{border:0; background:transparent; font-size:1.4rem; color:var(--ink-soft); cursor:pointer; min-width:44px; min-height:44px}
+.pp-prog{flex:1; height:16px; border-radius:999px; background:var(--pp-lock); overflow:hidden}
+.pp-prog i{display:block; height:100%; background:var(--pp-green); border-radius:999px; transition:width .3s; box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}
+.pp-time{font-weight:800; white-space:nowrap}
+.pp-skill{margin:6px 0 2px; font-weight:800; color:var(--ink-soft); font-size:.9rem}
+.pp-again{margin:4px 0; font-weight:800; color:#C2410C}
+.pp-word{font-size:2.2rem; font-weight:800; text-align:center; margin:8px 0 2px; word-break:break-word}
+.pp-word.small{font-size:1.7rem}
+.pp-new{margin:4px 0 0; font-weight:800; color:var(--berry-deep); text-align:center}
+.pp-hear{justify-content:center; align-items:center}
+.pp-mean{font-size:1.15rem; text-align:center; margin:10px 0}
+.pp-mean-small{text-align:center; margin:4px 0}
+.pp-example{font-style:italic; text-align:center; color:var(--ink-soft)}
+.pp-choices{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0}
+.pp-choices.long{grid-template-columns:1fr}
+.pp-choice,.pp-tile,.pp-chip{border:2px solid var(--pp-lock-deep); border-bottom-width:5px; background:var(--surface); color:var(--ink); border-radius:14px; padding:12px 10px; min-height:52px; font-weight:700; font-size:1.05rem; cursor:pointer; text-align:center}
+.pp-choices.long .pp-choice{text-align:left; font-weight:600; font-size:1rem}
+.pp-choice.sel,.pp-tile.sel{border-color:#3B82F6; background:#E0EDFF; color:#1E3A8A}
+.pp-choice.correct,.pp-tile.matched{border-color:var(--pp-green-deep); background:var(--pp-good-bg); color:var(--ink)}
+.pp-choice.incorrect,.pp-tile.wrong{border-color:#E11D48; background:var(--pp-bad-bg); color:var(--ink)}
+.pp-tile.matched{opacity:.55}
+.pp-tile.wrong{animation:pp-shake .3s}
+@keyframes pp-shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.pp-match{display:grid; grid-template-columns:1fr 1.4fr; gap:8px; margin:10px 0}
+.pp-col{display:flex; flex-direction:column; gap:8px}
+.pp-tile{font-size:.92rem; font-weight:600; padding:8px; min-height:58px}
+.pp-tile.word{font-size:1.05rem; font-weight:800}
+.pp-built{min-height:62px; border-bottom:3px solid var(--pp-lock-deep); display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:center; padding:6px; margin:10px 0}
+.pp-bank{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:8px 0}
+.pp-chip{min-height:48px; padding:8px 14px; font-weight:800}
+.pp-chip:disabled{opacity:.3}
+.pp-chip.in{border-color:#3B82F6}
+.pp-lesson .typed-fill{justify-content:center}
+.pp-foot{margin-top:auto; padding:12px; border-radius:16px; display:flex; flex-direction:column; gap:6px}
+.pp-foot .pp-check{width:100%; min-height:52px; font-size:1.15rem; font-weight:800; border-radius:14px; box-shadow:0 5px 0 var(--berry-deep)}
+.pp-foot .pp-check:disabled{background:var(--pp-lock); color:var(--ink-soft); box-shadow:0 5px 0 var(--pp-lock-deep)}
+.pp-foot.pp-good{background:var(--pp-good-bg)} .pp-foot.pp-good .pp-check{background:var(--pp-green); box-shadow:0 5px 0 var(--pp-green-deep)}
+.pp-foot.pp-bad{background:var(--pp-bad-bg)} .pp-foot.pp-bad .pp-check{background:#E11D48; box-shadow:0 5px 0 #9F1239}
+.pp-fb{margin:0; font-size:1.1rem}
+.pp-fb-pet{font-size:1.6rem; vertical-align:middle}
+.pp-why{margin:0}
+.pp-foot .fix-it{margin:4px 0}
+/* lesson complete */
+.pp-done{text-align:center}
+.pp-done-pet{font-size:4rem; animation:pp-hop 1.2s ease-in-out infinite}
+.pp-done h2{color:#C27A00; margin:4px 0 10px; font-size:1.7rem}
+.pp-tiles{display:flex; gap:8px; justify-content:center; margin:8px 0}
+.pp-tile-stat{flex:1; max-width:110px; border-radius:14px; border:3px solid; overflow:hidden; background:var(--surface)}
+.pp-tile-stat small{display:block; color:#fff; font-weight:800; padding:2px 4px; font-size:.75rem; text-transform:uppercase}
+.pp-tile-stat b{display:block; padding:8px 4px; font-size:1.2rem}
+.pp-tile-stat.xp{border-color:var(--pp-gold)} .pp-tile-stat.xp small{background:var(--pp-gold); color:#4A2E2A}
+.pp-tile-stat.acc{border-color:var(--pp-green)} .pp-tile-stat.acc small{background:var(--pp-green)}
+.pp-tile-stat.streak{border-color:#F97316} .pp-tile-stat.streak small{background:#F97316}
+.pp-unlocked{font-size:1.05rem}
+.pp-done-row{justify-content:center} .pp-done-row .btn{min-width:200px; min-height:50px; font-size:1.1rem}
+/* review fixes (Oct 30): look-alike card, accent keys, "stop this lesson?", room for the floating ✋ button */
+.pp-pair{display:flex; align-items:stretch; justify-content:center; gap:8px; margin:10px 0}
+.pp-pair-word{flex:1; max-width:160px; border:2px solid var(--pp-lock-deep); border-bottom-width:5px; border-radius:14px; padding:10px 8px; background:var(--surface); text-align:center; display:flex; flex-direction:column; gap:4px}
+.pp-pair-word b{font-size:1.25rem}
+.pp-pair-word small{color:var(--ink-soft); font-size:.85rem; line-height:1.25}
+.pp-vs{align-self:center; font-weight:800; color:var(--ink-soft)}
+.pp-intro .pp-why{text-align:center; font-size:1.02rem}
+.pp-part-mean{font-size:1.25rem; font-weight:800; text-align:center}
+.pp-accents{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; width:100%; margin-top:6px}
+.pp-accents .btn{min-width:40px; min-height:40px; font-size:1.05rem; text-transform:none}
+.pp-quit-ask{border:2px solid var(--edge); border-radius:14px; background:var(--surface); padding:10px 12px; margin:8px 0}
+.pp-quit-ask p{margin:0 0 8px}
+.pp-lesson{padding-bottom:84px}
+.pp-foot,.pp-foot .btn,.pp-foot .fix-it{scroll-margin-bottom:96px; scroll-margin-top:12px}
+.pp-match{grid-template-columns:1fr 1.6fr}
+.pp-match.from-meaning{grid-template-columns:1.6fr 1fr}
+@media (max-width:420px){ .pp-match{gap:6px} .pp-tile{font-size:.88rem; padding:6px} .pp-tile.word{font-size:1rem} }

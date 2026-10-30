@@ -16,6 +16,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
+import { PATH_SKILLS, skillInfo, buildLesson, lessonGroups, lessonCount, againItem, matchRetryItem, pathForWeek, pathNodes, recordLesson, pathSummaryText, fillBlank, XP_LESSON, langOf, graphemes } from '../shared/wordPath';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
@@ -6141,7 +6142,7 @@ function show(id){
   if (id === 'book') { const b = BUILDINGS.find(x => x.id === bookUnit), hood = currentHood(), list = viewSubject ? buildingsInClass(hood, viewSubject) : buildingsIn(hood); renderBook(b && b.hood === hood && (!viewSubject || b.subject === viewSubject) ? bookUnit : list[0].id); }
   if (id === 'library') { renderEnglishLibrary(); if (Backend.me) void Backend.refreshSettings().then(() => { if (!$('#scr-library').hidden && $('#libraryWrap .ela-layout')) renderEnglishLibrary(); }); }
   if (id === 'arcade') renderArcade();
-  if (id === 'vocab') renderVocab(); else { if (vocabRun) { stopVocabTimer(); vocabRun = null; } if (puzzleRun || checkRun) stopPuzzleRun(); }
+  if (id === 'vocab') renderVocab(); else { if (vocabRun) { stopVocabTimer(); vocabRun = null; } if (puzzleRun || checkRun) stopPuzzleRun(); if (pathRun || pathRound) leavePath(); }
   syncRoom(id);
   window.scrollTo(0,0);
   if (brainRun && (id === 'join' || id === 'name' || id === 'loading')) closeBrainStretch(false);   // signed out: the stretch waits in the save
@@ -6403,7 +6404,7 @@ function brainItemName(x){
 function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
-  if (on('vocab') && (vocabRun || puzzleRun || checkRun)) return false;
+  if (on('vocab') && (vocabRun || puzzleRun || checkRun || pathRun)) return false;
   if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap') || $('#brWrap') || $('#rcWrap') || $('#srWrap') || $('#snapWrap'))) return false;
   return true;
 }
@@ -9581,7 +9582,7 @@ function extraRowHTML(x, part = 'warm', lead = ''){
   const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
   return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${lead}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : start('all')}</div>`;
 }
-const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it', puzzle:'Word puzzle', check:'Friday mastery check'};
+const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it', puzzle:'Word puzzle', check:'Friday mastery check', path:'Paw Path'};
 function extraTypes(x){ const t = (x.skills || []).filter(type => DRILL_IMPL[type]?.sprintItem); return t.length ? t : ['times']; }
 function extraLabel(x){
   if (x.kind === 'vocab') return `🔤 Word Workshop${x.mode && VOCAB_MODE_NAME[x.mode] ? `: ${VOCAB_MODE_NAME[x.mode]}` : ''}`;
@@ -9597,7 +9598,8 @@ document.addEventListener('click', event => {
   const b = event.target.closest('[data-extra-start]'); if (!b) return;
   const x = assignedExtras().find(e => e.id === b.dataset.extraStart); if (!x) return;
   const challenge = b.dataset.extraPart === 'challenge' && challengeMin(x) > 0;
-  if (x.kind === 'vocab' && challenge) { vocabTab = 'week'; show('vocab'); if (checkDue()) startCheck(x.id); else startPuzzle({timed:true, min:challengeMin(x), extraId:x.id}); }
+  /* the warm-up: Friday's mastery check, or (owner, Oct 30, 2026) a timed round on the 🐾 Paw Path instead of the daily puzzle */
+  if (x.kind === 'vocab' && challenge) { vocabTab = 'path'; show('vocab'); if (checkDue()) startCheck(x.id); else startPathRound({min:challengeMin(x), extraId:x.id}); }
   else if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
   else { pendingExtra = challenge ? {...x, challengeRun:true} : x; openSprint(); }
 });
@@ -9883,7 +9885,10 @@ function wordsWeekCardHTML(){
   const chip = x => { const mark = x.result === 1 ? '⭐' : x.result === 0 ? '↩️' : x.right ? '✅' : '';
     return `<span class="vocab-chip wow-chip st-${x.result === 1 ? 'solid' : x.result === 0 ? 'work' : x.right ? 'close' : 'new'}" title="${esc(x.d)}">${mark ? `${mark} ` : ''}${esc(x.w)}</span>`; };
   const list = (title, xs) => xs.length ? `<h4 class="vocab-set">${title} (${xs.length})</h4><div class="vocab-grid">${xs.map(chip).join('')}</div>` : '';
-  return `<div class="card extras-card wow-card" style="grid-column:1/-1"><div class="wow-head"><h2>📚 Words of the Week</h2><button type="button" class="btn small${checkDue() ? '' : ' berry'}" data-open="vocab">Practice</button></div>
+  /* 🐾 the Paw Path is the default step (owner, Oct 30, 2026): Practice opens it at her next node */
+  const path = ensurePath(), {current, allDone} = pathNodes(path);
+  const pathLine = `<p class="wow-path">🐾 <b>Paw Path:</b> ${current ? `next ${current.emoji} ${esc(current.name)}, lesson ${current.nextLesson + 1} of ${current.total}` : allDone ? 'all 5 skills done! 🎉' : ''} · ⚡ ${path.xp} XP · 📅 ${path.days.length} day${path.days.length === 1 ? '' : 's'}</p>`;
+  return `<div class="card extras-card wow-card" style="grid-column:1/-1"><div class="wow-head"><h2>📚 Words of the Week</h2><button type="button" class="btn small${checkDue() ? '' : ' berry'}" data-open="vocab" data-wk-path>${current ? '🐾 Practice' : 'Practice'}</button></div>${pathLine}
     <p class="wow-stats"><span><b>${n}</b> words</span><span>✅ <b>${right}</b> right this week</span>${carried.length ? `<span>🔁 <b>${carried.length}</b> carried over</span>` : ''}${review.length ? `<span>🔄 <b>${review.length}</b> review</span>` : ''}</p>
     <div class="wow-bar" role="img" aria-label="${right} of ${n} words right this week"><i style="width:${Math.round(100 * right / n)}%"></i></div>
     <p class="wow-fri">${fri}</p>
@@ -9893,6 +9898,8 @@ function wordsWeekCardHTML(){
 }
 document.addEventListener('toggle', e => { if (e.target.classList?.contains('wow-all')) wowOpen = e.target.open; }, true);
 document.addEventListener('click', e => { if (e.target.closest('[data-wk-check]') && !$('#scr-vocab').hidden && checkDue() && !checkRun) { vocabTab = 'week'; renderVocab(); startCheck(); } });
+/* the card's Practice opens Word Workshop on the 🐾 Paw Path with her next node's bubble open (runs before the town's data-open) */
+document.addEventListener('click', e => { if (e.target.closest('[data-wk-path]')) { vocabTab = 'path'; pathOpen = pathNodes(ensurePath()).current?.id || null; } }, true);
 function renderHome(){
   const helper = petReward(), displayed = S.displayed.map(id => id ? REWARDS.find(reward => reward.id === id) : null);
   const ownedDecor = S.decor.map(id => REWARDS.find(reward => reward.id === id)).filter(Boolean);
@@ -10384,7 +10391,7 @@ $('#town').addEventListener('click', e => {
     show('cafe');
   }
   else if (id === 'sprint') openSprint();
-  else if (id === 'vocab') { void Backend.refreshSettings().then(() => { if (!$('#scr-vocab').hidden && !vocabRun) renderVocab(); }); show('vocab'); }
+  else if (id === 'vocab') { void Backend.refreshSettings().then(() => { if (!$('#scr-vocab').hidden && !vocabRun && !pathRun) renderVocab(); }); show('vocab'); }
   else if (id === 'room') show('room');
   else if (id === 'artstudio') show('artstudio');
   else if (id === 'reading') { activeEnglishCourse = 'nouns'; show('library'); }
@@ -12504,7 +12511,7 @@ $('#libraryWrap').addEventListener('click', event => {
 /* ---------- Word Workshop: vocabulary (docs: VOCAB.md) ----------
    Practice cards (meaning, use it in a sentence, spell it), a 60-second Sprint, Spell it, and a mastery chart like the
    times-tables heat map. Words: Pet World's list + the class's (teacher) + the family's (grown-up, behind the PIN). */
-let vocabRun = null, vocabTab = 'week', vocabTimer = null;
+let vocabRun = null, vocabTab = 'path', vocabTimer = null;   // the 🐾 Paw Path is the first tab (owner, Oct 30, 2026)
 /* the student's words: the lists (vocabList), plus every word they looked up with 📌 (a known word, or a flagged word
    a grown-up has since defined) added to the focus words even if a grown-up picked other focus words */
 /* words a teacher picked to practice a spelling pattern (quiz_overrides.spellFocus, a JSON list): from the word lists
@@ -12574,14 +12581,15 @@ function vocabCard(kind, word, all){
 }
 function renderVocab(){
   const {all, focus} = vocabWords();
-  const tabs = [['week','📅 This week'],['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
+  const tabs = [['path','🐾 Paw Path'],['week','📅 This week'],['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
   const solid = focus.filter(v => wordStatus(vocabStat(v.w)) === 'solid').length;
   let body = '';
-  if (vocabTab === 'week') body = weekTabHTML();
+  if (vocabTab === 'path') body = pathHTML();
+  else if (vocabTab === 'week') body = weekTabHTML();
   else if (vocabTab === 'chart') {
     const hall = new Set((S.vocab.hall || []).map(h => h.w)), un = all.filter(v => !hall.has(wordKey(v.w))).sort((a, b) => a.w.localeCompare(b.w)), won = all.filter(v => hall.has(wordKey(v.w))).sort((a, b) => a.w.localeCompare(b.w));
     const chip = (v, st) => `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st] || 'Mastered')}">${st === 'solid' && hall.has(wordKey(v.w)) ? '⭐ ' : ''}${esc(v.w)}</button>`;
-    body = `<p class="muted">All your words in one list. Tap a word to see what it means. Each week’s list has 20 unmastered words (last week’s leftovers first, the rest picked at random) and 5 mastered words to review.</p>
+    body = `${pathSummaryHTML()}<p class="muted">All your words in one list. Tap a word to see what it means. Each week’s list has 20 unmastered words (last week’s leftovers first, the rest picked at random) and 5 mastered words to review.</p>
       <h4 class="vocab-set">Unmastered (${un.length})</h4><div class="vocab-grid">${un.map(v => chip(v, wordStatus(vocabStat(v.w)))).join('')}</div>
       ${(S.vocab.back || []).length ? `<p class="muted vocab-back-line">🔁 First in line for next week: ${S.vocab.back.map(k => `<b>${esc(all.find(v => wordKey(v.w) === k)?.w || k)}</b>`).join(', ')}</p>` : ''}
       ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>${unmasterListHTML(won)}` : ''}
@@ -12597,6 +12605,8 @@ function renderVocab(){
     <div class="sprint-card vocab-card"><div class="subject-tabs vocab-tabs" role="group" aria-label="Word Workshop">${tabs.map(([id, label]) => `<button type="button" class="btn small" data-vocab-tab="${id}" aria-pressed="${vocabTab === id}">${label}</button>`).join('')}</div>
     <p class="muted">${focus.length} unmastered word${focus.length === 1 ? '' : 's'} · ${(S.vocab.hall || []).length} mastered</p>${body}
     ${flaggedWaiting().length ? `<p class="vocab-flagged">📌 Words you flagged: ${flaggedWaiting().map(f => `<b>${esc(f.w)}</b> ${dictLinkHTML(f.w)}`).join(' · ')} · waiting for a grown-up to add what they mean</p>` : '<p class="muted vocab-flag-tip">Tip: when you read a word you don’t know anywhere in Pet World, or want to keep a word from your own writing, highlight it (double-click, or press and hold it) and tap 📌.</p>'}</div>${vocabGrownUpHTML(all)}`;
+  /* the path opens with the node she's on (or the one she tapped) in the middle of the screen, not below the fold */
+  if (vocabTab === 'path') { const node = $(`#vocabWrap [data-pp-node="${pathOpen || ''}"]`) || $('#vocabWrap .pp-node.pp-current') || $('#vocabWrap [data-pp-node="friday"]'); if (node) setTimeout(() => node.scrollIntoView?.({block:'center'}), 30); }
 }
 function startVocab(mode, challengeExtra = null){
   const {all} = vocabWords(), week = weekWordObjs(), focus = week.length >= 4 ? week : vocabWords().focus; if (all.length < 4) { toast('Add at least 4 words first.'); return; }
@@ -12637,16 +12647,18 @@ function voiceScore(v){
   return (/natural|neural/i.test(n) ? 60 : 0) + (/google/i.test(n) ? 45 : 0) + (/enhanced|premium/i.test(n) ? 40 : 0) + (/online/i.test(n) ? 15 : 0)
     + (/samantha|ava|allison|aria|jenny|zoe|serena|evan|nathan/i.test(n) ? 15 : 0) + (/en[-_]us/i.test(v.lang) ? 10 : /en[-_](gb|au|ca)/i.test(v.lang) ? 5 : 0);
 }
-function readingVoice(){
+function readingVoice(lang = ''){
+  /* a word in another language (its `lang`, like "es") is read by a voice for that language when the device has one */
+  if (lang && !/^en/i.test(lang) && typeof speechSynthesis !== 'undefined') { const own = speechSynthesis.getVoices().filter(v => v.lang.toLowerCase().startsWith(lang.toLowerCase().split('-')[0])); if (own.length) return own.find(v => v.lang.toLowerCase() === lang.toLowerCase()) || own[0]; }
   const voices = englishVoices();
   return voices.find(v => v.name === S?.ttsVoice) || [...voices].sort((a, b) => voiceScore(b) - voiceScore(a))[0] || null;
 }
-if (typeof speechSynthesis !== 'undefined') speechSynthesis.addEventListener?.('voiceschanged', () => { if (!$('#scr-vocab')?.hidden && !vocabRun) renderVocab(); });
+if (typeof speechSynthesis !== 'undefined') speechSynthesis.addEventListener?.('voiceschanged', () => { if (!$('#scr-vocab')?.hidden && !vocabRun && !pathRun) renderVocab(); });
 let speakToken = 0;
-function say(text, rate = 0.85){
+function say(text, rate = 0.85, lang = ''){
   return new Promise(done => {
-    const u = new SpeechSynthesisUtterance(text), v = readingVoice();
-    if (v) u.voice = v; u.lang = v?.lang || 'en-US'; u.rate = rate; u.pitch = 1;
+    const u = new SpeechSynthesisUtterance(text), v = readingVoice(lang);
+    if (v) u.voice = v; u.lang = v?.lang || lang || 'en-US'; u.rate = rate; u.pitch = 1;
     u.onend = u.onerror = () => done(); speechSynthesis.speak(u);
     setTimeout(done, 4000 + text.length * 150);   // some browsers never fire onend
   });
@@ -12662,15 +12674,16 @@ async function speakWord(word, how = 'word'){
   if (!canSpeak()) return;
   const token = ++speakToken, syl = wordSyl(word), dots = $$('#vocabWrap .syl-dot');
   speechSynthesis.cancel();
-  if (how !== 'syllables' || syl.say.length < 2) { await say(syl.whole, how === 'slow' ? 0.6 : 0.85); return; }
+  const lang = typeof word === 'object' ? word?.lang || '' : '';
+  if (how !== 'syllables' || syl.say.length < 2) { await say(syl.whole, how === 'slow' ? 0.6 : 0.85, lang); return; }
   for (let i = 0; i < syl.say.length; i++) {
     if (token !== speakToken) return;
     dots.forEach((d, k) => d.classList.toggle('on', k === i));
-    await say(syl.say[i], 0.7); await pause(350);
+    await say(syl.say[i], 0.7, lang); await pause(350);
   }
   if (token !== speakToken) return;
   dots.forEach(d => d.classList.remove('on'));
-  await say(syl.whole, 0.75);
+  await say(syl.whole, 0.75, lang);
 }
 /* ---------- 👂 Listen first (owner, Oct 30, 2026; docs/VOCAB.md "Listen first") ----------
    "She needs to spend more time hearing the word and its parts." On every card where she hears a word and types it
@@ -12708,7 +12721,7 @@ async function listenFirst(word, run = null){
   const alive = () => listenState === st && host.isConnected;
   const unlock = msg => {
     if (!alive()) return; stopListen();
-    if (run?.end && vocabRun === run) run.end += performance.now() - st.started;   // a timed run never loses clock to listening
+    if (run?.end && (vocabRun === run || (run.pathClock && pathRound === run && !run.over))) run.end += performance.now() - st.started;   // a timed run (or the Paw Path warm-up) never loses clock to listening
     input.disabled = false; if (submitBtn) submitBtn.disabled = false; btns.forEach(b => { b.disabled = false; });
     host.querySelector('.listen-timer')?.classList.add('done'); if (bar) bar.style.width = '0%';
     if (text) text.textContent = msg; input.focus();
@@ -12716,21 +12729,21 @@ async function listenFirst(word, run = null){
   input.disabled = true; if (submitBtn) submitBtn.disabled = true;
   if (!canSpeak() || !(await voicesReady())) { unlock('🔇 This device can’t read words out loud right now, so you can type right away. Read the meaning and spell the word.'); host.querySelector('.listen-box')?.classList.add('no-voice'); return; }
   if (!alive()) return;
-  const syl = wordSyl(word), n = syl.say.length, dots = $$('.syl-dot', host), token = ++speakToken;
+  const syl = wordSyl(word), n = syl.say.length, dots = $$('.syl-dot', host), token = ++speakToken, lang = typeof word === 'object' ? word?.lang || '' : '';
   const stillHere = () => alive() && token === speakToken;
   speechSynthesis.cancel();
-  await say(syl.whole, 0.85); if (!stillHere()) return; await pause(400); if (!stillHere()) return;
+  await say(syl.whole, 0.85, lang); if (!stillHere()) return; await pause(400); if (!stillHere()) return;
   await say(`It has ${n} syllable${n === 1 ? '' : 's'}.`, 0.9); if (!stillHere()) return; await pause(400);
   if (n > 1) {
     for (let i = 0; i < n; i++) {
       if (!stillHere()) return;
       dots.forEach((d, k) => d.classList.toggle('on', k === i));
-      await say(syl.say[i], 0.7); await pause(450);
+      await say(syl.say[i], 0.7, lang); await pause(450);
     }
     if (!stillHere()) return;
     dots.forEach(d => d.classList.remove('on'));
   }
-  await say(syl.whole, 0.75); if (!stillHere()) return;
+  await say(syl.whole, 0.75, lang); if (!stillHere()) return;
   /* the playback is done: replay is open, and the listening timer runs before the box opens */
   btns.forEach(b => { b.disabled = false; });
   if (!sec) { unlock('✏️ Now type it!'); return; }
@@ -12801,7 +12814,7 @@ function answerVocab(ok, shownAnswer, typed = ''){
 let fixThen = null;
 function askFix(host, word, then){
   fixThen = then;
-  host.insertAdjacentHTML('beforeend', `<form class="fix-it" data-fix-word="${esc(word)}"><p>✍️ Type <b>${esc(word)}</b> to keep going:</p><div class="row"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type ${esc(word)}"><button type="submit" class="btn berry">OK</button></div></form>`);
+  host.insertAdjacentHTML('beforeend', `<form class="fix-it" data-fix-word="${esc(word)}"><p>✍️ Type <b>${esc(word)}</b> to keep going:</p><div class="row"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type ${esc(word)}"><button type="submit" class="btn berry">OK</button></div>${accentKeysHTML(word)}</form>`);
   setTimeout(() => host.querySelector('.fix-it input')?.focus(), 30);
 }
 document.addEventListener('submit', event => {
@@ -12856,7 +12869,7 @@ function weekWordObjs(all = vocabWords().all){
 }
 const checkDay = () => [5, 6, 0].includes(weekdayNum());   // Friday, or the weekend if Friday was missed
 const checkDue = () => checkDay() && !ensureWeek().check?.done && weekWordObjs().length > 0;
-function vocabWarmLabel(){ if (checkDue()) return '🏁 Friday mastery check'; const t = todayPuzzleType(); return `${PUZZLE_INFO[t].emoji} Word puzzle: ${PUZZLE_INFO[t].name}`; }
+function vocabWarmLabel(){ if (checkDue()) return '🏁 Friday mastery check'; const {skill} = nextPathLesson(), info = skillInfo(skill); return `🐾 Paw Path: ${info.emoji} ${info.name}`; }
 function todayPuzzleType(){ const p = S.vocab.puzzle, day = localDay(); if (p && !p.done && (p.day === day || (p.first === p.day && p.day === dayBefore(day)))) return p.type; const t = puzzleForDay(weekdayNum()); return t === 'check' ? 'match' : t; }
 /* today's puzzle: yesterday's unfinished one (one more day only), or a new one */
 function todayPuzzle(){
@@ -13110,6 +13123,320 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.pzWord) { puzzleRun.sel = b.dataset.pzWord; renderPuzzle(); return; }
   if (b.dataset.pzDef && puzzleRun.sel) { const w = puzzleRun.sel; puzzleRun.sel = null; if (b.dataset.pzDef === w) puzzleAnswer(w, true); else { renderPuzzle(); puzzleAnswer(w, false); } }
 });
+/* ---------- 🐾 This Week's Paw Path (owner, Oct 30, 2026; docs/VOCAB.md "This week's word path") ----------
+   "Can we add a Duolingo feel to the vocab? … She gets 20 a week with 5 distinct skills/games testing different parts of
+   teaching the words and definitions, then Friday she proves her mastery and we move on." A winding path of 5 round
+   skill nodes (wordPath.js: 👂 Meet the words, 🔗 Match it, 🧩 Build it, ✏️ Use it, 🔤 Spell it), unlocked in order,
+   each a few short lessons of about 5 of the week's words (so every skill covers all of them), then the 🏆 Friday node,
+   which is the Friday mastery check (unchanged). Her helper pet cheers beside the node she's on. Lessons: instant
+   feedback (a chime and a cheer, or a soft buzz, the right answer, 🧩 word parts and "type it to keep going"), misses
+   come back at the end until right, XP (10, +5 for no misses) and 🪙 1 (+1 for no misses) per lesson, a week streak of
+   days with a lesson. Replaying a finished lesson is practice and earns the same. The old daily puzzle is a bonus. */
+let pathRun = null, pathOpen = null, pathRound = null, pathRoundTimer = null;   // the lesson, the node whose bubble is open, a timed warm-up round
+const PATH_CHEERS = ['Great job!', 'You got it!', 'Nice one!', 'Awesome!', 'Way to go!', 'Yes! Keep going!', 'Super!'];
+const PATH_HELLO = ['Let’s go!', 'You can do it!', 'Start here!', 'Ready? Tap me!'];
+const pickOne = list => list[Math.floor(Math.random() * list.length)];
+/* the same pick all day for the same thing (the pet's line by a node doesn't change every time she taps) */
+const pickSteady = (list, seed) => { let h = 7; for (const ch of String(seed)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return list[h % list.length]; };
+/* the words on the path: this week's 20 she's learning (not the 5 review words, unless the week is tiny) */
+function pathWordObjs(){
+  const wk = ensureWeek(), map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), review = new Set(wk.review || []);
+  const learn = wk.words.filter(k => !review.has(k)).map(k => map.get(k)).filter(Boolean);
+  return learn.length >= 4 ? learn : wk.words.map(k => map.get(k)).filter(Boolean);
+}
+function ensurePath(){
+  const wk = ensureWeek(), p = pathForWeek(S.vocab.path, wk.id, lessonCount(pathWordObjs().length));
+  if (JSON.stringify(p) !== JSON.stringify(S.vocab.path)) { S.vocab.path = p; save(); }
+  return S.vocab.path;
+}
+const pathAcc = (path, id) => (path.acc[id]?.t ? path.acc[id].r / path.acc[id].t : 1);
+/* the next lesson: the current node's next one; once all 5 skills are done, practice in the skill she's least sure of */
+function nextPathLesson(){
+  const path = ensurePath(), {current} = pathNodes(path);
+  if (current) return {skill:current.id, idx:Math.max(0, current.nextLesson)};
+  const worst = [...PATH_SKILLS].sort((a, b) => pathAcc(path, a.id) - pathAcc(path, b.id))[0];
+  return {skill:worst.id, idx:Math.floor(Math.random() * Math.max(1, path.n))};
+}
+const addDays = (day, n) => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function pathRingSVG(frac){
+  const r = 41, c = 2 * Math.PI * r;
+  return `<svg class="pp-ring" viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="${r}" class="pp-ring-bg"/><circle cx="48" cy="48" r="${r}" class="pp-ring-fg" stroke-dasharray="${(c * Math.max(0, Math.min(1, frac))).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 48 48)"/></svg>`;
+}
+const PATH_X = [0, 54, 80, 54, 0, -54];   // the winding: each node's sideways step
+/* the 📅 path tab: header (XP, streak), the week's days, the nodes, the Friday trophy, and the bonus puzzle */
+function pathHTML(){
+  const words = pathWordObjs();
+  if (words.length < 2) return '<p>Add a few more words to start this week’s path.</p>';
+  const path = ensurePath(), {nodes} = pathNodes(path), wk = ensureWeek(), pet = petReward(), today = localDay();
+  const friState = wk.check?.done ? 'done' : checkDue() ? 'current' : 'locked';
+  const days = Array.from({length:7}, (_, i) => addDays(wk.id, i));
+  const bubble = n => {
+    if (n.state === 'locked') return `<div class="pp-bubble pp-b-locked" role="note"><b>${n.emoji} ${esc(n.name)}</b><p>🔒 Finish ${esc(PATH_SKILLS[PATH_SKILLS.findIndex(s => s.id === n.id) - 1]?.name || 'the one before')} to open this one.</p></div>`;
+    const lessons = Array.from({length:path.n}, (_, i) => { const got = path.lessons[n.id]?.[i]; return `<button type="button" class="pp-lesson-btn${got ? ' done' : ''}${i === n.nextLesson ? ' next' : ''}" data-pp-start="${n.id}" data-pp-lesson="${i}" ${!got && i !== n.nextLesson ? 'disabled' : ''} aria-label="Lesson ${i + 1}${got ? ', done, practice again' : ''}">${got ? '✅' : i === n.nextLesson ? '▶' : '🔒'} ${i + 1}</button>`; }).join('');
+    const go = n.state === 'done' ? `<button type="button" class="btn berry pp-go" data-pp-start="${n.id}" data-pp-lesson="${Math.floor(Math.random() * path.n)}">Practice +${XP_LESSON} XP</button>` : `<button type="button" class="btn berry pp-go" data-pp-start="${n.id}" data-pp-lesson="${n.nextLesson}">Start lesson ${n.nextLesson + 1} +${XP_LESSON} XP</button>`;
+    return `<div class="pp-bubble pp-b-${n.state}"><b>${n.emoji} ${esc(n.name)}</b> <span class="muted">${n.done} of ${n.total} lessons</span><p>${esc(n.how)}</p>${go}<div class="pp-lessons">${lessons}</div></div>`;
+  };
+  const nodeHTML = (n, i) => {
+    const x = PATH_X[i % PATH_X.length], cur = n.state === 'current';
+    return `<div class="pp-step" style="--x:${x}px">
+      ${cur ? `<div class="pp-pet ${x > 0 ? 'left' : 'right'}" aria-hidden="true"><span class="pp-pet-say">${esc(pickSteady(PATH_HELLO, `${today}:${n.id}:${n.done}`))}</span><span class="pp-pet-emoji">${pet.emoji}</span></div>` : ''}
+      <button type="button" class="pp-node pp-${n.state}" data-pp-node="${n.id}" aria-expanded="${pathOpen === n.id}" aria-label="${esc(`${n.name}: ${n.state === 'locked' ? 'locked' : `${n.done} of ${n.total} lessons done`}`)}">${pathRingSVG(n.total ? n.done / n.total : 0)}<span class="pp-face">${n.state === 'locked' ? '🔒' : n.state === 'done' ? '⭐' : n.emoji}</span></button>
+      <span class="pp-label">${n.state === 'done' ? '✅ ' : ''}${esc(n.name)}</span>
+      ${pathOpen === n.id ? bubble(n) : ''}</div>`;
+  };
+  const fri = `<div class="pp-step pp-fri" style="--x:0px">
+      ${friState === 'current' ? `<div class="pp-pet right" aria-hidden="true"><span class="pp-pet-say">Show what you know!</span><span class="pp-pet-emoji">${pet.emoji}</span></div>` : ''}
+      <button type="button" class="pp-node pp-trophy pp-${friState}" data-pp-node="friday" aria-expanded="${pathOpen === 'friday'}" aria-label="Friday mastery check: ${friState === 'done' ? 'done' : friState === 'current' ? 'ready' : 'opens on Friday'}"><span class="pp-face">${friState === 'locked' ? '🏆' : friState === 'done' ? '🏆' : '🏁'}</span></button>
+      <span class="pp-label">${friState === 'done' ? '✅ ' : ''}Friday: show what you know</span>
+      ${pathOpen === 'friday' ? `<div class="pp-bubble pp-b-${friState}"><b>🏁 Friday mastery check</b><p>📇 Flashcards, then type each word from its meaning. Words you spell right are mastered and go in your 🏆 Hall of Fame.</p>${friState === 'current' ? `<button type="button" class="btn berry pp-go" data-check-start>${Object.keys(wk.check?.results || {}).length ? 'Finish the check' : 'Start the check'}</button>` : friState === 'done' ? `<p>✅ Done this week: <b>${wk.mastered.length}</b> mastered!</p>` : `<p class="muted">🔒 Opens on Friday${nodes.every(n => n.state === 'done') ? '. You’re ready!' : '. Finish the path to get ready.'}</p>`}</div>` : ''}</div>`;
+  const p = S.vocab.puzzle, puzzleDone = p && p.day === today && p.done;
+  return `<div class="pp-head"><div><h3>🐾 This Week’s Paw Path</h3><p class="muted">${words.length} words · ${path.n} short lesson${path.n === 1 ? '' : 's'} in each skill · then Friday</p></div>
+    <div class="pp-stats"><span class="pp-xp" title="XP this week">⚡ ${path.xp} XP</span><span class="pp-streak" title="Days this week with a lesson">📅 ${path.days.length} day${path.days.length === 1 ? '' : 's'}</span></div></div>
+    <div class="pp-week" aria-label="Days this week with a lesson: ${path.days.length}">${days.map((d, i) => `<span class="${path.days.includes(d) ? 'on' : ''}${d === today ? ' today' : ''}"><i>${path.days.includes(d) ? '🐾' : ''}</i>${'MTWTFSS'[i]}</span>`).join('')}</div>
+    <div class="pp-path">${nodes.map(nodeHTML).join('<div class="pp-link" aria-hidden="true"></div>')}<div class="pp-link" aria-hidden="true"></div>${fri}</div>
+    <div class="pp-bonus"><button type="button" class="btn small" data-pz-start ${puzzleDone ? 'disabled' : ''}>🎲 Puzzle of the day: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}${puzzleDone ? ' ✅' : ''}</button><button type="button" class="btn small" data-vocab-tab="week">📅 All this week’s words</button></div>`;
+}
+/* one lesson: the week's words in that lesson's group, wrong answers from this week's words first, then all of hers */
+function startPathLesson(skill, idx){
+  const groups = lessonGroups(pathWordObjs(), ensureWeek().id), g = groups[idx] || groups[0];
+  if (!g?.length) { toast('Add a few more words first.'); return; }
+  if (vocabRun) { stopVocabTimer(); vocabRun = null; }
+  if (puzzleRun || checkRun) stopPuzzleRun();
+  stopListen(); fixThen = null;
+  const map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), week = ensureWeek().words.map(k => map.get(k)).filter(Boolean);
+  const items = buildLesson(skill, g, [week, vocabWords().all]);
+  pathRun = {skill, idx:groups[idx] ? idx : 0, items, pos:0, right:0, asked:0, missed:new Set(), startedAt:performance.now(), sel:null, build:[], matched:new Set(), boardMiss:new Set()};
+  pathOpen = null; renderPathItem();
+}
+const pathWordObj = k => vocabWords().all.find(v => wordKey(v.w) === k) || {w:k, d:''};
+/* accent keys under a typing box for a word in another language (or with a mark, like café): every letter with a mark
+   in her words in that language, so árbol can be typed on any keyboard. Tapping one adds it where the cursor is. */
+function accentKeysHTML(word){
+  const v = typeof word === 'object' ? word : pathWordObj(wordKey(word)), w = String(v?.w || word || '');
+  const odd = ch => /[^\x00-\x7F]/.test(ch) && /\p{L}/u.test(ch);
+  if (langOf(v) === 'en' && !graphemes(w).some(odd)) return '';
+  let all = []; try { all = vocabWords().all.filter(x => langOf(x) === langOf(v)); } catch { all = []; }
+  const keys = [...new Set([w, ...all.map(x => x.w)].flatMap(x => graphemes(String(x).toLowerCase())).filter(odd))].sort().slice(0, 16);
+  return keys.length ? `<div class="pp-accents" role="group" aria-label="Letters with marks">${keys.map(k => `<button type="button" class="btn small" data-accent="${esc(k)}" aria-label="Type ${esc(k)}">${esc(k)}</button>`).join('')}</div>` : '';
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-accent]'); if (!b) return;
+  const inp = b.closest('form')?.querySelector('input'); if (!inp || inp.disabled) return;
+  const a = inp.selectionStart ?? inp.value.length, z = inp.selectionEnd ?? a;
+  inp.value = inp.value.slice(0, a) + b.dataset.accent + inp.value.slice(z); inp.focus(); inp.setSelectionRange(a + b.dataset.accent.length, a + b.dataset.accent.length);
+});
+/* typed the right letters but missed an accent mark (arbol for árbol): it counts, with a note, the way Duolingo does */
+const foldMarks = t => normalizeTyped(t).normalize('NFD').replace(/\p{M}/gu, '');
+/* the button she taps next sits above the floating ✋ button and in view (a cleared match board's Continue was below a phone screen) */
+const showNext = el => { if (!el) return; el.focus({preventScroll:true}); el.scrollIntoView?.({block:'nearest', behavior:'smooth'}); };
+function pathTopHTML(){
+  const run = pathRun, done = run.pos, pct = Math.round(100 * done / Math.max(1, run.items.length)), info = skillInfo(run.skill);
+  return `<div class="pp-top"><button type="button" class="pp-x" data-pp-quit aria-label="Stop the lesson">✕</button><div class="pp-prog" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>${pathRound && !pathRound.over ? `<span class="pp-time">⏱️ <b id="ppTime">${fmtCountdown(Math.max(0, pathRound.end - performance.now()))}</b></span>` : ''}</div>
+    <p class="pp-skill">${info.emoji} ${esc(info.name)} · Lesson ${run.idx + 1}</p>`;
+}
+function renderPathItem(){
+  const run = pathRun; if (!run) return;
+  const it = run.items[run.pos]; if (!it) { finishPathLesson(); return; }
+  run.answered = false; run.sel = null; run.build = []; run.matched = new Set(); run.boardMiss = new Set(); run.matchSel = null;
+  const v = pathWordObj(it.word);
+  let body = '', foot = '<button type="button" class="btn berry pp-check" data-pp-check disabled>Check</button>';
+  if (it.type === 'intro') {
+    const n = wordSyl(v).say.length;
+    body = `<div class="pp-intro"><p class="pp-new">✨ New word</p><div class="pp-word">${esc(v.w)}</div><p class="row pp-hear"><button type="button" class="btn small" data-pp-hear>🔊 Hear it</button><button type="button" class="btn small" data-pp-hear="syllables">🐢 By syllables</button><span class="muted">${n} syllable${n === 1 ? '' : 's'}</span></p>
+      <p class="pp-mean">${esc(it.d)}</p>${it.s ? `<p class="pp-example">“${esc(fillBlank(it.s, v.w))}”</p>` : ''}</div>`;
+    foot = '<button type="button" class="btn berry pp-check" data-pp-next>Got it!</button>';
+  } else if (it.type === 'pick') {
+    const wordPrompt = ['word2def', 'partMeaning'].includes(it.kind);
+    /* "what does it mean in this sentence?": the sentence with her word in bold */
+    const prompt = it.kind === 'inContext' ? esc(it.prompt).replace(new RegExp(`(^|[^\\p{L}])(${v.w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})(?=[^\\p{L}]|$)`, 'iu'), '$1<b>$2</b>') : esc(it.prompt);
+    body = `<p class="vocab-ask">${esc(it.ask)}</p>${wordPrompt ? `<div class="pp-word small">${esc(it.kind === 'partMeaning' ? it.prompt : v.w)}${it.kind === 'word2def' ? ' <button type="button" class="btn small" data-pp-hear aria-label="Hear it">🔊</button>' : ''}</div>` : `<div class="fact vocab-prompt long${it.kind === 'hasPart' ? ' pp-part-mean' : ''}">${prompt}</div>`}
+      <div class="pp-choices${it.kind === 'inContext' || it.kind === 'word2def' ? ' long' : ''}">${it.choices.map((c, k) => `<button type="button" class="pp-choice" data-pp-choice="${k}" aria-pressed="false">${esc(c)}</button>`).join('')}</div>`;
+  } else if (it.type === 'pair') {
+    /* 👀 look-alike words: both words and how they differ, before she's asked about them both ways */
+    const side = x => `<div class="pp-pair-word"><b>${esc(x.w)}</b>${x.d ? `<small>${esc(x.d)}</small>` : ''}</div>`;
+    body = `<div class="pp-intro"><p class="pp-new">👀 Look-alike words</p><div class="pp-pair">${side(it.a)}<span class="pp-vs" aria-hidden="true">vs</span>${side(it.b)}</div><p class="pp-why">💡 ${esc(it.why)}</p><p class="muted pp-mean-small">Next: pick the one that fits each sentence.</p></div>`;
+    foot = '<button type="button" class="btn berry pp-check" data-pp-next>Got it!</button>';
+  } else if (it.type === 'match') {
+    const tile = (k, side) => { const p = it.pairs.find(x => x.key === k), text = (side === 'L') === !it.fromMeaning ? p.w : p.d; return `<button type="button" class="pp-tile${(side === 'L') === !it.fromMeaning ? ' word' : ''}" data-pp-tile="${esc(k)}" data-side="${side}">${esc(text)}</button>`; };
+    body = `<p class="vocab-ask">${it.fromMeaning ? 'Mixed review: tap a meaning, then its word.' : 'Tap a word, then its meaning.'}</p><div class="pp-match${it.fromMeaning ? ' from-meaning' : ''}"><div class="pp-col">${it.left.map(k => tile(k, 'L')).join('')}</div><div class="pp-col">${it.right.map(k => tile(k, 'R')).join('')}</div></div>`;
+    foot = '';
+  } else if (it.type === 'build') {
+    body = `<p class="vocab-ask">${esc(it.ask)}</p><div class="fact vocab-prompt long">${esc(it.prompt)}</div><div class="pp-built" aria-live="polite"><span class="muted">${it.kind === 'letters' ? 'Tap the letters in order' : 'Tap the parts in order'}</span></div><div class="pp-bank">${it.chips.map((c, i) => `<button type="button" class="pp-chip" data-pp-chip="${i}">${esc(c)}</button>`).join('')}</div>`;
+  } else if (it.type === 'type') {
+    body = `<p class="vocab-ask">${esc(it.ask)}</p>${it.sentence ? `<div class="fact vocab-prompt long">${esc(it.sentence)}</div><p class="muted pp-mean-small">Means: ${esc(it.prompt)}</p>` : it.listen ? '' : `<div class="fact vocab-prompt long">${esc(it.prompt)}</div>`}${it.listen ? `${listenRowHTML(v, 'data-pp-hear')}<p class="muted pp-mean-small">Means: ${esc(it.prompt)}</p>` : ''}
+      <form class="typed-fill" data-pp-type><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button>${accentKeysHTML(v)}</form>`;
+    foot = '';
+  }
+  $('#vocabWrap').innerHTML = `<div class="sprint-card vocab-card pp-lesson" data-pp-kind="${esc(it.kind)}">${pathTopHTML()}${it.again ? '<p class="pp-again">🔁 Let’s try this one again</p>' : ''}${body}<div class="pp-foot" aria-live="polite">${foot}</div></div>`;
+  if (it.type === 'intro') void speakWord(v);
+  if (it.type === 'type') { if (it.listen) void listenFirst(v, pathRound); else $('#vocabWrap .typed-input')?.focus(); }
+}
+/* after any answer: the bar at the bottom turns green (a cheer from her pet) or red (the right answer, word parts, and
+   typing the word to keep going); a miss comes back at the end of the lesson */
+function answerPath(ok, shown = '', typed = '', note = ''){
+  const run = pathRun, it = run?.items[run.pos]; if (!run || !it || run.answered) return;
+  run.answered = true;
+  const v = pathWordObj(it.word);
+  recordVocab(v.w, ok);
+  if (!it.again) { run.asked++; if (ok) run.right++; }
+  if (ok && pathRound && !pathRound.over) pathRound.right++;
+  if (!ok) { run.missed.add(it.word); run.items.push(againItem(it)); }
+  if (!ok && it.type === 'type' && typed.trim()) { const kinds = spellingPatterns(v.w, typed); S.vocab.mistakes = [...S.vocab.mistakes, {w:v.w, typed:typed.trim().slice(0, 40), kinds, t:Date.now()}].slice(-80); save(); }
+  sfx(ok ? 'good' : 'bad');
+  $$('#vocabWrap [data-pp-choice]').forEach(b => { b.disabled = true; if (it.type === 'pick' && +b.dataset.ppChoice === it.answer) b.classList.add('correct'); });
+  $$('#vocabWrap [data-pp-chip]').forEach(b => { b.disabled = true; });
+  const inp = $('#vocabWrap .typed-input'); if (inp) { inp.disabled = true; inp.classList.add(ok ? 'correct' : 'incorrect'); $('#vocabWrap form[data-pp-type] [type="submit"]')?.remove(); }
+  const foot = $('#vocabWrap .pp-foot'), pet = petReward();
+  foot.classList.add(ok ? 'pp-good' : 'pp-bad');
+  const why = it.why ? `<p class="pp-why">💡 ${esc(it.why)}</p>` : '';
+  const tip = !ok && it.type === 'type' ? (() => { const k = spellingPatterns(v.w, typed)[0], p = k ? patternById(k) : null; return p ? `<p class="spell-tip"><b>Tricky part: ${esc(p.name)}.</b> ${esc(p.tip)}</p>` : ''; })() : '';
+  /* 🧩 a word-parts item teaches as it goes: after every build (right or wrong) and every part question she sees the
+     word's parts and what each means, so the next "what does vid mean?" asks about something she was shown */
+  const parts = ['build', 'partMeaning', 'hasPart'].includes(it.kind) ? wordPartsHTML(v.w) : '';
+  if (ok) { foot.innerHTML = `<p class="pp-fb"><span class="pp-fb-pet">${pet.emoji}</span> <b>${esc(pickOne(PATH_CHEERS))}</b></p>${note}${why}${parts}${it.type === 'type' ? syllableAnswerHTML(v) : ''}<button type="button" class="btn berry pp-check" data-pp-next>Continue</button>`; showNext(foot.querySelector('[data-pp-next]')); return; }
+  /* a miss: she types the right answer to keep going (the word; for a part question, the part's meaning; for a
+     look-alike sentence, the look-alike) */
+  const fix = it.fix || (it.type === 'pick' && it.kind === 'nuance' ? it.choices[it.answer] : v.w);
+  foot.innerHTML = `<p class="pp-fb"><b>Not quite.</b> ${shown}</p>${why}${tip}${it.type === 'type' ? syllableAnswerHTML(v) : ''}${it.kind === 'letters' || it.kind === 'spellPick' ? '' : wordPartsHTML(v.w)}`;
+  askFix(foot, fix, () => { foot.insertAdjacentHTML('beforeend', '<button type="button" class="btn berry pp-check" data-pp-next>Continue</button>'); showNext(foot.querySelector('[data-pp-next]')); });
+}
+/* a match board: a right pair turns green; a wrong pair shows that word's meaning and she types it to keep going; the
+   board's words count once each (right if never paired wrong), and a word she paired wrong comes back at the end */
+function matchTap(tile){
+  const run = pathRun, it = run?.items[run.pos]; if (!it || it.type !== 'match' || run.answered || run.fixing) return;
+  const k = tile.dataset.ppTile, side = tile.dataset.side; if (run.matched.has(k)) return;
+  if (!run.matchSel || run.matchSel.side === side) { run.matchSel = {k, side}; $$('#vocabWrap .pp-tile').forEach(t => t.classList.toggle('sel', t === tile)); return; }
+  const a = run.matchSel; run.matchSel = null; $$('#vocabWrap .pp-tile').forEach(t => t.classList.remove('sel'));
+  if (a.k === k) {
+    run.matched.add(k); sfx('good');
+    $$(`#vocabWrap .pp-tile[data-pp-tile="${CSS.escape(k)}"]`).forEach(t => { t.classList.add('matched'); t.disabled = true; });
+    if (run.matched.size === it.pairs.length) finishBoard(it);
+    return;
+  }
+  /* the word she tried to pair (word side) is the one she's missing */
+  const wordKeyTapped = (a.side === 'L') === !it.fromMeaning ? a.k : k, v = pathWordObj(wordKeyTapped);
+  run.boardMiss.add(wordKeyTapped); recordVocab(v.w, false); sfx('bad');
+  const wrongTiles = $$('#vocabWrap .pp-tile').filter(t => (t.dataset.ppTile === a.k && t.dataset.side === a.side) || t === tile);
+  wrongTiles.forEach(t => { t.classList.add('wrong'); setTimeout(() => t.classList.remove('wrong'), 700); });
+  const foot = $('#vocabWrap .pp-foot'); run.fixing = true; foot.className = 'pp-foot pp-bad';
+  foot.innerHTML = `<p class="pp-fb"><b>Not a pair.</b> “${esc(v.w)}” means: ${esc(v.d)}</p>${wordPartsHTML(v.w)}`;
+  askFix(foot, v.w, () => { run.fixing = false; foot.className = 'pp-foot'; foot.innerHTML = ''; });
+}
+function finishBoard(it){
+  const run = pathRun; run.answered = true;
+  const words = it.pairs.map(p => p.key), missed = words.filter(k => run.boardMiss.has(k));
+  if (!it.again) { run.asked += words.length; run.right += words.length - missed.length; }
+  if (pathRound && !pathRound.over) pathRound.right += words.length - missed.length;
+  words.filter(k => !missed.includes(k)).forEach(k => recordVocab(pathWordObj(k).w, true));
+  const map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), week = ensureWeek().words.map(k => map.get(k)).filter(Boolean);
+  missed.forEach(k => { run.missed.add(k); const again = matchRetryItem(pathWordObj(k), [week, vocabWords().all]); if (again) run.items.push({...again, again:true}); });
+  const foot = $('#vocabWrap .pp-foot'), pet = petReward();
+  foot.className = `pp-foot ${missed.length ? 'pp-bad' : 'pp-good'}`;
+  foot.innerHTML = `<p class="pp-fb"><span class="pp-fb-pet">${pet.emoji}</span> <b>${missed.length ? `Board cleared! ${missed.length === 1 ? 'That word comes' : 'Those words come'} back at the end.` : esc(pickOne(PATH_CHEERS))}</b></p><button type="button" class="btn berry pp-check" data-pp-next>Continue</button>`;
+  showNext(foot.querySelector('[data-pp-next]'));
+  sfx(missed.length ? 'good' : 'coin');
+}
+function finishPathLesson(){
+  const run = pathRun; if (!run) return;
+  pathRun = null; stopListen(); fixThen = null;
+  const path = ensurePath(), info = skillInfo(run.skill), wasDone = pathNodes(path).nodes.find(n => n.id === run.skill)?.state === 'done';
+  const res = recordLesson(path, run.skill, run.idx, {right:run.right, asked:run.asked, day:localDay()});
+  const acc = run.asked ? Math.round(100 * run.right / run.asked) : 100, perfect = run.asked > 0 && run.right === run.asked, coins = 1 + (perfect ? 1 : 0);
+  S.coins += coins; addVocabExtraTime(run.startedAt);
+  logEvent({k:'vocab', mode:'path', s:run.right, n:run.asked, title:`${info.emoji} ${info.name} · lesson ${run.idx + 1} · +${res.xp} XP`});
+  save(); updateHeader();
+  const after = pathNodes(path), nowDone = !wasDone && after.nodes.find(n => n.id === run.skill)?.state === 'done', next = after.current;
+  const roundLeft = pathRound && !pathRound.over;
+  const brag = pathRound?.over && !pathRound.shown ? (() => { pathRound.shown = true; return challengeBragHTML(pathRound.extraId, pathRound.right, pathRound.min, 'words'); })() : '';
+  const pet = petReward();
+  $('#vocabWrap').innerHTML = `<div class="sprint-card vocab-card pp-done"><div class="pp-done-pet">${pet.emoji}</div><h2>${perfect ? 'Perfect lesson!' : 'Lesson complete!'}</h2>
+    <div class="pp-tiles"><div class="pp-tile-stat xp"><small>XP</small><b>⚡ ${res.xp}</b></div><div class="pp-tile-stat acc"><small>${acc >= 90 ? 'Amazing' : acc >= 70 ? 'Good' : 'Accuracy'}</small><b>🎯 ${acc}%</b></div><div class="pp-tile-stat streak"><small>Days this week</small><b>📅 ${path.days.length}</b></div></div>
+    <p>You earned <b>🪙 ${coins}</b>. ${esc(petName())} is proud of you!</p>
+    ${nowDone ? `<p class="pp-unlocked">🎉 You finished <b>${info.emoji} ${esc(info.name)}</b>!${next ? ` Next up: <b>${next.emoji} ${esc(next.name)}</b>` : ' The whole path is done: you’re ready for Friday!'}</p>` : ''}
+    ${run.missed.size ? `<p class="muted">Words to keep an eye on: ${[...run.missed].map(k => `<b>${esc(pathWordObj(k).w)}</b>`).join(', ')}</p>` : ''}
+    ${brag}
+    <div class="row pp-done-row">${roundLeft ? '<button type="button" class="btn berry" data-pp-nextlesson>Next lesson ▶</button>' : '<button type="button" class="btn berry" data-pp-continue>Continue</button>'}</div></div>`;
+  sfx('unlock');
+  if (!roundLeft && pathRound?.over) stopPathRound();
+}
+/* ⏱️ the Word Workshop warm-up on the path (the extra's round, 7 minutes unless a grown-up picked another length): she
+   does lessons back to back until the clock runs out; the score is the answers she got right. When time's up she can
+   finish the lesson she's in (it still counts). Friday's warm-up is the mastery check, as before. */
+function startPathRound({min = 7, extraId = null} = {}){
+  stopPathRound();
+  pathRound = {min, extraId, end:performance.now() + min * 60000, right:0, over:false, pathClock:true};
+  pathRoundTimer = setInterval(() => {
+    if (!pathRound) return;
+    const left = Math.max(0, pathRound.end - performance.now()), t = $('#ppTime'); if (t) t.textContent = fmtCountdown(left);
+    if (left <= 0 && !pathRound.over) endPathRoundClock();
+  }, 250);
+  const {skill, idx} = nextPathLesson(); startPathLesson(skill, idx);
+}
+function endPathRoundClock(){
+  if (!pathRound || pathRound.over) return;
+  pathRound.over = true; if (pathRoundTimer) { clearInterval(pathRoundTimer); pathRoundTimer = null; }
+  if (pathRound.extraId) recordChallenge(pathRound.extraId, pathRound.right, pathRound.min);
+  logEvent({k:'vocab', mode:'path', s:pathRound.right, min:pathRound.min, title:'warm-up round'});
+  save(); $('.pp-time')?.remove();
+  if (pathRun) toast(`⏰ Time! ${pathRound.right} right. Finish this lesson to keep its XP.`);
+}
+/* leaving Word Workshop mid-lesson: the lesson is dropped; a timed round still records what she got */
+function leavePath(){ if (pathRun) addVocabExtraTime(pathRun.startedAt); pathRun = null; stopListen(); if (pathRound && !pathRound.over) endPathRoundClock(); stopPathRound(); }
+function stopPathRound(){ if (pathRoundTimer) { clearInterval(pathRoundTimer); pathRoundTimer = null; } pathRound = null; }
+/* leaving a lesson part way: nothing is saved for the lesson (her answers already count in My words); a timed round ends */
+function quitPathLesson(){
+  const run = pathRun; pathRun = null; stopListen(); fixThen = null;
+  if (run) addVocabExtraTime(run.startedAt);
+  if (pathRound && !pathRound.over) endPathRoundClock();
+  stopPathRound(); vocabTab = 'path'; renderVocab();
+}
+document.addEventListener('submit', event => {
+  const f = event.target.closest('form[data-pp-type]'); if (!f) return;
+  event.preventDefault(); event.stopPropagation();
+  const it = pathRun?.items[pathRun.pos]; if (!it || pathRun.answered) return;
+  const typed = f.querySelector('input').value; if (!typed.trim()) return;
+  const ok = normalizeTyped(typed) === normalizeTyped(it.answer), marks = !ok && foldMarks(typed) === foldMarks(it.answer);
+  answerPath(ok || marks, `It’s spelled “<b>${esc(it.answer)}</b>.” You wrote “${esc(typed.trim())}.”`, typed, marks ? `<p class="pp-why">✍️ Watch the marks: it’s spelled <b>${esc(it.answer)}</b>.</p>` : '');
+}, true);
+$('#vocabWrap').addEventListener('click', event => {
+  const b = event.target.closest('button'); if (!b) return;
+  if (b.dataset.ppNode) { pathOpen = pathOpen === b.dataset.ppNode ? null : b.dataset.ppNode; renderVocab(); $(`#vocabWrap [data-pp-node="${b.dataset.ppNode}"]`)?.focus(); return; }
+  if (b.dataset.ppStart) { startPathLesson(b.dataset.ppStart, +b.dataset.ppLesson || 0); return; }
+  if (b.hasAttribute('data-pp-continue')) { vocabTab = 'path'; renderVocab(); return; }
+  if (b.hasAttribute('data-pp-nextlesson')) { const {skill, idx} = nextPathLesson(); startPathLesson(skill, idx); return; }
+  const run = pathRun; if (!run) return;
+  const it = run.items[run.pos];
+  /* ✕ asks first once she has started (her lesson isn't saved, and a timed warm-up round would end too) */
+  if (b.hasAttribute('data-pp-quit')) {
+    if (run.pos === 0 && !run.answered) { quitPathLesson(); return; }
+    if ($('#vocabWrap .pp-quit-ask')) return;
+    $('#vocabWrap .pp-top').insertAdjacentHTML('afterend', `<div class="pp-quit-ask" role="alertdialog" aria-label="Stop the lesson?"><p><b>Stop this lesson?</b> ${pathRound && !pathRound.over ? 'Your warm-up round ends too, and this lesson won’t count.' : 'This lesson won’t count yet.'}</p><div class="row"><button type="button" class="btn berry" data-pp-stay>Keep going</button><button type="button" class="btn small" data-pp-quit-yes>Stop</button></div></div>`);
+    $('#vocabWrap [data-pp-stay]')?.focus(); return;
+  }
+  if (b.hasAttribute('data-pp-stay')) { $('#vocabWrap .pp-quit-ask')?.remove(); return; }
+  if (b.hasAttribute('data-pp-quit-yes')) { quitPathLesson(); return; }
+  if (b.hasAttribute('data-pp-hear')) { void speakWord(pathWordObj(it.word), b.dataset.ppHear || 'word'); return; }
+  if (b.hasAttribute('data-pp-next')) { run.pos++; renderPathItem(); return; }
+  if (run.answered) return;
+  if (b.dataset.ppChoice != null) { run.sel = +b.dataset.ppChoice; $$('#vocabWrap [data-pp-choice]').forEach(x => { const on = x === b; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', String(on)); }); const c = $('#vocabWrap [data-pp-check]'); if (c) c.disabled = false; return; }
+  if (b.dataset.ppTile) { matchTap(b); return; }
+  if (b.dataset.ppChip != null) {
+    const i = +b.dataset.ppChip; if (run.build.includes(i)) return; run.build.push(i); b.disabled = true;
+    $('#vocabWrap .pp-built').innerHTML = run.build.map((j, n) => `<button type="button" class="pp-chip in" data-pp-unchip="${n}">${esc(it.chips[j])}</button>`).join('');
+    const c = $('#vocabWrap [data-pp-check]'); if (c) c.disabled = false; return;
+  }
+  if (b.dataset.ppUnchip != null) {
+    const j = run.build.splice(+b.dataset.ppUnchip, 1)[0]; const chip = $(`#vocabWrap [data-pp-chip="${j}"]`); if (chip) chip.disabled = false;
+    $('#vocabWrap .pp-built').innerHTML = run.build.length ? run.build.map((k, n) => `<button type="button" class="pp-chip in" data-pp-unchip="${n}">${esc(it.chips[k])}</button>`).join('') : '<span class="muted">Tap the parts in order</span>';
+    const c = $('#vocabWrap [data-pp-check]'); if (c) c.disabled = !run.build.length; return;
+  }
+  if (b.hasAttribute('data-pp-check')) {
+    if (it.type === 'pick' && run.sel != null) { const ok = run.sel === it.answer; if (!ok) $(`#vocabWrap [data-pp-choice="${run.sel}"]`)?.classList.add('incorrect'); answerPath(ok, `The answer is “<b>${esc(it.choices[it.answer])}</b>”.`); return; }
+    if (it.type === 'build' && run.build.length) { const made = run.build.map(j => it.chips[j]).join(''); answerPath(normalizeTyped(made) === normalizeTyped(it.answer), it.kind === 'letters' ? `It’s spelled <b>${esc(it.answer)}</b>.` : `It’s built <b>${it.parts.map(esc).join(' + ')}</b> = <b>${esc(it.answer)}</b>.`); }
+  }
+});
+/* the grown-ups' and the 📊 My words line: skills done this week and accuracy in each */
+function pathSummaryHTML(){ const wk = ensureWeek(); ensurePath(); return `<p class="pp-summary muted">${esc(pathSummaryText(S.vocab.path, wk.id))}</p>`; }
 /* ---------- moving a mastered word back to practice (owner, Oct 30, 2026; docs/VOCAB.md "Moving words back to practice") ----------
    Behind the grown-up PIN, 📊 My words lists each mastered word with "Move to unmastered" (unmasterWord in vocab.js: out
    of the Hall of Fame, first in line for next week's 20, answer history reset to needs practice). Adding a word she
@@ -13141,7 +13468,7 @@ function vocabGrownUpHTML(all){
       <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
     <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet World’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
     <p><label>👂 Listening time on spelling cards <select id="vocabListen">${listenOptionsHTML(v.listenSec, `${Backend.me?.game_settings?.vocab?.listenSec != null ? 'Teacher’s setting' : 'Default'} (${listenSeconds({classVocab:Backend.me?.game_settings?.vocab})} s)`)}</select></label><br><span class="muted">After Pet World says the word, how many syllables it has, and each syllable, the answer box stays locked this long so she keeps listening. She can replay it as much as she wants. 0 turns the wait off.</span></p>
-    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet.</p>
+    <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet. <b>Other languages:</b> put a line like <code>Language: Spanish</code> above the words (and <code>Language: English</code> to switch back); they’re read aloud in that language. For the 🐾 Paw Path you can add a second sentence as a fourth part, and the part of speech after the word: <code>árbol (n) - tree - El pájaro está en el ___. - Hay un ___ en el patio.</code></p>
     <p class="muted"><b>Type syllables with + to help Pet World say them: <code>ap+ples</code></b> (or <code>cel+e+bra+tion - a big party</code>). Pet World saves the word without the +’s and uses the pieces for the syllable count, the dots and the spoken parts. She never sees the pieces before she answers.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
@@ -13213,7 +13540,7 @@ $('#vocabWrap').addEventListener('change', event => { if (event.target.id === 'v
 /* the grown-ups' progress report: a one-line summary that opens the chart */
 function vocabReportHTML(){
   const {focus} = vocabWords(), count = st => focus.filter(v => wordStatus(vocabStat(v.w)) === st).length;
-  return `<div class="panel"><h3>🔤 Vocabulary</h3><p><b>${count('solid')}</b> solid · <b>${count('close')}</b> getting there · <b>${count('work')}</b> need practice · <b>${count('new')}</b> not seen yet (of ${focus.length} focus words). Sprint best: ${S.vocab.sprintBest}.</p><button class="btn small" data-go-vocab>Open Word Workshop</button></div>`;
+  return `<div class="panel"><h3>🔤 Vocabulary</h3>${pathSummaryHTML()}<p><b>${count('solid')}</b> solid · <b>${count('close')}</b> getting there · <b>${count('work')}</b> need practice · <b>${count('new')}</b> not seen yet (of ${focus.length} focus words). Sprint best: ${S.vocab.sprintBest}.</p><button class="btn small" data-go-vocab>Open Word Workshop</button></div>`;
 }
 document.addEventListener('click', event => { if (event.target.closest('[data-go-vocab]')) { vocabTab = 'chart'; show('vocab'); } });
 
@@ -15043,7 +15370,7 @@ function placeOnScreen(){
   if (on('shift') || on('cafe')) return shift ? `shop:${shift.shop}:${shift.station}${shift.mode === 'practice' ? '' : ':' + shift.mode}` : `shop:${currentShop}`;   // the shop floor counts for its unit
   if (on('summary') && summaryShop) return `shop:${summaryShop}`;   // a shift's or quiz's summary, not Fact Sprint's
   if (on('sprint') || on('summary')) return 'sprint';
-  if (on('vocab')) return `vocab:${vocabRun?.mode || vocabTab}`;
+  if (on('vocab')) return `vocab:${pathRun ? 'path' : vocabRun?.mode || vocabTab}`;
   if (on('arcade')) return 'arcade';
   if (!on('library')) return 'town';
   const form = $('#historyProjectForm'); if (form) return `project:${form.dataset.course}`;
@@ -15100,7 +15427,7 @@ function eventText(e){
   const score = e.n ? ` · ${e.s} of ${e.n}` : e.s != null ? ` · ${e.s} right` : '';
   if (e.k === 'assess') return `${stationLabel(e.shop, e.station, e.mode)}${score}${e.passed ? ' ✅ passed' : ''}`;
   if (e.k === 'sprint') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
-  if (e.k === 'vocab') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${score}`;
+  if (e.k === 'vocab') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${e.mode === 'path' && e.title ? `: ${e.title}` : ''}${score}`;
   if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through', review:'test review'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}${e.fixed ? ' (score fixed by a grown-up)' : ''}`;
   if (e.k === 'review') return `📇 ${englishCourse(e.course)?.title || e.course}: test review flashcards · ${e.s} of ${e.n} known on the first try`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;

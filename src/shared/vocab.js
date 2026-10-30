@@ -4,6 +4,8 @@
    from a published program). Teachers (class game_settings.vocab) and parents (the save's vocab.home) add their own
    words, for example from a Wordly Wise lesson, and choose focus words; all words are in focus by default. */
 
+import { normalizePath } from './wordPath.js';
+
 const W = (set, w, d, s) => ({ w, d, s, set });
 export const VOCAB_WORDS = [
   W('Set 1', 'analyze', 'to study something closely, part by part, to understand it', 'Scientists ___ each part of the water sample to learn what it contains.'),
@@ -140,7 +142,11 @@ export function validWord(entry){
   if (!w || !d || /\s{2,}/.test(w)) return null;
   if (syl && syl.join('').toLowerCase() !== w.toLowerCase()) syl = null;
   const s = clean(entry.s ?? entry.sentence, VOCAB_LIMITS.sentence);
-  return { w, d, ...(s.includes('___') ? { s } : {}), ...(entry.set ? { set: clean(entry.set, 40) } : {}), ...(syl && syl.length > 1 ? { syl } : {}) };
+  /* optional, for 🐾 the Paw Path (wordPath.js): a second sentence `u` (never shown as the example), the part of speech
+     (v n a r), and the word's language for the voice (`lang`, like "es" or "fr-CA"; none means English) */
+  const u = clean(entry.u, VOCAB_LIMITS.sentence), pos = /^[vnar]$/.test(String(entry.pos || '')) ? entry.pos : '', lang = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i.test(String(entry.lang || '')) ? String(entry.lang) : '';
+  return { w, d, ...(s.includes('___') ? { s } : {}), ...(entry.set ? { set: clean(entry.set, 40) } : {}), ...(syl && syl.length > 1 ? { syl } : {}),
+    ...(u.includes('___') && u !== s ? { u } : {}), ...(pos ? { pos } : {}), ...(lang ? { lang } : {}) };
 }
 /* How long she listens after the word is played on a spelling card, before she can type (docs/VOCAB.md, "Listen first"):
    the family's setting, else the class's, else 8 seconds. 0 turns the wait off; at most 20. */
@@ -158,7 +164,23 @@ export function listenSeconds({ classVocab, home } = {}){
    A word with no meaning yet ("abundant", "abundant -", or a list like "abundant, scarce, fragile") takes Pet World's meaning
    if the built-in list has the word; otherwise it comes back in `missing` so the screen can ask for its meaning.
    To add the word "set" itself, write it with a dash: "set - a group of things that go together".
-   Syllables can be written with +: "ap+ples - fruit", or just "cel+e+bra+tion" (validWord saves the word and its pieces). */
+   Syllables can be written with +: "ap+ples - fruit", or just "cel+e+bra+tion" (validWord saves the word and its pieces).
+   For 🐾 the Paw Path (wordPath.js): a line "Language: Spanish" (or "Language: es", "Idioma: español") puts the words
+   under it in that language, until "Language: English"; a fourth part is a second sentence with ___ (used in Use it,
+   never shown as the example); "(n)", "(v)", "(adj)" or "(adv)" right after the word gives its part of speech:
+   "árbol (n) - tree - El ___ es alto. - Hay un ___ en el patio." */
+const LANG_LINE = /^(?:language|lang|idioma|langue|sprache|lingua)\s*:\s*(.+)$/i;
+const LANG_NAMES = { english: 'en', inglés: 'en', ingles: 'en', spanish: 'es', español: 'es', espanol: 'es', french: 'fr', français: 'fr', francais: 'fr', german: 'de', deutsch: 'de',
+  italian: 'it', italiano: 'it', portuguese: 'pt', português: 'pt', portugues: 'pt', latin: 'la', latina: 'la', chinese: 'zh', mandarin: 'zh', japanese: 'ja', korean: 'ko',
+  russian: 'ru', arabic: 'ar', hebrew: 'he', greek: 'el', dutch: 'nl', hindi: 'hi', vietnamese: 'vi', tagalog: 'tl', polish: 'pl', swedish: 'sv', turkish: 'tr' };
+/* "Spanish", "español", "es" or "es-MX" → a language tag ('' for English or anything it can't read) */
+export function langTag(text){
+  const t = String(text || '').trim().toLowerCase().replace(/[.]+$/, '');
+  const tag = LANG_NAMES[t] || (/^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i.test(t) ? t : '');
+  return tag && tag !== 'en' && !/^en-/.test(tag) ? tag : '';
+}
+const POS_TAG = /\s*\((n|v|adj|adv|noun|verb|adjective|adverb)\.?\)\s*$/i;
+const POS_CODE = { n: 'n', noun: 'n', v: 'v', verb: 'v', adj: 'a', adjective: 'a', adv: 'r', adverb: 'r' };
 const BULLET = /^(?:[-*•▪◦·]+\s*|\d{1,3}[.)]\s*|\[[^\]\s]{0,3}\]\s*|\([a-z0-9]{1,3}\)\s+)/i;
 const NAMED_SET = /^((?:set|lesson|unit|week|list|chapter)(?:\s+|\s*#\s*|(?=\d))[\w.]{1,12})\s*(?::\s*(.*))?$/i;
 const SINGLE = /^[\p{L}][\p{L}'’+-]{0,51}$/u;   // + marks syllables: ap+ples
@@ -172,7 +194,7 @@ function readHeading(t){
 }
 export function parseVocabImport(text){
   const raw = String(text || '').trim(), words = [], errors = [], missing = [];
-  let set = '';
+  let set = '', lang = '';
   if (!raw) return { words, errors, missing };
   if (/^\[\s*[{\]]/.test(raw)) {   // a JSON list (not a line that starts with a bullet like "[i]")
     try { for (const item of JSON.parse(raw)) { const v = validWord(item); if (v) words.push(v); else errors.push(`Skipped: ${JSON.stringify(item).slice(0, 60)}`); } return { words, errors, missing }; }
@@ -182,9 +204,9 @@ export function parseVocabImport(text){
   const plainKey = w => wordKey(String(w).replace(/\+/g, ''));
   const bareWord = w => {
     const plus = plusSyllables(w); if (plus?.error) { errors.push(`Skipped: ${plus.error}`); return; }
-    const known = builtIn.get(plainKey(w)), entry = known ? validWord({ ...known, ...(plus ? { w } : {}), set: set || known.set }) : null;
+    const known = lang ? null : builtIn.get(plainKey(w)), entry = known ? validWord({ ...known, ...(plus ? { w } : {}), set: set || known.set }) : null;
     if (entry) words.push(entry);
-    else if (!missing.some(m => plainKey(m.w) === plainKey(w))) missing.push({ w: clean(w, VOCAB_LIMITS.word + 12), ...(set ? { set } : {}) });   // "ap+ples" stays written with its +'s
+    else if (!missing.some(m => plainKey(m.w) === plainKey(w))) missing.push({ w: clean(w, VOCAB_LIMITS.word + 12), ...(set ? { set } : {}), ...(lang ? { lang } : {}) });   // "ap+ples" stays written with its +'s
   };
   /* one entry line; `listOf` is how many single words separated by commas count as a list of words with no meanings */
   const readLine = (t, listOf) => {
@@ -193,12 +215,16 @@ export function parseVocabImport(text){
     const list = t.split(/\s*[,;]\s*/).filter(Boolean);
     if (!t.includes('\t') && !/ [-–—] /.test(t) && !t.includes(':') && list.length >= listOf && list.every(x => SINGLE.test(x))) { list.forEach(bareWord); return; }
     const parts = t.includes('\t') ? t.split('\t') : / [-–—] /.test(t) ? t.split(/ [-–—] /) : t.includes(':') ? t.split(/:(.*)/s).filter(x => x !== undefined && x !== '') : t.split(/,(.*)/s).filter(x => x !== undefined && x !== '');
-    const [w, d, ...rest] = parts.map(p => p.trim().replace(/^"|"$/g, ''));
-    const v = validWord({ w, d, s: rest.join(' '), set }), plus = plusSyllables(w);
+    const [w0, d, s0 = '', ...more] = parts.map(p => p.trim().replace(/^"|"$/g, ''));
+    const tag = String(w0 || '').match(POS_TAG), w = tag ? w0.replace(POS_TAG, '') : w0;
+    /* a fourth part with ___ is a second sentence; otherwise the rest is one example sentence (it may have had dashes) */
+    const second = more.length && /___/.test(s0) && /___/.test(more.join(' - ')) ? more.join(' - ') : '', s = second ? s0 : [s0, ...more].filter(Boolean).join(' ');
+    const v = validWord({ w, d, s, set, ...(second ? { u: second } : {}), ...(tag ? { pos: POS_CODE[tag[1].toLowerCase()] } : {}), ...(lang ? { lang } : {}) }), plus = plusSyllables(w);
     if (v) words.push(v); else errors.push(plus?.error ? `Skipped: ${plus.error}` : `Skipped: “${t.slice(0, 60)}” (use word - definition)`);
   };
   for (const line of raw.split(/\r?\n/)) {
     const t = line.trim().replace(BULLET, '').trim(); if (!t || /^word\s*[,\t]\s*definition/i.test(t)) continue;
+    const ln = t.match(LANG_LINE); if (ln) { lang = langTag(ln[1]); continue; }
     const heading = readHeading(t);
     if (!heading) { readLine(t, 3); continue; }
     if (heading.rest && !/[,;\t]| [-–—] /.test(heading.rest) && !SINGLE.test(heading.rest)) { set = clean(`${heading.set}: ${heading.rest}`, 40); continue; }
@@ -209,8 +235,9 @@ export function parseVocabImport(text){
 }
 /* words still waiting for a meaning, written back as "word - " lines (under their set headings) for the import box */
 export function missingLines(missing){
-  const out = []; let set;
+  const out = []; let set, lang = '';
   for (const m of missing) {
+    if ((m.lang || '') !== lang) { lang = m.lang || ''; out.push(`Language: ${lang || 'English'}`); }
     if ((m.set || '') !== set) { set = m.set || ''; if (set) out.push(`Set: ${set}`); }
     out.push(`${m.w} - `);
   }
@@ -274,7 +301,8 @@ function weeklyState(out){
     done: !!pz.done, data: pz.data && typeof pz.data === 'object' && JSON.stringify(pz.data).length < 6000 ? pz.data : null } : null;
   /* back: words a grown-up or teacher moved back from mastered, first in line for the next weekly draw (unmasterWord) */
   const back = keys(out.back, 60).filter((k, i, a) => a.indexOf(k) === i);
-  return { week, hall, back, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0 };
+  /* path: 🐾 this week's Paw Path (wordPath.js): lessons done per skill, XP, streak days, accuracy per skill */
+  return { week, hall, back, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0, path: normalizePath(out.path) };
 }
 export function normalizeVocabState(v){
   const out = v && typeof v === 'object' ? v : {};
@@ -388,7 +416,7 @@ export const PATTERN_WORDS = [
   W('Spelling: -tion / -sion', 'vacation', 'time off for rest or travel', 'We went to the beach on ___.'),
   W('Spelling: -tion / -sion', 'decision', 'a choice you make', 'Picking a puppy was a hard ___.'),
   W('Spelling: -tion / -sion', 'television', 'a screen for watching shows', 'We watched the game on ___.'),
-  W('Spelling: -tion / -sion', 'musician', 'a person who plays or makes music', 'The ___ played the violin.'),
+  W('Spelling: -tion / -sion', 'musician', 'a person who plays an instrument or sings, often for others', 'The ___ played the violin.'),
   W('Spelling: -tion / -sion', 'attention', 'careful listening or watching', 'Please pay ___ to the directions.'),
   W('Spelling: soft and hard c', 'circle', 'a perfectly round shape', 'Draw a ___ around the answer.'),
   W('Spelling: soft and hard c', 'notice', 'to see or become aware of', 'Did you ___ the new sign?'),

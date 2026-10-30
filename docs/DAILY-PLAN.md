@@ -63,7 +63,7 @@ With the class wheel on (`CLASS-WHEEL.md`), a school day's plan keeps only the c
 
 Every extra is a **timed round** (owner: "how many can you get in X minutes?"). In the teacher app → her page → extras, each extra has **⏱️ Timed round** (default 5 minutes for a Fact Sprint, 7 for Word Workshop) and **More practice later** (default 0).
 
-- **The warm-up is one round** that stops by itself when the clock runs out; not finishing is fine. A Fact Sprint extra runs one long sprint; a Word Workshop extra is the day's word puzzle (see `VOCAB.md`, "Weekly words"), and on Friday the mastery check.
+- **The warm-up is one round** that stops by itself when the clock runs out; not finishing is fine. A Fact Sprint extra runs one long sprint; a Word Workshop extra is a round on the 🐾 Paw Path (lessons back to back at her next node; it was the day's word puzzle until Oct 30, 2026; see `VOCAB.md`, "This week's word path"), and on Friday the mastery check.
 - **Bragging on progress:** the end screen shows her score, how it compares with last time ("📈 4 more than last time!"), her best, how far she's come since her first rounds, and a bar chart of her last 7 rounds (`S.challengeLog`; per minute when the round length changed). The start screen says "Last time: 19 · Your best: 23. Can you beat it?"
 - **More practice later:** minutes beyond the round are a separate **➕ … more practice** row after her plan items. It doesn't block subjects, and it must be done before "I'm done for today" counts the extra as finished.
 - An older extra with no round length keeps its minutes: a 5-minute (or 7-minute) round, then the rest as more practice.
