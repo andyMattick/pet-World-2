@@ -509,7 +509,7 @@ function renderSetup() {
       <li>📇 <b>Review before every test</b>, then a grown-up’s PIN to start it. No fix-up round.</li>
       <li>🔐 <b>Fix a score</b>: a grown-up can correct a unit test or quiz score with the PIN (on the unit page).</li>
       <li>📘 <b>Word Workshop weekly words</b>: up to 25 new words a week, a different puzzle each day, and a Friday mastery check with a Hall of Fame.</li>
-      <li>🔬 <b>Hands-on Biology</b>: one experiment or nature journal page a week while a Biology unit is open, sent to you as outside work with photos.</li>
+      <li>🔬 <b>Hands-on Biology</b>: one experiment or nature journal page a week while a Biology unit is open, sent to you as outside work with photos. Every lab from every Biology unit is in the 🔬 Science Lab in the Biology class; the week’s ⭐ follows her current unit.</li>
       <li>⏱️ <b>Time inside each assignment</b>: students see today’s minutes for that subject on the page.</li>
       <li>🎬 <b>Videos first</b> in History and Science, with watching counted as class time.</li>
     </ul><p class="muted">Per student, on their page: the daily plan, subject minutes, and extras (the length of each timed round).</p></details>

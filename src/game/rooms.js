@@ -78,6 +78,9 @@ const ROOMS = {
               props:['🌳','🦜','🪺','🦩','🦉','🌳'], hero:'🦜', float:['🪶'], motion:'fall'},
   bioEco:    {wall:'#1F6FA8', wall2:'#5FB8E0', pattern:'water', floor:'#E9D3A1', floor2:'#D6BE88', floorKind:'sand', frame:'#1C5A86', awning:['#1C6FB0','#7FD1E8'],
               props:['🪸','🐚','🐢','🦀','🐙','🪸'], hero:'🐋', float:['🫧','🐠'], motion:'rise', dark:true},
+  // the 🔬 Science Lab (not a building: every Biology lab, one a week; docs/HANDS-ON.md)
+  scienceLab:{wall:'#E4F1F7', wall2:'#C9DFEA', pattern:'tiles', floor:'#D7DEE3', floor2:'#B9C4CC', floorKind:'checks', frame:'#2F6F8F', awning:['#2F8FB0','#FFFFFF'],
+              props:['🔬','🧪','🧫','🌡️','🧬','🪴'], hero:'🔬', float:['🫧'], motion:'rise'},
   bioPlanet: {wall:'#FCE9C2', wall2:'#F2D08A', pattern:'sky', floor:'#C8B06B', floor2:'#B39B57', floorKind:'grass', frame:'#8A5A2B', awning:['#E08A1E','#FFF4D6'],
               props:['🌴','🦒','🐘','🦓','🦁','🌴'], hero:'☀️', float:['🦜'], motion:'drift'}
 };

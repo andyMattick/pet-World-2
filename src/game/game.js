@@ -6853,21 +6853,64 @@ function handsOnStatus(id){
   const row = outsideCache.rows.find(r => r.id === e.outsideId);
   return row?.review === 'ok' ? '✅ Checked' : row?.review === 'redo' ? '🔁 Fix it' : '⏳ Sent';
 }
-/* the cards on a Biology unit page */
-function handsOnCardsHTML(courseId){
-  const pick = handsOnPick().id, list = HANDS_ON.filter(x => x.course === courseId);
-  return `<section class="ela-final-assessment hands-on-head"><div><h3>🔬 Hands-on at home</h3><p class="muted">Do at least one each week: an experiment, or the nature journal. ${handsOnDoneThisWeek() ? '✅ This week’s is done!' : 'This week’s pick is marked ⭐.'}</p></div></section>`
-    + [...list, NATURE_JOURNAL].map(x => `<section class="ela-final-assessment"><div><h3>${x.id === pick && !handsOnDoneThisWeek() ? '⭐ ' : ''}${x.emoji} ${esc(x.title)}</h3><p class="muted">${esc(x.why)} · ${esc(x.time)} · ${x.id === 'nature' ? (handsOnEntry('nature')?.sentAt ? '✅ This week’s entry sent' : 'Any week') : handsOnStatus(x.id)}</p></div><button type="button" class="btn small${x.id === pick ? ' berry' : ''}" data-hands-on="${x.id}">${handsOnEntry(x.id)?.sentAt ? 'Open' : 'Start'}</button></section>`).join('');
+/* ---------- 🔬 the Science Lab (owner, Oct 30, 2026: "make a lab unit that tells her to do 1 per week instead of cramming
+   them all in unit 1"; docs/HANDS-ON.md, "The Science Lab") ----------
+   One spot in the Biology class that holds every lab from every Biology unit plus the nature journal. It is not a unit:
+   no quizzes, test, Khan link, stickers or unlock chain, and it is not in BUILDINGS (like the Reading Log and the Bible,
+   it opens with data-open="scienceLab"). On top, this week's ⭐ (handsOnPick: her current unit first); below, a shelf per
+   unit. Labs never gate anything, so every shelf is open; units she hasn't reached say "Goes with Unit N".
+   Unit pages show one small card that points here (handsOnUnitCardHTML). */
+const handsOnUnitNum = course => +(String(course).match(/\d+/) || [0])[0];
+const handsOnLesson = x => englishCourse(x.course)?.groups?.find(g => g.id === x.group)?.name || '';
+const handsOnSentThisWeek = () => Object.values(S.handsOn.entries).filter(e => e.sentAt && weekOf(logDayKey(new Date(e.sentAt))) === handsOnWeek()).sort((a, b) => a.sentAt - b.sentAt)[0] || null;
+function handsOnButton(x, berry){
+  const e = handsOnEntry(x.id);
+  return `<button type="button" class="btn small${berry ? ' berry' : ''}" data-hands-on="${x.id}">${e?.sentAt ? 'Open' : e ? 'Keep going' : 'Start'}</button>`;
 }
+/* the one small card on a Biology unit page */
+function handsOnUnitCardHTML(courseId){
+  const done = handsOnDoneThisWeek(), pick = handsOnPick(), mine = HANDS_ON.filter(x => x.course === courseId);
+  const sent = mine.filter(x => handsOnEntry(x.id)?.sentAt).length;
+  return `<section class="ela-final-assessment hands-on-unit"><div><h3>🔬 ${done ? '✅ This week’s lab is done!' : `This week’s lab: ${pick.emoji} ${esc(pick.title)}`}</h3><p class="muted">One lab a week, at home. All the labs live in the 🔬 Science Lab.${mine.length ? ` ${sent} of ${mine.length} labs for this unit done.` : ''}</p></div><div class="row">${done ? '' : handsOnButton(pick, true)}<button type="button" class="btn small" data-science-lab>🔬 Science Lab</button></div></section>`;
+}
+const sciLabRoom = () => applyRoom('scienceLab', 'biology', [], ownedPets().slice(0, 4).map(r => ({emoji:r.emoji, name:r.name.split(' ')[0]})));
+function renderScienceLab(){
+  activeEnglishCourse = currentBioCourse();   // its time counts for Biology (her current unit)
+  if ($('#scr-library').hidden) show('library');
+  const cur = currentBioCourse(), done = handsOnDoneThisWeek(), pick = handsOnPick(), week = handsOnSentThisWeek();
+  const weekLab = week && handsOnById(week.id);
+  const star = done
+    ? `<div class="sci-star done"><p class="sci-star-kicker">⭐ This week’s lab</p><h3>✅ This week’s is done!${weekLab ? ` ${weekLab.emoji} ${esc(weekLab.title)}` : ''}</h3><p class="muted">Great science. Next week’s ⭐ will be ${pick.emoji} ${esc(pick.title)}. You can do extra labs any time.</p><div class="row">${handsOnButton(pick, false)}</div></div>`
+    : `<div class="sci-star"><p class="sci-star-kicker">⭐ This week’s lab</p><h3><span class="sci-star-emoji" aria-hidden="true">${pick.emoji}</span> ${esc(pick.title)}</h3><p>${esc(pick.why)}</p><p class="muted">⏱️ ${esc(pick.time)}${pick.course ? ` · goes with Biology Unit ${handsOnUnitNum(pick.course)}${handsOnLesson(pick) ? `: ${esc(handsOnLesson(pick))}` : ''}` : ''} · ${pick.id === 'nature' ? 'Any week' : handsOnStatus(pick.id)}</p><div class="row">${handsOnButton(pick, true)}</div></div>`;
+  const row = x => {
+    const status = x.id === 'nature' ? (handsOnEntry('nature')?.sentAt ? '✅ This week’s entry sent' : 'Any week, as often as you like') : handsOnStatus(x.id);
+    const lesson = x.id === 'nature' ? '' : handsOnLesson(x);
+    return `<div class="sci-lab-row${handsOnEntry(x.id)?.sentAt ? ' sent' : ''}"><div><b>${x.id === pick.id && !done ? '⭐ ' : ''}${x.emoji} ${esc(x.title)}</b><small class="muted">${lesson ? `${esc(lesson)} · ` : ''}${esc(x.time)} · ${status}</small></div>${handsOnButton(x, x.id === pick.id && !done)}</div>`;
+  };
+  const courses = [...new Set(HANDS_ON.map(x => x.course))].sort((a, b) => handsOnUnitNum(a) - handsOnUnitNum(b));
+  const shelves = courses.map(c => {
+    const list = HANDS_ON.filter(x => x.course === c), n = handsOnUnitNum(c), b = BUILDINGS.find(x => x.id === courseBuilding(c));
+    const sent = list.filter(x => handsOnEntry(x.id)?.sentAt).length, open = b ? unitOpen(b.id) : true;
+    const tag = c === cur ? '<span class="sci-tag now">📍 Your unit now</span>' : !open ? `<span class="sci-tag">Goes with Unit ${n}</span>` : unitTestPassed(b?.id) ? '<span class="sci-tag">Unit done</span>' : '';
+    return `<section class="sci-shelf"><h3>${b ? `${b.emoji} ` : ''}Unit ${n}: ${esc((englishCourse(c)?.title || '').replace(/^Biology Unit \d+:\s*/, '') || c)} ${tag}</h3><p class="muted sci-shelf-count">${sent} of ${list.length} done</p>${list.map(row).join('')}</section>`;
+  }).join('');
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>🔬 Science Lab</h2><button class="btn small" data-go="home">Back to town</button></div>
+    ${todayTimeHTML('science')}
+    <div id="sciLabWrap"><p class="sci-rule">🧪 <b>One lab a week.</b> The ⭐ follows the unit you’re on. Labs you finish stay finished when you move to the next unit, and you can do any lab, any time.</p>
+    ${star}${shelves}<section class="sci-shelf"><h3>🌿 Any week</h3>${row(NATURE_JOURNAL)}</section></div>`;
+  sciLabRoom();
+}
+document.addEventListener('click', event => { if (event.target.closest('[data-science-lab]')) { sfx('tick'); renderScienceLab(); window.scrollTo(0, 0); } });
 function renderHandsOn(id){
   const x = handsOnById(id); if (!x) return;
   if ($('#scr-library').hidden) show('library');
   activeEnglishCourse = x.course || currentBioCourse();   // its time counts for Biology
+  sciLabRoom();   // the experiment page sits in the Science Lab's room
   const e = handsOnEntry(id) || {answers:{}}, sent = !!e.sentAt, back = x.course || currentBioCourse();
   const field = (f, label) => `<label class="hands-q"><b>${label}</b><span>${esc(x[f])}</span><textarea data-ho-field="${f}" rows="3" maxlength="1500" ${sent ? 'readonly' : ''}>${esc(e.answers?.[f] || '')}</textarea></label>`;
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${x.emoji} ${esc(x.title)}</h2><button class="btn small" data-ela-unit data-ela-course="${back}">Back to Biology</button></div>
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${x.emoji} ${esc(x.title)}</h2><div class="row"><button class="btn small" data-science-lab>Back to the Science Lab</button><button class="btn small" data-ela-unit data-ela-course="${back}">Biology unit</button></div></div>
     ${todayTimeHTML('science')}
-    <div class="hands-on"><p>${esc(x.why)}</p><p class="muted">⏱️ ${esc(x.time)}</p>
+    <div class="hands-on" data-lab="${esc(x.title)}"><p>${esc(x.why)}</p><p class="muted">⏱️ ${esc(x.time)}</p>
     <h3>🧺 You need</h3><ul>${x.need.map(n => `<li>${esc(n)}</li>`).join('')}</ul>
     <p class="hands-safety">⚠️ <b>Safety:</b> ${esc(x.safety)}</p>
     <h3>📋 Steps</h3><ol>${x.steps.map(st => `<li>${esc(st)}</li>`).join('')}</ol>
@@ -9815,15 +9858,22 @@ function renderHome(){
     const subject = SUBJECTS.find(item => item.id === selectedSubject);
     h += `<div class="class-heading"><button type="button" class="btn small" data-class-back>All classes</button><h2>${subject?.emoji || ''} ${esc(subject?.name || selectedSubject)}</h2></div>`;
     h += worldMapHTML(hood, selectedSubject);
+    let labTile = '';
+    if (selectedSubject === 'biology' && bioOpen()) {   // 🔬 the Science Lab: every Biology lab, one a week (not a unit: docs/HANDS-ON.md); it sits after the open units
+      const pick = handsOnPick();
+      labTile = `<button class="tile sci-lab-tile" data-open="scienceLab"><span class="te">🔬</span><span class="tn">Science Lab</span><span class="tu">${handsOnDoneThisWeek() ? '✅ This week’s lab is done' : `⭐ This week: ${pick.emoji} ${esc(pick.title)}`}</span></button>`;
+    }
     buildingsInClass(hood, selectedSubject).forEach(b => {
       const rewards = REWARDS.filter(r => r.unit === b.id), owned = rewards.filter(owns).length;
       const open = unitOpen(b.id);
+      if (!open && labTile) { h += labTile; labTile = ''; }
       const stickers = open && rewards.length ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
       const progress = open && rewards.length ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
       h += open
         ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}</button>`
         : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
     });
+    h += labTile;
   }
   if (bibleOn()) { const st = bibleStatus(); h += `<button class="tile service" data-open="bible"><span class="te">✝️</span><span class="tn">Bible</span><span class="tu">${st.done ? '✅ Done today' : 'Journal, verse and books'}</span></button>`; }
   h += `<button class="tile service" data-open="sprint"><span class="te">⚡</span><span class="tn">Sprint Track</span><span class="tu">${S.power > 1 ? 'Tips powered up ×' + fmtPow(S.power) : '60-second times tables'}</span></button>`;
@@ -10276,6 +10326,7 @@ $('#town').addEventListener('click', e => {
   else if (id === 'arcade') void openArcade();
   else if (id === 'prepRecall') openPrepRecall();
   else if (id === 'bible') openBible('today');
+  else if (id === 'scienceLab') renderScienceLab();
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5' || id === 'history6' || id === 'history7' || id === 'history8' || id === 'history9';
@@ -11962,7 +12013,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + barnBreederCardHTML(course.id) + lifeCycleCardHTML(course.id) + handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + barnBreederCardHTML(course.id) + lifeCycleCardHTML(course.id) + handsOnUnitCardHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -14784,6 +14835,8 @@ function placeOnScreen(){
   if ($('#brWrap') && brRun) return `repair:${brRun.shelf}`;
   if ($('#snapWrap') && snapShelf) return `snap:${snapShelf}`;
   if ($('#rcWrap') && rcRun) return `court:${rcRun.docket}`;
+  if ($('#sciLabWrap')) return `course:${activeEnglishCourse}:🔬 Science Lab`;   // counts for her current Biology unit
+  if ($('#libraryWrap .hands-on[data-lab]')) return `course:${activeEnglishCourse}:🔬 ${String($('#libraryWrap .hands-on').dataset.lab).slice(0, 50)}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun?.retryType === 'think' && englishRun.shop && $('#libraryWrap .ela-question')) return `shop:${englishRun.progressKey}:think`;   // Think it through counts for its unit
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
