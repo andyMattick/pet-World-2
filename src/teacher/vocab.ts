@@ -1,13 +1,13 @@
 /* Teacher app: Vocabulary tab (docs: VOCAB.md). The class word list lives in classes.game_settings.vocab
    ({builtIn, words, focus}), which students already receive, so no new database column is needed. */
 import { esc } from './report';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets, validListen, LISTEN_DEFAULT, LISTEN_MAX } from '../shared/vocab';
 import { weekOf } from '../shared/wordPuzzles';
 import { patternSummary, patternById } from '../shared/spellingPatterns';
 import { dictLinkHTML } from './wordPick';
 
-interface VocabWord { w: string; d: string; s?: string; set?: string }
-export interface ClassVocab { builtIn?: boolean; words?: VocabWord[]; focus?: string[]; dismissed?: string[] }   // dismissed: flagged words the teacher said no to
+interface VocabWord { w: string; d: string; s?: string; set?: string; syl?: string[] }   // syl: syllables typed with + (ap+ples)
+export interface ClassVocab { builtIn?: boolean; listenSec?: number; words?: VocabWord[]; focus?: string[]; dismissed?: string[] }   // dismissed: flagged words the teacher said no to
 interface VocabClass { id: string; name: string; game_settings: { vocab?: ClassVocab; [key: string]: unknown } | null }
 type SaveVocab = (vocab: ClassVocab) => Promise<string | null>;
 /* each student's answer history per word (state.vocab.stats), or null if it couldn't be loaded */
@@ -65,10 +65,12 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     <div class="card"><h2>Vocabulary (Word Workshop)</h2>
       <p class="muted" style="margin-top:0">Students practice these words with cards, a 60-second sprint and spelling in the 🔤 Word Workshop. Changes apply to <b>${esc(cls.name)}</b>. Parents can also add words at home behind the grown-up PIN.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="vbBuiltIn" ${builtIn ? 'checked' : ''}> Include Pet World’s word list (${VOCAB_WORDS.length} grade 4–6 academic words, written for Pet World)</label>
+      <p><label>👂 Listening time on spelling cards <select id="vbListen">${[`<option value=""${validListen(vocab.listenSec) == null ? ' selected' : ''}>Default (${LISTEN_DEFAULT} seconds)</option>`, ...[0, 3, 5, 8, 10, 12, 15, LISTEN_MAX].map(n => `<option value="${n}"${validListen(vocab.listenSec) === n ? ' selected' : ''}>${n ? `${n} seconds` : 'Off (0)'}</option>`)].join('')}</select></label><br><span class="muted">On every spelling card, Pet World says the word, how many syllables it has, and each syllable, then the answer box stays locked this long so students keep listening (they can replay it). A parent’s setting at home wins over this one.</span></p>
       <h3>Add or import words</h3><p class="muted" style="margin-top:0">Words you add go in every student’s <b>Unmastered</b> list and can be drawn the next Monday. One per line: <code>word - meaning</code>, with an optional example sentence that uses ___ for the word: <code>word - meaning - The ___ was here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them; use an existing name such as <code>Set: Set 3</code> to add to one of Pet World’s sets (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can paste two or three columns from a spreadsheet, or a JSON list with a <code>"set"</code> field. Use your own wording or your curriculum’s word list; Pet World doesn’t include published programs’ definitions.</p>
+      <p class="muted"><b>Type syllables with + to help Pet World say them: <code>ap+ples</code></b> (or <code>cel+e+bra+tion - a big party</code>). The word is saved without the +’s; the pieces set the syllable count, the dots and what the voice says. Students never see the pieces before they answer.</p>
       <textarea id="vbImport" rows="6" style="width:100%; font-family:inherit">${esc(refill)}</textarea>
       <div class="row"><button class="btn primary" id="vbAdd">Add these words</button><span class="status" id="vbMsg"></span></div>
-      ${words.length ? `<details class="vb-classwords"><summary><b>Class words you added (${words.length})</b> <span class="muted">· tap to see or remove them. They’re part of each student’s Unmastered list above.</span></summary><table class="steptable"><tr><th>Word</th><th>Meaning</th><th>Sentence</th><th></th></tr>${words.map(v => `<tr><td><b>${esc(v.w)}</b><br>${dictLinkHTML(v.w)}</td><td>${esc(v.d)}</td><td class="muted">${esc(v.s || '')}</td><td><button class="btn small" data-vb-remove="${esc(v.w)}">Remove</button></td></tr>`).join('')}</table></details>` : ''}
+      ${words.length ? `<details class="vb-classwords"><summary><b>Class words you added (${words.length})</b> <span class="muted">· tap to see or remove them. They’re part of each student’s Unmastered list above.</span></summary><table class="steptable"><tr><th>Word</th><th>Meaning</th><th>Sentence</th><th></th></tr>${words.map(v => `<tr><td><b>${esc(v.w)}</b>${v.syl ? `<br><span class="muted">${esc(v.syl.join('+'))}</span>` : ''}<br>${dictLinkHTML(v.w)}</td><td>${esc(v.d)}</td><td class="muted">${esc(v.s || '')}</td><td><button class="btn small" data-vb-remove="${esc(v.w)}">Remove</button></td></tr>`).join('')}</table></details>` : ''}
     </div>
     ${flaggedCard}${spellingCard(roster, all, focusSet)}
     <div class="card"><h2>Class progress on all words</h2>${progress}</div>${wordsCard}`;
@@ -99,6 +101,10 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     renderVocabTab(pane, cls, save, roster, saveSpellFocus);   // keep the spelling-pattern save hooked up after a redraw
   };
   pane.querySelector('#vbBuiltIn')!.addEventListener('change', e => { void commit({ ...vocab, builtIn: (e.target as HTMLInputElement).checked }, 'Saved.'); });
+  pane.querySelector('#vbListen')!.addEventListener('change', e => {
+    const n = validListen((e.target as HTMLSelectElement).value), next: ClassVocab = { ...vocab }; delete next.listenSec; if (n != null) next.listenSec = n;
+    void commit(next, `Listening time saved: ${n ?? LISTEN_DEFAULT} seconds${n === 0 ? ' (off)' : ''}.`);
+  });
   pane.querySelector('#vbAdd')!.addEventListener('click', () => {
     const box = pane.querySelector('#vbImport') as HTMLTextAreaElement, m = pane.querySelector('#vbMsg')!;
     const { words: added, errors, missing } = parseVocabImport(box.value) as { words: VocabWord[]; errors: string[]; missing: { w: string; set?: string }[] };

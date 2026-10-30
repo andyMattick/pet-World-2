@@ -13,7 +13,7 @@ import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS, wordBuckets } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
@@ -12619,8 +12619,8 @@ function nextVocabCard(){
     : `<form class="typed-fill" data-vocab-spell><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form>`;
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🔤 Word Workshop</h2><button class="btn small" data-vocab-stop>Stop</button></div>
     <div class="sprint-card vocab-card">${head}<p class="vocab-ask">${ask}</p><div class="fact vocab-prompt${c.kind === 'meaning' ? '' : ' long'}">${esc(c.prompt)}</div>
-    ${c.kind === 'spell' ? `<div class="row syl-row"><button type="button" class="btn small" data-vocab-hear>🔊 Hear the word</button><button type="button" class="btn small" data-vocab-hear="syllables">🐢 By syllables</button><button type="button" class="btn small" data-vocab-hear="slow">Slowly</button><span class="syl-dots" aria-label="${syllablesOf(c.word.w).say.length} syllables">${syllablesOf(c.word.w).say.map(() => '<i class="syl-dot"></i>').join('')}</span></div>` : ''}${options}<p class="ela-feedback" aria-live="polite"></p></div>`;
-  if (c.kind === 'spell') { $('#vocabWrap .typed-input').focus(); void speakWord(c.word.w); } else addCrossOuts($('#vocabWrap'), '.ela-option');
+    ${c.kind === 'spell' ? listenRowHTML(c.word, 'data-vocab-hear') : ''}${options}<p class="ela-feedback" aria-live="polite"></p></div>`;
+  if (c.kind === 'spell') listenFirst(c.word, run); else addCrossOuts($('#vocabWrap'), '.ela-option');
 }
 /* ---------- the reading voice (docs/VOCAB.md, "Hearing the word") ----------
    The browser's built-in voices vary a lot by device. This picks the clearest English one it can find (the "Natural",
@@ -12651,9 +12651,15 @@ function say(text, rate = 0.85){
   });
 }
 const pause = ms => new Promise(ok => setTimeout(ok, ms));
+/* a word's syllables, using the pieces a teacher or parent wrote with + ("ap+ples") when the word has them */
+function wordSyl(word){
+  const v = typeof word === 'object' ? word : findWord(vocabWords().all, word);
+  return syllablesOf(typeof word === 'object' ? word.w : word, v?.syl);
+}
+const canSpeak = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
 async function speakWord(word, how = 'word'){
-  if (typeof speechSynthesis === 'undefined' || typeof SpeechSynthesisUtterance === 'undefined') return;
-  const token = ++speakToken, syl = syllablesOf(word), dots = $$('#vocabWrap .syl-dot');
+  if (!canSpeak()) return;
+  const token = ++speakToken, syl = wordSyl(word), dots = $$('#vocabWrap .syl-dot');
   speechSynthesis.cancel();
   if (how !== 'syllables' || syl.say.length < 2) { await say(syl.whole, how === 'slow' ? 0.6 : 0.85); return; }
   for (let i = 0; i < syl.say.length; i++) {
@@ -12665,9 +12671,81 @@ async function speakWord(word, how = 'word'){
   dots.forEach(d => d.classList.remove('on'));
   await say(syl.whole, 0.75);
 }
+/* ---------- 👂 Listen first (owner, Oct 30, 2026; docs/VOCAB.md "Listen first") ----------
+   "She needs to spend more time hearing the word and its parts." On every card where she hears a word and types it
+   (Spell it, the spelling cards in Practice cards, the Friday mastery check), Pet World says the word, "It has N
+   syllables", each syllable with a pause while its dot lights up, then the word again. Then a listening timer runs
+   (listenSeconds: 8 seconds unless a grown-up or the teacher picks 0 to 20) and the answer box stays locked until it
+   ends. She can replay as much as she likes once the playback is done; replaying never shortens the timer. Only the
+   count, the dots and the sound show before she answers, never the syllables' letters. There is no skip button.
+   Word sprint has no spelling cards; if a timed run ever has one, the listening time is added back to its clock. */
+function listenRowHTML(word, hearAttr){
+  const n = wordSyl(word).say.length, k = word.w;
+  const hear = how => `${hearAttr}${how ? `="${how}"` : hearAttr === 'data-check-hear' ? `="${esc(k)}"` : ''}`;
+  const btns = hearAttr === 'data-check-hear' ? `<button type="button" class="btn small" ${hear('')} disabled>🔊 Hear the word</button><button type="button" class="btn small" data-check-hear="${esc(k)}" data-check-how="syllables" disabled>🐢 By syllables</button><button type="button" class="btn small" data-check-hear="${esc(k)}" data-check-how="slow" disabled>Slowly</button>`
+    : `<button type="button" class="btn small" ${hear('')} disabled>🔊 Hear the word</button><button type="button" class="btn small" ${hear('syllables')} disabled>🐢 By syllables</button><button type="button" class="btn small" ${hear('slow')} disabled>Slowly</button>`;
+  return `<div class="listen-box"><p class="listen-count"><b>🔊 ${n} syllable${n === 1 ? '' : 's'}</b><span class="syl-dots" aria-label="${n} syllable${n === 1 ? '' : 's'}">${Array.from({length:n}, () => '<i class="syl-dot"></i>').join('')}</span></p>
+    <div class="row syl-row">${btns}</div>
+    <div class="listen-timer" role="timer" aria-live="polite"><span class="listen-bar"><i style="width:100%"></i></span><span class="listen-text">👂 Listen…</span></div></div>`;
+}
+let listenState = null;
+/* true once the device has a voice (voices can load a moment after the page; wait up to 1.5 seconds) */
+function voicesReady(){
+  if (!canSpeak()) return Promise.resolve(false);
+  if (speechSynthesis.getVoices().length) return Promise.resolve(true);
+  return new Promise(ok => {
+    const t0 = performance.now(), poll = setInterval(() => { const has = speechSynthesis.getVoices().length > 0; if (has || performance.now() - t0 > 1500) { clearInterval(poll); ok(has); } }, 100);
+  });
+}
+function stopListen(){ if (listenState?.timer) clearInterval(listenState.timer); listenState = null; }
+async function listenFirst(word, run = null){
+  stopListen();
+  const host = $('#vocabWrap .vocab-card'), input = host?.querySelector('.typed-input'), submitBtn = input?.form?.querySelector('[type="submit"]');
+  if (!host || !input) return;
+  const st = listenState = {started:performance.now(), timer:null}, sec = listenSeconds({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home});
+  const text = host.querySelector('.listen-text'), bar = host.querySelector('.listen-bar i'), btns = $$('.syl-row button', host);
+  const alive = () => listenState === st && host.isConnected;
+  const unlock = msg => {
+    if (!alive()) return; stopListen();
+    if (run?.end && vocabRun === run) run.end += performance.now() - st.started;   // a timed run never loses clock to listening
+    input.disabled = false; if (submitBtn) submitBtn.disabled = false; btns.forEach(b => { b.disabled = false; });
+    host.querySelector('.listen-timer')?.classList.add('done'); if (bar) bar.style.width = '0%';
+    if (text) text.textContent = msg; input.focus();
+  };
+  input.disabled = true; if (submitBtn) submitBtn.disabled = true;
+  if (!canSpeak() || !(await voicesReady())) { unlock('🔇 This device can’t read words out loud right now, so you can type right away. Read the meaning and spell the word.'); host.querySelector('.listen-box')?.classList.add('no-voice'); return; }
+  if (!alive()) return;
+  const syl = wordSyl(word), n = syl.say.length, dots = $$('.syl-dot', host), token = ++speakToken;
+  const stillHere = () => alive() && token === speakToken;
+  speechSynthesis.cancel();
+  await say(syl.whole, 0.85); if (!stillHere()) return; await pause(400); if (!stillHere()) return;
+  await say(`It has ${n} syllable${n === 1 ? '' : 's'}.`, 0.9); if (!stillHere()) return; await pause(400);
+  if (n > 1) {
+    for (let i = 0; i < n; i++) {
+      if (!stillHere()) return;
+      dots.forEach((d, k) => d.classList.toggle('on', k === i));
+      await say(syl.say[i], 0.7); await pause(450);
+    }
+    if (!stillHere()) return;
+    dots.forEach(d => d.classList.remove('on'));
+  }
+  await say(syl.whole, 0.75); if (!stillHere()) return;
+  /* the playback is done: replay is open, and the listening timer runs before the box opens */
+  btns.forEach(b => { b.disabled = false; });
+  if (!sec) { unlock('✏️ Now type it!'); return; }
+  const until = performance.now() + sec * 1000;
+  const tick = () => {
+    if (!alive()) { if (listenState === st) stopListen(); return; }
+    const left = Math.max(0, until - performance.now());
+    if (bar) bar.style.width = `${(left / (sec * 1000)) * 100}%`;
+    if (text) text.textContent = `👂 Listen to the word and its parts: ${Math.ceil(left / 1000)}`;
+    if (left <= 0) unlock('✏️ Now type it!');
+  };
+  st.timer = setInterval(tick, 100); tick();
+}
 /* after a card is answered: the word split into syllables, with buttons to hear it again */
 function syllableAnswerHTML(word){
-  const syl = syllablesOf(word); if (syl.show.length < 2) return '';
+  const syl = wordSyl(word); if (syl.show.length < 2) return '';
   return `<p class="syl-answer"><span>${syl.show.map(esc).join('<i>·</i>')}</span> <span class="muted">${syl.say.length} syllables</span>
     <button type="button" class="btn small" data-vocab-hear>🔊</button><button type="button" class="btn small" data-vocab-hear="syllables">🐢 By syllables</button></p>`;
 }
@@ -12686,6 +12764,12 @@ function wordPartsHTML(word, {compact = false} = {}){
   const origin = !compact && ORIGIN_NAMES[e.origin] ? ` <span class="muted">(${esc(ORIGIN_NAMES[e.origin])})</span>` : '';
   return `<div class="word-parts${e.guess ? ' wp-guess' : ''}"><p class="wp-head"><b>🧩 ${e.guess ? 'Looks like:' : 'Word parts'}</b>${origin}</p><div class="wp-chips">${chips}</div>${e.gloss ? `<p class="wp-gloss">→ ${esc(e.gloss)}</p>` : ''}</div>`;
 }
+/* the listening-time choices: "" follows the teacher's setting (or 8 seconds), then 0 (off) to 20 seconds */
+function listenOptionsHTML(cur, firstLabel){
+  const val = validListen(cur);
+  return [`<option value=""${val == null ? ' selected' : ''}>${esc(firstLabel)}</option>`, ...[0, 3, 5, 8, 10, 12, 15, LISTEN_MAX].map(n => `<option value="${n}"${val === n ? ' selected' : ''}>${n ? `${n} seconds` : 'Off (0)'}</option>`)].join('');
+}
+document.addEventListener('change', e => { if (e.target.id === 'vocabListen' && parentReadingUnlocked) { const n = validListen(e.target.value); if (n == null) delete S.vocab.home.listenSec; else S.vocab.home.listenSec = n; save(); toast(`👂 Listening time: ${listenSeconds({classVocab:Backend.me?.game_settings?.vocab, home:S.vocab.home})} seconds`); } });
 document.addEventListener('change', e => { if (e.target.id === 'vocabVoice') { S.ttsVoice = e.target.value; save(); void speakWord('analyze', 'syllables'); } });
 function voicePickerHTML(){
   const voices = englishVoices(); if (voices.length < 2) return '';
@@ -12945,9 +13029,9 @@ function renderCheck(){
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Save and stop</button></div>
     <div class="sprint-card vocab-card pz-wrap"><p class="muted">${wk.check.cards ? 'Step 2 of 2: ' : ''}Word ${i} of ${words.length}. Spell each word from its meaning. Words you get right are mastered!${isReview ? ' <b>🔄 Review word:</b> one you mastered before.' : ''}</p>
     <p class="vocab-ask">Which word means:</p><div class="fact vocab-prompt long">${esc(v.d)}</div>${v.s ? `<p class="muted">${esc(v.s)}</p>` : ''}
-    <div class="row syl-row"><button type="button" class="btn small" data-check-hear="${esc(v.w)}">🔊 Hear the word</button></div>
+    ${listenRowHTML(v, 'data-check-hear')}
     <form class="typed-fill" data-check-answer="${esc(wordKey(v.w))}"><input type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button type="submit" class="btn berry">Check</button></form></div>`;
-  $('#vocabWrap .typed-input').focus();
+  void listenFirst(v);
 }
 function finishCheck(){
   const wk = S.vocab.week, run = checkRun; checkRun = null; fixThen = null;
@@ -13011,7 +13095,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.pzPlay) { startPuzzle({type:b.dataset.pzPlay}); return; }
   if (b.hasAttribute('data-check-start')) { startCheck(); return; }
   if (b.hasAttribute('data-pz-stop')) { if (puzzleRun?.timed) { finishPuzzle('stop'); return; } stopPuzzleRun(); vocabTab = 'week'; renderVocab(); return; }
-  if (b.dataset.checkHear) { void speakWord(b.dataset.checkHear); return; }
+  if (b.dataset.checkHear) { void speakWord(b.dataset.checkHear, b.dataset.checkHow || 'word'); return; }
   const p = puzzleRun?.p; if (!puzzleRun || !p) return;
   if (b.dataset.pzClue) { puzzleRun.active = +b.dataset.pzClue; renderPuzzle(); return; }
   if (b.dataset.pzCell) {
@@ -13038,10 +13122,12 @@ function vocabGrownUpHTML(all){
       <label>Example sentence, with ___ where the word goes (optional)<input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, f.w) : '')}" placeholder="The volcano ___ with a loud boom."></label>
       <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
     <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet World’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
+    <p><label>👂 Listening time on spelling cards <select id="vocabListen">${listenOptionsHTML(v.listenSec, `${Backend.me?.game_settings?.vocab?.listenSec != null ? 'Teacher’s setting' : 'Default'} (${listenSeconds({classVocab:Backend.me?.game_settings?.vocab})} s)`)}</select></label><br><span class="muted">After Pet World says the word, how many syllables it has, and each syllable, the answer box stays locked this long so she keeps listening. She can replay it as much as she wants. 0 turns the wait off.</span></p>
     <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet.</p>
+    <p class="muted"><b>Type syllables with + to help Pet World say them: <code>ap+ples</code></b> (or <code>cel+e+bra+tion - a big party</code>). Pet World saves the word without the +’s and uses the pieces for the syllable count, the dots and the spoken parts. She never sees the pieces before she answers.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
-    ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
+    ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.syl ? x.syl.join('+') : x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
     <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each Monday she gets 20 unmastered words (the ones she didn’t master last week first, the rest picked at random) plus 5 mastered words to review; Friday’s mastery check moves the ones she spells right to her 🏆 Hall of Fame, and a review word she misses goes back to unmastered.</p>
     <div class="row"><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
 }
@@ -13063,9 +13149,9 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.vocabTab) { vocabTab = b.dataset.vocabTab; renderVocab(); return; }
   if (b.dataset.vocabStart) { startVocab(b.dataset.vocabStart); return; }
   if (b.dataset.vocabLevel) { const kind = vocabKind(vocabTab); S.vocab.level[kind] = Math.max(1, Math.min(3, (S.vocab.level[kind] || 2) + +b.dataset.vocabLevel)); S.vocab.streak = 0; save(); renderVocab(); return; }
-  if (b.hasAttribute('data-vocab-stop')) { stopVocabTimer(); vocabRun = null; renderVocab(); return; }
+  if (b.hasAttribute('data-vocab-stop')) { stopVocabTimer(); stopListen(); vocabRun = null; renderVocab(); return; }
   if (b.hasAttribute('data-vocab-next')) { nextVocabCard(); return; }
-  if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word.w, b.dataset.vocabHear || 'word'); return; }
+  if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word, b.dataset.vocabHear || 'word'); return; }
   if (b.hasAttribute('data-voice-test')) { void speakWord('analyze', 'syllables'); return; }
   if (b.dataset.vocabAnswer != null && vocabRun && !vocabRun.answered) { const c = vocabRun.card; answerVocab(+b.dataset.vocabAnswer === c.answer, c.kind === 'meaning' ? `“${c.word.w}” means ${c.word.d}.` : `The word is “${c.word.w}”: ${c.word.d}.`); if (+b.dataset.vocabAnswer !== c.answer) b.classList.add('incorrect'); return; }
   if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}${wordPartsHTML(v.w, {compact:true})}` : ''; return; }

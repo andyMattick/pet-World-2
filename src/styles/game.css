@@ -1150,6 +1150,16 @@ a.btn{display:inline-block; text-decoration:none}
 .syl-dots{display:inline-flex; gap:6px; margin-left:6px}
 .syl-dot{width:12px; height:12px; border-radius:50%; background:var(--edge); opacity:.35; transition:opacity .15s, transform .15s}
 .syl-dot.on{opacity:1; transform:scale(1.35)}
+/* 👂 Listen first (docs/VOCAB.md): the syllable count, the dots and a listening timer before the answer box opens */
+.listen-box{margin:6px 0; text-align:center}
+.listen-count{display:flex; justify-content:center; align-items:center; gap:6px; margin:4px 0; font-size:1.1rem}
+.listen-count .syl-dot{width:16px; height:16px}
+.listen-timer{display:flex; flex-direction:column; align-items:center; gap:4px; margin:4px auto; max-width:320px}
+.listen-bar{display:block; width:100%; height:10px; border-radius:6px; background:var(--st-new); overflow:hidden}
+.listen-bar i{display:block; height:100%; background:var(--berry); border-radius:6px; transition:width .1s linear}
+.listen-text{font-weight:600}
+.listen-timer.done .listen-bar{display:none}
+.typed-fill .typed-input:disabled{opacity:.55; cursor:not-allowed}
 .syl-answer{display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0}
 .syl-answer>span:first-child{font-size:1.4rem; font-weight:700; letter-spacing:.02em}
 .syl-answer i{font-style:normal; opacity:.5; margin:0 2px}

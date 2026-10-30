@@ -19,7 +19,31 @@ Each built-in word has two versions of its syllables in `vocab.js` (`SYLLABLE_DA
 
 A third field fixes words the voice gets wrong on its own: "minute" meaning tiny is said "my noot".
 
-Words a teacher or parent adds are split by a simple rule (vowel groups, with ch, sh, th and the like kept together). Those pieces are said as written.
+Words a teacher or parent adds are split by a simple rule (vowel groups, with ch, sh, th and the like kept together), unless they wrote the syllables with + (below). Those pieces are said as written.
+
+### 👂 Listen first (Oct 30, 2026)
+
+Owner: "let's add a timer after she hears the word and tells her how many syllables it is supposed to have (and pronounce each one). she needs to spend more time hearing the word and its parts."
+
+On every card where she hears a word and types it (🔤 Spell it, the spelling cards in 🃏 Practice cards, and step 2 of the 🏁 Friday mastery check), `listenFirst` in `game.js`:
+
+1. **Plays it:** the whole word, then "It has 3 syllables.", then each syllable with a short pause while its dot lights up, then the whole word again.
+2. **Shows only the count:** "🔊 3 syllables" and three dots. The syllables' letters are never shown before she answers, because they'd give away the spelling. After she answers she sees "ba·nan·a", same as before.
+3. **Runs a listening timer:** a bar counts down, "👂 Listen to the word and its parts: 8". The answer box and Check stay locked until it ends, then "✏️ Now type it!" and the box gets the cursor. During the first playback the 🔊 / 🐢 / Slowly buttons wait; after that she can replay as much as she wants, and replaying doesn't shorten the timer. There's no skip button.
+
+- **How long:** 8 seconds after the playback by default. 0 turns the wait off (the box opens right after the playback); up to 20 seconds. The **teacher** sets it for the class (Vocabulary tab → 👂 Listening time, saved in `classes.game_settings.vocab.listenSec`, no new column). A **grown-up** at home sets it behind the PIN (Word Workshop → For grown-ups → 👂 Listening time, saved in `S.vocab.home.listenSec`). The grown-up's setting wins, then the teacher's, then 8 (`listenSeconds` in `vocab.js`).
+- **Timed rounds:** ⚡ Word sprint asks "which word means" and has no spelling cards, so the listening timer never runs inside it. If a timed run ever gets a spelling card, the time spent listening is added back to its clock (we pause it), so listening never costs her sprint time.
+- **No voice on the device:** a note says "🔇 This device can't read words out loud right now, so you can type right away" and the box opens straight away. She's never locked out. (Pet World waits up to 1.5 seconds for the device's voices to load first.)
+
+### Syllables with + (teacher's and parent's words)
+
+In the teacher's Vocabulary tab and the parent's word list, a word can be typed with its syllables split by +: `ap+ples - round fruit`, `cel+e+bra+tion - a big party`, or just `ap+ples` on a line or in a list (`Set 11: ap+ples, ba+nan+a`). Both editors say: "Type syllables with + to help Pet World say them: ap+ples".
+
+- The word is saved without the +'s (`apples`) and the pieces separately (`syl: ["ap", "ples"]`, `validWord` / `plusSyllables` in `vocab.js`). Matching, spelling checks, mastery and the teacher's tables use the plain word.
+- The pieces set the syllable count, the dots, what the voice says for each syllable (`syllablesOf(word, syl)`), and the "ap·ples" shown after she answers. Pieces written with + win over the built-in data and the vowel-group guess.
+- **Checked:** every piece must have letters, so `ap++ples`, `+apples` and `apples+` are skipped with "has an empty syllable: put letters between each +, like ap+ples". A saved `syl` that doesn't join to the word is dropped and the word keeps working with the usual split.
+- A word with no meaning yet comes back in the box as `ap+ples - `, + and all.
+- Words saved before this keep working as they were. The teacher's class-word table shows the pieces under the word; the parent's chips show `ap+ples`.
 
 To make a voice sound better on a device, install a better one:
 

@@ -112,13 +112,42 @@ export const VOCAB_LIMITS = { word: 40, def: 200, sentence: 200, list: 300 };
 const clean = (text, max) => String(text ?? '').replace(/\s+/g, ' ').trim().replace(/'/g, '’').slice(0, max);
 export const wordKey = word => String(word || '').trim().toLowerCase();
 
-/* One entry, cleaned, or null. A sentence only counts if it has a ___ blank. */
+/* A word written with its syllables, "ap+ples" or "cel+e+bra+tion" (docs/VOCAB.md, "Syllables with +"): the word without
+   the +'s and its pieces, or { error } (an empty piece, like "ap++ples" or "+apples"). A word with no + gives null. */
+export function plusSyllables(text){
+  const t = String(text ?? '').trim(); if (!t.includes('+')) return null;
+  const pieces = t.split('+').map(p => p.trim());
+  if (pieces.some(p => !p)) return { error: `“${t.slice(0, 40)}” has an empty syllable: put letters between each +, like ap+ples` };
+  if (pieces.some(p => /\s/.test(p))) return { error: `“${t.slice(0, 40)}”: syllables with + work for one word, like ap+ples` };
+  return { w: pieces.join(''), syl: pieces };
+}
+/* saved syllables for a word: kept only if every piece has letters and they join to the word */
+function validSyl(syl, w){
+  if (!Array.isArray(syl) || syl.length < 1 || syl.length > 12) return null;
+  const pieces = syl.map(p => String(p ?? '').trim());
+  return pieces.every(p => p && !/[\s+]/.test(p)) && pieces.join('').toLowerCase() === String(w).toLowerCase() ? pieces : null;
+}
+/* One entry, cleaned, or null. A sentence only counts if it has a ___ blank. A word written "ap+ples" is saved as
+   "apples" with syl ["ap", "ples"]; a saved syl that doesn't join to the word is dropped (the word still works). */
 export function validWord(entry){
   if (!entry || typeof entry !== 'object') return null;
-  const w = clean(entry.w ?? entry.word, VOCAB_LIMITS.word), d = clean(entry.d ?? entry.definition ?? entry.def, VOCAB_LIMITS.def);
+  let w = clean(entry.w ?? entry.word, VOCAB_LIMITS.word + 12), syl = null;
+  const plus = plusSyllables(w);
+  if (plus?.error) return null;
+  if (plus) { w = plus.w; syl = plus.syl; } else syl = validSyl(entry.syl, w);
+  w = w.slice(0, VOCAB_LIMITS.word);
+  const d = clean(entry.d ?? entry.definition ?? entry.def, VOCAB_LIMITS.def);
   if (!w || !d || /\s{2,}/.test(w)) return null;
+  if (syl && syl.join('').toLowerCase() !== w.toLowerCase()) syl = null;
   const s = clean(entry.s ?? entry.sentence, VOCAB_LIMITS.sentence);
-  return { w, d, ...(s.includes('___') ? { s } : {}), ...(entry.set ? { set: clean(entry.set, 40) } : {}) };
+  return { w, d, ...(s.includes('___') ? { s } : {}), ...(entry.set ? { set: clean(entry.set, 40) } : {}), ...(syl && syl.length > 1 ? { syl } : {}) };
+}
+/* How long she listens after the word is played on a spelling card, before she can type (docs/VOCAB.md, "Listen first"):
+   the family's setting, else the class's, else 8 seconds. 0 turns the wait off; at most 20. */
+export const LISTEN_DEFAULT = 8, LISTEN_MAX = 20;
+export const validListen = x => (x === '' || x == null || !Number.isFinite(+x) ? null : Math.max(0, Math.min(LISTEN_MAX, Math.round(+x))));
+export function listenSeconds({ classVocab, home } = {}){
+  return validListen(home?.listenSec) ?? validListen(classVocab?.listenSec) ?? LISTEN_DEFAULT;
 }
 
 /* Paste in a list: one word per line as "word - definition", "word: definition", "word<TAB>definition" or "word, definition"
@@ -128,10 +157,11 @@ export function validWord(entry){
    Before any heading words go in "My words". Bullets and numbers at the start of a line ("1.", "•", "-", "[i]") are ignored.
    A word with no meaning yet ("abundant", "abundant -", or a list like "abundant, scarce, fragile") takes Pet World's meaning
    if the built-in list has the word; otherwise it comes back in `missing` so the screen can ask for its meaning.
-   To add the word "set" itself, write it with a dash: "set - a group of things that go together". */
+   To add the word "set" itself, write it with a dash: "set - a group of things that go together".
+   Syllables can be written with +: "ap+ples - fruit", or just "cel+e+bra+tion" (validWord saves the word and its pieces). */
 const BULLET = /^(?:[-*•▪◦·]+\s*|\d{1,3}[.)]\s*|\[[^\]\s]{0,3}\]\s*|\([a-z0-9]{1,3}\)\s+)/i;
 const NAMED_SET = /^((?:set|lesson|unit|week|list|chapter)(?:\s+|\s*#\s*|(?=\d))[\w.]{1,12})\s*(?::\s*(.*))?$/i;
-const SINGLE = /^[\p{L}][\p{L}'’-]{0,39}$/u;
+const SINGLE = /^[\p{L}][\p{L}'’+-]{0,51}$/u;   // + marks syllables: ap+ples
 function readHeading(t){
   const m = t.match(/^#+\s*(.+)$/) || t.match(/^set\s*:\s*(.+)$/i);
   if (m) return { set: m[1], rest: '' };
@@ -149,10 +179,12 @@ export function parseVocabImport(text){
     catch { errors.push('That looked like JSON but couldn’t be read.'); return { words, errors, missing }; }
   }
   const builtIn = new Map(VOCAB_WORDS.map(v => [wordKey(v.w), v]));
+  const plainKey = w => wordKey(String(w).replace(/\+/g, ''));
   const bareWord = w => {
-    const known = builtIn.get(wordKey(w)), entry = known ? validWord({ ...known, set: set || known.set }) : null;
+    const plus = plusSyllables(w); if (plus?.error) { errors.push(`Skipped: ${plus.error}`); return; }
+    const known = builtIn.get(plainKey(w)), entry = known ? validWord({ ...known, ...(plus ? { w } : {}), set: set || known.set }) : null;
     if (entry) words.push(entry);
-    else if (!missing.some(m => wordKey(m.w) === wordKey(w))) missing.push({ w: clean(w, VOCAB_LIMITS.word), ...(set ? { set } : {}) });
+    else if (!missing.some(m => plainKey(m.w) === plainKey(w))) missing.push({ w: clean(w, VOCAB_LIMITS.word + 12), ...(set ? { set } : {}) });   // "ap+ples" stays written with its +'s
   };
   /* one entry line; `listOf` is how many single words separated by commas count as a list of words with no meanings */
   const readLine = (t, listOf) => {
@@ -162,8 +194,8 @@ export function parseVocabImport(text){
     if (!t.includes('\t') && !/ [-–—] /.test(t) && !t.includes(':') && list.length >= listOf && list.every(x => SINGLE.test(x))) { list.forEach(bareWord); return; }
     const parts = t.includes('\t') ? t.split('\t') : / [-–—] /.test(t) ? t.split(/ [-–—] /) : t.includes(':') ? t.split(/:(.*)/s).filter(x => x !== undefined && x !== '') : t.split(/,(.*)/s).filter(x => x !== undefined && x !== '');
     const [w, d, ...rest] = parts.map(p => p.trim().replace(/^"|"$/g, ''));
-    const v = validWord({ w, d, s: rest.join(' '), set });
-    if (v) words.push(v); else errors.push(`Skipped: “${t.slice(0, 60)}” (use word - definition)`);
+    const v = validWord({ w, d, s: rest.join(' '), set }), plus = plusSyllables(w);
+    if (v) words.push(v); else errors.push(plus?.error ? `Skipped: ${plus.error}` : `Skipped: “${t.slice(0, 60)}” (use word - definition)`);
   };
   for (const line of raw.split(/\r?\n/)) {
     const t = line.trim().replace(BULLET, '').trim(); if (!t || /^word\s*[,\t]\s*definition/i.test(t)) continue;
@@ -262,7 +294,7 @@ export function normalizeVocabState(v){
   const lv = out.level && typeof out.level === 'object' ? out.level : {}, level = x => Math.max(1, Math.min(3, Math.round(+x) || 2));
   return {
     flagged, lookedUp, stats, mistakes, level: { spell: level(lv.spell ?? 1), cards: level(lv.cards) }, streak: Number.isFinite(+out.streak) ? Math.max(-9, Math.min(9, Math.round(+out.streak))) : 0, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
-    home: { builtIn: home.builtIn !== false, words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
+    home: { builtIn: home.builtIn !== false, ...(validListen(home.listenSec) != null ? { listenSec: validListen(home.listenSec) } : {}), words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) },
     ...weeklyState(out)
   };
@@ -485,10 +517,13 @@ cycle=cy·cle=sy|kul`;
 const SYLLABLES = new Map(SYLLABLE_DATA.split('\n').map(line => { const [w, show, say, whole] = line.split('='); return [w, { show: show.split('·'), say: say.split('|'), whole: whole || w }]; }));
 export const SYLLABLE_WORDS = [...SYLLABLES.keys()];
 
-/** A word's syllables to show and to say. Words without built-in data (a teacher's or a parent's own) are split by
-    a simple vowel-group rule, and the voice says those pieces as written. */
-export function syllablesOf(word){
+/** A word's syllables to show and to say. `syl`: pieces a teacher or parent wrote with + (validWord's `syl`), used
+    first. Words without either (a teacher's or a parent's own) are split by a simple vowel-group rule, and the voice
+    says those pieces as written. */
+export function syllablesOf(word, syl){
   const key = String(word || '').trim().toLowerCase(), known = SYLLABLES.get(key);
+  /* syllables a teacher or parent wrote with + ("ap+ples") win: shown and said as written */
+  const own = validSyl(syl, key); if (own && own.length > 1) return { show: own, say: own, whole: key, known: false, own: true };
   if (known) return { ...known, known: true };
   if (/\s/.test(key) || key.length < 4) return { show: [key], say: [key], whole: key, known: false };
   /* one consonant between vowels goes with the next syllable, two or more split after the first; a final silent e stays put */
