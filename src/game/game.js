@@ -13,7 +13,7 @@ import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
@@ -12583,7 +12583,8 @@ function renderVocab(){
     const chip = (v, st) => `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}" title="${esc(STATUS_TEXT[st] || 'Mastered')}">${st === 'solid' && hall.has(wordKey(v.w)) ? '⭐ ' : ''}${esc(v.w)}</button>`;
     body = `<p class="muted">All your words in one list. Tap a word to see what it means. Each week’s list has 20 unmastered words (last week’s leftovers first, the rest picked at random) and 5 mastered words to review.</p>
       <h4 class="vocab-set">Unmastered (${un.length})</h4><div class="vocab-grid">${un.map(v => chip(v, wordStatus(vocabStat(v.w)))).join('')}</div>
-      ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>` : ''}
+      ${(S.vocab.back || []).length ? `<p class="muted vocab-back-line">🔁 First in line for next week: ${S.vocab.back.map(k => `<b>${esc(all.find(v => wordKey(v.w) === k)?.w || k)}</b>`).join(', ')}</p>` : ''}
+      ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>${unmasterListHTML(won)}` : ''}
       <p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
   } else {
     const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
@@ -12843,8 +12844,9 @@ function ensureWeek(){
   /* the weekly draw (owner, Oct 28, 2026): last week's unmastered words carry over and count toward 20 unmastered words,
      the rest of the 20 drawn at random from the unmastered list, plus 5 random mastered words to review */
   const {all} = vocabWords(), hall = hallKeys(), keys = all.map(v => wordKey(v.w));
-  const next = nextWeekWords(cur?.words || [], keys.filter(k => !hall.has(k)), keys.filter(k => hall.has(k)), {fresh:WEEK_NEW_WORDS, review:WEEK_REVIEW_WORDS});
+  const next = nextWeekWords(cur?.words || [], keys.filter(k => !hall.has(k)), keys.filter(k => hall.has(k)), {fresh:WEEK_NEW_WORDS, review:WEEK_REVIEW_WORDS, back:S.vocab.back || []});
   S.vocab.week = {id, words:next.words, kept:next.carried.length, added:next.added.length, carried:next.carried, review:next.review, right:[], mastered:[], check:null};
+  S.vocab.back = (S.vocab.back || []).filter(k => !next.words.includes(k) && keys.includes(k) && !hall.has(k));   // words moved back from mastered: drawn now (first in line), the rest wait for next week
   save(); return S.vocab.week;
 }
 /* this week's words still being worked on (not mastered yet), as word objects */
@@ -13108,6 +13110,22 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.pzWord) { puzzleRun.sel = b.dataset.pzWord; renderPuzzle(); return; }
   if (b.dataset.pzDef && puzzleRun.sel) { const w = puzzleRun.sel; puzzleRun.sel = null; if (b.dataset.pzDef === w) puzzleAnswer(w, true); else { renderPuzzle(); puzzleAnswer(w, false); } }
 });
+/* ---------- moving a mastered word back to practice (owner, Oct 30, 2026; docs/VOCAB.md "Moving words back to practice") ----------
+   Behind the grown-up PIN, 📊 My words lists each mastered word with "Move to unmastered" (unmasterWord in vocab.js: out
+   of the Hall of Fame, first in line for next week's 20, answer history reset to needs practice). Adding a word she
+   already mastered (the own-words editor, a flagged word) does the same. A teacher's move arrives as a clear (applyClears). */
+function unmasterListHTML(won){
+  if (!parentReadingUnlocked) return `<p class="muted vocab-back-tip">Grown-ups: unlock “For grown-ups” below with the PIN to move a mastered word back to practice.</p>`;
+  return `<details class="vocab-back" open><summary>↩️ Move a mastered word back to practice (grown-ups)</summary><p class="muted" style="margin:4px 0">It leaves the Hall of Fame, goes on the unmastered list, and is first in line for next week’s 20 words. To undo, she masters it again on a Friday check.</p>
+    <ul class="vocab-back-list">${won.map(v => `<li><span>⭐ ${esc(v.w)}</span><button type="button" class="btn small" data-vocab-unmaster="${esc(wordKey(v.w))}">Move to unmastered</button></li>`).join('')}</ul></details>`;
+}
+/* moves mastered words back to practice and logs each one; returns the keys that moved */
+function moveWordsBack(words, who = 'a grown-up'){
+  const moved = words.filter(w => unmasterWord(S.vocab, w)).map(wordKey);
+  for (const k of moved) logEvent({k:'wordBack', title:`🔁 ${k} moved back to practice by ${who}`});
+  return moved;
+}
+const backNote = moved => moved.map(k => `📌 ${k} was mastered, so it’s back on her practice list.`).join(' ');
 /* grown-ups: add or import words and choose focus words, behind the grown-up PIN (the class's words come from the teacher) */
 function vocabGrownUpHTML(all){
   const v = S.vocab.home, classWords = Backend.me?.game_settings?.vocab?.words?.length || 0;
@@ -13157,14 +13175,20 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}${wordPartsHTML(v.w, {compact:true})}` : ''; return; }
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
   if (!parentReadingUnlocked) return;
+  if (b.dataset.vocabUnmaster) {
+    const moved = moveWordsBack([b.dataset.vocabUnmaster]); save(); renderVocab();
+    if (moved.length) toast(`🔁 ${moved[0]} is back on the practice list, first in line for next week.`);
+    return;
+  }
   if (b.hasAttribute('data-vocab-import')) {
     const {words, errors, missing} = parseVocabImport($('#vocabImport').value);
     const have = new Set(S.vocab.home.words.map(x => wordKey(x.w)));
     S.vocab.home.words = [...S.vocab.home.words.filter(x => !words.some(w => wordKey(w.w) === wordKey(x.w))), ...words].slice(0, VOCAB_LIMITS.list);
     if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, ...words.map(w => wordKey(w.w))])];   // new words join the focus list
     const needs = missing.length ? ` ${missing.length} word${missing.length === 1 ? ' still needs' : 's still need'} a meaning: type it after the dash in the box, then add again.` : '';
+    const moved = moveWordsBack(masteredAmong(S.vocab, words));   // adding a word she already mastered puts it back on her practice list
     save(); renderVocab(); if (missing.length) $('#vocabImport').value = missingLines(missing);   // words with no meaning yet go back in the box as "word - "
-    $('#vocabMsg').textContent = `${words.filter(w => !have.has(wordKey(w.w))).length} added.${needs}${errors.length ? ` ${errors.length} line${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 2).join(' ')}` : ''}`; return;
+    $('#vocabMsg').textContent = `${words.filter(w => !have.has(wordKey(w.w))).length} added.${needs}${errors.length ? ` ${errors.length} line${errors.length === 1 ? '' : 's'} skipped: ${errors.slice(0, 2).join(' ')}` : ''}${moved.length ? ` ${backNote(moved)}` : ''}`; return;
   }
   if (b.dataset.flagDismiss) { S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagDismiss); save(); renderVocab(); return; }
   if (b.dataset.flagAdd) {
@@ -13172,7 +13196,10 @@ $('#vocabWrap').addEventListener('click', event => {
     if (!entry) { toast('Type what the word means first.'); row.querySelector('[data-flag-def]').focus(); return; }
     S.vocab.home.words = [...S.vocab.home.words.filter(x => wordKey(x.w) !== wordKey(entry.w)), entry].slice(0, VOCAB_LIMITS.list);
     if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, wordKey(entry.w)])];
-    S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagAdd); save(); toast(`${entry.w} added to the practice words.`); renderVocab(); return;
+    const moved = moveWordsBack(masteredAmong(S.vocab, [entry]));
+    S.vocab.flagged = S.vocab.flagged.filter(f => f.w !== b.dataset.flagAdd); save(); toast(`${entry.w} added to the practice words.`); renderVocab();
+    if (moved.length && $('#vocabMsg')) $('#vocabMsg').textContent = backNote(moved);
+    return;
   }
   if (b.dataset.vocabRemove) { S.vocab.home.words = S.vocab.home.words.filter(x => x.w !== b.dataset.vocabRemove); save(); renderVocab(); return; }
   if (b.hasAttribute('data-vocab-focus-all') || b.hasAttribute('data-vocab-focus-none')) { const on = b.hasAttribute('data-vocab-focus-all'); $$('#vocabWrap [data-vocab-focus]').forEach(x => { x.checked = on; }); return; }
@@ -15326,6 +15353,8 @@ function mergeProgress(base, other){
      skill:<id>            one math skill's mastery record (e.g. skill:equiv)
      rec:<store>:<key>     one lesson record in elaProgress, historyProgress or scienceProgress (e.g. rec:historyProgress:historyScale)
      word:<word>           one Word Workshop word's answer history (e.g. word:eager)
+     unmaster:<word>       move a mastered word back to practice (unmasterWord; the teacher's Vocabulary tab, docs/VOCAB.md
+                           "Moving words back to practice"); the word is URI-encoded. Only the first time, like word:
    Each clear runs once per save copy (state.clearsDone). Both copies are cleared before two devices' saves are merged,
    so an older copy can't bring the work back.
    Oct 21: that wasn't enough. A Pet World tab left open since before the clears (running older code with no clears and
@@ -15377,6 +15406,9 @@ function applyClears(state){
         dropKeys(state[a], k => k === token.slice(`rec:${a}:`.length), true);
       } else if (kind === 'word' && a) {
         dropKeys(state.vocab?.stats, k => k === a);
+      } else if (kind === 'unmaster' && a && !recheck && state.vocab) {
+        let w = a; try { w = decodeURIComponent(a); } catch(e){}
+        if (unmasterWord(state.vocab, w)) { changed = true; if (state === S && !LOOK_ID) logEvent({k:'wordBack', title:`🔁 ${wordKey(w)} moved back to practice by the teacher`}); }
       } else if (kind === 'think' && a && b) {
         dropKeys(state.mathThink, k => k === `${a}:${b}`, true);
       } else if (kind === 'quiz' && a && b) {

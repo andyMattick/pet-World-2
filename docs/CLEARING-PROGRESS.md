@@ -16,6 +16,7 @@ A full **Reset** wipes a student's whole town. To take back only part of it (a u
 | `skill:<id>` | One math skill's mastery record |
 | `rec:<store>:<key>` | One lesson record in `elaProgress`, `historyProgress` or `scienceProgress` |
 | `word:<word>` | One Word Workshop word's answer history |
+| `unmaster:<word>` | Moves one mastered word back to practice (out of the Hall of Fame, first in line next week, history reset); the word is URI-encoded. The teacher app's Vocabulary tab writes these as `clear:vocab-back-<time>` (docs/VOCAB.md, "Moving words back to practice") |
 
 The game applies each clear once per save copy and records it in `state.clearsDone`. It clears both copies before merging two devices' saves (`enterAs`, `Backend.onRemoteSave`), and checks for new clears whenever settings refresh (`Backend.onSettings`), so an old copy on a tablet can't bring the work back. Code: `applyClears()` in `src/game/game.js`.
 

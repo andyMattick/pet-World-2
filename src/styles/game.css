@@ -1093,6 +1093,11 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .dict-link{margin-left:4px; text-decoration:none; font-size:.9em; white-space:nowrap}
 .vocab-flagged{padding:8px 12px; border:2px dashed var(--edge); border-radius:10px; background:color-mix(in srgb,var(--butter) 35%,var(--surface))}
 .vocab-flag-row{display:grid; gap:6px; padding:8px 0; border-top:1px solid var(--edge)}
+.vocab-back{margin:8px 0}
+.vocab-back summary{cursor:pointer; font-weight:700}
+.vocab-back-list{list-style:none; margin:4px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr)); gap:4px 12px}
+.vocab-back-list li{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; border-top:1px solid var(--edge); min-width:0}
+.vocab-back-list li span{overflow-wrap:anywhere}
 .vocab-flag-row input{min-height:38px; padding:6px 10px; border:2px solid var(--edge); border-radius:8px; font:inherit; background:var(--surface); color:var(--ink)}
 .vocab-flag-row label{display:grid; gap:4px; font-size:.9rem; font-weight:700}
 

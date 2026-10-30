@@ -272,7 +272,9 @@ function weeklyState(out){
   const pz = out.puzzle && typeof out.puzzle === 'object' && DAY_KEY.test(out.puzzle.day) && typeof out.puzzle.type === 'string' ? out.puzzle : null;
   const puzzle = pz ? { day: pz.day, first: DAY_KEY.test(pz.first) ? pz.first : pz.day, type: pz.type.slice(0, 12), words: keys(pz.words, 12), solved: keys(pz.solved, 12), helped: keys(pz.helped, 12),
     done: !!pz.done, data: pz.data && typeof pz.data === 'object' && JSON.stringify(pz.data).length < 6000 ? pz.data : null } : null;
-  return { week, hall, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0 };
+  /* back: words a grown-up or teacher moved back from mastered, first in line for the next weekly draw (unmasterWord) */
+  const back = keys(out.back, 60).filter((k, i, a) => a.indexOf(k) === i);
+  return { week, hall, back, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0 };
 }
 export function normalizeVocabState(v){
   const out = v && typeof v === 'object' ? v : {};
@@ -313,10 +315,39 @@ export function wordBuckets(vocab, all){
   return {
     mastered: sortW([...hall].map(word)),
     unmastered: sortW((all || []).filter(x => !hall.has(wordKey(x.w)))),
-    week, weekId: wk?.id || '', checkDone: !!wk?.check?.done, cards: wk?.check?.cards || null
+    week, weekId: wk?.id || '', checkDone: !!wk?.check?.done, cards: wk?.check?.cards || null,
+    back: (v.back || []).filter(k => !hall.has(k))   // moved back from mastered, first in line next week
   };
 }
 
+/* Move a mastered word back to practice (docs/VOCAB.md, "Moving words back to practice"): a grown-up (behind the PIN),
+   a teacher (quiz_overrides clear token unmaster:<word>), or a grown-up or teacher adding a word she already mastered.
+   The word leaves the Hall of Fame and goes on the unmastered list; it is first in line for next week's 20 (`back`,
+   read by nextWeekWords), and its answer history is reset to "needs practice" (one miss) so it isn't solid right away.
+   This week's list: if it is one of the 5 review words it counts as carried over instead (so getting it right on Friday
+   masters it again, the normal way), it no longer shows as mastered this week, and an unfinished Friday check asks it
+   again. `vocab` is a normalized state, changed in place. Returns true if the word was mastered; a word that isn't in
+   the Hall of Fame (or a second call) changes nothing. */
+export function unmasterWord(vocab, word){
+  const k = wordKey(word);
+  if (!vocab || !k || !Array.isArray(vocab.hall) || !vocab.hall.some(h => wordKey(h?.w) === k)) return false;
+  vocab.hall = vocab.hall.filter(h => wordKey(h?.w) !== k);
+  vocab.back = [...(Array.isArray(vocab.back) ? vocab.back : []).filter(x => x !== k), k].slice(-60);
+  if (!vocab.stats || typeof vocab.stats !== 'object') vocab.stats = {};
+  delete vocab.stats[k]; vocab.stats[k] = { r: [0] };
+  const wk = vocab.week;
+  if (wk && Array.isArray(wk.words) && wk.words.includes(k)) {
+    if ((wk.review || []).includes(k)) { wk.review = wk.review.filter(x => x !== k); wk.carried = [...new Set([...(wk.carried || []), k])]; }
+    if (Array.isArray(wk.mastered)) wk.mastered = wk.mastered.filter(x => x !== k);
+    if (wk.check && !wk.check.done && wk.check.results && k in wk.check.results) delete wk.check.results[k];
+  }
+  return true;
+}
+/* the mastered words among `words` (entries or keys), as keys: the ones adding to a list would move back to practice */
+export function masteredAmong(vocab, words){
+  const hall = new Set((vocab?.hall || []).map(h => wordKey(h?.w)));
+  return [...new Set((words || []).map(w => wordKey(typeof w === 'object' && w ? w.w : w)))].filter(k => k && hall.has(k));
+}
 
 /* Extra words for practicing one spelling pattern (docs/VOCAB.md, "Spelling patterns"). They join a student's practice
    only when a teacher picks them from the student's pattern suggestions (quiz_overrides.spellFocus). */

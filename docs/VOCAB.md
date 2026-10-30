@@ -122,13 +122,13 @@ Owner: "I'd like to see a WORDS OF THE WEEK CARD on the plan page that shows all
 
 Each Monday (the first time she opens Pet World that week):
 
-1. **Carried over** 🔁: last week's words that are still unmastered: the ones she didn't get right on Friday (or didn't check at all), and any review word she missed (it went back to unmastered). They come first, in last week's order, and **count toward the 20**. If there are more than 20, the first 20 carry and the rest go back into the unmastered pool.
+1. **Carried over** 🔁: words a grown-up or teacher moved back from mastered come first (see "Moving words back to practice"), then last week's words that are still unmastered: the ones she didn't get right on Friday (or didn't check at all), and any review word she missed (it went back to unmastered). They come first, in last week's order, and **count toward the 20**. If there are more than 20, the first 20 carry and the rest go back into the unmastered pool.
 2. **New** 🆕: the rest of the 20, picked at random from the other unmastered words.
 3. **Review** 🔄: 5 words picked at random from the mastered words, preferring ones that weren't on last week's list.
 
 So a normal week is 20 + 5 = 25 words. With fewer unmastered or mastered words she gets what there is. The week saves `carried`, `review`, and `right` (below) with the words; a week drawn before this change keeps its words until the next Monday.
 
-**Friday for review words:** right = still mastered (stays in the Hall of Fame); missed = **back to unmastered** (out of the Hall of Fame, carried over next week). Coins are 🪙 1 per newly mastered word; review words don't earn coins.
+**Friday for review words:** right = still mastered (stays in the Hall of Fame); missed = **back to unmastered** (out of the Hall of Fame, carried over next week). Coins are 🪙 1 per newly mastered word; review words don't earn coins. Only Friday's check bumps a mastered word on its own; a grown-up or teacher can also move one back by hand (see "Moving words back to practice").
 
 ### 📇 "With the flashcard quiz"
 
@@ -149,6 +149,19 @@ The Vocabulary tab opens with **📚 Each student's words**: one row per student
 
 **Tested** (phone size, Playwright with a fake clock, `scratchpad/wow-e2e.mjs`): Monday 20 words with 0 carried; 3 puzzle words → "3 right this week"; teacher's and parent's new words in Unmastered; Friday: the card's Start opens the flashcards, then the typed check (16 mastered, 4 stay, flashcards 19 of 20); the card shows the result; next Monday 4 carried (the 4 that stayed) + 16 new (all unmastered, none from last week) + 5 review (all mastered); next Friday a skipped flashcard round and a missed review word, which leaves the Hall of Fame and carries over the Monday after. No sideways scroll at 375px. The draw was also checked on its own on 300 random cases. The teacher tab was rendered with fake students in a browser (not against the real backend).
 
+
+## Moving words back to practice (Oct 30, 2026)
+
+Owner: "I need to be able to move mastered words over to unmastered if I deem that as necessary. Also, if a word is mastered and it shows up later as incorrect and I add it back, it should bump it out of mastered, correct?" It didn't before; now it does.
+
+**What moving a word back does** (`unmasterWord` in `vocab.js`): the word leaves her 🏆 Hall of Fame and goes on the **Unmastered** list; it's **first in line for next week's 20** (`S.vocab.back`, read by `nextWeekWords`; it counts as 🔁 carried over, ahead of last week's leftovers); and its answer history is reset to one miss ("Needs practice") so it doesn't show as solid right away. This week's list stays as it is, except: if the word is one of this week's 5 review words it becomes a carried-over word (so getting it right on Friday masters it again), it no longer shows ⭐ as mastered this week, and a Friday check that's under way asks it again. Doing it twice changes nothing the second time. **Undo** is just mastering it again on a Friday check.
+
+- **A grown-up at home:** 📊 My words → unlock "For grown-ups" with the PIN → under 🏆 Mastered, **↩️ Move a mastered word back to practice** lists each mastered word with **Move to unmastered**. The day log gets "🔁 habitat moved back to practice by a grown-up".
+- **The teacher:** Vocabulary tab → 📚 Each student's words → tap a word in her **⭐ Mastered** list → **Move to unmastered**. The teacher sees "✅ habitat moves back to Abigail's Unmastered list (first in line for next week) the next time Pet World opens for her", and the word shows ⏳ moving back until her game has applied it. It's saved like other teacher-to-student changes, in the student's `quiz_overrides` (no new table): a clear `clear:vocab-back-<time>` = `unmaster:habitat` (`docs/CLEARING-PROGRESS.md`). The game applies it when it loads or refreshes settings (`applyClears`) and records it in `state.clearsDone`, so it runs **once** per save copy and never fights with her mastering the word again later. Her day log gets "🔁 habitat moved back to practice by the teacher".
+- **Adding a word she already mastered moves it back too**, built-in words included: the grown-up's word list (import box or a flagged word) shows "📌 habitat was mastered, so it's back on her practice list."; in the teacher app, adding class words (or a flagged word) or saving a student's spelling-pattern words does the same for each student who had it mastered, with "📌 habitat was mastered by Abigail, so it's back on her practice list." for each.
+- **Missing a mastered word in practice** (it can come up as one of the 5 review words) still only matters on Friday: a review word missed on Friday's check goes back to Unmastered, as before. Missing it on a puzzle or practice card doesn't bump it, but a grown-up or teacher can now move it back by hand.
+
+**Tested:** `node scripts/check-unmaster.mjs` (out of the Hall of Fame, on the unmastered list, first in next week's draw ahead of 30 leftovers, history reset, a review word turning carried, a second call changing nothing, and surviving a save and load). Playwright at 375px: grown-up PIN → Move to unmastered → the word under Unmastered, the day-log line, and next Monday's draw starting with it; the grown-up adding a mastered word → the 📌 note and the word moving; a fake teacher clear from the pretend backend applied once (the word mastered again afterwards stays mastered, one day-log line); the teacher tab rendered with fake students (confirm, ⏳ moving back, and the 📌 note for each student when class words are added). The teacher app's save to the real Supabase wasn't run.
 
 ## Word parts (Oct 30, 2026)
 

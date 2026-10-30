@@ -164,11 +164,13 @@ export function weekOf(day){
       first 20 carry and the rest wait in the unmastered pool.
     - New: the rest of the 20, picked at random from the other unmastered words.
     - Review: picked at random from the mastered words, preferring ones that weren't on last week's list.
+    - `back`: words a grown-up or teacher moved back from mastered (docs/VOCAB.md, "Moving words back to practice") are
+      first in line, before last week's leftovers, and count as carried over.
     `unmastered` and `mastered` are word keys (or {w} entries). Returns {words, carried, added, review} as keys. */
-export function nextWeekWords(prevWords, unmastered, mastered, { fresh = 20, review = 5, rand = Math.random } = {}){
+export function nextWeekWords(prevWords, unmastered, mastered, { fresh = 20, review = 5, rand = Math.random, back = [] } = {}){
   const key = w => String(typeof w === 'object' && w ? w.w : w).trim().toLowerCase();
   const pool = [...new Set(unmastered.map(key))], poolSet = new Set(pool), prev = [...new Set(prevWords.map(key))];
-  const carried = prev.filter(k => poolSet.has(k)).slice(0, fresh), carriedSet = new Set(carried);
+  const carried = [...new Set([...(back || []).map(key), ...prev])].filter(k => poolSet.has(k)).slice(0, fresh), carriedSet = new Set(carried);
   const added = shuffleWith(rand, pool.filter(k => !carriedSet.has(k))).slice(0, Math.max(0, fresh - carried.length));
   const prevSet = new Set(prev), done = shuffleWith(rand, [...new Set(mastered.map(key))].filter(k => !poolSet.has(k)));
   const reviewed = [...done.filter(k => !prevSet.has(k)), ...done.filter(k => prevSet.has(k))].slice(0, review);

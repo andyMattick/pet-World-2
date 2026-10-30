@@ -1,7 +1,7 @@
 /* Teacher app: Vocabulary tab (docs: VOCAB.md). The class word list lives in classes.game_settings.vocab
    ({builtIn, words, focus}), which students already receive, so no new database column is needed. */
 import { esc } from './report';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets, validListen, LISTEN_DEFAULT, LISTEN_MAX } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets, masteredAmong, validListen, LISTEN_DEFAULT, LISTEN_MAX } from '../shared/vocab';
 import { weekOf } from '../shared/wordPuzzles';
 import { patternSummary, patternById } from '../shared/spellingPatterns';
 import { dictLinkHTML } from './wordPick';
@@ -11,14 +11,37 @@ export interface ClassVocab { builtIn?: boolean; listenSec?: number; words?: Voc
 interface VocabClass { id: string; name: string; game_settings: { vocab?: ClassVocab; [key: string]: unknown } | null }
 type SaveVocab = (vocab: ClassVocab) => Promise<string | null>;
 /* each student's answer history per word (state.vocab.stats), or null if it couldn't be loaded */
-export type VocabRoster = { id?: string; name: string; stats: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[]; spellFocus?: string[]; saved?: unknown }[] | null | undefined;
+export type VocabRoster = { id?: string; name: string; stats: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[]; spellFocus?: string[]; saved?: unknown; pendingBack?: string[] }[] | null | undefined;
 /** saves the words picked for one student's spelling patterns (students.quiz_overrides.spellFocus); [] clears them */
 export type SaveSpellFocus = (studentId: string, words: string[]) => Promise<string | null>;
+/** moves mastered words back to one student's practice list (a one-time clear in students.quiz_overrides); null when saved */
+export type SaveUnmaster = (studentId: string, words: string[]) => Promise<string | null>;
+
+/* ---------- moving mastered words back to practice (owner, Oct 30, 2026; docs/VOCAB.md "Moving words back to practice") ----------
+   The teacher's move is saved as a clear in the student's quiz_overrides, the same way other teacher-to-student changes
+   reach the game: "clear:vocab-back-<time>" = "unmaster:<word>,unmaster:<word>" (words URI-encoded). The game applies a
+   clear once per save copy and records it in state.clearsDone (applyClears in game.js), so it never fights with her
+   mastering the word again later. */
+const BACK_PREFIX = 'clear:vocab-back-';
+export function unmasterClear(words: string[], now = Date.now()): [string, string] | null {
+  const keys = [...new Set(words.map(wordKey).filter(Boolean))];
+  return keys.length ? [`${BACK_PREFIX}${now}`, keys.map(k => `unmaster:${encodeURIComponent(k)}`).join(',')] : null;
+}
+/** words moved back by the teacher that the student's game hasn't applied yet (their clear isn't in her clearsDone) */
+export function pendingBackOf(overrides: Record<string, unknown> | null | undefined, clearsDone: unknown): string[] {
+  const done = new Set(Array.isArray(clearsDone) ? clearsDone.map(String) : []), out: string[] = [];
+  for (const [k, v] of Object.entries(overrides || {})) {
+    if (!k.startsWith(BACK_PREFIX) || done.has(k) || typeof v !== 'string') continue;
+    for (const t of v.split(',')) if (t.startsWith('unmaster:')) { try { out.push(wordKey(decodeURIComponent(t.slice(9)))); } catch { /* a bad token is skipped */ } }
+  }
+  return [...new Set(out)];
+}
+const backNotes = new Map<string, string>();   /* per student: the result of a move, shown in her box after the redraw */
 
 let flash = '';
 let spNote: { id: string; text: string } | null = null;   /* the result of “Add to focus and practice”, shown in that student's box after the redraw */
 let leftover = '';   /* words that still need a meaning, put back in the import box after a save */
-export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVocab, roster: VocabRoster, saveSpellFocus?: SaveSpellFocus) {
+export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVocab, roster: VocabRoster, saveSpellFocus?: SaveSpellFocus, saveUnmaster?: SaveUnmaster) {
   const vocab: ClassVocab = cls.game_settings?.vocab || {};
   const builtIn = vocab.builtIn !== false, words = (vocab.words || []).map(validWord).filter(Boolean) as VocabWord[];
   const { all } = vocabList({ classVocab: vocab }) as { all: VocabWord[] };
@@ -87,18 +110,34 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     const newWords = words.filter(w => !findWord(all, w)).map(w => findWord(PATTERN_WORDS as VocabWord[], w)).filter(Boolean) as VocabWord[];
     const unfocused = focusSet.size ? words.filter(w => !focusSet.has(wordKey(w))) : [];
     const said = !words.length ? `Cleared ${name}’s practice words.` : `✅ ${words.length} word${words.length === 1 ? '' : 's'} saved for ${name}. They come up more often in Word Workshop.${newWords.length ? ` Added ${newWords.length} to the class list (set “Spelling patterns”).` : ''}${unfocused.length ? ` Added ${unfocused.length} to the focus words.` : ''}`;
-    spNote = { id, text: said };
+    const st = roster?.find(r => r.id === id), bumped = st ? await bumpMastered(words, [st]) : '';
+    spNote = { id, text: said + bumped };
     if (newWords.length || unfocused.length) {
-      void commit({ ...vocab, words: [...(vocab.words || []), ...newWords.map(v => ({ w: v.w, d: v.d, ...(v.s ? { s: v.s } : {}), set: 'Spelling patterns' }))], focus: focusSet.size ? [...new Set([...focusSet, ...words.map(wordKey)])] : [] }, said);
-    } else renderVocabTab(pane, cls, save, roster, saveSpellFocus);
+      void commit({ ...vocab, words: [...(vocab.words || []), ...newWords.map(v => ({ w: v.w, d: v.d, ...(v.s ? { s: v.s } : {}), set: 'Spelling patterns' }))], focus: focusSet.size ? [...new Set([...focusSet, ...words.map(wordKey)])] : [] }, said + bumped);
+    } else renderVocabTab(pane, cls, save, roster, saveSpellFocus, saveUnmaster);
   }));
 
+  /* adding a word a student already mastered moves it back to her practice list (each student it affected gets a note) */
+  async function bumpMastered(added: string[], who = roster || []): Promise<string> {
+    if (!saveUnmaster) return '';
+    const notes: string[] = [];
+    for (const st of who) {
+      if (!st.id || !st.saved) continue;
+      const pending = new Set(st.pendingBack || []), hit = masteredAmong(normalizeVocabState(JSON.parse(JSON.stringify(st.saved))), added).filter(k => !pending.has(k));
+      if (!hit.length) continue;
+      const err = await saveUnmaster(st.id, hit);
+      if (err) { notes.push(`Couldn’t move ${hit.join(', ')} back for ${st.name}: ${err}`); continue; }
+      st.pendingBack = [...pending, ...hit];
+      notes.push(...hit.map(k => `📌 ${k} was mastered by ${st.name}, so it’s back on her practice list.`));
+    }
+    return notes.length ? ` ${notes.join(' ')}` : '';
+  }
   const commit = async (next: ClassVocab, done: string) => {
     const error = await save(next);
     if (error) { leftover = ''; const m = pane.querySelector('#vbMsg'); if (m) { m.textContent = error; m.className = 'status err'; } return; }
     flash = done;
     cls.game_settings = { ...(cls.game_settings || {}), vocab: next };
-    renderVocabTab(pane, cls, save, roster, saveSpellFocus);   // keep the spelling-pattern save hooked up after a redraw
+    renderVocabTab(pane, cls, save, roster, saveSpellFocus, saveUnmaster);   // keep the spelling-pattern save hooked up after a redraw
   };
   pane.querySelector('#vbBuiltIn')!.addEventListener('change', e => { void commit({ ...vocab, builtIn: (e.target as HTMLInputElement).checked }, 'Saved.'); });
   pane.querySelector('#vbListen')!.addEventListener('change', e => {
@@ -117,7 +156,7 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
     const merged = [...words.filter(v => !added.some(a => wordKey(a.w) === wordKey(v.w))), ...added].slice(0, VOCAB_LIMITS.list);
     const nextFocus = focusSet.size ? [...new Set([...focusSet, ...added.map(a => wordKey(a.w))])] : [];
     leftover = missing.length ? missingLines(missing) : '';
-    void commit({ ...vocab, words: merged, focus: nextFocus }, `${added.length} word${added.length === 1 ? '' : 's'} added${errors.length ? `; ${errors.length} line(s) skipped` : ''}.${needs}`);
+    void bumpMastered(added.map(a => a.w)).then(bumped => commit({ ...vocab, words: merged, focus: nextFocus }, `${added.length} word${added.length === 1 ? '' : 's'} added${errors.length ? `; ${errors.length} line(s) skipped` : ''}.${needs}${bumped}`));
   });
   pane.querySelectorAll<HTMLButtonElement>('[data-vb-remove]').forEach(b => b.addEventListener('click', () => {
     void commit({ ...vocab, words: words.filter(v => v.w !== b.dataset.vbRemove), focus: (vocab.focus || []).filter(f => f !== wordKey(b.dataset.vbRemove)) }, 'Word removed.');
@@ -128,12 +167,28 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
         const entry = validWord({ w: b.dataset.vbFlagAdd, d: (row.querySelector('[data-vb-flag-def]') as HTMLInputElement).value, s: typed.includes('___') ? typed : blankSentence(typed, b.dataset.vbFlagAdd) }) as VocabWord | null;
     if (!entry) { (row.querySelector('[data-vb-flag-def]') as HTMLInputElement).focus(); return; }
     const merged = [...words.filter(v => wordKey(v.w) !== wordKey(entry.w)), entry].slice(0, VOCAB_LIMITS.list);
-    void commit({ ...vocab, words: merged, focus: focusSet.size ? [...new Set([...focusSet, wordKey(entry.w)])] : [] }, `${entry.w} added to the class list.`);
+    void bumpMastered([entry.w]).then(bumped => commit({ ...vocab, words: merged, focus: focusSet.size ? [...new Set([...focusSet, wordKey(entry.w)])] : [] }, `${entry.w} added to the class list.${bumped}`));
   }));
   pane.querySelectorAll<HTMLButtonElement>('[data-vb-flag-dismiss]').forEach(b => b.addEventListener('click', () => {
       const dismissed = [...new Set([...(vocab.dismissed || []), wordKey(b.dataset.vbFlagDismiss)])].slice(-300);
       void commit({ ...vocab, dismissed }, `${b.dataset.vbFlagDismiss} dismissed.`);
     }));
+  /* a student's ⭐ Mastered word → "Move to unmastered": ask first, then save it for her game */
+  pane.querySelectorAll<HTMLButtonElement>('[data-vb-back]').forEach(b => b.addEventListener('click', () => {
+    const box = b.closest<HTMLElement>('[data-vb-student]'), ask = box?.querySelector<HTMLElement>('[data-vb-back-ask]'), st = roster?.find(r => r.id === box?.dataset.vbStudent);
+    if (!box || !ask || !st) return;
+    const w = b.dataset.vbBack!;
+    ask.innerHTML = `Move <b>${esc(w)}</b> back to ${esc(st.name)}’s <b>Unmastered</b> list? It’s first in line for her next week’s 20 words. <button class="btn small primary" type="button" data-vb-back-yes="${esc(w)}">Move to unmastered</button> <button class="btn small" type="button" data-vb-back-no>Cancel</button>`;
+    ask.querySelector('[data-vb-back-no]')!.addEventListener('click', () => { ask.innerHTML = ''; });
+    ask.querySelector<HTMLButtonElement>('[data-vb-back-yes]')!.addEventListener('click', async e => {
+      const yes = e.currentTarget as HTMLButtonElement; yes.disabled = true; yes.textContent = 'Saving…';
+      const err = saveUnmaster ? await saveUnmaster(st.id!, [w]) : 'reload the page and try again';
+      if (err) { ask.textContent = `Couldn’t save: ${err}`; return; }
+      st.pendingBack = [...new Set([...(st.pendingBack || []), wordKey(w)])];
+      backNotes.set(st.id!, `✅ ${w} moves back to ${st.name}’s Unmastered list (first in line for next week) the next time Pet World opens for her.`);
+      renderVocabTab(pane, cls, save, roster, saveSpellFocus, saveUnmaster);
+    });
+  }));
 }
 
 /* ---------- each student's three lists (owner, Oct 28, 2026; docs/VOCAB.md "Words of the week") ----------
@@ -142,7 +197,7 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
    (saves.state->vocab). The old focus-word picker is gone: the game no longer narrows practice to focus words. */
 const TAG_TEXT: Record<string, string> = { carried: '🔁 carried over', new: '🆕 new', review: '🔄 review' };
 function studentListsHTML(roster: VocabRoster, vocab: ClassVocab): string {
-  const intro = `<p class="muted" style="margin-top:0">Each student’s words are one list. <b>This week’s words</b>: up to 20 unmastered words (the ones she didn’t master last week carry over first and count toward the 20; the rest are drawn at random) plus 5 mastered words to review. Friday’s check (📇 flashcards, then she types each word from its meaning) moves the ones she gets right to <b>Mastered</b>; a review word she misses goes back to <b>Unmastered</b>. Words you add below go in <b>Unmastered</b>.</p>`;
+  const intro = `<p class="muted" style="margin-top:0">Each student’s words are one list. <b>This week’s words</b>: up to 20 unmastered words (the ones she didn’t master last week carry over first and count toward the 20; the rest are drawn at random) plus 5 mastered words to review. Friday’s check (📇 flashcards, then she types each word from its meaning) moves the ones she gets right to <b>Mastered</b>; a review word she misses goes back to <b>Unmastered</b>. Words you add below go in <b>Unmastered</b>. <b>Tap a mastered word</b> to move it back to Unmastered (first in line for her next week’s list); adding a word she already mastered moves it back too.</p>`;
   if (roster === undefined) return `<div class="card"><h2>📚 Each student’s words</h2>${intro}<p class="muted">Loading students…</p></div>`;
   if (roster === null) return `<div class="card"><h2>📚 Each student’s words</h2>${intro}<p class="err">Students’ words could not be loaded right now.</p></div>`;
   if (!roster.length) return `<div class="card"><h2>📚 Each student’s words</h2>${intro}<p class="muted">No students yet.</p></div>`;
@@ -151,7 +206,7 @@ function studentListsHTML(roster: VocabRoster, vocab: ClassVocab): string {
     const saved = normalizeVocabState(st.saved && typeof st.saved === 'object' ? JSON.parse(JSON.stringify(st.saved)) : {}) as Parameters<typeof wordBuckets>[0] & { home?: { builtIn?: boolean; words?: VocabWord[] } };
     const list = vocabList({ classVocab: vocab, home: saved.home }) as { all: VocabWord[] };
     const extra = (st.spellFocus || []).map(w => findWord([...list.all, ...(PATTERN_WORDS as VocabWord[])], w)).filter((v): v is VocabWord => !!v && !findWord(list.all, v.w));
-    const b = wordBuckets(saved, [...list.all, ...extra]) as { mastered: VocabWord[]; unmastered: VocabWord[]; week: (VocabWord & { tag: string; right: boolean; result: number | null })[]; weekId: string; checkDone: boolean; cards: { first: number; n: number; skipped?: boolean } | null };
+    const b = wordBuckets(saved, [...list.all, ...extra]) as { mastered: VocabWord[]; unmastered: VocabWord[]; week: (VocabWord & { tag: string; right: boolean; result: number | null })[]; weekId: string; checkDone: boolean; cards: { first: number; n: number; skipped?: boolean } | null; back: string[] };
     const n = (tag: string) => b.week.filter(x => x.tag === tag).length, right = b.week.filter(x => x.right).length;
     const friday = b.checkDone ? `⭐ ${b.week.filter(x => x.result === 1 && x.tag !== 'review').length} mastered, ${b.week.filter(x => x.result === 0).length} stay${b.cards && !b.cards.skipped ? ` · 📇 ${b.cards.first}/${b.cards.n} cards first try` : ''}` : 'Friday check not done yet';
     const stale = b.weekId && b.weekId !== thisWeek ? ` <span class="muted">(week of ${esc(b.weekId)}; her new list is drawn when she next opens Pet World)</span>` : '';
@@ -159,9 +214,11 @@ function studentListsHTML(roster: VocabRoster, vocab: ClassVocab): string {
     const box = (title: string, body: string) => `<div class="vb-list"><h3>${title}</h3><div class="vb-scroll">${body}</div></div>`;
     const weekBody = b.week.length ? `<table class="steptable"><tr><th>Word</th><th>Kind</th><th>Right this week</th><th>Friday</th></tr>${b.week.map(x => `<tr><td title="${esc(x.d)}"><b>${esc(x.w)}</b></td><td>${TAG_TEXT[x.tag]}</td><td>${x.right ? '✅' : '<span class="muted">–</span>'}</td><td>${x.result === 1 ? '⭐ mastered' : x.result === 0 ? (x.tag === 'review' ? '↩️ back to unmastered' : '↩️ stays') : '<span class="muted">–</span>'}</td></tr>`).join('')}</table>` : '<p class="muted">No list yet: it’s drawn the first time she opens Pet World this week.</p>';
     const chips = (xs: VocabWord[], mark: (v: VocabWord) => string) => xs.length ? xs.map(v => `<span class="chip" title="${esc(v.d || '')}">${mark(v)} ${esc(v.w)}</span>`).join(' ') : '<span class="muted">None yet.</span>';
-    const active = b.week.length > 0 || Object.keys(st.stats || {}).length > 0;   // open for any student who has words this week or has practiced
-    return `<details${active ? ' open' : ''} class="vb-student"><summary><b>${esc(st.name)}</b> <span class="muted">⭐ ${b.mastered.length} mastered · ${b.unmastered.length} unmastered · this week ${b.week.length} (${n('carried')} carried over, ${n('new')} new, ${n('review')} review) · ✅ ${right} right this week · ${friday}</span></summary>${stale}
-      <div class="vb-lists">${box(`This week’s words (${b.week.length})`, weekBody)}${box(`Unmastered (${b.unmastered.length})`, `<p class="muted" style="margin:0 0 4px">✅ solid · 🟡 getting there · 🔴 needs practice</p>${chips(b.unmastered, st3)}`)}${box(`⭐ Mastered (${b.mastered.length})`, chips(b.mastered, () => '⭐'))}</div></details>`;
+    const active = b.week.length > 0 || Object.keys(st.stats || {}).length > 0 || backNotes.has(st.id || '');   // open for any student who has words this week or has practiced
+    const pending = new Set(st.pendingBack || []), note = backNotes.get(st.id || ''); backNotes.delete(st.id || '');
+    const masteredBody = b.mastered.length ? `<p class="muted" style="margin:0 0 4px">Tap a word to move it back to Unmastered.</p>${b.mastered.map(v => pending.has(wordKey(v.w)) ? `<span class="chip" title="Moves back to Unmastered the next time she opens Pet World">⏳ ${esc(v.w)} <small class="muted">moving back</small></span>` : st.id ? `<button type="button" class="chip vb-back" data-vb-back="${esc(v.w)}" title="${esc(v.d || '')}: tap to move it back to Unmastered">⭐ ${esc(v.w)}</button>` : `<span class="chip">⭐ ${esc(v.w)}</span>`).join(' ')}` : '<span class="muted">None yet.</span>';
+    return `<details${active ? ' open' : ''} class="vb-student" data-vb-student="${esc(st.id || '')}"><summary><b>${esc(st.name)}</b> <span class="muted">⭐ ${b.mastered.length} mastered · ${b.unmastered.length} unmastered · this week ${b.week.length} (${n('carried')} carried over, ${n('new')} new, ${n('review')} review) · ✅ ${right} right this week · ${friday}</span></summary>${stale}
+      <div class="vb-lists">${box(`This week’s words (${b.week.length})`, weekBody)}${box(`Unmastered (${b.unmastered.length})`, `<p class="muted" style="margin:0 0 4px">✅ solid · 🟡 getting there · 🔴 needs practice</p>${chips(b.unmastered, v => `${b.back.includes(wordKey(v.w)) ? '🔁' : ''}${st3(v)}`)}`)}${box(`⭐ Mastered (${b.mastered.length})`, masteredBody)}</div><p class="status" data-vb-back-ask>${note ? esc(note) : ''}</p></details>`;
   }).join('');
   return `<div class="card"><h2>📚 Each student’s words</h2>${intro}${rows}</div>`;
 }

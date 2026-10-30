@@ -12,7 +12,7 @@ import { setLedgerClass } from './ledger';
 import { startAlerts } from './live';
 import { messagesPanel } from './chat';
 import { renderApprovals, waitingCount } from './approvals';
-import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus } from './vocab';
+import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus, type SaveUnmaster, unmasterClear, pendingBackOf } from './vocab';
 import { installWordPick } from './wordPick';
 import { insightsSaveFields, rowsByStudent, insightsSince } from '../shared/insights';
 import { setInsightsEmailer } from './insightsCard';
@@ -466,18 +466,30 @@ function renderVocabularyTab() {
     if (!e2 && roster) { const st = roster.find(r => r.id === id); if (st) st.spellFocus = words; }
     return e2 ? e2.message : null;
   };
-  const draw = () => { if (current?.id === cls.id && tab === 'vocab') renderVocabTab($('#pane'), cls, save, roster, saveSpellFocus); };
+  /* move mastered words back to one student's practice list: a one-time clear in her quiz_overrides ("clear:vocab-back-<time>"
+     = "unmaster:<word>,…"), which the game applies once (applyClears, state.clearsDone). Read fresh so nothing else is lost. */
+  const saveUnmaster: SaveUnmaster = async (id, words) => {
+    const clear = unmasterClear(words); if (!clear) return null;
+    const { data, error } = await sb!.from('students').select('quiz_overrides').eq('id', id).maybeSingle();
+    if (error) return error.message;
+    const next = { ...((data?.quiz_overrides as Record<string, string> | null) || {}), [clear[0]]: clear[1] };
+    const { error: e2 } = await sb!.from('students').update({ quiz_overrides: next }).eq('id', id);
+    return e2 ? e2.message : null;
+  };
+  const draw = () => { if (current?.id === cls.id && tab === 'vocab') renderVocabTab($('#pane'), cls, save, roster, saveSpellFocus, saveUnmaster); };
   draw();
   void (async () => {
     const { data: kids, error } = await sb!.from('students').select('id,display_name,quiz_overrides').eq('class_id', cls.id).order('display_name');
     if (error) { roster = null; draw(); return; }
     const list = (kids || []) as { id: string; display_name: string; quiz_overrides?: Record<string, string> | null }[];
-    const { data, error: saveError } = list.length ? await sb!.from('saves').select('student_id, vocab:state->vocab').in('student_id', list.map(k => k.id)) : { data: [], error: null };
+    const { data, error: saveError } = list.length ? await sb!.from('saves').select('student_id, vocab:state->vocab, clearsDone:state->clearsDone').in('student_id', list.map(k => k.id)) : { data: [], error: null };
     if (saveError) { roster = null; draw(); return; }
+    const doneBy = new Map(((data || []) as { student_id: string; clearsDone?: unknown }[]).map(row => [row.student_id, row.clearsDone]));
     const byStudent = new Map(((data || []) as { student_id: string; vocab?: { stats?: Record<string, { r: number[] }>; flagged?: { w: string; ctx?: string }[]; mistakes?: { w: string; typed: string; kinds: string[] }[] } }[]).map(row => [row.student_id, row.vocab || {}]));
     const focusOf = (k: typeof list[number]) => { try { const v = JSON.parse(k.quiz_overrides?.spellFocus || '[]'); return Array.isArray(v) ? v.map(String) : []; } catch { return []; } };
     roster = list.map(k => ({ id: k.id, name: k.display_name, stats: byStudent.get(k.id)?.stats || {}, flagged: Array.isArray(byStudent.get(k.id)?.flagged) ? byStudent.get(k.id)!.flagged! : [],
-      mistakes: Array.isArray(byStudent.get(k.id)?.mistakes) ? byStudent.get(k.id)!.mistakes! : [], spellFocus: focusOf(k), saved: byStudent.has(k.id) ? byStudent.get(k.id) : null }));   // saved: her whole Word Workshop state (week, Hall of Fame, home words) for the three lists
+      mistakes: Array.isArray(byStudent.get(k.id)?.mistakes) ? byStudent.get(k.id)!.mistakes! : [], spellFocus: focusOf(k), saved: byStudent.has(k.id) ? byStudent.get(k.id) : null,
+      pendingBack: pendingBackOf(k.quiz_overrides, doneBy.get(k.id)) }));   // pendingBack: words the teacher moved back that her game hasn't applied yet   // saved: her whole Word Workshop state (week, Hall of Fame, home words) for the three lists
     draw();
   })();
 }
