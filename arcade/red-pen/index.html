@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red Pen Desk</title>
+<!-- Pet World Arcade copy of the ✍️ Red Pen Desk (Word Workshop's word game, docs/RED-PEN-DESK.md, docs/ARCADE-GAMES.md).
+     Served at /arcade/red-pen/. It is a Vite page (vite.config.ts), not a public/ file, so it uses the same papers as
+     Word Workshop: src/shared/redPen.js. It asks the Arcade for her words of the week (arcade:words-request) and uses
+     Pet World's built-in words when it's opened on its own. In the Arcade (?arcadeRun=…) it pays tickets; it never pays
+     coins and never counts toward mastery. -->
+<link rel="stylesheet" href="/src/styles/game.css">
+<style>
+  body{margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  .wrap{max-width:640px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.5em; margin:6px 0 4px}
+  .rp-card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:12px; margin-top:10px}
+  .rp-top{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .rp-top h1{flex:1}
+  .rp-bar{display:flex; gap:10px; flex-wrap:wrap; font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

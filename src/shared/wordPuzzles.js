@@ -1,17 +1,33 @@
 /* Word puzzles for Word Workshop (docs/VOCAB.md, "Daily puzzles"): scramble, decode, crossword and word search, built
    from this week's words. Pure functions (no DOM), so they can be tested on their own. `rand` is a () => [0, 1) function. */
 
-export const PUZZLE_TYPES = ['scramble', 'decode', 'crossword', 'search', 'match'];
+export const PUZZLE_TYPES = ['scramble', 'decode', 'crossword', 'search', 'redpen', 'match'];
 export const PUZZLE_INFO = {
   scramble: { emoji: '🔀', name: 'Word Scramble', how: 'Unscramble the letters to find the word that matches the meaning.' },
   decode: { emoji: '🔐', name: 'Secret Code', how: 'Each symbol stands for a letter. Use the meaning and the code key to crack each word.' },
   crossword: { emoji: '✏️', name: 'Crossword', how: 'Tap a clue, then type the word that means it.' },
   search: { emoji: '🔎', name: 'Word Search', how: 'Read the meaning, find that word in the grid: tap its first letter, then its last letter.' },
   match: { emoji: '🧩', name: 'Match-Up', how: 'Tap a word, then tap the meaning that goes with it.' },
+  redpen: { emoji: '✍️', name: 'Red Pen Desk', how: 'You’re the teacher! Tap the misspelled word (or Looks good!), write it the right way, then pick what kind of mistake it was.' },   // src/shared/redPen.js
 };
 /* the day's puzzle type: Monday scramble, Tuesday decode, Wednesday crossword, Thursday word search; Friday is the
    mastery check; weekends get a match-up */
 export function puzzleForDay(weekday){ return ['match', 'scramble', 'decode', 'crossword', 'search', 'check', 'match'][weekday] || 'scramble'; }
+/* The word game of the day (owner, Oct 30, 2026: the ✍️ Red Pen Desk joins the rotation; docs/VOCAB.md "Word game
+   rotation"). Five games take turns, in this order, on Monday to Thursday, and each week picks up where the last one
+   stopped: game = (4 × weeks since Monday Oct 26, 2026 + Mon 0 … Thu 3) mod 5. Over any 5 weeks each game comes up 4
+   times, each week skips one game, and it's a different one every week (never the same game skipped twice running).
+   The week of Oct 26, 2026 is the old fixed week (scramble, code, crossword, search), so the Red Pen Desk starts on
+   Monday Nov 2. Friday is the mastery check, weekends the match-up. */
+export const WORD_GAME_CYCLE = ['scramble', 'decode', 'crossword', 'search', 'redpen'];
+const ROTATION_START = Date.UTC(2026, 9, 26);   // a Monday
+export function wordGameForDate(day){
+  const [y, m, d] = String(day).split('-').map(Number), t = Date.UTC(y, m - 1, d), wd = new Date(t).getUTCDay();
+  if (wd === 5) return 'check';
+  if (wd === 0 || wd === 6) return 'match';
+  const weeks = Math.floor((t - ROTATION_START) / (7 * 86400000)), slot = 4 * weeks + (wd - 1);
+  return WORD_GAME_CYCLE[((slot % 5) + 5) % 5];
+}
 
 const letters = w => String(w).toLowerCase().replace(/[^a-z]/g, '');
 export const puzzleWord = w => /^[a-z]+$/i.test(String(w)) && String(w).length >= 3;   // one plain word (no spaces or apostrophes)

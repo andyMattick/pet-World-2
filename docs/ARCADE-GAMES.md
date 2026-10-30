@@ -23,12 +23,13 @@
 | 🌺 Greenhouse Keeper | Biology Unit 3, a card at the bottom of the unit page (`openGreenhouse`) | `greenhouse-keeper`, `public/arcade/greenhouse-keeper/` | 1 per star, up to 3 a shift |
 | 🦋 Life Cycle Lab | Biology Unit 4, a card at the bottom of the unit page (`openLifeCycle`) | `life-cycle-lab`, `public/arcade/life-cycle-lab/` | 1 per star, up to 3 a round |
 | 🐄 Barn Breeder | Biology Unit 5 (Farm Barn), a card at the bottom of the unit page (`openBarnBreeder`) | `barn-breeder`, `arcade/barn-breeder/index.html` (a Vite page using `src/game/barnBreeder.js` and `src/shared/genetics.js`) | 1 per star, up to 3 a fair season |
+| ✍️ Red Pen Desk | Word Workshop: the word game of the day in its turn (Mon–Thu rotation), the path's 🎲 Puzzle of the day, and the 📅 This week tab's games (`redPenBodyHTML`; docs/RED-PEN-DESK.md) | `red-pen`, `arcade/red-pen/index.html` (a Vite page using `src/shared/redPen.js`; her words of the week via `arcade:words-request`) | 1 per 3 papers graded perfectly, up to 3 a round |
 | ⚖️ Pax Oeconomica | History Units 4 and 5, a card at the bottom of the unit page (`openPax`; Unit 4 plays the Classical empires, Unit 5 the Medieval ones) | `pax-oeconomica`, `public/arcade/pax-oeconomica/` (React source in `src/arcade/pax-oeconomica/`; both eras) | 1 per star, up to 3 a game |
 
 ## Two ways to build the Arcade copy
 
 1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game, Supermarket Dash, Penguin Push, Potion Detective, Carnival Midway). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
-2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`, the Book Repair Desk `src/game/bookRepair.js`, Rule Court `src/game/ruleCourt.js`, WPET Style Radio `src/game/styleRadio.js`, Sentence Snap `src/game/sentenceSnap.js`; the Link Library Games import `src/game/grammarGames.js` and `src/game/hideSeek.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
+2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`, the Book Repair Desk `src/game/bookRepair.js`, Rule Court `src/game/ruleCourt.js`, WPET Style Radio `src/game/styleRadio.js`, Sentence Snap `src/game/sentenceSnap.js`, the Red Pen Desk `src/shared/redPen.js`; the Link Library Games import `src/game/grammarGames.js` and `src/game/hideSeek.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
 
 Either way:
 - Add the payout to `arcadeModuleMessage` in `src/game/game.js` (tickets, capped per round).

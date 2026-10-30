@@ -72,7 +72,7 @@ Every extra is a **timed round** (owner: "how many can you get in X minutes?"). 
 
 Owner: "I'm OK if we spend 10 minutes doing the phases (Meet, Match, Build, Use, Spell), then another 7 with the word game of the day."
 
-- A Word Workshop extra is **two rows** on Today's plan and the Warm-up time! card: **⏱️ 10 min: 🐾 Paw Path** (her next lessons, back to back), then **⏱️ 7 min: the word game of the day** (Mon 🔀 Word Scramble, Tue 🔐 Secret Code, Wed ✏️ Crossword, Thu 🔎 Word Search). Each row has its own Start, ✅ and score; the game row's Start turns berry once the path part is done.
+- A Word Workshop extra is **two rows** on Today's plan and the Warm-up time! card: **⏱️ 10 min: 🐾 Paw Path** (her next lessons, back to back), then **⏱️ 7 min: the word game of the day**. Since Oct 30, 2026 five games take turns on Monday to Thursday (🔀 Word Scramble, 🔐 Secret Code, ✏️ Crossword, 🔎 Word Search, ✍️ Red Pen Desk), each week picking up where the last stopped (`docs/RED-PEN-DESK.md`, "The word game rotation"); the ✍️ Red Pen Desk's score is its ⭐ papers. Each row has its own Start, ✅ and score; the game row's Start turns berry once the path part is done.
 - **The path part** continues lesson to lesson until the clock runs out. At 10 minutes she's never cut off mid-question: "⏰ Time's up! Finish this lesson to keep its XP." When that lesson is done, **Next: <game>, 7 min ▶** starts the game part.
 - **Friday** is one row: the 🏁 mastery check (as before).
 - **Lengths:** teacher app → her page → extras: 🐾 Paw Path (default 10) and 🎲 Word game (default 7), saved as `path` and `game` on the extra. An extra saved before Oct 30 has no `path`: it gets 10 + its old round length, and its minutes beyond the old round stay "more practice later".

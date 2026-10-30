@@ -15,11 +15,12 @@ import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkT
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong, keepPictures } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
+import { makeRedPenRound, plainWord as redPenWord, tapIsRight, spellingIsRight, patternIsRight, PATTERN_SHORT } from '../shared/redPen';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
 import { pictureFor, suggestEmoji, validPictureEmoji, needsCartoon, cartoonRequest, PHOTO_DATA_MAX } from '../shared/wordPictures';
 import { searchPhotos, photoChoice, photoResultsHTML } from '../shared/photoSearch';
 import { PATH_SKILLS, skillInfo, buildLesson, lessonGroups, lessonCount, againItem, matchRetryItem, pathForWeek, pathNodes, recordLesson, pathSummaryText, fillBlank, XP_LESSON, langOf, graphemes } from '../shared/wordPath';
-import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
+import { PUZZLE_INFO, wordGameForDate, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
@@ -6259,6 +6260,11 @@ function arcadeModuleMessage(event){
     S.arcade.gameSaves[run.gameId] = data.state; save(); return;
   }
   if (data.type === 'arcade:state-clear') { delete S.arcade.gameSaves[run.gameId]; save(); return; }
+  /* ✍️ Red Pen Desk: her words of the week for the papers (docs/RED-PEN-DESK.md) */
+  if (data.type === 'arcade:words-request' && run.gameId === 'red-pen') {
+    let words = []; try { words = weekWordObjs().filter(v => /^[a-z]{4,}$/i.test(v.w) && !v.lang).map(v => ({w:v.w, d:v.d || '', s:v.s || ''})); } catch { words = []; }
+    event.source.postMessage({type:'arcade:words', gameId:run.gameId, runId:run.id, words}, event.origin); return;
+  }
   if (data.type !== 'arcade:round-complete' || run.freePlay || policy.freePlay || !policy.enabled || !policy.games[run.gameId]) return;
   const roundId = typeof data.roundId === 'string' ? data.roundId.slice(0,80) : '';
   const score = Math.floor(Number(data.score));
@@ -6278,6 +6284,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'book-repair') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));
   else if (run.gameId === 'style-radio') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));   // 1 ticket per 2 perfect calls, up to 3 a show (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'rule-court') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));   // 1 ticket per 2 perfect cases, up to 3 a docket (docs/ARCADE-GAMES.md)   // 1 ticket per 2 books fixed on the first try, up to 3 a shelf (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'red-pen') earned = Math.max(0, Math.min(3, Math.floor(score / 3)));   // 1 ticket per 3 papers graded perfectly, up to 3 a round (docs/RED-PEN-DESK.md)
   else if (run.gameId === 'sentence-snap') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
@@ -9701,10 +9708,10 @@ function extraRowHTML(x, part = 'warm', lead = ''){
   if (x.kind === 'vocab' && !vocabCheckToday(x)) {
     /* two rows: ⏱️ 10 min on the Paw Path, then ⏱️ 7 min on the word game of the day */
     const ps = challengeScore(x), gs = gameScore(x), pBest = S.challengeBest?.[x.id] || 0, gBest = S.challengeBest?.[gameId(x)] || 0, t = todayPuzzleType(), info = PUZZLE_INFO[t];
-    const words = n => `${n} ${n === 1 ? 'word' : 'words'}`;
+    const words = n => `${n} ${n === 1 ? 'word' : 'words'}`, gameUnit = n => (t === 'redpen' ? `⭐ ${n} ${n === 1 ? 'paper' : 'papers'}` : words(n));
     const startPart = (p, berry) => `<button type="button" class="btn small${berry ? ' berry' : ''}" data-extra-start="${esc(x.id)}" data-extra-part="${p}">Start</button>`;
     return `<div class="row extras-row" data-warm-part="path"><span style="flex:1">${ps !== null ? '✅' : '⬜'} ${lead}⏱️ <b>${vocabPathMin(x)} min</b>: ${esc(vocabWarmLabel())} · <b>${ps !== null ? `${words(ps)} right` : pBest ? `best ${pBest}` : 'lessons back to back'}</b></span>${ps !== null ? '' : startPart('path', true)}</div>`
-      + `<div class="row extras-row" data-warm-part="game"><span style="flex:1">${gs !== null ? '✅' : '⬜'} ${lead}⏱️ <b>${vocabGameMin(x)} min</b>: ${info.emoji} Word game of the day: ${esc(info.name)} · <b>${gs !== null ? words(gs) : gBest ? `best ${gBest}` : 'how many can you get?'}</b></span>${gs !== null ? '' : startPart('game', ps !== null)}</div>`;
+      + `<div class="row extras-row" data-warm-part="game"><span style="flex:1">${gs !== null ? '✅' : '⬜'} ${lead}⏱️ <b>${vocabGameMin(x)} min</b>: ${info.emoji} Word game of the day: ${esc(info.name)} · <b>${gs !== null ? gameUnit(gs) : gBest ? `best ${gBest}` : 'how many can you get?'}</b></span>${gs !== null ? '' : startPart('game', ps !== null)}</div>`;
   }
   if (challengeMin(x)) {
     const score = challengeScore(x), best = S.challengeBest?.[x.id] || 0;
@@ -13011,12 +13018,13 @@ function finishVocab(){
 }
 /* ---------- 📅 this week's words, 🧩 daily puzzles, 🏁 Friday mastery check (owner, Oct 27, 2026; docs/VOCAB.md "Weekly words") ----------
    She works on the same words all week: 20 unmastered words (the ones she didn't master last week first, the rest at
-   random) plus 5 mastered words to review (nextWeekWords). Each school day has a puzzle on them (Mon scramble, Tue secret code, Wed crossword, Thu word search, weekends a
-   match-up); the warm-up is a timed round on it (7 minutes unless a grown-up picks another length). A puzzle she doesn't
+   random) plus 5 mastered words to review (nextWeekWords). Each school day has a word game on them: Monday to Thursday
+   the 5 games take turns (scramble, secret code, crossword, word search, ✍️ Red Pen Desk; wordGameForDate, owner Oct 30,
+   2026), weekends a match-up; the warm-up is a timed round on it (7 minutes unless a grown-up picks another length). A puzzle she doesn't
    finish is saved and finished the next day (one day only). Friday is the mastery check: type each word from its
    meaning; the ones she gets right are celebrated, go in her Word Hall of Fame and leave her focus list. A wrong answer
    anywhere means typing the word correctly before moving on. */
-const WEEK_NEW_WORDS = 20, WEEK_REVIEW_WORDS = 5, PUZZLE_SIZE = {scramble:8, decode:6, crossword:8, search:8, match:6};
+const WEEK_NEW_WORDS = 20, WEEK_REVIEW_WORDS = 5, PUZZLE_SIZE = {scramble:8, decode:6, crossword:8, search:8, match:6, redpen:10};
 const weekdayNum = () => new Date(`${localDay()}T12:00:00`).getDay();
 const dayBefore = day => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const hallKeys = () => new Set((S.vocab.hall || []).map(h => h.w));
@@ -13039,7 +13047,7 @@ function weekWordObjs(all = vocabWords().all){
 const checkDay = () => [5, 6, 0].includes(weekdayNum());   // Friday, or the weekend if Friday was missed
 const checkDue = () => checkDay() && !ensureWeek().check?.done && weekWordObjs().length > 0;
 function vocabWarmLabel(){ if (checkDue()) return '🏁 Friday mastery check'; const {skill} = nextPathLesson(), info = skillInfo(skill); return `🐾 Paw Path: ${info.emoji} ${info.name}`; }
-function todayPuzzleType(){ const p = S.vocab.puzzle, day = localDay(); if (p && !p.done && (p.day === day || (p.first === p.day && p.day === dayBefore(day)))) return p.type; const t = puzzleForDay(weekdayNum()); return t === 'check' ? 'match' : t; }
+function todayPuzzleType(){ const p = S.vocab.puzzle, day = localDay(); if (p && !p.done && (p.day === day || (p.first === p.day && p.day === dayBefore(day)))) return p.type; const t = wordGameForDate(localDay()); return t === 'check' ? 'match' : t; }
 /* today's puzzle: yesterday's unfinished one (one more day only), or a new one */
 function todayPuzzle(){
   const day = localDay(), p = S.vocab.puzzle;
@@ -13051,6 +13059,13 @@ function todayPuzzle(){
 /* a puzzle of one type on this week's words */
 function makePuzzle(type, day = localDay()){
   const size = PUZZLE_SIZE[type] || 8;
+  if (type === 'redpen') {
+    /* ✍️ Red Pen Desk: papers from pet students on this week's words (src/shared/redPen.js); words = the paper ids */
+    const {all} = vocabWords(), fit = weekWordObjs(all).filter(v => redPenWord(v.w) && !v.lang);
+    const pool = fit.length >= 6 ? fit : all.filter(v => redPenWord(v.w) && !v.lang);
+    const papers = makeRedPenRound(pool, Math.random, {papers:size, extraReal:all});
+    return {day, first:day, type, words:papers.map(x => x.id), solved:[], helped:[], done:false, data:{papers, order:papers.map(x => x.id), back:{}, graded:[]}};
+  }
   const fit = weekWordObjs().filter(v => puzzleWord(v.w) && v.w.length <= (type === 'search' ? 10 : 12));
   const pool = fit.length >= 4 ? fit : vocabWords().focus.filter(v => puzzleWord(v.w) && v.w.length <= 10);
   const picked = [];
@@ -13074,22 +13089,23 @@ function startPuzzle({timed = true, min = 7, extraId = null, type = ''} = {}){
   if (p.done && extraId) p = {...makePuzzle(p.type), free:true};   // the warm-up's word game when today's puzzle is already done: a fresh one of the same kind
   if (!p.words.length) { toast('Add a few more words first.'); return; }
   if (vocabRun) { stopVocabTimer(); vocabRun = null; }
-  puzzleRun = {p, timed, min, extraId, end:performance.now() + min * 60000, startedAt:performance.now(), startSolved:p.solved.length, sel:null, active:0};
+  puzzleRun = {p, timed, min, extraId, end:performance.now() + min * 60000, startedAt:performance.now(), startSolved:p.solved.length, sel:null, active:0, ...(p.type === 'redpen' ? {rp:null, streak:0, bestStreak:0, startGraded:(p.data.graded || []).length} : {})};
   if (puzzleTimer) clearInterval(puzzleTimer);
   if (timed) puzzleTimer = setInterval(() => { if (!puzzleRun) return; const left = Math.max(0, puzzleRun.end - performance.now()), t = $('#puzzleTime'); if (t) t.textContent = fmtCountdown(left); if (left <= 0) finishPuzzle('time'); }, 250);
   renderPuzzle();
 }
 const fmtCountdown = ms => { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-const pzLeft = p => p.words.filter(w => !p.solved.includes(w) && !p.helped.includes(w));
+const pzLeft = p => (p.type === 'redpen' && p.data?.order ? p.data.order : p.words).filter(w => !p.solved.includes(w) && !p.helped.includes(w));
 function renderPuzzle(){
   const run = puzzleRun, p = run?.p; if (!p || !run) return;
-  if (!pzLeft(p).length) { finishPuzzle('done'); return; }
+  if (!pzLeft(p).length && !(p.type === 'redpen' && run.rp)) { finishPuzzle('done'); return; }
   const info = PUZZLE_INFO[p.type], got = p.solved.length - run.startSolved;
   const head = `<div class="backrow"><h2>${info.emoji} ${esc(info.name)}</h2><button class="btn small" data-pz-stop>${run.timed ? 'Stop' : 'Back'}</button></div>
-    <p class="sprint-stats"><span>✅ ${p.solved.length + p.helped.length} of ${p.words.length} words${got ? ` · ${got} today` : ''}</span>${run.timed ? `<span>⏱️ <b id="puzzleTime">${fmtCountdown(Math.max(0, run.end - performance.now()))}</b></span>` : ''}</p>
+    <p class="sprint-stats"><span>${p.type === 'redpen' ? `📝 ${p.solved.length + p.helped.length} of ${p.words.length} papers graded · ⭐ ${p.solved.length}${run.streak > 1 ? ` · 🔥 ${run.streak} in a row` : ''}` : `✅ ${p.solved.length + p.helped.length} of ${p.words.length} words${got ? ` · ${got} today` : ''}`}</span>${run.timed ? `<span>⏱️ <b id="puzzleTime">${fmtCountdown(Math.max(0, run.end - performance.now()))}</b></span>` : ''}</p>
     ${p.first !== p.day ? '<p class="muted">📌 Yesterday’s puzzle: finish it today!</p>' : ''}<p class="muted">${esc(info.how)}</p>`;
   let body = '';
-  if (p.type === 'scramble' || p.type === 'decode') {
+  if (p.type === 'redpen') body = redPenBodyHTML(p, run);
+  else if (p.type === 'scramble' || p.type === 'decode') {
     const k = pzLeft(p)[0], v = wordObj(k);
     const shown = p.type === 'scramble' ? `<div class="pz-tiles">${[...p.data.mix[k]].map(ch => `<span>${esc(ch.toUpperCase())}</span>`).join('')}</div>`
       : `<div class="pz-tiles pz-code">${encodeWord(k, p.data.code).map(sym => `<span>${esc(sym)}</span>`).join('')}</div>
@@ -13121,6 +13137,7 @@ function renderPuzzle(){
   }
   $('#vocabWrap').innerHTML = `${head}<div class="sprint-card vocab-card pz-wrap">${body}</div>`;
   $('#vocabWrap .pz-wrap form[data-pz-answer] input')?.focus();
+  $('#vocabWrap form[data-rp-spell] input')?.focus();
 }
 /* a word answered: right the first time is ✅ solved; wrong means typing it correctly first (then it counts as helped) */
 function puzzleAnswer(k, ok){
@@ -13135,6 +13152,111 @@ function puzzleAnswer(k, ok){
   host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>${wordPicHTML(wordObj(k))}${wordPartsHTML(k)}`);   // 🖼️ after the miss, with the word
   askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); crack(); save(); renderPuzzle(); });
 }
+/* ---------- ✍️ Red Pen Desk (owner, Oct 30, 2026; docs/RED-PEN-DESK.md) ----------
+   She's the teacher: pet students turn in papers using this week's words (src/shared/redPen.js). Each paper: 1) tap the
+   misspelled spelling word, or ✅ Looks good! (about 1 paper in 6 has no mistake); 2) write it the right way (no 🔊:
+   she has to know it); 3) pick the kind of mistake. The pet thanks her and fixes its paper; a paper graded with no
+   slips gets a ⭐ (p.solved, the round's score); the others are graded with help (p.helped). A wrong tap is gentle: the
+   paper goes back on her pile and comes back two papers later; a second wrong tap on it shows her the word. A missed
+   spelling shows the right word, its picture and word parts, and she types it to keep going, like the rest of Word
+   Workshop. It never counts toward mastery. */
+function redPenPaper(p, run){
+  const id = run.rp?.id || pzLeft(p)[0], paper = p.data.papers.find(x => x.id === id);   // the paper on the desk stays until Next paper
+  if (paper && run.rp?.id !== id) run.rp = {id, step:'tap', slip:!!p.data.back[id], msg:''};
+  return paper;
+}
+function redPenStackHTML(p){
+  const g = p.data.graded || []; if (!g.length) return '';
+  const pet = id => p.data.papers.find(x => x.id === id)?.pet?.e || '📄';
+  return `<div class="rp-stack" aria-label="${g.length} graded paper${g.length === 1 ? '' : 's'}">${g.map((x, i) => `<span class="rp-done${x.star ? ' star' : ''}" style="--i:${i}" title="${x.star ? 'Graded perfectly' : 'Graded with a little help'}">${pet(x.id)}<b>${x.star ? '⭐' : '✔️'}</b></span>`).join('')}</div>`;
+}
+function redPenBodyHTML(p, run){
+  const paper = redPenPaper(p, run); if (!paper) return '';
+  const r = run.rp, t = paper.target, fixed = r.step === 'kind' || r.step === 'done', circled = r.step !== 'tap' && r.step !== 'back' && t >= 0;
+  const slot = i => {
+    const sl = paper.slots[i];
+    if (r.step === 'tap') return `<button type="button" class="rp-word" data-rp-tap="${i}">${esc(sl.shown)}</button>`;
+    if (i === t && fixed) return `<span class="rp-word rp-fixed"><s>${esc(sl.shown)}</s> <b>${esc(sl.right)}</b></span>`;
+    return `<span class="rp-word${i === t && circled ? ' rp-circled' : ''}">${esc(sl.shown)}</span>`;
+  };
+  const lines = paper.lines.map(line => `<li>${line.map(x => (x.slot != null ? slot(x.slot) : esc(x.text))).join('')}</li>`).join('');
+  const what = paper.kind === 'list' ? 'a spelling list' : `${paper.slots.length} sentences`;
+  const stamp = r.step === 'done' ? `<span class="rp-stamp${r.slip ? ' help' : ''}" aria-hidden="true">${r.slip ? '✔️' : '⭐'}</span>` : '';
+  const sheet = `<div class="rp-from"><span class="rp-pet" aria-hidden="true">${esc(paper.pet.e)}</span><span><b>${esc(paper.pet.n)}</b> turned in ${what}${p.data.back[paper.id] && r.step !== 'back' ? ' <span class="muted">(back from your pile)</span>' : ''}</span></div>
+    <div class="rp-paper"><p class="rp-name">${esc(paper.pet.n)} · ${paper.kind === 'list' ? 'Spelling list' : 'Use each spelling word in a sentence'}</p><ol class="rp-lines ${paper.kind === 'list' ? 'rp-list' : 'rp-sents'}">${lines}</ol>${stamp}</div>`;
+  const wrong = t >= 0 ? paper.slots[t].shown : '', right = t >= 0 ? paper.slots[t].right : '';
+  let step = '';
+  if (r.step === 'tap') step = `<p class="rp-ask"><b>Step 1:</b> tap the spelling word that’s misspelled. No mistake? Tap Looks good!</p>
+    <div class="row"><button type="button" class="btn rp-ok" data-rp-tap="-1">✅ Looks good! No mistakes</button></div>`;
+  else if (r.step === 'back') step = `<p class="rp-msg" role="status">${r.msg}</p><p class="muted">📥 This paper goes back on your pile. You’ll check it again in a little bit.</p>
+    <div class="row"><button type="button" class="btn berry" data-rp-next>Next paper ▶</button></div>`;
+  else if (r.step === 'spell') step = `${r.msg ? `<p class="rp-msg" role="status">${r.msg}</p>` : ''}<form class="typed-fill rp-spell" data-rp-spell><label for="rpSpell"><b>Step 2:</b> ✍️ How should “${esc(wrong)}” be spelled? Write it the right way.</label>
+    <div class="row"><input id="rpSpell" type="text" class="typed-input" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="submit" class="btn berry">Check</button></div></form>`;
+  else if (r.step === 'fix') step = r.msg;   // the miss feedback, with the type-it box under it (askFix)
+  else if (r.step === 'kind') step = `${r.msg ? `<p class="rp-msg ok" role="status">${r.msg}</p>` : ''}<p class="rp-ask"><b>Step 3:</b> what kind of mistake did ${esc(paper.pet.n)} make? <span class="rp-pair"><s>${esc(wrong)}</s> → <b>${esc(right)}</b></span></p>
+    <div class="rp-kinds">${paper.choices.map(id => `<button type="button" class="btn" data-rp-kind="${esc(id)}">${esc(PATTERN_SHORT[id])}</button>`).join('')}</div>`;
+  else if (r.step === 'done') step = `<p class="rp-msg${r.kindOk === false ? '' : ' ok'}" role="status">${r.msg}</p><p class="rp-thanks">${esc(paper.pet.e)} <b>${esc(paper.pet.n)}:</b> “${t >= 0 ? `Thanks, teacher! I fixed it: ${esc(right)}.` : 'Thanks, teacher! I checked every word.'}” ${r.slip ? '✔️' : '⭐'}</p>
+    <div class="row"><button type="button" class="btn berry" data-rp-next>${pzLeft(p).length ? 'Next paper ▶' : 'Finish ▶'}</button></div>`;
+  return `<div class="rp-desk">${sheet}<div class="rp-step">${step}</div>${redPenStackHTML(p)}</div>`;
+}
+/* grading a paper: ⭐ with no slips, ✔️ with a little help; the 🔥 streak counts ⭐ papers in a row */
+function redPenGrade(p, run){
+  const r = run.rp; if (!r || p.solved.includes(r.id) || p.helped.includes(r.id)) return;
+  (r.slip ? p.helped : p.solved).push(r.id); (p.data.graded ||= []).push({id:r.id, star:!r.slip});
+  run.streak = r.slip ? 0 : (run.streak || 0) + 1; run.bestStreak = Math.max(run.bestStreak || 0, run.streak);
+  r.step = 'done'; save();
+}
+/* the paper goes back on her pile, after two other papers (or right away when it's the last one) */
+function redPenBack(p, id){
+  const order = p.data.order.filter(x => x !== id), left = order.filter(x => !p.solved.includes(x) && !p.helped.includes(x));
+  const after = left[Math.min(1, left.length - 1)];
+  order.splice(after ? order.indexOf(after) + 1 : order.length, 0, id); p.data.order = order; p.data.back[id] = (p.data.back[id] || 0) + 1; save();
+}
+function redPenTap(i){
+  const run = puzzleRun, p = run?.p, r = run?.rp; if (!p || !r || r.step !== 'tap') return;
+  const paper = p.data.papers.find(x => x.id === r.id); if (!paper) return;
+  if (tapIsRight(paper, i)) {
+    sfx('good');
+    if (paper.target < 0) { r.msg = '✅ Right! Every word on this paper is spelled correctly.'; redPenGrade(p, run); }
+    else { r.step = 'spell'; r.msg = `🖍️ You found it! “${esc(paper.slots[i].shown)}” is misspelled.`; }
+    renderPuzzle(); return;
+  }
+  sfx('bad'); r.slip = true;
+  const again = (p.data.back[r.id] || 0) >= 1;   // already back from her pile once: show her this time
+  const said = i >= 0 ? `“${esc(paper.slots[i].shown)}” is spelled right.` : 'One word on this paper is misspelled.';
+  /* on a paper with no mistake, "not that one" would send her hunting for another (review, Oct 30) */
+  if (!again) { r.msg = paper.target < 0 && i >= 0 ? `${said} Read every word again when this paper comes back.` : `Hmm, not that one. ${said}`; r.step = 'back'; redPenBack(p, r.id); renderPuzzle(); return; }
+  if (paper.target < 0) { r.msg = `${said} This paper has no mistakes, so it Looks good!`; redPenGrade(p, run); renderPuzzle(); return; }
+  r.step = 'spell'; r.msg = `${said} Here’s the misspelled one, circled in red: “${esc(paper.slots[paper.target].shown)}”.`;
+  renderPuzzle();
+}
+function redPenSpell(typed){
+  const run = puzzleRun, p = run?.p, r = run?.rp; if (!p || !r || r.step !== 'spell') return;
+  const paper = p.data.papers.find(x => x.id === r.id), sl = paper?.slots[paper.target]; if (!sl) return;
+  const ok = spellingIsRight(paper, typed);
+  recordVocab(sl.k, ok);   // her answer history and ✅ right this week, like the other word games (never mastery)
+  if (ok) { sfx('good'); r.step = 'kind'; r.msg = `✅ Yes! It’s spelled <b>${esc(sl.right)}</b>.`; renderPuzzle(); return; }
+  sfx('bad'); r.slip = true;
+  if (typed.trim()) { S.vocab.mistakes = [...S.vocab.mistakes, {w:sl.k, typed:typed.trim().slice(0, 40), kinds:spellingPatterns(sl.k, typed), t:Date.now()}].slice(-80); save(); }
+  const v = wordObj(sl.k);
+  r.step = 'fix'; r.msg = `<p class="ela-feedback">Not quite. It’s spelled “<b>${esc(sl.right)}</b>”${v.d ? `: ${esc(v.d)}` : '.'}</p>${wordPicHTML(v)}${wordPartsHTML(sl.k)}`;
+  renderPuzzle();
+  askFix($('#vocabWrap .rp-step'), sl.right, () => { if (puzzleRun?.rp !== r) return; r.step = 'kind'; r.msg = ''; renderPuzzle(); });
+}
+function redPenKind(id){
+  const run = puzzleRun, p = run?.p, r = run?.rp; if (!p || !r || r.step !== 'kind') return;
+  const paper = p.data.papers.find(x => x.id === r.id); if (!paper) return;
+  const ok = patternIsRight(paper, id), pat = patternById(paper.pattern);
+  sfx(ok ? 'good' : 'bad'); if (!ok) r.slip = true; r.kindOk = ok;
+  r.msg = `${ok ? '✅ Yes! ' : `Not quite: it was <b>${esc(PATTERN_SHORT[paper.pattern])}</b>. `}${ok ? `<b>${esc(PATTERN_SHORT[paper.pattern])}.</b> ` : ''}${pat ? esc(pat.tip) : ''}`;
+  redPenGrade(p, run); renderPuzzle();
+}
+document.addEventListener('submit', event => {
+  const f = event.target.closest('form[data-rp-spell]'); if (!f) return;
+  event.preventDefault(); event.stopPropagation();
+  const typed = f.querySelector('input').value; if (!typed.trim()) return;
+  redPenSpell(typed);
+}, true);
 function finishPuzzle(why){
   const run = puzzleRun, p = run?.p; if (!p || !run) return;
   if (puzzleTimer) { clearInterval(puzzleTimer); puzzleTimer = null; }
@@ -13142,15 +13264,17 @@ function finishPuzzle(why){
   const n = p.solved.length - run.startSolved, complete = !pzLeft(p).length, info = PUZZLE_INFO[p.type];
   if (complete && !p.free) p.done = true;
   addVocabExtraTime(run.startedAt);
-  logEvent({k:'vocab', mode:'puzzle', s:n, title:info.name, ...(run.timed ? {min:run.min} : {})});
+  const rp = p.type === 'redpen', graded = rp ? (p.data.graded || []).length - (run.startGraded || 0) : 0;
+  logEvent({k:'vocab', mode:'puzzle', s:n, title:info.name, ...(rp ? {n:graded} : {}), ...(run.timed ? {min:run.min} : {})});
   if (run.extraId) recordChallenge(run.extraId, n, run.min);
   const best = n > (S.vocab.puzzleBest || 0); if (best) S.vocab.puzzleBest = n;
   const coins = Math.floor(n / 2); S.coins += coins; save(); updateHeader();
   const later = p.free ? '' : !complete && p.first === p.day ? '<p>📌 Your puzzle is saved. You can finish it tomorrow.</p>' : !complete ? '<p class="muted">Tomorrow is a brand-new puzzle.</p>' : '';
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>${info.emoji} ${esc(info.name)}</h2><button class="btn small" data-go="home">Back to town</button></div>
-    <div class="sprint-card vocab-card"><div class="big-emoji">${complete ? '🎉' : '⏱️'}</div><h2>${n} word${n === 1 ? '' : 's'} solved${run.timed && why === 'time' ? ` in ${run.min} minute${run.min === 1 ? '' : 's'}!` : '!'}</h2>
-    ${complete ? `<p><b>Puzzle complete!</b>${p.helped.length ? ` (${p.helped.length} with a little help)` : ''}</p>` : ''}${later}
-    ${run.extraId ? challengeBragHTML(run.extraId, n, run.min, 'words') : best && n ? '<p><b>Your best puzzle yet!</b></p>' : ''}
+    <div class="sprint-card vocab-card${rp ? ' rp-end' : ''}"><div class="big-emoji">${complete ? '🎉' : '⏱️'}</div><h2>${rp ? `⭐ ${n} paper${n === 1 ? '' : 's'} graded perfectly` : `${n} word${n === 1 ? '' : 's'} solved`}${run.timed && why === 'time' ? ` in ${run.min} minute${run.min === 1 ? '' : 's'}!` : '!'}</h2>
+    ${rp ? redPenStackHTML(p) + `<p>📝 ${graded} paper${graded === 1 ? '' : 's'} graded${run.bestStreak > 1 ? ` · 🔥 best streak: ${run.bestStreak} in a row` : ''}</p>` : ''}
+    ${complete ? `<p><b>${rp ? 'Every paper graded!' : 'Puzzle complete!'}</b>${p.helped.length ? ` (${p.helped.length} with a little help)` : ''}</p>` : ''}${later}
+    ${run.extraId ? challengeBragHTML(run.extraId, n, run.min, rp ? 'papers' : 'words') : best && n ? '<p><b>Your best puzzle yet!</b></p>' : ''}
     ${coins ? `<p>You earned <b>🪙 ${coins}</b>.</p>` : ''}
     <div class="row"><button class="btn" data-vocab-tab="week">📅 This week’s words</button></div></div>`;
   sfx(complete ? 'coin' : 'good');
@@ -13259,8 +13383,8 @@ function weekTabHTML(){
     + (p && p.day === today && p.done ? `<p>✅ Today’s ${esc(PUZZLE_INFO[p.type].name)} is done!</p>` : `<button type="button" class="btn${checkDue() ? '' : ' berry'}" data-pz-start>${PUZZLE_INFO[todayPuzzleType()].emoji} ${checkDue() ? 'Puzzle' : 'Today’s puzzle'}: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}</button>`);
   return `<p>This week: <b>${wk.words.length} words</b>${weekMixText(wk)}. Practice them all week. <b>Friday</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
     <div class="row">${puzzleLine}</div>
-    <h4 class="vocab-set">🎮 All 5 word games (7 minutes each, on this week’s words)</h4>
-    <div class="row pz-games">${['scramble', 'decode', 'crossword', 'search', 'match'].map(t => `<button type="button" class="btn small${t === todayPuzzleType() ? ' butter' : ''}" data-pz-play="${t}">${PUZZLE_INFO[t].emoji} ${esc(PUZZLE_INFO[t].name)}${t === todayPuzzleType() ? ' (today’s)' : ''}</button>`).join('')}</div>
+    <h4 class="vocab-set">🎮 All 6 word games (7 minutes each, on this week’s words)</h4>
+    <div class="row pz-games">${['scramble', 'decode', 'crossword', 'search', 'redpen', 'match'].map(t => `<button type="button" class="btn small${t === todayPuzzleType() ? ' butter' : ''}" data-pz-play="${t}">${PUZZLE_INFO[t].emoji} ${esc(PUZZLE_INFO[t].name)}${t === todayPuzzleType() ? ' (today’s)' : ''}</button>`).join('')}</div>
     ${wk.check?.done ? `<p>🏁 Mastery check done: <b>${wk.mastered.length} mastered</b> this week! 🎉</p>` : day >= 1 && day <= 4 ? `<p class="muted">Mastery check in ${5 - day} day${5 - day === 1 ? '' : 's'} (Friday).</p>` : ''}
     <div class="vocab-grid">${wk.words.map(chip).join('')}</div><p class="vocab-peek muted" aria-live="polite"></p>
     ${(S.vocab.hall || []).length ? `<details><summary>🏆 Word Hall of Fame: ${S.vocab.hall.length} mastered</summary><div class="vocab-grid">${S.vocab.hall.map(h => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(h.w)?.w || h.w)}</span>`).join('')}</div></details>` : ''}`;
@@ -13285,6 +13409,9 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.hasAttribute('data-pz-stop')) { if (puzzleRun?.timed) { finishPuzzle('stop'); return; } stopPuzzleRun(); vocabTab = 'week'; renderVocab(); return; }
   if (b.dataset.checkHear) { void speakWord(b.dataset.checkHear, b.dataset.checkHow || 'word'); return; }
   const p = puzzleRun?.p; if (!puzzleRun || !p) return;
+  if (b.dataset.rpTap != null) { redPenTap(+b.dataset.rpTap); return; }
+  if (b.dataset.rpKind) { redPenKind(b.dataset.rpKind); return; }
+  if (b.hasAttribute('data-rp-next')) { if (puzzleRun.rp?.step === 'done' || puzzleRun.rp?.step === 'back') { puzzleRun.rp = null; renderPuzzle(); } return; }
   if (b.dataset.pzClue) { puzzleRun.active = +b.dataset.pzClue; renderPuzzle(); return; }
   if (b.dataset.pzCell) {
     const at = b.dataset.pzCell.split(',').map(Number);
@@ -15709,7 +15836,7 @@ function eventText(e){
   const score = e.n ? ` · ${e.s} of ${e.n}` : e.s != null ? ` · ${e.s} right` : '';
   if (e.k === 'assess') return `${stationLabel(e.shop, e.station, e.mode)}${score}${e.passed ? ' ✅ passed' : ''}`;
   if (e.k === 'sprint') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}⚡ Fact Sprint (${(e.skills || []).map(t => DRILLS[t]?.name || t).join(', ')})${score}`;
-  if (e.k === 'vocab') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${e.mode === 'path' && e.title ? `: ${e.title}` : ''}${score}`;
+  if (e.k === 'vocab') return `${e.min ? `⏱️ ${e.min}-minute challenge: ` : ''}🔤 ${VOCAB_MODE_NAME[e.mode] || 'Word Workshop'}${(e.mode === 'path' || e.mode === 'puzzle') && e.title ? `: ${e.title}` : ''}${score}`;
   if (e.k === 'course') return `📚 ${englishCourse(e.course)?.title || e.course}: ${e.title || ''} (${{practice:'practice', quiz:'quiz', think:'think it through', review:'test review'}[e.kind] || 'unit test'})${score}${e.passed ? ' ✅' : ''}${e.fixed ? ' (score fixed by a grown-up)' : ''}`;
   if (e.k === 'review') return `📇 ${englishCourse(e.course)?.title || e.course}: test review flashcards · ${e.s} of ${e.n} known on the first try`;
   if (e.k === 'project') return `📁 Sent: ${e.title}`;

@@ -15,6 +15,7 @@ export default defineConfig({
         ruleCourt: resolve(__dirname, 'arcade/rule-court/index.html'),
         styleRadio: resolve(__dirname, 'arcade/style-radio/index.html'),   // 🎙️ English Unit 10 (docs/ENGLISH-UNIT10.md)
         sentenceSnap: resolve(__dirname, 'arcade/sentence-snap/index.html'),
+        redPen: resolve(__dirname, 'arcade/red-pen/index.html'),   // ✍️ Word Workshop's Red Pen Desk (docs/RED-PEN-DESK.md)
         barnBreeder: resolve(__dirname, 'arcade/barn-breeder/index.html')   // 🐄 the Farm Barn's game (docs/BARN-BREEDER.md)
       }
     }

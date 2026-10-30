@@ -248,7 +248,7 @@ for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', avail
 }
 
 // Owner rule (CLAUDE.md, "Games go in the unit and in the Arcade"): every unit game is also an Arcade game
-for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'greenhouse-keeper':'function openGreenhouse(', 'life-cycle-lab':'function openLifeCycle(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML(', 'book-repair':'function bookRepairCardHTML(', 'rule-court':'function ruleCourtCardHTML(', 'style-radio':'function styleRadioCardHTML(', 'sentence-snap':'function sentenceSnapCardHTML('})) {
+for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'greenhouse-keeper':'function openGreenhouse(', 'life-cycle-lab':'function openLifeCycle(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML(', 'book-repair':'function bookRepairCardHTML(', 'rule-court':'function ruleCourtCardHTML(', 'style-radio':'function styleRadioCardHTML(', 'sentence-snap':'function sentenceSnapCardHTML(', 'red-pen':'function redPenBodyHTML('})) {
   if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
   if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
 }
@@ -270,6 +270,11 @@ catch (error) { problems.push(`The Khan link check could not run: ${error.messag
 try { execFileSync(process.execPath, ['scripts/check-word-pictures.mjs'], { stdio: 'pipe' }); }
 catch (error) { problems.push(`Word pictures check failed (node scripts/check-word-pictures.mjs): ${String(error.stderr || error.message).trim().split('\n').slice(0, 6).join(' | ')}`); }
 need('src/game/game.js', 'function wordPicHTML(', 'the word pictures in Word Workshop (wordPicHTML)');
+// ✍️ Red Pen Desk (ROADMAP F94, docs/RED-PEN-DESK.md): fair papers (one real-kind misspelling, never a real word, one
+// right kind of mistake), a test-wise bot near chance, and the 5-game word game rotation. Runs scripts/check-red-pen.mjs.
+try { execFileSync(process.execPath, ['scripts/check-red-pen.mjs', '--papers', '4000'], { stdio: 'pipe' }); }
+catch (error) { problems.push(`Red Pen Desk check failed (node scripts/check-red-pen.mjs): ${String(error.stderr || error.message).trim().split('\n').slice(0, 6).join(' | ')}`); }
+need('src/game/game.js', 'wordGameForDate(localDay())', 'the word game of the day rotation (wordGameForDate in todayPuzzleType)');
 // Pictures for added words (ROADMAP F92, docs/VOCAB.md "Pictures for added words"): the grown-up's picture box and 🎨 cartoon
 // list behind the PIN, the teacher's picture box and cartoon card, and the free-license photo search.
 need('src/game/game.js', 'function picEditorHTML(', 'the grown-up’s 🖼️ picture box for added words (picEditorHTML)');

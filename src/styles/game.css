@@ -1437,6 +1437,45 @@ a.btn{display:inline-block; text-decoration:none}
 .pz-mw{font-weight:800}
 .pz-mw.sel{background:var(--berry);color:#fff}
 .pz-mw.found,.pz-md.found{background:color-mix(in srgb,var(--mint) 55%,var(--surface));opacity:.75}
+/* ✍️ Red Pen Desk (docs/RED-PEN-DESK.md): a pet's paper on lined paper, the spelling words underlined, a red circle and a stamp */
+.rp-desk{display:flex;flex-direction:column;gap:10px}
+/* room under the graded stack and the end screen's buttons for the floating ✋ I have a question button (review, Oct 30) */
+.rp-desk,.rp-end{padding-bottom:72px}
+.rp-from{display:flex;align-items:center;gap:8px}
+.rp-pet{font-size:2rem;line-height:1;animation:rpHop .5s ease-out}
+@keyframes rpHop{0%{transform:translateY(8px) scale(.9);opacity:.3}60%{transform:translateY(-4px)}100%{transform:none;opacity:1}}
+.rp-paper{position:relative;background:#FFFDF4;color:#2B2B3A;border:1px solid #D9CFA8;border-radius:6px;padding:10px 14px 12px 34px;box-shadow:0 3px 0 rgba(0,0,0,.12);
+  background-image:linear-gradient(90deg,transparent 24px,#F3A6B5 24px,#F3A6B5 26px,transparent 26px),repeating-linear-gradient(transparent 0 31px,#BFD7F0 31px 32px);line-height:32px;font-family:"Patrick Hand","Comic Sans MS",cursive,sans-serif;font-size:1.2rem;overflow-wrap:anywhere}
+.rp-name{margin:0;font-size:1rem;color:#5A5A70;line-height:32px;padding-right:8px}
+.rp-lines{margin:0;padding-left:1.2em}
+.rp-lines li{line-height:32px}
+.rp-list{columns:2 150px;column-gap:18px}
+.rp-word{display:inline;white-space:nowrap;font:inherit;color:inherit;background:none;border:0;padding:0 2px;margin:0;border-bottom:2px solid #7C8BB0;border-radius:2px;line-height:inherit}
+button.rp-word{cursor:pointer;min-height:32px}
+button.rp-word:hover,button.rp-word:focus-visible{background:#FFF0A8;outline:none}
+.rp-circled{border:2.5px solid #D62F45;border-radius:50%;padding:0 6px}
+.rp-fixed s{color:#D62F45;text-decoration-thickness:2px}
+.rp-fixed b{color:#C0213A;font-weight:700}
+.rp-stamp{position:absolute;right:10px;bottom:4px;font-size:2rem;transform:rotate(-14deg);animation:rpStamp .35s ease-out}
+.rp-stamp.help{font-size:1.6rem}
+@keyframes rpStamp{0%{transform:scale(2.2) rotate(-30deg);opacity:0}100%{transform:scale(1) rotate(-14deg);opacity:1}}
+.rp-step{display:flex;flex-direction:column;gap:6px}
+.rp-step p{margin:0}
+.rp-step .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}   /* right side: clear of the floating ✋ button */
+.rp-spell .row{flex-wrap:nowrap}
+.rp-spell input{flex:1;min-width:0;font-size:1.1rem;padding:8px;border-radius:8px;border:2px solid var(--edge)}
+.rp-msg{font-weight:700}
+.rp-msg.ok{color:var(--mint-ink,#1F3D33)}
+.rp-pair{white-space:nowrap}
+.rp-pair s{color:#D62F45}
+.rp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rp-kinds .btn{white-space:normal;text-align:center;min-height:48px}
+.rp-ok{background:color-mix(in srgb,var(--mint) 45%,var(--surface))}
+.rp-thanks{background:color-mix(in srgb,var(--butter) 40%,var(--surface));border-radius:10px;padding:6px 10px}
+.rp-stack{display:flex;flex-wrap:wrap;gap:8px 0;padding:6px 0 6px 8px}
+.rp-done{position:relative;width:34px;height:42px;margin-left:-8px;background:#FFFDF4;border:1px solid #D9CFA8;border-radius:4px;box-shadow:1px 2px 0 rgba(0,0,0,.15);display:grid;place-items:center;font-size:1rem;transform:rotate(calc((var(--i) * 7 % 11 - 5) * 1deg))}
+.rp-done b{position:absolute;left:0;bottom:-6px;font-size:.75rem}
+.rp-done.star{border-color:#E8B400}
 .fix-it{margin-top:8px;padding:8px;border:2px dashed var(--berry);border-radius:10px}
 .fix-it p{margin:0 0 6px}
 .fix-it .row{display:flex;gap:6px;flex-wrap:nowrap}
