@@ -326,7 +326,7 @@ Single-attempt quiz pass chance (best bot) after: The sound of language Quiz 5%,
 
 Owner rule (CONTENT-RULES.md, docs/BLIND-REVIEW.md): the unit test now draws **only** from questions written for it, which never appear in practice, quizzes, the test review, flashcards or games. Each retake shows reserved questions she hasn’t had on an earlier try first, then the least recently seen (`pickTestItems`, `S.testSeen`). This unit has no share holdout any more: every original question is back in practice. A unit-test miss still names the lesson and never shows the right answer.
 
-**20 new questions** (soundOfLanguage 10, styleTechnique 10); 9 at level 3 (45%). In the bank: `reserveForTest(STYLE_QUESTIONS, …)` in src/shared/questionBanks.js, marked `testOnly:true`.
+**34 new questions** (soundOfLanguage 17, styleTechnique 17: 10 each at first, 7 each added in round 2); 16 at level 3 (47%). In the bank: `reserveForTest(STYLE_QUESTIONS, …)` in src/shared/questionBanks.js, marked `testOnly:true`.
 
 **Blind score: 20/20.** A fresh reviewer who never saw the key or the writer’s notes answered every question from a keyless, shuffled view. No key disagreements; 2 flags (too-easy or giveaway), all decided below.
 
@@ -355,7 +355,7 @@ Made before the questions went into the bank, so no saved id changes. The change
 
 - **soundOfLanguage:t4 and the sound items**: They assume American pronunciation, as the unit already does (“heard/hearth”, “steak/grape”).
 - **styleTechnique:t4**: The wrong answer “Grandpa’s truck is older than I am.” is meant as a literal statement; a reader could take it as mild exaggeration.
-- **Pool size**: 10 reserved questions per lesson against 9 per lesson on the test: a second try is mostly repeats and a third try is all repeats. See the bot result below; this unit needs about 4–8 more reserved questions per lesson (blind-solved) to stay clean through three tries.
+- **Pool size**: 10 reserved questions per lesson against 9 per lesson on the test: a second try is mostly repeats and a third try is all repeats. See the bot result below; this unit needs about 4–8 more reserved questions per lesson (blind-solved) to stay clean through three tries. Done in round 2: 7 more per lesson (17 each), and the memorizer now fails on every try.
 
 ### Test-wise bot, before → after
 
@@ -370,9 +370,33 @@ Made before the questions went into the bank, so no saved id changes. The change
 
 Share of each try’s questions that were new to her unit tests, after: 100% / 11.1% / 0%. A retake repeats 88.9% of the previous try’s questions (before: 34.6%).
 
-**The memorizer still passes the line on a third try.** The test takes 9 questions per lesson and the pool has 10, so try 2 is about 1 new question in 9 and try 3 is all repeats; a student who remembers which answers were marked right, and which choice was marked wrong, gets about 76% on try 3 against a line of 68% (pass mark 83% minus 15). In a simulation with 14 reserved questions per lesson the third try fell to about 60%. This unit needs about 4–8 more reserved questions per lesson, written and blind-solved like these, before it meets the rule on every try.
+**The memorizer still passed the line on a third try (fixed in round 2, below).** The test takes 9 questions per lesson and the pool has 10, so try 2 is about 1 new question in 9 and try 3 is all repeats; a student who remembers which answers were marked right, and which choice was marked wrong, gets about 76% on try 3 against a line of 68% (pass mark 83% minus 15). In a simulation with 14 reserved questions per lesson the third try fell to about 60%. This unit needs about 4–8 more reserved questions per lesson, written and blind-solved like these, before it meets the rule on every try.
 
-**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+**Blind solve of the fixes:** done in round 2 (below).
+
+### Round 2: blind solve of the fixes, Oct 30, 2026
+
+**Blind score: 19/19.** A fresh reviewer solved the 5 questions fixed above plus the 14 new questions below from a keyless, shuffled view (`round2-view.md`, 58 questions across the five units, no sign of which were new or changed). No key disagreements; 2 flags (too-easy).
+
+**Fixes (2), ids kept:**
+
+- **styleTechnique:t3** (`style:styleTechnique:1p095d6`), FIX (too-easy at level 3): every wrong answer used obvious slang (“kinda”, “gonna”, “whole deal”). Now each wrong answer slips in a subtler way: talking to the reader (“Stay tuned for the big vote next month!”), adding the writer’s feelings (“…next month, thank goodness.”), or adding an opinion (“Honestly, the council should vote…”). The key is a middle length.
+- **styleTechnique:t13** (new), FIX (too-easy at level 3): “chilled for a bit” was the only slang in the lab report. Now the slip is a quieter one, “After an hour, it was down to a nice, cool 22°C.”, beside formal sentences with numbers and a longer formal one, so the key is neither the longest nor the shortest choice.
+
+The question(s) changed in this round were not blind-solved again: this run could not start a fresh agent, so a fresh reviewer still needs to solve them.
+
+### Test-wise bot, final (after round 2)
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500` (exit 0), rerun after the round-2 fixes and Unit 10’s new questions. The line is the pass mark minus 15 points; a non-memorizer strategy also fails if it beats chance by more than 10 points.
+
+| assessment | pass mark | chance | best strategy (not the memorizer) | verdict |
+|---|---|---|---|---|
+| The sound of language Quiz (4 q) | 75% | 23.1 | longest 28.7 | holds |
+| Style and technique Quiz (4 q) | 75% | 23.8 | middle 33.4 | holds |
+| Unit test (18 q) | 83.3% | 25 | learnedXU 33.5 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 33.4 / 36.6 / 56.2 (line 68.3%) | holds |
+
+**The memorizer now fails on every try.** With 17 reserved questions per lesson against 9 on the test, try 2 is 88.9% new questions and the third try reaches 56.2% against a line of 68.3% (before the 14 new questions: 75.7%, a FAIL). The closest strategy is learnedXU on the unit test at 33.5% against a chance-plus-10 limit of 35%, and middle length on the Style and technique Quiz at 33.4%.
 
 ### The questions (right answer in bold)
 
@@ -398,6 +422,20 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
    **Slow and low it rolls through the meadow.** · The brook babbles by the big stones. · Gurgle! Splash! goes the stream. · Down to a lake by the hill.
 10. (level 2) A writer wants readers to hear an old car. Which sentence does that with onomatopoeia?  
    **The old car sputtered all the way up the hill.** · The old car struggled up the hill. · The old car crept slowly up the steep hill. · The old car was noisy on the hill.
+11. (level 2) A comic book panel shows a balloon bursting. Which word in the sound bubble is onomatopoeia?  
+   **Pop!** · Gone! · Look! · Yikes!
+12. (level 2) A pet shop owner wants a name that uses alliteration. Which name should she pick?  
+   **Polly’s Parrot Palace** · The Bright Goldfish Store · Snug Kitten Lounge · The Muddy Dog Bath
+13. (level 3) Say each name out loud. Which name alliterates (both parts start with the same sound)?  
+   **Kate Collins** · Cindy Cole · Gene Grant · Shea Smith
+14. (level 3) Say each line out loud (American pronunciation). Which line repeats one vowel sound even though that sound is spelled in different ways?  
+   **Kay ate eight grapes.** · Pat grabbed a black hat. · Pete met ten wet pets. · Paul pulled a heavy pole.
+15. (level 2) Which device does this sentence lean on most, and what does it do? During the storm, hail pinged on the roof, the shutters thumped, and the dog yelped.  
+   **onomatopoeia: it lets readers hear the storm** · alliteration: nearby words start with one sound · assonance: one vowel sound repeats in nearby words · overstatement: it makes the storm seem worse
+16. (level 3) Say this line out loud. Which sound does it alliterate on? Kevin knew nine knights.  
+   **n, in knew, nine, and knights** · k, in Kevin, knew, and knights · k, in Kevin and knights · It doesn’t; its first letters differ.
+17. (level 2) In American pronunciation, which pair of words has assonance but does NOT rhyme?  
+   **“lake” and “paint”** · “lake” and “cake” · “lake” and “lack” · “lake” and “like”
 
 **styleTechnique**
 
@@ -406,7 +444,7 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
 2. (level 2) Which words best fill the blank on a sign in a museum? Visitors may not ___ the paintings.  
    **touch** · lay a finger on · fiddle with · mess with
 3. (level 3) Which sentence keeps this news report at one level of formality? The city council met on Tuesday to discuss the new bus routes. Several residents spoke in favor of the plan. ___  
-   **The council will vote on the routes next month.** · The council will vote on the routes next month, which is kinda soon. · They’ll vote on the whole deal soon. · The council’s gonna vote on the routes next month.
+   **The council will vote on the routes next month.** · Stay tuned for the big vote next month! · The council will vote on the routes next month, thank goodness. · Honestly, the council should vote on the routes next month.
 4. (level 2) Which sentence uses overstatement?  
    **Grandpa’s truck is older than the dinosaurs.** · Grandpa’s truck is older than I am. · Grandpa’s truck is thirty years old. · Grandpa’s truck is the oldest one on our street.
 5. (level 3) Ana’s cake sank in the middle, burned black, and set off the smoke alarm. She says, “It’s not my best work.” What does Ana really mean?  
@@ -421,4 +459,17 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
    **Could you please hold the dragon book for me? Thank you.** · Could you please hold the dragon book for me? Thx! · Can you hold that dragon book for me? Thanks a bunch! · Please hold the book for me. Thank you.
 10. (level 2) Which writing task calls for the most casual style?  
    **A note on the fridge telling your brother you went to the park** · An email asking your principal about joining the chess club · A letter to the newspaper about a pothole on your street · A thank-you letter to the author who visited your school
-
+11. (level 2) Which sentence fits best in a letter asking to volunteer at the animal shelter?  
+   **I have walked my neighbor’s dogs for two years.** · I’ve walked my neighbor’s dogs for, like, two years. · I have walked my neighbor’s pups for two years, no biggie. · I have walked my neighbor’s dogs for two whole years, which is a lot!
+12. (level 2) Dad says, “I’ve asked you a million times to hang up your coat.” Why does he exaggerate?  
+   **To show how annoyed he is** · To give the exact number of times · To say he has asked only once before · To show he doesn’t mind the coat on the floor
+13. (level 3) Which sentence slips out of the formal style of this lab report? We heated 200 mL of water to 100°C. We recorded the temperature with a thermometer every ten minutes. The temperature dropped quickly at first. After an hour, it was down to a nice, cool 22°C.  
+   **After an hour, it was down to a nice, cool 22°C.** · We heated 200 mL of water to 100°C. · We recorded the temperature with a thermometer every ten minutes. · The temperature dropped quickly at first.
+14. (level 2) A big new “Drive Slowly” billboard goes up beside the highway. The next day, a speeding truck knocks it down. What kind of irony is this?  
+   **situational irony** · verbal irony · dramatic irony · overstatement
+15. (level 3) Kai searches the whole house for his missing cat. Which detail would create dramatic irony?  
+   **Readers know the cat is asleep in Kai’s backpack, but Kai doesn’t.** · Kai, who runs a lost-pet club, can’t find his own cat. · Kai looks under the bed and says, “Wonderful, more dust.” · Kai finally finds the cat asleep in his backpack.
+16. (level 3) Which sentence is a literal statement, NOT an overstatement?  
+   **The pool was so cold that my lips turned blue.** · The pool was colder than the North Pole. · I turned into an ice cube in that pool. · The pool water was a million degrees below zero.
+17. (level 3) A cooking-show judge takes one bite of a soup, spits it out, and gulps down a whole glass of water. Which comment from the judge is an understatement?  
+   **“It’s a bit salty.”** · “This soup is too salty to eat.” · “That soup was saltier than the ocean.” · “Next time, use less salt in your soup.”

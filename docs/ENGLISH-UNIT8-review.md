@@ -637,7 +637,40 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
 
 Ten lessons × 8 reserved questions against 2 per lesson on the test: four fully fresh tries before anything repeats.
 
-**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+**Blind solve of the fixes:** done in round 2 (below).
+
+### Round 2: blind solve of the fixes, Oct 30, 2026
+
+**Blind score: 5/5.** A fresh reviewer solved the 5 questions fixed above from a keyless, shuffled view (`round2-view.md`, 58 questions across the five units, no sign of which were new or changed). No key disagreements; no flags.
+
+**Fixes:**
+
+None needed.
+
+**Reviewer notes (not flagged):**
+
+- **sentenceTypes:t7** (JUDGMENT, listed below): reviewer answered C (the plain command) at confidence 4.
+- **subjectPredicate:t5**: KEEP. Some books call only the main verb (“visit”) the simple predicate, but that choice isn’t offered, so “will visit” is the only right one.
+- **rearrangeSentences:t2**: KEEP. “for” meaning “because” sounds formal, but it is one of the FANBOYS joining words the lesson teaches, and it is the only choice that makes sense.
+
+**Judgment calls for Andy:**
+
+- **sentenceTypes:t7**: “Would everyone please line up by the door?” is a question in form; some curricula also call a polite request like this an indirect command. Reading 1 (key): only “Line up by the door, everyone.” gives it as a command. Reading 2: the polite question also works as a command. The prompt asks which sentence “gives that as a command”, and the reviewer took reading 1.
+
+### Test-wise bot, final (after round 2)
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500` (exit 0), rerun after the round-2 fixes and Unit 10’s new questions. The line is the pass mark minus 15 points; a non-memorizer strategy also fails if it beats chance by more than 10 points.
+
+| assessment | pass mark | chance | best strategy (not the memorizer) | verdict |
+|---|---|---|---|---|
+| Sentence types Quiz (4 q) | 75% | 22 | learnedCV 29.4 | holds |
+| Types of sentences Quiz (4 q) | 75% | 22.3 | specific 26 | holds |
+| Subjects and predicates Quiz (4 q) | 75% | 21.1 | notVote 27.6 | holds |
+| Phrases and clauses Quiz (4 q) | 75% | 22.5 | learnedXU 31.3 | holds |
+| Unit test (20 q) | 85% | 25 | learnedXU 27.7 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 85% | | 27.7 / 27.5 / 27.1 (line 70%) | holds |
+
+Unchanged from the first run: no strategy comes near the line, and the pool gives four fully fresh tries.
 
 ### The questions (right answer in bold)
 

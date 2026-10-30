@@ -409,7 +409,33 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
 
 Six lessons × 8 reserved against 3 per lesson: two fully fresh tries; try 3 is two-thirds fresh.
 
-**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+**Blind solve of the fixes:** done in round 2 (below).
+
+### Round 2: blind solve of the fixes, Oct 30, 2026
+
+**Blind score: 6/6.** A fresh reviewer solved the 6 questions fixed above from a keyless, shuffled view (`round2-view.md`, 58 questions across the five units, no sign of which were new or changed). No key disagreements; no flags.
+
+**Fixes:**
+
+None needed.
+
+**Reviewer notes (not flagged):**
+
+- **subjVerbAgree:t5**: KEEP. “Neither of the concert tickets was cheap enough” is the formal standard; everyday speech also says “were”, but the keyed error (“The cost of the concert tickets were…”) is wrong either way.
+
+### Test-wise bot, final (after round 2)
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500` (exit 0), rerun after the round-2 fixes and Unit 10’s new questions. The line is the pass mark minus 15 points; a non-memorizer strategy also fails if it beats chance by more than 10 points.
+
+| assessment | pass mark | chance | best strategy (not the memorizer) | verdict |
+|---|---|---|---|---|
+| Agreement Quiz (4 q) | 75% | 21.6 | learnedCV 26 | holds |
+| Fragments and run-ons Quiz (4 q) | 75% | 22 | middle 30.7 | holds |
+| Dangling modifiers and parallel structure Quiz (4 q) | 75% | 22.5 | notLongest 24.9 | holds |
+| Unit test (18 q) | 83.3% | 25 | shortest 29.2 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 29.1 / 30.3 / 38.4 (line 68.3%) | holds |
+
+No strategy comes near the line; the memorizer’s third try reaches 38.4% against a line of 68.3%.
 
 ### The questions (right answer in bold)
 

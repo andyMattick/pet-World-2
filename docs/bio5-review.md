@@ -475,7 +475,30 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 5
 
 Six lessons × 6 reserved against 4 per lesson: try 2 is half fresh and try 3 is all repeats, yet the memorizer stays below the line (about 60% against 64%). Two more reserved questions per lesson would give two fully fresh tries.
 
-**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+**Blind solve of the fixes:** done in round 2 (below).
+
+### Round 2: blind solve of the fixes, Oct 30, 2026
+
+**Blind score: 10/10.** A fresh reviewer solved the 10 questions fixed above from a keyless, shuffled view (`round2-view.md`, 58 questions across the five units, no sign of which were new or changed). No key disagreements; 1 flag (giveaway).
+
+**Fixes:**
+
+- **sexVarU:t2** (`bio5:sexVarU:9xkzip`), FIX (giveaway): “They are a new mix” and “Each daughter has a new mix of her mother’s genes” said the same thing, so both could be crossed off, “like clones” pointed at the key, and the key was the longest choice. Now: **Their genes are almost exactly the same as hers** · Their genes are a reshuffled mix of their mother’s · Half their genes come from a father aphid · They carry only half as many genes as their mother. The key is now a middle length, and each wrong answer is a different misconception.
+
+The question(s) changed in this round were not blind-solved again: this run could not start a fresh agent, so a fresh reviewer still needs to solve them.
+
+### Test-wise bot, final (after round 2)
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500` (exit 0), rerun after the round-2 fixes and Unit 10’s new questions. The line is the pass mark minus 15 points; a non-memorizer strategy also fails if it beats chance by more than 10 points.
+
+| assessment | pass mark | chance | best strategy (not the memorizer) | verdict |
+|---|---|---|---|---|
+| Quiz 1 (4 q) | 75% | 21.2 | overlap 25.6 | holds |
+| Quiz 2 (4 q) | 75% | 20.1 | learnedCV 29.5 | holds |
+| Unit test (24 q) | 79.2% | 25 | learnedXU 31.2 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 79.2% | | 31 / 43 / 60.4 (line 64.2%) | holds |
+
+Every strategy fails; the memorizer’s third try reaches 60.4% against a line of 64.2% (the closest margin in these five units; two more reserved questions per lesson would widen it).
 
 ### The questions (right answer in bold)
 
@@ -529,7 +552,7 @@ Six lessons × 6 reserved against 4 per lesson: try 2 is half fresh and try 3 is
 1. (level 2) One farmer plants garlic cloves split from a single bulb. Another plants seeds from pumpkin flowers that bees pollinated. Which crop will most likely show more genetic variety, and why?  
    **The pumpkins, since each seed got a new mix from two parents** · The garlic, since each clove grows in its own spot in the soil · The pumpkins, since bees add genes of their own to the seeds · The garlic, since a bulb holds cloves from many parent plants
 2. (level 2) In summer, the aphids on the barn’s rose bushes are females that give birth to daughters without mating. How do the daughters’ genes compare with their mother’s?  
-   **They are nearly identical to their mother’s genes, like clones** · They are a new mix · Each daughter has a new mix of her mother’s genes · Each daughter has half as many genes as her mother
+   **Their genes are almost exactly the same as hers** · Their genes are a reshuffled mix of their mother’s · Half their genes come from a father aphid · They carry only half as many genes as their mother
 3. (level 3) In which situation would asexual reproduction most likely help a plant more than sexual reproduction would?  
    **Spreading fast across a field where conditions stay steady** · Surviving a new plant disease that has just reached the farm this year · Coping with weather that changes a lot from year to year · Producing seedlings with many new mixes of traits
 4. (level 3) Two goat kids have the same mother and father. One has its mother’s long, droopy ears, and the other doesn’t. Both got 30 chromosomes from their mother. What best explains the difference?  
