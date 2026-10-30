@@ -34,9 +34,9 @@ _Lesson:_ A declarative sentence makes a statement (The bus is late.). An interr
 11. (level 3) How many of these are imperative sentences? (1) Sit down. (2) You sat down. (3) Please sit here. (4) Where should I sit?
    **Two** · One · Three · Four
 12. (level 3) Which sentence is exclamatory?
-   **What a huge dog that is!** · Stop that huge dog! · Is that dog huge? · That dog is huge, isn’t it?
+   **What a huge dog that is!** · Look at that huge dog. · Is that dog huge? · That dog is huge, isn’t it?
 13. (level 3) Ana wrote, “Turn left at the bakery.” She wants to ask for directions instead of giving them. Which sentence does that?
-   **Where should I turn after the bakery?** · You turn left at the bakery. · Please turn left when you get to the bakery. · I will turn left at the bakery.
+   **Where should I turn after the bakery?** · Turn left at the bakery, okay? · Please turn left when you get to the bakery. · Did you turn left at the bakery?
 14. (level 3) Which sentence has the wrong end mark?
    **Do you know who wrote this book.** · Tell me who wrote this book before the bell rings. · I know who wrote this book. · Who wrote this book?
 
@@ -59,7 +59,7 @@ _Lesson:_ A simple sentence has one independent clause: one subject-and-verb pai
 3. (level 1) Which word can join two independent clauses after a comma?
    **but** · because · when · although
 4. (level 2) Is this sentence simple or compound? My aunt and my uncle drove to the beach and swam all day.
-   **Simple, with a compound subject and a compound verb** · Compound, because it has two subjects and two different verbs · Compound, because it uses the word and twice · Simple, because it has just one verb
+   **Simple, with a compound subject and a compound verb** · Compound, with a compound subject and a compound verb · Compound, because it uses the word and twice · Simple, with a compound subject and just one verb
 5. (level 2) Which sentence is a compound sentence?
    **I wanted to swim, but the pool was closed.** · I wanted to swim in the pool after lunch. · After lunch, I wanted to swim in the pool. · My brother and I wanted to swim but stayed home.
 6. (level 2) Which compound sentence is punctuated correctly?
@@ -98,7 +98,7 @@ _Lesson:_ Join two simple sentences into a compound sentence with a comma and a 
 3. (level 1) Which shows this compound sentence split into two simple sentences? The lake froze, so we went skating.
    **The lake froze. We went skating.** · The lake froze so. We went skating. · The lake. Froze, so we went skating. · The lake froze, so. We went skating.
 4. (level 2) Which sentence combines these into one simple sentence? Rosa washed the car. Rosa dried the car.
-   **Rosa washed and dried the car.** · Rosa washed the car, and Rosa dried the car. · Rosa washed the car Rosa dried it. · Rosa washed, the car and dried it.
+   **Rosa washed and dried the car.** · Rosa washed the car, and Rosa dried the car. · Rosa washed the car and Rosa dried the car. · Rosa washed the car and then she dried it.
 5. (level 2) Which joining word shows a choice? We can walk to the park, ___ we can ride our bikes.
    **or** · so · but · yet
 6. (level 2) Which combined sentence keeps the meaning? It rained all morning. The game went on anyway.
@@ -114,7 +114,7 @@ _Lesson:_ Join two simple sentences into a compound sentence with a comma and a 
 11. (level 3) Which is NOT a correct way to combine these? Jamal set the table. His sister cooked dinner.
    **Jamal set the table, his sister cooked dinner.** · Jamal set the table, and his sister cooked dinner. · Jamal set the table; his sister cooked dinner. · Jamal set the table while his sister cooked dinner.
 12. (level 3) Which correctly splits this into two simple sentences? The cat climbed the tree, but it couldn’t get down.
-   **The cat climbed the tree. It couldn’t get down.** · The cat climbed the tree, but. It couldn’t get down. · The cat climbed. The tree, but it couldn’t get down. · The cat climbed the tree but it. Couldn’t get down.
+   **The cat climbed the tree. It couldn’t get down.** · The cat climbed the tree. Couldn’t get down. · The cat climbed the tree, it couldn’t get down. · The cat climbed the tree. But couldn’t get down.
 13. (level 3) Which joining word fits? Maya didn’t like the soup, ___ did she like the salad.
    **nor** · or · but · so
 14. (level 3) Which rewrite turns this compound sentence into a simple sentence with the same meaning? Theo grabbed his coat, and he ran out the door.
@@ -260,7 +260,7 @@ _Lesson:_ A clause is a group of words with a subject and its verb (the dog bark
 4. (level 2) Which group of words is a phrase?
    **after the long, boring meeting** · after the meeting ended · the meeting ended · because the meeting ran very late
 5. (level 2) Is “running through the sprinklers” a phrase or a clause?
-   **A phrase, because nobody in it is doing the running** · A clause, because it has a verb · A clause, because it has more than three words in it · A phrase, because it has no nouns
+   **A phrase, because nobody in it is doing the running** · A clause, because running is an action verb · A clause, because it has a subject and a verb in it · A phrase, because it has no nouns
 6. (level 2) Which group of words is a clause?
    **until the sun came up** · before sunrise · at the crack of dawn · with the bright rising sun above
 7. (level 2) How many clauses are in this sentence? We ate lunch after the show ended.
@@ -338,23 +338,23 @@ _Lesson:_ Put a describing phrase or clause right next to the word it describes.
 4. (level 2) Which sentence is clear?
    **Dad found his old coat hanging in the closet.** · Hanging in the closet, Dad found his old coat. · Dad, hanging in the closet, found his old coat. · Hanging in the closet, his old coat Dad found.
 5. (level 2) Which revision fixes this sentence? We gave the cookies to the neighbors that we baked.
-   **We gave the cookies that we baked to the neighbors.** · We gave the neighbors to the cookies that we baked. · That we baked, we gave the cookies to the neighbors. · We gave the cookies to the neighbors, that we baked.
-6. (level 2) What does this sentence seem to say? Covered in mud, Mom washed the dog.
-   **Mom was covered in mud.** · The dog was covered in mud. · The mud covered the house. · Mom and the dog both dislike mud.
+   **We gave the cookies that we baked to the neighbors.** · We gave the neighbors that we baked the cookies. · That we baked, we gave the cookies to the neighbors. · We gave the cookies to the neighbors, which we baked.
+6. (level 2) Read it word for word. What does this sentence accidentally say? Covered in mud, Mom washed the dog.
+   **Mom was covered in mud.** · The dog was covered in mud. · Mom washed the dog because it was muddy. · Mom covered the dog in mud.
 7. (level 2) Which sentence is clear?
-   **Barking loudly, the dog chased the mail truck.** · Barking loudly, the mail truck was chased by the dog. · The mail truck, barking loudly, was chased by the dog. · Barking loudly, the truck chased the dog.
+   **Barking loudly, the dog chased the mail truck.** · Barking loudly, the mail truck was chased by the dog. · The mail truck, barking loudly, was chased by the dog. · Barking loudly, the mail truck sped away from the dog.
 8. (level 2) Which sentence puts “with a long tail” in the right place?
    **The monkey with a long tail ate a banana.** · The monkey ate a banana with a long tail. · With a long tail, a banana was eaten by the monkey. · The monkey ate with a long tail a banana.
 9. (level 3) Which sentence is clear?
    **While I walked to the park, a dog followed me.** · Walking to the park, a dog followed me. · While walking to the park, a dog followed me. · Walking to the park, a dog behind me followed along.
 10. (level 3) Which revision fixes this sentence? I read about the bear that escaped in the newspaper.
-   **I read in the newspaper about the bear that escaped.** · I read about the bear in the newspaper that escaped. · I read in the bear about the newspaper that escaped. · That escaped, I read about the bear in the newspaper.
+   **I read in the newspaper about the bear that escaped.** · I read about the bear in the newspaper that escaped. · I read about the bear, which escaped in the newspaper. · I read about the bear in the newspaper, which escaped.
 11. (level 3) Which sentence is clear?
-   **The girl in the blue dress sang a song.** · The girl sang a song in the blue dress. · In the blue dress, a song was sung by the girl. · The girl sang in the blue dress a song.
+   **The girl in the blue dress sang a song.** · The girl sang a song in the blue dress. · Wearing the blue dress, the song was sung by the girl. · The girl sang a song wearing the blue dress.
 12. (level 3) What is wrong with this sentence? After finishing my homework, the TV was turned on.
    **It doesn’t say who finished the homework.** · It needs a semicolon after homework instead of a comma. · The verb is in the wrong tense. · It has too many commas in it.
 13. (level 3) Which revision fixes this sentence? Full of fresh water, the dog drank from the bowl.
-   **The dog drank from the bowl full of fresh water.** · Full of fresh water, the bowl drank the dog. · The dog, full of fresh water, drank from the bowl. · Full of fresh water drank the dog from the bowl.
+   **The dog drank from the bowl full of fresh water.** · The dog drank full of fresh water from the bowl. · The dog, full of fresh water, drank from the bowl. · Full of fresh water, the dog happily drank from its bowl.
 14. (level 3) Which sentence is clear?
    **Flying over the city, we spotted the stadium.** · Flying over the city, the stadium was easy to spot. · The stadium, flying over the city, was easy to spot. · We spotted the stadium, which was flying over the city.
 
@@ -525,3 +525,10 @@ Right answers in bold. Shelf 2 builds its orders from the scenes below; every co
 31. Tap the noun the relative clause describes. I met a **girl** whose dog can skateboard. (“Whose dog can skateboard” tells which girl.)
 32. Tap the noun the relative clause describes. The **cake** that Ana baked was delicious. (“That Ana baked” tells which cake.)
 
+## Blind review, Oct 30, 2026
+
+A separate reviewer answered all 160 scored items from the student view, without the key. Score: **160/160**, with no key disagreements. Full table: /home/claude/blind/report.md.
+
+Fixed (12): the “Which sentence is exclamatory?” choice “Stop that huge dog!” (some texts call a forceful command exclamatory) is now “Look at that huge dog.” The phrase/clause item no longer has silly reasons. Garbled or absurd distractors are replaced with real mistakes in the bakery-directions, compound-terms, Rosa, cat-and-tree, cookies, barking-dog, bear-in-the-newspaper, blue-dress and water-bowl items. “What does this sentence seem to say?” now asks what it *accidentally* says, word for word, and its id changes (1i7dkkm → 1n1wdc8).
+
+Judgment calls for Andy: (1) The phrase/clause key reads “A phrase, because nobody in it is doing the running.” “…because it has no subject” is plainer, but changing it would change the id. (2) The simple predicate of “My sister and I have been practicing all week” is keyed as “have been practicing”, which matches Khan; some older texts take the main verb only.

@@ -74,7 +74,7 @@ const shuffleR = (list, rnd) => { const a = [...list]; for (let i = a.length - 1
 const ri = (lo, hi, rnd) => lo + Math.floor(rnd() * (hi - lo + 1));
 /** "a" or "an" before a genotype read letter by letter ("an RW cow", "a Pp bull") */
 const anW = w => (/^[aeiou]/i.test(w) ? 'an' : 'a');
-const anG = g => (/^[AEFHILMNORSX]/.test(g) ? 'an' : 'a');
+const anG = g => (/^[AEFHILMNORSX]/i.test(g) ? 'an' : 'a');   // read letter by letter, so "an rr hen" too
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 /** multiple choice with the right answer first, shuffled; the right answer moves with it */
 function mcQ(prompt, right, wrongs, rnd, extra = {}){
@@ -87,6 +87,8 @@ const describe = (traitId, g) => {   // "a Pp bull" style words, with the phenot
   const t = TRAITS[traitId], p = phenotype(traitId, g);
   return t.kind === 'dom' ? (p === t.domW ? t.dom : t.rec) : `${p} ${traitId === 'andalusian' ? 'feathers' : 'coat'}`;
 };
+/* the vocabulary rule for the phenotype question: names the alleles and the kind of dominance, not the in-between look */
+const PHENO_RULE = {roan:'In Shorthorn cattle, the red (R) and white (W) coat alleles are codominant, so both colors show.', andalusian:'In Andalusian chickens, the black (B) and white (W) feather alleles show incomplete dominance, so the two colors blend.'};
 const ruleText = traitId => { const t = TRAITS[traitId]; return t.rule || (t.kind === 'dom' ? `In ${t.animal}, ${t.dom} (${t.A}) is dominant over ${t.rec} (${t.a}).` : t.note); };
 
 /* ---------- figures ---------- */
@@ -210,8 +212,9 @@ const KINDS = {
       const right = sex ? 'A sex cell (egg or sperm) with one chromosome from each pair' : 'A body cell with two chromosomes of each pair';
       const wrongs = sex ? ['A body cell with two chromosomes of each pair', 'A body cell that has lost half of its chromosomes and half its genes', 'A sex cell with two chromosomes from each pair'] : ['A sex cell (egg or sperm) with one chromosome from each pair', 'A sex cell with two chromosomes from each pair', 'A body cell with one chromosome from each pair'];
       return mcQ(`${cap(anW(one))} ${one}’s body cells have ${n} chromosomes. Under the barn microscope, ${anW(one)} ${one} cell has ${count} chromosomes. Which kind of cell is it most likely to be?`, right, wrongs, rnd); }],
-    spermAllele:[3, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], g = t.A + t.a, which = pick([t.A, t.a], rnd);
-      return fillQ(`${ruleText(id)} ${cap(anG(g))} ${g} ${t.male}’s two ${t.A}/${t.a} alleles sit on one pair of chromosomes. Each sperm cell gets one chromosome from that pair. What fraction of his sperm cells carry the ${which} allele?`, probAccept(1, 2)); }],
+    spermAllele:[3, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), g = pick([Aa, Aa, AA, aa], rnd), which = pick([t.A, t.a], rnd);
+      const n = [...g].filter(c => c === which).length;   // each sperm gets one chromosome of the pair, so n of his 2 alleles
+      return fillQ(`${ruleText(id)} ${cap(anG(g))} ${g} ${t.male}’s two alleles for this gene sit on one pair of chromosomes. What fraction of his sperm cells carry the ${which} allele?`, probAccept(n, 2)); }],
     mule:[3, rnd => { const horseMom = rnd() < 0.5;
       return fillQ(`Horses have 64 chromosomes in each body cell and donkeys have 62. A ${horseMom ? 'mule has a horse mother and a donkey father' : 'hinny has a donkey mother and a horse father'}. How many chromosomes are in each of its body cells?`, ['63']); }]
   },
@@ -220,7 +223,7 @@ const KINDS = {
     kind:[1, rnd => { const m = makeMutation(rnd, pick(['sub', 'ins', 'del'], rnd));
       const names = {sub:'One letter was swapped for a different letter', ins:'One extra letter was added to the gene', del:'One letter was removed from the gene'};
       const wrong = Object.keys(names).filter(k => k !== m.kind).map(k => names[k]).concat('Two neighboring letters traded places with each other');
-      return mcQ('A barn scientist compares a calf’s gene with its mother’s. What kind of mutation happened?', names[m.kind], wrong, rnd, {figure:mutationFigure(m.orig, m.mutated, [], {splitNew:false}).replace(/<div class="codon-keys">[\s\S]*?<\/div>/, '')}); }],
+      return mcQ('A barn scientist compares a gene in a calf’s cell before and after the cell copied its DNA with a mistake. What kind of mutation happened?', names[m.kind], wrong, rnd, {figure:mutationFigure(m.orig, m.mutated, [], {splitNew:false}).replace(/<div class="codon-keys">[\s\S]*?<\/div>/, '')}); }],
     effect:[2, rnd => { const m = makeMutation(rnd, pick(['sub', 'sub', 'sub', 'ins', 'del'], rnd));
       const names = {silent:'No amino acid changes, so the protein stays the same', one:'Exactly one amino acid changes; the rest stay the same', stop:'A stop codon shows up early and cuts the protein short', frameshift:'The reading frame shifts; later amino acids change too'};
       const codons = [...triplets(m.orig), ...triplets(m.mutated)];
@@ -234,14 +237,16 @@ const KINDS = {
     pheno:[1, rnd => { const id = pick([...DOM_TRAITS, ...MIX_TRAITS], rnd), t = TRAITS[id], g = randomGenotype(id, rnd), right = phenotype(id, g);
       const words = p => (t.kind === 'dom' ? (p === t.domW ? t.dom : t.rec) : p), wrongs = phenotypesOf(id).filter(p => p !== right).map(words);
       wrongs.push({polled:'short horns that grow halfway', angus:'a roan coat, red and black mixed', wool:'gray wool, a blend of the two colors', comb:'half a rose comb and half a single comb', roan:'pink, a blend of red and white', andalusian:'gray and white stripes'}[id]);
-      return mcQ(`${ruleText(id)} A ${t.baby} has the genotype ${g}. What is its phenotype?`, words(right), wrongs, rnd); }],
+      const shown = p => ({roan:'roan: red and white hairs', blue:'blue-gray'}[p] || p);   // the in-between looks in words, so the rule doesn't hand them over
+      const rule = PHENO_RULE[id] || ruleText(id);
+      return mcQ(`${rule} A ${t.baby} has the genotype ${g}. What is its phenotype?`, shown(words(right)), wrongs.map(shown), rnd); }],
     zyg:[1, rnd => { const id = pick([...DOM_TRAITS, ...MIX_TRAITS], rnd), t = TRAITS[id], g = randomGenotype(id, rnd);
       const het = g[0] !== g[1], right = het ? 'Heterozygous: two different alleles' : 'Homozygous: two copies of the same allele';
-      return mcQ(`A ${t.female}’s genotype for one gene is ${g}. Which word describes her genotype?`, right, [het ? 'Homozygous: two copies of the same allele' : 'Heterozygous: two different alleles', 'Recessive: an allele that is hidden by another', 'Mutated: a gene that changed'], rnd); }],
+      return mcQ(`A ${t.female}’s genotype for one gene is ${g}. Which word describes her genotype?`, right, [het ? 'Homozygous: two copies of the same allele' : 'Heterozygous: two different alleles', 'Phenotype: the trait you can see when you look at her', 'Mutated: a gene that changed'], rnd); }],
     sortZyg:[2, rnd => { const items = shuffleR(DOM_TRAITS.concat(MIX_TRAITS).flatMap(id => genotypesOf(id)), rnd);
       const picked = [], seen = new Set(); for (const g of items) { if (!seen.has(g)) { seen.add(g); picked.push(g); } }
       let list; do list = shuffleR(picked, rnd).slice(0, 6); while (!list.some(g => g[0] !== g[1]) || !list.some(g => g[0] === g[1]));
-      return {type:'sort', prompt:'Sort these barn animals’ genotypes. Capital and small letters are different alleles.', groups:['Homozygous', 'Heterozygous'], items:list.map(g => [g, g[0] === g[1] ? 0 : 1])}; }],
+      return {type:'sort', prompt:'Sort these barn animals’ genotypes. Two different letters (RW) or a capital and a small letter (Rr) are different alleles.', groups:['Homozygous', 'Heterozygous'], items:list.map(g => [g, g[0] === g[1] ? 0 : 1])}; }],
     genoFromPheno:[2, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], rec = rnd() < 0.5;
       const [AA, Aa, aa] = genotypesOf(id), right = rec ? aa : `${AA} or ${Aa}`;
       const wrongs = rec ? [Aa, AA, `${Aa} or ${aa}`] : [AA, Aa, `${Aa} or ${aa}`];
@@ -251,18 +256,19 @@ const KINDS = {
       return mcQ(`${ruleText(id)} A farmer wants to know which pair could have a ${t.baby} with ${t.rec}. Which pair could?`, `${m} ${t.female} × ${d} ${t.male}`, pairs.slice(1).map(([a, b]) => `${a} ${t.female} × ${b} ${t.male}`), rnd); }],
     alleleCount:[3, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), nAA = ri(1, 6, rnd), nAa = ri(1, 8, rnd), naa = ri(1, 5, rnd), which = pick([t.A, t.a], rnd);
       const count = which === t.A ? 2 * nAA + nAa : 2 * naa + nAa;
-      return fillQ(`A herd of ${t.animal} has ${nAA} ${AA} animals, ${nAa} ${Aa} animals, and ${naa} ${aa} animals. How many copies of the ${which} allele does the herd have in all?`, [String(count)]); }]
+      const group = t.animal === 'sheep' || t.animal === 'chickens' ? 'flock' : 'herd', animals = k => (k === 1 ? 'animal' : 'animals');
+      return fillQ(`A ${group} of ${t.animal} has ${nAA} ${AA} ${animals(nAA)}, ${nAa} ${Aa} ${animals(nAa)}, and ${naa} ${aa} ${animals(naa)}. How many copies of the ${which} allele does the ${group} have in all?`, [String(count)]); }]
   },
   /* Apply: Punnett squares */
   punnettA:{
     build:[1, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), [mom, dad] = pick([[Aa, Aa], [Aa, aa], [aa, Aa], [AA, Aa], [Aa, AA], [AA, aa]], rnd);
-      return {type:'punnett', prompt:`Fill in the Punnett square for ${anG(mom)} ${mom} ${t.female} and ${anG(dad)} ${dad} ${t.male}. Type the two alleles in each box. Capital letters matter.`, rows:[...mom], cols:[...dad], rowLabel:`${cap(t.female)} (${mom})`, colLabel:`${cap(t.male)} (${dad})`}; }],
+      return {type:'punnett', prompt:`Fill in the Punnett square for ${anG(mom)} ${mom} ${t.female} and ${anG(dad)} ${dad} ${t.male}. Type the two alleles in each box, in either order. Capital letters matter.`, rows:[...mom], cols:[...dad], rowLabel:`${cap(t.female)} (${mom})`, colLabel:`${cap(t.male)} (${dad})`}; }],
     prob:[1, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), [mom, dad] = pick([[Aa, Aa], [Aa, aa], [aa, Aa]], rnd), want = pick(['dom', 'rec'], rnd);
       const n = crossOutcome(id, mom, dad)[want === 'dom' ? t.domW : t.recW], asPct = rnd() < 0.5;
       return fillQ(`${ruleText(id)} ${cap(anG(mom))} ${mom} ${t.female} and ${anG(dad)} ${dad} ${t.male} have a ${t.baby}. What is the probability the ${t.baby} has ${want === 'dom' ? t.dom : t.rec}? Type it as a ${asPct ? 'percent' : 'fraction'}.`, probAccept(n, 4)); }],
     buildG:[2, rnd => { const id = pick([...DOM_TRAITS, ...MIX_TRAITS], rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), [mom, dad] = pick([[Aa, Aa], [Aa, aa], [aa, Aa], [AA, Aa], [Aa, AA], [AA, aa], [aa, AA]], rnd);
       const looks = g => (t.kind === 'dom' ? describe(id, g) : `${phenotype(id, g)} ${id === 'andalusian' ? 'feathers' : 'coat'}`);
-      return {type:'punnett', ask:true, prompt:`${ruleText(id)} Cross ${anG(mom)} ${mom} ${t.female} (${looks(mom)}) with ${anG(dad)} ${dad} ${t.male} (${looks(dad)}). Type each parent’s alleles on the edges of the square, then fill in all four boxes. Capital letters matter.`, rows:[...mom], cols:[...dad], rowLabel:`${cap(t.female)} (${mom})`, colLabel:`${cap(t.male)} (${dad})`}; }],
+      return {type:'punnett', ask:true, prompt:`${ruleText(id)} Cross ${anG(mom)} ${mom} ${t.female} (${looks(mom)}) with ${anG(dad)} ${dad} ${t.male} (${looks(dad)}). Type each parent’s alleles on the edges of the square, then fill in all four boxes (the two letters in a box can go in either order). Capital letters matter.`, rows:[...mom], cols:[...dad], rowLabel:`${cap(t.female)} (${mom})`, colLabel:`${cap(t.male)} (${dad})`}; }],
     ratio:[2, rnd => { const id = pick([...DOM_TRAITS, ...MIX_TRAITS], rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), [mom, dad] = pick([[Aa, Aa], [Aa, aa], [AA, Aa], [AA, aa]], rnd);
       const out = crossOutcome(id, mom, dad), names = phenotypesOf(id);
       const ratioText = counts => { const nz = names.map((p, i) => [counts[i], p]).filter(([c]) => c > 0), g = nz.reduce((a, [c]) => gcd(a, c), 0);
@@ -313,8 +319,10 @@ const KINDS = {
   },
   /* Understand: Sexual reproduction and genetic variation */
   sexVarU:{
-    clone:[2, rnd => { const id = pick(DOM_TRAITS, rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id);
-      return mcQ(`Scientists cloned ${anG(Aa)} ${Aa} ${t.female}: the new ${t.baby} was made from one of her body cells, with no ${t.male}. What genotype does the cloned ${t.baby} have?`, `${Aa}, the same as her`, [`${AA} or ${aa}, half of her alleles doubled`, `${Aa}, ${AA} or ${aa}, like a Punnett square`, `${aa}, because a clone keeps just the recessive alleles`], rnd); }],
+    clone:[2, rnd => { const id = pick(['polled', 'angus', 'wool'], rnd), t = TRAITS[id], [AA, Aa, aa] = genotypesOf(id), g = pick([Aa, Aa, AA, aa], rnd);   // mammals only: no bird has ever been cloned
+      const wrongs = g === Aa ? [`${AA} or ${aa}, half of her alleles doubled`, `${Aa}, ${AA} or ${aa}, like a Punnett square`, `${aa}, because a clone keeps just the recessive alleles`]
+        : [`${Aa}, because the egg cell adds a new allele`, `${Aa}, ${AA} or ${aa}, like a Punnett square`, `Just ${g[0]}, half of her alleles, like an egg cell`];
+      return mcQ(`Scientists cloned ${anG(g)} ${g} ${t.female}: the new ${t.baby} was made from one of her body cells, with no ${t.male}. What genotype does the cloned ${t.baby} have?`, `${g}, the same as her`, wrongs, rnd); }],
     eggTypes:[3, rnd => { const genes = ri(2, 4, rnd), labels = ['Aa', 'Bb', 'Dd', 'Ee'].slice(0, genes);
       return fillQ(`A hen is heterozygous for ${genes} different genes: ${labels.join(', ')}. Each gene is on a different chromosome pair, and each egg gets one allele of each gene. How many different combinations of these alleles can her eggs have?`, [String(2 ** genes)]); }]
   }

@@ -232,7 +232,7 @@ export const TERM_CARDS = {
     { term: 'understood subject', means: "A command’s subject is you, even though it isn’t written, so a command is a complete sentence.", example: "Close the door.", skill: 'fragments' },
     { term: 'run-on sentence', means: "Two complete sentences jammed together with nothing between them.", example: "Not: The bell rang we left. Yes: The bell rang, and we left.", skill: 'runOns' },
     { term: 'comma splice', means: "Two complete sentences joined by only a comma. Words like however and then can’t join them either.", example: "Not: I studied, however, it was hard. Yes: I studied; however, it was hard.", skill: 'runOns' },
-    { term: 'dangling modifier', means: "An opening phrase that doesn’t describe the word right after the comma, so it seems to describe the wrong thing.", example: "Not: Flying over the city, the buildings looked tiny. Yes: Flying over the city, we saw tiny buildings.", skill: 'danglingMods' },
+    { term: 'dangling modifier', means: "An opening phrase that doesn’t fit the subject right after the comma, so it seems to describe the wrong thing.", example: "Not: Flying over the city, the buildings looked tiny. Yes: Flying over the city, we saw tiny buildings.", skill: 'danglingMods' },
     { term: 'parallel structure', means: "Items in a list or a pair written in the same form.", example: "hiking, swimming, and biking (not to bike)", skill: 'parallelStructure' },
     { term: 'paired joining words', means: "Either… or, neither… nor, both… and, and not only… but also need the same kind of words after each half.", example: "She not only sings but also dances.", skill: 'parallelStructure' }
   ],

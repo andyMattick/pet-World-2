@@ -150,8 +150,8 @@ Why care? Every scraped knee heals by mitosis, and cancer is what happens when c
    - Anaphase
    - Metaphase
 10. (level 3) A cut on a lizard’s side heals, and new skin covers it. Why is the new skin’s DNA the same as the old skin’s?
-   - **Mitosis copies the DNA exactly before the cell splits**
-   - The new cells each get half of their DNA from each of the parents
+   - **The DNA is copied exactly, then mitosis gives each cell a full set**
+   - The new cells each get half of their DNA from each of the lizard’s two parents
    - Meiosis shuffles the chromosomes into a new mix
    - Skin cells don’t have any DNA in them
 11. (level 3) An onion root tip has many cells in mitosis, but a grown onion leaf has very few. What does this tell you?
@@ -212,7 +212,7 @@ Why care? Meiosis is why brothers and sisters with the same parents can look so 
    - Skin and muscle cells
    - New blood cells
    - Cells that heal cuts
-2. (level 1) How many cells does meiosis make from one starting cell?
+2. (level 1) In a male butterfly, meiosis turns one starting cell into sperm cells. How many cells does it make?
    - **4**
    - 2
    - 1
@@ -247,7 +247,7 @@ Why care? Meiosis is why brothers and sisters with the same parents can look so 
    - Cells in the skin
    - Cells in the bone marrow that make blood
    - Cells in the stomach lining
-9. (level 3) A dog body cell has 78 chromosomes. How many chromosomes are in each cell made by meiosis?
+9. (level 2) A dog body cell has 78 chromosomes. How many chromosomes are in each cell made by meiosis?
    - **39**
    - 78
    - 156
@@ -341,8 +341,8 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
 8. (level 2) Which offspring would be genetically identical to its parent?
    - **A new plant grown from a cutting**
    - A puppy from two dogs
-   - A seed from a pollinated flower
-   - A tadpole from a frog egg fertilized by a male
+   - A seed from a flower that pollinated itself
+   - A twin calf that grew from the same egg as its twin
 9. (level 3) A sea star loses an arm, and the arm (with part of the center) grows into a whole new sea star. What kind of reproduction is this?
    - **Asexual, by regrowing from a piece**
    - Sexual, because the arm joins with a cell from another star
@@ -355,9 +355,9 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
    - The fungus can’t spread from one plant to another
 11. (level 3) Aphids reproduce asexually all summer, then sexually in the fall, laying eggs that last the winter. Why might switching help?
    - **Fast asexual growth fills the summer; sexual eggs add variety for a harsh season**
-   - Aphids run out of the sex cells they need for reproducing during the long summer
-   - Asexual reproduction works best in cold weather
-   - Sexual reproduction is faster in the fall
+   - Summer heat stops their sex cells from forming, so they just clone themselves until fall
+   - Asexual young are tougher in the cold; sexual eggs hatch faster in summer
+   - Mating in the fall gives eggs that are exact copies of the mother, so they are safe
 12. (level 3) A hydra grows a small hydra off its side that breaks free. How do the new hydra’s chromosomes compare with its parent’s?
    - **The same, because they came from mitosis**
    - Half as many, because they came from meiosis
@@ -365,14 +365,14 @@ Why care? Every Honeycrisp apple tree is grafted from another one, so they all c
    - Twice as many, because it grew from a bud
 13. (level 3) Which pair is matched correctly?
    - **Asexual: offspring are clones; Sexual: offspring have variation**
-   - Asexual: two parents; Sexual: one parent
-   - Asexual: uses meiosis; Sexual: uses budding
-   - Asexual: slow, with two parents; Sexual: fast, and no mate is needed
+   - Asexual: offspring have variation; Sexual: offspring are clones
+   - Asexual: uses meiosis to make clones; Sexual: offspring have variation
+   - Asexual: offspring are clones; Sexual: one parent gives all the genes
 14. (level 3) A gardener wants 50 rose bushes just like her prize-winning rose. Which method should she use?
    - **Take cuttings from the prize rose and root them**
-   - Plant seeds from the prize rose’s flowers
+   - Plant seeds from the prize rose after it pollinates itself
    - Let bees pollinate the prize rose with other roses
-   - Cross the prize rose with a wild rose
+   - Take cuttings from a young rose grown from the prize rose’s seeds
 
 **Newer types**
 
@@ -592,3 +592,17 @@ You are the head tour guide at the Pet World Butterfly House. Write a paragraph 
 
 - Rubric: Explains that meiosis makes egg and sperm cells with half the chromosomes; Explains that fertilization makes a zygote with the full number, which grows by mitosis; Names the four stages (egg, larva, pupa, adult) in order with a correct detail about each; Connects the adult laying eggs back to the start of the cycle
 - Model: In the Butterfly House, a female monarch’s body makes egg cells by meiosis, so each egg has half the usual chromosomes, and a male’s sperm does too. When a sperm fertilizes an egg, the zygote has the full number again, and it divides by mitosis into the tiny caterpillar growing inside the egg. The caterpillar, or larva, hatches, eats its eggshell and then milkweed, and molts as it grows. Then it hangs upside down and molts into a pupa, the chrysalis, where its body is rebuilt. The adult butterfly breaks out, sips nectar, mates, and lays eggs on milkweed, and the cycle starts again.
+
+## Blind review, Oct 30, 2026
+
+A separate reviewer answered all 96 scored items from the student view, without the key. Score: **96/96**, with no key disagreements. Full table: /home/claude/blind/report.md.
+
+Fixed (10):
+- The Microscope Window scene showed “dyed chromosomes from a butterfly cell” as X shapes. Butterfly chromosomes are holocentric and look like dots or rods, so the scene now shows a human cell that is getting ready to divide.
+- The lizard-skin key said mitosis copies the DNA, but copying happens in interphase. It now reads “The DNA is copied exactly, then mitosis gives each cell a full set” (15s0d3z → 1naa32d).
+- The meiosis cell count now asks about a male butterfly making sperm, because the Egg Lab scene made “4 cells” arguable when one egg comes with polar bodies (8nohos → 191j33n).
+- The dog 78 → 39 meiosis item is now level 2.
+- The garden scene card now says “the Butterfly House’s Butterfly Garden”, to match the prompt.
+- The cutting, rose, aphid and matched-pair items have stronger distractors: self-pollinated seeds, an identical twin, and pairs that are half right.
+
+No judgment calls are left.

@@ -79,7 +79,8 @@ const S = {
     pairs:q => ({num:+q.prompt.match(/has (\d+) chromosomes/)[1] / 2}),
     fromParent:q => ({num:+q.prompt.match(/has (\d+) chromosomes/)[1] / 2}),
     whichCell:q => { const n = +q.prompt.match(/body cells have (\d+)/)[1], c = +q.prompt.match(/cell has (\d+) chromosomes/)[1]; return pickOpt(q, o => (c * 2 === n ? /^A sex cell \(egg or sperm\) with one/.test(o) : c === n && /^A body cell with two/.test(o))); },
-    spermAllele:() => ({value:1 / 2}),
+    spermAllele:q => { const g = q.prompt.match(/\b[Aa]n? (\w\w) (?:bull|ram|rooster)’s two alleles/)[1], which = q.prompt.match(/carry the (\w) allele/)[1];
+      return {value:[...g].filter(c => c === which).length / 2}; },   // one chromosome of the pair goes to each sperm
     mule:q => { const [h, d] = [...q.prompt.matchAll(/(\d+) chromosomes|have (\d+)/g)].map(m => +(m[1] || m[2])); return {num:h / 2 + d / 2}; }
   },
   mutA:{
@@ -97,13 +98,21 @@ const S = {
       const a = translate(orig, n), b = translate(mut, n); return {num:a.filter((x, i) => x !== b[i]).length}; }
   },
   vocabA:{
-    pheno:q => { const r = readRule(q.prompt), g = q.prompt.match(/genotype (\w\w)\./)[1]; const want = r.look(g); return pickOpt(q, o => o === want || (want === 'white' && /feather/.test(q.prompt) && o === 'splash white')); },
+    pheno:q => { const g = q.prompt.match(/genotype (\w\w)\./)[1]; let m;
+      if ((m = q.prompt.match(/the (\w+) \((\w)\) and (\w+) \((\w)\) (coat|feather) alleles (?:are )?(codominant|show incomplete dominance)/))) {   // the in-between look is not named in the rule
+        const [, n1, A, n2, a, , how] = m, base = g === A + A ? n1 : g === a + a ? n2 : null;
+        if (base) return pickOpt(q, o => o === base || (base === 'white' && how !== 'codominant' && o === 'splash white'));
+        if (/ named the (blend|mix)|is roan|is blue/.test(q.prompt)) return {error:'the rule names the in-between look'};
+        return how === 'codominant' ? pickOpt(q, o => o.includes(n1) && o.includes(n2) && /hairs/.test(o) && !/blend/.test(o))
+          : pickOpt(q, o => o !== n1 && o !== n2 && o !== 'splash white' && !/stripe|spot|patch|hair|half| and /.test(o)); }
+      const r = readRule(q.prompt), want = r.look(g); return pickOpt(q, o => o === want || (want === 'white' && /feather/.test(q.prompt) && o === 'splash white')); },
     zyg:q => { const g = q.prompt.match(/is (\w\w)\./)[1]; return pickOpt(q, o => o.startsWith(g[0] === g[1] ? 'Homozygous' : 'Heterozygous')); },
     sortZyg:q => ({sort:q.items.map(([g]) => (g[0] === g[1] ? 0 : 1))}),
     genoFromPheno:q => { const r = readRule(q.prompt), has = q.prompt.match(/ has (.+?)\. Nobody/)[1]; const AA = r.A + r.A, Aa = r.A + r.a, aa = r.a + r.a;
       return pickOpt(q, o => o === (has === r.rec ? aa : has === r.dom ? `${AA} or ${Aa}` : '??')); },
     carrier:q => { const r = readRule(q.prompt); return pickOpt(q, o => { const [m, d] = [...o.matchAll(/\b(\w\w) (?:cow|ewe|hen|bull|ram|rooster)/g)].map(x => x[1]); return kids(m, d).some(k => r.look(k) === r.rec); }); },
-    alleleCount:q => { const m = q.prompt.match(/has (\d+) (\w\w) animals, (\d+) (\w\w) animals, and (\d+) (\w\w) animals\. How many copies of the (\w) allele/);
+    alleleCount:q => { const m = q.prompt.match(/has (\d+) (\w\w) animals?, (\d+) (\w\w) animals?, and (\d+) (\w\w) animals?\. How many copies of the (\w) allele/);
+      if (/\b1 \w\w animals\b/.test(q.prompt) || /herd of (?:sheep|chickens)/.test(q.prompt)) return {error:'grammar: 1 … animals, or a herd of sheep/chickens'};
       const which = m[7]; return {num:[[+m[1], m[2]], [+m[3], m[4]], [+m[5], m[6]]].reduce((s, [n, g]) => s + n * [...g].filter(c => c === which).length, 0)}; }
   },
   punnettA:{
@@ -137,7 +146,7 @@ const S = {
       if (a.length !== 1 || b.length !== 1) return {error:'parents not forced'}; return {value:kids(a[0], b[0]).filter(k => k === 'aa').length / 4}; }
   },
   sexVarU:{
-    clone:q => { const g = q.prompt.match(/cloned an? (\w\w) /)[1]; return pickOpt(q, o => o === `${g}, the same as her`); },
+    clone:q => { if (/\b(hen|rooster|chick)\b/.test(q.prompt)) return {error:'no bird has ever been cloned'}; const g = q.prompt.match(/cloned an? (\w\w) /)[1]; return pickOpt(q, o => o === `${g}, the same as her`); },
     eggTypes:q => ({num:2 ** q.prompt.match(/: ((?:\w\w(?:, )?)+)\. Each gene/)[1].split(', ').length})
   }
 };

@@ -61,7 +61,7 @@ _Lesson:_ A pronoun has to match the word it stands for, its antecedent: one thi
 5. (level 2) Which pronoun fits? The class, working as one group, finished ___ mural before lunch.
    **its** · their · it’s · they’re
 6. (level 2) Which pronoun fits? Leo and Sam forgot ___ jackets on the bus.
-   **their** · his · its · him
+   **their** · his · there · they’re
 7. (level 2) Which pronoun fits? Neither the cat nor the puppies ate ___ food.
    **their** · its · her · his
 8. (level 2) Which sentence has a pronoun that doesn’t agree with its antecedent?
@@ -122,7 +122,7 @@ _Lesson:_ A complete sentence needs a subject, a verb, and a complete thought. A
 
 _Newer types:_
 - Sort: Is each one a complete sentence or a fragment? Close the door. → **Complete sentence**; After the long hike. → **Fragment**; The tired hikers rested. → **Complete sentence**; Hoping for sunshine. → **Fragment**; Who left the gate open? → **Complete sentence**; The bird that sang all morning. → **Fragment**
-- Two-part: Part A: Which revision fixes the fragment? Hoping for a snow day. **Hoping for a snow day, we watched the weather report.** · Hoping for a snow day tomorrow morning. · Hoping, for a snow day. / Part B: What was the fragment missing? **A subject and a verb that tell who did what** · An end mark · A word like because at the start
+- Two-part: Part A: Which revision fixes the fragment? Hoping for a snow day. **Hoping for a snow day, we watched the weather report.** · Hoping for a snow day tomorrow morning, after a long and very cold week. · Hoping, for a snow day. / Part B: What was the fragment missing? **A subject and a main verb that tell who did what** · An end mark · A word like because at the start, to join it to another sentence
 - Short answer: Write a fragment that starts with because or when. Then fix it two different ways. Explain what the fragment was missing.
   Rubric: Writes a fragment that starts with because or when; Fixes it correctly two different ways; Explains that it didn’t finish the thought (it needs a complete sentence with it)
   Model: Fragment: When the library opens. Fix 1: When the library opens, I will return my books. Fix 2: I will be first in line when the library opens. The fragment didn’t finish its thought. It never said what happens when the library opens.
@@ -145,7 +145,7 @@ _Lesson:_ A run-on sentence jams two complete sentences together with nothing be
 7. (level 2) What kind of error is in this sentence? Grandma baked bread, it smelled amazing.
    **A comma splice** · A fragment · A dangling modifier · A pronoun error
 8. (level 2) Which mark fixes the run-on? The bell rang___ the students rushed out.
-   **;** · , · - · no mark
+   **;** · , · ? · no mark
 9. (level 3) Which sentence is a run-on?
    **We wanted to play outside however it was raining.** · We wanted to play outside; however, it was raining. · We wanted to play outside, but it was raining. · Although we wanted to play outside, it was raining.
 10. (level 3) Which sentence is correct?
@@ -172,7 +172,7 @@ _Newer types:_
 _Lesson:_ A describing phrase at the start of a sentence, like “Running to the bus,” describes whoever comes right after the comma. If that word can’t be doing the action, the modifier is dangling: “Running to the bus, my backpack fell open” says the backpack was running. Fix it by putting the real doer right after the comma (Running to the bus, I felt my backpack fall open) or by giving the phrase its own subject (While I was running to the bus, …).
 
 1. (level 1) An opening phrase like “Walking home,” describes which part of the sentence?
-   **The word right after the comma** · The last word in the sentence · The verb in the sentence · The word right before the comma
+   **The subject right after the comma** · The noun or verb at the very end of the sentence · The verb in the sentence · The noun right before the comma
 2. (level 1) Which sentence has a dangling modifier?
    **Barking loudly, the mail was dropped.** · Barking loudly, the dog scared the mail carrier. · The dog barked loudly at the mail carrier. · The mail carrier dropped the mail.
 3. (level 1) Which sentence is correct?
@@ -201,7 +201,7 @@ _Lesson:_ A describing phrase at the start of a sentence, like “Running to the
    **Once covered with frosting, the cake sat on the table.** · Once covered with frosting, Dad set the cake on the table. · Once covered with frosting, the table held the cake. · Once covered with frosting, we set out plates for the cake.
 
 _Newer types:_
-- Two-part: Part A: Which sentence has a dangling modifier? Purring softly, the kitten curled up in my lap. · **Purring softly, my lap was warm from the kitten.** · The kitten, purring softly, curled up in my lap. / Part B: Which rule does that sentence break? **An opening phrase has to describe the word right after the comma.** · Items in a list have to be in the same form. · A verb has to agree with its subject.
+- Two-part: Part A: Which sentence has a dangling modifier? Purring softly, the kitten curled up in my lap. · **Purring softly, my lap was warm from the kitten.** · The kitten, purring softly, curled up in my lap. / Part B: Which rule does that sentence break? **An opening phrase has to describe the subject right after the comma.** · Items in a list have to be in the same form. · A verb has to agree in number with its subject, even when other words come between them.
 - Tap the words: The opening phrase describes the wrong thing. Tap the word it wrongly describes. Swinging from tree to tree, the **tourists** photographed the monkeys.
 - Short answer: Write a sentence with a dangling modifier on purpose, like “Flying over the city, the buildings looked tiny.” Then fix it, and explain what the opening phrase described by mistake.
   Rubric: Writes a sentence with a real dangling modifier; Fixes it so the right doer comes right after the comma; Explains what the phrase wrongly described
@@ -219,11 +219,11 @@ _Lesson:_ Parallel structure means the ideas in a list or a pair are written in 
 4. (level 2) Which sentence is NOT parallel?
    **The coach told us to stretch, to drink water, and that we should rest.** · The coach told us to stretch, drink water, and rest. · The coach told us to stretch, to drink water, and to rest. · The coach told us that we should stretch first, drink some water, and then rest.
 5. (level 2) Which revision fixes the faulty parallelism? Mia is smart, funny, and has kindness.
-   **Mia is smart, funny, and kind.** · Mia is smart, funny, and has kind. · Mia is smart, being funny, and kind. · Mia is smart, funny, and a kindness.
+   **Mia is smart, funny, and kind.** · Mia is smart, funny, and acts kindly. · Mia is smart, being funny, and kind. · Mia is smart, funny, and kindly.
 6. (level 2) Which sentence is parallel?
-   **We can walk to the park or ride our bikes.** · We can walk to the park or riding our bikes. · We can walk to the park or a bike ride. · We can walking to the park or ride our bikes.
+   **We can walk to the park or ride our bikes.** · We can walk to the park or riding our bikes. · We can walk to the park or by bike. · We can walk to the park, or bike riding.
 7. (level 2) Which choice completes the sentence with parallel structure? The recipe says to chop the onions, stir the sauce, and ___.
-   **boil the pasta** · the pasta should boil · boiling the pasta · pasta boiled
+   **boil the pasta** · you should boil the pasta · boiling the pasta · boils the pasta
 8. (level 2) Which sentence uses either… or correctly?
    **You can either read a book or write a story.** · You can either read a book or writing a story. · Either you can read a book or write a story. · You can either read a book or a story to write.
 9. (level 3) Which sentence uses not only… but also correctly?
@@ -299,3 +299,11 @@ The right fix is in **bold**; a culprit word is in _italics_.
 6. (Round 3) The Craft Table: The jar of glitter and the box of beads are on the craft table. → **Not guilty.** The subject is two things joined by and: the jar and the box. That’s plural, so are fits.
 7. (Round 3) The Mountain Trail: The trail was _steep_ we kept climbing anyway. → **Guilty: Run-on or comma splice.** Fixes: **The trail was steep, but we kept climbing anyway.** · The trail was steep, we kept climbing anyway. · The trail was steep, therefore we kept climbing anyway.
 8. (Round 3) The Rainy Bus Stop: Waiting for the bus in the rain while the thunder rolled. → **Guilty: Sentence fragment.** Fixes: **We waited for the bus in the rain while the thunder rolled.** · Waiting for the bus, in the rain, while the thunder rolled. · While the thunder rolled, waiting for the bus in the rain.
+
+## Blind review, Oct 30, 2026
+
+A separate reviewer answered all 96 scored items from the student view, without the key. Score: **96/96**, with no key disagreements. Full table: /home/claude/blind/report.md.
+
+Fixed (8): The rule “an opening phrase describes the word right after the comma” was wrong, since in “Walking home, the tired girl…” that word is “the”. It now says *the subject* right after the comma, in the level-1 item (1712tp8 → 7vocek), the Purring-softly Part B (1l4pcyo → 16onlwg), the lesson text and the term card. In the snow-day fragment two-part (1ljc4wy → 9jjs2b), Part A gets a longer wrong choice and Part B says “a subject and a main verb”. The run-on mark “-” could be read as a dash, which is a fair fix, so it is now “?”. “Leo and Sam forgot ___ jackets” now uses the homophones there and they’re. The three level-2 parallel-structure items lost their broken-on-sight choices. The but/yet fill was already right, since it accepts both.
+
+Judgment calls for Andy: (1) “Each of the kittens ___ its own blanket”: “its” in the stem cues the singular, and removing it changes the id. (2) In “Tired after the long game, the bus ride…”, the key names “the players”, while “we” fits the original just as well. (3) “The class… finished ___ mural” and “The team won its…” key the American singular “its”, where British English allows “their”.

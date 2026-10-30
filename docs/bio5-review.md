@@ -35,15 +35,15 @@ Every question with the right answer in **bold**, for the teacher to read before
 11. [3] Two calves have the same parents but look different. A visitor asks why. What do you explain?  
    **Each got a different mix of its parents’ chromosomes** · One of them got genes from a third animal in the herd · Brothers and sisters share almost none of their genes · The older calf used up the best genes first
 12. [3] A gene for coat color sits on one chromosome pair. How many copies of that gene are in one of a cow’s body cells?  
-   **Two, one on each chromosome of the pair** · One, on the chromosome from her mother · Sixty, one on each of her chromosomes · None, since coat color is decided in the hair
+   **Two, one on each chromosome of the pair** · One, on the chromosome from her mother · Sixty, one on each of her chromosomes · One, made by mixing her mother’s and father’s copies
 13. [3] A visitor asks why a cow’s skin cells and muscle cells both have the coat-color gene. What do you explain?  
-   **Nearly every body cell has the full set of chromosomes** · Skin cells borrow genes from muscle cells when needed · The gene travels around the body in the blood · Coat-color genes are made fresh in each cell that needs them
+   **Nearly every body cell has the full set of chromosomes** · Each kind of body cell gets its own set of genes for its job · The gene travels around the body in the blood · Cells keep just the genes they use, and both of these use it
 14. [3] Which sentence about genes and proteins is accurate?  
-   **Genes hold instructions, and cells use them to make proteins** · Proteins hold instructions, and cells use them to make genes · Genes and proteins are two names for the same molecule · Cells make genes from the protein in the food an animal eats
+   **Genes hold instructions, and cells use them to make proteins** · Proteins hold instructions, and cells use them to make genes · Genes are proteins that carry the instructions for traits · Each protein is a piece of a gene that the cell cut off and used
 
 **Newer types and short answer**
 
-- Sort [2]: Is each cell a body cell or a sex cell (egg or sperm)? A cow’s skin cell with 60 chromosomes → **Body cell**; A bull’s sperm cell with 30 chromosomes → **Sex cell**; A hen’s egg cell with 39 chromosomes → **Sex cell**; A goat’s muscle cell with 60 chromosomes → **Body cell**; A pig’s liver cell with 38 chromosomes → **Body cell**; A ram’s sperm cell with 27 chromosomes → **Sex cell**
+- Sort [2]: Body cells have 60 chromosomes in cattle and goats, 78 in chickens, 38 in pigs and 54 in sheep. Is each cell a body cell or a sex cell (egg or sperm)? A cow cell with 60 chromosomes → **Body cell**; A bull cell with 30 chromosomes → **Sex cell**; A hen cell with 39 chromosomes → **Sex cell**; A goat cell with 60 chromosomes → **Body cell**; A pig cell with 38 chromosomes → **Body cell**; A ram cell with 27 chromosomes → **Sex cell**
 - Put in order [1]: Put these in order from biggest to smallest. **A calf’s skin cell → The cell’s nucleus → One chromosome → One gene on that chromosome**
 - Short answer: A visitor asks, “How can something as tiny as a chromosome decide whether a calf has horns?” Answer like a tour guide.  
   Rubric: Says chromosomes carry genes (sections of DNA); Says a gene holds the instructions for making a protein; Connects the protein to the trait (horns or no horns)  
@@ -66,11 +66,11 @@ Every question with the right answer in **bold**, for the teacher to read before
 5. [2] A goat is born with an extra copy of one chromosome. Why might that cause health problems?  
    **Extra genes can mean too much of some proteins** · An extra chromosome erases some of the goat’s other genes · Chromosomes take up space the blood needs · The extra chromosome turns into a second nucleus
 6. [2] A lamb has a white body like its mother and a dark face like its father. What explains this best?  
-   **It got genes for different traits from each parent** · It picked which parent to look like before birth · Its mother’s genes control the body and its father’s the head · It copied its father by staying near him
+   **It got alleles from both parents, and in each trait a different one showed** · It picked which parent to look like before birth · Its mother’s genes build its body, and its father’s genes build its head and face · It copied its father by staying near him
 7. [2] Each egg from a hen gets one chromosome from each pair. Why does that matter when the egg joins a sperm?  
    **The chick ends up with full pairs again** · The chick ends up with twice the normal number · The chick gets no chromosomes from the hen · The egg can then grow without a sperm cell
 8. [2] Holstein cattle are black and white. A breeder says the pattern comes from the calf’s genes. Where are those genes?  
-   **On chromosomes in the nucleus of its cells** · In the hair, which grows on the outside · In the milk the calf drinks from its mother · In the stomach, where the calf digests grass
+   **On chromosomes in the nucleus of its cells** · On chromosomes in its skin cells, but not in its other cells · In its blood, which carries the genes out to the skin · In the milk the calf drinks from its mother
 9. [3] A mule has 63 chromosomes, from a horse (64) and a donkey (62). Why can mules almost never have foals?  
    **Their chromosomes can’t pair up evenly to make sex cells** · Mules have no genes for making eggs or sperm · Horses and donkeys have totally different genes · Their chromosomes are too long to fit in a sex cell nucleus
 10. [3] A Bb bull has B on one chromosome of a pair and b on the other. What fraction of his sperm cells get the b allele?  
@@ -87,7 +87,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 **Newer types and short answer**
 
 - Type the answer [2]: A turkey’s body cells have 80 chromosomes. How many chromosomes are in one of its egg cells? Type the number. Accepts **40, forty**
-- Two-part [3]: Part A: A mule has 63 chromosomes and can almost never have foals. What is the main reason? **Its chromosomes can’t pair up evenly to make eggs or sperm** · It has too many genes for its body size · Its body has no cells that can make sex cells or hormones — Part B: Which fact supports your answer? **Its horse and donkey chromosomes don’t all match up as pairs** · Mules grow larger than donkeys and need far more food each day · Mules eat more grass than horses
+- Two-part [3]: Part A: A mule has 63 chromosomes and can almost never have foals. What is the main reason? **Its chromosomes can’t pair up evenly to make eggs or sperm** · It has too many genes for its body size · Its body has no cells that can make sex cells or hormones — Part B: Which fact supports your answer? **It got 32 chromosomes from its horse parent and 31 from its donkey parent** · Mules grow larger than donkeys and need far more food each day · A mule has 64 chromosomes in each body cell, the same number as its horse parent
 - Short answer: A calf has 60 chromosomes in each body cell, but its mother’s egg and its father’s sperm each had just 30. Explain how that works.  
   Rubric: Says the egg and the sperm each have one chromosome from each pair (half the number); Says the egg and sperm join (fertilization); Says 30 + 30 = 60, so the calf has full pairs again  
   Model: *Egg and sperm cells get just one chromosome from each pair, so each has 30. When the sperm joins the egg, their chromosomes come together: 30 from the mother plus 30 from the father makes 60, so every pair is complete again.* (at least 15 words)
@@ -101,7 +101,7 @@ Every question with the right answer in **bold**, for the teacher to read before
   Accepts **37**
 - `whichCell` [2]: A duck’s body cells have 80 chromosomes. Under the barn microscope, a duck cell has 40 chromosomes. Which kind of cell is it most likely to be?  
   **A sex cell (egg or sperm) with one chromosome from each pair** · A body cell with two chromosomes of each pair · A body cell that has lost half of its chromosomes and half its genes · A sex cell with two chromosomes from each pair
-- `spermAllele` [3]: In sheep, white wool (W) is dominant over black wool (w). A Ww ram’s two W/w alleles sit on one pair of chromosomes. Each sperm cell gets one chromosome from that pair. What fraction of his sperm cells carry the W allele?  
+- `spermAllele` [3]: In sheep, white wool (W) is dominant over black wool (w). A Ww ram’s two alleles for this gene sit on one pair of chromosomes. What fraction of his sperm cells carry the W allele?  
   Accepts **1/2, 2/4, 4/8, 8/16, 50%, 50 percent, 50, 0.5, .5**
 - `mule` [3]: Horses have 64 chromosomes in each body cell and donkeys have 62. A hinny has a donkey mother and a horse father. How many chromosomes are in each of its body cells?  
   Accepts **63**
@@ -130,7 +130,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 7. [2] A mutation was in the egg that became a calf. A visitor asks why the mutation is in nearly every cell of the calf. What do you explain?  
    **All its cells came from copies of that first cell** · The mutation spread through the blood like a cold · The calf caught it from its mother’s milk · Mutations copy themselves into new cells over the years
 8. [2] Which is an example of a helpful mutation for a farm animal?  
-   **A mutation that helps cattle resist a disease** · A mutation that makes calves too weak to stand · A mutation that stops a hen from making strong eggshells · A mutation that causes a calf to be born blind
+   **A mutation that helps cattle resist a disease** · A mutation that makes calves too weak to stand · A mutation that stops a hen from making strong eggshells · A mutation that changes a DNA letter but leaves the protein the same
 9. [3] A gene reads ATG GCA TTC AAA. A mutation adds one letter right after ATG. Why does this usually change more than one amino acid?  
    **Every three-letter group after it shifts** · The added letter becomes a new chromosome · One extra letter doubles the protein’s size · The cell reads the gene backward after a mutation
 10. [3] Polled (hornless) Holsteins carry a natural mutation. A dairy farmer chooses polled bulls. What is one benefit?  
@@ -140,9 +140,9 @@ Every question with the right answer in **bold**, for the teacher to read before
 12. [3] A cow has a mutation in her udder cells. Which of her calves could inherit that mutation?  
    **None of them, since udder cells aren’t sex cells** · The female calves, because they will grow udders too · Half of them, like any other allele · The ones born after the mutation happened
 13. [3] A mutation gives some cattle a short, slick hair coat that helps them stay cool. Where would cattle with this mutation most likely do better?  
-   **Herds in hot places, where slick-coated cows stay cool** · Herds in cold places, where cows need thick, warm winter hair · Any herd, since mutations spread through the air · Nowhere, because helpful mutations fade away
+   **Herds in hot places, where slick-coated cows stay cool** · Herds in cold places, where cows need thick, warm winter hair · Any herd, since cows everywhere need to stay cool in summer · Herds kept in cool barns with fans, where the cows stay cool
 14. [3] Which change is NOT a mutation?  
-   **A cow’s muscles getting bigger from exercise** · A DNA letter swapped in a sperm cell · A DNA letter lost while a cell copies its DNA · An extra DNA letter added to a gene
+   **A cow’s muscles getting bigger from exercise** · A DNA letter swapped in a sperm cell · A DNA letter lost while a cell copies its DNA · UV light changing a DNA letter in a cow’s skin cell
 
 **Newer types and short answer**
 
@@ -153,7 +153,7 @@ Every question with the right answer in **bold**, for the teacher to read before
   Model: *No. The sun changed DNA in her skin cells, which are body cells. Calves get their DNA from an egg and a sperm, so only a mutation in an egg or sperm cell can be passed on.* (at least 15 words)
 
 **Generated (new every try)** — 3 kinds
-- `kind` [1]: A barn scientist compares a calf’s gene with its mother’s. What kind of mutation happened? [Original gene: ATG TGC GTA GCG GCA TCG TAG Gene after the mutation: ATGTGCGTAGCGGTATCGTAG]  
+- `kind` [1]: A barn scientist compares a gene in a calf’s cell before and after the cell copied its DNA with a mistake. What kind of mutation happened? [Original gene: ATG TGC GTA GCG GCA TCG TAG Gene after the mutation: ATGTGCGTAGCGGTATCGTAG]  
   One letter was removed from the gene · **One letter was swapped for a different letter** · One extra letter was added to the gene · Two neighboring letters traded places with each other
 - `effect` [2]: Read both genes three letters at a time. What does this mutation do to the protein? [Original gene: ATG TCG ACC TCC AGT CAC TGA Gene after the mutation: ATGTCGCCTCCAGTCACTGA Codon key (read 3 letters at a time from the start): ACC = Thr ACT = Thr AGT = Ser ATG = Met CAC = His CCA = Pro CCT = Pro GTC = Val TCC = Ser TCG = Ser TGA = Stop]  
   Exactly one amino acid changes; the rest stay the same · **The reading frame shifts; later amino acids change too** · A stop codon shows up early and cuts the protein short · No amino acid changes, so the protein stays the same
@@ -186,7 +186,7 @@ Every question with the right answer in **bold**, for the teacher to read before
 8. [2] Dolly the sheep (born 1996) was cloned from a body cell of a ewe. How did the genes in Dolly’s nucleus compare with that ewe’s?  
    **They were the same as that ewe’s genes** · Half came from the ewe and half from a ram · They were a new mix, like any lamb’s · She had no genes until she was born
 9. [3] A farmer grows one kind of potato, and every plant is a clone. A new fungus arrives. Why is the farm at high risk?  
-   **The plants have the same genes, so all could get sick** · Clones grow too slowly and stay too small to fight off a fungus · Fungi attack plants that grow from seeds most · Clones have more genes than seed-grown plants
+   **The plants have the same genes, so all could get sick** · Clones grow too slowly and stay too small to fight off a fungus · Clones can’t make the proteins plants use to fight a fungus · Plants grown from pieces of a potato have weaker cells than seedlings
 10. [3] Two black Angus parents have a red calf. A visitor asks how. What do you say?  
    **Each parent passed on a hidden red allele** · The calf’s coat changed color after it was born · Red calves come from a new mutation in the calf · The calf got all its genes from one parent
 11. [3] Why is a calf not an exact copy of either parent?  
@@ -194,9 +194,9 @@ Every question with the right answer in **bold**, for the teacher to read before
 12. [3] A hen has two alleles for a gene, B and b. Each egg gets one of them. What does this mean for her chicks?  
    **Some chicks can get B and others b** · Each chick gets both B and b from her · Each chick gets B, since it is the dominant one · The chicks get no alleles from the hen
 13. [3] Which group of offspring is most likely to have a lot of genetic variety?  
-   **Lambs from many ewes and rams** · Cuttings from one rose bush · Potato plants grown from pieces of one potato · Copies of one ewe made by cloning
+   **Lambs from many ewes and rams** · Cuttings from one rose bush · Lambs from one ewe and one ram · Chicks hatched from one hen’s eggs and fathered by one rooster
 14. [3] A breeder wants calves just like her best cow. Which method gives the closest match?  
-   **Cloning the cow from one of her body cells** · Breeding her with her own brother · Breeding her with the best bull at the fair · Feeding her calves the same food she eats
+   **Cloning the cow from one of her body cells** · Breeding her with her own brother · Breeding her with the best bull at the fair · Breeding her with a bull from her own family line, many times
 
 **Newer types and short answer**
 
@@ -259,14 +259,14 @@ Every question with the right answer in **bold**, for the teacher to read before
 - `pheno` [1]: In chickens, a rose comb (R) is dominant over a single comb (r). A chick has the genotype rr. What is its phenotype?  
   **a single comb** · half a rose comb and half a single comb · a rose comb
 - `zyg` [1]: A cow’s genotype for one gene is Pp. Which word describes her genotype?  
-  **Heterozygous: two different alleles** · Recessive: an allele that is hidden by another · Mutated: a gene that changed · Homozygous: two copies of the same allele
-- `sortZyg` [2]: Sort these barn animals’ genotypes. Capital and small letters are different alleles.  
+  **Heterozygous: two different alleles** · Phenotype: the trait you can see when you look at her · Mutated: a gene that changed · Homozygous: two copies of the same allele
+- `sortZyg` [2]: Sort these barn animals’ genotypes. Two different letters (RW) or a capital and a small letter (Rr) are different alleles.  
   Pp → **Heterozygous**; Ww → **Heterozygous**; bb → **Homozygous**; Bb → **Heterozygous**; Rr → **Heterozygous**; ww → **Homozygous**
 - `genoFromPheno` [2]: In chickens, a rose comb (R) is dominant over a single comb (r). A hen has a single comb. Nobody knows her parents. Which choice lists every genotype she could have?  
   RR · **rr** · Rr · Rr or rr
 - `carrier` [3]: In cattle, the polled allele (P, no horns) is dominant over the horned allele (p). A farmer wants to know which pair could have a calf with horns. Which pair could?  
   **Pp cow × Pp bull** · PP cow × pp bull · PP cow × PP bull · PP cow × Pp bull
-- `alleleCount` [3]: A herd of chickens has 6 RR animals, 5 Rr animals, and 5 rr animals. How many copies of the R allele does the herd have in all?  
+- `alleleCount` [3]: A flock of chickens has 6 RR animals, 5 Rr animals, and 5 rr animals. How many copies of the R allele does the flock have in all?  
   Accepts **17**
 
 ### Apply: Punnett squares (`punnettA`)
@@ -285,7 +285,7 @@ Every question with the right answer in **bold**, for the teacher to read before
    **3** · 1 · 2 · 4
 5. [2] Two Pp cattle have 4 calves. Which statement is true?  
    **Each calf has a 1/4 chance of having horns** · Exactly 1 of the 4 calves will have horns · At least 1 of the 4 calves will have horns · The first calf will be the one with horns
-6. [2] A Punnett square predicts that 3/4 of the calves will be black. What percent is that?  
+6. [1] A Punnett square predicts that 3/4 of the calves will be black. What percent is that?  
    **75%** · 34% · 25% · 3.4%
 7. [2] In sheep, white wool (W) is dominant over black wool (w). A WW ram and a ww ewe have a lamb. What is its genotype?  
    **Ww** · WW · ww · WW or ww
@@ -313,11 +313,11 @@ Every question with the right answer in **bold**, for the teacher to read before
   Model: *Horns are recessive, so the calf is pp and got a p from each parent. Both parents have no horns, so each must be Pp. A Pp × Pp square has PP, Pp, Pp and pp, so each new calf has a 1 in 4 (25%) chance of having horns.* (at least 20 words)
 
 **Generated (new every try)** — 10 kinds
-- `build` [1]: Fill in the Punnett square for a Pp cow and a pp bull. Type the two alleles in each box. Capital letters matter.  
+- `build` [1]: Fill in the Punnett square for a Pp cow and a pp bull. Type the two alleles in each box, in either order. Capital letters matter.  
   Boxes: **Pp, Pp, pp, pp** (side P, p; top p, p)
 - `prob` [1]: In sheep, white wool (W) is dominant over black wool (w). A Ww ewe and a ww ram have a lamb. What is the probability the lamb has black wool? Type it as a fraction.  
   Accepts **1/2, 2/4, 4/8, 8/16, 50%, 50 percent, 50, 0.5, .5**
-- `buildG` [2]: In sheep, white wool (W) is dominant over black wool (w). Cross a Ww ewe (white wool) with a WW ram (white wool). Type each parent’s alleles on the edges of the square, then fill in all four boxes. Capital letters matter.  
+- `buildG` [2]: In sheep, white wool (W) is dominant over black wool (w). Cross a Ww ewe (white wool) with a WW ram (white wool). Type each parent’s alleles on the edges of the square, then fill in all four boxes (the two letters in a box can go in either order). Capital letters matter.  
   Edges and boxes: **WW, WW, Ww, Ww** (side W, w; top W, W)
 - `ratio` [2]: In Andalusian chickens, the black (B) and white (W) feather alleles show incomplete dominance: a BW chick has blue-gray feathers, a blend of the two. A BB hen and a BW rooster have many chicks. Which phenotype ratio do you expect?  
   100% splash white · 3 black : 1 splash white · **1 black : 1 blue** · 1 black : 2 blue : 1 splash white
@@ -336,7 +336,24 @@ Every question with the right answer in **bold**, for the teacher to read before
 
 ## Unit test paragraph
 
-You are the head tour guide at the Pet World Farm Barn. Two polled (no horns) cows and a polled bull had three calves, and one of them has horns. A family asks how that happened and whether it could happen again. Write a paragraph that answers them using chromosomes, alleles, and a Punnett square, and explains one way sexual reproduction or mutations make calves different from their parents.  
+You are the head tour guide at the Pet World Farm Barn. A polled (no horns) cow and a polled bull have had three calves together, and one of them has horns. A family asks how that happened and whether it could happen again. Write a paragraph that answers them using chromosomes, alleles, and a Punnett square, and explains one way sexual reproduction or mutations make calves different from their parents.  
 Rubric: Explains that genes and alleles are on chromosomes and each calf gets one of each pair from each parent; Says the horned calf is pp and that its polled parents must carry a hidden p (Pp); Uses a Punnett square or probability correctly (1/4, or 25%, for a Pp × Pp cross); Explains how sexual reproduction or mutations create variation  
 Model: *Each calf gets one chromosome of every pair from its mother and one from its father, so it gets one allele of the horn gene from each. The polled allele (P) is dominant and the horned allele (p) is recessive, so a calf with horns must be pp. That means its mother and the bull both carried a hidden p and are Pp. In a Pp × Pp Punnett square the boxes are PP, Pp, Pp and pp, so each new calf has a 1/4 (25%) chance of horns, and it could happen again. Because each egg and sperm carries a different mix of alleles, sexual reproduction makes brothers and sisters different, and a rare mutation in an egg or sperm could even add a brand-new allele.*
 
+## Blind review, Oct 30, 2026
+
+A separate reviewer answered all 96 scored items and 155 generated samples from the student view, without the key, and checked every Punnett, pedigree and mutation item by hand. Score: **96/96** scored and **155/155** generated, with no key disagreements. Full table: /home/claude/blind/report.md.
+
+Fixed (26):
+- **Cloning.** The clone generator said “Scientists cloned an Rr hen”, but no bird has ever been cloned. It now uses cattle and sheep only, with any genotype.
+- **Mutation kind.** The generator compared a calf’s gene with its mother’s, which isn’t a mutation test, since the calf may carry the father’s allele. It now compares one cell’s gene before and after a copying mistake.
+- **Lamb key.** “genes for different traits from each parent” is now “alleles from both parents, and in each trait a different one showed” (1ezf9aq → 2gv503).
+- **Unit-test paragraph.** It now names one polled cow and the bull, so both are known to be Pp (1iw576y → 18fzog).
+- **Mule two-part.** Part B no longer restates Part A (186yviu → 1ag3n78).
+- **Body-or-sex-cell sort.** The items no longer name the cell type (1oxi3ou → 1mitvdp).
+- **Sperm-allele generator.** It no longer hands over “one chromosome per sperm”, and the answer can be 0, 1/2 or 1.
+- **Phenotype generator.** For roan and blue Andalusians, the rule no longer names the in-between look.
+- **Smaller generator fixes.** The zygosity choices drop the tempting “Recessive”. The sort hint covers RW. “1 … animal” is singular, and sheep and chickens come in a flock. It is now “an rr” throughout. The Punnett builds say either letter order is fine.
+- **Distractors.** Ten level-2 and level-3 bank items have stronger wrong choices, and the 3/4 → 75% item is now level 1.
+
+No judgment calls are left. Kept: “compare to” is standard. Repeated generated samples come from the export drawing six per kind, while a quiz uses one per kind. “Married into the family” is only in the export’s picture description.
