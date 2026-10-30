@@ -44,7 +44,7 @@ All in `INSIGHT_RULES` at the top of `src/shared/insights.ts`. Nothing is said b
 | Arcade idea | Arcade at 25%+ of her time, out of 60+ minutes |
 | Left partway | 2+ minutes in a lesson or quiz with no finish that day, 3+ times on 2+ days in one subject |
 | Stuck | 15+ minutes on one screen with nothing finished |
-| Idle | 35%+ idle, out of 60+ minutes on screen |
+| Idle | 35%+ idle, out of 60+ minutes on screen; ⏸️ paused time (after an unanswered "Still there?") is idle, and the text says how many pauses (`IDLE-NUDGE.md`) |
 
 Confidence: ●●● at 3× the minimum, ●●○ at 1.5×, ●○○ at the minimum.
 

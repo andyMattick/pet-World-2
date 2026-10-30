@@ -155,6 +155,8 @@ A student's town is one saved record, so two devices could save over each other.
 
 **Reading Log (Oct 27, 2026).** The Reading Log page counts without taps while it's open and visible, for up to 20 minutes after her last tap (`READ_IDLE_MIN`, through `ActivityTracker.watching`). See `READING-TIMER.md`.
 
+**"Still there?" and pause (Oct 30, 2026).** After 2 minutes with no taps her pet asks "Still there?"; with no answer in 3 more, Pet World pauses. From the moment the nudge appears nothing counts (`ActivityTracker.holdSince`), so the wait and the pause are idle, never practice. Not during videos, the Reading Log, timed rounds or breaks; on a quiz or test it waits twice as long. See `IDLE-NUDGE.md`.
+
 **Plans show all her time.** The daily plan, extras and time goals show every minute she did ("32 of 20 min"), not a number stopped at the goal.
 
 **Time inside each assignment (Oct 27, 2026).** Each math shop, library unit (English, History, Biology) and the Reading Log shows "⏱️ Today in History: 23 of 30 min · 12 min in this unit" at the top (`todayTimeHTML`), out of the plan's minutes when the plan has them. It updates every 20 seconds.

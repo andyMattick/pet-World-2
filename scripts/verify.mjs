@@ -19,6 +19,11 @@ need('src/game/game.js', 'function buildReadingQuiz(', 'the reading quiz builder
 need('src/game/game.js', 'const readingChapterState = ', 'the grown-up check for reading notes');
 need('src/teacher/report.ts', 'function readingReviewHTML(', 'the teacher reading review card');
 need('src/teacher/main.ts', 'pin_plain', 'teacher-readable PIN support');
+// ⏸️ "Still there?" nudge, then pause (docs/IDLE-NUDGE.md): the held time never counts as practice
+need('src/lib/studentBackend.ts', 'static holdSince', 'the practice-time hold while "Still there?" is up or Pet World is paused');
+need('src/game/game.js', 'ActivityTracker.holdSince = ', 'the game sets the practice-time hold');
+need('src/game/game.js', 'function idleBusy(', 'no "Still there?" during videos, reading, timed rounds and breaks');
+need('src/shared/insights.ts', "e.k !== 'pause'", 'Insights counts pauses as idle time');
 need('src/game/game.js', 'reset_at', 'teacher reset metadata support');
 need('src/game/game.js', 'function renderBook(', 'the Sticker Book renderer');
 need('src/game/game.js', 'function rewardTileHTML(', 'the shared reward tile renderer');

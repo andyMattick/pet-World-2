@@ -5,6 +5,7 @@ import { installLanguage, type Language } from '../shared/language';
 import { teacherLock, setTeacherLock, isUnlocked, markUnlocked, relock, pinMatchesLock } from '../shared/grownupLock';
 import { BRAIN_GAMES, brainSettings, type BrainSettings } from '../shared/brainGames';
 import { THEME_DAYS, SPECIAL_DAYS, themeSettings, type ThemeSettings } from '../shared/themeDays';
+import { idleSettings, IDLE_MAX_MIN, IDLE_TEST_FACTOR } from '../shared/idleNudge';   // ⏸️ Still there? (docs/IDLE-NUDGE.md)
 import { MOVES, MOVES_PER_BREAK, MOVE_SECONDS, MOVE_MINUTES_MAX, moveSettings, type MoveSettings } from '../shared/moveBreaks';
 import { BUILDINGS, SHOPS, DRILLS, ARCADE_GAMES, arcadeSettings, prevBuilding, builtHoods, validHood, DEFAULT_HOME, QUIZ_DEFAULTS, quizSettings, mergeDrillSettings, STATIONS, type ArcadeSettings, type DrillSettings, type QuizSettings } from '../shared/registry';
 import { renderClassReport, setReportClass, esc, type StudentReport } from './report';
@@ -501,6 +502,7 @@ interface SetupChoice { id: string; emoji: string; name: string; what: string; o
 const SETUP_CHOICES: SetupChoice[] = [
   { id: 'brain', emoji: '🧠', name: 'Brain stretches', what: 'One brain break a day: 3 short brain games after the student’s first subject. Results go to each student’s 🧠 Brain tab.', on: g => brainSettings(g?.brain as Partial<BrainSettings> | undefined).enabled },
   { id: 'move', emoji: '🤸', name: 'Stand-and-stretch breaks', what: 'One exercise break a day, after the third subject: their pet leads a 1½-minute movement break. Pick the moves in Settings.', on: g => moveSettings(g?.move as Partial<MoveSettings> | undefined).enabled },
+  { id: 'idle', emoji: '⏸️', name: '“Still there?” and pause', what: 'After 2 minutes with no taps, the student’s pet asks “Still there?”; with no answer in 3 more, Pet World pauses and that time doesn’t count as practice. Change the minutes in Settings; a grown-up’s own setting wins.', on: g => idleSettings(null, g?.idle).on },
   { id: 'planShuffle', emoji: '⭐', name: 'Random first subject', what: 'Each day one subject on the plan is marked ⭐ Start here, and quizzes and unit tests move to the end of Today’s plan.', on: g => g?.planShuffle !== false },
   { id: 'extrasFirst', emoji: '☀️', name: 'Warm-up first', what: 'A student’s extras come first each day, after Bible: timed rounds of Fact Sprint (5 minutes) and Word Workshop (10 minutes on the 🐾 Paw Path, then 7 on the word game of the day). Subjects open once they’re done. Set each student’s extras on their page.', on: g => g?.extrasFirst !== false },
   { id: 'themes', emoji: '🎉', name: 'Theme days', what: 'A fun theme day (Pajama Day, Detective Day, Pi Day…) when a grown-up says yes each morning (after seeing what wasn’t finished the day before). Each theme has a quick way (wear something) and a longer way (make something). Every day or Fridays instead in Settings.', on: g => themeSettings(g?.themes as Partial<ThemeSettings> | undefined).enabled },
@@ -533,6 +535,7 @@ function renderSetup() {
     const game_settings = { ...old, allowMusic: val('allowMusic'), requireThink: val('requireThink'), planShuffle: val('planShuffle'), khan: val('khan'), youtube: val('youtube'),
       brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
       move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: val('move') },
+      idle: (i => ({ on: val('idle'), nudge: i.nudge, pause: i.pause }))(idleSettings(null, old.idle)),
       themes: { ...themeSettings(old.themes as Partial<ThemeSettings> | undefined), enabled: val('themes') }, extrasFirst: val('extrasFirst'),
       arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') },
       insightsEmail: { ...insightsEmailSetting(old), on: val('insightsEmail') } };
@@ -556,6 +559,7 @@ function renderSettings() {
   const brain = brainSettings(cls.game_settings?.brain as Partial<BrainSettings> | undefined);
   const move = moveSettings(cls.game_settings?.move as Partial<MoveSettings> | undefined);
   const themes = themeSettings(cls.game_settings?.themes as Partial<ThemeSettings> | undefined);
+  const idle = idleSettings(null, cls.game_settings?.idle);
   const insightsMail = insightsEmailSetting(cls.game_settings);
   const openUnits = new Set(BUILDINGS.filter(b => b.open).map(b => b.id));
   const drillTypes = Object.entries(DRILLS).filter(([, drill]) => drill.unit === 'all' || openUnits.has(drill.unit));
@@ -598,6 +602,11 @@ function renderSettings() {
       <p class="muted" style="margin-top:0">Once a day, after the student’s third subject, their pet leads ${MOVES_PER_BREAK} moves (half stretches, half fun ones like a staring contest or sock basketball), about ${MOVE_SECONDS} seconds each, before the new subject. There's no skip button. Walking around town or the Arcade in between doesn't count as a new subject, and break time doesn't count toward any subject.</p>
       <label for="moveMinutes">Minutes in a subject before it counts as one of the three (0 = any time)</label><input type="number" id="moveMinutes" min="0" max="${MOVE_MINUTES_MAX}" step="1" value="${move.minutes}">
       <h4>Moves in the cycle</h4><div class="row"><button type="button" class="btn small" data-move-all="1">Use all</button><button type="button" class="btn small" data-move-all="0">Block all</button></div>${([['stretch', 'Stretches'], ['fun', 'Fun ones']] as const).map(([kind, title]) => `<p style="margin:8px 0 2px"><b>${title}</b></p>${MOVES.filter(m => m.kind === kind).map(m => `<label style="display:flex; gap:8px; align-items:center" title="${esc(m.cue)}"><input type="checkbox" data-move="${m.id}" ${move.moves[m.id] ? 'checked' : ''}> ${m.emoji} ${esc(m.name)}</label>`).join('')}`).join('')}
+      <h3>⏸️ “Still there?” and pause</h3>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="idleOn" ${idle.on ? 'checked' : ''}> Ask “Still there?” when a student stops tapping</label>
+      <label for="idleNudge">Ask after this many minutes with no taps or keys</label><input type="number" id="idleNudge" min="1" max="${IDLE_MAX_MIN}" step="1" value="${idle.nudge}">
+      <label for="idlePause">Pause after this many more minutes with no answer</label><input type="number" id="idlePause" min="1" max="${IDLE_MAX_MIN}" step="1" value="${idle.pause}">
+      <p class="muted" style="margin-top:0">Their pet pops up with a big “I’m here!” button. With no answer, Pet World pauses (their pet naps; a tap brings them right back, nothing lost) and one line goes in the day log. Time from the “Still there?” on never counts as practice. It never asks during a video, a Khan lesson’s watch time, the Reading Log, a timed round or a break; on a quiz or test question it waits ${IDLE_TEST_FACTOR} times as long. A family’s own setting (in the progress report, behind the grown-up PIN) wins over this one.</p>
       <h3>✉️ Daily insights email</h3>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="insightsOn" ${insightsMail.on ? 'checked' : ''}> Email me each student’s 📈 Insights every day</label>
       <label for="insightsHour">Send at</label><select id="insightsHour">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === insightsMail.hour ? 'selected' : ''}>${hourLabel(h)}</option>`).join('')}</select>
@@ -680,7 +689,7 @@ function renderSettings() {
     const homeSel = pane.querySelector<HTMLSelectElement>('#cHome');
     const minStations: Record<string, number> = {};
     pane.querySelectorAll<HTMLSelectElement>('[data-min-station]').forEach(sel => { minStations[sel.dataset.minStation!] = +sel.value; });
-    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, planShuffle: ($('#planShuffle') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}),
+    const game_settings = { ...(cls.game_settings || {}), openUnits, allowMusic, khan, youtube, requireThink, minStations, arcade: arcadeSettingsForClass, brain: brainSettingsForClass, move: moveSettingsForClass, idle: { on: ($('#idleOn') as HTMLInputElement).checked, nudge: idleSettings(null, { nudge: +($('#idleNudge') as HTMLInputElement).value }).nudge, pause: idleSettings(null, { pause: +($('#idlePause') as HTMLInputElement).value }).pause }, themes: themeSettingsForClass, extrasFirst: ($('#extrasFirst') as HTMLInputElement).checked, planShuffle: ($('#planShuffle') as HTMLInputElement).checked, ...(homeSel ? { home: homeSel.value } : {}),
       insightsEmail: { on: ($('#insightsOn') as HTMLInputElement).checked, hour: +($('#insightsHour') as HTMLSelectElement).value, tz: browserTz() } };
     const { error } = await sb!.from('classes').update({ name, min_station, game_settings }).eq('id', cls.id);
     if (error) { $('#setMsg').textContent = error.message; return; }

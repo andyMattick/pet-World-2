@@ -30,6 +30,7 @@ import { themeSceneHTML, addThemeSceneCSS } from './reveals/themeScenes.js';
 import { termCards } from '../shared/termCards';
 import { HANDS_ON, NATURE_JOURNAL, handsOnById, weekHandsOn } from '../shared/handsOn';
 import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, moveSeconds, MOVE_SUBJECTS } from '../shared/moveBreaks';
+import { idleSettings, idleSetting, IDLE_TEST_FACTOR, IDLE_MAX_MIN, IDLE_NUDGE_MIN, IDLE_PAUSE_MIN } from '../shared/idleNudge';   // ⏸️ Still there? (docs/IDLE-NUDGE.md)
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS, SIM_MISSIONS, CELL_PARTS, CELLS, cellPart, cellPick, GENOTYPES, furOf, punnettGrid, whiteShare, litter, PUNNETT_MISSIONS, WEB, webById, WEB_ANIMALS, WEB_LIVING, sameSet, removeEffect, effectLabel, WEB_MISSIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { REPAIR_SHELVES, booksOn, repairSentenceHTML, choiceLabel } from './bookRepair.js';
@@ -265,6 +266,7 @@ function normalize(raw){
   s.carrySkipped = typeof s.carrySkipped === 'string' ? s.carrySkipped : '';
   s.nudges = s.nudges && typeof s.nudges.day === 'string' && Array.isArray(s.nudges.shown) ? {day:s.nudges.day, shown:s.nudges.shown.filter(x => typeof x === 'string').slice(0, 20)} : {day:'', shown:[]};   // today's "wrap it up" reminders already shown   // the last day a grown-up let her skip "Finish from before first"
   s.themeTurn = Number.isInteger(s.themeTurn) && s.themeTurn >= 0 ? s.themeTurn : 0;
+  s.idleNudge = idleSetting(s.idleNudge);   // ⏸️ the grown-up's Still there? setting, or null (docs/IDLE-NUDGE.md)
   s.testReady = Object.fromEntries(Object.entries(s.testReady && typeof s.testReady === 'object' ? s.testReady : {}).filter(([k, v]) => typeof k === 'string' && Number.isFinite(+v)).slice(-60));   // "<course or shop>:pw|khan": the review is done for the next test (docs/TEST-GATE.md)
   s.reviewDone = Object.fromEntries(Object.entries(s.reviewDone && typeof s.reviewDone === 'object' ? s.reviewDone : {}).filter(([k, v]) => typeof k === 'string' && v && Number.isFinite(+v.t) && Number.isInteger(v.total) && v.total > 0).map(([k, v]) => [k, {t:+v.t, total:v.total, right:Math.max(0, Math.min(v.total, Math.round(+v.right || 0))), fixed:Math.max(0, Math.round(+v.fixed || 0))}]).slice(-60));   // the last finished test review per test: all its mixed questions done, how many right the first time, lessons fixed after
   s.wheelLog = normalizeWheelLog(s.wheelLog);   // 🎡 each school day's classes (docs/CLASS-WHEEL.md)
@@ -6625,6 +6627,111 @@ function openNudge(html){
   document.body.appendChild(el); sfx('tick');
 }
 setInterval(() => { if (Backend.me) nudgeCheck(); }, 15000);
+/* ---------- ⏸️ "Still there?" nudge, then pause (ROADMAP F93, docs/IDLE-NUDGE.md) ----------
+   After the nudge minutes (default 2) with no taps or keys, her helper pet asks "Still there?" with a big "I'm here! 🐾".
+   No answer in the pause minutes (default 3) more, and Pet World pauses: a calm full-screen "Paused, tap to keep going"
+   with her pet napping, and one day-log line. A tap resumes right where she was (the screen underneath is never
+   touched, so typed answers stay). Never a skip, a penalty or lost coins. From the moment the nudge appears, nothing
+   counts as practice time (ActivityTracker.holdSince), so the wait and the pause are idle time, not practice.
+   Not while she's busy without tapping (idleBusy): a video, a Khan lesson's watch window, the Reading Log counting
+   reading or its timer, read-aloud or any audio playing, a timed round (Fact Sprint, Word Workshop, a word game), a
+   brain stretch or stand-and-stretch break, or anything marked data-idle-busy (the Word Workshop listening timer). On a
+   quiz or test question the nudge waits IDLE_TEST_FACTOR times longer (4 minutes by default). A hidden page isn't
+   counting anyway, so it never nudges, and coming back to the page starts the quiet clock again.
+   Settings: the grown-up's (progress report, S.idleNudge) wins over the teacher's class setting (game_settings.idle),
+   then the defaults. */
+let idleRun = null;   // {stage:'nudge'|'pause', at (nudge time, ms), perf (performance.now() then), pausedAt, event, el}
+let idleQuietFrom = Date.now();   // the quiet clock starts at the later of her last tap and the last busy moment
+const idlePolicy = () => idleSettings(S?.idleNudge, Backend.me ? Backend.me.game_settings?.idle : null);
+ActivityTracker.holdSince = () => (idleRun ? idleRun.at : null);
+function idleBusy(){
+  try { if (ActivityTracker.watching?.()) return true; } catch(e) { /* not watching */ }
+  if (S?.readTimer || brainRun || moveRun || spTimer || vocabTimer || puzzleTimer) return true;
+  if (typeof speechSynthesis !== 'undefined' && speechSynthesis.speaking) return true;
+  if ([...document.querySelectorAll('audio, video')].some(m => !m.paused && !m.ended)) return true;
+  if (document.querySelector('[data-idle-busy]')) return true;
+  return false;
+}
+/* a quiz or test question on screen: she may be reading a long one, so the nudge waits longer */
+function idleOnTest(){
+  const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
+  if (on('shift') && (shift?.mode === 'quiz' || shift?.mode === 'test')) return true;
+  if (on('library') && (readingRun || (englishRun && ['quiz', 'final', 'review'].includes(englishRun.retryType) && $('#libraryWrap .ela-question')))) return true;
+  return false;
+}
+function idleCheck(){
+  if (LOOK_ID || !S) return;
+  const p = idlePolicy(), now = Date.now();
+  if (!p.on) { if (idleRun) idleResume(); idleQuietFrom = now; return; }
+  if (idleRun) {
+    if (idleRun.stage === 'nudge' && now - idleRun.at >= p.pause * 60000) idlePause();
+    return;
+  }
+  if (document.hidden || idleBusy()) { idleQuietFrom = now; return; }
+  const quiet = now - Math.max(idleQuietFrom, ActivityTracker.lastInputAt, lastTapAt);
+  if (quiet >= p.nudge * 60000 * (idleOnTest() ? IDLE_TEST_FACTOR : 1)) idleNudge();
+}
+function idleNudge(){
+  const pet = petReward();
+  const el = document.createElement('div');
+  el.className = 'idle-nudge'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-label', 'Still there?');
+  el.innerHTML = `<div class="idle-box"><div class="idle-pet" aria-hidden="true">${pet?.emoji || '🐾'}</div>
+    <p class="idle-say"><b>${esc(petName())}:</b> Still there?</p>
+    <button type="button" class="btn berry idle-here" data-idle-here>I’m here! 🐾</button></div>`;
+  document.body.appendChild(el); sfx('tick');
+  idleRun = {stage:'nudge', at:Date.now(), perf:performance.now(), el};
+}
+function idlePause(){
+  const r = idleRun; if (!r) return;
+  const pet = petReward(), mins = Math.max(1, Math.round((Date.now() - Math.max(idleQuietFrom, ActivityTracker.lastInputAt, lastTapAt)) / 60000));
+  r.el.remove(); Music.stop();
+  const el = document.createElement('div');
+  el.className = 'idle-pause'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Paused — tap to keep going');
+  el.innerHTML = `<div class="idle-box"><div class="idle-pet idle-nap" aria-hidden="true">${pet?.emoji || '🐾'}<span class="idle-zzz">💤</span></div>
+    <h2>⏸️ Paused — tap to keep going</h2><p class="idle-why">${esc(petName())} is taking a nap until you’re back. Everything is right where you left it.</p></div>`;
+  document.body.appendChild(el); document.body.classList.add('brain-open');
+  r.stage = 'pause'; r.el = el; r.pausedAt = Date.now();
+  logEvent({k:'pause', idle:mins, from:r.at}); r.event = dayLogToday().events[dayLogToday().events.length - 1]; save();
+}
+/* back: the screen underneath is untouched; an order's timing skips the time away, so no "slow answer" pop-up comes of it */
+function idleResume(){
+  const r = idleRun; if (!r) return;
+  idleRun = null; r.el.remove(); idleQuietFrom = Date.now();
+  if (r.stage !== 'pause') return;
+  if (!brainRun && !moveRun) document.body.classList.remove('brain-open');
+  if (r.event) { r.event.back = Date.now(); save(); }
+  const away = performance.now() - r.perf;
+  if (order && !order.done && order.start !== null && away > 0) { order.start += away; const st = order.p?.steps?.[order.i]; if (st?.t0 != null) st.t0 += away; }
+  kickMusic(); toast('Welcome back! 🐾');
+}
+document.addEventListener('click', e => { if (idleRun && (e.target.closest('[data-idle-here]') || (idleRun.stage === 'pause' && e.target.closest('.idle-pause')))) idleResume(); });
+document.addEventListener('keydown', () => { if (idleRun) idleResume(); });   // any key means she's here
+document.addEventListener('pointerdown', e => { if (idleRun?.stage === 'nudge' && !e.target.closest?.('.idle-nudge')) idleResume(); }, {capture:true});   // a tap anywhere answers the nudge
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !idleRun) idleQuietFrom = Date.now(); });
+setInterval(idleCheck, 5000);
+/* the grown-up's setting, in the progress report (behind the grown-up PIN) */
+function idleParentHTML(){
+  const p = idlePolicy(), g = idleSetting(S.idleNudge), teacher = Backend.me ? idleSetting(Backend.me.game_settings?.idle) : null;
+  const opts = v => Array.from({length:IDLE_MAX_MIN}, (_, i) => `<option value="${i + 1}" ${i + 1 === v ? 'selected' : ''}>${i + 1} min</option>`).join('');
+  return `<div class="panel" id="idleParent"><h3>⏸️ “Still there?” and pause</h3>
+    <p class="muted" style="margin-top:0">After a few minutes with no taps, her pet asks “Still there?” With no answer, Pet World pauses, and that time doesn’t count as practice. Not during videos, reading, timed rounds or breaks; on a quiz or test it waits twice as long.</p>
+    <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="idleOn" ${p.on ? 'checked' : ''}> Ask “Still there?”</label>
+    <label style="display:block; margin:8px 0">Ask after <select id="idleNudgeMin">${opts(p.nudge)}</select> with no taps</label>
+    <label style="display:block; margin:8px 0">Pause after <select id="idlePauseMin">${opts(p.pause)}</select> more with no answer</label>
+    <div class="row"><button type="button" class="btn small primary" id="idleSave">Save</button>${g ? `<button type="button" class="btn small" id="idleClear">${Backend.me ? 'Use the teacher’s setting' : 'Back to the defaults'}</button>` : ''}</div>
+    <p class="muted">${g ? 'Using your setting.' : teacher ? 'Using the teacher’s setting. Yours wins if you save one.' : `Using the defaults (${IDLE_NUDGE_MIN} and ${IDLE_PAUSE_MIN} minutes).`}</p></div>`;
+}
+document.addEventListener('click', async e => {   // saving asks for the grown-up PIN (askGrownUp), like every grown-up choice
+  const saveIt = e.target.closest('#idleSave'), clear = e.target.closest('#idleClear'); if (!saveIt && !clear) return;
+  const next = saveIt ? idleSetting({on:$('#idleOn').checked, nudge:+$('#idleNudgeMin').value, pause:+$('#idlePauseMin').value}) : null;
+  if (!await askGrownUp({title:'Change “Still there?”', text:next ? (next.on ? `Ask after ${next.nudge} min with no taps, pause ${next.pause} min after that.` : 'Turn “Still there?” off.') : 'Go back to the teacher’s setting or the defaults.', ok:'Save', log:'⏸️ Changed the “Still there?” setting'})) return;
+  S.idleNudge = next; save(); renderParent(); toast('Saved');
+});
+if (new URLSearchParams(location.search).has('idletest')) window.PetWorldIdle = {
+  state:() => ({stage:idleRun?.stage || '', policy:idlePolicy(), busy:idleBusy(), test:idleOnTest()}),
+  active:() => Object.values(S.subjectTime?.[logDayKey()] || {}).reduce((a, b) => a + b, 0),
+  log:() => dayLogToday().events.filter(e => e.k === 'pause')
+};
 /* ---------- grown-up PIN check (docs/TEST-GATE.md) ----------
    One card for everything a grown-up has to OK: starting a test review, a Pet World test or a Khan test, a written-answer
    hint, reading minutes from another timer. There is no skip: the only other button is Cancel. Each OK goes in the day
@@ -15371,6 +15478,7 @@ function renderParent(){
       <div class="stat"><b>${mP === null ? '–' : mP + '%'}</b>arithmetic steps right on the first try (${mc} of ${ma})</div></div><p>${verdict}</p></div>
     <p class="counting-stat">Counting and reading the picture: <b>${setupC} of ${setupA}</b> right on first try.</p>
     ${practiceTimePanel()}
+    ${idleParentHTML()}
     ${vocabReportHTML()}
     ${progressBySubjectHTML({detail:true, canReview:parentReadingUnlocked, title:'Progress by subject and unit', reading:readingReviewHTML()})}
     ${writtenParentHTML()}
@@ -15640,6 +15748,7 @@ function eventText(e){
   if (e.k === 'done') return `✅ Finished: ${e.title}`;
   if (e.k === 'outside') return `📎 Outside work: ${e.title}`;
   if (e.k === 'watch') return e.title;
+  if (e.k === 'pause') return `⏸️ Paused after ${e.idle} idle minute${e.idle === 1 ? '' : 's'}`;
   return e.title || e.k;
 }
 /* the day's quizzes and tests passed (with scores) and skills mastered (ROADMAP F14): math skills that turned mastered,

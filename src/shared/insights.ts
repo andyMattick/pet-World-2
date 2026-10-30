@@ -82,7 +82,7 @@ export interface Insights {
   struggles: Struggle[]; missed: MissedItem[]; patterns: Pattern[];
   time: { subjects: SubjectTimeRow[]; totalMinutes: number; order: { days: { day: string; label: string; seq: string[] }[]; verdict: string };
     share: { lessons: number; games: number; arcade: number; town: number; breaks: number; total: number };
-    idle: { onScreen: number; active: number; pct: number | null }; emptyDays: string[];
+    idle: { onScreen: number; active: number; pct: number | null; pauses: number; pausedMinutes: number }; emptyDays: string[];
     partway: { subject: string; label: string; day: string; minutes: number }[]; stuck: { label: string; day: string; minutes: number }[] };
   tools: ToolRow[]; wins: Win[]; recs: { plan: Rec[]; app: Rec[] }; dataNotes: string[];
 }
@@ -504,8 +504,19 @@ export function computeInsights(student: InsightsStudent, options: InsightsOptio
   }
   /* idle: on screen minus active, from the practice sessions */
   let onScreen = 0, active = 0;
-  for (const row of arr(obj(student.ss).recent)) { const r = arr(row), s = num(r[0]), e = num(r[1]), a = num(r[2]); if (s == null || e == null || a == null || !inWin(at(s).day)) continue; onScreen += Math.max(0, (e - s) / 1000); active += a; }
-  const idle = { onScreen: mins(onScreen), active: mins(active), pct: onScreen >= 60 ? Math.max(0, Math.round((1 - active / onScreen) * 100)) : null };
+  const spans: [number, number][] = [];
+  for (const row of arr(obj(student.ss).recent)) { const r = arr(row), s = num(r[0]), e = num(r[1]), a = num(r[2]); if (s == null || e == null || a == null || !inWin(at(s).day)) continue; onScreen += Math.max(0, (e - s) / 1000); active += a; spans.push([s, e]); }
+  /* ⏸️ pauses after "Still there?" (docs/IDLE-NUDGE.md): from the nudge to her tap back is idle, never practice (the game
+     counts nothing in it). A session's on-screen time already holds the part inside it; the rest (a pause long enough
+     for the session to close, or one that never ended) is added as on screen, so paused time always shows as idle. */
+  let pauses = 0, pausedSecs = 0;
+  for (const day of windowDays) for (const e of log[day]?.events || []) {
+    if (e.k !== 'pause') continue;
+    const from = num(e.raw.from) ?? e.t, to = Math.max(e.t, num(e.raw.back) ?? e.t); if (to <= from) { pauses++; continue; }
+    const inside = spans.reduce((sum, [s, x]) => sum + Math.max(0, Math.min(x, to) - Math.max(s, from)), 0);
+    pauses++; pausedSecs += (to - from) / 1000; onScreen += Math.max(0, (to - from - inside) / 1000);
+  }
+  const idle = { onScreen: mins(onScreen), active: mins(active), pct: onScreen >= 60 ? Math.max(0, Math.min(100, Math.round((1 - active / onScreen) * 100))) : null, pauses, pausedMinutes: mins(pausedSecs) };
   const emptyDays = days.filter(d => !d.active && d.day !== today && weekdayOf(d.day) % 6 !== 0).map(d => d.label);
   /* left partway: a lesson or quiz with 2+ minutes and nothing finished that day; stuck: 15+ minutes */
   const partway: Insights['time']['partway'] = [], stuck: Insights['time']['stuck'] = [];
@@ -631,7 +642,7 @@ export function computeInsights(student: InsightsStudent, options: InsightsOptio
   for (const q of arr(student.help).map(obj)) { if (!inWinT(q.at)) continue; const l = str(q.label) || 'Pet World'; helpPlaces.set(l, (helpPlaces.get(l) || 0) + 1); if (q.kind === 'bug') bugs.push(`${l}: “${shortText(str(q.text), 60)}”`); }
   for (const [place, n] of helpPlaces) if (n >= 2) app.push({ kind: 'app', text: `${n} ✋ questions from the same place: ${place}. The instructions there may need work.`, evidence: `${n} questions in ${R.windowDays} days`, confidence: n >= 3 ? 'high' : 'medium' });
   if (bugs.length) app.push({ kind: 'app', text: `She reported something not working (🐞): ${bugs.slice(0, 2).join('; ')}.`, evidence: `${plural(bugs.length, 'report')} in ${R.windowDays} days`, confidence: 'high' });
-  if (idle.pct != null && idle.onScreen >= R.idleMinMinutes && idle.pct >= R.idleSharePct) app.push({ kind: 'app', text: `Pet World is open but idle ${idle.pct}% of the time. A “still there?” nudge, or shorter sittings, might help.`, evidence: `${idle.onScreen} min on screen, ${idle.active} min active (recent sessions)`, confidence: idle.onScreen >= 3 * R.idleMinMinutes ? 'high' : 'medium' });
+  if (idle.pct != null && idle.onScreen >= R.idleMinMinutes && idle.pct >= R.idleSharePct) app.push({ kind: 'app', text: idle.pauses ? `Pet World is open but idle ${idle.pct}% of the time, and it paused ${plural(idle.pauses, 'time')} after “Still there?” went unanswered. Shorter sittings might help.` : `Pet World is open but idle ${idle.pct}% of the time. Shorter sittings, or a shorter “Still there?” wait (Settings), might help.`, evidence: `${idle.onScreen} min on screen, ${idle.active} min active (recent sessions)${idle.pauses ? `; ${plural(idle.pauses, 'pause')}, ${idle.pausedMinutes} min paused` : ''}`, confidence: idle.onScreen >= 3 * R.idleMinMinutes ? 'high' : 'medium' });
 
   if (!activeDays) dataNotes.push(`No work recorded in the last ${R.windowDays} days.`);
   return {

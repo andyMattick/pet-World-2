@@ -31,9 +31,14 @@ export class ActivityTracker {
   /** set by the game: true while she is watching a lesson video (in Pet World or on Khan Academy in another tab), so
    *  that time counts with no taps and with Pet World hidden (docs/PRACTICE-TIME.md, "Videos count") */
   static watching: (() => boolean) | null = null;
+  /** set by the game (docs/IDLE-NUDGE.md): the time "Still there?" appeared, while it's up or Pet World is paused.
+   *  Nothing after that moment counts, not even watching, so the wait and the pause are never practice time. */
+  static holdSince: (() => number | null) | null = null;
+  /** the last tap, click or key on the page or in a same-origin game frame (the "Still there?" nudge reads it) */
+  static lastInputAt = Date.now();
   private pending = 0;
   private reporting = false;
-  private readonly onInput = () => { this.lastInput = Date.now(); };
+  private readonly onInput = () => { this.lastInput = ActivityTracker.lastInputAt = Date.now(); };
   private readonly onVisibility = () => { if (document.hidden) void this.report(); };
   /* taps inside a same-origin game frame (the unit games, the Arcade) count too: they don't reach this document */
   private readonly onFrameLoad = (e: Event) => { if (e.target instanceof HTMLIFrameElement) this.watchFrame(e.target); };
@@ -54,9 +59,11 @@ export class ActivityTracker {
     this.lastTick = Date.now();
     this.tickTimer = setInterval(() => {
       /* the real time since the last tick (a background tab's timers can slow to once a minute), at most 2 minutes */
-      const now = Date.now(), secs = Math.max(0, Math.min(120, Math.round((now - this.lastTick) / 1000))); this.lastTick = now;
-      let watching = false; try { watching = !!ActivityTracker.watching?.(); } catch { /* not watching */ }
-      if (secs && ((!document.hidden && now - this.lastInput < 60000) || watching)) { this.pending += secs; try { this.onActive?.(secs); } catch { /* never stop the clock */ } }
+      let hold: number | null = null; try { hold = ActivityTracker.holdSince?.() ?? null; } catch { /* no hold */ }
+      const now = Date.now(), end = hold != null ? Math.min(now, hold) : now;   // held: count only up to the nudge
+      const secs = Math.max(0, Math.min(120, Math.round((end - this.lastTick) / 1000))); this.lastTick = now;
+      let watching = false; try { watching = hold == null && !!ActivityTracker.watching?.(); } catch { /* not watching */ }
+      if (secs && ((!document.hidden && end - this.lastInput < 60000) || watching)) { this.pending += secs; try { this.onActive?.(secs); } catch { /* never stop the clock */ } }
     }, 15000);
     this.reportTimer = setInterval(() => { void this.report(); }, 60000);
   }
