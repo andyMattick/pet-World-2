@@ -201,7 +201,7 @@ const problems = [];
 
 for (const unit of UNITS) {
   const { course } = unit, ts = testSettings(course), view = [], keys = {};
-  const counts = { mc: 0, typed: 0, generated: 0, short: 0, essay: 0, droppedTyped: 0 };
+  const counts = { mc: 0, reserved: 0, typed: 0, generated: 0, short: 0, essay: 0, droppedTyped: 0 };
   const visible = [];   // every student-visible string, for the leak check
   let n = 0;
   const add = (q, sourceRef, section) => {
@@ -209,7 +209,7 @@ for (const unit of UNITS) {
     const { view: lines, key } = render(q, n);
     view.push(...lines);
     if (keys[q.id]) problems.push(`${unit.id}: duplicate id ${q.id}`);
-    keys[q.id] = { n, section, lesson: q.skillId, level: QT.isWritten(q) ? null : (q.difficulty || 1), ...key, source: sourceRef };
+    keys[q.id] = { n, section, ...(q.testOnly ? { testOnly: true } : {}), lesson: q.skillId, level: QT.isWritten(q) ? null : (q.difficulty || 1), ...key, source: sourceRef };
     visible.push(q.prompt, ...(q.options || []), ...(q.partB ? [q.partB.prompt, ...q.partB.options] : []), ...(q.items || []).map(x => (Array.isArray(x) ? x[0] : x)), ...(q.groups || []), (q.groups || []).join(' | '), q.sentence || '', q.rowLabel || '', q.colLabel || '', ...(q.figure ? figureText(q.figure) : []));
   };
   const skillName = id => unit.skills.find(s => s.id === id)?.name || id;
@@ -232,7 +232,7 @@ for (const unit of UNITS) {
     if (role) view.push(`Scene shown above every question in this lesson: You are ${role.who}. ${role.where} · ${role.intro}`);
     view.push('');
     const bank = QB.applyQuestionEdits(course, skill.id, unit.bank[skill.id] || [], {});
-    for (const q of bank) { counts.mc++; add({ ...q, skillId: skill.id, lessonName: skill.name }, srcRef('bank', findLine('bank', q.prompt)), 'scored'); }
+    for (const q of bank) { counts.mc++; if (q.testOnly) counts.reserved++; add({ ...q, skillId: skill.id, lessonName: skill.name }, srcRef('bank', findLine('bank', q.prompt)), 'scored'); }
     const typedRaw = TQ.TYPED_QUESTIONS[course]?.[skill.id] || [];
     const typed = QT.typedQuestions(course, skill.id, typedRaw, {});
     const dropped = typedRaw.filter(x => QT.typedProblems(x).length);

@@ -55,5 +55,6 @@ Every time questions are written or changed, in any unit, subject or grade (bank
 3. **Score against the key:** every mismatch and flag gets FIX, KEEP (with a reason) or JUDGMENT (Andy’s call, with both readings).
 4. **Check difficulty by level:** L3 clearly harder than L2, about 40% L3, and compare with Khan (easier, same or harder).
 5. **Run the test-wise bot:** `node scripts/test-wise-bot.mjs --courses <ids>`. It plays longest, shortest, middle-length, most specific, word overlap, absolute words, grammar agreement, odd one out, both/all, letter position, majority vote, two trained bots, generated-answer patterns, and a memorizer across practice, quizzes, the review and retakes. **Any strategy within 15 points of a pass mark, or more than about 10 points above chance, fails the unit.** Fix the items and rerun until it exits 0.
-6. Put the results in the unit’s `docs/*-review.md` (“Blind review and test-wise bot, <date>”). How to run it all: `docs/BLIND-REVIEW.md`.
+6. **Every unit has a reserved test pool:** at least 6–10 test-only questions per lesson (`testOnly:true` via `reserveForTest` in `src/shared/questionBanks.js`), blind-solved by a fresh agent, never shown in practice, quizzes, the test review, flashcards or games; the unit test draws from it and each retake shows ones she hasn’t seen first (docs/BLIND-REVIEW.md).
+7. Put the results in the unit’s `docs/*-review.md` (“Blind review and test-wise bot, <date>”). How to run it all: `docs/BLIND-REVIEW.md`.
 

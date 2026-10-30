@@ -321,3 +321,104 @@ Single-attempt quiz pass chance (best bot) after: The sound of language Quiz 5%,
 - **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
 - **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
 - **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.
+
+## Reserved test pool, Oct 30, 2026
+
+Owner rule (CONTENT-RULES.md, docs/BLIND-REVIEW.md): the unit test now draws **only** from questions written for it, which never appear in practice, quizzes, the test review, flashcards or games. Each retake shows reserved questions she hasn’t had on an earlier try first, then the least recently seen (`pickTestItems`, `S.testSeen`). This unit has no share holdout any more: every original question is back in practice. A unit-test miss still names the lesson and never shows the right answer.
+
+**20 new questions** (soundOfLanguage 10, styleTechnique 10); 9 at level 3 (45%). In the bank: `reserveForTest(STYLE_QUESTIONS, …)` in src/shared/questionBanks.js, marked `testOnly:true`.
+
+**Blind score: 20/20.** A fresh reviewer who never saw the key or the writer’s notes answered every question from a keyless, shuffled view. No key disagreements; 2 flags (too-easy or giveaway), all decided below.
+
+### Fixes (5)
+
+Made before the questions went into the bank, so no saved id changes. The changed questions were not re-solved blind (see “Still owed” below).
+
+- **soundOfLanguage:t3** (`style:soundOfLanguage:whp2ny`): Bot balance: Level-3 key lengths rebalanced (a wrong answer shortened).
+- **styleTechnique:t1** (`style:styleTechnique:1dhq2em`): Wrong answers now look polite too, each with one casual slip (“a ton”, “awesome”, a casual comma splice).
+- **styleTechnique:t2** (`style:styleTechnique:aelz8c`): Wrong answers are now closer idioms (“lay a finger on”, “fiddle with”) instead of obvious slang.
+- **styleTechnique:t3** (`style:styleTechnique:1p095d6`): Bot balance: Level-3 key lengths rebalanced (a wrong answer shortened).
+- **styleTechnique:t5** (`style:styleTechnique:5am72x`): Bot balance: Level-3 key lengths rebalanced (a wrong answer shortened).
+
+**Practice questions** (wrong answers only, so ids are stable). Returning the old 2-in-5 test-only questions to practice tilted a few quiz pools; the bot’s quiz check failed until these were rebalanced:
+
+- `styleTechnique:13v26gg` (letter to the mayor): “pumped” → “psyched up”.
+- `styleTechnique:4grdow` (situational irony): “A dog that barks at the mail carrier” → “A dog that barks loudly at the mail carrier each day”.
+- `styleTechnique:16ymkev` (verbal irony, “Nice job”): “Your brother finishes a puzzle…” → “Your brother finishes a hard puzzle all by himself…”.
+
+### Kept, with the reason
+
+- **soundOfLanguage:t7**: “Zip! Five bright kites rise high.” is keyed onomatopoeia and assonance; the reviewer reached the same answer (no repeated first consonant, so no alliteration).
+- **soundOfLanguage:t8**: Keyed four s-sound words: “shiny” starts with an sh sound. A fair sound-versus-spelling trap.
+
+### Judgment calls for Andy
+
+- **soundOfLanguage:t4 and the sound items**: They assume American pronunciation, as the unit already does (“heard/hearth”, “steak/grape”).
+- **styleTechnique:t4**: The wrong answer “Grandpa’s truck is older than I am.” is meant as a literal statement; a reader could take it as mild exaggeration.
+- **Pool size**: 10 reserved questions per lesson against 9 per lesson on the test: a second try is mostly repeats and a third try is all repeats. See the bot result below; this unit needs about 4–8 more reserved questions per lesson (blind-solved) to stay clean through three tries.
+
+### Test-wise bot, before → after
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500`. “Before” is the same bot run on this branch before the reserved pool (the old 2-in-5 holdout). The memorizer now also rules out a choice once it is marked wrong on a unit test and carries the game’s seen-list into retakes.
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| The sound of language Quiz (4 q) | 75% | 23.2 | learnedCV 27 | longest 29.6 | holds |
+| Style and technique Quiz (4 q) | 75% | 23.7 | middle 28.2 | middle 33.1 | holds |
+| Unit test (18 q) | 83.3% | 25 | longest 28.9 | middle 31.8 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 56.6 / 65.9 / 73 (FAIL) | 31.7 / 56.4 / 75.7 (FAIL) | FAIL |
+
+Share of each try’s questions that were new to her unit tests, after: 100% / 11.1% / 0%. A retake repeats 88.9% of the previous try’s questions (before: 34.6%).
+
+**The memorizer still passes the line on a third try.** The test takes 9 questions per lesson and the pool has 10, so try 2 is about 1 new question in 9 and try 3 is all repeats; a student who remembers which answers were marked right, and which choice was marked wrong, gets about 76% on try 3 against a line of 68% (pass mark 83% minus 15). In a simulation with 14 reserved questions per lesson the third try fell to about 60%. This unit needs about 4–8 more reserved questions per lesson, written and blind-solved like these, before it meets the rule on every try.
+
+**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+
+### The questions (right answer in bold)
+
+**soundOfLanguage**
+
+1. (level 2) Which word in this sentence is onomatopoeia? The campfire crackled and flickered while owls called from the pines.  
+   **crackled** · flickered · called · pines
+2. (level 2) Which line is built mainly on alliteration?  
+   **Darting dragonflies dipped down to the ditch.** · The deep green sea was clean. · Plop! A stone dropped into the lake. · A pair of dragonflies rested on a leaf near the water.
+3. (level 3) Listen for sounds, not letters. Which pair of words alliterates (starts with the same sound)?  
+   **“gem” and “jar”** · “gym” and “go” · “chorus” and “chair” · “cent” and “kite”
+4. (level 3) Listen for sounds, not spelling. Which pair of words shares a vowel sound?  
+   **“steak” and “grape”** · “steak” and “beak” · “grape” and “grab” · “heard” and “hearth”
+5. (level 2) Which line is built mainly on assonance?  
+   **Joan sold her old coat.** · Gus grabbed green grapes from the garden. · Squeak! The gate swung open in the wind. · Joan paid for the scarf with cash.
+6. (level 2) What makes this line sound musical? Lou flew to the zoo in June.  
+   **The same vowel sound repeats in nearby words.** · The same first sound repeats in nearby words. · One word in it imitates a noise. · The trip is made to sound much bigger than it was.
+7. (level 3) Which devices does this line use? “Zip! Five bright kites rise high.”  
+   **onomatopoeia and assonance** · onomatopoeia and alliteration · alliteration and understatement · assonance and overstatement
+8. (level 3) How many words in this line begin with the s sound? Cecil saw seven shiny circles.  
+   **four: Cecil, saw, seven, circles** · five: Cecil, saw, seven, shiny, circles · three: saw, seven, shiny · two: saw and seven
+9. (level 3) Read the poem. Line 1: The brook babbles by the big stones. Line 2: Gurgle! Splash! goes the stream. Line 3: Slow and low it rolls through the meadow. Line 4: Down to a lake by the hill. Which line is built mainly on assonance?  
+   **Slow and low it rolls through the meadow.** · The brook babbles by the big stones. · Gurgle! Splash! goes the stream. · Down to a lake by the hill.
+10. (level 2) A writer wants readers to hear an old car. Which sentence does that with onomatopoeia?  
+   **The old car sputtered all the way up the hill.** · The old car struggled up the hill. · The old car crept slowly up the steep hill. · The old car was noisy on the hill.
+
+**styleTechnique**
+
+1. (level 2) Which sentence fits best in a thank-you note to the nurse who cared for your grandmother?  
+   **Thank you for the care you gave my grandmother last week.** · Thanks a ton for the care you gave Grandma last week! · Thank you for being so awesome to my grandmother last week. · Thank you for the care you gave my grandma, you were the best!
+2. (level 2) Which words best fill the blank on a sign in a museum? Visitors may not ___ the paintings.  
+   **touch** · lay a finger on · fiddle with · mess with
+3. (level 3) Which sentence keeps this news report at one level of formality? The city council met on Tuesday to discuss the new bus routes. Several residents spoke in favor of the plan. ___  
+   **The council will vote on the routes next month.** · The council will vote on the routes next month, which is kinda soon. · They’ll vote on the whole deal soon. · The council’s gonna vote on the routes next month.
+4. (level 2) Which sentence uses overstatement?  
+   **Grandpa’s truck is older than the dinosaurs.** · Grandpa’s truck is older than I am. · Grandpa’s truck is thirty years old. · Grandpa’s truck is the oldest one on our street.
+5. (level 3) Ana’s cake sank in the middle, burned black, and set off the smoke alarm. She says, “It’s not my best work.” What does Ana really mean?  
+   **The cake turned out terribly.** · It was a bit off. · She is proud of how her cake came out. · The cake needs a few more minutes in the oven.
+6. (level 2) Jonah gets a flat tire on his bike, then drops his phone in a puddle. Which line from Jonah is verbal irony?  
+   **“This is turning into a fantastic morning.”** · “This morning keeps getting worse and worse.” · “My phone is wet and my tire is flat.” · “This is the worst morning in the history of the world.”
+7. (level 3) A town puts up a big new sign that says “Keep Our Park Clean.” Which detail would make the story situational irony?  
+   **The crew leaves a pile of trash right under the sign.** · A storm knocks the sign over a week later. · The mayor points at some litter and jokes that the park is “spotless.” · Readers know a raccoon is hiding behind the sign, but the crew doesn’t.
+8. (level 2) In a movie, Nora brags to her friends that her brother will never find her diary. The audience has already watched him read it. What kind of irony is this?  
+   **dramatic irony** · situational irony · verbal irony · understatement
+9. (level 3) A student writes to the school librarian: “yo, can u hold that dragon book 4 me? thx.” Which revision is formal and still says which book she wants?  
+   **Could you please hold the dragon book for me? Thank you.** · Could you please hold the dragon book for me? Thx! · Can you hold that dragon book for me? Thanks a bunch! · Please hold the book for me. Thank you.
+10. (level 2) Which writing task calls for the most casual style?  
+   **A note on the fridge telling your brother you went to the park** · An email asking your principal about joining the chess club · A letter to the newspaper about a pothole on your street · A thank-you letter to the author who visited your school
+

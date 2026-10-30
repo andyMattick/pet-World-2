@@ -44,7 +44,7 @@ import { ENGLISH_UNIT10, ENGLISH_GROUPS10, STYLE_QUESTIONS } from '../shared/que
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
 import { BIO_UNIT5, BIO_GROUPS5, BIO5_QUESTIONS } from '../shared/questionBanks';   // Biology Unit 5: Inheritance and variation (the Farm Barn)
 import { geneticsQuestions } from '../shared/genetics';   // the Farm Barn's generated genetics problems (docs/SCIENCE-UNIT5.md)
-import { punnettSlots, punnettMarks, testOnlyIds } from '../shared/questionTypes';   // testOnlyIds: questions kept for the unit test (docs/BLIND-REVIEW.md)   // 🐄 Build a Punnett square answers
+import { punnettSlots, punnettMarks, testOnlyIds, pickTestItems, normalizeTestSeen } from '../shared/questionTypes';   // testOnlyIds: questions kept for the unit test; pickTestItems: a retake's reserved questions (docs/BLIND-REVIEW.md)   // 🐄 Build a Punnett square answers
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -89,7 +89,7 @@ const freshBase = () => ({v:1, name:'', sid:'s'+Math.random().toString(36).slice
   owned:['cat'], decor:[], pet:'cat', unlocked:[], seenUnlocks:[], seenCollection:[], completedSets:[], muted:false, music:true, musicTrack:'cafe', musicVolume:70, streak:0, day:1, orders:0, perfect:0, timeMs:0,
   mathMinutes:{}, arcade:{tickets:0, playedSeconds:0, timerVersion:3, day:'', admittedDay:'', ticketDay:'', ticketsEarnedToday:0, completedRounds:[], rewardsPaid:[], gameSaves:{}},
   facts:{}, divFacts:{}, practiceLog:{}, drillLog:{}, practiceLanguage:'en', pace:{idea:[], arith:[], sprint:[]}, ks:{}, kr:{}, kn:{}, mis:{},
-  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], subjectTime:{}, sentBackSeen:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
+  review:{}, quizzes:{}, stationsOpenedBefore:{}, sessions:[], subjectTime:{}, sentBackSeen:[], readingBooks:[], readingSelection:null, elaProgress:{}, historyProgress:{}, historyProjects:{}, scienceProgress:{}, scienceProjects:{}, questionStats:{}, testSeen:{}, videosWatched:{}, writtenAnswers:[], mathThink:{}, vocab:normalizeVocabState(),
   cafe:{st:{1:0,2:0,3:0,4:0}}, bakery:{st:{1:0,2:0,3:0,4:0,5:0}}, displayed:Array(8).fill(null), room:{initialized:false,placements:[],items:[]}, accessoriesOwned:['starter-clip'], accessoryPositions:{}, wearing:{hat:null,eyes:null,neck:null}, minStation:1, unlockAll:false, resetSeen:null, sync:{url:'', wkey:'', cls:'', last:0}, savedAt:0});
 /* a new save, with a progress record for every shop (the Lemonade Stand and later ones too) */
 const fresh = () => { const s = freshBase(); Object.values(SHOPS).forEach(shop => { if (!s[shop.id]) s[shop.id] = {st:Object.fromEntries(shop.stations.map(st => [st.id, 0]))}; }); return s; };
@@ -149,6 +149,7 @@ function normalize(raw){
     .filter(([k, v]) => k.length <= 80 && Array.isArray(v)).slice(-300).map(([k, v]) => [k, [Math.max(0, Math.round(+v[0]) || 0), Math.max(0, Math.round(+v[1]) || 0)]]));
   s.questionStats = Object.fromEntries(Object.entries(s.questionStats && typeof s.questionStats === 'object' ? s.questionStats : {})   // bank question id → [answered, missed]
     .filter(([id, v]) => typeof id === 'string' && id.length <= 80 && Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 0) && v[1] <= v[0]).slice(-QUESTION_STATS_MAX));
+  s.testSeen = normalizeTestSeen(s.testSeen);   // course → {reserved test question id: when it was last on her unit test}; a retake shows ones she hasn't seen first (docs/BLIND-REVIEW.md)
   s.vocab = normalizeVocabState(s.vocab);   // Word Workshop: answer history per word, sprint best, the family's own words and focus
   s.mathThink = s.mathThink && typeof s.mathThink === 'object' ? s.mathThink : {};   // math Think it through sets, by station ("cafe:1")
   s.videoPass = Object.fromEntries(Object.entries(s.videoPass && typeof s.videoPass === 'object' && !Array.isArray(s.videoPass) ? s.videoPass : {})   // 🎬 today's video per unit: {day, title, picked, signed} (docs/VIDEO-GATE.md)
@@ -12159,9 +12160,11 @@ function startEnglishAssessment(groupId,courseId=activeEnglishCourse){
   const course=englishCourse(courseId),final = groupId === 'final', group = course.groups.find(item => item.id === groupId);
   if (!final && helpBlocks(courseSubject(course.id))) return;
   if (final ? !englishFinalReady(course) : !group || !(unitOpenedByGrownUp(course.building) || group.skills.every(skillId => englishRecord(skillId,course.id).passed))) return;
+  const seen = S.testSeen[course.id] || {};   // a unit with a reserved test pool: each retake shows reserved questions she hasn't had yet, then the least recently seen (docs/BLIND-REVIEW.md)
   const questions = final
-    ? shuffle(course.skills.flatMap(skill => leanHard(englishQuestions(skill.id,course.id,{test:true})).slice(0,course.testPer || 1)))
+    ? shuffle(course.skills.flatMap(skill => pickTestItems(englishQuestions(skill.id,course.id,{test:true}), course.testPer || 1, seen, leanHard)))
     : englishAssessmentQuestions(group.quizSkills || group.skills, 4,course.id);
+  if (final) { const now = Date.now(); S.testSeen = normalizeTestSeen({...S.testSeen, [course.id]:{...seen, ...Object.fromEntries(questions.filter(q => typeof q.id === 'string' && !q.gen).map(q => [q.id, now]))}}); save(); }
   activeEnglishCourse=course.id;englishRun = {title:final ? `${course.title} Test` : (group.quizName || `${group.name} Quiz`),progressKey:final ? course.finalKey : englishQuizKey(group.id,course.id),retryType:final ? 'final' : 'quiz',retryId:groupId,courseId:course.id,questions,index:0,score:0,passMark:final ? course.finalPass : 3,answered:false,outcomes:[],assessment:true,written:final ? unitEssay(course.id) : null};
   renderEnglishQuestion();
 }
@@ -15199,6 +15202,8 @@ function mergeProgress(base, other){
   for (const [w, stat] of Object.entries(other.vocab?.stats || {})) if ((stat?.r?.length || 0) > (base.vocab.stats[w]?.r?.length || 0)) { base.vocab.stats[w] = stat; n++; }
   for (const [id, v] of Object.entries(other.questionStats || {})) if (Array.isArray(v) && v[0] > (base.questionStats[id]?.[0] || 0)) { base.questionStats[id] = v; n++; }
   for (const [key, day] of Object.entries(other.videosWatched || {})) if (!base.videosWatched[key]) { base.videosWatched[key] = day; n++; }
+  base.testSeen = normalizeTestSeen(base.testSeen);   // reserved test questions seen on either device: the later time wins
+  for (const [course, ids] of Object.entries(normalizeTestSeen(other.testSeen))) for (const [id, t] of Object.entries(ids)) if (t > (base.testSeen[course]?.[id] ?? -1)) { (base.testSeen[course] = base.testSeen[course] || {})[id] = t; n++; }
   for (const [id, dig] of Object.entries(other.digs || {})) {   // the dig with more finds placed wins; a finished dig stays finished
     const mine = base.digs[id], count = d => Object.keys(d?.found || {}).length;
     if (!mine || count(dig) > count(mine)) { base.digs[id] = {...dig, done:!!(dig.done || mine?.done), best:Math.max(dig.best || 0, mine?.best || 0)}; n++; }

@@ -22,7 +22,7 @@ export interface LessonClass { id: string; name: string; lesson_links?: Record<s
 type SaveClass = (classId: string, patch: { lesson_links?: Record<string, LessonLink>; question_edits?: QuestionEdits }) => Promise<string | null>;
 
 interface Course { id: string; title: string; skills: { id: string; name: string }[] }
-interface BankQuestion { prompt: string; options: string[]; answer: number; difficulty?: number }
+interface BankQuestion { prompt: string; options: string[]; answer: number; difficulty?: number; testOnly?: boolean }   // testOnly: the unit's reserved test pool (docs/BLIND-REVIEW.md)
 interface Shown extends BankQuestion { id: string; source: 'built-in' | 'edited' | 'teacher'; hidden?: boolean; status?: 'approved' | 'draft' }
 interface LinkSlot { key: string; name: string; khan: string; skills: string[] }
 
@@ -288,7 +288,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
         const flagged = answered >= MISS_FLAG.minAnswers && missed / answered >= MISS_FLAG.rate;
         const missCell = isDraft || !stats ? '–' : !answered ? '<span class="muted">no answers yet</span>'
           : `<span${answered < MISS_FLAG.minAnswers ? ' class="muted"' : ''}>${missed} of ${answered}${answered >= MISS_FLAG.minAnswers ? ` (${Math.round(100 * missed / answered)}%)` : ''}</span>`;
-        const badge = isDraft ? 'Draft' : q.hidden ? 'Hidden' : q.source === 'edited' ? 'Edited' : q.source === 'teacher' ? 'Mine' : 'Built-in';
+        const badge = (isDraft ? 'Draft' : q.hidden ? 'Hidden' : q.source === 'edited' ? 'Edited' : q.source === 'teacher' ? 'Mine' : 'Built-in') + (q.testOnly ? ' · Unit test only' : '');
         const actions = isDraft
           ? `<button class="btn small primary" data-q-approve="${esc(q.id)}">Approve</button> <button class="btn small" data-q-edit="${esc(q.id)}">Edit</button> <button class="btn small" data-q-reject="${esc(q.id)}">Reject</button>`
           : q.source === 'teacher'

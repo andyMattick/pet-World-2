@@ -413,3 +413,159 @@ Single-attempt quiz pass chance (best bot) after: Quiz 1 5%, Quiz 2 7%; before: 
 - **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
 - **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
 - **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.
+
+## Reserved test pool, Oct 30, 2026
+
+Owner rule (CONTENT-RULES.md, docs/BLIND-REVIEW.md): the unit test now draws **only** from questions written for it, which never appear in practice, quizzes, the test review, flashcards or games. Each retake shows reserved questions she hasn’t had on an earlier try first, then the least recently seen (`pickTestItems`, `S.testSeen`). This unit has no share holdout any more: every original question is back in practice. A unit-test miss still names the lesson and never shows the right answer.
+
+**36 new questions** (chromU 6, chromA 6, mutA 6, sexVarU 6, vocabA 6, punnettA 6); 17 at level 3 (47%). In the bank: `reserveForTest(BIO5_QUESTIONS, …)` in src/shared/questionBanks.js, marked `testOnly:true`.
+
+**Blind score: 36/36.** A fresh reviewer who never saw the key or the writer’s notes answered every question from a keyless, shuffled view. No key disagreements; 3 flags (too-easy or giveaway), all decided below.
+
+### Fixes (10)
+
+Made before the questions went into the bank, so no saved id changes. The changed questions were not re-solved blind (see “Still owed” below).
+
+- **chromU:t2** (`bio5:chromU:1b87whf`): Wrong answers are now real misconceptions (one gene for both, chromosome = gene).
+- **chromU:t4** (`bio5:chromU:1osvdbx`): Bot balance: A wrong answer lengthened so the key is not the longest. Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **chromU:t5** (`bio5:chromU:1i0gmay`): Wrong answers now include the wrong nutrient (fat) and two believable rescues.
+- **mutA:t2** (`bio5:mutA:1a83iew`): Bot balance: The right answer now names the detail (more specific), so it is not always the plain choice a trained bot picks.
+- **mutA:t5** (`bio5:mutA:17zus2i`): Bot balance: A wrong answer lengthened so the key is not the longest.
+- **sexVarU:t2** (`bio5:sexVarU:9xkzip`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks. Bot balance: The right answer now names the detail (more specific), so it is not always the plain choice a trained bot picks.
+- **sexVarU:t3** (`bio5:sexVarU:1bc0ggw`): Bot balance: A wrong answer lengthened so the key is not the longest.
+- **sexVarU:t4** (`bio5:sexVarU:h6ip0t`): Bot balance: The right answer now names the detail (more specific), so it is not always the plain choice a trained bot picks.
+- **vocabA:t6** (`bio5:vocabA:1v8ha0m`): Bot balance: A wrong answer lengthened so the key is not the longest. Bot balance: The right answer now names the detail (more specific), so it is not always the plain choice a trained bot picks.
+- **punnettA:t6** (`bio5:punnettA:nqr9ez`): Reasons removed; the choices are bare chances, so the key is not signaled by its wording.
+
+**Practice questions** (wrong answers only, so ids are stable). Returning the old 2-in-5 test-only questions to practice tilted a few quiz pools; the bot’s quiz check failed until these were rebalanced:
+
+- `chromU:x6qxla`: “Brothers and sisters share almost none of their genes” → “Each got the same chromosomes from its parents”.
+- `chromU:10q3069`: “One, on the chromosome from her mother” → “One, on one chromosome of the pair”.
+- `chromA:3homqd`: “A red calf is born to two black parents” → “A calf with genes for red hair is born red to black parents”.
+- `mutA:10ry2mq`: “Herds in cold places, where cows need thick, warm winter hair” → “Herds in cold places, where a slick coat keeps cows warm”.
+- `sexVarU:1scfxm1`: “The calf got all its genes from one parent” → “The calf got its genes from one parent”.
+- `sexVarU:1imjn8a`: “Each chick gets both B and b from her” → “Each chick gets both B and b”.
+- `vocabA:12idm5b`: “A dominant allele makes an animal healthier” → “A dominant allele is healthier”.
+
+### Kept, with the reason
+
+- **chromA:t6**: Correct; “Each of its 30 chromosomes is from a different pair” may need a second read.
+
+### Judgment calls for Andy
+
+- **sexVarU:t5**: Chance during development explains why clones look different. Correct (the CC cat), but 6th graders may not have been taught it; it can be solved by ruling out the others.
+- **punnettA:t4**: 3/4 × 3/4 = 9/16 multiplies the chances of two separate events, which may be above 6th-grade level.
+- **vocabA:t4**: A trait hidden in both parents is keyed “recessive”; a new mutation is possible but less likely, so the prompt says “most likely”.
+- **mutA:t4**: A change in DNA outside any gene is keyed as “likely” leaving the traits the same.
+- **sexVarU:t2**: Summer aphid daughters are treated as near-clones of their mother, true for most aphids.
+- **chromU:t6**: Mature mammal red blood cells have no nucleus, so they hold none of the animal’s chromosomes.
+
+### Test-wise bot, before → after
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500`. “Before” is the same bot run on this branch before the reserved pool (the old 2-in-5 holdout). The memorizer now also rules out a choice once it is marked wrong on a unit test and carries the game’s seen-list into retakes.
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Quiz 1 (4 q) | 75% | 21.3 | overlap 27.4 | overlap 25.7 | holds |
+| Quiz 2 (4 q) | 75% | 19.9 | kindMemo 27.6 | learnedCV 28.9 | holds |
+| Unit test (24 q) | 79.2% | 25 | kindMemo 24.9 | longest 30.3 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 79.2% | | 42.2 / 47.8 / 52.5 | 30.6 / 41.2 / 60 | holds |
+
+Share of each try’s questions that were new to her unit tests, after: 100% / 50% / 0%. A retake repeats 50% of the previous try’s questions (before: 20.6%).
+
+Six lessons × 6 reserved against 4 per lesson: try 2 is half fresh and try 3 is all repeats, yet the memorizer stays below the line (about 60% against 64%). Two more reserved questions per lesson would give two fully fresh tries.
+
+**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+
+### The questions (right answer in bold)
+
+**chromU**
+
+1. (level 2) A goat’s horn cells make keratin, the tough protein that builds horns. Where do those cells get the instructions for making keratin?  
+   **From the keratin gene on one of the goat’s chromosomes** · From keratin in the goat’s food, which the cell copies · From proteins already in the horn, which make more keratin · From the goat’s blood, which carries instructions to the horn
+2. (level 2) A rabbit’s gene for fur color and its gene for ear length both sit on the same chromosome. What does this show?  
+   **One chromosome holds many different genes** · Fur color and ear length are controlled by one gene · The two genes make one protein together · A chromosome is a single gene that is very long
+3. (level 3) A goat’s hoof cells and stomach cells have the same chromosomes, so both carry the keratin gene. Hoof cells make lots of keratin, but stomach cells make almost none. What explains this?  
+   **Each kind of cell uses some of its genes and leaves others switched off** · The stomach cells lost the keratin gene as they grew · Keratin made in the stomach is carried to the hooves by the blood · Stomach cells keep the keratin gene in the wrong part of the nucleus
+4. (level 3) Alpacas have 74 chromosomes in each body cell, and people have 46. A visitor says, “So an alpaca must have more genes than a person.” What is the best reply?  
+   **Chromosome count doesn’t tell you how many genes an animal has** · Each chromosome carries one gene, so the alpaca has 74 · An animal with more chromosomes has more genes to fit inside them · Animals with more genes need fewer chromosomes
+5. (level 2) Calves digest the sugar in milk with lactase, a protein. A calf is born with both copies of its lactase gene broken. What would most likely happen?  
+   **It would have trouble digesting the sugar in its milk** · It would have trouble digesting the fat in its milk · Its other body cells would make extra lactase for its gut · It would digest milk normally, using its mother’s lactase gene
+6. (level 3) A barn vet explains that a cow’s red blood cells push out their nucleus as they mature. What is true of one of her mature red blood cells?  
+   **It no longer holds her chromosomes** · It holds half her chromosomes, like an egg · It keeps her chromosomes in its cell membrane · It stores her chromosomes in the blood around it
+
+**chromA**
+
+1. (level 2) A rabbit’s egg cell has 22 chromosomes. How many chromosomes are in one of that rabbit’s skin cells?  
+   **44** · 22 · 11 · 88
+2. (level 2) Ducks have 80 chromosomes in each body cell. A duck egg and a duck sperm join. How many chromosome pairs does the duckling’s first cell have?  
+   **40 pairs** · 20 pairs · 80 pairs · 160 pairs
+3. (level 3) A billy goat has alleles A and a for a gene on one chromosome pair, and alleles B and b for a gene on a different pair. Which set of alleles could one of his sperm cells carry?  
+   **A and b** · A and a · B and b · A, a, B, and b
+4. (level 3) Corn plants have 20 chromosomes in each body cell. A pollen grain’s sperm normally brings 10 to the egg. If a mistake gave one sperm 20 chromosomes, how many would the new corn embryo have?  
+   **30** · 20 · 40 · 15
+5. (level 2) A doe rabbit got a short-fur allele on chromosome 2 from her mother and a long-fur allele on chromosome 2 from her father. Which is true about the eggs she makes?  
+   **About half get the short-fur allele, and half get the long-fur one** · Each egg gets both alleles, one on each chromosome 2 · About three in four get the allele that shows in her fur · Each egg gets her mother’s allele, since eggs come from mothers
+6. (level 3) A goat’s egg cell has 30 chromosomes. A student says, “That’s 15 pairs.” What is the mistake?  
+   **Each of its 30 chromosomes is from a different pair** · The egg has 30 pairs, because it came from a cell with 30 pairs · The egg has 60 chromosomes, the same as the goat’s body cells · The egg has 15 pairs, but each pair is missing one of its genes
+
+**mutA**
+
+1. (level 3) Siamese cats carry a mutation in a gene for a fur-color protein. The changed protein works well only where the skin is cool and poorly where it is warm. Which parts of a Siamese cat’s coat are darkest?  
+   **The ears, paws, and tail, the coolest parts** · The belly, chest, and back, the warmest parts · The back and head, where the sun hits most · The whole coat evenly, since each skin cell has the mutation
+2. (level 3) A mutation removes three DNA letters in a row from the middle of a gene: exactly one whole three-letter group. What most likely happens to the protein?  
+   **It is missing one amino acid, and the rest of the protein stays the same** · The amino acids after the cut change, as with a one-letter loss · It is cut short right where the three letters were removed · It stays the same, since the cell reads letters in threes
+3. (level 2) In which of a ewe’s cells could a new mutation be passed on to her future lambs?  
+   **A cell in her ovary that will become an egg** · A cell in her udder that makes milk for her lambs · A cell in her womb, where her lambs will grow · A blood cell that carries food to her unborn lambs
+4. (level 2) A mutation changes one DNA letter in a stretch of a goat’s DNA that is not part of any gene. What is the most likely result?  
+   **No protein changes, so the goat’s traits likely stay the same** · The protein made by the nearest gene turns into a new protein · A new gene forms at that spot and gives the goat a new trait · The goat’s chromosome breaks apart at that spot
+5. (level 3) Two calves each have a one-letter deletion in the same 900-letter gene. In calf A, it is near the start of the gene; in calf B, it is in the last few letters. Whose protein is likely more changed?  
+   **Calf A’s, since more three-letter groups come after its deletion** · Calf B’s, since the end of the gene is read last · Neither, since one letter is too small to matter · They change by the same amount, since each calf lost just one letter
+6. (level 2) A visitor says, “The goats needed thicker coats for a cold winter, so their genes mutated to give them thicker coats.” What is wrong with that idea?  
+   **Mutations happen by chance, not because an animal needs them** · Coat thickness is a trait that genes don’t control · Mutations can make a coat thinner but not thicker · Genes can mutate in young goats but not in grown ones
+
+**sexVarU**
+
+1. (level 2) One farmer plants garlic cloves split from a single bulb. Another plants seeds from pumpkin flowers that bees pollinated. Which crop will most likely show more genetic variety, and why?  
+   **The pumpkins, since each seed got a new mix from two parents** · The garlic, since each clove grows in its own spot in the soil · The pumpkins, since bees add genes of their own to the seeds · The garlic, since a bulb holds cloves from many parent plants
+2. (level 2) In summer, the aphids on the barn’s rose bushes are females that give birth to daughters without mating. How do the daughters’ genes compare with their mother’s?  
+   **They are nearly identical to their mother’s genes, like clones** · They are a new mix · Each daughter has a new mix of her mother’s genes · Each daughter has half as many genes as her mother
+3. (level 3) In which situation would asexual reproduction most likely help a plant more than sexual reproduction would?  
+   **Spreading fast across a field where conditions stay steady** · Surviving a new plant disease that has just reached the farm this year · Coping with weather that changes a lot from year to year · Producing seedlings with many new mixes of traits
+4. (level 3) Two goat kids have the same mother and father. One has its mother’s long, droopy ears, and the other doesn’t. Both got 30 chromosomes from their mother. What best explains the difference?  
+   **The two eggs got different mixes of their mother’s chromosomes during meiosis** · One kid got more of its mother’s chromosomes than the other did · The ear genes of the second kid mutated after it was born · Long ears show up in the kid that was born first
+5. (level 3) A rancher has five clones made from her prize mare. The clones grow up with slightly different white markings on their faces. What best explains this?  
+   **Each clone’s markings also depended on chance as it developed** · Each clone got a new mix of the mare’s alleles · Each clone’s genes mutated into a new set as it grew · Each clone got half of its genes from a stallion
+6. (level 2) Which pair is most likely to be genetically identical?  
+   **Two plants grown from cuttings of one geranium** · Two ducklings from one nest, with the same parents · Two kittens born in the same litter to one mother · Two corn plants grown from kernels on one ear
+
+**vocabA**
+
+1. (level 2) In rabbits, a gene for hair length comes in a short-hair version (L) and a long angora-hair version (l). What are L and l?  
+   **Two alleles of one gene** · Two genes on different chromosomes · Two phenotypes of one rabbit · Two genotypes for hair length
+2. (level 2) In snapdragons, a red-flowered plant (RR) crossed with a white-flowered plant (WW) gives pink-flowered plants. Which choice names the pattern and the pink plants’ genotype?  
+   **Incomplete dominance; RW** · Codominance; RW · Incomplete dominance; RR · Complete dominance; RR
+3. (level 2) A gardener crosses a plant with red flowers and a plant with white flowers. Which offspring would show codominance?  
+   **Plants whose flowers have red patches and white patches** · Plants whose flowers are an even pink · Plants whose flowers are deep red, like one parent · Some plants with red flowers and some with white flowers
+4. (level 3) Two goats with wattles (small flaps of skin on the neck) have a kid without wattles. What is the most likely explanation about the no-wattles allele?  
+   **It is recessive, since it was hidden in both parents** · It is dominant, since it showed up in the kid · It is codominant, since both traits appear in the family · It is a new mutation, since neither parent showed it
+5. (level 3) In horses, the allele E is dominant over e. A horse with at least one E can make black pigment; an ee horse is chestnut, a reddish color. Two chestnut horses have a foal. Which is true?  
+   **The foal is ee and chestnut, like both parents** · The foal could be EE, Ee, or ee, like any foal · The foal is Ee, so it carries black but looks chestnut · The foal has a 1 in 4 chance of making black pigment
+6. (level 3) In Shorthorn cattle, red (R) and white (W) are codominant. Why can a breeder tell any calf’s genotype just by looking at its coat?  
+   **Each of the three genotypes, RR, RW and WW, gives a different coat color** · Shorthorn calves are homozygous for coat color · Red is dominant, so a red calf has to be RR · The white allele hides the red allele in a roan calf
+
+**punnettA**
+
+1. (level 2) In rabbits, short hair (L) is dominant over long angora hair (l). An Ll doe and an ll buck have 12 kits over a few litters. About how many kits would you expect to have angora hair?  
+   **6** · 3 · 9 · 12
+2. (level 2) In snapdragons, red (RR) and white (WW) show incomplete dominance, so RW plants are pink. A pink plant is crossed with a white plant. What percent of the offspring should have red flowers?  
+   **0%** · 25% · 50% · 75%
+3. (level 3) In sheep, white wool (W) is dominant over black wool (w). A white ram and a black ewe have a black lamb. What is the chance that their next lamb is black?  
+   **1/2** · 1/4 · 3/4 · 0
+4. (level 3) In goats, wattles (W) are dominant over no wattles (w). Two Ww goats have two kids, one after the other. What is the probability that both kids have wattles?  
+   **9/16** · 3/4 · 3/16 · 1/2
+5. (level 2) A Punnett square has W and W across the top and W and w down the side. What do its four boxes show?  
+   **2 WW and 2 Ww** · 1 WW, 2 Ww, and 1 ww · 4 Ww · 3 WW and 1 Ww
+6. (level 2) In rabbits, short hair (L) is dominant over angora hair (l). Two Ll rabbits have had three kits, and each of the three has short hair. What is the chance their next kit has angora hair?  
+   **1/4** · 1/2 · 0 · 3/4
+

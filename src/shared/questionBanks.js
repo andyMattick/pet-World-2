@@ -1688,6 +1688,10 @@ const BIO1_QUESTIONS = {
 // Phase 1 Science bank: extra Biology Unit 1 questions, tagged by difficulty (1-3).
 // They join the built-in pools above; practice still draws 4 at random and unit tests draw from the whole pool.
 const mcLevel = (difficulty, prompt, correct, ...wrong) => ({...mc(prompt, correct, ...wrong), difficulty});
+/* Reserved test pool (owner, Oct 30, 2026; docs/BLIND-REVIEW.md): questions written only for the unit test. They are
+   marked testOnly:true, so practice, quizzes, the test review and the games never show them, and the unit test draws from
+   them (testOnlyIds and pickTestItems in questionTypes.js). Each one was blind-solved by a fresh reviewer before it went in. */
+const reserveForTest = (bank, reserved) => { for (const [skill, list] of Object.entries(reserved)) (bank[skill] = bank[skill] || []).push(...list.map(question => ({...question, testOnly:true}))); };
 const BIO1_EXTRA_QUESTIONS = {
   cellsOrganisms:[
     mcLevel(1,'A kid asks what all living things have in common. What do you say?','They are made of one or more cells','They each make their own food','They each have a brain and a heartbeat','They are each made of many cells'),
@@ -2145,9 +2149,9 @@ const BIO4_QUESTIONS = {
     mcLevel(2,'Which cells in a person’s body go through meiosis?','Cells in the ovaries or testes','Cells in the skin','Cells in the bone marrow that make blood','Cells in the stomach lining'),
     mcLevel(2,'A dog body cell has 78 chromosomes. How many chromosomes are in each cell made by meiosis?','39','78','156','19'),
     mcLevel(3,'A cell with 12 chromosomes goes through meiosis. How many cells are made, and how many chromosomes are in each?','4 cells with 6 chromosomes each','2 cells with 12 chromosomes each','4 cells with 12 chromosomes each','2 cells with 6 chromosomes each'),
-    mcLevel(3,'Two sisters have the same parents but look different. Which part of meiosis helps explain this?','Crossing over mixes pieces of partner chromosomes','Mitosis copies the DNA exactly','Cytokinesis splits each cell in half','The chromosomes double in number'),
-    mcLevel(3,'A mule has 63 chromosomes, an odd number. Why can’t its cells usually finish meiosis normally?','Some chromosomes have no partner to pair with','Mules have no DNA in their sex cells','Mules can’t copy their chromosomes','Mitosis stops working in mules'),
-    mcLevel(3,'A human cell with 46 chromosomes finishes meiosis I. How many chromosomes are in each of the two new cells?','23, each still 2 chromatids','46, each now just 1 chromatid','92, each one still 2 chromatids','23, each now just 1 chromatid'),
+    mcLevel(3,'Two sisters have the same parents but look different. Which part of meiosis helps explain this?','Crossing over mixes pieces of partner chromosomes','Mitosis copies the DNA exactly','Cytokinesis splits each new cell into two unequal halves','The chromosomes double in number'),
+    mcLevel(3,'A mule has 63 chromosomes, an odd number. Why can’t its cells usually finish meiosis normally?','Some chromosomes have no partner to pair with','Mules have no DNA in their sex cells','Mules can’t copy their chromosomes before the cells divide','Mitosis stops working in mules'),
+    mcLevel(3,'A human cell with 46 chromosomes finishes meiosis I. How many chromosomes are in each of the two new cells?','23, each still 2 chromatids','46, each now just 1 chromatid','46, each still 2 chromatids','23, each now just 1 chromatid'),
     mcLevel(3,'Which statement compares mitosis and meiosis correctly?','Mitosis makes identical body cells; meiosis makes different sex cells','Mitosis makes sex cells; meiosis makes body cells','Both make four new cells that each have half the chromosomes of the parent cell','Mitosis happens in plants, and meiosis happens in animals')
   ],
   reproTypes4:[
@@ -2162,9 +2166,9 @@ const BIO4_QUESTIONS = {
     mcLevel(3,'A sea star loses an arm, and the arm (with part of the center) grows into a whole new sea star. What kind of reproduction is this?','Asexual, by regrowing from a piece','Sexual, because the arm joins with a cell from another star','Budding, like yeast','Binary fission, like bacteria'),
     mcLevel(3,'A farm grows a field of identical banana plants (clones). A new fungus kills one plant. What is most likely to happen?','The fungus can kill the rest, because they have the same weakness','The other plants survive, because each clone grows its own new defenses','The plants switch to sexual reproduction to escape it','The fungus can’t spread from one plant to another'),
     mcLevel(3,'Aphids reproduce asexually all summer, then sexually in the fall, laying eggs that last the winter. Why might switching help?','Fast asexual growth fills the summer; sexual eggs add variety for a harsh season','Summer heat stops their sex cells from forming, so they just clone themselves until fall','Asexual young are tougher in the cold; sexual eggs hatch faster in summer','Mating in the fall gives eggs that are exact copies of the mother, so they are safe'),
-    mcLevel(3,'A hydra grows a small hydra off its side that breaks free. How do the new hydra’s chromosomes compare with its parent’s?','The same, because they came from mitosis','Half as many, because they came from meiosis','A new mix of chromosomes from two different parents','Twice as many, because it grew from a bud'),
+    mcLevel(3,'A hydra grows a small hydra off its side that breaks free. How do the new hydra’s chromosomes compare with its parent’s?','The same, because they came from mitosis','Half as many, due to meiosis','A new mix of chromosomes from two different parents','Twice as many, because it grew from a bud'),
     mcLevel(3,'Which pair is matched correctly?','Asexual: offspring are clones; Sexual: offspring have variation','Asexual: offspring have variation; Sexual: offspring are clones','Asexual: uses meiosis to make clones; Sexual: offspring have variation','Asexual: offspring are clones; Sexual: one parent gives all the genes'),
-    mcLevel(3,'A gardener wants 50 rose bushes just like her prize-winning rose. Which method should she use?','Take cuttings from the prize rose and root them','Plant seeds from the prize rose after it pollinates itself','Let bees pollinate the prize rose with other roses','Take cuttings from a young rose grown from the prize rose’s seeds')
+    mcLevel(3,'A gardener wants 50 rose bushes just like her prize-winning rose. Which method should she use?','Take cuttings from the prize rose and root them','Plant seeds from the prize rose after it pollinates itself','Let bees pollinate the prize rose','Take cuttings from a young rose grown from the prize rose’s seeds')
   ],
   development4:[
     mcLevel(1,'A visitor at the Egg Lab asks what fertilization is. What do you say?','A sperm cell joining with an egg cell','A cell splitting into two new cells by mitosis','A caterpillar turning into a butterfly','A seed sprouting in the soil'),
@@ -2175,12 +2179,12 @@ const BIO4_QUESTIONS = {
     mcLevel(2,'What is a cell called when it can still become many kinds of cells?','A stem cell','A sex cell (egg or sperm)','A nerve cell','A red blood cell'),
     mcLevel(2,'What is it called when cells become specialized, like turning into muscle or nerve cells?','Differentiation','Fertilization','Pollination','Cellular respiration'),
     mcLevel(2,'Most frogs lay hundreds of eggs in water, and the male fertilizes them there. Why do frogs lay so many?','Many eggs and tadpoles get eaten or don’t survive','Each egg must be fertilized by many different sperm cells to develop','Frogs can’t lay just one egg at a time','Water makes eggs grow faster'),
-    mcLevel(3,'Identical twins form when one early embryo splits into two. Why do identical twins have the same DNA?','Both came from the same zygote, copied by mitosis','Each came from a different egg and sperm','Meiosis made two sex cells, both identical','Both got the same food and the same blood before birth'),
+    mcLevel(3,'Identical twins form when one early embryo splits into two. Why do identical twins have the same DNA?','Both came from the same zygote, copied by mitosis','Each came from a different egg and sperm','Meiosis made two sex cells, both identical','Both got the same food before birth'),
     mcLevel(3,'Fraternal twins form when two eggs are fertilized by two different sperm. How alike are their genes?','About as alike as any brother and sister','Exactly the same as each other, like identical twins','Totally different, with no genes in common','Half the same as their mother’s, half random'),
     mcLevel(3,'In 1996, scientists put the nucleus from an adult sheep’s udder cell into an egg whose own nucleus was removed, and it grew into Dolly the lamb. What does this show?','A specialized cell still has all the DNA needed to make a whole animal','Udder cells contain a special extra set of chromosomes just for making new lambs','Meiosis is needed to make every animal','Eggs make their own DNA after fertilization'),
     mcLevel(3,'Which order shows how a chick develops?','Fertilization → zygote → mitosis makes many cells → cells differentiate → hatching','Zygote → fertilization → cells differentiate → mitosis makes many cells → hatching','Fertilization → cells differentiate → zygote → mitosis makes many cells → hatching','Mitosis makes many cells → fertilization → zygote → cells differentiate → hatching'),
     mcLevel(3,'A zygote divides 3 times by mitosis, and every cell divides each time. How many cells are there?','8','6','3','9'),
-    mcLevel(3,'A sea urchin egg is fertilized by two sperm at once. Why is that a problem?','The zygote would have too many sets of chromosomes','It would make identical twins','The two sperm cells would use up the food stored inside the egg','Fertilization can’t happen in water')
+    mcLevel(3,'A sea urchin egg is fertilized by two sperm at once. Why is that a problem?','The zygote would have too many sets of chromosomes','It would make identical twins','The sperm would use up the egg’s food','Fertilization can’t happen in water')
   ],
   lifeCycles4:[
     mcLevel(1,'Which shows the stages of complete metamorphosis in order?','Egg, larva, pupa, adult','Egg, nymph, pupa, adult','Larva, egg, pupa, adult','Egg, pupa, larva, adult'),
@@ -2191,14 +2195,77 @@ const BIO4_QUESTIONS = {
     mcLevel(2,'What happens inside a butterfly’s chrysalis?','Much of the caterpillar’s body breaks down and is rebuilt into adult parts','The caterpillar sleeps and grows, but its parts stay the same','The butterfly lays its eggs','The caterpillar eats leaves stored inside'),
     mcLevel(2,'How is a tadpole different from an adult frog?','A tadpole breathes with gills and has a tail','A tadpole breathes with lungs and has four legs','A tadpole flies away and lays eggs of its own','A tadpole is a different species from the adult frog'),
     mcLevel(2,'Which stage of a flowering plant’s life cycle comes right after pollination?','Fertilization','Germination','Seed dispersal','Flowering'),
-    mcLevel(3,'A monarch caterpillar molts 4 times as it grows, then molts once more. What does that last molt reveal?','The chrysalis (pupa)','A bigger caterpillar','An adult butterfly','A nymph (young insect)'),
+    mcLevel(3,'A monarch caterpillar molts 4 times as it grows, then molts once more. What does that last molt reveal?','The chrysalis (pupa)','A bigger caterpillar','A fully grown butterfly','A nymph (young insect)'),
     mcLevel(3,'Why don’t a monarch caterpillar and an adult monarch compete for food?','The caterpillar chews leaves, and the adult sips nectar','They eat the same leaves, just at different times','Adult butterflies don’t eat','Caterpillars eat other insects'),
     mcLevel(3,'Ladybugs, bees, and flies go through complete metamorphosis. What is one way this can help an insect species?','Young and adults use different foods and places, so they don’t compete','The pupa stage lets the insect rest and skip eating for the rest of its life','Nymphs can fly away from danger','Adults can lay eggs without mating'),
-    mcLevel(3,'A milkweed patch is mowed down while monarch caterpillars are still eating. What is most likely to happen to them?','Many will starve, because they can’t eat other plants','They’ll switch to eating the grass and weeds that are left behind','They’ll sip nectar instead, because they can’t find leaves','They’ll turn into butterflies right away'),
+    mcLevel(3,'A milkweed patch is mowed down while monarch caterpillars are still eating. What is most likely to happen to them?','Many will starve, because they can’t eat other plants','They’ll switch to eating the grass and weeds that are left behind','They’ll sip nectar instead, because they can’t find leaves','They’ll turn into butterflies right away to find new food'),
     mcLevel(3,'Which life cycle is matched with the right stages?','Frog: egg, tadpole, froglet, adult','Grasshopper: egg, larva, pupa, adult','Butterfly: egg, nymph, adult','Ladybug: egg, nymph, adult'),
     mcLevel(3,'A painted lady butterfly lays her eggs on thistle, not on milkweed. Why does she choose so carefully?','Her caterpillars can’t travel far and must eat the right host plant','Thistle flowers have the sweetest nectar for her to drink when she’s older','Milkweed leaves are too smooth for eggs to stick','Eggs can only hatch on prickly leaves')
   ]
 };
+/* Biology Unit 4 (Butterfly House): reserved test pool, Oct 30, 2026 (48 test-only questions; docs/bio4-review.md, "Reserved test pool"). */
+reserveForTest(BIO4_QUESTIONS, {
+  chromosomes4:[
+    mcLevel(2,"Each leaf cell of a garden pea plant holds 7 homologous pairs of chromosomes. How many of the chromosomes in one leaf cell came from the pollen that fertilized the egg the plant grew from?","7","14","2","28"),
+    mcLevel(3,"At the Microscope Window, a guide points to the pinched spot where the two sister chromatids of a copied chromosome are held together. What is that spot called, and what happens to it in anaphase?","The centromere; it splits so the sister chromatids separate","The centromere; it holds the homologous pair together for good","The chromatid; it splits so the centromeres separate","The spindle; it splits so the homologous pairs separate"),
+    mcLevel(2,"A rabbit sperm cell has 22 chromosomes. How many chromosomes are in one of that rabbit’s ear skin cells?","44","22","11","88"),
+    mcLevel(2,"If the DNA from one human cell were stretched out end to end, it would be about 2 meters long, yet it fits inside a nucleus far too small to see. How?","It is coiled tightly around proteins","The cell cuts it into millions of tiny pieces","It is stored outside the nucleus","The cell keeps just the genes it is using"),
+    mcLevel(3,"Corn leaf cells have 20 chromosomes. A scientist finds a healthy corn cell with exactly 10 chromosomes. Which kind of cell is it most likely to be?","A sex cell made in the flower","A root cell","A cell that has just finished mitosis","A seedling’s stem cell"),
+    mcLevel(3,"In honeybees, females grow from fertilized eggs and have 32 chromosomes in their body cells. Males grow from eggs that were never fertilized. How many chromosomes are in a male honeybee’s body cells?","16","32","64","8"),
+    mcLevel(3,"A mouse cell has 40 chromosomes. Every one of them has been copied, and the cell hasn’t started dividing yet. How many centromeres does the cell have?","40","80","20","160"),
+    mcLevel(3,"Which two pieces of DNA carry the exact same version of every gene?","The sister chromatids of one copied chromosome","The two chromosomes in one homologous pair of a body cell","Mom’s chromosome 1 and Mom’s chromosome 2","A man’s X chromosome and his Y chromosome")
+  ],
+  mitosis4:[
+    mcLevel(2,"A cell has just finished interphase. Compared with when it first formed, what has changed?","It is bigger, with twice the DNA","It has split its nucleus into two parts","It is smaller and has half as much DNA","It has the same DNA but more chromosome pairs"),
+    mcLevel(2,"Which of these depends on mitosis?","A puppy’s leg bones growing longer","A frog’s body making egg cells","A sperm cell joining with an egg","Partner chromosomes trading pieces"),
+    mcLevel(2,"A cell has just finished anaphase. What happens next?","New nuclei form around the two sets of chromosomes","The chromosomes line up across the middle","The sister chromatids pull apart toward opposite ends","The DNA is copied so each chromosome gets two chromatids"),
+    mcLevel(2,"Why does a cell copy its DNA before mitosis instead of after?","So each new cell gets a full set","So each new cell gets half of the DNA","So the copies can trade pieces with their partners","So the cell keeps double the chromosomes for good"),
+    mcLevel(3,"A pig skin cell has 38 chromosomes. It goes through the whole cell cycle, and then both new cells do it again. How many cells are there, and how many chromosomes does each have?","4 cells with 38 each","4 cells with 19 each","2 cells with 38 each","4 cells with 76 each"),
+    mcLevel(3,"A cell with 10 chromosomes is in metaphase of mitosis. How many sister chromatids are lined up across the middle of the cell?","20","10","5","40"),
+    mcLevel(3,"A drug stops cells from copying their DNA. Which cells in the body would it harm the most?","Cells that divide often, like those lining the gut","Grown nerve cells, which seldom divide after childhood","Egg cells waiting in the ovaries","Fat cells that store energy"),
+    mcLevel(3,"During anaphase in a cell with 46 chromosomes, one pair of sister chromatids fails to separate, and both go to the same end. How many chromosomes do the two new cells get?","47 in one cell and 45 in the other","46 in each cell","23 in each cell","47 in each cell")
+  ],
+  meiosis4:[
+    mcLevel(2,"Bacteria never go through meiosis. Why don’t they need it?","They reproduce asexually, so no sex cells join","They have no DNA to copy","Their cells are too small to divide twice","They make their sex cells by mitosis instead"),
+    mcLevel(3,"Meiosis has two divisions. What is pulled apart in meiosis II?","Sister chromatids","The homologous pairs","The nuclear membrane and the DNA","Chromosomes from Mom and from Dad"),
+    mcLevel(2,"Besides crossing over, what else in meiosis makes each sex cell different?","Pairs line up in random directions","The DNA is copied with lots of mistakes","Each cell gets a random number of chromosomes","The cell divides once"),
+    mcLevel(3,"A species has 3 pairs of chromosomes. In meiosis, each pair can line up 2 ways. Ignoring crossing over, how many different chromosome combinations can its sex cells get?","8","6","3","9"),
+    mcLevel(2,"In a flowering plant, where does meiosis happen?","In the flower, where its pollen and egg cells form","In the root tip, where new root cells are made","In the leaves, where the plant makes its food","In the growing tip of the stem, where it gets taller"),
+    mcLevel(3,"A cell with 16 chromosomes finishes meiosis II. How many chromosomes are in each new cell, and how do the new cells compare?","8, and they are genetically different","8, and the four new cells are identical","16, and they are genetically different","4, and they are each genetically different"),
+    mcLevel(3,"A student says, “Meiosis is just mitosis done twice.” What is the best correction?","In meiosis I, partner chromosomes separate, so the number is cut in half","Meiosis copies the DNA twice, once before each division","Meiosis happens in plants, and mitosis happens in animals","In meiosis, the cell doesn’t copy its DNA"),
+    mcLevel(2,"A bull’s sperm cells each have 30 chromosomes. How many chromosomes were in the cell that started meiosis?","60","30","15","120")
+  ],
+  reproTypes4:[
+    mcLevel(2,"A strawberry plant sends out a runner, a stem along the ground that roots and grows a new plant. How do the new plant’s genes compare with the parent’s?","They are identical","They are a new mix from two plants","They are half of the parent’s genes","They differ"),
+    mcLevel(2,"Which of these is sexual reproduction?","A tulip seed forming after a bee brings pollen from another tulip","A spider plant growing baby plants on long stems","A sea anemone splitting down the middle","A tulip bulb growing new bulbs"),
+    mcLevel(2,"Duckweed plants on a calm pond often reproduce by budding. Why is asexual reproduction a good fit for spreading across the pond?","It makes lots of new plants quickly","It mixes genes","It lets each new plant grow larger than its parent","It helps the plants survive a change in the pond"),
+    mcLevel(2,"A planarian flatworm is cut in two, and each half regrows into a whole worm. Which describes this?","Asexual; both worms have the same genes","Sexual; both worms have the same genes","Asexual; each worm has a new mix of genes","Sexual; each worm has a new mix of genes"),
+    mcLevel(3,"A gardener crosses a red rose with a yellow rose and plants 20 of the seeds. What will the seedlings be like?","Each will have its own mix of the parents’ genes","Ten will copy the red parent, and ten the yellow","Each will be a copy of the red mother plant","They will be identical to one another"),
+    mcLevel(2,"In which pair are both examples asexual reproduction?","An amoeba splitting and an aspen tree sprouting from its roots","An amoeba splitting and a salmon’s eggs being fertilized in a stream","A pollinated apple flower and a potato eye","A frog’s eggs and a hydra’s bud"),
+    mcLevel(3,"Over 50 years, a lake slowly gets warmer. Snail population A reproduces only asexually, and population B reproduces sexually. Which is more likely to still live there, and why?","B, since some of its varied young may handle warmth","A, because its young vary and some will handle warmth","A, because it makes more young each year","B, because its young may copy the best parent"),
+    mcLevel(3,"One bacterium splits in two every 20 minutes, and every new cell keeps splitting. After 2 hours, how many bacteria are there, and how are their genes related?","64, with the same genes","64, each with a new mix of genes","12, with the same genes","32, with the same genes")
+  ],
+  development4:[
+    mcLevel(2,"A rooster’s body cells each have 78 chromosomes. How many chromosomes does a chicken zygote have when one of his sperm fertilizes a hen’s egg?","78","39","156","117"),
+    mcLevel(2,"A zygote divides into 2 cells, then 4, then 8. How do the chromosomes in each of the 8 cells compare with the zygote’s?","The same","One-eighth as many","Half as many","A new mix, like a sex cell’s"),
+    mcLevel(2,"A person’s skin cells carry the gene for making insulin, but only pancreas cells make insulin. Why don’t skin cells make it?","Skin cells keep that gene switched off","Skin cells lost that gene during mitosis","Pancreas cells have the insulin gene, but skin cells don’t","Skin cells have fewer chromosomes than pancreas cells"),
+    mcLevel(2,"A scientist takes cells from a 5-day-old embryo and grows them into beating heart muscle cells in a dish. What kind of cells did she start with?","Stem cells that hadn’t specialized yet","Heart cells","Sex cells made by meiosis","Zygotes with half the usual chromosomes"),
+    mcLevel(3,"In 1891 a scientist shook apart the two cells of a 2-cell sea urchin embryo, and each cell grew into a small but complete larva. What does this show about those early cells?","Neither cell had differentiated yet","Each cell had already differentiated into half a larva","Each held a different half of the DNA","They were already sex cells made by meiosis"),
+    mcLevel(3,"An embryo has 64 cells. Since the zygote, every cell has divided once in each round of mitosis. How many rounds have there been?","6","32","8","7"),
+    mcLevel(2,"Which happens first after a human egg is fertilized?","The zygote divides into two cells by mitosis","The cells differentiate into nerve and skin","The zygote makes sex cells by meiosis","The embryo forms a heart"),
+    mcLevel(3,"When a salamander loses a leg, cells near the wound lose their special jobs, divide many times, and then become bone, muscle, and skin again. Which two processes rebuild the leg, in order?","Mitosis, then differentiation","Meiosis, then fertilization","Fertilization, then mitosis","Differentiation, then meiosis")
+  ],
+  lifeCycles4:[
+    mcLevel(2,"A housefly maggot is white, has no legs, and looks nothing like an adult fly. Which life cycle stage is a maggot?","Larva","Nymph","Pupa","Egg"),
+    mcLevel(2,"A grasshopper nymph molts several times before it becomes an adult. What is the main difference between the last nymph stage and the adult?","The adult has full-sized wings","The nymph breathes with gills","The nymph has no legs yet","The nymph eats nectar while the adult eats leaves"),
+    mcLevel(2,"A mealworm is the larva of a darkling beetle. What does a full-grown mealworm turn into next?","A pupa that doesn’t eat","A nymph with small wing buds","An adult beetle that lays eggs","A winged larva"),
+    mcLevel(3,"Why does a butterfly do almost all of its growing as a caterpillar?","Adult butterflies don’t molt, so they can’t get bigger","The pupa eats the most food, so it grows the fastest of all","Adults can’t eat, so they can’t grow","Larvae grow by meiosis, which is faster"),
+    mcLevel(2,"A froglet has four legs and a short tail stub. Which change has already happened since it was a young tadpole?","Lungs have replaced its gills","It has already laid its first eggs","It has grown a longer tail for swimming","It has pupated"),
+    mcLevel(3,"A bean seed is planted. Which list puts the next steps of its life cycle in order?","Germination, flowering, pollination, new seeds","Flowering, germination, pollination, new seeds","Germination, pollination, flowering, new seeds","Pollination, germination, flowering, new seeds"),
+    mcLevel(3,"Japanese beetle grubs live in the soil and eat grass roots; the adults eat rose leaves. A gardener sprays the rose leaves all summer, but beetles come back the next year. What is the most likely reason?","Grubs living in the soil were never reached by the spray","Beetle nymphs hatching on the leaves resist the spray","The beetles skip the larva stage when sprayed","Pupae on the rose leaves are protected"),
+    mcLevel(3,"A cicada nymph lives underground for years, then climbs a tree and molts into a winged adult. Which statement about cicadas is accurate?","They have no pupa stage, so it’s incomplete metamorphosis","The underground stage is a larva, so it’s complete metamorphosis","The adult is a pupa until its wings dry","The nymph spins a chrysalis before it molts")
+  ]
+});
 /* ---------- end of Biology Unit 4 ---------- */
 // Biology Unit 5: Inheritance and variation (Khan Academy middle school biology, "Inheritance and variation"). The
 // student is a tour guide at the Pet World Farm Barn. Khan's lessons, in order (checked from Khan's lesson sitemaps,
@@ -2233,8 +2300,8 @@ const BIO5_QUESTIONS = {
     mcLevel(2,'A sheep’s body cells have 54 chromosomes. A visitor asks how many pairs that is. What do you say?','27 pairs','54 pairs','108 pairs','13 pairs'),
     mcLevel(3,'A visitor asks how a change in a gene can change a trait. Which chain is right?','Different gene → different protein → different trait','Different trait → different gene → different protein','Different protein → different chromosome → different gene','Different chromosome → different trait → different protein'),
     mcLevel(3,'A kid asks why a calf looks a bit like its mother and a bit like its father. What do you explain?','It has one chromosome of each pair from each parent','It has all of its mother’s genes and none of its father’s','It copies the traits it sees while it grows up','Its father’s genes take over half of its body cells'),
-    mcLevel(3,'Two calves have the same parents but look different. A visitor asks why. What do you explain?','Each got a different mix of its parents’ chromosomes','One of them got genes from a third animal in the herd','Brothers and sisters share almost none of their genes','The older calf was born first and used up the best genes'),
-    mcLevel(3,'A gene for coat color sits on one chromosome pair. How many copies of that gene are in one of a cow’s body cells?','Two, one on each chromosome of the pair','One, on the chromosome from her mother','Sixty, one on each of her chromosomes','One, made by mixing her mother’s and father’s copies'),
+    mcLevel(3,'Two calves have the same parents but look different. A visitor asks why. What do you explain?','Each got a different mix of its parents’ chromosomes','One of them got genes from a third animal in the herd','Each got the same chromosomes from its parents','The older calf was born first and used up the best genes'),
+    mcLevel(3,'A gene for coat color sits on one chromosome pair. How many copies of that gene are in one of a cow’s body cells?','Two, one on each chromosome of the pair','One, on one chromosome of the pair','Sixty, one on each of her chromosomes','One, made by mixing her mother’s and father’s copies'),
     mcLevel(3,'A visitor asks why a cow’s skin cells and muscle cells both have the coat-color gene. What do you explain?','Nearly every body cell has the full set of chromosomes','Each kind of body cell gets its own set of genes for its job','The gene travels around the body in the blood','Cells keep just the genes they use, and both of these use it'),
     mcLevel(3,'Which sentence about genes and proteins is accurate?','Genes hold instructions, and cells use them to make proteins','Proteins hold instructions, and cells use them to make genes','Genes are proteins that carry the instructions for traits','Each protein is a piece of a gene that the cell cut off and used')
   ],
@@ -2252,7 +2319,7 @@ const BIO5_QUESTIONS = {
     mcLevel(3,'The polled (no horns) gene is on chromosome 1 in cattle. A Pp bull passes P to some calves and p to others. Why?','Each sperm gets just one chromosome 1 from his pair','He passes it to bull calves but not heifers','The P allele is used up after his first few calves','Each calf chooses which of his alleles it wants'),
     mcLevel(3,'A pig has 38 chromosomes in each body cell. After an egg and a sperm join, how many chromosomes does the piglet’s first cell have?','38','19','76','57'),
     mcLevel(3,'Which two cells from the same ram both have 54 chromosomes?','A skin cell and a muscle cell','A sperm cell and a skin cell','Two of his sperm cells','A sperm and a muscle cell'),
-    mcLevel(3,'A breeder says, “Genes decide a lot, but the environment matters too.” Which example shows the environment changing a trait?','A calf with genes for large size stays small on poor feed','A red calf is born to two black parents','A calf gets one allele from each parent','A lamb gets 27 chromosomes from its mother')
+    mcLevel(3,'A breeder says, “Genes decide a lot, but the environment matters too.” Which example shows the environment changing a trait?','A calf with genes for large size stays small on poor feed','A calf with genes for red hair is born red to black parents','A calf gets one allele from each parent','A lamb gets 27 chromosomes from its mother')
   ],
   mutA:[
     mcLevel(1,'A visitor asks what a mutation is. What do you say?','A change in the DNA of a gene','A brand-new chromosome that appears from nowhere','An injury, like a broken leg or a cut','A trait an animal learns while growing'),
@@ -2267,7 +2334,7 @@ const BIO5_QUESTIONS = {
     mcLevel(3,'Polled (hornless) Holsteins carry a natural mutation. A dairy farmer chooses polled bulls. What is one benefit?','Calves won’t need their horns removed','Calves will grow twice as fast','The cows will produce milk with more protein','The bulls can’t pass on any other mutations'),
     mcLevel(3,'A mutation changes the shape of a protein. Which outcome could happen?','The protein may work worse, better, or about the same','The protein will turn into a different chromosome','The animal’s other genes may mutate too','The protein will change the DNA in the nucleus'),
     mcLevel(3,'A cow has a mutation in her udder cells. Which of her calves could inherit that mutation?','None of them, since udder cells aren’t sex cells','The female calves, which grow udders too','Half of them, like any other allele','The ones born after the mutation happened'),
-    mcLevel(3,'A mutation gives some cattle a short, slick hair coat that helps them stay cool. Where would cattle with this mutation most likely do better?','Herds in hot places, where slick-coated cows stay cool','Herds in cold places, where cows need thick, warm winter hair','Any herd, since cows everywhere need to stay cool in summer','Herds kept in cool barns with fans, where the cows stay cool'),
+    mcLevel(3,'A mutation gives some cattle a short, slick hair coat that helps them stay cool. Where would cattle with this mutation most likely do better?','Herds in hot places, where slick-coated cows stay cool','Herds in cold places, where a slick coat keeps cows warm','Any herd, since cows everywhere need to stay cool in summer','Herds kept in cool barns with fans, where the cows stay cool'),
     mcLevel(3,'Which change is NOT a mutation?','A cow’s muscles getting bigger from exercise','A DNA letter swapped in one of a bull’s sperm cells','A DNA letter lost while a cell copies its DNA','UV light changing a DNA letter in a cow’s skin cell')
   ],
   sexVarU:[
@@ -2280,9 +2347,9 @@ const BIO5_QUESTIONS = {
     mcLevel(2,'What is one advantage of asexual reproduction?','One parent can make many offspring quickly','Offspring are more varied','Offspring can survive any new disease','It needs a male and a female'),
     mcLevel(2,'Dolly the sheep (born 1996) was cloned from a body cell of a ewe. How did the genes in Dolly’s nucleus compare with that ewe’s?','They were the same as that ewe’s genes','Half from the ewe, half from a ram','They were a new mix, like any lamb’s','She had no genes until she was born'),
     mcLevel(3,'A farmer grows one kind of potato, and every plant is a clone. A new fungus arrives. Why is the farm at high risk?','The plants have the same genes, so all could get sick','Clones grow too slowly and stay too small to fight off a fungus','Clones can’t make the proteins plants use to fight a fungus','Plants grown from pieces of a potato have weaker cells than seedlings'),
-    mcLevel(3,'Two black Angus parents have a red calf. A visitor asks how. What do you say?','Each parent passed on a hidden red allele','The calf’s coat changed color after it was born','Red calves come from a new mutation in the calf','The calf got all its genes from one parent'),
+    mcLevel(3,'Two black Angus parents have a red calf. A visitor asks how. What do you say?','Each parent passed on a hidden red allele','The calf’s coat changed color after it was born','Red calves come from a new mutation in the calf','The calf got its genes from one parent'),
     mcLevel(3,'Why is a calf not an exact copy of either parent?','It got half its chromosomes from each, in a new mix','From the stronger parent, it got its chromosomes','Calves make new chromosomes as they grow','It got its four grandparents’ chromosomes'),
-    mcLevel(3,'A hen has two alleles for a gene, B and b. Each egg gets one of them. What does this mean for her chicks?','Some chicks can get B and others b','Each chick gets both B and b from her','Each chick gets B, since it is the dominant one','The chicks get no alleles from the hen'),
+    mcLevel(3,'A hen has two alleles for a gene, B and b. Each egg gets one of them. What does this mean for her chicks?','Some chicks can get B and others b','Each chick gets both B and b','Each chick gets B, since it is the dominant one','The chicks get no alleles from the hen'),
     mcLevel(3,'Which group of offspring is most likely to have a lot of genetic variety?','Lambs from many ewes and rams','Cuttings from one rose bush','Lambs from one ewe and one ram','Chicks hatched from one hen’s eggs and fathered by one rooster'),
     mcLevel(3,'A breeder wants calves just like her best cow. Which method gives the closest match?','Cloning the cow from one of her body cells','Breeding her with her own brother','Breeding her with the best bull at the fair','Breeding her with a bull from her own family line, many times')
   ],
@@ -2299,7 +2366,7 @@ const BIO5_QUESTIONS = {
     mcLevel(3,'Why can’t you tell a black Angus bull’s genotype just by looking at him?','BB and Bb both give a black coat','Genotypes change as the bull gets older','Black hides all of the bull’s alleles','Black bulls have three alleles for coat color'),
     mcLevel(3,'In Shorthorn cattle, red (R) and white (W) are codominant. A breeder wants every calf to be roan. Which pair should she breed?','A red cow and a white bull','Two roan cattle','A roan cow and a red bull','A roan cow and a white bull'),
     mcLevel(3,'Why does a roan × roan cross give some red, some roan, and some white calves?','Each parent can pass on either R or W','Roan is a mutation that comes and goes','The calves mix colors as they grow up','Roan parents can carry three alleles each'),
-    mcLevel(3,'Which statement about dominant alleles is true?','A dominant allele can be rare in a herd','A dominant allele is the most common one in a herd','A dominant allele makes an animal healthier','A dominant allele turns recessive alleles into copies of itself'),
+    mcLevel(3,'Which statement about dominant alleles is true?','A dominant allele can be rare in a herd','A dominant allele is the most common one in a herd','A dominant allele is healthier','A dominant allele turns recessive alleles into copies of itself'),
     mcLevel(3,'In chickens, a rose comb (R) is dominant over a single comb (r). A rose-comb hen has a single-comb chick. What is the hen’s genotype?','Rr','RR','rr','RR or Rr, no way to tell')
   ],
   punnettA:[
@@ -2319,6 +2386,57 @@ const BIO5_QUESTIONS = {
     mcLevel(3,'In Angus cattle, black (B) is dominant over red (b). A black bull is bred to 20 red cows, and all 20 calves are black. What is the best conclusion?','He is most likely BB','He must be Bb, a carrier','He must be bb, like the cows','He is most likely Bb')
   ]
 };
+/* Biology Unit 5 (Farm Barn): reserved test pool, Oct 30, 2026 (36 test-only questions; docs/bio5-review.md, "Reserved test pool"). */
+reserveForTest(BIO5_QUESTIONS, {
+  chromU:[
+    mcLevel(2,"A goat’s horn cells make keratin, the tough protein that builds horns. Where do those cells get the instructions for making keratin?","From the keratin gene on one of the goat’s chromosomes","From keratin in the goat’s food, which the cell copies","From proteins already in the horn, which make more keratin","From the goat’s blood, which carries instructions to the horn"),
+    mcLevel(2,"A rabbit’s gene for fur color and its gene for ear length both sit on the same chromosome. What does this show?","One chromosome holds many different genes","Fur color and ear length are controlled by one gene","The two genes make one protein together","A chromosome is a single gene that is very long"),
+    mcLevel(3,"A goat’s hoof cells and stomach cells have the same chromosomes, so both carry the keratin gene. Hoof cells make lots of keratin, but stomach cells make almost none. What explains this?","Each kind of cell uses some of its genes and leaves others switched off","The stomach cells lost the keratin gene as they grew","Keratin made in the stomach is carried to the hooves by the blood","Stomach cells keep the keratin gene in the wrong part of the nucleus"),
+    mcLevel(3,"Alpacas have 74 chromosomes in each body cell, and people have 46. A visitor says, “So an alpaca must have more genes than a person.” What is the best reply?","Chromosome count doesn’t tell you how many genes an animal has","Each chromosome carries one gene, so the alpaca has 74","An animal with more chromosomes has more genes to fit inside them","Animals with more genes need fewer chromosomes"),
+    mcLevel(2,"Calves digest the sugar in milk with lactase, a protein. A calf is born with both copies of its lactase gene broken. What would most likely happen?","It would have trouble digesting the sugar in its milk","It would have trouble digesting the fat in its milk","Its other body cells would make extra lactase for its gut","It would digest milk normally, using its mother’s lactase gene"),
+    mcLevel(3,"A barn vet explains that a cow’s red blood cells push out their nucleus as they mature. What is true of one of her mature red blood cells?","It no longer holds her chromosomes","It holds half her chromosomes, like an egg","It keeps her chromosomes in its cell membrane","It stores her chromosomes in the blood around it")
+  ],
+  chromA:[
+    mcLevel(2,"A rabbit’s egg cell has 22 chromosomes. How many chromosomes are in one of that rabbit’s skin cells?","44","22","11","88"),
+    mcLevel(2,"Ducks have 80 chromosomes in each body cell. A duck egg and a duck sperm join. How many chromosome pairs does the duckling’s first cell have?","40 pairs","20 pairs","80 pairs","160 pairs"),
+    mcLevel(3,"A billy goat has alleles A and a for a gene on one chromosome pair, and alleles B and b for a gene on a different pair. Which set of alleles could one of his sperm cells carry?","A and b","A and a","B and b","A, a, B, and b"),
+    mcLevel(3,"Corn plants have 20 chromosomes in each body cell. A pollen grain’s sperm normally brings 10 to the egg. If a mistake gave one sperm 20 chromosomes, how many would the new corn embryo have?","30","20","40","15"),
+    mcLevel(2,"A doe rabbit got a short-fur allele on chromosome 2 from her mother and a long-fur allele on chromosome 2 from her father. Which is true about the eggs she makes?","About half get the short-fur allele, and half get the long-fur one","Each egg gets both alleles, one on each chromosome 2","About three in four get the allele that shows in her fur","Each egg gets her mother’s allele, since eggs come from mothers"),
+    mcLevel(3,"A goat’s egg cell has 30 chromosomes. A student says, “That’s 15 pairs.” What is the mistake?","Each of its 30 chromosomes is from a different pair","The egg has 30 pairs, because it came from a cell with 30 pairs","The egg has 60 chromosomes, the same as the goat’s body cells","The egg has 15 pairs, but each pair is missing one of its genes")
+  ],
+  mutA:[
+    mcLevel(3,"Siamese cats carry a mutation in a gene for a fur-color protein. The changed protein works well only where the skin is cool and poorly where it is warm. Which parts of a Siamese cat’s coat are darkest?","The ears, paws, and tail, the coolest parts","The belly, chest, and back, the warmest parts","The back and head, where the sun hits most","The whole coat evenly, since each skin cell has the mutation"),
+    mcLevel(3,"A mutation removes three DNA letters in a row from the middle of a gene: exactly one whole three-letter group. What most likely happens to the protein?","It is missing one amino acid, and the rest of the protein stays the same","The amino acids after the cut change, as with a one-letter loss","It is cut short right where the three letters were removed","It stays the same, since the cell reads letters in threes"),
+    mcLevel(2,"In which of a ewe’s cells could a new mutation be passed on to her future lambs?","A cell in her ovary that will become an egg","A cell in her udder that makes milk for her lambs","A cell in her womb, where her lambs will grow","A blood cell that carries food to her unborn lambs"),
+    mcLevel(2,"A mutation changes one DNA letter in a stretch of a goat’s DNA that is not part of any gene. What is the most likely result?","No protein changes, so the goat’s traits likely stay the same","The protein made by the nearest gene turns into a new protein","A new gene forms at that spot and gives the goat a new trait","The goat’s chromosome breaks apart at that spot"),
+    mcLevel(3,"Two calves each have a one-letter deletion in the same 900-letter gene. In calf A, it is near the start of the gene; in calf B, it is in the last few letters. Whose protein is likely more changed?","Calf A’s, since more three-letter groups come after its deletion","Calf B’s, since the end of the gene is read last","Neither, since one letter is too small to matter","They change by the same amount, since each calf lost just one letter"),
+    mcLevel(2,"A visitor says, “The goats needed thicker coats for a cold winter, so their genes mutated to give them thicker coats.” What is wrong with that idea?","Mutations happen by chance, not because an animal needs them","Coat thickness is a trait that genes don’t control","Mutations can make a coat thinner but not thicker","Genes can mutate in young goats but not in grown ones")
+  ],
+  sexVarU:[
+    mcLevel(2,"One farmer plants garlic cloves split from a single bulb. Another plants seeds from pumpkin flowers that bees pollinated. Which crop will most likely show more genetic variety, and why?","The pumpkins, since each seed got a new mix from two parents","The garlic, since each clove grows in its own spot in the soil","The pumpkins, since bees add genes of their own to the seeds","The garlic, since a bulb holds cloves from many parent plants"),
+    mcLevel(2,"In summer, the aphids on the barn’s rose bushes are females that give birth to daughters without mating. How do the daughters’ genes compare with their mother’s?","They are nearly identical to their mother’s genes, like clones","They are a new mix","Each daughter has a new mix of her mother’s genes","Each daughter has half as many genes as her mother"),
+    mcLevel(3,"In which situation would asexual reproduction most likely help a plant more than sexual reproduction would?","Spreading fast across a field where conditions stay steady","Surviving a new plant disease that has just reached the farm this year","Coping with weather that changes a lot from year to year","Producing seedlings with many new mixes of traits"),
+    mcLevel(3,"Two goat kids have the same mother and father. One has its mother’s long, droopy ears, and the other doesn’t. Both got 30 chromosomes from their mother. What best explains the difference?","The two eggs got different mixes of their mother’s chromosomes during meiosis","One kid got more of its mother’s chromosomes than the other did","The ear genes of the second kid mutated after it was born","Long ears show up in the kid that was born first"),
+    mcLevel(3,"A rancher has five clones made from her prize mare. The clones grow up with slightly different white markings on their faces. What best explains this?","Each clone’s markings also depended on chance as it developed","Each clone got a new mix of the mare’s alleles","Each clone’s genes mutated into a new set as it grew","Each clone got half of its genes from a stallion"),
+    mcLevel(2,"Which pair is most likely to be genetically identical?","Two plants grown from cuttings of one geranium","Two ducklings from one nest, with the same parents","Two kittens born in the same litter to one mother","Two corn plants grown from kernels on one ear")
+  ],
+  vocabA:[
+    mcLevel(2,"In rabbits, a gene for hair length comes in a short-hair version (L) and a long angora-hair version (l). What are L and l?","Two alleles of one gene","Two genes on different chromosomes","Two phenotypes of one rabbit","Two genotypes for hair length"),
+    mcLevel(2,"In snapdragons, a red-flowered plant (RR) crossed with a white-flowered plant (WW) gives pink-flowered plants. Which choice names the pattern and the pink plants’ genotype?","Incomplete dominance; RW","Codominance; RW","Incomplete dominance; RR","Complete dominance; RR"),
+    mcLevel(2,"A gardener crosses a plant with red flowers and a plant with white flowers. Which offspring would show codominance?","Plants whose flowers have red patches and white patches","Plants whose flowers are an even pink","Plants whose flowers are deep red, like one parent","Some plants with red flowers and some with white flowers"),
+    mcLevel(3,"Two goats with wattles (small flaps of skin on the neck) have a kid without wattles. What is the most likely explanation about the no-wattles allele?","It is recessive, since it was hidden in both parents","It is dominant, since it showed up in the kid","It is codominant, since both traits appear in the family","It is a new mutation, since neither parent showed it"),
+    mcLevel(3,"In horses, the allele E is dominant over e. A horse with at least one E can make black pigment; an ee horse is chestnut, a reddish color. Two chestnut horses have a foal. Which is true?","The foal is ee and chestnut, like both parents","The foal could be EE, Ee, or ee, like any foal","The foal is Ee, so it carries black but looks chestnut","The foal has a 1 in 4 chance of making black pigment"),
+    mcLevel(3,"In Shorthorn cattle, red (R) and white (W) are codominant. Why can a breeder tell any calf’s genotype just by looking at its coat?","Each of the three genotypes, RR, RW and WW, gives a different coat color","Shorthorn calves are homozygous for coat color","Red is dominant, so a red calf has to be RR","The white allele hides the red allele in a roan calf")
+  ],
+  punnettA:[
+    mcLevel(2,"In rabbits, short hair (L) is dominant over long angora hair (l). An Ll doe and an ll buck have 12 kits over a few litters. About how many kits would you expect to have angora hair?","6","3","9","12"),
+    mcLevel(2,"In snapdragons, red (RR) and white (WW) show incomplete dominance, so RW plants are pink. A pink plant is crossed with a white plant. What percent of the offspring should have red flowers?","0%","25%","50%","75%"),
+    mcLevel(3,"In sheep, white wool (W) is dominant over black wool (w). A white ram and a black ewe have a black lamb. What is the chance that their next lamb is black?","1/2","1/4","3/4","0"),
+    mcLevel(3,"In goats, wattles (W) are dominant over no wattles (w). Two Ww goats have two kids, one after the other. What is the probability that both kids have wattles?","9/16","3/4","3/16","1/2"),
+    mcLevel(2,"A Punnett square has W and W across the top and W and w down the side. What do its four boxes show?","2 WW and 2 Ww","1 WW, 2 Ww, and 1 ww","4 Ww","3 WW and 1 Ww"),
+    mcLevel(2,"In rabbits, short hair (L) is dominant over angora hair (l). Two Ll rabbits have had three kits, and each of the three has short hair. What is the chance their next kit has angora hair?","1/4","1/2","0","3/4")
+  ]
+});
 /* ---------- end of Biology Unit 5 ---------- */
 const KHAN = 'https://www.khanacademy.org/';
 const GRAMMAR = `${KHAN}humanities/grammar/parts-of-speech-the-`, WORLD = `${KHAN}humanities/world-history/x66f79d8a:`, BIO6 = `${KHAN}science/grade-6-science/x88f5990a7622d8f5:life-sciences/x88f5990a7622d8f5:`;
@@ -3862,16 +3980,16 @@ const SENTENCE_QUESTIONS = {
     qLevel(2,"Which shows the sentence split correctly into complete subject | complete predicate?","The kids on our street | play tag every evening.","The kids | on our street play tag every evening.","The kids on our street play | tag every evening.","The kids on our | street play tag every evening."),
     qLevel(3,"What is the simple subject? One of my friends has a pet snake.","One","friends","snake","has"),
     qLevel(3,"What is the complete subject? Here comes the parade.","the parade","Here","Here comes","comes the parade"),
-    qLevel(3,"What is the complete subject? Did the girl with the green backpack win the race?","the girl with the green backpack","the girl","the girl with the green backpack win","win the race"),
-    qLevel(3,"What is the simple predicate? My sister and I have been practicing all week.","have been practicing","practicing","have been practicing all week","My sister and I"),
-    qLevel(3,"What is the complete subject? Lions, tigers, and bears live at the city zoo.","Lions, tigers, and bears","Lions","Lions, tigers, and bears live","the city zoo"),
+    qLevel(3,"What is the complete subject? Did the girl with the green backpack win the race?","the girl with the green backpack","the girl","the girl with the green backpack win","the girl with the backpack"),
+    qLevel(3,"What is the simple predicate? My sister and I have been practicing all week.","have been practicing","practicing","have been practicing all week","I have been practicing"),
+    qLevel(3,"What is the complete subject? Lions, tigers, and bears live at the city zoo.","Lions, tigers, and bears","Lions","Lions, tigers, and bears live","Lions, tigers, and bears at the city zoo"),
     qLevel(3,"Which sentence has a compound subject?","The coach and the players cheered.","The coach cheered and clapped loudly.","The coach cheered for all the players.","The coach’s players cheered loudly.")
   ],
   subjectObjects:[
     qLevel(1,"What is the direct object? Nora painted a picture.","picture","Nora","painted","a"),
     qLevel(1,"What is the subject? The puppy chewed my shoe.","puppy","shoe","chewed","my"),
     qLevel(1,"Which question does a direct object answer?","What? or Whom? after the verb","Where? or When? after the verb","How? after the verb","Who did the action?"),
-    qLevel(2,"What is the indirect object? Mr. Ruiz gave the class a quiz.","class","quiz","Ruiz","gave"),
+    qLevel(2,"What is the indirect object? Mr. Ruiz gave the class a quiz.","class","quiz","Mr. Ruiz","gave"),
     qLevel(2,"What is the direct object? Grandma baked us cookies.","cookies","us","Grandma","baked"),
     qLevel(2,"Which sentence has an indirect object?","Dev showed his mom the trophy.","Dev showed the trophy to his mom.","Dev showed the trophy proudly.","Dev and his mom saw the trophy."),
     qLevel(2,"What is the direct object? The coach handed each player a water bottle.","bottle","player","coach","handed"),
@@ -3879,7 +3997,7 @@ const SENTENCE_QUESTIONS = {
     qLevel(3,"What is the indirect object? Will you lend me your bike?","me","bike","you","lend"),
     qLevel(3,"Which sentence has a direct object but no indirect object?","Lila told a funny story to us.","Lila told us a really funny story.","Lila told her best friends a story.","Lila gave the muddy dog a bath."),
     qLevel(3,"What is the direct object? Whom did you invite?","Whom","you","invite","did"),
-    qLevel(3,"Which sentence has no direct object?","The baby slept all afternoon.","The baby grabbed my finger.","The baby threw her rattle.","The baby gave me a smile."),
+    qLevel(3,"Which sentence has no direct object?","The baby slept all afternoon.","The baby grabbed all my fingers.","The baby threw her rattle across the room.","The baby gave me a smile."),
     qLevel(3,"In which sentence is “Sam” an indirect object?","We bought Sam a new hat.","We bought a new hat for Sam.","Sam bought a new hat.","We saw Sam at the hat store."),
     qLevel(3,"Which words are the direct objects? The waiter brought my parents their menus and some water.","menus and water","parents and menus","waiter and parents","parents and water")
   ],
@@ -3948,6 +4066,109 @@ const SENTENCE_QUESTIONS = {
     qLevel(3,"How many relative clauses are in this sentence? The girl who sits next to me has a cat that can open doors.","Two","One","Three","Four")
   ]
 };
+/* English Unit 8 (Sentence Library): reserved test pool, Oct 30, 2026 (80 test-only questions; docs/ENGLISH-UNIT8-review.md, "Reserved test pool"). */
+reserveForTest(SENTENCE_QUESTIONS, {
+  sentenceTypes:[
+    mcLevel(2,"What kind of sentence is this? Let the soup cool before you taste it.","Imperative","Declarative","Exclamatory","Interrogative"),
+    mcLevel(2,"Which sentence is interrogative?","Who left the ladder in the hallway?","Someone left the ladder in the hallway.","Please move the ladder out of the hallway.","I wonder who left that ladder."),
+    mcLevel(3,"Which sentence is declarative?","Kenji asked his coach when practice would start.","When will practice start, Coach?","Ask the coach when practice will start on Saturday.","How early practice starts on Saturdays!"),
+    mcLevel(2,"Which sentence is imperative?","Kindly keep your voices low in the museum.","Visitors keep their voices low in the museum.","Do visitors keep their voices low here?","How quietly the visitors walk!"),
+    mcLevel(3,"Which sentence has the wrong end mark?","Please tell me where you bought that kite?","Where did you buy that bright red kite last weekend?","I asked where you bought that kite.","What a bright kite you bought!"),
+    mcLevel(3,"What kind of sentence is this? How quickly the snow melted this morning!","Exclamatory","Interrogative","Declarative","Imperative"),
+    mcLevel(2,"Ms. Okafor wants the class to line up. Which sentence gives that as a command?","Line up by the door, everyone.","Would everyone please line up by the door?","Everyone will line up by the door now.","I want everyone to line up by the door."),
+    mcLevel(3,"How many of these are interrogative sentences? (1) Why is the gate open? (2) I wonder why the gate is open. (3) Is the gate locked? (4) Who left the gate open?","Three","Two","One","Four")
+  ],
+  simpleCompound:[
+    mcLevel(2,"Which sentence is compound?","The ferry was late, so we missed the concert.","Because the ferry was late, we missed the concert.","The late ferry made us miss the concert.","We waited for the ferry and missed the concert."),
+    mcLevel(3,"Which sentence is simple?","Before dawn, the farmers and their children milked the goats and fed the hens.","The farmers milked the goats, and their children fed the hens.","The farmers milked the goats; their children fed the hens.","The farmers milked the goats before their children fed the hens."),
+    mcLevel(2,"Is this sentence simple or compound? The wind howled all night, but the tent stayed up.","Compound, with two independent clauses","Simple, with one subject and a compound verb","Simple, because but joins the two verbs","Compound, because it has a compound subject"),
+    mcLevel(3,"How many independent clauses are in this sentence? Pedro and his twin sister painted the fence, washed the windows, and swept the porch.","One","Two","Three","Four"),
+    mcLevel(2,"Which compound sentence is punctuated correctly?","The hikers were thirsty, yet they kept climbing.","The hikers were thirsty yet, they kept climbing.","The hikers were thirsty, they kept climbing.","The hikers, were thirsty yet they kept on climbing."),
+    mcLevel(3,"Which sentence is compound?","Mia’s brother couldn’t swim, so he stayed on the dock.","Mia’s brother, who couldn’t swim, stayed on the dock all day.","Unable to swim, Mia’s brother stayed on the dock.","Mia’s brother couldn’t swim and stayed on the dock."),
+    mcLevel(2,"Which sentence is compound?","The bakery sells bread; the café next door sells coffee.","The bakery sells bread and also serves coffee right next door.","The bakery and the café next door both sell bread and coffee.","The bakery sells bread that the café next door serves with coffee."),
+    mcLevel(2,"Which sentence uses a comma and a joining word to make a compound sentence?","Ana forgot her lines, but the audience never noticed.","Ana forgot her lines but kept going anyway.","Ana forgot her lines, and stood still on the stage.","When Ana forgot her lines, nobody noticed.")
+  ],
+  rearrangeSentences:[
+    mcLevel(2,"Which sentence combines these correctly? The oven beeped. Grandpa took out the bread.","The oven beeped, and Grandpa took out the bread.","The oven beeped, Grandpa took out the bread.","The oven beeped and, Grandpa took the bread.","The oven, beeped and Grandpa took out bread."),
+    mcLevel(3,"Which joining word makes sense? We wore spikes on our boots, ___ the trail was icy.","for","so","yet","but"),
+    mcLevel(2,"Which combined sentence keeps the meaning? The forecast called for sun. We packed umbrellas anyway.","The forecast called for sun, yet we packed umbrellas anyway.","The forecast called for sun, so we packed umbrellas anyway.","The forecast called for sun, for we packed umbrellas anyway.","The forecast called for sun, and so we packed umbrellas anyway."),
+    mcLevel(2,"Which sentence combines these into one simple sentence with a compound subject? The goalie stretched before the game. The coach stretched before the game.","The goalie and the coach stretched before the game.","The goalie stretched before the game, and so did the coach.","The goalie stretched, and the coach stretched before the game.","The goalie stretched; the coach did too."),
+    mcLevel(2,"Which combination is punctuated correctly? The museum was crowded. We left after an hour.","The museum was crowded; we left after an hour.","The museum was crowded; so we left after an hour.","The museum was crowded we left after an hour.","The museum was crowded so, we left after an hour."),
+    mcLevel(3,"Which splits this into two simple sentences without changing the meaning? Nadia trained for months, yet she finished last.","Nadia trained for months. However, she finished last.","Nadia trained for months. So she finished last.","Nadia trained for months. Finished last.","Nadia trained for months, she finished last."),
+    mcLevel(3,"Which sentence combines these into one simple sentence? The parrot whistled. The parrot bobbed its head. The parrot flapped its wings.","The parrot whistled, bobbed its head, and flapped its wings.","The parrot whistled, it bobbed its head, and it flapped its wings.","The parrot whistled; it bobbed its head; it flapped its wings.","The parrot whistled and it bobbed its head and flapped its wings."),
+    mcLevel(3,"Which joining word gives a reason? We left the beach early, ___ a storm was rolling in.","for","so","yet","and so")
+  ],
+  complexSentences:[
+    mcLevel(2,"Which sentence is complex?","The puppy whined until we opened the crate.","The puppy whined, so we finally opened the crate.","The puppy whined; we opened the crate for it.","The puppy whined and pawed at the crate door."),
+    mcLevel(2,"What is the dependent clause? If the tide is low, we can walk to the island.","If the tide is low","we can walk to the island","If the tide is low, we can walk","can walk to the island"),
+    mcLevel(3,"What kind of sentence is this? The goat that escaped from the pen ate Mom’s tulips.","Complex","Simple","Compound","Compound-complex"),
+    mcLevel(3,"What kind of sentence is this? Jada practiced the solo for weeks, and she nailed it at the concert.","Compound","Complex","Compound-complex","Simple"),
+    mcLevel(3,"Which sentence is compound-complex?","The cat hid under the bed, and the dog barked until the storm ended.","The cat hid under the bed while the dog barked at the storm.","The cat hid under the bed, and the dog barked at the storm.","When the storm began, the cat hid under the bed and shook all night long."),
+    mcLevel(2,"Where does the comma go? Although the soup smelled strange it tasted wonderful.","After “strange”","After “Although”","After “tasted”","After “wonderful”"),
+    mcLevel(2,"Which word group, added in the blank, makes this a complex sentence? ___, we ate dinner on the porch.","Because the kitchen was hot","The kitchen was hot","The kitchen being so hot","Hot from the oven"),
+    mcLevel(3,"What kind of sentence is this? Stay inside until the thunder stops, or you could get hurt.","Compound-complex","Complex","Compound","Simple")
+  ],
+  subjectPredicate:[
+    mcLevel(2,"What is the complete subject? The red bicycle with the flat tire leaned against the fence.","The red bicycle with the flat tire","The red bicycle","bicycle","The red bicycle with the flat tire leaned"),
+    mcLevel(2,"What is the simple predicate? My cousins from Texas will arrive on Sunday.","will arrive","arrive","will arrive on Sunday","cousins"),
+    mcLevel(3,"What is the simple subject? There are three owls in the barn.","owls","There","three","are"),
+    mcLevel(3,"What is the complete subject? Where did your little brother hide the remote?","your little brother","the remote","your little brother hide","brother"),
+    mcLevel(3,"What is the simple predicate? Will your grandparents visit us in July?","will visit","will your grandparents visit","visit us in July","grandparents"),
+    mcLevel(2,"What is the complete predicate? The tired runners in the last row of the bus fell asleep before the first stop.","fell asleep before the first stop","fell asleep","The tired runners","of the bus fell asleep"),
+    mcLevel(3,"What is the simple subject? A box of old photos sat in the attic.","box","photos","attic","A box of old photos"),
+    mcLevel(2,"Which sentence has a compound verb?","The waves crashed against the rocks and soaked the fishermen.","The waves and the wind crashed against the rocks.","The waves crashed, and the fishermen got soaked.","The crashing waves soaked the fishermen on the rocks.")
+  ],
+  subjectObjects:[
+    mcLevel(2,"What is the direct object? After the race, the winner hugged her exhausted coach.","coach","winner","hugged","exhausted"),
+    mcLevel(2,"What is the indirect object? The museum guide showed the visitors an ancient map.","visitors","map","guide","showed"),
+    mcLevel(3,"Which sentence has an indirect object?","Please pour your grandfather some tea.","Please pour some tea for Grandpa.","Please pour the tea into the cup.","Your grandfather sipped some tea."),
+    mcLevel(3,"What job does “them” do in this sentence? The puppies followed them into the yard.","Direct object","Indirect object","Subject","Simple predicate"),
+    mcLevel(2,"Which sentence has NO indirect object?","The magician pulled a coin from my ear.","The magician handed my little sister a coin.","The magician showed the whole crowd a card trick.","The magician threw my brother a silk scarf."),
+    mcLevel(3,"What is the direct object? Did the shopkeeper sell you those apples?","apples","shopkeeper","you","sell"),
+    mcLevel(3,"What is the simple subject? Across the river paddled a family of ducks.","family","river","ducks","paddled"),
+    mcLevel(2,"Which words are the indirect object and the direct object, in that order? Coach Lee bought the team new jerseys.","team, jerseys","jerseys, team","Lee, team","Lee, jerseys")
+  ],
+  phrasesClauses:[
+    mcLevel(2,"Which group of words is a clause?","while the kettle whistled","whistling on the stove","after a cup of tea","the whistling kettle on the stove"),
+    mcLevel(2,"Which group of words is a phrase?","beneath the creaky stairs","the stairs creaked","as the stairs creaked","something creaked under me"),
+    mcLevel(3,"How many clauses are in this sentence? When the music stopped, everyone froze, and Lily laughed.","Three","Two","One","Four"),
+    mcLevel(3,"Which group of words is a clause?","whoever finishes first","finishing first","the first one to finish","to finish first"),
+    mcLevel(2,"Is “because of the icy roads” a phrase or a clause?","A phrase, because it has no subject and verb","A clause, because it starts with the word because","A clause, because roads is its subject","A phrase, because it is short"),
+    mcLevel(2,"Which sentence is made of one clause and some phrases, with no second clause?","In the spring, the geese return to the lake.","When spring comes, the geese return to the lake.","The geese return, and the lake fills up again.","The geese return to the lake when the ice melts."),
+    mcLevel(3,"Lena wrote this as a sentence: “Waiting for the bus in the pouring rain.” What is it?","A phrase, so it is a fragment","A clause, so it is a full sentence","A dependent clause, so it is a fragment","An independent clause missing a period"),
+    mcLevel(2,"Which pair lists a phrase first and then a clause?","near the river / the river rose quickly","the river rose / near the old dock","the river rose / after it rained","near the river / along the muddy bank")
+  ],
+  depIndepClauses:[
+    mcLevel(2,"What is the independent clause? Whenever the doorbell rings, our parrot screams loudly.","our parrot screams loudly","Whenever the doorbell rings","the doorbell rings","Whenever the doorbell rings, our parrot"),
+    mcLevel(2,"Which is a dependent clause?","once the paint dries","the paint dries quickly","dry paint on the wall","let the paint dry first"),
+    mcLevel(2,"Which group of words is a dependent clause?","which floated down the river","floating down the river","the log floated down the river","down the river on a log"),
+    mcLevel(3,"Which sentence has TWO dependent clauses?","If you see Ana, tell her that the bus is late.","If you see Ana, give her this note.","See Ana and tell her about the bus.","Ana is late, and the bus is late too."),
+    mcLevel(2,"What does the dependent clause tell? Grandma will call us when the plane lands.","The time Grandma will call","The reason Grandma will call","The person who will call us","The place where the plane lands"),
+    mcLevel(3,"How many independent clauses are in this sentence? Although the trail was muddy, we kept going because the view was worth it.","One","Two","Three","Zero"),
+    mcLevel(3,"Which is a fragment?","The girl who found the lost puppy.","The girl found the lost puppy.","Who found the lost puppy?","Find the lost puppy."),
+    mcLevel(2,"Which word starts the dependent clause? We will finish painting the mural unless it rains.","unless","painting","mural","will")
+  ],
+  clausePlacement:[
+    mcLevel(2,"Which sentence is clear?","Hiking up the mountain, we saw an eagle.","Hiking up the mountain, an eagle was spotted by us.","Hiking up the mountain, an eagle flew over us.","An eagle, hiking up the mountain, flew over us."),
+    mcLevel(2,"Which revision fixes this sentence? Sparkling in the sunlight, Mia admired the lake.","Mia admired the lake sparkling in the sunlight.","Mia, sparkling in the sunlight, admired the lake.","Sparkling, Mia admired the lake in the sunlight.","Mia sparkling in sunlight admired the lake."),
+    mcLevel(2,"Which sentence is clear?","Swinging from branch to branch, the monkeys entertained the crowd.","Swinging from branch to branch, the crowd watched the monkeys.","Swinging from branch to branch, the crowd was entertained.","The crowd, swinging from branch to branch, watched the monkeys."),
+    mcLevel(3,"Which revision fixes this sentence? Lucas found a wallet walking to school.","Walking to school, Lucas found a wallet.","Walking to school, a wallet was found by Lucas.","Lucas walking to school a wallet found.","A wallet walking to school was found by Lucas."),
+    mcLevel(2,"Which revision fixes this sentence? The girl gave a cookie to the dog with braids.","The girl with braids gave a cookie to the dog.","The girl gave a cookie with braids to the dog.","With braids, the dog got a cookie from the girl.","The girl gave the dog with braids a cookie."),
+    mcLevel(3,"What is wrong with this sentence? To win the science fair, the volcano had to erupt on cue.","It sounds like the volcano wants to win the fair.","It needs a comma after the word volcano.","It is a fragment with no main verb.","The phrase should come after the word erupt."),
+    mcLevel(3,"Which revision fixes this sentence? We bought a puppy from a farmer that loves to chew socks.","From a farmer, we bought a puppy that loves to chew socks.","We bought a puppy from a farmer, who loves to chew socks.","We bought, from a farmer that loves to chew socks, a puppy.","That loves to chew socks, we bought a puppy from a farmer."),
+    mcLevel(3,"Which sentence is clear?","Nervous about the test, Omar read his notes again.","Nervous about the test, Omar’s notes were read again.","Nervous about the test, the notes were read again by Omar.","Omar’s notes, nervous about the test, were read again.")
+  ],
+  relativeClauses:[
+    mcLevel(2,"Which relative pronoun fits? The spider ___ web stretched across the door was huge.","whose","who","that","whom"),
+    mcLevel(2,"What is the relative clause? The song that the band played last was my favorite.","that the band played last","The song that the band played","was my favorite","the band played last"),
+    mcLevel(3,"Only the students who signed up early got front-row seats. Which sentence says that?","The students who signed up early got front-row seats.","The students, who signed up early, got front-row seats.","The students, who signed up early got front-row seats.","The students who signed up early, got front-row seats."),
+    mcLevel(3,"In formal writing, which relative pronoun is correct? The scientist ___ the reporters interviewed studies volcanoes.","whom","who","which","whose"),
+    mcLevel(3,"Which sentence uses “that” correctly?","The trophy that we won last spring sits in the office.","The trophy that we won it last spring sits in the office.","Our principal, that worked here for years, retired.","My dad, that drives a truck, picked us up today."),
+    mcLevel(2,"Which noun does the relative clause describe? The poem that my sister wrote about the ocean won a prize.","poem","sister","ocean","prize"),
+    mcLevel(3,"How many relative clauses are in this sentence? The vet who treated our cat said that the bandage must stay dry.","One","Two","Three","Zero"),
+    mcLevel(2,"Which relative pronoun fits? Our neighbor’s barn, ___ was painted red last summer, burned down.","which","who","that","whom")
+  ]
+});
 /* English Unit 9 (the 📏 Rule Library): Khan Academy Grammar, Syntax: conventions of standard English.
    Khan's 6 practice exercises in Khan's 3 lessons, in Khan's order (lesson and exercise list from khanacademy.org's
    sitemaps for the unit, Oct 30 2026). Docs: docs/ENGLISH-UNIT9.md, review list docs/ENGLISH-UNIT9-review.md */
@@ -3979,7 +4200,7 @@ const RULE_QUESTIONS = {
     qLevel(2,"Which verb fits? Maya and her cousin ___ to the library every Saturday.","walk","walks","is walking","has walked"),
     qLevel(2,"Which word is the subject of this sentence? Along the fence grow three tall sunflowers.","sunflowers","fence","grow","tall"),
     qLevel(3,"Which sentence has a subject-verb agreement error?","The list of chores are taped to the fridge.","The chores on the list are easy.","One of my chores is feeding the fish.","Everyone in my family has a chore."),
-    qLevel(3,"Which verb fits? One of the girls who sing in the choir ___ a solo tonight.","has","have","are having","were having"),
+    qLevel(3,"Which verb fits? One of the girls who sing in the choir ___ a solo tonight.","has","have","get","were having"),
     qLevel(3,"Which verb fits? Either the twins or their older sister ___ the dog every morning.","walks","walk","are walking","have walked"),
     qLevel(3,"Which revision fixes the error? The flowers in the vase on the windowsill needs water.","The flowers in the vase on the windowsill need water.","The flowers in the vase on the windowsill needing water.","The flower in the vases on the windowsill need water.","The flowers in the vase on the windowsills needs water."),
     qLevel(3,"Which sentence is correct?","Everybody on both teams was cheering.","Everybody on both teams were cheering.","Everybody on both teams are cheering.","Everybody on both teams have cheered."),
@@ -3995,8 +4216,8 @@ const RULE_QUESTIONS = {
     qLevel(2,"Which pronoun fits? Neither the cat nor the puppies ate ___ food.","their","its","her","his"),
     qLevel(2,"Which sentence has a pronoun that doesn’t agree with its antecedent?","One of the lamps lost their shade.","Both lamps lost their shades.","The lamp lost its shade.","Each lamp has its own price tag."),
     qLevel(3,"Which pronoun fits? Either Grandpa’s old trucks or his new car will need ___ tires checked.","its","their","it’s","they’re"),
-    qLevel(3,"Which revision fixes the pronoun error? Every one of the trees dropped their leaves by November.","Every one of the trees dropped its leaves by November.","Every one of the trees dropped it’s leaves by November.","Every one of the tree dropped their leaves by November.","Every one of the trees dropped they’re leaves by November."),
-    qLevel(3,"In which sentence does the pronoun agree with its antecedent?","The box of old letters has lost its lid.","The box of old letters has lost their lid.","The boxes of old letters have lost its lids.","The box of old letters have lost their lid."),
+    qLevel(3,"Which revision fixes the pronoun error? Every one of the trees dropped their leaves by November.","Every one of the trees dropped its leaves by November.","Every one of the trees dropped their leaves.","Every one of the tree dropped their leaves by November.","Every one of the trees dropped they’re leaves by November."),
+    qLevel(3,"In which sentence does the pronoun agree with its antecedent?","The box of old letters has lost its lid.","The box of old letters has lost their lid.","The boxes of old letters have lost its lids.","The box of old letters lost their lid."),
     qLevel(3,"Which pronoun fits? The museum and the zoo both lowered ___ prices for kids.","their","its","her","his"),
     qLevel(3,"Which sentence has a pronoun error?","Neither of the windows had their screen in place.","Both windows had their screens in place.","No window in the hall had its screen.","The windows had lost their screens."),
     qLevel(3,"Which pronoun fits? Not one of the forty paintings in the gallery had ___ price on the wall.","its","their","it’s","his")
@@ -4066,6 +4287,69 @@ const RULE_QUESTIONS = {
     qLevel(3,"Which sentence has parallel structure?","I would rather stay home than go to the mall.","I would rather stay home than going to the mall.","I would rather staying home than go to the mall.","I would rather stay home than a trip to the mall.")
   ]
 };
+/* English Unit 9 (Rule Library): reserved test pool, Oct 30, 2026 (48 test-only questions; docs/ENGLISH-UNIT9-review.md, "Reserved test pool"). */
+reserveForTest(RULE_QUESTIONS, {
+  subjVerbAgree:[
+    mcLevel(2,"Which verb fits? The jar of buttons on Grandma’s sewing table ___ almost empty.","is","are","were","have been"),
+    mcLevel(3,"Which verb fits? Neither the coach nor the players ___ happy with the referee’s call.","were","was","is","has been"),
+    mcLevel(2,"Which sentence has correct subject-verb agreement?","The players on the soccer team practice after school.","The players on the soccer team practices after school.","The player on the soccer team practice after school.","The players on the soccer team is practicing after school."),
+    mcLevel(3,"Which word is the subject that the verb has to agree with? Near the back of the old barn sits a rusty tractor with two flat tires.","tractor","barn","tires","back"),
+    mcLevel(3,"Which sentence has a subject-verb agreement error?","The cost of the concert tickets were too high for us.","The tickets for the concert were too costly for us.","Each of the concert tickets was too costly for us.","Neither of the concert tickets was cheap enough for us."),
+    mcLevel(3,"Which verb fits? A stack of old magazines and a broken lamp ___ in the corner of the attic.","sit","sits","is sitting","has sat"),
+    mcLevel(2,"Which verb fits? Here ___ the keys to the shed that you asked for.","are","is","was","has been"),
+    mcLevel(2,"Which revision fixes the error? One of the mugs in the cupboard have a chip on the rim.","One of the mugs in the cupboard has a chip on the rim.","One of the mugs in the cupboard have a chipped rim.","One of the mugs in the cupboard were chipped on the rim.","Both of the mugs in the cupboard has a chip on the rim.")
+  ],
+  pronAntecedent:[
+    mcLevel(2,"Which pronoun fits? The robins in the maple tree are building ___ nest out of grass and string.","their","its","her","they’re"),
+    mcLevel(2,"Which pronoun fits? One of the drawers in the old desk won’t close because ___ handle is loose.","its","their","it’s","they’re"),
+    mcLevel(3,"Which pronoun fits? Neither the lamp nor the two fans had ___ cords plugged in.","their","its","it’s","they’re"),
+    mcLevel(3,"Which sentence has a pronoun that does NOT agree with its antecedent?","Each of the puzzles was missing a few of their pieces.","Both puzzles were missing a few of their pieces.","The puzzle on the shelf was missing a few of its pieces.","The puzzle in the closet had most of its pieces."),
+    mcLevel(2,"What is the antecedent of “their”? The kittens in the basket next to the old dog opened their eyes for the first time.","kittens","basket","dog","eyes"),
+    mcLevel(3,"Which revision fixes the pronoun error? The chairs and the table had a layer of dust on it.","The chairs and the table had a layer of dust on them.","The chairs and the table had dust on its top.","The chairs and the table had dust on it’s top.","The chair and the tables had a layer of dust on it."),
+    mcLevel(3,"Which pronoun fits? Either the hamsters or the rabbit will have ___ cage cleaned first.","its","their","it’s","there"),
+    mcLevel(2,"Which sentence is correct?","Every window in the classroom had its blinds closed.","Every window in the classroom had their blinds closed.","Every window in the classroom had it’s blinds closed.","Every one of the windows had their blinds closed.")
+  ],
+  fragments:[
+    mcLevel(3,"Which is a complete sentence?","Behind the shed grew a wild pumpkin vine.","Behind the old red shed, a wild pumpkin vine.","A wild pumpkin vine growing behind the shed.","The pumpkin vine that grew behind the shed."),
+    mcLevel(2,"What is missing from this fragment? Carried the heavy boxes up to the attic.","A subject that tells who did it","A verb that tells the action","A joining word like and","A comma after boxes"),
+    mcLevel(2,"Which word group is a fragment?","Since the library closes early on Sundays.","The library closes early on Sundays.","Since the library closes early, we went on Saturday.","Does the library close early on Sundays?"),
+    mcLevel(3,"Which is NOT a fragment?","Whoever finishes first gets to pick the music.","Whoever finishes first and picks the music.","The kid who finishes first and gets to pick the music.","Because whoever finishes first gets to pick the music."),
+    mcLevel(3,"How many fragments are in this passage? Our class planted a garden. Tomatoes, beans, and peppers. Water it every day. Unless it rains. Then we skip it. Which is fine with us.","3","2","4","1"),
+    mcLevel(2,"Which revision fixes the fragment? The coach gave us a speech. Before the big game started.","Before the big game started, the coach gave us a speech.","The coach gave us a speech; before the big game had started.","The coach, before the big game started. Gave us a speech.","Before the big game started and the coach gave us a speech."),
+    mcLevel(3,"Which word group is a fragment?","The trail that winds along the river past the old mill.","The trail winds along the river past the old mill.","Follow the trail along the river past the old mill.","Where does the trail along the river past the mill go?"),
+    mcLevel(2,"Why is this a fragment? Shivering in the cold wind at the bus stop.","It has no subject or main verb.","It starts with a word like because or when.","It is missing a mark at the end.","It has too many describing words.")
+  ],
+  runOns:[
+    mcLevel(2,"Which sentence is a run-on?","The puppy chased its tail it never caught it.","The puppy chased its tail but never caught it.","The puppy chased its tail, but it never caught it.","The puppy chased its tail; it never caught it."),
+    mcLevel(3,"Which sentence is correct?","The trail was muddy; nevertheless, we finished the hike.","The trail was muddy, nevertheless, we still finished the hike.","The trail was muddy, nevertheless we finished the hike.","The trail was muddy nevertheless, we finished the hike."),
+    mcLevel(2,"What kind of error is in this sentence? Our team lost the game we still had fun.","A run-on sentence","A comma splice","A fragment","A pronoun error"),
+    mcLevel(2,"Which revision does NOT fix the run-on? The museum was closed we visited the park instead.","The museum was closed, we visited the park instead.","The museum was closed, so we visited the park instead.","Since the museum was closed, we visited the park instead.","The museum was closed, and we visited the park instead."),
+    mcLevel(3,"Which sentence is a comma splice?","Lena wanted to join the band, she had never played an instrument.","Lena wanted to join the band, yet she had never played an instrument.","Lena wanted to join the band even though she had never played an instrument.","Lena, who had never played, wanted to join the band."),
+    mcLevel(3,"Which revision fixes the comma splice and shows the right connection? The bridge was icy, the bus took the long way.","The bridge was icy, so the bus took the long way.","The bridge was icy, but the bus took the long way.","The bridge was icy, then the bus took the long way.","The bridge was icy, the bus, took the long way."),
+    mcLevel(2,"How many complete sentences are jammed into this run-on? We opened the box inside was a tiny kitten.","2","1","3","4"),
+    mcLevel(3,"Which sentence is NOT a run-on or a comma splice?","Dad fixed the sink and then cleaned up the kitchen.","Dad fixed the sink then he cleaned the kitchen.","Dad fixed the sink, then he cleaned the kitchen.","Dad fixed the sink, he cleaned up the kitchen.")
+  ],
+  danglingMods:[
+    mcLevel(2,"Which sentence has a dangling modifier?","Stirring the soup, the kitchen filled with steam.","Stirring the soup, Abuela hummed a song.","While Abuela stirred the soup, the kitchen filled with steam.","The kitchen filled with steam as Abuela stirred the soup."),
+    mcLevel(2,"Read it the way it is written: who or what is reading the map? Reading the map carefully, the campsite was easy for Dev to find.","The campsite","Dev","The map","The trail"),
+    mcLevel(3,"Which revision fixes the dangling modifier? Painted bright red, the neighbors admired our new front door.","Painted bright red, our new front door impressed the neighbors.","Painted bright red, the neighbors admired our brand-new front door.","The neighbors, painted bright red, admired our new front door.","Painted bright red, our neighbors admired the new front door."),
+    mcLevel(2,"Which sentence is correct?","Searching for her glasses, Grandma found them on her head.","Searching for her glasses, they were found on Grandma’s head.","Searching for her glasses, Grandma’s head was where they were.","Searching for her glasses, Grandma’s glasses turned up on her head."),
+    mcLevel(3,"Which sentence does NOT have a dangling modifier?","Before leaving for school, Omar packed his lunch.","Before leaving for school, Omar’s lunch was packed.","Before leaving for school, his lunch was packed by Omar.","Before leaving for school, the lunch Omar packed was ready."),
+    mcLevel(3,"Which sentence has a dangling modifier?","As a new student, the hallways confused me.","As a new student, I was confused by the hallways.","When I was a new student, the hallways confused me.","The hallways confused me when I was new."),
+    mcLevel(2,"Read it the way it is written. What does this sentence say by mistake? Covered in sprinkles, I bit into the donut.","That I was covered in sprinkles","That the donut bit me","That the sprinkles bit the donut","That someone else ate the donut"),
+    mcLevel(2,"Which revision fixes the dangling modifier? Sweating in the hot sun, the trail seemed to go on forever.","Sweating in the hot sun, the hikers thought the trail went on forever.","The trail, sweating in the hot sun, seemed to go on forever.","Sweating in the hot sun, the trail seemed to go on and on for the tired hikers.","Sweating in the hot sun, the trail went on forever for hikers.")
+  ],
+  parallelStructure:[
+    mcLevel(2,"Which choice keeps the list parallel? At the beach, my little brother likes to build castles, to collect shells, and ___ in the waves.","to splash","splashing","splashes","splash around"),
+    mcLevel(2,"Which sentence has parallel structure?","The guide told us to stay on the path, to watch for snakes, and to carry water.","The guide told us to stay on the path, watch for snakes, and that we should carry water.","The guide told us staying on the path, to watch for snakes, and carry water.","The guide told us to stay on the path, watch for snakes, and carrying water."),
+    mcLevel(3,"Which sentence uses both… and correctly?","The new phone is both lighter and faster than the old one.","The new phone is both lighter and it is faster.","The new phone both is lighter and faster than mine.","Both the new phone is lighter and is faster than mine."),
+    mcLevel(3,"Which sentence has a parallel comparison?","The library’s hours are longer than the museum’s.","The library’s hours are longer than the museum is.","The hours of the library are longer than the museum.","The library has hours that are longer than the museum."),
+    mcLevel(2,"Which revision fixes the faulty parallelism? The new student was polite, helpful, and had a lot of patience.","The new student was polite, helpful, and patient.","The new student was polite, helpful, and patiently.","The new student was polite, helpful, and showed patience.","The new student was polite, being helpful, and patient."),
+    mcLevel(3,"Which sentence is parallel?","Tomás couldn’t decide whether to join the chess club or to try out for the play.","Tomás couldn’t decide whether to join the chess club or a tryout for the play.","Tomás couldn’t decide whether joining the chess club or to try out for the play.","Tomás couldn’t decide whether to join the chess club or if he should try out for the play."),
+    mcLevel(2,"Which choice completes the sentence with parallel structure? Before the trip, we washed the car, packed the snacks, and ___.","checked the tires","checking the tires","to check the tires","we check the tires"),
+    mcLevel(2,"Which sentence is NOT parallel?","Ana enjoys painting with watercolors and to sketch in pencil.","Ana enjoys painting in watercolors and sketching in pencil.","Ana likes to paint with watercolors and to sketch in pencil.","Ana likes to paint with watercolors and sketch in pencil.")
+  ]
+});
 /* English Unit 10 (the 🪶 Style Library): Khan Academy Grammar, Usage and style. Khan's unit has one lesson, Style!,
    with 4 videos and 2 practices (Khan's lesson sitemap, Oct 30 2026): the sound video and The sound of language, then
    the formality, under- and overstatement, and irony videos and Style and technique. Pet World splits that lesson at
@@ -4114,7 +4398,7 @@ const STYLE_QUESTIONS = {
     qLevel(1,"Which sentence is an overstatement?","My backpack weighs a ton.","My backpack is heavy today.","My backpack has six books in it.","I carried my backpack to school."),
     qLevel(1,"What is verbal irony?","Saying the opposite of what you mean","When the reader knows something a character doesn’t","When the opposite of what you expect happens","Making something sound bigger than it is"),
     qLevel(1,"A tornado just tore the roof off the barn. Which comment is an understatement?","“Looks like we had a little wind.”","“That tornado destroyed everything we own!”","“The tornado tore the roof off the barn.”","“That was the worst storm in a million years.”"),
-    qLevel(2,"Which word fits best in a letter to the mayor? Our class is ___ about the new park.","excited","pumped","stoked","hyped"),
+    qLevel(2,"Which word fits best in a letter to the mayor? Our class is ___ about the new park.","excited","psyched up","stoked","hyped"),
     qLevel(2,"Which revision makes this sentence more formal? The science fair was kinda awesome.","The science fair was impressive.","The science fair was super awesome.","The science fair was totally rad.","The science fair was, like, awesome."),
     qLevel(2,"A fire station burns down. What kind of irony is this?","Situational: the opposite of what you expect happens.","Verbal: someone says the opposite of what they mean.","Dramatic: the reader knows something a character doesn’t.","Understatement: something big is made to sound small."),
     qLevel(2,"In a movie, the audience sees the wolf hide in Grandma’s bed, but Red Riding Hood walks in smiling. What kind of irony is this?","dramatic irony","verbal irony","situational irony","overstatement"),
@@ -4125,10 +4409,10 @@ const STYLE_QUESTIONS = {
     qLevel(3,"Which sentence does NOT fit the style of this letter? Dear Principal Ortiz, I am writing to ask for a longer lunch period. Many students do not have enough time to finish eating. Honestly, the lines are bonkers. Thank you for considering this request.","Honestly, the lines are bonkers.","I am writing to ask for a longer lunch period.","Many students do not have enough time to finish eating.","Thank you for considering this request."),
     qLevel(3,"Which revision of “Honestly, the lines are bonkers.” fits a formal letter?","The lunch lines are often very long.","The lunch lines are often super long, for real.","The lunch lines are way too long.","The lines are bonkers, if you ask me."),
     qLevel(3,"Mia studies all week for the spelling bee. She spells every hard word right, then misspells her own last name. What kind of irony is this?","situational irony","verbal irony","dramatic irony","overstatement"),
-    qLevel(3,"Which is the best example of situational irony?","A swimming coach who is afraid of water","A rainy day on the morning of a picnic","A girl who loses her keys at the mall","A dog that barks at the mail carrier"),
+    qLevel(3,"Which is the best example of situational irony?","A swimming coach who is afraid of water","A rainy day on the morning of a picnic","A girl who loses her keys at the mall","A dog that barks loudly at the mail carrier each day"),
     qLevel(3,"Which sentence is an understatement?","After running a marathon, Leo said, “My legs are a little tired.”","After a short walk, Leo said, “My legs are a little tired.”","After running a marathon, Leo said, “I could run a hundred more miles!”","After running a marathon, Leo said, “My legs are so sore that I can barely stand.”"),
     qLevel(3,"Which sentence is an overstatement, not a literal statement?","The line for the roller coaster stretched to the moon.","The line for the roller coaster took forty minutes.","The line for the roller coaster wrapped around the fence twice.","The line for the roller coaster was the longest in the park."),
-    qLevel(3,"In which situation would “Nice job” most likely be verbal irony?","Your brother drops all the groceries, and you say, “Nice job.”","Your brother scores a goal, and you say, “Nice job.”","Your brother cleans his room, and you say, “Nice job.”","Your brother finishes a puzzle, and you say, “Nice job.”"),
+    qLevel(3,"In which situation would “Nice job” most likely be verbal irony?","Your brother drops all the groceries, and you say, “Nice job.”","Your brother scores a goal, and you say, “Nice job.”","Your brother cleans his room, and you say, “Nice job.”","Your brother finishes a hard puzzle all by himself, and you say, “Nice job.”"),
     qLevel(3,"A text to a friend says, “Can’t make it, sry!” Which version fits an email to a teacher?","I’m sorry, but I won’t be able to attend.","Sorry!! I’m busy then, my bad.","Can’t make it, sorry, see ya.","Sorry, I can’t make it to that thing, so just count me out."),
     qLevel(3,"In a play, Theo plans a surprise party for his sister. Which detail creates dramatic irony?","The audience saw his sister find the invitation, but Theo thinks she has no clue.","Theo drops the cake and says, “Well, that went perfectly,” to his friends.","Theo’s sister, who plans parties for a living, forgets her own party.","Theo bakes a cake and hides it in the garage."),
     qLevel(2,"Which sentence is an understatement?","Winning the state title was pretty nice.","Winning the state title was the best thing ever.","We won the state title on Saturday.","Winning the state title made the whole world shake."),
@@ -4139,6 +4423,33 @@ const STYLE_QUESTIONS = {
     qLevel(3,"After a three-hour storm knocked out the power, Dad said, “Well, that was a little breezy.” What is Dad using?","understatement","overstatement","dramatic irony","onomatopoeia")
   ]
 };
+/* English Unit 10 (Style Library): reserved test pool, Oct 30, 2026 (20 test-only questions; docs/ENGLISH-UNIT10-review.md, "Reserved test pool"). */
+reserveForTest(STYLE_QUESTIONS, {
+  soundOfLanguage:[
+    mcLevel(2,"Which word in this sentence is onomatopoeia? The campfire crackled and flickered while owls called from the pines.","crackled","flickered","called","pines"),
+    mcLevel(2,"Which line is built mainly on alliteration?","Darting dragonflies dipped down to the ditch.","The deep green sea was clean.","Plop! A stone dropped into the lake.","A pair of dragonflies rested on a leaf near the water."),
+    mcLevel(3,"Listen for sounds, not letters. Which pair of words alliterates (starts with the same sound)?","“gem” and “jar”","“gym” and “go”","“chorus” and “chair”","“cent” and “kite”"),
+    mcLevel(3,"Listen for sounds, not spelling. Which pair of words shares a vowel sound?","“steak” and “grape”","“steak” and “beak”","“grape” and “grab”","“heard” and “hearth”"),
+    mcLevel(2,"Which line is built mainly on assonance?","Joan sold her old coat.","Gus grabbed green grapes from the garden.","Squeak! The gate swung open in the wind.","Joan paid for the scarf with cash."),
+    mcLevel(2,"What makes this line sound musical? Lou flew to the zoo in June.","The same vowel sound repeats in nearby words.","The same first sound repeats in nearby words.","One word in it imitates a noise.","The trip is made to sound much bigger than it was."),
+    mcLevel(3,"Which devices does this line use? “Zip! Five bright kites rise high.”","onomatopoeia and assonance","onomatopoeia and alliteration","alliteration and understatement","assonance and overstatement"),
+    mcLevel(3,"How many words in this line begin with the s sound? Cecil saw seven shiny circles.","four: Cecil, saw, seven, circles","five: Cecil, saw, seven, shiny, circles","three: saw, seven, shiny","two: saw and seven"),
+    mcLevel(3,"Read the poem. Line 1: The brook babbles by the big stones. Line 2: Gurgle! Splash! goes the stream. Line 3: Slow and low it rolls through the meadow. Line 4: Down to a lake by the hill. Which line is built mainly on assonance?","Slow and low it rolls through the meadow.","The brook babbles by the big stones.","Gurgle! Splash! goes the stream.","Down to a lake by the hill."),
+    mcLevel(2,"A writer wants readers to hear an old car. Which sentence does that with onomatopoeia?","The old car sputtered all the way up the hill.","The old car struggled up the hill.","The old car crept slowly up the steep hill.","The old car was noisy on the hill.")
+  ],
+  styleTechnique:[
+    mcLevel(2,"Which sentence fits best in a thank-you note to the nurse who cared for your grandmother?","Thank you for the care you gave my grandmother last week.","Thanks a ton for the care you gave Grandma last week!","Thank you for being so awesome to my grandmother last week.","Thank you for the care you gave my grandma, you were the best!"),
+    mcLevel(2,"Which words best fill the blank on a sign in a museum? Visitors may not ___ the paintings.","touch","lay a finger on","fiddle with","mess with"),
+    mcLevel(3,"Which sentence keeps this news report at one level of formality? The city council met on Tuesday to discuss the new bus routes. Several residents spoke in favor of the plan. ___","The council will vote on the routes next month.","The council will vote on the routes next month, which is kinda soon.","They’ll vote on the whole deal soon.","The council’s gonna vote on the routes next month."),
+    mcLevel(2,"Which sentence uses overstatement?","Grandpa’s truck is older than the dinosaurs.","Grandpa’s truck is older than I am.","Grandpa’s truck is thirty years old.","Grandpa’s truck is the oldest one on our street."),
+    mcLevel(3,"Ana’s cake sank in the middle, burned black, and set off the smoke alarm. She says, “It’s not my best work.” What does Ana really mean?","The cake turned out terribly.","It was a bit off.","She is proud of how her cake came out.","The cake needs a few more minutes in the oven."),
+    mcLevel(2,"Jonah gets a flat tire on his bike, then drops his phone in a puddle. Which line from Jonah is verbal irony?","“This is turning into a fantastic morning.”","“This morning keeps getting worse and worse.”","“My phone is wet and my tire is flat.”","“This is the worst morning in the history of the world.”"),
+    mcLevel(3,"A town puts up a big new sign that says “Keep Our Park Clean.” Which detail would make the story situational irony?","The crew leaves a pile of trash right under the sign.","A storm knocks the sign over a week later.","The mayor points at some litter and jokes that the park is “spotless.”","Readers know a raccoon is hiding behind the sign, but the crew doesn’t."),
+    mcLevel(2,"In a movie, Nora brags to her friends that her brother will never find her diary. The audience has already watched him read it. What kind of irony is this?","dramatic irony","situational irony","verbal irony","understatement"),
+    mcLevel(3,"A student writes to the school librarian: “yo, can u hold that dragon book 4 me? thx.” Which revision is formal and still says which book she wants?","Could you please hold the dragon book for me? Thank you.","Could you please hold the dragon book for me? Thx!","Can you hold that dragon book for me? Thanks a bunch!","Please hold the book for me. Thank you."),
+    mcLevel(2,"Which writing task calls for the most casual style?","A note on the fridge telling your brother you went to the park","An email asking your principal about joining the chess club","A letter to the newspaper about a pothole on your street","A thank-you letter to the author who visited your school")
+  ]
+});
 /* ---------- end of the moved banks ---------- */
 
 export {

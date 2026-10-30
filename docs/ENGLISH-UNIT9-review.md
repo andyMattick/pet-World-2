@@ -353,3 +353,177 @@ Single-attempt quiz pass chance (best bot) after: Agreement Quiz 6%, Fragments a
 - **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
 - **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
 - **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.
+
+## Reserved test pool, Oct 30, 2026
+
+Owner rule (CONTENT-RULES.md, docs/BLIND-REVIEW.md): the unit test now draws **only** from questions written for it, which never appear in practice, quizzes, the test review, flashcards or games. Each retake shows reserved questions she hasn’t had on an earlier try first, then the least recently seen (`pickTestItems`, `S.testSeen`). This unit has no share holdout any more: every original question is back in practice. A unit-test miss still names the lesson and never shows the right answer.
+
+**48 new questions** (subjVerbAgree 8, pronAntecedent 8, fragments 8, runOns 8, danglingMods 8, parallelStructure 8); 22 at level 3 (46%). In the bank: `reserveForTest(RULE_QUESTIONS, …)` in src/shared/questionBanks.js, marked `testOnly:true`.
+
+**Blind score: 48/48.** A fresh reviewer who never saw the key or the writer’s notes answered every question from a keyless, shuffled view. No key disagreements; 2 flags (too-easy or giveaway), all decided below.
+
+### Fixes (6)
+
+Made before the questions went into the bank, so no saved id changes. The changed questions were not re-solved blind (see “Still owed” below).
+
+- **subjVerbAgree:t5** (`conventions:subjVerbAgree:fremi0`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **subjVerbAgree:t8** (`conventions:subjVerbAgree:78rba6`): The fragment and the “One of the mug” choices replaced with real agreement errors, so every choice is a full sentence.
+- **fragments:t1** (`conventions:fragments:1tvucql`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **danglingMods:t3** (`conventions:danglingMods:e14pix`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **danglingMods:t8** (`conventions:danglingMods:1yrzxkj`): The lead-in “The hikers, not the trail, were sweating.” removed; she has to see who is sweating herself.
+- **parallelStructure:t4** (`conventions:parallelStructure:qktaz5`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+
+**Practice questions** (wrong answers only, so ids are stable). Returning the old 2-in-5 test-only questions to practice tilted a few quiz pools; the bot’s quiz check failed until these were rebalanced:
+
+- `subjVerbAgree:1yay2z1` (“One of the girls who sing in the choir ___ a solo tonight”): “are having” → “get”.
+- `pronAntecedent:5o59g3`: “…dropped it’s leaves by November.” → “Every one of the trees dropped their leaves.”
+- `pronAntecedent:1uot9zn`: “The box of old letters have lost their lid.” → “The box of old letters lost their lid.”
+
+### Kept, with the reason
+
+- **pronAntecedent:t4**: “Each … their” is keyed as the error; the antecedent is puzzles (things), so singular “they” does not apply (reviewer agrees).
+- **runOns:t3**: A fused sentence with no comma is a run-on, not a comma splice (reviewer agrees).
+- **danglingMods:t2**: Keyed as the campsite, because the stem asks what the sentence says as written; Dev (the meaning intended) is the trap.
+- **fragments:t5**: Keyed 3; “Water it every day.” is a complete command, so a student who counts it answers 4 (a fair trap).
+
+### Judgment calls for Andy
+
+- **runOns:t8**: “Dad fixed the sink, then he cleaned the kitchen.” is keyed as a comma splice. Reading A: the lesson and mainstream handbooks treat “then” as an adverb, not a joining word. Reading B: some dictionaries accept “, then” in informal writing.
+- **runOns:t6**: “The bridge was icy, but the bus took the long way.” is grammatical; it is wrong only because the stem asks for the cause-and-effect connection (“so”). Reading A: tests meaning, which the lesson covers. Reading B: a student may think “grammatical” is enough.
+- **runOns:t7**: “We opened the box inside was a tiny kitten.” is keyed as 2 sentences, reading the second as “Inside was a tiny kitten.” Reading B: a student could split it after “inside”.
+- **parallelStructure:t8**: Relies on “to” being shared across a pair (“likes to paint … and sketch” counts as parallel). Standard, but a student may expect “to” repeated.
+
+### Test-wise bot, before → after
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500`. “Before” is the same bot run on this branch before the reserved pool (the old 2-in-5 holdout). The memorizer now also rules out a choice once it is marked wrong on a unit test and carries the game’s seen-list into retakes.
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Agreement Quiz (4 q) | 75% | 21.7 | shortest 29.3 | vote 26.9 | holds |
+| Fragments and run-ons Quiz (4 q) | 75% | 21.9 | learnedXU 29.7 | middle 29.7 | holds |
+| Dangling modifiers and parallel structure Quiz (4 q) | 75% | 22.5 | shortest 25.5 | notLongest 25.2 | holds |
+| Unit test (18 q) | 83.3% | 25 | shortest 25.4 | shortest 29.2 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 53.8 / 59.2 / 62.9 | 29 / 29.9 / 38.9 | holds |
+
+Share of each try’s questions that were new to her unit tests, after: 100% / 100% / 66.7%. A retake repeats 0% of the previous try’s questions (before: 21.3%).
+
+Six lessons × 8 reserved against 3 per lesson: two fully fresh tries; try 3 is two-thirds fresh.
+
+**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+
+### The questions (right answer in bold)
+
+**subjVerbAgree**
+
+1. (level 2) Which verb fits? The jar of buttons on Grandma’s sewing table ___ almost empty.  
+   **is** · are · were · have been
+2. (level 3) Which verb fits? Neither the coach nor the players ___ happy with the referee’s call.  
+   **were** · was · is · has been
+3. (level 2) Which sentence has correct subject-verb agreement?  
+   **The players on the soccer team practice after school.** · The players on the soccer team practices after school. · The player on the soccer team practice after school. · The players on the soccer team is practicing after school.
+4. (level 3) Which word is the subject that the verb has to agree with? Near the back of the old barn sits a rusty tractor with two flat tires.  
+   **tractor** · barn · tires · back
+5. (level 3) Which sentence has a subject-verb agreement error?  
+   **The cost of the concert tickets were too high for us.** · The tickets for the concert were too costly for us. · Each of the concert tickets was too costly for us. · Neither of the concert tickets was cheap enough for us.
+6. (level 3) Which verb fits? A stack of old magazines and a broken lamp ___ in the corner of the attic.  
+   **sit** · sits · is sitting · has sat
+7. (level 2) Which verb fits? Here ___ the keys to the shed that you asked for.  
+   **are** · is · was · has been
+8. (level 2) Which revision fixes the error? One of the mugs in the cupboard have a chip on the rim.  
+   **One of the mugs in the cupboard has a chip on the rim.** · One of the mugs in the cupboard have a chipped rim. · One of the mugs in the cupboard were chipped on the rim. · Both of the mugs in the cupboard has a chip on the rim.
+
+**pronAntecedent**
+
+1. (level 2) Which pronoun fits? The robins in the maple tree are building ___ nest out of grass and string.  
+   **their** · its · her · they’re
+2. (level 2) Which pronoun fits? One of the drawers in the old desk won’t close because ___ handle is loose.  
+   **its** · their · it’s · they’re
+3. (level 3) Which pronoun fits? Neither the lamp nor the two fans had ___ cords plugged in.  
+   **their** · its · it’s · they’re
+4. (level 3) Which sentence has a pronoun that does NOT agree with its antecedent?  
+   **Each of the puzzles was missing a few of their pieces.** · Both puzzles were missing a few of their pieces. · The puzzle on the shelf was missing a few of its pieces. · The puzzle in the closet had most of its pieces.
+5. (level 2) What is the antecedent of “their”? The kittens in the basket next to the old dog opened their eyes for the first time.  
+   **kittens** · basket · dog · eyes
+6. (level 3) Which revision fixes the pronoun error? The chairs and the table had a layer of dust on it.  
+   **The chairs and the table had a layer of dust on them.** · The chairs and the table had dust on its top. · The chairs and the table had dust on it’s top. · The chair and the tables had a layer of dust on it.
+7. (level 3) Which pronoun fits? Either the hamsters or the rabbit will have ___ cage cleaned first.  
+   **its** · their · it’s · there
+8. (level 2) Which sentence is correct?  
+   **Every window in the classroom had its blinds closed.** · Every window in the classroom had their blinds closed. · Every window in the classroom had it’s blinds closed. · Every one of the windows had their blinds closed.
+
+**fragments**
+
+1. (level 3) Which is a complete sentence?  
+   **Behind the shed grew a wild pumpkin vine.** · Behind the old red shed, a wild pumpkin vine. · A wild pumpkin vine growing behind the shed. · The pumpkin vine that grew behind the shed.
+2. (level 2) What is missing from this fragment? Carried the heavy boxes up to the attic.  
+   **A subject that tells who did it** · A verb that tells the action · A joining word like and · A comma after boxes
+3. (level 2) Which word group is a fragment?  
+   **Since the library closes early on Sundays.** · The library closes early on Sundays. · Since the library closes early, we went on Saturday. · Does the library close early on Sundays?
+4. (level 3) Which is NOT a fragment?  
+   **Whoever finishes first gets to pick the music.** · Whoever finishes first and picks the music. · The kid who finishes first and gets to pick the music. · Because whoever finishes first gets to pick the music.
+5. (level 3) How many fragments are in this passage? Our class planted a garden. Tomatoes, beans, and peppers. Water it every day. Unless it rains. Then we skip it. Which is fine with us.  
+   **3** · 2 · 4 · 1
+6. (level 2) Which revision fixes the fragment? The coach gave us a speech. Before the big game started.  
+   **Before the big game started, the coach gave us a speech.** · The coach gave us a speech; before the big game had started. · The coach, before the big game started. Gave us a speech. · Before the big game started and the coach gave us a speech.
+7. (level 3) Which word group is a fragment?  
+   **The trail that winds along the river past the old mill.** · The trail winds along the river past the old mill. · Follow the trail along the river past the old mill. · Where does the trail along the river past the mill go?
+8. (level 2) Why is this a fragment? Shivering in the cold wind at the bus stop.  
+   **It has no subject or main verb.** · It starts with a word like because or when. · It is missing a mark at the end. · It has too many describing words.
+
+**runOns**
+
+1. (level 2) Which sentence is a run-on?  
+   **The puppy chased its tail it never caught it.** · The puppy chased its tail but never caught it. · The puppy chased its tail, but it never caught it. · The puppy chased its tail; it never caught it.
+2. (level 3) Which sentence is correct?  
+   **The trail was muddy; nevertheless, we finished the hike.** · The trail was muddy, nevertheless, we still finished the hike. · The trail was muddy, nevertheless we finished the hike. · The trail was muddy nevertheless, we finished the hike.
+3. (level 2) What kind of error is in this sentence? Our team lost the game we still had fun.  
+   **A run-on sentence** · A comma splice · A fragment · A pronoun error
+4. (level 2) Which revision does NOT fix the run-on? The museum was closed we visited the park instead.  
+   **The museum was closed, we visited the park instead.** · The museum was closed, so we visited the park instead. · Since the museum was closed, we visited the park instead. · The museum was closed, and we visited the park instead.
+5. (level 3) Which sentence is a comma splice?  
+   **Lena wanted to join the band, she had never played an instrument.** · Lena wanted to join the band, yet she had never played an instrument. · Lena wanted to join the band even though she had never played an instrument. · Lena, who had never played, wanted to join the band.
+6. (level 3) Which revision fixes the comma splice and shows the right connection? The bridge was icy, the bus took the long way.  
+   **The bridge was icy, so the bus took the long way.** · The bridge was icy, but the bus took the long way. · The bridge was icy, then the bus took the long way. · The bridge was icy, the bus, took the long way.
+7. (level 2) How many complete sentences are jammed into this run-on? We opened the box inside was a tiny kitten.  
+   **2** · 1 · 3 · 4
+8. (level 3) Which sentence is NOT a run-on or a comma splice?  
+   **Dad fixed the sink and then cleaned up the kitchen.** · Dad fixed the sink then he cleaned the kitchen. · Dad fixed the sink, then he cleaned the kitchen. · Dad fixed the sink, he cleaned up the kitchen.
+
+**danglingMods**
+
+1. (level 2) Which sentence has a dangling modifier?  
+   **Stirring the soup, the kitchen filled with steam.** · Stirring the soup, Abuela hummed a song. · While Abuela stirred the soup, the kitchen filled with steam. · The kitchen filled with steam as Abuela stirred the soup.
+2. (level 2) Read it the way it is written: who or what is reading the map? Reading the map carefully, the campsite was easy for Dev to find.  
+   **The campsite** · Dev · The map · The trail
+3. (level 3) Which revision fixes the dangling modifier? Painted bright red, the neighbors admired our new front door.  
+   **Painted bright red, our new front door impressed the neighbors.** · Painted bright red, the neighbors admired our brand-new front door. · The neighbors, painted bright red, admired our new front door. · Painted bright red, our neighbors admired the new front door.
+4. (level 2) Which sentence is correct?  
+   **Searching for her glasses, Grandma found them on her head.** · Searching for her glasses, they were found on Grandma’s head. · Searching for her glasses, Grandma’s head was where they were. · Searching for her glasses, Grandma’s glasses turned up on her head.
+5. (level 3) Which sentence does NOT have a dangling modifier?  
+   **Before leaving for school, Omar packed his lunch.** · Before leaving for school, Omar’s lunch was packed. · Before leaving for school, his lunch was packed by Omar. · Before leaving for school, the lunch Omar packed was ready.
+6. (level 3) Which sentence has a dangling modifier?  
+   **As a new student, the hallways confused me.** · As a new student, I was confused by the hallways. · When I was a new student, the hallways confused me. · The hallways confused me when I was new.
+7. (level 2) Read it the way it is written. What does this sentence say by mistake? Covered in sprinkles, I bit into the donut.  
+   **That I was covered in sprinkles** · That the donut bit me · That the sprinkles bit the donut · That someone else ate the donut
+8. (level 2) Which revision fixes the dangling modifier? Sweating in the hot sun, the trail seemed to go on forever.  
+   **Sweating in the hot sun, the hikers thought the trail went on forever.** · The trail, sweating in the hot sun, seemed to go on forever. · Sweating in the hot sun, the trail seemed to go on and on for the tired hikers. · Sweating in the hot sun, the trail went on forever for hikers.
+
+**parallelStructure**
+
+1. (level 2) Which choice keeps the list parallel? At the beach, my little brother likes to build castles, to collect shells, and ___ in the waves.  
+   **to splash** · splashing · splashes · splash around
+2. (level 2) Which sentence has parallel structure?  
+   **The guide told us to stay on the path, to watch for snakes, and to carry water.** · The guide told us to stay on the path, watch for snakes, and that we should carry water. · The guide told us staying on the path, to watch for snakes, and carry water. · The guide told us to stay on the path, watch for snakes, and carrying water.
+3. (level 3) Which sentence uses both… and correctly?  
+   **The new phone is both lighter and faster than the old one.** · The new phone is both lighter and it is faster. · The new phone both is lighter and faster than mine. · Both the new phone is lighter and is faster than mine.
+4. (level 3) Which sentence has a parallel comparison?  
+   **The library’s hours are longer than the museum’s.** · The library’s hours are longer than the museum is. · The hours of the library are longer than the museum. · The library has hours that are longer than the museum.
+5. (level 2) Which revision fixes the faulty parallelism? The new student was polite, helpful, and had a lot of patience.  
+   **The new student was polite, helpful, and patient.** · The new student was polite, helpful, and patiently. · The new student was polite, helpful, and showed patience. · The new student was polite, being helpful, and patient.
+6. (level 3) Which sentence is parallel?  
+   **Tomás couldn’t decide whether to join the chess club or to try out for the play.** · Tomás couldn’t decide whether to join the chess club or a tryout for the play. · Tomás couldn’t decide whether joining the chess club or to try out for the play. · Tomás couldn’t decide whether to join the chess club or if he should try out for the play.
+7. (level 2) Which choice completes the sentence with parallel structure? Before the trip, we washed the car, packed the snacks, and ___.  
+   **checked the tires** · checking the tires · to check the tires · we check the tires
+8. (level 2) Which sentence is NOT parallel?  
+   **Ana enjoys painting with watercolors and to sketch in pencil.** · Ana enjoys painting in watercolors and sketching in pencil. · Ana likes to paint with watercolors and to sketch in pencil. · Ana likes to paint with watercolors and sketch in pencil.
+

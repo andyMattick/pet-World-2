@@ -657,3 +657,193 @@ No ids changed.
 - **Test-only share.** 2 in 5 of each lesson’s fixed questions are held back for the unit test. Reading A: the test checks the skill on questions she hasn’t memorized. Reading B: she practices fewer distinct questions (each lesson keeps at least 8). The share is `TEST_ONLY_SHARE` in questionTypes.js.
 - **No answer shown after a unit-test miss.** Reading A: a retake can’t be passed by remembering answers. Reading B: she loses the instant correction during the test. The review before each try still teaches every missed lesson.
 - **Quiz retakes are still unlimited.** The best bot now passes one 4-question quiz attempt 5–8% of the time (before: 9–25%). That is about 1 in 13–20 tries, so a cap or cooldown on quiz retakes is your call.
+
+## Reserved test pool, Oct 30, 2026
+
+Owner rule (CONTENT-RULES.md, docs/BLIND-REVIEW.md): the unit test now draws **only** from questions written for it, which never appear in practice, quizzes, the test review, flashcards or games. Each retake shows reserved questions she hasn’t had on an earlier try first, then the least recently seen (`pickTestItems`, `S.testSeen`). This unit has no share holdout any more: every original question is back in practice. A unit-test miss still names the lesson and never shows the right answer.
+
+**48 new questions** (chromosomes4 8, mitosis4 8, meiosis4 8, reproTypes4 8, development4 8, lifeCycles4 8); 23 at level 3 (48%). In the bank: `reserveForTest(BIO4_QUESTIONS, …)` in src/shared/questionBanks.js, marked `testOnly:true`.
+
+**Blind score: 48/48.** A fresh reviewer who never saw the key or the writer’s notes answered every question from a keyless, shuffled view. No key disagreements; 7 flags (too-easy or giveaway), all decided below.
+
+### Fixes (18)
+
+Made before the questions went into the bank, so no saved id changes. The changed questions were not re-solved blind (see “Still owed” below).
+
+- **chromosomes4:t2** (`bio4:chromosomes4:10fd4yk`): Now two-part (name and what happens in anaphase); two choices name the centromere. Raised to level 3.
+- **chromosomes4:t4** (`bio4:chromosomes4:1o1geqo`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **chromosomes4:t5** (`bio4:chromosomes4:ppdcjm`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **chromosomes4:t8** (`bio4:chromosomes4:11bole4`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **mitosis4:t3** (`bio4:mitosis4:bzaec5`): Asks what happens next, not the phase name; wrong answers are the other phases’ events (anaphase itself is the trap).
+- **mitosis4:t7** (`bio4:mitosis4:1sgsvae`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **meiosis4:t3** (`bio4:meiosis4:1aisbl3`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **meiosis4:t5** (`bio4:meiosis4:ynv3ni`): Every choice now has a “where…” reason, so the key no longer stands out by form.
+- **meiosis4:t6** (`bio4:meiosis4:1xukpah`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened).
+- **reproTypes4:t1** (`bio4:reproTypes4:18wxcjl`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **reproTypes4:t3** (`bio4:reproTypes4:1ti0ai7`): “in a few weeks” removed from the stem; wrong answers include two real advantages of sexual reproduction. Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **reproTypes4:t4** (`bio4:reproTypes4:wdlgec`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **reproTypes4:t7** (`bio4:reproTypes4:122dy74`): A wrong answer now uses the same variation reasoning (for the clones), and the key is no longer the longest. Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **development4:t1** (`bio4:development4:197nf2b`): Gives the body-cell number, so she has to halve for the sperm and egg and add back (156 and 117 are the doubling traps).
+- **development4:t5** (`bio4:development4:aqqc7j`): A wrong answer now also uses “differentiated”, and the key is no longer the longest.
+- **lifeCycles4:t3** (`bio4:lifeCycles4:qnn5a8`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **lifeCycles4:t4** (`bio4:lifeCycles4:kvg2ex`): Bot balance: Level-3 key lengths rebalanced (a wrong answer lengthened). Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+- **lifeCycles4:t5** (`bio4:lifeCycles4:1611bf1`): Bot balance: Wrong answers rebalanced so the key is not the plain, shortest choice a trained bot picks.
+
+**Practice questions** (wrong answers only, so ids are stable). Returning the old 2-in-5 test-only questions to practice tilted a few quiz pools; the bot’s quiz check failed until these were rebalanced:
+
+- `meiosis4:10lexk2`: “Cytokinesis splits each cell in half” → “Cytokinesis splits each new cell into two unequal halves”.
+- `meiosis4:e30dt1`: “Mules can’t copy their chromosomes” → “…before the cells divide”.
+- `meiosis4:dxp4sd`: “92, each one still 2 chromatids” → “46, each still 2 chromatids”.
+- `reproTypes4:1w1syxl`: “Half as many, because they came from meiosis” → “Half as many, due to meiosis”.
+- `reproTypes4:1tge8jb`: “Let bees pollinate the prize rose with other roses” → “Let bees pollinate the prize rose”.
+- `development4:12jj136`: “Both got the same food and the same blood before birth” → “Both got the same food before birth”.
+- `development4:153rlvz`: “The two sperm cells would use up the food stored inside the egg” → “The sperm would use up the egg’s food”.
+- `lifeCycles4:v61kc9`: “An adult butterfly” → “A fully grown butterfly”.
+- `lifeCycles4:q7dr76`: “They’ll turn into butterflies right away” → “…right away to find new food”.
+
+### Kept, with the reason
+
+- **chromosomes4:t7**: Keyed 40 centromeres (one per copied chromosome); 80 is the doubling trap (reviewer agrees).
+- **the four repeated right answers**: “Telophase” (mitosis4:t3 before its fix), “Sister chromatids” (meiosis4:t2), “Larva” (lifeCycles4:t1) and “8” (meiosis4:t4) are also right answers to practice questions, but other choices on the same items (Metaphase, Interphase, a homologous-pair choice, Pupa) are also old right answers, so memorizing words gives no edge.
+
+### Judgment calls for Andy
+
+- **meiosis4:t4**: 2³ = 8 ways three pairs can line up. Reading A: follows from the line about how pairs line up. Reading B: 6th graders may multiply 2 × 3 = 6 unless the counting idea is taught.
+- **meiosis4:t2**: Meiosis II separates sister chromatids, a step past the lesson text (it follows from the existing question about chromosomes after meiosis I).
+- **lifeCycles4:t5**: “Lungs have replaced its gills” simplifies a little: young tadpoles already start growing lungs.
+- **chromosomes4:t2 (after its fix)**: “The centromere … splits so the sister chromatids separate” is the usual school wording; strictly, the proteins holding the chromatids are cut.
+
+### Test-wise bot, before → after
+
+`node scripts/test-wise-bot.mjs --courses sentences,conventions,style,bio4,bio5 --attempts 1500`. “Before” is the same bot run on this branch before the reserved pool (the old 2-in-5 holdout). The memorizer now also rules out a choice once it is marked wrong on a unit test and carries the game’s seen-list into retakes.
+
+| assessment | pass mark | chance | best bot before | best bot after | verdict after |
+|---|---|---|---|---|---|
+| Quiz 1 (4 q) | 75% | 22.3 | learnedCV 29.3 | specific 28.1 | holds |
+| Quiz 2 (4 q) | 75% | 22.5 | shortest 27.9 | middle 28.2 | holds |
+| Quiz 3 (4 q) | 75% | 21.9 | middle 27.3 | learnedCV 27.3 | holds |
+| Unit test (24 q) | 83.3% | 25 | middle 23.1 | learnedCV 33.3 | holds |
+| Memorizer, test tries 1 / 2 / 3 | 83.3% | | 51 / 57.9 / 63.3 | 33.1 / 32.8 / 56.2 | holds |
+
+Share of each try’s questions that were new to her unit tests, after: 100% / 100% / 0%. A retake repeats 0% of the previous try’s questions (before: 28.8%).
+
+Six lessons × 8 reserved against 4 per lesson: two fully fresh tries; try 3 repeats the least recently seen.
+
+**Still owed:** a fresh blind solve of the fixed questions above (the first blind solve was of the versions before the fixes).
+
+### The questions (right answer in bold)
+
+**chromosomes4**
+
+1. (level 2) Each leaf cell of a garden pea plant holds 7 homologous pairs of chromosomes. How many of the chromosomes in one leaf cell came from the pollen that fertilized the egg the plant grew from?  
+   **7** · 14 · 2 · 28
+2. (level 3) At the Microscope Window, a guide points to the pinched spot where the two sister chromatids of a copied chromosome are held together. What is that spot called, and what happens to it in anaphase?  
+   **The centromere; it splits so the sister chromatids separate** · The centromere; it holds the homologous pair together for good · The chromatid; it splits so the centromeres separate · The spindle; it splits so the homologous pairs separate
+3. (level 2) A rabbit sperm cell has 22 chromosomes. How many chromosomes are in one of that rabbit’s ear skin cells?  
+   **44** · 22 · 11 · 88
+4. (level 2) If the DNA from one human cell were stretched out end to end, it would be about 2 meters long, yet it fits inside a nucleus far too small to see. How?  
+   **It is coiled tightly around proteins** · The cell cuts it into millions of tiny pieces · It is stored outside the nucleus · The cell keeps just the genes it is using
+5. (level 3) Corn leaf cells have 20 chromosomes. A scientist finds a healthy corn cell with exactly 10 chromosomes. Which kind of cell is it most likely to be?  
+   **A sex cell made in the flower** · A root cell · A cell that has just finished mitosis · A seedling’s stem cell
+6. (level 3) In honeybees, females grow from fertilized eggs and have 32 chromosomes in their body cells. Males grow from eggs that were never fertilized. How many chromosomes are in a male honeybee’s body cells?  
+   **16** · 32 · 64 · 8
+7. (level 3) A mouse cell has 40 chromosomes. Every one of them has been copied, and the cell hasn’t started dividing yet. How many centromeres does the cell have?  
+   **40** · 80 · 20 · 160
+8. (level 3) Which two pieces of DNA carry the exact same version of every gene?  
+   **The sister chromatids of one copied chromosome** · The two chromosomes in one homologous pair of a body cell · Mom’s chromosome 1 and Mom’s chromosome 2 · A man’s X chromosome and his Y chromosome
+
+**mitosis4**
+
+1. (level 2) A cell has just finished interphase. Compared with when it first formed, what has changed?  
+   **It is bigger, with twice the DNA** · It has split its nucleus into two parts · It is smaller and has half as much DNA · It has the same DNA but more chromosome pairs
+2. (level 2) Which of these depends on mitosis?  
+   **A puppy’s leg bones growing longer** · A frog’s body making egg cells · A sperm cell joining with an egg · Partner chromosomes trading pieces
+3. (level 2) A cell has just finished anaphase. What happens next?  
+   **New nuclei form around the two sets of chromosomes** · The chromosomes line up across the middle · The sister chromatids pull apart toward opposite ends · The DNA is copied so each chromosome gets two chromatids
+4. (level 2) Why does a cell copy its DNA before mitosis instead of after?  
+   **So each new cell gets a full set** · So each new cell gets half of the DNA · So the copies can trade pieces with their partners · So the cell keeps double the chromosomes for good
+5. (level 3) A pig skin cell has 38 chromosomes. It goes through the whole cell cycle, and then both new cells do it again. How many cells are there, and how many chromosomes does each have?  
+   **4 cells with 38 each** · 4 cells with 19 each · 2 cells with 38 each · 4 cells with 76 each
+6. (level 3) A cell with 10 chromosomes is in metaphase of mitosis. How many sister chromatids are lined up across the middle of the cell?  
+   **20** · 10 · 5 · 40
+7. (level 3) A drug stops cells from copying their DNA. Which cells in the body would it harm the most?  
+   **Cells that divide often, like those lining the gut** · Grown nerve cells, which seldom divide after childhood · Egg cells waiting in the ovaries · Fat cells that store energy
+8. (level 3) During anaphase in a cell with 46 chromosomes, one pair of sister chromatids fails to separate, and both go to the same end. How many chromosomes do the two new cells get?  
+   **47 in one cell and 45 in the other** · 46 in each cell · 23 in each cell · 47 in each cell
+
+**meiosis4**
+
+1. (level 2) Bacteria never go through meiosis. Why don’t they need it?  
+   **They reproduce asexually, so no sex cells join** · They have no DNA to copy · Their cells are too small to divide twice · They make their sex cells by mitosis instead
+2. (level 3) Meiosis has two divisions. What is pulled apart in meiosis II?  
+   **Sister chromatids** · The homologous pairs · The nuclear membrane and the DNA · Chromosomes from Mom and from Dad
+3. (level 2) Besides crossing over, what else in meiosis makes each sex cell different?  
+   **Pairs line up in random directions** · The DNA is copied with lots of mistakes · Each cell gets a random number of chromosomes · The cell divides once
+4. (level 3) A species has 3 pairs of chromosomes. In meiosis, each pair can line up 2 ways. Ignoring crossing over, how many different chromosome combinations can its sex cells get?  
+   **8** · 6 · 3 · 9
+5. (level 2) In a flowering plant, where does meiosis happen?  
+   **In the flower, where its pollen and egg cells form** · In the root tip, where new root cells are made · In the leaves, where the plant makes its food · In the growing tip of the stem, where it gets taller
+6. (level 3) A cell with 16 chromosomes finishes meiosis II. How many chromosomes are in each new cell, and how do the new cells compare?  
+   **8, and they are genetically different** · 8, and the four new cells are identical · 16, and they are genetically different · 4, and they are each genetically different
+7. (level 3) A student says, “Meiosis is just mitosis done twice.” What is the best correction?  
+   **In meiosis I, partner chromosomes separate, so the number is cut in half** · Meiosis copies the DNA twice, once before each division · Meiosis happens in plants, and mitosis happens in animals · In meiosis, the cell doesn’t copy its DNA
+8. (level 2) A bull’s sperm cells each have 30 chromosomes. How many chromosomes were in the cell that started meiosis?  
+   **60** · 30 · 15 · 120
+
+**reproTypes4**
+
+1. (level 2) A strawberry plant sends out a runner, a stem along the ground that roots and grows a new plant. How do the new plant’s genes compare with the parent’s?  
+   **They are identical** · They are a new mix from two plants · They are half of the parent’s genes · They differ
+2. (level 2) Which of these is sexual reproduction?  
+   **A tulip seed forming after a bee brings pollen from another tulip** · A spider plant growing baby plants on long stems · A sea anemone splitting down the middle · A tulip bulb growing new bulbs
+3. (level 2) Duckweed plants on a calm pond often reproduce by budding. Why is asexual reproduction a good fit for spreading across the pond?  
+   **It makes lots of new plants quickly** · It mixes genes · It lets each new plant grow larger than its parent · It helps the plants survive a change in the pond
+4. (level 2) A planarian flatworm is cut in two, and each half regrows into a whole worm. Which describes this?  
+   **Asexual; both worms have the same genes** · Sexual; both worms have the same genes · Asexual; each worm has a new mix of genes · Sexual; each worm has a new mix of genes
+5. (level 3) A gardener crosses a red rose with a yellow rose and plants 20 of the seeds. What will the seedlings be like?  
+   **Each will have its own mix of the parents’ genes** · Ten will copy the red parent, and ten the yellow · Each will be a copy of the red mother plant · They will be identical to one another
+6. (level 2) In which pair are both examples asexual reproduction?  
+   **An amoeba splitting and an aspen tree sprouting from its roots** · An amoeba splitting and a salmon’s eggs being fertilized in a stream · A pollinated apple flower and a potato eye · A frog’s eggs and a hydra’s bud
+7. (level 3) Over 50 years, a lake slowly gets warmer. Snail population A reproduces only asexually, and population B reproduces sexually. Which is more likely to still live there, and why?  
+   **B, since some of its varied young may handle warmth** · A, because its young vary and some will handle warmth · A, because it makes more young each year · B, because its young may copy the best parent
+8. (level 3) One bacterium splits in two every 20 minutes, and every new cell keeps splitting. After 2 hours, how many bacteria are there, and how are their genes related?  
+   **64, with the same genes** · 64, each with a new mix of genes · 12, with the same genes · 32, with the same genes
+
+**development4**
+
+1. (level 2) A rooster’s body cells each have 78 chromosomes. How many chromosomes does a chicken zygote have when one of his sperm fertilizes a hen’s egg?  
+   **78** · 39 · 156 · 117
+2. (level 2) A zygote divides into 2 cells, then 4, then 8. How do the chromosomes in each of the 8 cells compare with the zygote’s?  
+   **The same** · One-eighth as many · Half as many · A new mix, like a sex cell’s
+3. (level 2) A person’s skin cells carry the gene for making insulin, but only pancreas cells make insulin. Why don’t skin cells make it?  
+   **Skin cells keep that gene switched off** · Skin cells lost that gene during mitosis · Pancreas cells have the insulin gene, but skin cells don’t · Skin cells have fewer chromosomes than pancreas cells
+4. (level 2) A scientist takes cells from a 5-day-old embryo and grows them into beating heart muscle cells in a dish. What kind of cells did she start with?  
+   **Stem cells that hadn’t specialized yet** · Heart cells · Sex cells made by meiosis · Zygotes with half the usual chromosomes
+5. (level 3) In 1891 a scientist shook apart the two cells of a 2-cell sea urchin embryo, and each cell grew into a small but complete larva. What does this show about those early cells?  
+   **Neither cell had differentiated yet** · Each cell had already differentiated into half a larva · Each held a different half of the DNA · They were already sex cells made by meiosis
+6. (level 3) An embryo has 64 cells. Since the zygote, every cell has divided once in each round of mitosis. How many rounds have there been?  
+   **6** · 32 · 8 · 7
+7. (level 2) Which happens first after a human egg is fertilized?  
+   **The zygote divides into two cells by mitosis** · The cells differentiate into nerve and skin · The zygote makes sex cells by meiosis · The embryo forms a heart
+8. (level 3) When a salamander loses a leg, cells near the wound lose their special jobs, divide many times, and then become bone, muscle, and skin again. Which two processes rebuild the leg, in order?  
+   **Mitosis, then differentiation** · Meiosis, then fertilization · Fertilization, then mitosis · Differentiation, then meiosis
+
+**lifeCycles4**
+
+1. (level 2) A housefly maggot is white, has no legs, and looks nothing like an adult fly. Which life cycle stage is a maggot?  
+   **Larva** · Nymph · Pupa · Egg
+2. (level 2) A grasshopper nymph molts several times before it becomes an adult. What is the main difference between the last nymph stage and the adult?  
+   **The adult has full-sized wings** · The nymph breathes with gills · The nymph has no legs yet · The nymph eats nectar while the adult eats leaves
+3. (level 2) A mealworm is the larva of a darkling beetle. What does a full-grown mealworm turn into next?  
+   **A pupa that doesn’t eat** · A nymph with small wing buds · An adult beetle that lays eggs · A winged larva
+4. (level 3) Why does a butterfly do almost all of its growing as a caterpillar?  
+   **Adult butterflies don’t molt, so they can’t get bigger** · The pupa eats the most food, so it grows the fastest of all · Adults can’t eat, so they can’t grow · Larvae grow by meiosis, which is faster
+5. (level 2) A froglet has four legs and a short tail stub. Which change has already happened since it was a young tadpole?  
+   **Lungs have replaced its gills** · It has already laid its first eggs · It has grown a longer tail for swimming · It has pupated
+6. (level 3) A bean seed is planted. Which list puts the next steps of its life cycle in order?  
+   **Germination, flowering, pollination, new seeds** · Flowering, germination, pollination, new seeds · Germination, pollination, flowering, new seeds · Pollination, germination, flowering, new seeds
+7. (level 3) Japanese beetle grubs live in the soil and eat grass roots; the adults eat rose leaves. A gardener sprays the rose leaves all summer, but beetles come back the next year. What is the most likely reason?  
+   **Grubs living in the soil were never reached by the spray** · Beetle nymphs hatching on the leaves resist the spray · The beetles skip the larva stage when sprayed · Pupae on the rose leaves are protected
+8. (level 3) A cicada nymph lives underground for years, then climbs a tree and molts into a winged adult. Which statement about cicadas is accurate?  
+   **They have no pupa stage, so it’s incomplete metamorphosis** · The underground stage is a larva, so it’s complete metamorphosis · The adult is a pupa until its wings dry · The nymph spins a chrysalis before it molts
+

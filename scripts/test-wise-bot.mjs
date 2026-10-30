@@ -13,8 +13,9 @@
      shuffle (Fisher-Yates on Math.random), englishBankQuestions (bank choices shuffled per call), typedAutoQuestions
      (typedQuestions(...).filter(!isWritten).map(shuffledCopy)), geneticsQuestions (fresh every call), practiceOrder,
      leanHard, englishAssessmentQuestions (quizzes and the 8-question test review), the unit test
-     (shuffle(skills.flatMap(s => leanHard(pool(s, test)).slice(0, testPer)))), testOnlyIds (questions kept for the unit
-     test), and order items that start shuffled. Math.random is a seeded mulberry32, so runs repeat.
+     (shuffle(skills.flatMap(s => pickTestItems(pool(s, test), testPer, seen, leanHard)))), testOnlyIds (questions kept for
+     the unit test: a lesson's reserved test pool, or the old 2-in-5 share), pickTestItems (a retake prefers reserved
+     questions she hasn't had on a unit test yet, then the least recently seen), and order items that start shuffled. Math.random is a seeded mulberry32, so runs repeat.
    Each strategy returns, for one shown question, the chance it is marked right (ties split at random); expected score and
    pass chance come from a Poisson-binomial over the questions actually drawn.
 
@@ -61,6 +62,7 @@ const courseSettings = id => {
 const GENERATED = new Set([...GAME.matchAll(/courseId === '(\w+)' \? geneticsQuestions/g)].map(m => m[1]));
 const TEST_HIDES_KEY = /retryType === 'final' && !correct/.test(GAME);   // the unit test doesn't show the right answer after a miss
 const testOnlyIds = QT.testOnlyIds || (() => new Set());                // questions kept for the unit test (none in older versions)
+const pickTestItems = QT.pickTestItems || ((pool, count, seen, order) => order(pool).slice(0, count));   // one lesson's questions for one test try
 
 /* ---------- the game's selection code (copied) ---------- */
 const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -90,7 +92,9 @@ function assessmentQuestions(unit, skillIds, count){
   while (out.length < count && pools.some(p => p.length)) pools.forEach(p => { if (p.length && out.length < count) out.push(p.pop()); });
   return shuffle(out);
 }
-const unitTest = unit => shuffle(unit.skills.flatMap(s => leanHard(englishQuestions(unit, s.id, { test: true })).slice(0, unit.testPer)));
+/* seen: {question id: when it was last on her unit test} (the game's S.testSeen[course]); a first try passes {} */
+const unitTest = (unit, seen = {}) => shuffle(unit.skills.flatMap(s => pickTestItems(englishQuestions(unit, s.id, { test: true }), unit.testPer, seen, leanHard)));
+const markSeen = (seen, test, stamp) => { for (const q of test) if (!q.gen) seen[q.id] = stamp; return seen; };
 const practice = (unit, skillId) => practiceOrder(englishQuestions(unit, skillId), 4);
 const reviewCheck = unit => assessmentQuestions(unit, unit.skills.map(s => s.id), 8);   // the 8 mixed questions before every test
 
@@ -322,12 +326,12 @@ for (const unit of UNITS) {
   }
 
   /* retakes and memorization */
-  const memo = { poolSize: {}, testOnly: {}, testItems: unit.testPer * unit.skills.length, testHidesKey: TEST_HIDES_KEY };
-  for (const s of unit.skills) { const all = englishQuestions(unit, s.id, { test: true }), prac = englishQuestions(unit, s.id); memo.poolSize[s.id] = all.length; memo.testOnly[s.id] = all.length - prac.length; }
+  const memo = { poolSize: {}, testOnly: {}, reserved: {}, testItems: unit.testPer * unit.skills.length, testHidesKey: TEST_HIDES_KEY };
+  for (const s of unit.skills) { const all = englishQuestions(unit, s.id, { test: true }), prac = englishQuestions(unit, s.id); memo.poolSize[s.id] = all.length; memo.testOnly[s.id] = all.length - prac.length; memo.reserved[s.id] = all.filter(q => q.testOnly).length; }
   let sameItems = 0, sameOrder = 0, sameLetter = 0, letterN = 0;
   const T = Math.min(ATTEMPTS, 1500);
   for (let t = 0; t < T; t++) {
-    const x = unitTest(unit), y = unitTest(unit), xi = x.map(q => q.id), yi = y.map(q => q.id);
+    const x = unitTest(unit), y = unitTest(unit, markSeen({}, x, 1)), xi = x.map(q => q.id), yi = y.map(q => q.id);
     const common = xi.filter(i => yi.includes(i) && !i.startsWith('gen:'));
     sameItems += common.length / xi.length; if (xi.join() === yi.join()) sameOrder++;
     for (const i of common) { const qa = x.find(q => q.id === i), qb = y.find(q => q.id === i); if (QT.typeOf(qa) === 'mc') { letterN++; if (qa.answer === qb.answer) sameLetter++; } }
@@ -337,25 +341,33 @@ for (const unit of UNITS) {
   memo.retakeSameLetterPct = letterN ? +(100 * sameLetter / letterN).toFixed(1) : null;
   /* memorizer: remembers the right answer of every fixed item it was shown (practice once per lesson, each quiz once, the
      8-question review before every test try, and the test itself). If the test hides the key after a miss, it only
-     learns the test items it happened to get right. On anything new it uses the one trick that scores best on this unit's
-     test (a student commits to a trick; it can't know per item which trick happens to be right). */
+     learns the test items it happened to get right; for a test item it missed it remembers the choice that was marked
+     wrong and, if the item comes back on a retake, guesses among the choices it hasn't ruled out (or uses its trick, if
+     that does better). On anything new it uses the one trick that scores best on this unit's test (a student commits to
+     a trick; it can't know per item which trick happens to be right). Retakes carry the game's seen-list, so a unit
+     with a reserved test pool shows it reserved questions it hasn't had yet. */
   const fallback = STRATEGY_NAMES.filter(s => s !== 'random').reduce((b, s) => (table.final.strategies[s].pct > table.final.strategies[b].pct ? s : b), 'learnedXU');
   memo.fallback = fallback;
   const memoRuns = [];
   for (let t = 0; t < Math.min(ATTEMPTS, 1000); t++) {
-    const seen = new Set(), see = qs => qs.forEach(q => { if (!q.gen) seen.add(q.id); });
+    const seen = new Set(), see = qs => qs.forEach(q => { if (!q.gen) seen.add(q.id); }), testSeen = {}, ruledOut = {};
     for (const s of unit.skills) see(practice(unit, s.id));
     for (const q of quizzes) see(assessmentQuestions(unit, q.skills, 4));
     const tries = [];
     for (let k = 0; k < 3; k++) {
       see(reviewCheck(unit));
-      const test = unitTest(unit), ps = test.map(q => { if (seen.has(q.id)) return 1; const e = evalQuestion(q, unit.course); return e[fallback]; });
-      tries.push({ pct: 100 * ps.reduce((a, b) => a + b, 0) / test.length, pass: passProb(ps, unit.finalPass) });
-      test.forEach((q, i) => { if (q.gen) return; if (!TEST_HIDES_KEY || Math.random() < ps[i]) seen.add(q.id); });
+      const test = unitTest(unit, testSeen), ps = test.map(q => {
+        if (seen.has(q.id)) return 1;
+        const e = evalQuestion(q, unit.course), out = ruledOut[q.id] || 0;
+        return out && QT.typeOf(q) === 'mc' ? Math.max(e[fallback], 1 / Math.max(1, q.options.length - out)) : e[fallback];
+      });
+      tries.push({ pct: 100 * ps.reduce((a, b) => a + b, 0) / test.length, pass: passProb(ps, unit.finalPass), fresh: test.filter(q => !q.gen && testSeen[q.id] == null).length / test.length });
+      markSeen(testSeen, test, k + 1);
+      test.forEach((q, i) => { if (q.gen) return; if (!TEST_HIDES_KEY || Math.random() < ps[i]) seen.add(q.id); else if (QT.typeOf(q) === 'mc') ruledOut[q.id] = Math.min((ruledOut[q.id] || 0) + 1, q.options.length - 1); });
     }
     memoRuns.push(tries);
   }
-  memo.tries = [0, 1, 2].map(k => ({ attempt: k + 1, pct: +(memoRuns.reduce((a, r) => a + r[k].pct, 0) / memoRuns.length).toFixed(1), passProb: +(memoRuns.reduce((a, r) => a + r[k].pass, 0) / memoRuns.length).toFixed(3) }));
+  memo.tries = [0, 1, 2].map(k => ({ attempt: k + 1, pct: +(memoRuns.reduce((a, r) => a + r[k].pct, 0) / memoRuns.length).toFixed(1), passProb: +(memoRuns.reduce((a, r) => a + r[k].pass, 0) / memoRuns.length).toFixed(3), freshPct: +(100 * memoRuns.reduce((a, r) => a + r[k].fresh, 0) / memoRuns.length).toFixed(1) }));
   const finalPassPct = table.final.passPct;
   memo.fail = memo.tries.some(x => x.pct >= finalPassPct - 15);
   /* quizzes can be retaken: the best realistic bot's chance to pass one attempt */
@@ -384,7 +396,7 @@ for (const [u, r] of Object.entries(results)) {
   console.log(`| assessment | pass mark | ${SHOW.join(' | ')} | verdict |`);
   console.log(`|---|---|${SHOW.map(() => '---').join('|')}|---|`);
   for (const t of Object.values(r.table)) console.log(`| ${t.name} (${t.n} q) | ${t.pass} = ${t.passPct}% | ${SHOW.map(s => (t.fails.includes(s) ? `**${t.strategies[s].pct}**` : `${t.strategies[s].pct}`)).join(' | ')} | ${t.fails.length ? `FAIL (${t.fails.join(', ')})` : 'ok'} |`);
-  console.log(`\nMemorizer (test ${r.memo.testHidesKey ? 'hides' : 'shows'} the key after a miss; test-only items per lesson ${JSON.stringify(r.memo.testOnly)} of ${JSON.stringify(r.memo.poolSize)}): ${r.memo.tries.map(x => `try ${x.attempt} ${x.pct}% (pass chance ${(100 * x.passProb).toFixed(0)}%)`).join('; ')} vs pass mark ${r.table.final.passPct}% (new items: ${r.memo.fallback}) → ${r.memo.fail ? '**FAIL**' : 'ok'}.`);
+  console.log(`\nMemorizer (test ${r.memo.testHidesKey ? 'hides' : 'shows'} the key after a miss; test-only items per lesson ${JSON.stringify(r.memo.testOnly)} of ${JSON.stringify(r.memo.poolSize)}${Object.values(r.memo.reserved).some(Boolean) ? `, reserved ${JSON.stringify(r.memo.reserved)}` : ''}): ${r.memo.tries.map(x => `try ${x.attempt} ${x.pct}% (pass chance ${(100 * x.passProb).toFixed(0)}%, ${x.freshPct}% of items new to its tests)`).join('; ')} vs pass mark ${r.table.final.passPct}% (new items: ${r.memo.fallback}) → ${r.memo.fail ? '**FAIL**' : 'ok'}.`);
   console.log(`Retake vs previous test: ${r.memo.retakeSameItemsPct}% same fixed items, same order ${r.memo.retakeSameOrderPct}%, same letter for a repeated item ${r.memo.retakeSameLetterPct}%. Position of the key (4 choices): ${JSON.stringify(r.posHist['4'] || [])}.`);
   if (Object.keys(r.quizPass).length) console.log(`Best realistic bot, chance to pass one quiz attempt: ${Object.entries(r.quizPass).map(([k, v]) => `${k} ${(100 * v).toFixed(0)}%`).join(', ')}.`);
   console.log(`Single-cue items (cue right ≥60% and 30 points over chance): ${r.leaks.length}${r.leaks.length ? `: ${r.leaks.map(x => `${x.id} (${x.cues.join('+')})`).join(', ')}` : ''}.`);
