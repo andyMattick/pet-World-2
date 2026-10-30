@@ -387,6 +387,7 @@ Share of each try’s questions that were new to her unit tests, after: 100% / 1
 
 - **styleTechnique:t3**: right (C, confidence 5), no flags. The reviewer found the stem phrase “keeps this news report at one level of formality” a little clunky but clear. **KEEP.**
 - **styleTechnique:t13**: right (D, confidence 5), flagged **too-easy**: the wrong answers are the report’s own plain sentences, so the one casual sentence stands out. **JUDGMENT** for Andy, because toughening it means rewriting the passage, and the passage is part of the prompt, so the question’s id would change (it is reserved and new today, so no class has a hide or edit saved for it) and the rewrite would need another blind solve. The two readings:
+  - **Andy decided (Oct 30, 2026): keep t13 as it is.**
   - *Keep it:* spotting the one sentence that slips (“a nice, cool 22°C”) is exactly the level-3 skill, and the slip is already a quiet one, not slang.
   - *Toughen it:* every “which sentence slips” item has one odd sentence out, so make the slip subtler and the formal sentences look less plain. A draft: “We heated 200 mL of water to 100°C. Every ten minutes, we recorded its temperature with a thermometer. **The temperature dropped pretty fast at first.** After one hour, the water had cooled to 22°C.” (the slip is “pretty fast”). If Andy picks this, it needs a fresh blind solve before it goes in.
 
