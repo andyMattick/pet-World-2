@@ -1570,3 +1570,20 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .br-fix{color:var(--berry-deep); background:var(--butter); border-radius:8px; padding:0 .2em}
 .br-choices{margin:8px 0}
 .br-choices .btn{min-width:3em; font-size:1.15em}
+/* 🧩 word parts after a miss (docs/VOCAB.md, "Word parts"): prefix blue, root green, suffix orange; fixed light chips
+   with dark text so they read the same in light and dark mode */
+.word-parts{margin:6px auto; max-width:46ch; padding:6px 10px; border-radius:10px; border:2px dashed var(--ink-soft); text-align:left; font-size:.92rem}
+.word-parts p{margin:0}
+.word-parts .wp-head{margin-bottom:4px}
+.wp-chips{display:flex; flex-wrap:wrap; align-items:center; gap:4px}
+.wp-chip{display:inline-flex; flex-direction:column; align-items:center; padding:2px 8px; border-radius:8px; border:2px solid; line-height:1.15; color:#2A1F1C}
+.wp-chip b{font-size:1rem}
+.wp-chip small{font-size:.74rem; max-width:16ch; text-align:center}
+.wp-prefix{background:#DCEBFF; border-color:#5B8BD9}
+.wp-root{background:#DDF5E9; border-color:#4FA383}
+.wp-suffix{background:#FFE9CF; border-color:#E0913D}
+.wp-mark{font-style:normal; color:#7A5A55}
+.wp-plus{font-weight:700; color:var(--ink-soft)}
+.wp-gloss{margin-top:4px !important}
+.wp-guess{border-style:dotted}
+.vocab-peek .word-parts{margin:6px 0 0}

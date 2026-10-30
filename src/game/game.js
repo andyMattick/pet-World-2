@@ -15,6 +15,7 @@ import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkT
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, PATTERN_WORDS, wordBuckets } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
+import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
@@ -12670,6 +12671,21 @@ function syllableAnswerHTML(word){
   return `<p class="syl-answer"><span>${syl.show.map(esc).join('<i>·</i>')}</span> <span class="muted">${syl.say.length} syllables</span>
     <button type="button" class="btn small" data-vocab-hear>🔊</button><button type="button" class="btn small" data-vocab-hear="syllables">🐢 By syllables</button></p>`;
 }
+/* 🧩 word parts after a miss (owner, Oct 30, 2026; docs/VOCAB.md "Word parts"): prefix, root and suffix chips with
+   what each means, then the put-together meaning. A word with no real parts gets a one-line note; a word a grown-up
+   added gets a "Looks like:" guess only when the fallback is sure (wordParts.js), else nothing. Shown only after she
+   answers, never before. `compact` drops the origin label (the 📊 My words peek). */
+function wordPartsHTML(word, {compact = false} = {}){
+  let known = []; try { known = vocabWords().all.map(v => wordKey(v.w)); } catch { known = []; }
+  const e = wordPartsFor(word, known); if (!e) return '';
+  const kindName = {prefix:'prefix', root:'root', suffix:'suffix'};
+  const label = x => x.type === 'prefix' ? `${x.show || x.text}-` : x.type === 'suffix' ? `-${x.show || x.text}` : (x.show || x.text);
+  const changed = x => (x.show && x.show !== x.text ? ` <i class="wp-mark" title="spelled “${esc(x.text)}” in this word">*</i>` : '');
+  if (e.parts.length < 2) return `<div class="word-parts wp-one"><p><b>🧩 One word part:</b> ${esc(String(e.note || '').replace(/^One word part: /, ''))}</p></div>`;
+  const chips = e.parts.map(x => `<span class="wp-chip wp-${x.type}" role="img" aria-label="${esc(`${kindName[x.type]} ${x.show || x.text}, means ${x.meaning}`)}"><b>${esc(label(x))}${changed(x)}</b><small>${esc(x.meaning)}</small></span>`).join('<span class="wp-plus" aria-hidden="true">+</span>');
+  const origin = !compact && ORIGIN_NAMES[e.origin] ? ` <span class="muted">(${esc(ORIGIN_NAMES[e.origin])})</span>` : '';
+  return `<div class="word-parts${e.guess ? ' wp-guess' : ''}"><p class="wp-head"><b>🧩 ${e.guess ? 'Looks like:' : 'Word parts'}</b>${origin}</p><div class="wp-chips">${chips}</div>${e.gloss ? `<p class="wp-gloss">→ ${esc(e.gloss)}</p>` : ''}</div>`;
+}
 document.addEventListener('change', e => { if (e.target.id === 'vocabVoice') { S.ttsVoice = e.target.value; save(); void speakWord('analyze', 'syllables'); } });
 function voicePickerHTML(){
   const voices = englishVoices(); if (voices.length < 2) return '';
@@ -12688,7 +12704,7 @@ function answerVocab(ok, shownAnswer, typed = ''){
   sfx(ok ? 'good' : 'bad');
   $('#vocabWrap .ela-feedback').textContent = ok ? 'That’s right!' : `Not quite. ${shownAnswer}`;
   const tip = kinds.length ? patternById(kinds[0]) : null;
-  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', `${tip ? `<p class="spell-tip"><b>Tricky part: ${esc(tip.name)}.</b> ${esc(tip.tip)}</p>` : ''}${syllableAnswerHTML(c.word.w)}${moved === 'down' ? '<p class="level-note">🌱 Let’s try some easier words for a bit.</p>' : moved === 'up' ? `<p class="level-note">🌳 Nice! On to ${esc(LEVEL_NAMES[S.vocab.level[c.kind === 'spell' ? 'spell' : 'cards']].replace(/^\S+ /, '').toLowerCase())}.</p>` : ''}`);
+  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', `${tip ? `<p class="spell-tip"><b>Tricky part: ${esc(tip.name)}.</b> ${esc(tip.tip)}</p>` : ''}${syllableAnswerHTML(c.word.w)}${ok ? '' : wordPartsHTML(c.word.w)}${moved === 'down' ? '<p class="level-note">🌱 Let’s try some easier words for a bit.</p>' : moved === 'up' ? `<p class="level-note">🌳 Nice! On to ${esc(LEVEL_NAMES[S.vocab.level[c.kind === 'spell' ? 'spell' : 'cards']].replace(/^\S+ /, '').toLowerCase())}.</p>` : ''}`);
   $$('#vocabWrap [data-vocab-answer]').forEach(b => { b.disabled = true; if (+b.dataset.vocabAnswer === c.answer) b.classList.add('correct'); });
   $('#vocabWrap .typed-input')?.classList.add(ok ? 'correct' : 'incorrect'); const inp = $('#vocabWrap .typed-input'); if (inp) inp.disabled = true;
   run.index++;
@@ -12846,7 +12862,7 @@ function puzzleAnswer(k, ok){
   if (ok) { if (!p.solved.includes(k)) p.solved.push(k); sfx('good'); crack(); save(); renderPuzzle(); return; }
   sfx('bad');
   const host = $('#vocabWrap .pz-wrap'); host.querySelector('form[data-pz-answer]')?.remove();
-  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>`);
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>${wordPartsHTML(k)}`);
   askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); crack(); save(); renderPuzzle(); });
 }
 function finishPuzzle(why){
@@ -12986,7 +13002,7 @@ document.addEventListener('submit', event => {
   recordVocab(k, ok); wk.check.results[k] = ok ? 1 : 0; save();
   if (ok) { sfx('good'); toast('⭐ Mastered!'); renderCheck(); return; }
   sfx('bad'); const host = $('#vocabWrap .pz-wrap'); f.remove();
-  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on next week’s list.</p>`);
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on next week’s list.</p>${wordPartsHTML(k)}`);
   askFix(host, k, renderCheck);
 }, true);
 $('#vocabWrap').addEventListener('click', event => {
@@ -13052,7 +13068,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word.w, b.dataset.vocabHear || 'word'); return; }
   if (b.hasAttribute('data-voice-test')) { void speakWord('analyze', 'syllables'); return; }
   if (b.dataset.vocabAnswer != null && vocabRun && !vocabRun.answered) { const c = vocabRun.card; answerVocab(+b.dataset.vocabAnswer === c.answer, c.kind === 'meaning' ? `“${c.word.w}” means ${c.word.d}.` : `The word is “${c.word.w}”: ${c.word.d}.`); if (+b.dataset.vocabAnswer !== c.answer) b.classList.add('incorrect'); return; }
-  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}` : ''; return; }
+  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}${wordPartsHTML(v.w, {compact:true})}` : ''; return; }
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
   if (!parentReadingUnlocked) return;
   if (b.hasAttribute('data-vocab-import')) {

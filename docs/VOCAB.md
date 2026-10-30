@@ -125,3 +125,41 @@ The Vocabulary tab opens with **📚 Each student's words**: one row per student
 
 **Tested** (phone size, Playwright with a fake clock, `scratchpad/wow-e2e.mjs`): Monday 20 words with 0 carried; 3 puzzle words → "3 right this week"; teacher's and parent's new words in Unmastered; Friday: the card's Start opens the flashcards, then the typed check (16 mastered, 4 stay, flashcards 19 of 20); the card shows the result; next Monday 4 carried (the 4 that stayed) + 16 new (all unmastered, none from last week) + 5 review (all mastered); next Friday a skipped flashcard round and a missed review word, which leaves the Hall of Fame and carries over the Monday after. No sideways scroll at 375px. The draw was also checked on its own on 300 random cases. The teacher tab was rendered with fake students in a browser (not against the real backend).
 
+
+## Word parts (Oct 30, 2026)
+
+Owner: "Can you give a brief breakdown of the word if she misses it to show the prefix, suffix, and root word?"
+
+### What she sees
+
+When she misses a word anywhere in Word Workshop (🃏 practice cards of every kind, ⚡ Word sprint, 🔤 Spell it, the daily puzzles and the timed warm-up on them, the 🏁 Friday mastery check), a small **🧩 Word parts** box shows under the right answer, above “✍️ Type it to keep going”:
+
+- **Chips** for each part, in order, each with what it means: **prefix-** (blue), **root** (green), **-suffix** (orange). Example: `pre-` before + `dict` say.
+- The **put-together line**: → to say it before it happens.
+- The language it comes from (Latin, Greek, Old English…), small and grey.
+- A part spelled a little differently inside the word has a small `*` (summarize: `summary*`, the y changes; civilization: `-ize*`, the e drops).
+- A word with **no real prefix or suffix** gets one honest line instead of a made-up split: “🧩 One word part: from Latin rapidus, ‘quick, snatching.’” 26 of the 143 built-in words are like this (scarce, rapid, vivid, thorough…).
+
+It’s one or two lines on a phone. Nothing shows before she answers (no giveaway), a right answer shows no box, and the “type it correctly to keep going” step works as before. For read-aloud, each chip has a label like “prefix pre, means before.”
+
+In **📊 My words** (and the 📅 This week word list), tapping a word shows its meaning and the same box, without the language label.
+
+### Where the parts come from
+
+`src/shared/wordParts.js`, `WORD_PARTS`: a hand-checked entry for every built-in word (the 100 words in Sets 1–10 and the 43 spelling-pattern words). Each part is `{text, type, meaning}`; `text` is the letters as they appear in the word, so the parts join to the word exactly, and `show` is the dictionary form when the spelling changes inside the word. The splits are the meaningful classroom ones (spect = look, port = carry, dict = say), checked against Etymonline and Merriam-Webster; the full list with a source for each word is `docs/word-parts-review.md`. A few are worth knowing: predator’s *pred* is “prey,” not pre- “before”; terrible’s *terr* is “frighten,” not terra “earth”; improve’s *prove* is old French “profit.”
+
+### Words a teacher or parent adds
+
+A small, careful guess (`guessParts`), labeled **🧩 Looks like:** with a dotted border so it reads as a guess:
+
+- It only splits off a prefix from a short list (un, dis, mis, non, pre, re, sub, inter, trans, anti, super, semi, tri, bi, multi, auto, tele, over, under) and/or a suffix from a short list (-ness, -less, -ful, -able, -ible, -ment, -tion, -ous, -ive, -ity, -ize…).
+- What’s left has to be **3 or more letters** and either a common root (spect, port, dict, struct, rupt, vis…) or **another word she knows** (her list or the built-in words), with a dropped e put back (hopeful → hope + -ful).
+- The endings -er, -or, -ed, -ing and -ly only count after a whole known word, never a bare root, so “tender,” “former” and “motor” aren’t split.
+- `in-` and `im-` are left out (they can mean “not” or “into”).
+- If none of that fits, **nothing shows**. “read,” “reason,” “under,” “interest” and “station” show nothing.
+
+### Adding parts for a new built-in word
+
+Add the word to `vocab.js` as usual, then add its entry to `WORD_PARTS` with the same helpers: `E([p('pre', 'before'), r('dict', 'say')], 'to say it before it happens', 'L')` for a word with parts, or `one('rapid', 'quick', 'One word part: from Latin rapidus, “quick.”', 'L')` for a word without. Check it in a dictionary (Etymonline or Merriam-Webster) and set `src` to `'E✓'` if you looked it up. Use curly quotes and apostrophes. Then run `node scripts/check-word-parts.mjs`: it fails if a built-in word has no entry, if the parts don’t join to the word, or if a part has no meaning. `--table` prints the review table for `docs/word-parts-review.md`.
+
+**Tested** (phone size, 375px, Playwright with the clock on a Friday): a miss in practice cards (fill-in-the-sentence and spelling cards), Word sprint, Spell it, the Crossword, Scramble, Secret Code and Match-Up puzzles, and the Friday check each shows the box with the type-it box under it; a wrong copy still doesn’t move on; a right answer in each of those shows no box; nothing shows before she answers; no sideways scroll; 📊 My words shows the parts when she taps a word.
