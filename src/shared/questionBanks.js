@@ -2325,8 +2325,15 @@ const GRAMMAR = `${KHAN}humanities/grammar/parts-of-speech-the-`, WORLD = `${KHA
 const MEO = `${KHAN}science/ms-biology/x0c5bb03129646fd6:matter-and-energy-in-organisms/x0c5bb03129646fd6:`;   // Middle school biology, Unit 3
 const MIV = `${KHAN}science/ms-biology/x0c5bb03129646fd6:inheritance-and-variation/x0c5bb03129646fd6:`;   // Middle school biology, Inheritance and variation (the Farm Barn)
 const CDIV = `${KHAN}science/biology/cellular-molecular-biology/`;   // Biology Unit 4: Khan's Biology library, cell division (docs/SCIENCE-UNIT4.md)
+const STYLE_KHAN = `${KHAN}humanities/grammar/usage-and-style/style/`;   // English Unit 10: Khan's one lesson, Style! (docs/ENGLISH-UNIT10.md)
 /* every Khan video in each lesson (History and Biology: the videos come first; docs/PRACTICE-TIME.md). Checked Oct 27 2026. */
 const KHAN_VIDEOS = {
+  /* English Unit 10 (the 🪶 Style Library): every video in Khan's lesson Style!, in Khan's order (Khan's lesson sitemap,
+     Oct 30 2026). Pet World splits the lesson at its first practice: the sound video, then the other three. */
+  style:{
+    sound:[["The sound of language: alliteration, assonance, and onomatopoeia", `${STYLE_KHAN}v/alliteration-assonance-and-onomatopoeia`]],
+    technique:[["The scale of formality", `${STYLE_KHAN}v/scale-of-formality`], ["Under- and overstatement", `${STYLE_KHAN}v/under-and-overstatement-final`], ["Irony", `${STYLE_KHAN}v/irony-final`]]
+  },
   /* Biology Unit 3 (Matter and energy in organisms): every video in each Khan lesson, checked Oct 29 2026 (Khan's lesson
      sitemaps). Each lesson also has a “Key points” article; the Unit 3 activity is an article with no video. */
   bio3:{
@@ -2431,6 +2438,7 @@ const KHAN_LINKS = {
   colons:{colons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/introduction-to-colons/v/linking-function-of-the-colon-the-colon-and-semicolon-punctuation-khan-academy`,semicolons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/introduction-to-semicolons/v/introduction-to-the-semicolon-the-colon-and-semicolon-punctuation-khan-academy`,formatting:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/formatting-styles/v/italics-and-underlining`,dashes:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/hyphens-dashes-and-ellipses/v/dashes`},
   sentences:{intro:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/introduction-to-sentences/v/what-is-a-sentence-syntax-khan-academy`,types:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/types-of-sentences/v/simple-and-compound-sentences-syntax-khan-academy`,subjects:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/subjects-and-predicates/v/subjects-and-predicates-syntax-khan-academy`,clauses:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/phrases-and-clauses/v/phrases-and-clauses-syntax-khan-academy`},   // English Unit 8, Khan's lesson sitemaps, Oct 30 2026
   conventions:{agreement:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/subject-verb-agreement-and-pronoun-antecedent-agreement/v/subject-verb-agreement-syntax-khan-academy`,fragments:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/fragments-and-run-ons/v/recognizing-fragments-syntax-khan-academy`,modifiers:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/dangling-modifiers-and-parallel-structure/v/dangling-modifiers-syntax-khan-academy`},   // English Unit 9 (docs/ENGLISH-UNIT9.md)
+  style:{sound:`${STYLE_KHAN}v/alliteration-assonance-and-onomatopoeia`,technique:`${STYLE_KHAN}v/scale-of-formality`},   // English Unit 10 (docs/ENGLISH-UNIT10.md)
   history:{stories:`${WORLD}origins-of-history/x66f79d8a:history-stories-1-1/v/meet-oer-project-world-history`,frames:`${WORLD}origins-of-history/x66f79d8a:history-frames-1-3/v/frame-concept-introduction-world-history-project-beta`,memory:`${WORLD}origins-of-history/x66f79d8a:history-and-memory-1-4/a/activity-opener-worst-day-ever`},
   history2:{earliestHumans:`${WORLD}early-humans/x66f79d8a:the-earliest-humans-2-1/a/activity-opener-then-vs-now`,migrationArt:`${WORLD}early-humans/x66f79d8a:migration-and-art-2-2/a/activity-opener-who-s-an-authority`,foragingSocieties:`${WORLD}early-humans/x66f79d8a:foraging-societies-2-3/a/activity-opener-what-is-this-asking-introduction-origins`,agriculturalRevolution:`${WORLD}early-humans/x66f79d8a:the-agricultural-revolution-2-4/a/activity-opener-which-frame`,biggestMistake:`${WORLD}early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/a/activity-opener-casual-map-jack-and-the-giant-beanstalk`},
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
@@ -4058,6 +4066,67 @@ const RULE_QUESTIONS = {
     qLevel(3,"Which sentence has parallel structure?","I would rather stay home than go to the mall.","I would rather stay home than going to the mall.","I would rather staying home than go to the mall.","I would rather stay home than a trip to the mall.")
   ]
 };
+/* English Unit 10 (the 🪶 Style Library): Khan Academy Grammar, Usage and style. Khan's unit has one lesson, Style!,
+   with 4 videos and 2 practices (Khan's lesson sitemap, Oct 30 2026): the sound video and The sound of language, then
+   the formality, under- and overstatement, and irony videos and Style and technique. Pet World splits that lesson at
+   its first practice into two blocks so each practice gets its own quiz. Docs: docs/ENGLISH-UNIT10.md, review list
+   docs/ENGLISH-UNIT10-review.md. 21 questions a practice (9 at level 3), because the unit has only two. */
+const ENGLISH_UNIT10 = [
+  {id:'soundOfLanguage',name:'The sound of language',lesson:'Writers use sound to make words stick. Alliteration repeats the same first consonant sound in words close together (silly snakes slither). Assonance repeats the same vowel sound inside nearby words (the rain came late). Onomatopoeia is a word that sounds like the noise it names (buzz, hiss, thud). Listen for sounds, not letters: “funny photos” alliterates because f and ph make the same sound, but “city cats” doesn’t, because the c in city sounds like s.'},
+  {id:'styleTechnique',name:'Style and technique',lesson:'Match your words to your reader. The scale of formality runs from casual (a text to a friend: slang like “gonna” or “kinda”) to formal (a letter to a principal: complete sentences, no slang), and a piece of writing should stay at one level. Overstatement makes something sound much bigger than it is (my backpack weighs a ton); understatement makes something big sound small (calling a blizzard “a bit chilly”). Irony is a gap between what is said or expected and what is true: verbal irony says the opposite of what you mean, situational irony is when the opposite of what you expect happens (not just bad luck), and dramatic irony is when the reader knows something a character doesn’t.'}
+];
+const ENGLISH_GROUPS10 = [
+  {id:'sound',hook:{emoji:'🎙️',title:'Welcome to the Style Library',story:'The Style Library runs its own radio station, WPET. On the radio, nobody can see the words, so they have to sound good. “Big brown bears” bounces. “The kettle hissed” lets you hear the kettle. Writers choose words for their sound, not just their meaning.'},quizName:'The sound of language Quiz',name:'The sound of language',learn:'Hear alliteration, assonance and onomatopoeia, and tell them apart by sound, not by spelling.',skills:['soundOfLanguage']},
+  {id:'technique',hook:{emoji:'🎛️',title:'Turn the dial',story:'WPET’s callers write in every style. A text from a friend can say “gonna,” but a letter to the mayor can’t. A caller who says “I’ve told you a million times” is turning the volume up; one who calls a blizzard “a bit chilly” is turning it down. And sometimes a caller says “Great weather!” in a thunderstorm and means the opposite.'},quizName:'Style and technique Quiz',name:'Style and technique',learn:'Pick the right level of formality, spot overstatement and understatement, and tell verbal, situational and dramatic irony apart.',skills:['styleTechnique']}
+];
+const STYLE_QUESTIONS = {
+  soundOfLanguage:[
+    qLevel(1,"Which line uses alliteration?","Six slippery seals slid south.","The gray seal dove under the waves.","A tired otter napped beside a log.","Our dog barked at the mail truck."),
+    qLevel(1,"Which word is an example of onomatopoeia?","thud","fall","heavy","floor"),
+    qLevel(1,"What is assonance?","The same vowel sound repeated in words close together","The same first consonant sound repeated in words close together","A word that sounds like the noise it describes","Saying something big as if it were small"),
+    qLevel(1,"Which word in this sentence is onomatopoeia? The bees buzzed around the garden all afternoon.","buzzed","bees","garden","afternoon"),
+    qLevel(2,"Which word starts with the same sound as “phone”?","fish","pony","hope","pail"),
+    qLevel(2,"Which line is built mainly on assonance?","The rain came late to the valley.","Wild wolves wander the woods.","Bang! The door slammed shut.","Penny packed popcorn for the trip."),
+    qLevel(2,"Why is “hiss” an example of onomatopoeia?","It sounds like the noise it names.","It starts with the same sound as the words near it.","It repeats a vowel sound from a nearby word.","It makes something sound much bigger than it is."),
+    qLevel(2,"Which sentence uses onomatopoeia?","The kettle hissed on the stove.","The kettle sat on the stove.","The kettle was hot on the stove.","The kettle was full of tea."),
+    qLevel(2,"Which device does this line use? Bright kites glide high in the sky.","assonance","alliteration","onomatopoeia","overstatement"),
+    qLevel(2,"Which word would add alliteration to the sentence? The ___ snake slid across the sand.","sneaky","green","long","quiet"),
+    qLevel(2,"Why might a writer use onomatopoeia in a story?","To let the reader hear what is happening","To make the story sound more formal and serious","To show a character means the opposite of what she says","To make a small problem sound like a huge one"),
+    qLevel(2,"Which line has two examples of onomatopoeia?","The cows mooed while the farmer hummed.","The cows ate while the farmer sang.","The cows mooed while the farmer slept.","The cows stood by the fence until sunset."),
+    qLevel(3,"Which words in this line alliterate? Clever crows cawed from the kitchen roof.","clever, crows, cawed, and kitchen","clever, crows, and cawed","crows, cawed, and roof","clever, crows, cawed, kitchen, and roof"),
+    qLevel(3,"Which line has NO alliteration, even though its words start with the same letter?","Cindy chose cake.","Cindy sold cider.","Kate kept cookies.","Chris collected crabs."),
+    qLevel(3,"Which pair of words shows assonance?","“goat” and “bowl”","“goat” and “gate”","“bowl” and “ball”","“gate” and “mat”"),
+    qLevel(3,"Which line uses both alliteration and onomatopoeia?","The bees buzzed by the busy barn.","The busy bees flew by the big brown barn.","The kettle hissed on the stove.","The fat cat sat on a mat."),
+    qLevel(3,"Which word repeats the vowel sound in “moon”?","blue","wood","mouse","moan"),
+    qLevel(3,"Which of these words is NOT onomatopoeia?","shout","crash","thump","sizzle"),
+    qLevel(3,"Which devices does this line use? “Splish, splash, the puppies played in puddles.”","onomatopoeia and alliteration","alliteration and overstatement","onomatopoeia and irony","assonance and understatement"),
+    qLevel(3,"Which word could fill the blank to add assonance? The old boat ___ low in the water.","rode","bobbed","sat","dipped"),
+    qLevel(3,"In which line does the alliteration use two different spellings for the same sound?","Funny photos fill the frame.","Pink peppers popped up.","Cool cats clapped.","Silly geese sang songs at sunset.")
+  ],
+  styleTechnique:[
+    qLevel(1,"Which sentence is the most formal?","I would like to request a meeting with you on Friday.","Hey, can we meet up Friday?","Wanna hang out Friday or what?","Yo, so can we maybe meet up on Friday after school or whatever?"),
+    qLevel(1,"Which sentence is an overstatement?","My backpack weighs a ton.","My backpack is heavy today.","My backpack has six books in it.","I carried my backpack to school."),
+    qLevel(1,"What is verbal irony?","Saying the opposite of what you mean","When the reader knows something a character doesn’t","When the opposite of what you expect happens","Making something sound bigger than it is"),
+    qLevel(1,"A tornado just tore the roof off the barn. Which comment is an understatement?","“Looks like we had a little wind.”","“That tornado destroyed everything we own!”","“The tornado tore the roof off the barn.”","“That was the worst storm in a million years.”"),
+    qLevel(2,"Which word fits best in a letter to the mayor? Our class is ___ about the new park.","excited","pumped","stoked","hyped"),
+    qLevel(2,"Which revision makes this sentence more formal? The science fair was kinda awesome.","The science fair was impressive.","The science fair was super awesome.","The science fair was totally rad.","The science fair was, like, awesome."),
+    qLevel(2,"A fire station burns down. What kind of irony is this?","Situational: the opposite of what you expect happens.","Verbal: someone says the opposite of what they mean.","Dramatic: the reader knows something a character doesn’t.","Understatement: something big is made to sound small."),
+    qLevel(2,"In a movie, the audience sees the wolf hide in Grandma’s bed, but Red Riding Hood walks in smiling. What kind of irony is this?","dramatic irony","verbal irony","situational irony","overstatement"),
+    qLevel(2,"Which sentence uses overstatement?","This homework will take me a thousand years.","This homework will take me about an hour.","This homework has twelve problems on it.","This homework is the last thing I have to do before I can go outside."),
+    qLevel(2,"It is pouring rain. Max looks outside and says, “Great day for a picnic.” What is this?","verbal irony","dramatic irony","situational irony","onomatopoeia"),
+    qLevel(2,"Which reader would expect the most formal writing?","A judge reading a letter about a court case","Your best friend reading a text","Your little cousin reading a birthday card","Your team reading a group chat about practice"),
+    qLevel(2,"What does the overstatement really mean? “I’m so hungry I could eat a horse.”","The speaker is very hungry.","The speaker wants to eat a horse.","The speaker just ate a big meal.","The speaker doesn’t like horses."),
+    qLevel(3,"Which sentence does NOT fit the style of this letter? Dear Principal Ortiz, I am writing to ask for a longer lunch period. Many students do not have enough time to finish eating. Honestly, the lines are bonkers. Thank you for considering this request.","Honestly, the lines are bonkers.","I am writing to ask for a longer lunch period.","Many students do not have enough time to finish eating.","Thank you for considering this request."),
+    qLevel(3,"Which revision of “Honestly, the lines are bonkers.” fits a formal letter?","The lunch lines are often very long.","The lunch lines are super long, for real.","Honestly, the lunch lines are way too long.","The lines are bonkers, if you ask me."),
+    qLevel(3,"Mia studies all week for the spelling bee. She spells every hard word right, then misspells her own last name. What kind of irony is this?","situational irony","verbal irony","dramatic irony","no irony, just bad luck"),
+    qLevel(3,"Which is the best example of situational irony?","A swimming coach who is afraid of water","A rainy day on the morning of a picnic","A girl who loses her keys at the mall","A dog that barks at the mail carrier on Monday mornings"),
+    qLevel(3,"Which sentence is an understatement?","After running a marathon, Leo said, “My legs are a little tired.”","After a short walk, Leo said, “My legs are a little tired.”","After running a marathon, Leo said, “I could run a hundred more miles!”","After running a marathon, Leo said, “My legs are so sore that I can barely stand.”"),
+    qLevel(3,"Which sentence is an overstatement, not a literal statement?","The line for the roller coaster stretched to the moon.","The line for the roller coaster took forty minutes.","The line for the roller coaster wrapped around the fence twice.","The line for the roller coaster was the longest in the park."),
+    qLevel(3,"In which situation would “Nice job” most likely be verbal irony?","Your brother drops all the groceries, and you say, “Nice job.”","Your brother scores a goal, and you say, “Nice job.”","Your brother cleans his room, and you say, “Nice job.”","Your brother finishes the whole puzzle by himself, and you say, “Nice job.”"),
+    qLevel(3,"A text to a friend says, “Can’t make it, sry!” Which version fits an email to a teacher?","I’m sorry, but I won’t be able to attend.","Sorry!! Can’t make it, my bad.","Can’t make it, sorry, see ya.","Sorry, I can’t make it to that thing, so just count me out."),
+    qLevel(3,"In a play, Theo plans a surprise party for his sister. Which detail creates dramatic irony?","The audience saw his sister find the invitation, but Theo thinks she has no clue.","Theo drops the cake and says, “Well, that went perfectly,” to his friends.","Theo’s sister, who plans parties for a living, forgets her own party.","Theo bakes a big chocolate cake for the party and hides it behind the boxes in the garage.")
+  ]
+};
 /* ---------- end of the moved banks ---------- */
 
 export {
@@ -4065,6 +4134,7 @@ export {
   ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS,
   ENGLISH_UNIT8, ENGLISH_GROUPS8, SENTENCE_QUESTIONS,
   ENGLISH_UNIT9, ENGLISH_GROUPS9, RULE_QUESTIONS,
+  ENGLISH_UNIT10, ENGLISH_GROUPS10, STYLE_QUESTIONS,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, HISTORY_UNIT6, HISTORY_GROUPS6,
   BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS,
   BIO_UNIT4, BIO_GROUPS4, BIO4_QUESTIONS,
@@ -4089,6 +4159,7 @@ export const LESSON_COURSES = [
   {id:'colons', title:'English Unit 7: Colons, Semicolons, and More', skills:ENGLISH_UNIT7, groups:ENGLISH_GROUPS7},
   {id:'sentences', title:'English Unit 8: Sentences and Clauses', skills:ENGLISH_UNIT8, groups:ENGLISH_GROUPS8},
   {id:'conventions', title:'English Unit 9: Conventions of Standard English', skills:ENGLISH_UNIT9, groups:ENGLISH_GROUPS9},
+  {id:'style', title:'English Unit 10: Usage and Style', skills:ENGLISH_UNIT10, groups:ENGLISH_GROUPS10},
   {id:'history', title:'History Unit 1: Origins of History', skills:HISTORY_UNIT1, groups:HISTORY_GROUPS},
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
@@ -4111,6 +4182,7 @@ export function builtInBank(courseId){
   if (courseId === 'colons') return COLON_QUESTIONS;
   if (courseId === 'sentences') return SENTENCE_QUESTIONS;
   if (courseId === 'conventions') return RULE_QUESTIONS;
+  if (courseId === 'style') return STYLE_QUESTIONS;
   if (courseId === 'bio4') return BIO4_QUESTIONS;
   if (courseId === 'bio5') return BIO5_QUESTIONS;
   return courseId === 'bio1' ? BIO1_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS

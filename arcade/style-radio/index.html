@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WPET Style Radio</title>
+<!-- Pet World Arcade copy of 🎙️ WPET Style Radio (English Unit 10, docs/ENGLISH-UNIT10.md, docs/ARCADE-GAMES.md).
+     Served at /arcade/style-radio/. It is a Vite page (vite.config.ts), not a public/ file, so it plays the same calls
+     with the same engine as the unit: src/game/styleRadio.js. In the Arcade (?arcadeRun=…) it pays tickets; it never
+     pays coins or counts toward the unit's stars, quizzes or tests. -->
+<style>
+  :root{ --bg:#EAF1FB; --surface:#FFFFFF; --ink:#2F3A4A; --ink-soft:#5E6B7D; --edge:#2F3A4A; --berry:#E4577A; --berry-deep:#B83659; --butter:#FFD76A; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#1B2230; --surface:#283244; --ink:#E9EEF7; --ink-soft:#B4BFD0; --edge:#0E131C; --berry:#EE7394; --berry-deep:#FF9DB6; --butter:#6B5520; } }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:760px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.6em; margin:6px 0 4px} h2{font-size:1.2em; margin:0 0 6px}
+  .muted{color:var(--ink-soft)}
+  .card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:14px; margin-top:12px}
+  .btn{border:3px solid var(--edge); background:var(--surface); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.berry{background:var(--berry); color:#fff; border-color:var(--berry-deep)}
+  .shows{display:grid; gap:10px}
+  .show{display:flex; gap:12px; align-items:center; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); border-radius:14px; padding:10px 12px}
+  .show .e{font-size:1.8em} .show b{display:block}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import { RADIO_SHOWS, callsOn, newRadioRun, radioAct, radioHTML, RADIO_CSS } from '../../src/game/styleRadio.js';
+import { starsFor } from '../../src/game/grammarGames.js';
+const params = new URLSearchParams(location.search), ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const style = document.createElement('style'); style.textContent = RADIO_CSS; document.head.appendChild(style);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let best = {}; try { best = JSON.parse(localStorage.getItem('style-radio:best') || '{}') || {}; } catch(e){}
+const stars = n => `${'⭐'.repeat(n)}${'☆'.repeat(3 - n)}`;
+let run = null;
+
+function renderShows(){
+  run = null;
+  app.innerHTML = `<h1>🎙️ WPET Style Radio</h1>
+    <p class="muted">You’re on the air at the Style Library’s radio station! Pets call in with lines for the show. Tap the words that make the sound, pick the device, and turn the formality dial. A mistake drops the call, and the caller calls back at the end.</p>
+    <div class="shows">${RADIO_SHOWS.map(d => `<button type="button" class="show" data-show="${d.id}"><span class="e">${d.emoji}</span><span><b>${esc(d.name)}</b><span class="muted">${esc(d.blurb)} ${callsOn(d.id).length} calls · ${best[d.id] ? stars(best[d.id]) : 'Not played yet'}</span></span></button>`).join('')}</div>`;
+}
+function render(){
+  const d = RADIO_SHOWS.find(k => k.id === run.show), total = run.list.length;
+  const body = run.done
+    ? `<div class="card"><h2>🏁 ${stars(run.stars)} ${run.perfect} of ${total} calls aired with no mistakes</h2>
+      <p>${run.stars === 3 ? 'That’s a wrap! A perfect show.' : run.stars === 2 ? 'Great show! One more for three stars?' : 'Every call made it on the air. Try again for more stars!'} 📻 ${run.listeners.toLocaleString('en-US')} listeners.${run.bestStreak >= 3 ? ` Best streak: 🔥 ${run.bestStreak}.` : ''}</p>
+      <div class="row"><button type="button" class="btn berry" data-again>🔁 Play again</button><button type="button" class="btn" data-shows>Pick another show</button></div></div>`
+    : `<div class="card">${radioHTML(run, esc)}</div>`;
+  app.innerHTML = `<div class="row"><h1 style="flex:1">🎙️ WPET Style Radio</h1><button type="button" class="btn" data-shows>All shows</button></div><p class="muted">${d.emoji} ${esc(d.name)}</p>${body}`;
+}
+function finish(){
+  run.stars = starsFor(run.perfect, run.list.length);
+  best[run.show] = Math.max(best[run.show] || 0, run.stars); try { localStorage.setItem('style-radio:best', JSON.stringify(best)); } catch(e){}
+  try { if (ARCADE_RUN && window.parent !== window) window.parent.postMessage({type:'arcade:round-complete', gameId:'style-radio', runId:ARCADE_RUN, roundId:`${run.show}-${Date.now()}`, score:run.perfect}, location.origin); } catch(e){}
+}
+app.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.show) { run = newRadioRun(btn.dataset.show); render(); return; }
+  if (btn.hasAttribute('data-shows')) { renderShows(); return; }
+  if (!run) return;
+  if (btn.hasAttribute('data-again')) { run = newRadioRun(run.show); render(); return; }
+  const a = btn.dataset.srTap != null ? {tap:+btn.dataset.srTap} : btn.dataset.srOpt != null ? {opt:+btn.dataset.srOpt}
+    : btn.dataset.srItem != null ? {item:+btn.dataset.srItem} : btn.hasAttribute('data-sr-next') ? {next:true} : null;
+  if (!a) return;
+  if (radioAct(run, a) === 'done') finish();
+  render();
+});
+renderShows();
+</script>
+</body>
+</html>

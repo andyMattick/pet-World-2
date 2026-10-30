@@ -209,6 +209,19 @@ export const TERM_CARDS = {
     { term: 'misplaced modifier', means: "A describing phrase that sits next to the wrong word, so the sentence says something silly. Move it next to the word it describes.", example: "Not: Riding the bus, a deer ran past. Yes: Riding the bus, I saw a deer.", skill: 'clausePlacement' },
     { term: 'relative clause', means: "A dependent clause that describes a noun. It starts with who, whom, whose, which or that.", example: "the book that I borrowed", skill: 'relativeClauses' }
   ],
+  style: [
+    { term: 'alliteration', means: "The same first consonant sound repeated in words close together.", example: "Six slippery seals slid south.", skill: 'soundOfLanguage' },
+    { term: 'assonance', means: "The same vowel sound repeated inside words close together.", example: "The rain came late. (long a)", skill: 'soundOfLanguage' },
+    { term: 'onomatopoeia', means: "A word that sounds like the noise it names.", example: "buzz, hiss, thud, sizzle", skill: 'soundOfLanguage' },
+    { term: 'sounds, not letters', means: "Sound devices are about what you hear. Different letters can make the same sound, and the same letter can make different sounds.", example: "“funny photos” alliterates; “city cats” doesn’t; “wood” and “moon” don’t share a vowel sound.", skill: 'soundOfLanguage' },
+    { term: 'scale of formality', means: "Writing runs from casual (texts to friends) to formal (letters to a principal or a judge). Pick the level that fits your reader, and stay there.", example: "Wanna come? → Would you like to come?", skill: 'styleTechnique' },
+    { term: 'formal language', means: "Complete sentences, polite words, and no slang. Used for teachers, officials, and anyone you don’t know well.", example: "I would like to request a meeting.", skill: 'styleTechnique' },
+    { term: 'overstatement (hyperbole)', means: "Making something sound much bigger, worse, or better than it really is, on purpose.", example: "I’ve told you a million times!", skill: 'styleTechnique' },
+    { term: 'understatement', means: "Making something big or serious sound small, on purpose.", example: "Calling a blizzard “a bit chilly.”", skill: 'styleTechnique' },
+    { term: 'verbal irony', means: "Saying the opposite of what you mean.", example: "“Great day for a picnic,” in a thunderstorm.", skill: 'styleTechnique' },
+    { term: 'situational irony', means: "The opposite of what you’d expect happens. Plain bad luck isn’t irony.", example: "A fire station burns down.", skill: 'styleTechnique' },
+    { term: 'dramatic irony', means: "The reader or audience knows something a character doesn’t.", example: "We see the wolf in Grandma’s bed; Red Riding Hood doesn’t.", skill: 'styleTechnique' }
+  ],
   conventions: [
     { term: 'subject-verb agreement', means: "A singular subject takes a singular verb, and a plural subject takes a plural verb. Cross out phrases like “of the books” to find the real subject.", example: "The box of crayons is here. The crayons are here.", skill: 'subjVerbAgree' },
     { term: 'compound subject', means: "Two subjects joined by and are plural. With or or nor, the verb matches the closer subject.", example: "Mia and Leo are here. Neither the twins nor Mom is here.", skill: 'subjVerbAgree' },

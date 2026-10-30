@@ -171,7 +171,7 @@ const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
 const librarySets = rewardRegistry.match(/const LIBRARY_SETS[\s\S]*?\n\];/)?.[0] || '';
-if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 14 || (librarySets.match(/^  \['/gm) || []).length !== 4)) problems.push('src/shared/registry.ts should define REWARDS.length === 196 (Sentence Library, Rule Library, Butterfly House and Farm Barn sets added Oct 30, 2026)');
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 14 || (librarySets.match(/^  \['/gm) || []).length !== 5)) problems.push('src/shared/registry.ts should define REWARDS.length === 206 (Sentence Library, Rule Library, Butterfly House, Farm Barn and Style Library sets added Oct 30, 2026)');
 if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);
@@ -212,6 +212,8 @@ need('src/shared/questionBanks.js', 'const SENTENCE_QUESTIONS', 'English Unit 8 
 need('src/game/game.js', 'function renderSentenceSnap(', 'English Unit 8 Sentence Snap (ENGLISH-UNIT8.md)');
 need('src/shared/questionBanks.js', 'const RULE_QUESTIONS', 'English Unit 9 questions (ENGLISH-UNIT9.md)');
 need('src/game/game.js', 'function renderRuleCourt(', 'English Unit 9 Rule Court (ENGLISH-UNIT9.md)');
+need('src/shared/questionBanks.js', 'const STYLE_QUESTIONS', 'English Unit 10 questions (ENGLISH-UNIT10.md)');
+need('src/game/game.js', 'function renderStyleRadio(', 'English Unit 10 WPET Style Radio (ENGLISH-UNIT10.md)');
 need('public/prep-recall/index.html', 'prep:result', 'the preposition recall game tells Pet World its score (ENGLISH-UNIT5.md)');
 need('src/game/game.js', 'function openPrepRecall(', 'the preposition recall game on Today’s plan during Unit 5 (ENGLISH-UNIT5.md)');
 need('src/teacher/report.ts', 'r.ss?.', 'practice time on the dashboard');
@@ -240,7 +242,7 @@ for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', avail
 }
 
 // Owner rule (CLAUDE.md, "Games go in the unit and in the Arcade"): every unit game is also an Arcade game
-for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'greenhouse-keeper':'function openGreenhouse(', 'life-cycle-lab':'function openLifeCycle(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML(', 'book-repair':'function bookRepairCardHTML(', 'rule-court':'function ruleCourtCardHTML(', 'sentence-snap':'function sentenceSnapCardHTML('})) {
+for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'greenhouse-keeper':'function openGreenhouse(', 'life-cycle-lab':'function openLifeCycle(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML(', 'book-repair':'function bookRepairCardHTML(', 'rule-court':'function ruleCourtCardHTML(', 'style-radio':'function styleRadioCardHTML(', 'sentence-snap':'function sentenceSnapCardHTML('})) {
   if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
   if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
 }

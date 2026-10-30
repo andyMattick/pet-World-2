@@ -374,6 +374,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'harbor-battleship', name: 'Harbor Battleship', emoji: '⚓', description: 'Pirates are hiding ships on a coordinate plane! Name your target’s coordinates to fire, plot the pirates’ shots, and use sonar to find their fleet.', src: '/arcade/harbor-battleship/', available: true },
   { id: 'shape-asteroids', name: 'Shape Asteroids', emoji: '☄️', description: 'Shape asteroids are flying at the ship! Tap one to freeze space, turn it to see it, and find its area or a missing side to blast it.', src: '/arcade/shape-asteroids/', available: true },
   { id: 'carnival', name: 'Carnival Midway', emoji: '🎪', description: 'Six carnival booths: pop balloons, toss rings, check riders’ heights and more, with equations and inequalities.', src: '/arcade/carnival/', available: true },
+  { id: 'style-radio', name: 'WPET Style Radio', emoji: '🎙️', description: 'You’re the DJ at the Style Library’s radio station! Pets call in: tap the alliteration, catch the onomatopoeia, turn the formality dial, and spot overstatement, understatement and irony.', src: '/arcade/style-radio/', available: true },
   { id: 'rule-court', name: 'Rule Court', emoji: '🔨', description: 'Sentences are on trial at the Rule Library! Give the verdict, name the rule it broke, point to the culprit word, and pick the fix: agreement, fragments, run-ons, dangling modifiers and parallel structure.', src: '/arcade/rule-court/', available: true },
   { id: 'book-repair', name: 'Book Repair Desk', emoji: '📚', description: 'Books came back to the Pause Library with marks torn out. Pick the colon, semicolon, dash, hyphen, title style or ellipsis that fixes each one.', src: '/arcade/book-repair/', available: true },
   { id: 'sentence-snap', name: 'Sentence Snap', emoji: '🧩', description: 'Ninety seconds on the clock at the Sentence Library: sort sentence types, snap clauses into compound and complex sentences, slice subjects from predicates and fix fragments.', src: '/arcade/sentence-snap/', available: true },
@@ -691,7 +692,9 @@ const LIBRARY_SETS: [string, [string,string][], [string,string][]][] = [
   ['bioDivide', [['🪱','Loamy the earthworm'],['🪰','Zippy the hoverfly'],['🪲','Scarab the beetle'],['🕷️','Webster the garden spider'],['🧚','Flutter the garden fairy']],
                [['🪻','Lavender pots'],['🎐','Wind chime'],['🪷','Lotus pond'],['🔭','Butterfly-spotting scope'],['🏵️','Golden rosette']]],   // 🦋 Butterfly House, Biology Unit 4 (docs/SCIENCE-UNIT4.md)
   ['bioGenes', [['🐏','Woolly the ram'],['🦃','Gobbles the turkey'],['🫏','Hazel the donkey'],['🐃','Boulder the water buffalo'],['🐂','Duke the blue-ribbon bull']],   // 🐄 the Farm Barn (Biology Unit 5)
-               [['🪣','Milk pail'],['🪺','Nest box'],['🧶','Wool basket'],['🚜','Red tractor'],['🧬','Golden DNA trophy']]]
+               [['🪣','Milk pail'],['🪺','Nest box'],['🧶','Wool basket'],['🚜','Red tractor'],['🧬','Golden DNA trophy']]],
+  ['elaStyle', [['🪿','Honk the goose'],['🪼','Jasmine the jellyfish'],['🦞','Lord Lobster, Esquire'],['🦧','Ironic Ida the orangutan'],['🐅','Tiger Tiger the poet']],   // 🪶 the Style Library, English Unit 10 (docs/ENGLISH-UNIT10.md)
+               [['📻','Vintage radio'],['🎛️','Mixing desk'],['🎤','On-air microphone'],['🎧','Studio headphones'],['🎷','Golden saxophone']]]
 ];
 const SLOTS = ['welcome','s2','s3','s4','legend'] as const;
 // a unit with only 3 stations (Clock Tower, Pet Harbor) unlocks its 4th-slot reward at its last station
@@ -774,7 +777,7 @@ export const BUILDINGS: Building[] = [
   {id:'elaColon',  emoji:'⏸️', name:'Pause Library',        unit:'Unit 7: Colons, semicolons, and more', hood:'g6', subject:'english', open:true},
   {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Unit 8: Sentences and clauses', hood:'g6', subject:'english', open:true},
   {id:'elaRules',  emoji:'📏', name:'Rule Library',         unit:'Unit 9: Conventions of standard English', hood:'g6', subject:'english', open:true},
-  {id:'elaStyle',  emoji:'🪶', name:'Style Library',        unit:'Unit 10: Usage and style', hood:'g6', subject:'english'},
+  {id:'elaStyle',  emoji:'🪶', name:'Style Library',        unit:'Unit 10: Usage and style', hood:'g6', subject:'english', open:true},
   {id:'elaVocab',  emoji:'🔤', name:'Word Library',         unit:'Vocabulary, word roots, and context clues', hood:'g6', subject:'english'},
   {id:'elaRead',   emoji:'🔍', name:'Reading Library',      unit:'Main idea, details, and inference', hood:'g6', subject:'english'},
   {id:'elaLit',    emoji:'🎭', name:'Storybook Library',    unit:'Literature: characters, plot, and theme', hood:'g6', subject:'english'},
