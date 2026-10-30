@@ -31,11 +31,13 @@ import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './he
 import { REPAIR_SHELVES, booksOn, repairSentenceHTML, choiceLabel } from './bookRepair.js';
 import { SNAP_SHELVES, createSnap, snapItemCount } from './sentenceSnap.js';
 import { ENGLISH_UNIT8, ENGLISH_GROUPS8, SENTENCE_QUESTIONS } from '../shared/questionBanks';
+import { COURT_DOCKETS, casesOn, newCourtRun, courtAct, courtHTML, COURT_CSS } from './ruleCourt.js';   // ⚖️ Rule Court (English Unit 9)
 import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { ROLE_SCENES, COURSE_ERAS, commonsThumb, WORLD_MAP, yearText } from '../shared/roleScenes.js';
 import { mathSkillVideos, struggleCheck, HELP_WINDOW } from '../shared/mathVideos.js';
 import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
 import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
+import { ENGLISH_UNIT9, ENGLISH_GROUPS9, RULE_QUESTIONS } from '../shared/questionBanks';   // English Unit 9, the Rule Library (docs/ENGLISH-UNIT9.md)
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
 
 /* ===================== CORE (no DOM) ===================== */
@@ -189,6 +191,7 @@ function normalize(raw){
     s.heroLab = {packs:Object.fromEntries(HERO_PACKS.map(p => [p.id, s.heroLab?.packs?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.heroLab?.master};   // ⚡ Punctuation Power Lab (docs/ENGLISH-UNIT6.md)
     s.bookRepair = {shelves:Object.fromEntries(REPAIR_SHELVES.map(p => [p.id, s.bookRepair?.shelves?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.bookRepair?.master};   // 📚 Book Repair Desk (docs/ENGLISH-UNIT7.md)
     s.sentenceSnap = {shelves:Object.fromEntries(SNAP_SHELVES.map(p => [p.id, s.sentenceSnap?.shelves?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), top:Math.max(0, Math.min(999, Math.floor(+v.top) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.sentenceSnap?.master};   // 🧩 Sentence Snap (docs/ENGLISH-UNIT8.md)
+    s.ruleCourt = {dockets:Object.fromEntries(COURT_DOCKETS.map(d => [d.id, s.ruleCourt?.dockets?.[d.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.ruleCourt?.master};   // ⚖️ Rule Court (docs/ENGLISH-UNIT9.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0), ...(id === 'hide' ? {levels:hideLevelsFrom(v)} : {})}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
@@ -415,6 +418,7 @@ function unitLockedText(building){
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
 const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test', elaPunct:'punctuation:final-test', elaColon:'colons:final-test'};
 ELA_FINAL_KEYS.elaSent = 'sentences:final-test';   // English Unit 8 (docs/ENGLISH-UNIT8.md)
+ELA_FINAL_KEYS.elaRules = 'conventions:final-test';   // English Unit 9, the Rule Library (docs/ENGLISH-UNIT9.md)
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (ELA_FINAL_KEYS[unit]) {
@@ -435,10 +439,19 @@ function ruleMet(reward){
     const skills = UNIT_SKILLS[reward.unit] || [];
     return skills.length > 0 && skills.every(skill => skillStatus(skill) === 'mastered');
   }
+  if (rule.type === 'quiz') { const g = libraryQuizGroup(reward.unit, rule.n); return !!g && !!englishRecord(englishQuizKey(g.group.id, g.course), g.course).passed; }
   if (rule.type === 'sprint') return S.sprintBest >= rule.best;
   if (rule.type === 'streak') return S.bestStreak >= rule.n;
   return false;
 }
+/* a library building's n-th lesson quiz, for {type:'quiz', n} rewards (the last quiz when it has fewer; docs/REWARDS.md) */
+function libraryQuizGroup(unit, n){
+  const course = ELA_BUILDING_COURSE[unit] || HISTORY_BUILDING_COURSE[unit]; if (!course) return null;
+  const groups = (englishCourse(course)?.groups || []).filter(group => !group.noQuiz && group.skills?.length);
+  const group = groups[Math.min(n, groups.length) - 1];
+  return group ? {course, group} : null;
+}
+const libraryQuizHint = (unit, n) => { const g = libraryQuizGroup(unit, n); return g ? `Pass the ${g.group.quizName || `${g.group.name} quiz`}` : 'Pass a lesson quiz'; };
 function available(reward){ return unitOpen(reward.unit) && ruleMet(reward); }
 function owns(reward){ return reward.kind === 'pet' ? S.owned.includes(reward.id) : S.decor.includes(reward.id); }
 function checkSetCompletions({announce = false} = {}){
@@ -6242,7 +6255,8 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'chefs-rush') earned = Math.min(3, Math.floor(score / 5));   // 1 ticket per 5 orders served, up to 3 a shift (docs/CHEFS-RUSH.md)
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
-  else if (run.gameId === 'book-repair') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));   // 1 ticket per 2 books fixed on the first try, up to 3 a shelf (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'book-repair') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));
+  else if (run.gameId === 'rule-court') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));   // 1 ticket per 2 perfect cases, up to 3 a docket (docs/ARCADE-GAMES.md)   // 1 ticket per 2 books fixed on the first try, up to 3 a shelf (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'sentence-snap') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
@@ -6372,7 +6386,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && (vocabRun || puzzleRun || checkRun)) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap') || $('#brWrap') || $('#snapWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap') || $('#brWrap') || $('#rcWrap') || $('#snapWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -9095,6 +9109,57 @@ $('#libraryWrap').addEventListener('click', e => {
   const btn = e.target.closest('button[data-snap-open]'); if (!btn) return;
   renderSentenceSnap(btn.dataset.snapOpen);
 });
+/* ⚖️ Rule Court (English Unit 9, the Rule Library; src/game/ruleCourt.js, docs/ENGLISH-UNIT9.md)
+   Sentences are on trial. She gives the verdict, names the charge, points to the culprit word, and picks the fix. A
+   mistake sends the case back for a retrial at the end of the docket. Stars from cases closed with no mistakes. Coins like
+   the Book Repair Desk: 10 + 5 a star the first time, then 5 for each new star; 3 stars on all four dockets is
+   "Chief Justice" (+50 once). S.ruleCourt = {dockets:{docketId:{best, plays}}, master}. Never counts toward mastery. */
+let rcRun = null;
+function ruleCourtCardHTML(courseId, groupId){
+  if (courseId !== 'conventions') return '';
+  const last = ENGLISH_GROUPS9[ENGLISH_GROUPS9.length - 1].id;
+  const ids = groupId === last ? [groupId, 'supreme'] : [groupId];
+  return ids.map(id => COURT_DOCKETS.find(d => d.id === id)).filter(Boolean).map(d => {
+    const st = S.ruleCourt.dockets[d.id], stars = st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)}` : 'Not played yet';
+    return `<section class="ela-final-assessment sim-card"><div><h3>⚖️ Rule Court: ${esc(d.name)}</h3><p class="muted">${esc(d.blurb)} You’re the judge: verdict, charge, culprit, fix. ${casesOn(d.id).length} cases · ${stars}</p></div><button type="button" class="btn small berry" data-rc-open="${d.id}">${st?.plays ? 'Play again' : 'Play'}</button></section>`;
+  }).join('');
+}
+function rcStart(docket){
+  if (!$('#rcStyle')) { const st = document.createElement('style'); st.id = 'rcStyle'; st.textContent = COURT_CSS; document.head.appendChild(st); }
+  rcRun = newCourtRun(docket); renderRuleCourt();
+}
+function renderRuleCourt(){
+  const r = rcRun, d = COURT_DOCKETS.find(k => k.id === r.docket), total = r.list.length;
+  activeEnglishCourse = 'conventions';
+  const body = r.done
+    ? `<section class="card"><h3>🏁 ${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)} ${r.perfect} of ${total} cases closed with no mistakes</h3>
+      <p>${r.stars === 3 ? 'Court is adjourned. Justice was served perfectly!' : r.stars === 2 ? 'So close to three stars. Hear the docket again?' : 'Every case is closed. Try again for more stars!'}${r.bestStreak >= 3 ? ` Best streak: 🔥 ${r.bestStreak}.` : ''}${r.coins ? ` +${r.coins} 🪙` : ''}</p>
+      ${r.master ? '<p class="review-banner">⚖️ Chief Justice! Three stars on every docket. +50 🪙</p>' : ''}
+      <div class="row"><button type="button" class="btn berry" data-rc-again>🔁 Play again</button></div></section>`
+    : courtHTML(r, esc);
+  $('#libraryWrap').innerHTML = `<div id="rcWrap" class="sim gg rc"><div class="backrow"><h2>⚖️ Rule Court</h2><button class="btn small" data-dig-back="conventions">Back to unit</button></div><p class="muted">${d.emoji} ${esc(d.name)}</p>${body}</div>`;
+}
+function rcFinish(){
+  const r = rcRun, total = r.list.length, st = S.ruleCourt.dockets[r.docket] || (S.ruleCourt.dockets[r.docket] = {best:0, plays:0}), stars = starsFor(r.perfect, total), before = st.best;
+  const coins = st.plays ? Math.max(0, stars - before) * 5 : 10 + 5 * stars;
+  st.plays++; st.best = Math.max(before, stars); r.stars = stars; r.coins = coins;
+  if (coins) { S.coins += coins; updateHeader(); }
+  logEvent({k:'court', title:COURT_DOCKETS.find(d => d.id === r.docket)?.name || 'Rule Court', s:r.perfect, n:total});
+  if (!S.ruleCourt.master && COURT_DOCKETS.every(d => (S.ruleCourt.dockets[d.id]?.best || 0) >= 3)) { S.ruleCourt.master = true; S.coins += 50; updateHeader(); r.master = true; }
+  sfx('good'); save();
+}
+$('#libraryWrap').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.rcOpen) { rcStart(btn.dataset.rcOpen); return; }
+  if (!rcRun || !btn.closest('#rcWrap')) return;
+  if (btn.hasAttribute('data-rc-again')) { rcStart(rcRun.docket); return; }
+  const a = btn.dataset.rcVerdict ? {verdict:btn.dataset.rcVerdict} : btn.dataset.rcCharge ? {charge:btn.dataset.rcCharge}
+    : btn.dataset.rcTap != null ? {tap:+btn.dataset.rcTap} : btn.dataset.rcFix != null ? {fix:+btn.dataset.rcFix} : btn.hasAttribute('data-rc-next') ? {next:true} : null;
+  if (!a) return;
+  const result = courtAct(rcRun, a);
+  if (result === 'done') rcFinish(); else if (result === 'good') sfx('good'); else if (result === 'bad') sfx('bad');
+  renderRuleCourt();
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -9380,6 +9445,7 @@ setInterval(() => { if (S) $$('[data-today-time]').forEach(el => { el.innerHTML 
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
 const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions', elaPunct:'punctuation', elaColon:'colons'};
 ELA_BUILDING_COURSE.elaSent = 'sentences';   // English Unit 8, the Sentence Library (docs/ENGLISH-UNIT8.md)
+ELA_BUILDING_COURSE.elaRules = 'conventions';   // English Unit 9 (docs/ENGLISH-UNIT9.md)
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
@@ -9828,7 +9894,7 @@ function helpPlace(){
   const where = placeOnScreen(), [kind, a = ''] = where.split(':');
   const open = kind === 'shop' ? a : ['vocab', 'sprint', 'arcade', 'reading'].includes(kind) ? kind
     : kind === 'course' ? (a === 'math' ? currentShop || '' : courseBuilding(a)) : kind === 'project' ? projectBuilding(a)
-    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'repair' ? courseBuilding('colons') : kind === 'snap' ? courseBuilding('sentences') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
+    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'repair' ? courseBuilding('colons') : kind === 'court' ? courseBuilding('conventions') : kind === 'snap' ? courseBuilding('sentences') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
   return {where, label:String(placeLabel(where)), open};
 }
 const helpBtn = document.createElement('button');
@@ -10447,6 +10513,8 @@ const englishCourse = course => course === 'sentences'
   ? {id:'sentences',building:'elaSent',title:'English Unit 8: Sentences and Clauses',skills:ENGLISH_UNIT8,groups:ENGLISH_GROUPS8,finalKey:'sentences:final-test',testPer:2,finalPass:17}   // Khan Grammar Unit 8; 2 questions a lesson (docs/ENGLISH-UNIT8.md)
   : course === 'colons'
   ? {id:'colons',building:'elaColon',title:'English Unit 7: Colons, Semicolons, and More',skills:ENGLISH_UNIT7,groups:ENGLISH_GROUPS7,finalKey:'colons:final-test',testPer:2,finalPass:15}   // Khan's Quiz 1 and unit test (docs/ENGLISH-UNIT7.md)
+  : course === 'conventions'
+  ? {id:'conventions',building:'elaRules',title:'English Unit 9: Conventions of Standard English',skills:ENGLISH_UNIT9,groups:ENGLISH_GROUPS9,finalKey:'conventions:final-test',testPer:3,finalPass:15}   // 3 per lesson (18), Khan's unit test (docs/ENGLISH-UNIT9.md)
   : course === 'punctuation'
   ? {id:'punctuation',building:'elaPunct',title:'English Unit 6: Punctuation',skills:ENGLISH_UNIT6,groups:ENGLISH_GROUPS6,finalKey:'punctuation:final-test',finalPass:11}
   : course === 'prepositions'
@@ -10573,6 +10641,7 @@ const KHAN_UNIT_TESTS = {
   punctuation:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/its-vs-its/test/punctuation-the-comma-and-the-apostrophe-unit-test`,
   colons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/hyphens-dashes-and-ellipses/test/punctuation-the-colon-semicolon-and-more-unit-test`,   // checked on khanacademy.org, Oct 29 2026
   sentences:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/phrases-and-clauses/test/syntax-sentences-and-clauses-unit-test`,   // checked on khanacademy.org, Oct 30 2026
+  conventions:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/dangling-modifiers-and-parallel-structure/test/syntax-conventions-of-standard-english-unit-test`,   // follows Khan's pattern; the page needs JavaScript, so the link couldn't be opened here (Oct 30 2026)
   /* History follows Khan's World History Project (Origins to the Present), Biology Unit 1 Grade 6 Science: Life sciences,
      Biology Unit 2 Middle school biology: Organism growth and reproduction (checked on khanacademy.org, Oct 20 2026) */
   history:`${KHAN}humanities/world-history/x66f79d8a:origins-of-history/x66f79d8a:history-and-memory-1-4/test/x66f79d8a:origins-of-history-unit-test`,
@@ -10969,6 +11038,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
 const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','colons','sentences','history','history2','history3','history4','history5','bio1','bio2','bio3','history6','history7','history8','history9'];
+REPORT_COURSES.push('conventions');   // English Unit 9 (docs/ENGLISH-UNIT9.md)
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -11116,6 +11186,10 @@ function englishBankQuestions(skillId, courseId='nouns'){
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
   if (courseId === 'sentences') return applyQuestionEdits(courseId, skillId, SENTENCE_QUESTIONS[skillId] || [], edits).map(question => {   // English Unit 8
+    const correct = question.options[question.answer], options = shuffle(question.options);
+    return {...question,options,answer:options.indexOf(correct),skillId};
+  });
+  if (courseId === 'conventions') return applyQuestionEdits(courseId, skillId, RULE_QUESTIONS[skillId] || [], edits).map(question => {   // English Unit 9
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -11439,7 +11513,7 @@ function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' || courseId === 'colons' || courseId === 'sentences' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' || courseId === 'colons' || courseId === 'conventions' || courseId === 'sentences' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
@@ -11684,7 +11758,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${bookRepairCardHTML(course.id, group.id)}${sentenceSnapCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${bookRepairCardHTML(course.id, group.id)}${ruleCourtCardHTML(course.id, group.id)}${sentenceSnapCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
@@ -14108,7 +14182,8 @@ function rewardTileHTML(reward, state){
     const rule = reward.unlock;
     if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${(SHOPS[reward.unit]?.stations || STATIONS)[rule.station - 1]?.name || `station ${rule.station}`}`;
     if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
-    if (rule.type === 'unitMastery') return `Master every ${building.name} skill`;
+    if (rule.type === 'quiz') return libraryQuizHint(reward.unit, rule.n);
+    if (rule.type === 'unitMastery') return UNIT_SKILLS[reward.unit]?.length ? `Master every ${building.name} skill` : `Pass the ${building.name} unit test`;
     if (rule.type === 'sprint') return `Reach ${rule.best} in the Fact Sprint`;
     if (rule.type === 'streak') return `Get ${rule.n} perfect orders in a row`;
     return 'Available from the beginning';
@@ -14140,7 +14215,8 @@ function renderBook(unit){
     const rule = reward.unlock;
     if (rule.type === 'station') return `Serve ${UNLOCK_AT} orders at ${(SHOPS[reward.unit]?.stations || STATIONS)[rule.station - 1]?.name || `station ${rule.station}`}`;
     if (rule.type === 'mastery') return `Master ${rule.skills.map(skill => SKILLS[skill]?.name || skill).join(' and ')}`;
-    if (rule.type === 'unitMastery') return `Master every ${building.name} skill`;
+    if (rule.type === 'quiz') return libraryQuizHint(reward.unit, rule.n);
+    if (rule.type === 'unitMastery') return UNIT_SKILLS[reward.unit]?.length ? `Master every ${building.name} skill` : `Pass the ${building.name} unit test`;
     if (rule.type === 'sprint') return `Reach ${rule.best} in the Fact Sprint`;
     if (rule.type === 'streak') return `Get ${rule.n} perfect orders in a row`;
     return 'Available from the beginning';
@@ -14492,6 +14568,7 @@ function placeOnScreen(){
   if ($('#hlWrap') && hlRun) return `hero:${hlRun.pack}`;
   if ($('#brWrap') && brRun) return `repair:${brRun.shelf}`;
   if ($('#snapWrap') && snapShelf) return `snap:${snapShelf}`;
+  if ($('#rcWrap') && rcRun) return `court:${rcRun.docket}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun?.retryType === 'think' && englishRun.shop && $('#libraryWrap .ela-question')) return `shop:${englishRun.progressKey}:think`;   // Think it through counts for its unit
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
@@ -14525,6 +14602,7 @@ function placeLabel(key){
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
   if (kind === 'repair') return `📚 Book Repair Desk · ${REPAIR_SHELVES.find(p => p.id === a)?.name || ''}`;
   if (kind === 'snap') return `🧩 Sentence Snap · ${SNAP_SHELVES.find(p => p.id === a)?.name || ''}`;
+  if (kind === 'court') return `⚖️ Rule Court · ${COURT_DOCKETS.find(d => d.id === a)?.name || ''}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -14558,6 +14636,7 @@ function eventText(e){
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
   if (e.k === 'repair') return `📚 Book Repair Desk, ${e.title}: ${e.s} of ${e.n} books fixed on the first try`;
   if (e.k === 'snap') return `🧩 Sentence Snap, ${e.title}: ${e.s} right in 90 seconds (${e.n} ⭐)`;
+  if (e.k === 'court') return `⚖️ Rule Court, ${e.title}: ${e.s} of ${e.n} cases closed with no mistakes`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;

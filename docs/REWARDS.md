@@ -22,7 +22,8 @@ Rewards are **cosmetic only**. They never change problems, scores, hints, or dia
 | `unit` | That unit's building is open (`BUILDINGS[...].open === true`) |
 | `station` | The student has served `UNLOCK_AT` (6) orders at that station of that unit |
 | `mastery` | Every listed skill has status `mastered` |
-| `unitMastery` | Every skill in that unit has status `mastered` |
+| `unitMastery` | Every skill in that unit has status `mastered`, or the unit test is passed (for library buildings, which have no math skills, it means the unit test) |
+| `quiz` | A library building (English, History, Biology): its n-th lesson quiz is passed (the last quiz when it has fewer) |
 | `sprint` | `S.sprintBest >= best` |
 | `streak` | `S.bestStreak >= n` (longest run of perfect orders) |
 
@@ -93,6 +94,15 @@ Rules and prices for every column in units 2 to 8:
 | st 3 | `station` 3 | pets 150, decor 90 |
 | st 4 | `station` 4 | pets 200, decor 120 |
 | legendary | `unitMastery` | 0 (**legendary**) |
+
+### Library buildings (English, History, Biology), added Oct 30, 2026
+
+The owner wants every new unit to unlock new animals and decorations, so library buildings get a set too, in `LIBRARY_SETS` (`src/shared/registry.ts`). Same five columns and prices; slots 2 to 4 use the `quiz` rule (pass the 1st, 2nd and 3rd lesson quiz) and the legendary pair comes with the unit test. Add a new unit's set as its own line.
+
+| Building | Pets | Decorations |
+|---|---|---|
+| Sentence Library (`elaSent`) | 🐊 Clause the crocodile, 🦥 Pause the sloth, 🦨 Fragment the skunk, 🦏 Subject the rhino, 🦖 Rex the sentence-saurus | 🪑 Reading chair, 🗂️ Card catalog, 🔖 Bookmark banner, 🖋️ Fountain pen, 🗝️ Golden library key |
+| Rule Library (`elaRules`) | 🦛 Judge Hippo, 🐦‍⬛ Gavel the raven, 🐜 Clerk the ant, 🦂 Rulebreaker the scorpion, 🐆 Chief Justice Cheetah | 🛎️ Court bell, 🪵 Witness bench, 🎖️ Medal of order, 💼 Case briefcase, 🕮 Golden rule book |
 
 The ids follow the pattern `<buildingId>_<pet|decor>_<slot>`, where slot is `welcome`, `s2`, `s3`, `s4`, or `legend`. For example, `bakery_pet_welcome` or `show_decor_legend`. The exact TypeScript is in `TASK-rewards.md`.
 

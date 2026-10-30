@@ -87,6 +87,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'dig': case 'scribe': case 'pax': return 'history';
     case 'sim': case 'handson': case 'greenhouse': return 'science';
     case 'ggame': case 'recall': case 'hero': case 'repair': case 'snap': return 'english';
+    case 'court': return 'english';   // ⚖️ Rule Court (English Unit 9)
     case 'bible': return 'bible';
     case 'help': return 'other';
     case 'brain': case 'move': return 'breaks';

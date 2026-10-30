@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule Court</title>
+<!-- Pet World Arcade copy of ⚖️ Rule Court (English Unit 9, docs/ENGLISH-UNIT9.md, docs/ARCADE-GAMES.md).
+     Served at /arcade/rule-court/. It is a Vite page (vite.config.ts), not a public/ file, so it plays the same cases
+     with the same engine as the unit: src/game/ruleCourt.js. In the Arcade (?arcadeRun=…) it pays tickets; it never
+     pays coins or counts toward the unit's stars, quizzes or tests. -->
+<style>
+  :root{ --bg:#EAF1FB; --surface:#FFFFFF; --ink:#2F3A4A; --ink-soft:#5E6B7D; --edge:#2F3A4A; --berry:#E4577A; --berry-deep:#B83659; --butter:#FFD76A; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#1B2230; --surface:#283244; --ink:#E9EEF7; --ink-soft:#B4BFD0; --edge:#0E131C; --berry:#EE7394; --berry-deep:#FF9DB6; --butter:#6B5520; } }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:760px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.6em; margin:6px 0 4px} h2{font-size:1.2em; margin:0 0 6px}
+  .muted{color:var(--ink-soft)}
+  .card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:14px; margin-top:12px}
+  .btn{border:3px solid var(--edge); background:var(--surface); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.berry{background:var(--berry); color:#fff; border-color:var(--berry-deep)}
+  .dockets{display:grid; gap:10px}
+  .docket{display:flex; gap:12px; align-items:center; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); border-radius:14px; padding:10px 12px}
+  .docket .e{font-size:1.8em} .docket b{display:block}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import { COURT_DOCKETS, casesOn, newCourtRun, courtAct, courtHTML, COURT_CSS } from '../../src/game/ruleCourt.js';
+import { starsFor } from '../../src/game/grammarGames.js';
+const params = new URLSearchParams(location.search), ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const style = document.createElement('style'); style.textContent = COURT_CSS; document.head.appendChild(style);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let best = {}; try { best = JSON.parse(localStorage.getItem('rule-court:best') || '{}') || {}; } catch(e){}
+const stars = n => `${'⭐'.repeat(n)}${'☆'.repeat(3 - n)}`;
+let run = null;
+
+function renderDockets(){
+  run = null;
+  app.innerHTML = `<h1>⚖️ Rule Court</h1>
+    <p class="muted">Order in the court! Sentences from the Rule Library are on trial. You’re the judge: decide if each one is guilty, name the rule it broke, point to the culprit word, and pick the fix. A mistake sends the case back for a retrial.</p>
+    <div class="dockets">${COURT_DOCKETS.map(d => `<button type="button" class="docket" data-docket="${d.id}"><span class="e">${d.emoji}</span><span><b>${esc(d.name)}</b><span class="muted">${esc(d.blurb)} ${casesOn(d.id).length} cases · ${best[d.id] ? stars(best[d.id]) : 'Not played yet'}</span></span></button>`).join('')}</div>`;
+}
+function render(){
+  const d = COURT_DOCKETS.find(k => k.id === run.docket), total = run.list.length;
+  const body = run.done
+    ? `<div class="card"><h2>🏁 ${stars(run.stars)} ${run.perfect} of ${total} cases closed with no mistakes</h2>
+      <p>${run.stars === 3 ? 'Court is adjourned. Justice was served perfectly!' : run.stars === 2 ? 'So close to three stars. Hear the docket again?' : 'Every case is closed. Try again for more stars!'}${run.bestStreak >= 3 ? ` Best streak: 🔥 ${run.bestStreak}.` : ''}</p>
+      <div class="row"><button type="button" class="btn berry" data-again>🔁 Play again</button><button type="button" class="btn" data-dockets>Pick another docket</button></div></div>`
+    : `<div class="card">${courtHTML(run, esc)}</div>`;
+  app.innerHTML = `<div class="row"><h1 style="flex:1">⚖️ Rule Court</h1><button type="button" class="btn" data-dockets>All dockets</button></div><p class="muted">${d.emoji} ${esc(d.name)}</p>${body}`;
+}
+function finish(){
+  run.stars = starsFor(run.perfect, run.list.length);
+  best[run.docket] = Math.max(best[run.docket] || 0, run.stars); try { localStorage.setItem('rule-court:best', JSON.stringify(best)); } catch(e){}
+  try { if (ARCADE_RUN && window.parent !== window) window.parent.postMessage({type:'arcade:round-complete', gameId:'rule-court', runId:ARCADE_RUN, roundId:`${run.docket}-${Date.now()}`, score:run.perfect}, location.origin); } catch(e){}
+}
+app.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.docket) { run = newCourtRun(btn.dataset.docket); render(); return; }
+  if (btn.hasAttribute('data-dockets')) { renderDockets(); return; }
+  if (!run) return;
+  if (btn.hasAttribute('data-again')) { run = newCourtRun(run.docket); render(); return; }
+  const a = btn.dataset.rcVerdict ? {verdict:btn.dataset.rcVerdict} : btn.dataset.rcCharge ? {charge:btn.dataset.rcCharge}
+    : btn.dataset.rcTap != null ? {tap:+btn.dataset.rcTap} : btn.dataset.rcFix != null ? {fix:+btn.dataset.rcFix} : btn.hasAttribute('data-rc-next') ? {next:true} : null;
+  if (!a) return;
+  if (courtAct(run, a) === 'done') finish();
+  render();
+});
+renderDockets();
+</script>
+</body>
+</html>

@@ -164,6 +164,20 @@ export const TERM_CARDS = {
     { term: 'misplaced modifier', means: "A describing phrase that sits next to the wrong word, so the sentence says something silly. Move it next to the word it describes.", example: "Not: Riding the bus, a deer ran past. Yes: Riding the bus, I saw a deer.", skill: 'clausePlacement' },
     { term: 'relative clause', means: "A dependent clause that describes a noun. It starts with who, whom, whose, which or that.", example: "the book that I borrowed", skill: 'relativeClauses' }
   ],
+  conventions: [
+    { term: 'subject-verb agreement', means: "A singular subject takes a singular verb, and a plural subject takes a plural verb. Cross out phrases like “of the books” to find the real subject.", example: "The box of crayons is here. The crayons are here.", skill: 'subjVerbAgree' },
+    { term: 'compound subject', means: "Two subjects joined by and are plural. With or or nor, the verb matches the closer subject.", example: "Mia and Leo are here. Neither the twins nor Mom is here.", skill: 'subjVerbAgree' },
+    { term: 'subject after the verb', means: "In a sentence that starts with There, Here, or a place phrase, the subject comes after the verb.", example: "There are two cats. Under the bed are my shoes.", skill: 'subjVerbAgree' },
+    { term: 'antecedent', means: "The word a pronoun stands for. The pronoun has to match it: it or its for one, they or their for more than one.", example: "The dog wagged its tail. The dogs wagged their tails.", skill: 'pronAntecedent' },
+    { term: 'singular words that sound plural', means: "Each, one of, every one of, and not one are singular, so they take is, has, it, and its.", example: "One of the trees lost its leaves.", skill: 'pronAntecedent' },
+    { term: 'fragment', means: "A word group that is missing a subject, a verb, or a complete thought, but is written like a sentence.", example: "Because the bus was late.", skill: 'fragments' },
+    { term: 'understood subject', means: "A command’s subject is you, even though it isn’t written, so a command is a complete sentence.", example: "Close the door.", skill: 'fragments' },
+    { term: 'run-on sentence', means: "Two complete sentences jammed together with nothing between them.", example: "Not: The bell rang we left. Yes: The bell rang, and we left.", skill: 'runOns' },
+    { term: 'comma splice', means: "Two complete sentences joined by only a comma. Words like however and then can’t join them either.", example: "Not: I studied, however, it was hard. Yes: I studied; however, it was hard.", skill: 'runOns' },
+    { term: 'dangling modifier', means: "An opening phrase that doesn’t describe the word right after the comma, so it seems to describe the wrong thing.", example: "Not: Flying over the city, the buildings looked tiny. Yes: Flying over the city, we saw tiny buildings.", skill: 'danglingMods' },
+    { term: 'parallel structure', means: "Items in a list or a pair written in the same form.", example: "hiking, swimming, and biking (not to bike)", skill: 'parallelStructure' },
+    { term: 'paired joining words', means: "Either… or, neither… nor, both… and, and not only… but also need the same kind of words after each half.", example: "She not only sings but also dances.", skill: 'parallelStructure' }
+  ],
   prepositions: [
     { term: 'preposition', means: 'A word that shows how a noun or pronoun is related to the rest of the sentence: where, when, or how.', example: 'under the bed, after lunch, with a spoon', skill: 'meetPreposition' },
     { term: 'object of the preposition', means: 'The noun or pronoun at the end of a prepositional phrase.', example: 'behind the shed (shed), with her (her)', skill: 'prepPhrases' },

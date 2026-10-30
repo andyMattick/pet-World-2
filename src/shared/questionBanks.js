@@ -2173,6 +2173,7 @@ const KHAN_LINKS = {
   punctuation:{endCommas:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/introduction-to-commas/v/three-ways-to-end-a-sentence-punctuation-khan-academy`,spaceTime:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/commas-in-space-and-time/v/salutations-and-valedictions-the-comma-punctuation-khan-academy`,moreCommas:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/more-ways-to-use-commas/v/more-uses-for-commas-the-comma-punctuation-khan-academy`,apostrophes:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/apostrophes-and-contractions/v/introduction-to-the-apostrophe-the-apostrophe-punctuation-khan-academy`,possessive:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/introduction-to-the-possessive/v/introduction-to-the-possessive-the-apostrophe-punctuation-khan-academy`},
   colons:{colons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/introduction-to-colons/v/linking-function-of-the-colon-the-colon-and-semicolon-punctuation-khan-academy`,semicolons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/introduction-to-semicolons/v/introduction-to-the-semicolon-the-colon-and-semicolon-punctuation-khan-academy`,formatting:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/formatting-styles/v/italics-and-underlining`,dashes:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/hyphens-dashes-and-ellipses/v/dashes`},
   sentences:{intro:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/introduction-to-sentences/v/what-is-a-sentence-syntax-khan-academy`,types:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/types-of-sentences/v/simple-and-compound-sentences-syntax-khan-academy`,subjects:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/subjects-and-predicates/v/subjects-and-predicates-syntax-khan-academy`,clauses:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/phrases-and-clauses/v/phrases-and-clauses-syntax-khan-academy`},   // English Unit 8, Khan's lesson sitemaps, Oct 30 2026
+  conventions:{agreement:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/subject-verb-agreement-and-pronoun-antecedent-agreement/v/subject-verb-agreement-syntax-khan-academy`,fragments:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/fragments-and-run-ons/v/recognizing-fragments-syntax-khan-academy`,modifiers:`${KHAN}humanities/grammar/syntax-conventions-of-standard-english/dangling-modifiers-and-parallel-structure/v/dangling-modifiers-syntax-khan-academy`},   // English Unit 9 (docs/ENGLISH-UNIT9.md)
   history:{stories:`${WORLD}origins-of-history/x66f79d8a:history-stories-1-1/v/meet-oer-project-world-history`,frames:`${WORLD}origins-of-history/x66f79d8a:history-frames-1-3/v/frame-concept-introduction-world-history-project-beta`,memory:`${WORLD}origins-of-history/x66f79d8a:history-and-memory-1-4/a/activity-opener-worst-day-ever`},
   history2:{earliestHumans:`${WORLD}early-humans/x66f79d8a:the-earliest-humans-2-1/a/activity-opener-then-vs-now`,migrationArt:`${WORLD}early-humans/x66f79d8a:migration-and-art-2-2/a/activity-opener-who-s-an-authority`,foragingSocieties:`${WORLD}early-humans/x66f79d8a:foraging-societies-2-3/a/activity-opener-what-is-this-asking-introduction-origins`,agriculturalRevolution:`${WORLD}early-humans/x66f79d8a:the-agricultural-revolution-2-4/a/activity-opener-which-frame`,biggestMistake:`${WORLD}early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/a/activity-opener-casual-map-jack-and-the-giant-beanstalk`},
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
@@ -3680,12 +3681,131 @@ const SENTENCE_QUESTIONS = {
     qLevel(3,"How many relative clauses are in this sentence? The girl who sits next to me has a cat that can open doors.","Two","One","Three","Four")
   ]
 };
+/* English Unit 9 (the 📏 Rule Library): Khan Academy Grammar, Syntax: conventions of standard English.
+   Khan's 6 practice exercises in Khan's 3 lessons, in Khan's order (lesson and exercise list from khanacademy.org's
+   sitemaps for the unit, Oct 30 2026). Docs: docs/ENGLISH-UNIT9.md, review list docs/ENGLISH-UNIT9-review.md */
+const ENGLISH_UNIT9 = [
+  {id:'subjVerbAgree',name:'Subject-verb agreement',lesson:'A verb has to match its subject: one subject takes a singular verb (The dog barks), and more than one takes a plural verb (The dogs bark). Find the real subject first. It is never inside a phrase like “of the books” or “with her friends,” so cross those out. Two subjects joined by and are plural; with or or nor, the verb matches the closer subject. Each, everyone, and one of are singular, and in a sentence that starts with There, Here, or a place phrase, the subject comes after the verb.'},
+  {id:'pronAntecedent',name:'Pronoun-antecedent agreement',lesson:'A pronoun has to match the word it stands for, its antecedent: one thing takes it or its, and more than one takes they, them, or their. Find the antecedent first and skip over phrases like “of the trees.” Each, one of, and not one are singular. Two antecedents joined by and are plural; with or or nor, the pronoun matches the closer one.'},
+  {id:'fragments',name:'Recognizing fragments',lesson:'A complete sentence needs a subject, a verb, and a complete thought. A fragment is missing one of them: it has no subject (Ran to the bus.), no verb (The puppy with the spotted ears.), or it starts with a word like because, when, or although and never finishes the thought (Because the bus was late.). A command like “Close the door.” is complete, because its subject, you, is understood. Fix a fragment by adding what is missing or by joining it to a complete sentence.'},
+  {id:'runOns',name:'Recognizing run-ons and comma splices',lesson:'A run-on sentence jams two complete sentences together with nothing between them (The bell rang we ran outside). A comma splice joins them with only a comma (The bell rang, we ran outside). Fix either one with a period, a semicolon, a comma plus a joining word like and, but, or so, or by starting one part with a word like because or when. Words like however, then, and therefore can’t join two sentences with just a comma.'},
+  {id:'danglingMods',name:'Dangling modifiers',lesson:'A describing phrase at the start of a sentence, like “Running to the bus,” describes whoever comes right after the comma. If that word can’t be doing the action, the modifier is dangling: “Running to the bus, my backpack fell open” says the backpack was running. Fix it by putting the real doer right after the comma (Running to the bus, I felt my backpack fall open) or by giving the phrase its own subject (While I was running to the bus, …).'},
+  {id:'parallelStructure',name:'Parallel structure',lesson:'Parallel structure means the ideas in a list or a pair are written in the same form: all -ing words (hiking, swimming, and biking), all to-verbs, or all describing words. Pairs like either… or, neither… nor, and not only… but also need the same kind of words after each half, and a comparison compares the same kinds of things (Riding a bike is easier than driving a car).'}
+];
+const RULES_LESSON = `${KHAN}humanities/grammar/syntax-conventions-of-standard-english/`;
+const ENGLISH_GROUPS9 = [
+  {id:'agreement',hook:{emoji:'📏',title:'Welcome to the Rule Library',story:'In the Rule Library, every sentence has to follow the rules before it can go on a shelf. The first rule: words that work together have to match. “The puppies barks” sounds wrong because the subject and the verb don’t match. The library’s judge sends sentences like that to Rule Court.'},quizName:'Agreement Quiz',name:'Subject-verb agreement and pronoun-antecedent agreement',learn:'Make each verb match its subject and each pronoun match the word it stands for, even when a phrase sits in between.',skills:['subjVerbAgree','pronAntecedent'],
+    extraLessons:[{name:'Pronoun-antecedent agreement (video)',lesson:'A short video on making a pronoun match the word it stands for.',url:`${RULES_LESSON}subject-verb-agreement-and-pronoun-antecedent-agreement/v/pronoun-antecedent-agreement-syntax-khan-academy`}]},
+  {id:'fragments',hook:{emoji:'🧩',title:'Too little, too much',story:'Some sentences come to the Rule Library missing a piece: no subject, no verb, or a thought that just stops. Others arrive as two sentences crashed into one, with no mark to keep them apart. A fragment needs a missing piece; a run-on needs a fence.'},quizName:'Fragments and run-ons Quiz',name:'Fragments and run-ons',learn:'Tell a complete sentence from a fragment, and fix run-ons and comma splices.',skills:['fragments','runOns'],
+    extraLessons:[{name:'Run-ons and comma splices (video)',lesson:'A short video on run-on sentences and comma splices, and how to fix them.',url:`${RULES_LESSON}fragments-and-run-ons/v/run-ons-and-comma-splices-syntax-khan-academy`}]},
+  {id:'modifiers',hook:{emoji:'🪝',title:'Say what you mean',story:'“Flying over the city, the buildings looked tiny.” Were the buildings flying? A describing phrase hooks onto whatever comes right after the comma. And in a list, every item has to wear the same uniform: hiking, swimming, and biking, not hiking, swimming, and to bike.'},quizName:'Dangling modifiers and parallel structure Quiz',name:'Dangling modifiers and parallel structure',learn:'Put the right doer after an opening phrase, and keep lists and pairs in the same form.',skills:['danglingMods','parallelStructure'],
+    extraLessons:[{name:'Parallel structure (video)',lesson:'A short video on keeping lists and pairs in the same form.',url:`${RULES_LESSON}dangling-modifiers-and-parallel-structure/v/parallel-structure-syntax-khan-academy`}]}
+];
+const RULE_QUESTIONS = {
+  subjVerbAgree:[
+    qLevel(1,"Which verb fits? The puppies in the window ___ at everyone who walks by.","bark","barks","is barking","has barked"),
+    qLevel(1,"Which sentence has correct subject-verb agreement?","My sister plays the drums.","My sister play the drums.","My sisters plays the drums.","My sister are playing the drums."),
+    qLevel(1,"Which word is the subject that the verb has to agree with? The box of crayons is on the table.","box","crayons","table","crayons and table"),
+    qLevel(2,"Which verb fits? Each of the kittens ___ its own blanket.","has","have","are having","were having"),
+    qLevel(2,"Which verb fits? Neither my brothers nor my dad ___ seafood.","likes","like","are liking","were liking"),
+    qLevel(2,"Which sentence is correct in formal writing?","There are three eggs in the nest.","There is three eggs in the nest.","There’s three eggs in the nest.","Here is three eggs in the bird’s nest."),
+    qLevel(2,"Which verb fits? Maya and her cousin ___ to the library every Saturday.","walk","walks","is walking","has walked"),
+    qLevel(2,"Which word is the subject of this sentence? Along the fence grow three tall sunflowers.","sunflowers","fence","grow","tall"),
+    qLevel(3,"Which sentence has a subject-verb agreement error?","The list of chores are taped to the fridge.","The chores on the list are easy.","One of my chores on weekends is feeding the fish.","Everyone in my family has a chore."),
+    qLevel(3,"Which verb fits? One of the girls who sing in the choir ___ a solo tonight.","has","have","are having","were having"),
+    qLevel(3,"Which verb fits? Either the twins or their older sister ___ the dog every morning.","walks","walk","are walking","have walked"),
+    qLevel(3,"Which revision fixes the error? The flowers in the vase on the windowsill needs water.","The flowers in the vase on the windowsill need water.","The flowers in the vase on the windowsill needing water.","The flower in the vases on the windowsill need water.","The flowers in the vase on the windowsills needs water."),
+    qLevel(3,"Which sentence is correct?","Everybody on both teams was cheering.","Everybody on both teams were cheering.","Everybody on both teams are cheering.","Everybody on both teams have cheered."),
+    qLevel(3,"Which verb fits? Under the bed ___ a pair of socks and an old shoe.","are","is","was","has been")
+  ],
+  pronAntecedent:[
+    qLevel(1,"Which pronoun fits? The girls packed ___ own lunches.","their","her","its","his"),
+    qLevel(1,"What is the antecedent of “it”? The library lent me a book, and it was due on Friday.","book","library","me","Friday"),
+    qLevel(1,"Which sentence is correct?","The dog wagged its tail.","The dog wagged their tail.","The dog wagged it’s tail.","The dog wagged they’re tail."),
+    qLevel(2,"Which pronoun fits? Each of the bikes has a bell on ___ handlebars.","its","their","his","it’s"),
+    qLevel(2,"Which pronoun fits? The class, working as one group, finished ___ mural before lunch.","its","their","it’s","they’re"),
+    qLevel(2,"Which pronoun fits? Leo and Sam forgot ___ jackets on the bus.","their","his","its","him"),
+    qLevel(2,"Which pronoun fits? Neither the cat nor the puppies ate ___ food.","their","its","her","his"),
+    qLevel(2,"Which sentence has a pronoun that doesn’t agree with its antecedent?","One of the lamps lost their shade.","Both lamps lost their shades.","The lamp lost its shade.","Each lamp in the shop has its own price tag."),
+    qLevel(3,"Which pronoun fits? Either Grandpa’s old trucks or his new car will need ___ tires checked.","its","their","it’s","they’re"),
+    qLevel(3,"Which revision fixes the pronoun error? Every one of the trees dropped their leaves by November.","Every one of the trees dropped its leaves by November.","Every one of the trees dropped it’s leaves by November.","Every one of the tree dropped their leaves by November.","Every one of the trees dropped they’re leaves by November."),
+    qLevel(3,"In which sentence does the pronoun agree with its antecedent?","The box of old letters has lost its lid.","The box of old letters has lost their lid.","The boxes of old letters have lost its lids.","The box of old letters have lost their lid."),
+    qLevel(3,"Which pronoun fits? The museum and the zoo both lowered ___ prices for kids.","their","its","her","his"),
+    qLevel(3,"Which sentence has a pronoun error?","Neither of the windows had their screen in place.","Both windows had their screens in place.","Each window in the hall had its own screen.","The windows in the hall had lost their screens in the storm."),
+    qLevel(3,"Which pronoun fits? Not one of the forty paintings in the gallery had ___ price on the wall.","its","their","it’s","his")
+  ],
+  fragments:[
+    qLevel(1,"Which is a complete sentence?","The bus stopped at the corner.","Stopped at the corner.","The bus at the corner.","The yellow bus at the corner by the school."),
+    qLevel(1,"What is missing from this fragment? Ran all the way to the park.","A subject","A verb","An end mark","A capital letter"),
+    qLevel(1,"Which word group is a fragment?","After the game ended.","The game ended.","We left after the game ended.","The game ended at noon."),
+    qLevel(2,"What is missing from this fragment? The tall girl with the red backpack.","A verb that tells what she did","A subject that tells who","A word like because at the start","A comma after girl"),
+    qLevel(2,"Why is this a fragment? When the lights went out.","It starts with when and doesn’t finish the thought.","It has no subject.","It is missing a verb.","It is too short to be a complete sentence with a subject."),
+    qLevel(2,"Which revision fixes the fragment? Because it was raining.","Because it was raining, we played inside.","Because it was raining outside.","Because it was raining and cold.","Because it was raining very hard all afternoon."),
+    qLevel(2,"Which is a complete sentence?","Running down the hall, Mia slipped.","Running down the hall to the gym after lunch.","Mia, running down the hall.","The girl running down the hall."),
+    qLevel(2,"How many fragments are in this passage? We went to the zoo. Saw the lions. The baby giraffe was my favorite. Because it was so tall.","2","1","3","0"),
+    qLevel(3,"Which is NOT a fragment?","Although it was late, the store was still open.","Although it was late and the store was still open.","The store, which was still open even though it was late.","Still open, although it was late at night."),
+    qLevel(3,"Which revision fixes the fragment? The puppy chewed my shoe. Which was brand new.","The puppy chewed my shoe, which was brand new.","The puppy chewed my shoe. Which, was brand new.","The puppy chewed my shoe; which was brand new.","The puppy chewed. My shoe, which was brand new."),
+    qLevel(3,"Which word group is a fragment?","The kids who built the tree house last summer.","The kids built the tree house last summer.","Last summer, the kids built a tree house in the yard.","Who built the tree house last summer?"),
+    qLevel(3,"Which is a complete sentence?","Stop right there.","To stop right there.","Stopping right there.","The one stopping right there."),
+    qLevel(3,"Which is a fragment?","Hoping to see a shooting star.","We hoped to see a shooting star.","Hope for a shooting star.","We were hoping to see one."),
+    qLevel(3,"Which revision fixes the fragment? Our dog, a shaggy mutt named Biscuit.","Our dog is a shaggy mutt named Biscuit.","Our dog, who is a shaggy mutt named Biscuit.","A shaggy mutt named Biscuit, our dog.","Our dog and a shaggy mutt named Biscuit.")
+  ],
+  runOns:[
+    qLevel(1,"Which is a run-on sentence?","The sun came out we went swimming.","The sun came out, and we went swimming.","The sun came out. We went swimming.","When the sun came out, we went swimming."),
+    qLevel(1,"What is a comma splice?","Two sentences joined with only a comma","A list with too many commas in it","A sentence that is missing its subject or its verb","A comma between a city and a state"),
+    qLevel(1,"Which sentence is a comma splice?","I love soup, it warms me up.","I love soup because it warms me up.","I love soup; it warms me up.","I love soup, for it warms me up."),
+    qLevel(2,"Which revision fixes the run-on? The movie was long I fell asleep.","The movie was long, so I fell asleep.","The movie was long, I fell asleep.","The movie was long so, I fell asleep.","The movie, was long I fell asleep."),
+    qLevel(2,"Which revision does NOT fix the comma splice? We packed the car, we drove to the lake.","We packed the car, then we drove to the lake.","We packed the car; we drove to the lake.","We packed the car, and we drove to the lake.","After we packed the car, we drove to the lake."),
+    qLevel(2,"Which sentence is correct?","My cat is shy; she hides under the bed.","My cat is shy, she hides under the bed.","My cat is shy she hides under the bed.","My cat is shy and, she hides under the bed."),
+    qLevel(2,"What kind of error is in this sentence? Grandma baked bread, it smelled amazing.","A comma splice","A fragment","A dangling modifier","A pronoun error"),
+    qLevel(2,"Which mark fixes the run-on? The bell rang___ the students rushed out.",";",",","-","no mark"),
+    qLevel(3,"Which sentence is a run-on?","We wanted to play outside however it was raining.","We wanted to play outside; however, it was raining.","We wanted to play outside, but it was raining.","Although we wanted to play outside, it was raining."),
+    qLevel(3,"Which sentence is correct?","Sam studied hard, so he aced the test.","Sam studied hard, he aced the test.","Sam studied hard, therefore he aced the test.","Sam studied hard he aced the test."),
+    qLevel(3,"Which is NOT a run-on or a comma splice?","When the storm passed, we checked on the horses.","The storm passed, we checked on the horses.","The storm passed we checked on the horses.","The storm passed, then we checked on the horses."),
+    qLevel(3,"Which revision fixes this run-on and correctly shows what caused what? The power went out the food in the freezer melted.","Because the power went out, the food in the freezer melted.","The power went out, the food in the freezer melted.","The power went out because the food in the freezer melted.","The power went out, because, the food in the freezer melted."),
+    qLevel(3,"How many complete sentences are jammed into this run-on? My brother plays soccer my sister swims I take karate.","3","2","1","4"),
+    qLevel(3,"Which sentence is a comma splice?","Mr. Diaz smiled at the class, everyone had passed.","Mr. Diaz smiled at the class, for everyone had passed.","Mr. Diaz, our teacher, smiled because everyone had passed.","Smiling at the class, Mr. Diaz said that everyone had passed.")
+  ],
+  danglingMods:[
+    qLevel(1,"An opening phrase like “Walking home,” describes which part of the sentence?","The word right after the comma","The last word in the sentence","The verb in the sentence","The word right before the comma"),
+    qLevel(1,"Which sentence has a dangling modifier?","Barking loudly, the mail was dropped.","Barking loudly, the dog scared the mail carrier.","The dog barked loudly at the mail carrier.","The mail carrier dropped the mail."),
+    qLevel(1,"Which sentence is correct?","Walking home, I saw a rainbow.","Walking home, a rainbow appeared.","Walking home, the rainbow was seen.","Walking home, a rainbow was in the sky."),
+    qLevel(2,"Read it the way it is written: who or what is eating popcorn? Eating popcorn, the movie seemed even better to Jada.","The movie","Jada","The popcorn","The theater"),
+    qLevel(2,"The dog, not Mom, is muddy. Which revision fixes the sentence? Covered in mud, Mom washed the dog.","Mom washed the dog, which was covered in mud.","Covered in mud, Mom washed the dog right away.","Covered in mud, the dog was washing Mom.","Mom, covered in mud, washed the dog."),
+    qLevel(2,"Which sentence has a dangling modifier?","After finishing my homework, the TV was turned on.","After finishing my homework, I turned on the TV.","After I had finished all of my homework, I turned on the TV.","I turned on the TV after finishing my homework."),
+    qLevel(2,"Which sentence is correct?","While I was hiking up the hill, my legs got tired.","Hiking up the hill, my legs got tired.","Hiking up the hill, tiredness hit my legs.","While hiking up the steep hill behind the school, my legs got tired."),
+    qLevel(2,"Why is this a dangling modifier? Flying over the city, the buildings looked tiny.","It says the buildings were flying.","It needs a semicolon instead of the comma.","The verb looked should be look.","Flying should be the word flew."),
+    qLevel(3,"Which revision fixes the dangling modifier? Having lost the key, the door wouldn’t open.","Having lost the key, we couldn’t open the door.","Having lost the key, the door couldn’t be opened.","The door wouldn’t open, having lost the key.","Having lost the key, the door wouldn’t open for us."),
+    qLevel(3,"Which sentence does NOT have a dangling modifier?","To win the contest, Ella practiced every day.","To win the contest, practice was needed every day.","To win the contest, every day was spent practicing.","To win the contest, daily practice was Ella’s plan."),
+    qLevel(3,"Which sentence has a dangling modifier?","At the age of five, my family moved to Ohio.","At the age of five, I moved to Ohio with my family.","When I was five, my family moved to Ohio.","My family moved to Ohio when I was five."),
+    qLevel(3,"Which revision keeps the meaning and fixes the error? Tired after the long game, the bus ride home felt endless.","Tired after the long game, the players felt the bus ride home was endless.","Tired after the long game, the bus ride home seemed to feel endless to all of us.","The bus ride home, tired after the long game, felt endless.","Tired after the long game, the bus felt the ride home was endless."),
+    qLevel(3,"In which sentence does the opening phrase describe the right person?","Holding the trophy high, Coach Kim smiled for the camera.","Holding the trophy high, the camera flashed at Coach Kim.","Holding the trophy high, a smile spread across Coach Kim’s face.","Holding the trophy high, the photo showed Coach Kim smiling."),
+    qLevel(3,"Which sentence is correct?","Once covered with frosting, the cake sat on the table.","Once covered with frosting, Dad set the cake on the table.","Once covered with frosting, the table held the cake.","Once covered with frosting, we set out plates for the cake.")
+  ],
+  parallelStructure:[
+    qLevel(1,"Which sentence has parallel structure?","I like hiking, swimming, and biking.","I like hiking, swimming, and to bike.","I like to hike, swimming, and biking.","I like hiking, to swim, and bike rides."),
+    qLevel(1,"What does parallel structure mean?","Items in a list or pair use the same form.","Every sentence in a paragraph is the same length.","Two sentences are joined by a semicolon.","Each item in a list starts with a capital."),
+    qLevel(1,"Which word keeps the list parallel? Our dog likes running, digging, and ___.","napping","to nap","naps","a nap"),
+    qLevel(2,"Which sentence is NOT parallel?","The coach told us to stretch, to drink water, and that we should rest.","The coach told us to stretch, drink water, and rest.","The coach told us to stretch, to drink water, and to rest.","The coach told us that we should stretch first, drink some water, and then rest."),
+    qLevel(2,"Which revision fixes the faulty parallelism? Mia is smart, funny, and has kindness.","Mia is smart, funny, and kind.","Mia is smart, funny, and has kind.","Mia is smart, being funny, and kind.","Mia is smart, funny, and a kindness."),
+    qLevel(2,"Which sentence is parallel?","We can walk to the park or ride our bikes.","We can walk to the park or riding our bikes.","We can walk to the park or a bike ride.","We can walking to the park or ride our bikes."),
+    qLevel(2,"Which choice completes the sentence with parallel structure? The recipe says to chop the onions, stir the sauce, and ___.","boil the pasta","the pasta should boil","boiling the pasta","pasta boiled"),
+    qLevel(2,"Which sentence uses either… or correctly?","You can either read a book or write a story.","You can either read a book or writing a story.","Either you can read a book or write a story.","You can either read a book or a story to write."),
+    qLevel(3,"Which sentence uses not only… but also correctly?","She not only sings but also plays the piano.","She not only sings but also playing the piano.","Not only does she sing but also plays the piano.","She not only sings but also the piano."),
+    qLevel(3,"Which sentence has a parallel comparison?","Riding a bike is easier than driving a car.","Riding a bike is easier than to drive a car.","To ride a bike is easier than driving a car.","Riding a bike is easier than a car."),
+    qLevel(3,"Which sentence is parallel?","The museum was crowded, noisy, and too warm.","The museum was crowded, noisy, and it was too warm.","The museum was crowded, had noise, and too warm.","The museum was crowded, noisy, and warmth."),
+    qLevel(3,"Which revision fixes the faulty parallelism? Our goals are to read more, exercising daily, and that we eat better.","Our goals are to read more, to exercise daily, and to eat better.","Our goals are reading more, to exercise daily, and eating better.","Our goals are to read more, exercise daily, and that we eat better.","Our goals are to read more, exercising daily, and to eat better."),
+    qLevel(3,"Which sentence uses neither… nor correctly?","The puppy neither ate its food nor drank its water.","The puppy neither ate its food nor its water.","Neither the puppy ate its food nor drank its water.","The puppy neither ate its food nor drinking its water."),
+    qLevel(3,"Which sentence has parallel structure?","I would rather stay home than go to the mall.","I would rather stay home than going to the mall.","I would rather staying home than go to the mall.","I would rather stay home than a trip to the mall.")
+  ]
+};
 /* ---------- end of the moved banks ---------- */
 
 export {
   ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, ENGLISH_UNIT4, ENGLISH_GROUPS4, ENGLISH_UNIT5, ENGLISH_GROUPS5, ENGLISH_UNIT6, ENGLISH_GROUPS6,
   ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS,
   ENGLISH_UNIT8, ENGLISH_GROUPS8, SENTENCE_QUESTIONS,
+  ENGLISH_UNIT9, ENGLISH_GROUPS9, RULE_QUESTIONS,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, HISTORY_UNIT6, HISTORY_GROUPS6,
   BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS,
   HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS,
@@ -3707,6 +3827,7 @@ export const LESSON_COURSES = [
   {id:'punctuation', title:'English Unit 6: Punctuation', skills:ENGLISH_UNIT6, groups:ENGLISH_GROUPS6},
   {id:'colons', title:'English Unit 7: Colons, Semicolons, and More', skills:ENGLISH_UNIT7, groups:ENGLISH_GROUPS7},
   {id:'sentences', title:'English Unit 8: Sentences and Clauses', skills:ENGLISH_UNIT8, groups:ENGLISH_GROUPS8},
+  {id:'conventions', title:'English Unit 9: Conventions of Standard English', skills:ENGLISH_UNIT9, groups:ENGLISH_GROUPS9},
   {id:'history', title:'History Unit 1: Origins of History', skills:HISTORY_UNIT1, groups:HISTORY_GROUPS},
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
@@ -3726,6 +3847,7 @@ export function builtInBank(courseId){
   if (courseId === 'history8') return HISTORY8_QUESTIONS;
   if (courseId === 'colons') return COLON_QUESTIONS;
   if (courseId === 'sentences') return SENTENCE_QUESTIONS;
+  if (courseId === 'conventions') return RULE_QUESTIONS;
   return courseId === 'bio1' ? BIO1_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS
     : courseId === 'history6' ? HISTORY6_QUESTIONS
     : courseId === 'history7' ? HISTORY7_QUESTIONS

@@ -372,6 +372,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'harbor-battleship', name: 'Harbor Battleship', emoji: '⚓', description: 'Pirates are hiding ships on a coordinate plane! Name your target’s coordinates to fire, plot the pirates’ shots, and use sonar to find their fleet.', src: '/arcade/harbor-battleship/', available: true },
   { id: 'shape-asteroids', name: 'Shape Asteroids', emoji: '☄️', description: 'Shape asteroids are flying at the ship! Tap one to freeze space, turn it to see it, and find its area or a missing side to blast it.', src: '/arcade/shape-asteroids/', available: true },
   { id: 'carnival', name: 'Carnival Midway', emoji: '🎪', description: 'Six carnival booths: pop balloons, toss rings, check riders’ heights and more, with equations and inequalities.', src: '/arcade/carnival/', available: true },
+  { id: 'rule-court', name: 'Rule Court', emoji: '🔨', description: 'Sentences are on trial at the Rule Library! Give the verdict, name the rule it broke, point to the culprit word, and pick the fix: agreement, fragments, run-ons, dangling modifiers and parallel structure.', src: '/arcade/rule-court/', available: true },
   { id: 'book-repair', name: 'Book Repair Desk', emoji: '📚', description: 'Books came back to the Pause Library with marks torn out. Pick the colon, semicolon, dash, hyphen, title style or ellipsis that fixes each one.', src: '/arcade/book-repair/', available: true },
   { id: 'sentence-snap', name: 'Sentence Snap', emoji: '🧩', description: 'Ninety seconds on the clock at the Sentence Library: sort sentence types, snap clauses into compound and complex sentences, slice subjects from predicates and fix fragments.', src: '/arcade/sentence-snap/', available: true },
   { id: 'power-lab', name: 'Punctuation Power Lab', emoji: '⚡', description: 'Tap the glowing spots to change the punctuation and watch your superhero change. Build the hero each mission needs!', src: '/arcade/power-lab/', available: true },
@@ -608,6 +609,7 @@ export type UnlockRule =
   | { type: 'station'; station: number }
   | { type: 'mastery'; skills: string[] }
   | { type: 'unitMastery' }
+  | { type: 'quiz'; n: number }   // a library building (English, History, Biology): pass its n-th lesson quiz (docs/REWARDS.md)
   | { type: 'sprint'; best: number }
   | { type: 'streak'; n: number };
 
@@ -676,6 +678,15 @@ const UNIT_SETS: [string, [string,string][], [string,string][]][] = [
   ['show',   [['🐩','Fifi the poodle'],['🐈','Duchess the show cat'],['🦒','Tallulah the giraffe'],['🦓','Stripes the zebra'],['🦁','King the lion']],
              [['🎀','Ribbons'],['📊','Score board'],['🎪','Show tent'],['🎺','Trumpet'],['🏆','Grand trophy']]]
 ];
+/* Library buildings (English, History, Biology) earn a set too (owner decision, Oct 30, 2026): the welcome pet and decor
+   when the building opens, slots 2 to 4 for passing its 1st, 2nd and 3rd lesson quiz (the last quiz if it has fewer),
+   and the legendary pair for passing the unit test. Each set lives in its own line so new units can add theirs. */
+const LIBRARY_SETS: [string, [string,string][], [string,string][]][] = [
+  ['elaSent',  [['🐊','Clause the crocodile'],['🦥','Pause the sloth'],['🦨','Fragment the skunk'],['🦏','Subject the rhino'],['🦖','Rex the sentence-saurus']],
+               [['🪑','Reading chair'],['🗂️','Card catalog'],['🔖','Bookmark banner'],['🖋️','Fountain pen'],['🗝️','Golden library key']]],
+  ['elaRules', [['🦛','Judge Hippo'],['🐦‍⬛','Gavel the raven'],['🐜','Clerk the ant'],['🦂','Rulebreaker the scorpion'],['🐆','Chief Justice Cheetah']],
+               [['🛎️','Court bell'],['🪵','Witness bench'],['🎖️','Medal of order'],['💼','Case briefcase'],['🕮','Golden rule book']]]
+];
 const SLOTS = ['welcome','s2','s3','s4','legend'] as const;
 // a unit with only 3 stations (Clock Tower, Pet Harbor) unlocks its 4th-slot reward at its last station
 const slotRule = (i: number, unit: string): UnlockRule => i === 0 ? {type:'unit'} : i === 4 ? {type:'unitMastery'} : {type:'station', station:Math.min(i + 1, SHOPS[unit]?.stations.length || i + 1)};
@@ -688,6 +699,12 @@ export const REWARDS: Reward[] = [
       list.map(([emoji, name], i): Reward => ({
         id: `${unit}_${kind}_${SLOTS[i]}`, kind, emoji, name, unit,
         unlock: slotRule(i, unit), price: PRICE[kind][i], legendary: i === 4 || undefined
+      })))),
+  ...LIBRARY_SETS.flatMap(([unit, pets, decor]) => (
+    [['pet', pets], ['decor', decor]] as const).flatMap(([kind, list]) =>
+      list.map(([emoji, name], i): Reward => ({
+        id: `${unit}_${kind}_${SLOTS[i]}`, kind, emoji, name, unit,
+        unlock: i === 0 ? {type:'unit'} : i === 4 ? {type:'unitMastery'} : {type:'quiz', n:i}, price: PRICE[kind][i], legendary: i === 4 || undefined
       }))))
 ];
 
@@ -750,7 +767,7 @@ export const BUILDINGS: Building[] = [
   {id:'elaPunct',  emoji:'🦸', name:'Superhero Factory',    unit:'Unit 6: End marks, commas, and apostrophes', hood:'g6', subject:'english', open:true},
   {id:'elaColon',  emoji:'⏸️', name:'Pause Library',        unit:'Unit 7: Colons, semicolons, and more', hood:'g6', subject:'english', open:true},
   {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Unit 8: Sentences and clauses', hood:'g6', subject:'english', open:true},
-  {id:'elaRules',  emoji:'📏', name:'Rule Library',         unit:'Unit 9: Conventions of standard English', hood:'g6', subject:'english'},
+  {id:'elaRules',  emoji:'📏', name:'Rule Library',         unit:'Unit 9: Conventions of standard English', hood:'g6', subject:'english', open:true},
   {id:'elaStyle',  emoji:'🪶', name:'Style Library',        unit:'Unit 10: Usage and style', hood:'g6', subject:'english'},
   {id:'elaVocab',  emoji:'🔤', name:'Word Library',         unit:'Vocabulary, word roots, and context clues', hood:'g6', subject:'english'},
   {id:'elaRead',   emoji:'🔍', name:'Reading Library',      unit:'Main idea, details, and inference', hood:'g6', subject:'english'},
