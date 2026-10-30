@@ -41,7 +41,7 @@ const SCENES = {
 const SCENE_RULES = [
   [/microscope/i,'lab'], [/cell model|cell detective/i,'cell'], [/pollinator/i,'garden'], [/greenhouse/i,'greenhouse'], [/butterfly house garden/i,'garden'], [/butterfly house/i,'greenhouse'],
   [/seed trail/i,'trail'], [/digestion/i,'tunnel'], [/nature center/i,'garden'],
-  [/duck pond/i,'pond'], [/feed garden|orchard/i,'garden'], [/petting zoo/i,'barn'],
+  [/duck pond/i,'pond'], [/feed garden|orchard/i,'garden'], [/petting zoo/i,'barn'], [/farm barn/i,'barn'],
   [/battuta|envoy|xuanzang|traveling merchant|monk and traveler/i,'travel'],
   [/cave/i,'cave'], [/ice age/i,'ice'], [/campfire|foraging band/i,'campfire'], [/herder/i,'pasture'],
   [/farm|wheat|abu hureyra/i,'field'], [/dilmun|bahrain|sailor|ships/i,'harbor'], [/nile|kush|nubia/i,'river'],

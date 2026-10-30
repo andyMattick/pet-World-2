@@ -994,6 +994,31 @@ body.in-room .topbar h1{width:fit-content; background:color-mix(in srgb,var(--su
 .typed-seg button[aria-pressed="true"]{background:var(--berry); color:#fff}
 .typed-seg button.correct{background:var(--mint); color:var(--mint-ink)}
 .typed-seg button.incorrect{background:var(--bad); color:#4A2E2A}
+/* 🐄 Farm Barn genetics: build a Punnett square, pedigrees and DNA figures (docs/SCIENCE-UNIT5.md) */
+.pb-labels{display:flex; flex-wrap:wrap; gap:4px 14px; margin:0; font-size:.95rem; color:var(--ink-soft)}
+.punnett-build{border-collapse:separate; border-spacing:6px; margin:0 auto}
+.punnett-build th{min-width:44px; font-size:1.3rem; text-align:center; color:var(--ink)}
+.punnett-build td{width:76px; height:64px; padding:0; border:3px solid var(--edge); border-radius:12px; background:color-mix(in srgb,var(--butter) 30%,var(--surface))}
+.gene-input{width:100%; min-width:0; height:100%; min-height:48px; box-sizing:border-box; border:0; border-radius:9px; background:transparent; color:var(--ink); font:inherit; font-size:1.5rem; font-weight:800; text-align:center; letter-spacing:.06em}
+.punnett-build th .gene-input{width:48px; min-height:44px; border:2px dashed var(--edge); background:var(--surface)}
+.gene-input:focus{outline:3px solid var(--berry); outline-offset:-3px}
+.gene-input.correct{background:var(--mint); color:var(--mint-ink)}
+.gene-input.incorrect{background:var(--bad); color:#4A2E2A}
+.punnett-build th .gene-input.correct{background:var(--mint); color:var(--mint-ink); border-style:solid}
+.punnett-build th .gene-input.incorrect{background:var(--bad); color:#4A2E2A; border-style:solid}
+.gene-figure{margin:6px 0 10px}
+.gene-fig{margin:0; padding:10px; border:2px solid var(--edge); border-radius:12px; background:var(--surface); overflow-wrap:anywhere}
+.gene-fig figcaption{margin-top:6px; font-size:.9rem; color:var(--ink-soft)}
+.pedigree{display:block; width:100%; max-width:420px; height:auto; margin:0 auto}
+.ped-line{stroke:var(--ink); stroke-width:2}
+.ped-un{fill:var(--surface); stroke:var(--ink); stroke-width:2.5}
+.ped-aff{fill:var(--ink); stroke:var(--ink); stroke-width:2.5}
+.ped-num{fill:var(--ink); font:700 13px var(--font)}
+.ped-key svg{vertical-align:-3px}
+.gene-dna div{margin:4px 0}
+.gene-dna code{font-size:1.05rem; letter-spacing:.08em; word-break:break-all}
+.codon-keys{font-size:.92rem}
+.codon-key{display:inline-block; margin:2px 6px 2px 0; padding:1px 6px; border:1px solid var(--edge); border-radius:8px; white-space:nowrap}
 .typed-words{font-size:1.25rem; line-height:2.4; margin:0}
 .typed-word{padding:4px 8px; border:2px solid transparent; border-radius:8px; background:transparent; color:var(--ink); font:inherit; cursor:pointer}
 .typed-word:hover:not(:disabled){border-color:var(--edge)}

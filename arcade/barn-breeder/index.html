@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barn Breeder</title>
+<!-- Pet World: 🐄 Barn Breeder, the Farm Barn's game (Biology Unit 5, docs/BARN-BREEDER.md, docs/ARCADE-GAMES.md).
+     Served at /arcade/barn-breeder/. It is a Vite page (vite.config.ts), not a public/ file, so the unit and the Arcade
+     use the same genetics: src/game/barnBreeder.js and src/shared/genetics.js. Played from the Farm Barn (?from=bio5) it
+     tells Pet World its result (barn:result, which pays coins); from the Arcade (?arcadeRun=…) it pays tickets. It never
+     counts toward the unit's practice, quizzes, tests or unlocks. -->
+<style>
+  :root{ --bg:#FBF3E4; --surface:#FFFFFF; --ink:#4A2E1F; --ink-soft:#7A5A45; --edge:#6B3A1F; --barn:#B5452F; --barn-deep:#8C2F1E; --hay:#F2D98B; --ok:#2E7D57; --bad:#B83659; --pick:#FFE9A8; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#22170F; --surface:#33241A; --ink:#F7E9DA; --ink-soft:#D2BCA6; --edge:#0F0905; --barn:#D2654D; --barn-deep:#F08B73; --hay:#5E4A1C; --ok:#7FD1B9; --bad:#FF9DB6; --pick:#5E4A1C; } }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button{font:inherit; color:inherit; cursor:pointer}
+  button:disabled{cursor:default; opacity:.6}
+  .wrap{max-width:760px; margin:0 auto; padding:10px 16px 32px}
+  h1{font-size:1.55em; margin:6px 0 4px} h2{font-size:1.15em; margin:0 0 6px} h3{font-size:1em; margin:10px 0 6px}
+  .muted{color:var(--ink-soft)}
+  .card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:12px; margin-top:10px}
+  .goal{border-color:var(--barn); background:linear-gradient(var(--surface),var(--surface)) padding-box}
+  .btn{border:3px solid var(--edge); background:var(--surface); border-radius:12px; padding:8px 14px; font-weight:700; min-height:44px}
+  .btn.go{background:var(--barn); color:#fff; border-color:var(--barn-deep)}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0}
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; background:var(--hay); font-weight:700; font-size:.9em}
+  .barn{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px}
+  .animal{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); border-radius:14px; padding:8px 10px}
+  .animal[aria-pressed="true"]{background:var(--pick); box-shadow:inset 0 0 0 3px var(--barn)}
+  .animal.new{animation:pop .5s ease-out}
+  .animal .top{display:flex; gap:6px; align-items:center; font-weight:800}
+  .animal .e{font-size:1.6em}
+  .tag{font-family:ui-monospace, Menlo, monospace; font-weight:800; letter-spacing:.06em; background:var(--hay); border-radius:6px; padding:0 6px}
+  .gen{font-size:.8em; color:var(--ink-soft)}
+  .chips{display:flex; flex-wrap:wrap; gap:6px}
+  .chips .btn{min-width:56px; padding:6px 10px}
+  .chips .btn[aria-pressed="true"]{background:var(--barn); color:#fff; border-color:var(--barn-deep)}
+  .msg{font-weight:800} .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .squares{display:flex; flex-wrap:wrap; gap:14px}
+  table.sq{border-collapse:separate; border-spacing:4px}
+  table.sq th{min-width:30px; font-family:ui-monospace, Menlo, monospace}
+  table.sq td{width:52px; height:38px; text-align:center; border:2px solid var(--edge); border-radius:8px; font-family:ui-monospace, Menlo, monospace; font-weight:800}
+  table.sq td.hit{background:var(--hay)}
+  .stats{display:flex; gap:10px; flex-wrap:wrap} .stats div{flex:1; min-width:120px; background:var(--surface); border:3px solid var(--edge); border-radius:14px; padding:10px; text-align:center} .stats b{display:block; font-size:1.3em}
+  @keyframes pop{0%{transform:scale(.6); opacity:0} 70%{transform:scale(1.05)} 100%{transform:scale(1); opacity:1}}
+  @media (prefers-reduced-motion: reduce){ .animal.new{animation:none} }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import { GOALS, CHIPS_ONE, CHIPS_TWO, chipText, sameChance, kindOf, looks, newSeason, goalById, startBarn, hasTarget, targetChance, makeBaby, squareFor, starsFor } from '../../src/game/barnBreeder.js';
+const params = new URLSearchParams(location.search), FROM_UNIT = params.get('from') === 'bio5', ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let best = 0; try { best = +localStorage.getItem('barn-breeder:best') || 0; } catch(e){}
+const NAMES = {f:['Bella','Hazel','Willow','Poppy','Honey','Ivy','Juniper','Luna','Marigold','Nutmeg','Olive','Pumpkin','Sage','Tulip','Violet','Wren'], m:['Ace','Bandit','Buster','Chester','Dusty','Fergus','Gus','Hank','Jasper','Moose','Ollie','Pepper','Rusty','Scout','Tucker','Ziggy']};
+let G = null;
+
+function intro(){
+  G = null;
+  app.innerHTML = `<h1>🐄 Barn Breeder</h1>
+    <p>The county fair is coming! Five judges each want one special animal. Pick a mother and a father from your barn, <b>predict the chance</b> that a baby will have the trait the judge wants, then breed them and see who is born.</p>
+    <div class="card"><b>How it works</b><ul style="margin:6px 0 0; padding-left:20px">
+      <li>Every animal wears a DNA tag with its genotype, like <span class="tag">Pp</span>.</li>
+      <li>Each breeding gives a female and a male baby. Babies join your barn, so you can breed them next year (that’s the F1 and the F2).</li>
+      <li>Each goal has a limit on breedings. Plan with Punnett squares!</li>
+      <li>A right prediction earns a coin. Reach goals and predict well for ⭐⭐⭐.</li></ul></div>
+    <p><button type="button" class="btn go" data-start>Start the fair season</button>${best ? ` <span class="muted">Best: ${'⭐'.repeat(best)}</span>` : ''}</p>`;
+}
+function startSeason(){
+  G = {season:newSeason(), gi:0, right:0, tries:0, goals:0, started:Date.now(), done:false, used:new Set()};
+  startGoal();
+}
+function startGoal(){
+  const goal = goalById(G.season[G.gi]);
+  G.goal = goal; G.barn = startBarn(goal); G.left = goal.limit; G.sel = {f:null, m:null}; G.guess = null; G.last = null; G.reached = false; G.year = 1;
+  render();
+}
+const animalById = id => G.barn.find(a => a.id === id);
+const tags = a => Object.values(a.g).map(g => `<span class="tag">${esc(g)}</span>`).join(' ');
+function animalHTML(a){
+  const k = kindOf(G.goal.species), on = G.sel[a.sex] === a.id, isNew = !G.last?.shown && G.last?.babies?.some(b => b.id === a.id);
+  return `<button type="button" class="animal${isNew ? ' new' : ''}" data-animal="${a.id}" aria-pressed="${on}" ${G.reached || !G.left ? 'disabled' : ''}>
+    <span class="top"><span class="e" aria-hidden="true">${k.emoji}</span>${esc(a.name)} ${a.sex === 'f' ? '♀' : '♂'}</span>
+    <span>${tags(a)}</span><span>${esc(looks(a))}</span><span class="gen">${a.gen === 'P' ? `${a.sex === 'f' ? k.female : k.male} from the start` : `${a.gen} ${a.sex === 'f' ? k.babyF : k.babyM}`}</span></button>`;
+}
+function render(){
+  const goal = G.goal, k = kindOf(goal.species), mom = animalById(G.sel.f), dad = animalById(G.sel.m);
+  const chips = Object.keys(goal.want).length > 1 ? CHIPS_TWO : CHIPS_ONE;
+  const females = G.barn.filter(a => a.sex === 'f'), males = G.barn.filter(a => a.sex === 'm');
+  let action = '';
+  if (G.reached) action = `<p class="msg ok" role="status">🎉 Blue ribbon! You bred ${esc(goal.title.toLowerCase())}.</p><button type="button" class="btn go" data-next>${G.gi < G.season.length - 1 ? 'Next judge' : 'See your season'}</button>`;
+  else if (!G.left) action = `<p class="msg bad" role="status">Out of breedings for this goal. The judge moves on.</p><button type="button" class="btn go" data-next>${G.gi < G.season.length - 1 ? 'Next judge' : 'See your season'}</button>`;
+  else if (mom && dad) action = `<h3>Predict: what is the chance that one baby ${esc(goal.ask)}?</h3>
+      <div class="chips" role="group" aria-label="Your prediction">${chips.map((c, i) => `<button type="button" class="btn" data-guess="${i}" aria-pressed="${G.guess === i}">${chipText(c)}</button>`).join('')}</div>
+      <div class="row"><button type="button" class="btn go" data-breed ${G.guess == null ? 'disabled' : ''}>Breed ${esc(mom.name)} × ${esc(dad.name)}</button></div>`;
+  else action = `<p class="muted">Tap one ${k.female} and one ${k.male} to breed.</p>`;
+  const last = G.last ? lastHTML() : '';
+  app.innerHTML = `<div class="row" style="margin:0"><h1 style="flex:1">🐄 Barn Breeder</h1><span class="pill">Judge ${G.gi + 1} of ${G.season.length}</span></div>
+    <div class="card goal"><h2>🏅 ${esc(goal.title)}</h2><p style="margin:0 0 6px">${esc(goal.judge)}</p>
+      <div class="row" style="margin:0"><span class="pill">Breedings left: ${G.left}</span><span class="pill">Predictions right: ${G.right} of ${G.tries}</span><span class="pill">Ribbons: ${G.goals}</span></div></div>
+    ${last}
+    <div class="card">${action}</div>
+    <h3>${k.emoji} ${k.female[0].toUpperCase() + k.female.slice(1)}s</h3><div class="barn">${females.map(animalHTML).join('')}</div>
+    <h3>${k.emoji} ${k.male[0].toUpperCase() + k.male.slice(1)}s</h3><div class="barn">${males.map(animalHTML).join('')}</div>`;
+  if (G.last) G.last.shown = true;   // the new babies pop in once
+}
+function squareHTML(sq, trait){
+  return `<table class="sq" aria-label="Punnett square for ${esc(trait)}"><tr><th></th>${sq.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>${[0, 1].map(i => `<tr><th>${esc(sq.rows[i])}</th>${[0, 1].map(j => { const b = sq.boxes[i * 2 + j]; return `<td class="${b.hit ? 'hit' : ''}">${esc(b.g)}</td>`; }).join('')}</tr>`).join('')}</table>`;
+}
+function lastHTML(){
+  const L = G.last, k = kindOf(G.goal.species), traits = Object.keys(G.goal.want);
+  const squares = traits.map(t => { const sq = squareFor(t, L.mom, L.dad, G.goal.want[t]), hits = sq.boxes.filter(b => b.hit).length; return `<div>${squareHTML(sq, t)}<div class="muted">${hits} of 4 boxes</div></div>`; }).join('');
+  const why = traits.length > 1 ? `Two genes on different chromosomes: multiply the chances. ${traits.map(t => `${squareFor(t, L.mom, L.dad, G.goal.want[t]).boxes.filter(b => b.hit).length}/4`).join(' × ')} = ${chipText(L.chance)}.` : `${L.chance[0]} of 4 boxes = ${chipText(L.chance)}.`;
+  return `<div class="card"><p class="msg ${L.right ? 'ok' : 'bad'}" role="status">${L.right ? `✅ Right! The chance was ${chipText(L.chance)}.` : `Not quite: you said ${chipText(L.guess)}, but the chance was ${chipText(L.chance)}.`}</p>
+    <p class="muted" style="margin:0 0 6px">${esc(L.mom.name)} (mother, down the side) × ${esc(L.dad.name)} (father, across the top). Shaded boxes have the trait. ${esc(why)}</p>
+    <div class="squares">${squares}</div>
+    <p style="margin:8px 0 0">Born: ${L.babies.map(b => `<b>${esc(b.name)}</b> ${b.sex === 'f' ? '♀' : '♂'} <span class="tag">${Object.values(b.g).join(' ')}</span> (${esc(looks(b))})${hasTarget(G.goal, b) ? ' 🏅' : ''}`).join(' and ')}.</p></div>`;
+}
+function newName(sex){
+  const free = NAMES[sex].filter(n => !G.used.has(n) && !G.barn.some(a => a.name === n));
+  const name = free.length ? free[Math.floor(Math.random() * free.length)] : `${sex === 'f' ? 'Girl' : 'Boy'} ${G.barn.length + 1}`;
+  G.used.add(name); return name;
+}
+function breed(){
+  const goal = G.goal, mom = animalById(G.sel.f), dad = animalById(G.sel.m);
+  if (!mom || !dad || G.guess == null || !G.left || G.reached) return;
+  const chips = Object.keys(goal.want).length > 1 ? CHIPS_TWO : CHIPS_ONE, guess = chips[G.guess], chance = targetChance(goal, mom, dad), right = sameChance(guess, chance);
+  G.tries++; if (right) G.right++; G.left--;
+  const gen = mom.gen === 'P' && dad.gen === 'P' ? 'F1' : 'F' + (Math.max(+(mom.gen.slice(1) || 0), +(dad.gen.slice(1) || 0)) + 1);
+  const babies = ['f', 'm'].map((sex, i) => ({...makeBaby(goal, mom, dad, sex), id:`b${G.barn.length + i}`, name:newName(sex), gen}));
+  G.barn.push(...babies);
+  G.last = {mom, dad, guess, chance, right, babies};
+  if (babies.some(b => hasTarget(goal, b))) { G.reached = true; G.goals++; }
+  G.sel = {f:null, m:null}; G.guess = null;
+  render();
+  app.querySelector('.card .msg')?.scrollIntoView({block:'center', behavior:'smooth'});
+}
+function finish(){
+  if (!G || G.done) return; G.done = true;
+  const stars = starsFor(G.goals, G.right, G.tries);
+  const result = {stars, right:G.right, tries:G.tries, goals:G.goals, ms:Date.now() - G.started};
+  const newBest = stars > best; if (newBest) { best = stars; try { localStorage.setItem('barn-breeder:best', String(best)); } catch(e){} }
+  try {
+    if (window.parent !== window) {
+      if (FROM_UNIT) window.parent.postMessage({type:'barn:result', result}, location.origin);
+      else if (ARCADE_RUN) window.parent.postMessage({type:'arcade:round-complete', gameId:'barn-breeder', runId:ARCADE_RUN, roundId:`season-${G.started}`, score:stars}, location.origin);
+    }
+  } catch(e){}
+  app.innerHTML = `<h1>${stars === 3 ? '🏆 Breeder of the Year!' : '🐄 The fair is over'}</h1>
+    <p><b>${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</b> ${stars === 3 ? 'Every ribbon, and sharp predictions. The judges are amazed!' : 'Nice breeding! Can you win every ribbon and predict three of every four litters right?'}</p>
+    <div class="stats"><div><b>${G.goals} of ${G.season.length}</b>ribbons won</div><div><b>${G.right} of ${G.tries}</b>predictions right</div><div><b>${'⭐'.repeat(best) || '—'}</b>best${newBest && stars ? ' 🎉' : ''}</div></div>
+    <p><button type="button" class="btn go" data-start>Play another season</button></p>`;
+}
+app.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.hasAttribute('data-start')) { startSeason(); return; }
+  if (!G) return;
+  if (b.dataset.animal) { const a = animalById(b.dataset.animal); G.sel[a.sex] = G.sel[a.sex] === a.id ? null : a.id; G.guess = null; render(); return; }
+  if (b.dataset.guess != null) { G.guess = +b.dataset.guess; render(); return; }
+  if (b.hasAttribute('data-breed')) { breed(); return; }
+  if (b.hasAttribute('data-next')) { if (G.gi < G.season.length - 1) { G.gi++; startGoal(); } else finish(); }
+});
+window.__barn = {get G(){ return G; }, GOALS, startSeason, breed};   // for tests
+intro();
+</script>
+</body>
+</html>

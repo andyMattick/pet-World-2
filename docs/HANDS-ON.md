@@ -5,7 +5,7 @@ The owner asked to make Biology more hands-on, with at least one hands-on activi
 ## 1. 🔬 This week's experiment (`src/shared/handsOn.js`)
 
 - **The plan row:** the daily plan has one row for the week, "🔬 Hands-on Biology this week: …". It turns ✅ once she sends one experiment or nature journal page that week (Monday to Sunday). It shows only while a Biology unit is open.
-- **The week's pick:** `weekHandsOn` chooses the next experiment she hasn't sent from her current Biology unit, then any experiment she hasn't sent. After all 17 are done, it picks the 🌿 Nature Journal, which can be done every week.
+- **The week's pick:** `weekHandsOn` chooses the next experiment she hasn't sent from her current Biology unit, then any experiment she hasn't sent. After all 23 are done, it picks the 🌿 Nature Journal, which can be done every week.
 - **On the unit page:** the "Hands-on at home" cards show all the experiments for each lesson, so she can do more than one in a week.
 
 **The experiments.** Each one has what you need, a safety line, steps, and three lab notes: predict, what happened, and explain.
@@ -22,6 +22,9 @@ The owner asked to make Biology more hands-on, with at least one hands-on activi
 | Biology 4 | Chromosomes and the cell cycle | 🧬 Pipe-Cleaner Mitosis |
 | Biology 4 | Meiosis and reproduction | 🧦 Sock Chromosomes: Meiosis on the Floor |
 | Biology 4 | Fertilization, development, and life cycles | 🔎 Life Cycle Hunt |
+| Biology 5 | Chromosomes | 🧦 Sock Chromosome Pairs |
+| Biology 5 | Mutations | 📝 Copy-Machine Mutations |
+| Biology 5 | Reproduction and genetic variation | 🫘 Bean Bag Babies |
 
 **Sending it.**
 - She writes all three notes, with at least 3 words each. Signed in, she also adds 1 to 3 photos.

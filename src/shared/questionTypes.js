@@ -8,15 +8,19 @@
      fill   Type the answer           {type:'fill', prompt, accept:['best answer', 'also right', …]}
      sort   Sort into groups          {type:'sort', prompt, groups:['A', 'B'], items:[[text, groupIndex], …]}
      pick   Tap the words             {type:'pick', prompt, sentence:'…', answers:[wordIndex, …]}
+     punnett Build a Punnett square   {type:'punnett', prompt, rows:[allele, allele], cols:[allele, allele], ask?:true, rowLabel, colLabel}
+            rows are the mother's two alleles (down the side), cols the father's (across the top). She types the two alleles
+            in each box; with ask:true she types the edges too. Capital letters matter; the order inside a box doesn't
+            ("bB" counts as "Bb"). Made by src/shared/genetics.js for the Farm Barn (docs/SCIENCE-UNIT5.md).
    Read by a grown-up (the teacher in the dashboard, or a parent at home behind the grown-up PIN):
      short  Short answer (1–3 sentences)   {type:'short', prompt, rubric:['…', …], model:'…', minWords}
      essay  Paragraph                      {type:'essay', prompt, rubric:['…', …], model:'…', minWords}
    Every question can also have difficulty (1–3). A question with no type is plain multiple choice. */
 import { questionId } from './questionIds';
 
-export const AUTO_TYPES = ['multi', 'two', 'order', 'fill', 'sort', 'pick'];
+export const AUTO_TYPES = ['multi', 'two', 'order', 'fill', 'sort', 'pick', 'punnett'];
 export const WRITTEN_TYPES = ['short', 'essay'];
-export const TYPE_LABELS = { mc: 'Multiple choice', multi: 'Select all', two: 'Two-part', order: 'Put in order', fill: 'Type the answer', sort: 'Sort', pick: 'Tap the words', short: 'Short answer', essay: 'Paragraph' };
+export const TYPE_LABELS = { mc: 'Multiple choice', multi: 'Select all', two: 'Two-part', order: 'Put in order', fill: 'Type the answer', sort: 'Sort', pick: 'Tap the words', punnett: 'Build a Punnett square', short: 'Short answer', essay: 'Paragraph' };
 export const typeOf = question => (question && WRITTEN_TYPES.concat(AUTO_TYPES).includes(question.type) ? question.type : 'mc');
 export const isWritten = question => WRITTEN_TYPES.includes(typeOf(question));
 
@@ -27,6 +31,27 @@ export const pickWords = sentence => String(sentence ?? '').split(/\s+/).filter(
 /* a word without the punctuation around it: "ball." -> "ball" */
 export const bareWord = word => String(word).replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
 export const wordCount = text => (String(text ?? '').match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) || []).length;
+/* ---------- Build a Punnett square (type punnett) ---------- */
+const alleleCmp = (a, b) => { const la = a.toLowerCase(), lb = b.toLowerCase(); return la !== lb ? (la < lb ? -1 : 1) : a === b ? 0 : a === a.toUpperCase() ? -1 : 1; };
+/** a typed box: spaces dropped, capital letters kept, letters in the usual order ("b B" → "Bb") */
+export const genoKey = text => [...String(text ?? '').replace(/[^A-Za-z]/g, '')].sort(alleleCmp).join('');
+export const punnettSlots = question => (question.ask ? 8 : 4);
+export const punnettBoxes = (rows, cols) => rows.flatMap(r => cols.map(c => genoKey(r + c)));
+/** right or wrong for each box she typed: with ask, the edges [top 1, top 2, side 1, side 2] come first, and the four boxes
+    are checked against her own edges when those are right (any order), so a square with the parents swapped is fine too */
+export function punnettMarks(question, response){
+  const r = Array.isArray(response) ? response.map(x => String(x ?? '').trim()) : [], one = s => (/^[A-Za-z]$/.test(s) ? s : '');
+  const sameAlleles = (got, want) => [...got].sort().join() === [...want].sort().join();
+  let rows = question.rows, cols = question.cols, edges = [], boxes = r;
+  if (question.ask) {
+    const top = [one(r[0]), one(r[1])], side = [one(r[2]), one(r[3])];
+    const topOk = sameAlleles(top, question.cols), sideOk = sameAlleles(side, question.rows);
+    edges = [...top.map((a, i) => topOk || a === question.cols[i]), ...side.map((a, i) => sideOk || a === question.rows[i])];
+    if (topOk) cols = top; if (sideOk) rows = side; boxes = r.slice(4);
+  }
+  const want = punnettBoxes(rows, cols);
+  return [...edges, ...want.map((w, i) => { const got = String(boxes[i] ?? '').replace(/\s+/g, ''); return /^[A-Za-z]{2}$/.test(got) && genoKey(got) === w; })];
+}
 const sameSet = (a, b) => Array.isArray(a) && a.length === b.length && [...a].sort((x, y) => x - y).join() === [...b].sort((x, y) => x - y).join();
 
 /* The "correct answer" text that goes into the question's id. Plain multiple choice keeps options[answer],
@@ -39,6 +64,7 @@ export function answerKey(question){
     case 'fill': return question.accept[0];
     case 'sort': return question.items.map(([text, group]) => `${text}=${question.groups[group]}`).join(' | ');
     case 'pick': return question.answers.map(i => bareWord(pickWords(question.sentence)[i])).join(' | ');
+    case 'punnett': return `${question.rows.join('')} x ${question.cols.join('')}`;
     case 'short': case 'essay': return typeOf(question);
     default: return question.options[question.answer];
   }
@@ -54,6 +80,7 @@ export function answerText(question){
     case 'fill': return question.accept[0];
     case 'sort': return question.groups.map((group, g) => `${group}: ${question.items.filter(item => item[1] === g).map(item => item[0]).join(', ')}`).join(' · ');
     case 'pick': return question.answers.map(i => bareWord(pickWords(question.sentence)[i])).join(', ');
+    case 'punnett': return `${question.rowLabel || 'Side'}: ${question.rows.join(', ')} · ${question.colLabel || 'Top'}: ${question.cols.join(', ')} · Boxes: ${punnettBoxes(question.rows, question.cols).join(', ')}`;
     case 'short': case 'essay': return question.model || '';
     default: return question.options[question.answer];
   }
@@ -70,6 +97,7 @@ export function responseText(question, response){
     case 'fill': return String(response ?? '').trim() || '(blank)';
     case 'sort': return question.groups.map((group, g) => `${group}: ${question.items.filter((_, i) => list[i] === g).map(item => item[0]).join(', ') || '–'}`).join(' · ');
     case 'pick': return list.map(i => bareWord(pickWords(question.sentence)[i])).join(', ') || '(nothing tapped)';
+    case 'punnett': { const t = list.map(x => String(x ?? '').trim() || '–'); return question.ask ? `Top: ${t.slice(0, 2).join(', ')} · Side: ${t.slice(2, 4).join(', ')} · Boxes: ${t.slice(4).join(', ')}` : `Boxes: ${t.join(', ')}`; }
     case 'short': case 'essay': return String(response ?? '');
     default: return question.options[response] ?? '';
   }
@@ -84,6 +112,7 @@ export function responseReady(question, response){
     case 'order': return list.length === question.items.length;
     case 'fill': return normalizeTyped(response).length > 0;
     case 'sort': return question.items.every((_, i) => Number.isInteger(list[i]));
+    case 'punnett': return list.length === punnettSlots(question) && list.every(x => String(x ?? '').trim().length > 0);
     case 'short': case 'essay': return wordCount(response) >= (question.minWords || 1);
     default: return Number.isInteger(response);
   }
@@ -97,6 +126,7 @@ export function checkTyped(question, response){
     case 'order': return Array.isArray(response) && response.length === question.items.length && response.every((item, i) => item === i);
     case 'fill': return question.accept.some(ok => normalizeTyped(ok) === normalizeTyped(response));
     case 'sort': return Array.isArray(response) && question.items.every((item, i) => response[i] === item[1]);
+    case 'punnett': return Array.isArray(response) && response.length === punnettSlots(question) && punnettMarks(question, response).every(Boolean);
     case 'short': case 'essay': return false;
     default: return response === question.answer;
   }
@@ -139,6 +169,7 @@ export function typedProblems(question){
     if (words.length < 3) p.push('pick needs a sentence');
     else if (!Array.isArray(question.answers) || !question.answers.length || question.answers.length >= words.length || !question.answers.every(i => index(i, words) && bareWord(words[i]))) p.push('pick answers must be word positions in the sentence');
   }
+  if (type === 'punnett') { const two = list => Array.isArray(list) && list.length === 2 && list.every(a => /^[A-Za-z]$/.test(a)); if (!two(question.rows) || !two(question.cols)) p.push('punnett needs two single-letter alleles for rows and for cols'); }
   if (type === 'short' || type === 'essay') {
     if (!Array.isArray(question.rubric) || question.rubric.length < 2 || question.rubric.length > 4 || !question.rubric.every(text)) p.push('written questions need 2 to 4 rubric points');
     if (!text(question.model)) p.push('written questions need a model answer for the grown-up');

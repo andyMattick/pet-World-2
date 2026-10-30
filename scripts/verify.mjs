@@ -171,7 +171,7 @@ const rewardRegistry = read('src/shared/registry.ts');
 const cafeRewards = rewardRegistry.match(/const cafeRewards[\s\S]*?\n\];/)?.[0] || '';
 const unitSets = rewardRegistry.match(/const UNIT_SETS[\s\S]*?\n\];/)?.[0] || '';
 const librarySets = rewardRegistry.match(/const LIBRARY_SETS[\s\S]*?\n\];/)?.[0] || '';
-if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 14 || (librarySets.match(/^  \['/gm) || []).length !== 3)) problems.push('src/shared/registry.ts should define REWARDS.length === 186 (Sentence Library and Rule Library sets added Oct 30, 2026; the Butterfly House set the same day)');
+if (rewardRegistry && ((cafeRewards.match(/\{ id:/g) || []).length !== 16 || (unitSets.match(/^  \['/gm) || []).length !== 14 || (librarySets.match(/^  \['/gm) || []).length !== 4)) problems.push('src/shared/registry.ts should define REWARDS.length === 196 (Sentence Library, Rule Library, Butterfly House and Farm Barn sets added Oct 30, 2026)');
 if (rewardRegistry && !rewardRegistry.includes('export const BUILDINGS')) problems.push('src/shared/registry.ts is missing the shared buildings registry');
 for (const ex of ['export const backendConfigured', 'export function makeClient']) need('src/lib/supabase.ts', ex);
 for (const m of ['async restore(', 'async roster(', 'async join(', 'async signOut(', 'saveSoon(', 'log(table', 'async flush(']) need('src/lib/studentBackend.ts', m);
@@ -197,6 +197,9 @@ need('src/shared/questionBanks.js', 'const BIO3_QUESTIONS', 'Biology Unit 3 ques
 need('public/arcade/greenhouse-keeper/index.html', 'greenhouse:result', 'Greenhouse Keeper tells Pet World its score (GREENHOUSE-KEEPER.md)');
 need('src/shared/questionBanks.js', 'const BIO4_QUESTIONS', 'Biology Unit 4 questions (SCIENCE-UNIT4.md)');
 need('public/arcade/life-cycle-lab/index.html', 'lifecycle:result', 'the Life Cycle Lab tells Pet World its score (LIFE-CYCLE-LAB.md)');
+need('src/shared/questionBanks.js', 'const BIO5_QUESTIONS', 'Biology Unit 5 questions, the Farm Barn (SCIENCE-UNIT5.md)');
+need('src/shared/genetics.js', 'export function geneticsQuestion(', 'the Farm Barn’s generated genetics problems (SCIENCE-UNIT5.md)');
+need('arcade/barn-breeder/index.html', 'barn:result', 'Barn Breeder tells Pet World its result (BARN-BREEDER.md)');
 need('src/game/game.js', 'function openHelpCard(', '✋ I have a question (QUESTIONS.md)');
 need('src/teacher/report.ts', 'function questionsWaitingHTML(', 'teacher sees ✋ questions waiting (QUESTIONS.md)');
 need('src/shared/questionBanks.js', 'const PREPOSITION_QUESTIONS', 'English Unit 5 questions (ENGLISH-UNIT5.md)');
@@ -238,6 +241,11 @@ for (const [, src] of rewardRegistry.matchAll(/src: '(\/arcade\/[^']+\/)', avail
 
 // Owner rule (CLAUDE.md, "Games go in the unit and in the Arcade"): every unit game is also an Arcade game
 for (const [id, inUnit] of Object.entries({'chefs-rush':'function openChefRush(', 'pet-surgery':'function openSurgery(', 'supermarket-dash':'function openDash(', 'penguin-push':'function openPenguin(', 'potion-detective':'function openDetective(', 'carnival':'function openCarnival(', 'shape-asteroids':'function openAsteroids(', 'harbor-battleship':'function openBattleship(', 'parcel-post':'function openParcel(', 'pet-show':'function openPetShow(', 'pax-oeconomica':'function openPax(', 'greenhouse-keeper':'function openGreenhouse(', 'life-cycle-lab':'function openLifeCycle(', 'link-games':'function ggameCardsHTML(', 'power-lab':'function heroLabCardHTML(', 'book-repair':'function bookRepairCardHTML(', 'rule-court':'function ruleCourtCardHTML(', 'sentence-snap':'function sentenceSnapCardHTML('})) {
+  if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
+  if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
+}
+// 🐄 Barn Breeder (Biology Unit 5, the Farm Barn) is a unit game too
+for (const [id, inUnit] of [['barn-breeder', 'function openBarnBreeder(']]) {
   if (!game.includes(inUnit)) problems.push(`The unit game "${id}" is missing from its unit (${inUnit} in src/game/game.js)`);
   if (!new RegExp(`id: '${id}'[^\n]*available: true`).test(rewardRegistry)) problems.push(`The unit game "${id}" is missing from the Arcade (ARCADE_GAMES in src/shared/registry.ts)`);
 }

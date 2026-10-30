@@ -66,6 +66,7 @@ export const UNIT_TESTS: Record<string, [string, string]> = {
   history: ['historyProgress', 'history:final-test'], history2: ['historyProgress', 'history2:final-test'],
   history3: ['historyProgress', 'history3:final-test'], history4: ['historyProgress', 'history4:final-test'], history5: ['historyProgress', 'history5:final-test'], history7: ['historyProgress', 'history7:final-test'],
   bio1: ['scienceProgress', 'bio1:final-test'], bio2: ['scienceProgress', 'bio2:final-test'], bio3: ['scienceProgress', 'bio3:final-test'], bio4: ['scienceProgress', 'bio4:final-test'],
+  bio5: ['scienceProgress', 'bio5:final-test'],   // the Farm Barn
   history6: ['historyProgress', 'history6:final-test'],
   history8: ['historyProgress', 'history8:final-test'],
   history9: ['historyProgress', 'history9:final-test']

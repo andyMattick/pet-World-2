@@ -40,6 +40,9 @@ import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideA
 import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS, BIO_UNIT4, BIO_GROUPS4, BIO4_QUESTIONS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
 import { ENGLISH_UNIT9, ENGLISH_GROUPS9, RULE_QUESTIONS } from '../shared/questionBanks';   // English Unit 9, the Rule Library (docs/ENGLISH-UNIT9.md)
 import { HISTORY_UNIT8, HISTORY_GROUPS8, HISTORY8_QUESTIONS } from '../shared/questionBanks';   // History Unit 8: Global Conflict
+import { BIO_UNIT5, BIO_GROUPS5, BIO5_QUESTIONS } from '../shared/questionBanks';   // Biology Unit 5: Inheritance and variation (the Farm Barn)
+import { geneticsQuestions } from '../shared/genetics';   // the Farm Barn's generated genetics problems (docs/SCIENCE-UNIT5.md)
+import { punnettSlots, punnettMarks } from '../shared/questionTypes';   // 🐄 Build a Punnett square answers
 
 /* ===================== CORE (no DOM) ===================== */
 const rand = (a,b) => a + Math.floor(Math.random()*(b-a+1));
@@ -160,7 +163,7 @@ function normalize(raw){
   s.deletedBooks = Array.isArray(s.deletedBooks) ? s.deletedBooks.filter(id => typeof id === 'string').slice(-100) : [];   // so a merge never brings a deleted book back
   s.historyProjects = normalizeProjectStore(s.historyProjects, [...new Set(['history','historylab','history2','history3','history4','history5','prepositions','prepositionslab','prepositionslab2', ...[6, 7, 8, 9].flatMap(n => ['', 'lab', 'lab2', 'lab3'].map(x => `history${n}${x}`))])]);   // Units 6–9: each unit's projects (pick-one choices use the lab keys)
   s.gateOpen = Object.fromEntries(Object.entries(s.gateOpen && typeof s.gateOpen === 'object' ? s.gateOpen : {}).filter(([k, v]) => typeof k === 'string' && v === true));   // lessons a grown-up previewed and unlocked (skill gate:true)   // English projects are kept here too
-  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3','bio3','bio3lab','bio4','bio4lab']);
+  s.scienceProjects = normalizeProjectStore(s.scienceProjects, ['bio1','bio1lab','bio2','bio2lab','bio2lab2','bio2lab3','bio3','bio3lab','bio4','bio4lab','bio5','bio5lab']);
   if (s.readingSelection && !s.readingBooks.some(book => book.id === s.readingSelection.bookId && (s.readingSelection.chapterId == null || book.chapters.some(chapter => chapter.id === s.readingSelection.chapterId)))) s.readingSelection = null;
   if (!raw || !Object.prototype.hasOwnProperty.call(raw, 'stationsOpenedBefore') || raw.stationsOpenedBefore === null) {
     s.stationsOpenedBefore = Object.fromEntries(Object.values(SHOPS).map(shop => [shop.id,
@@ -223,6 +226,8 @@ function normalize(raw){
       games:(Array.isArray(s.greenhouse?.games) ? s.greenhouse.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), jobs:Math.max(0, Math.min(8, +g.jobs || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🌺 Greenhouse Keeper (docs/GREENHOUSE-KEEPER.md)
     s.lifecycle = {best:Math.max(0, Math.min(3, Math.round(+s.lifecycle?.best || 0))), day:typeof s.lifecycle?.day === 'string' ? s.lifecycle.day : '', coinsToday:Math.max(0, Math.round(+s.lifecycle?.coinsToday || 0)),
       games:(Array.isArray(s.lifecycle?.games) ? s.lifecycle.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, room:['monarch','cycles','cells'].includes(g.room) ? g.room : 'monarch', stars:Math.max(0, Math.min(3, +g.stars || 0)), steps:Math.max(0, Math.min(12, +g.steps || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🦋 Life Cycle Lab (docs/LIFE-CYCLE-LAB.md)
+    s.barnBreeder = {best:Math.max(0, Math.min(3, Math.round(+s.barnBreeder?.best || 0))), day:typeof s.barnBreeder?.day === 'string' ? s.barnBreeder.day : '', coinsToday:Math.max(0, Math.round(+s.barnBreeder?.coinsToday || 0)),
+      games:(Array.isArray(s.barnBreeder?.games) ? s.barnBreeder.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, Math.round(+g.stars || 0))), right:Math.max(0, Math.min(40, Math.round(+g.right || 0))), tries:Math.max(0, Math.min(40, Math.round(+g.tries || 0))), goals:Math.max(0, Math.min(6, Math.round(+g.goals || 0)))}))};   // 🐄 Barn Breeder (docs/BARN-BREEDER.md)
     s.chat = {seenAt:Math.max(0, +s.chat?.seenAt || 0), replies:(Array.isArray(s.chat?.replies) ? s.chat.replies : []).filter(r => r && typeof r.text === 'string' && Number.isFinite(+r.at)).slice(-60).map(r => ({id:String(r.id || '').slice(0, 40), at:+r.at, text:String(r.text).slice(0, 1000)}))};   // 💬 messages with a grown-up (docs/CHAT.md)
     s.bible = normalizeBible(s.bible);   // ✝️ Bible (docs/BIBLE.md)
     s.help = normalizeHelp(s.help);   // ✋ questions for the teacher (docs: QUESTIONS.md)
@@ -6267,6 +6272,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'pax-oeconomica') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/PAX-OECONOMICA.md)
   else if (run.gameId === 'life-cycle-lab') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a round (docs/LIFE-CYCLE-LAB.md)
   else if (run.gameId === 'greenhouse-keeper') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/GREENHOUSE-KEEPER.md)
+  else if (run.gameId === 'barn-breeder') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a fair season (docs/BARN-BREEDER.md)
   else if (run.gameId === 'parcel-post') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/PARCEL-POST.md)
   else if (run.gameId === 'harbor-battleship') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a battle (docs/HARBOR-BATTLESHIP.md)
   else if (run.gameId === 'shape-asteroids') earned = Math.max(0, Math.min(3, score));   // 1 ticket per wave survived, up to 3 (docs/SHAPE-ASTEROIDS.md)
@@ -6833,7 +6839,7 @@ const handsOnKey = id => (id === 'nature' ? `nature:${handsOnWeek()}` : id);
 const handsOnEntry = id => S.handsOn.entries[handsOnKey(id)] || null;
 const handsOnSentIds = () => Object.values(S.handsOn.entries).filter(e => e.sentAt && e.id !== 'nature').map(e => e.id);
 const handsOnDoneThisWeek = () => Object.values(S.handsOn.entries).some(e => e.sentAt && weekOf(logDayKey(new Date(e.sentAt))) === handsOnWeek());
-const bioOpen = () => ['bioChem', 'bioCells', 'bioEnergy', 'bioDivide'].some(id => unitOpen(id));
+const bioOpen = () => ['bioChem', 'bioCells', 'bioEnergy', 'bioDivide', 'bioGenes'].some(id => unitOpen(id));
 const currentBioCourse = () => unitCourse(nextUnit('biology')?.id || 'bioChem') || 'bio1';
 function handsOnPick(){ return weekHandsOn(currentBioCourse(), handsOnSentIds()); }
 function handsOnPlanRow(){
@@ -8539,6 +8545,42 @@ window.addEventListener('message', e => {
   save();
   toast(`🦋 ${roomName}: ${right} of ${steps} right!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= LIFECYCLE_COINS_PER_DAY ? ' (Today’s Life Cycle Lab coins are all earned.)' : ''}`);
 });
+/* ---------- 🐄 Barn Breeder (arcade/barn-breeder, docs/BARN-BREEDER.md) ----------
+   Biology Unit 5's game: a fair season of breeding goals at the Farm Barn. She picks two animals to breed, predicts the
+   chance of the target trait before the babies are born, and breeds over generations (F1, F2) to reach each goal. It
+   opens from a card on the Farm Barn unit page and is also an Arcade game. Played from the unit it pays Pet World coins:
+   1 per right prediction, up to BARN_COINS_PER_DAY a day. It never counts toward practice, quizzes, tests or unlocks. */
+const BARN_COINS_PER_DAY = 20;
+function barnBreederCardHTML(courseId){
+  if (courseId !== 'bio5') return '';
+  const best = S.barnBreeder?.best || 0, n = S.barnBreeder?.games?.length || 0;
+  return `<section class="ela-final-assessment"><div><h3>🐄 Barn Breeder</h3><p class="muted">Breed blue-ribbon animals for the county fair: predict the odds of every litter, then breed over generations to hit each goal · ${n ? `${n} season${n === 1 ? '' : 's'} played${best ? `, best ${'⭐'.repeat(best)}` : ''}` : 'Not played yet'}</p></div><button type="button" class="btn small berry" data-barn-open>Play</button></section>`;
+}
+function openBarnBreeder(){
+  if ($('#barnBreederWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'barnBreederWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Barn Breeder');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🐄 Barn Breeder</b><button type="button" class="btn small" data-barn-close>Done</button></div><iframe src="/arcade/barn-breeder/?from=bio5" title="Barn Breeder"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-barn-close]').addEventListener('click', () => { el.remove(); if (!$('#scr-library').hidden && $('#libraryWrap [data-barn-open]')) renderEnglishUnit('bio5'); });
+}
+$('#libraryWrap').addEventListener('click', e => { if (e.target.closest('[data-barn-open]')) openBarnBreeder(); });
+window.addEventListener('message', e => {
+  const frame = $('#barnBreederWrap iframe');
+  if (e.origin !== location.origin || e.data?.type !== 'barn:result' || !frame || e.source !== frame.contentWindow) return;
+  const r = e.data.result || {}, stars = Math.max(0, Math.min(3, Math.round(+r.stars || 0))), goals = Math.max(0, Math.min(6, Math.round(+r.goals || 0)));
+  const tries = Math.max(0, Math.min(40, Math.round(+r.tries || 0))), right = Math.max(0, Math.min(tries, Math.round(+r.right || 0)));
+  const c = S.barnBreeder, day = logDayKey();
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  const newBest = stars > c.best;
+  c.games = [...c.games, {t:Date.now(), stars, right, tries, goals}].slice(-30);
+  if (newBest) c.best = stars;
+  const coins = Math.min(right, Math.max(0, BARN_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  logEvent({k:'barnBreeder', course:'bio5', s:right, n:tries, title:`${right} of ${tries} litter odds predicted right, ${goals} breeding goal${goals === 1 ? '' : 's'} reached`});
+  save();
+  toast(`🐄 ${right} of ${tries} predictions right, ${goals} goal${goals === 1 ? '' : 's'} reached!${stars ? ` ${'⭐'.repeat(stars)}` : ''}${newBest && stars ? ' A new best!' : ''}${coins ? ` +${coins} 🪙` : c.coinsToday >= BARN_COINS_PER_DAY ? ' (Today’s Barn Breeder coins are all earned.)' : ''}`);
+});
 /* ---------- ✝️ Bible (docs/BIBLE.md) ----------
    Turned on for one student by a grown-up (teacher app → her page → ✝️ Bible, quiz_overrides "bible"). It comes first
    every day, before the morning brain stretch, the theme question and the warm-up: until it's done, opening anything else
@@ -10237,7 +10279,7 @@ $('#town').addEventListener('click', e => {
 });
 
 const isHistoryCourse = id => id === 'history' || id === 'history2' || id === 'history3' || id === 'history4' || id === 'history5' || id === 'history6' || id === 'history7' || id === 'history8' || id === 'history9';
-const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',bioEnergy:'bio3',bioDivide:'bio4',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
+const HISTORY_BUILDING_COURSE = {histOrigins:'history',histEarly:'history2',histAgrarian:'history3',histEmpires:'history4',histWebs:'history5',bioChem:'bio1',bioCells:'bio2',bioEnergy:'bio3',bioDivide:'bio4',bioGenes:'bio5',histGlobal1:'history6',histLong19:'history7',histConflict:'history8',histGlobal2:'history9'};
 const isScienceCourse = id => /^bio\d+$/.test(id);
 const isProjectCourse = id => isHistoryCourse(id) || isScienceCourse(id) || id === 'prepositions';
 const progressStore = id => id === 'math' ? S.mathThink : isHistoryCourse(id) ? S.historyProgress : isScienceCourse(id) ? S.scienceProgress : S.elaProgress;
@@ -10347,6 +10389,13 @@ const ROLE_CARDS = {
   reproTypes4:{emoji:'🌱',who:'a tour guide in the Butterfly House Garden',where:'Pet World Butterfly House',intro:'Gardeners are rooting plant cuttings next to bean seeds sprouting in trays, and your group asks which new plants are copies.'},
   development4:{emoji:'🐣',who:'a tour guide at the Butterfly House’s Egg Lab',where:'Pet World Butterfly House',intro:'Under the microscope, a frog egg has just been fertilized and is starting to divide, and the visitors can’t stop watching.'},
   lifeCycles4:{emoji:'🦋',who:'a tour guide at the Butterfly House’s Chrysalis Window',where:'Pet World Butterfly House',intro:'Green chrysalises hang in rows behind the glass, and one is turning see-through. Your group wants to know what happens next.'},
+  /* Biology Unit 5: the Farm Barn (docs/SCIENCE-UNIT5.md) */
+  chromU:{emoji:'🔬',who:'a tour guide at the Farm Barn’s microscope corner',where:'Pet World Farm Barn',intro:'A microscope shows a calf’s cells, and a poster of chromosomes hangs above the hay bales.'},
+  chromA:{emoji:'🐴',who:'a tour guide at the Farm Barn’s stable',where:'Pet World Farm Barn',intro:'A horse, a donkey and a mule share the stable, and visitors want to know why they’re different.'},
+  mutA:{emoji:'🐂',who:'a tour guide at the Farm Barn’s cattle stalls',where:'Pet World Farm Barn',intro:'A muscly Belgian Blue bull stands next to a slick-coated cow and a polled Holstein.'},
+  sexVarU:{emoji:'🐷',who:'a tour guide at the Farm Barn’s piglet pen',where:'Pet World Farm Barn',intro:'A new litter of piglets tumbles in the straw, and no two look exactly alike.'},
+  vocabA:{emoji:'🐑',who:'a tour guide at the Farm Barn’s sheep fold',where:'Pet World Farm Barn',intro:'White and black lambs, roan calves and blue chickens wear name tags with their genotypes.'},
+  punnettA:{emoji:'🐄',who:'a tour guide at the Farm Barn’s breeding board',where:'Pet World Farm Barn',intro:'A big chalkboard Punnett square shows which calves the farm expects this spring.'},
   /* History Unit 6 (Oct 28, 2026). The Transatlantic Slave Trade (slaveTrade) has no role card on purpose (docs/HARD-LESSONS.md). */
   mongolEmpire:{emoji:'🐎',who:'a rider in the yam, the Mongol relay post',where:'the Mongol Empire, about 1260 CE',intro:'You carry messages and travelers’ passes from station to station across the empire. People along the road ask you about the Mongols.'},
   blackDeath:{emoji:'🕯️',who:'a shopkeeper in Florence',where:'Florence, Italy, 1348 CE',intro:'A terrible sickness has reached your city from the ports. Neighbors and travelers ask you what you know about it.'},
@@ -10529,6 +10578,20 @@ const HISTORY_PROJECTS = {
     {key:'photo',kind:'photo',label:'4. Take a photo of a larva, a pupa, and a beetle side by side (a spoon or a dish works).'},
     {key:'results',label:'5. Use your numbers: on which day did each container get its first pupa and its first beetle? How many days apart were they?'},
     {key:'conclusion',label:'6. Was your hypothesis supported? Which kind of metamorphosis did you see, and how do you know? Name one source of error and how you would fix it.'}]},
+  /* Biology Unit 5: a barn family tree and a coin-toss lab (docs/SCIENCE-UNIT5.md) */
+  bio5:{title:'Barn Family Tree: Follow One Trait',summary:'Make a family tree (a pedigree) for one trait in a family of farm animals, real or made up, and use alleles and Punnett squares to explain it. Draw it by hand, then add a photo of it.',steps:[
+    {key:'trait',label:'1. Choose a trait from the Farm Barn (horns or no horns, black or red coat, white or black wool, or roan) and say which allele is dominant, or if it is codominant.'},
+    {key:'family',label:'2. Describe your family of animals over three generations: who the parents are, their offspring, and the grand-offspring. Which animals show the trait?'},
+    {key:'genotypes',label:'3. Write the genotype of every animal you can figure out. For one animal, explain how you knew (for example, “its calf had horns, so it must carry p”).'},
+    {key:'square',label:'4. Pick one pair in your tree and do their Punnett square. What is the chance their next offspring shows the recessive trait?'},
+    {key:'tree',kind:'photo',label:'5. Draw your family tree on paper: squares for males, circles for females, filled shapes for the trait. Label each animal’s genotype. Take a photo and add it here.'},
+    {key:'sources',label:'6. List the sources you used (the Khan videos, books, websites) so your teacher can check them.'}]},
+  bio5lab:{title:'Experiment: Coin-Toss Calves',summary:'Two coins stand for two Pp parents: heads is P (no horns) and tails is p (horns). Toss both coins to “make” a calf, 40 times, and compare your calves with a Punnett square’s prediction. No special safety needs: toss gently over a table.',steps:[
+    {key:'question',label:'1. Do the Pp × Pp Punnett square. Predict how many of 40 calves will be PP, Pp and pp, and how many will have horns.'},
+    {key:'tally',kind:'table',cols:['Calves','PP (two heads)','Pp (one of each)','pp (two tails)'],num:[1,2,3],rows:4,rowLabels:['1 to 10','11 to 20','21 to 30','31 to 40'],label:'2. Toss both coins together for each calf. Tally each group of 10 calves in a row.'},
+    {key:'photo',kind:'photo',label:'3. Take a photo of your coins and your tally sheet.'},
+    {key:'results',label:'4. Add up your columns. How many calves had horns (pp)? What fraction and percent of the 40 is that?'},
+    {key:'compare',label:'5. Compare with your prediction. Were you exactly right? Why do real results often come out a little different from a Punnett square, and how would tossing 400 times change that?'}]},
   history4:{title:'Belief Systems and Empires Case Study',summary:'Show how a belief system and an empire helped (or challenged) each other.',steps:[
     {key:'subject',label:'1. Choose one belief system and one empire from this unit. Say where and when each existed.'},
     {key:'spread',label:'2. Explain how the belief system spread: which people, routes, or networks carried it?'},
@@ -10616,6 +10679,8 @@ const englishCourse = course => course === 'sentences'
     ? {id:'bio3',building:'bioEnergy',title:'Biology Unit 3: Matter and Energy in Organisms',skills:BIO_UNIT3,groups:BIO_GROUPS3,finalKey:'bio3:final-test',testPer:5,finalPass:16}   // Khan's one quiz after lesson 3.2 (docs/SCIENCE-UNIT3.md)
   : course === 'bio4'
     ? {id:'bio4',building:'bioDivide',title:'Biology Unit 4: Cell Division and Life Cycles',skills:BIO_UNIT4,groups:BIO_GROUPS4,finalKey:'bio4:final-test',testPer:4,finalPass:20}   // a quiz after each lesson (docs/SCIENCE-UNIT4.md)
+  : course === 'bio5'
+    ? {id:'bio5',building:'bioGenes',title:'Biology Unit 5: Inheritance and Variation',skills:BIO_UNIT5,groups:BIO_GROUPS5,finalKey:'bio5:final-test',testPer:4,finalPass:19}   // the Farm Barn: two quizzes, 24-question test (docs/SCIENCE-UNIT5.md)
   : course === 'history9'
     ? {id:'history9',building:'histGlobal2',title:'History Unit 9: Globalization',skills:HISTORY_UNIT9,groups:HISTORY_GROUPS9,finalKey:'history9:final-test',testPer:2,finalPass:11}   // Khan's two quizzes (docs/HISTORY-UNIT9.md)
   : {id:'nouns',building:'elaNouns',title:'English Unit 1: Nouns',skills:ENGLISH_UNIT1,groups:ENGLISH_GROUPS,finalKey:'final-test',finalPass:8};
@@ -10724,6 +10789,7 @@ const KHAN_UNIT_TESTS = {
   bio2:`${KHAN}science/ms-biology/x0c5bb03129646fd6:organism-growth-and-reproduction/x0c5bb03129646fd6:activity-what-causes-harmful-algae-blooms/test/x0c5bb03129646fd6:organism-growth-and-reproduction-unit-test`,
   bio3:`${KHAN}science/ms-biology/x0c5bb03129646fd6:matter-and-energy-in-organisms/x0c5bb03129646fd6:unit-3-phenomenon-based-activities/test/x0c5bb03129646fd6:matter-and-energy-in-organisms-unit-test`,   // Middle school biology Unit 3 (Oct 29 2026)
   bio4:`${KHAN}science/hs-bio/x230b3ff252126bb6:the-cell-cycle-and-differentiation`,   // Biology Unit 4: Khan's High school biology unit; its unit test is at the end of the unit page (docs/SCIENCE-UNIT4.md)
+  bio5:`${KHAN}science/ms-biology/x0c5bb03129646fd6:inheritance-and-variation/x0c5bb03129646fd6:reproduction-and-genetic-variation/test/x0c5bb03129646fd6:inheritance-and-variation-unit-test`,   // the Farm Barn (checked Oct 30 2026)
   history6:`${KHAN}humanities/world-history/x66f79d8a:the-first-global-age/x66f79d8a:the-transatlantic-slave-trade-6-9/test/x66f79d8a:the-first-global-age-unit-test`,
   history8:`${KHAN}humanities/world-history/x66f79d8a:global-conflict/x66f79d8a:decolonization-8-9/test/x66f79d8a:global-conflict-unit-test`,   // History Unit 8, checked Oct 28 2026
   history9:`${KHAN}humanities/world-history/x66f79d8a:globalization/x66f79d8a:the-anthropocene-9-8/test/x66f79d8a:globalization-unit-test`   // checked on khanacademy.org, Oct 28 2026
@@ -11169,6 +11235,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
 const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','colons','sentences','history','history2','history3','history4','history5','bio1','bio2','bio3','history6','history7','history8','history9'];
 REPORT_COURSES.push('conventions');   // English Unit 9 (docs/ENGLISH-UNIT9.md)
 REPORT_COURSES.push('bio4');   // Biology Unit 4 (docs/SCIENCE-UNIT4.md)
+REPORT_COURSES.push('bio5');   // Biology Unit 5, the Farm Barn (docs/SCIENCE-UNIT5.md)
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -11304,10 +11371,10 @@ function selectedReading(){
 }
 function selectedReadingBook(){ return S.readingBooks.find(book => book.id === S.readingSelection?.bookId) || null; }
 /* a lesson's questions: the multiple-choice bank plus the scored questions of the newer types */
-function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId)]; }
+function englishQuestions(skillId, courseId='nouns'){ return [...englishBankQuestions(skillId, courseId), ...typedAutoQuestions(skillId, courseId), ...(courseId === 'bio5' ? geneticsQuestions(skillId) : [])]; }   // the Farm Barn adds new generated problems every time (src/shared/genetics.js)
 function englishBankQuestions(skillId, courseId='nouns'){
   const edits = Backend.me?.question_edits || {};   // this class's hidden, edited and added questions (docs: LESSON-CONTENT.md)
-  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio4' ? BIO4_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
+  if (isScienceCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'bio5' ? BIO5_QUESTIONS : courseId === 'bio4' ? BIO4_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : BIO1_QUESTIONS)[skillId] || [], edits).map(question => {
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -11895,7 +11962,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
     : finalRecord.tries ? `Best ${finalRecord.best}/${size} · ${finalRecord.tries} tries · Get ${course.finalPass} of ${size} to pass`
       : finalReady ? `Ready · Get ${course.finalPass} of ${size} to pass` : course.noQuizzes ? 'Pass every practice to unlock' : 'Pass all block quizzes to unlock';
   const context = active ? `<strong>Reading: ${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Theme not added yet'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
-  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + lifeCycleCardHTML(course.id) + handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
+  $('#libraryWrap').innerHTML = `<div class="backrow"><h2>📚 ${esc(course.title)}</h2><div class="row"><button class="btn small" data-go="home">Back to town</button></div></div>${todayTimeHTML(isHistoryCourse(course.id) ? 'history' : isScienceCourse(course.id) ? 'science' : course.id === 'math' ? 'math' : 'english', course.building || '')}${videoFirstCourse(course.id) ? videoPassBannerHTML(course.id) : ''}<p class="muted ela-learn-note">How it works: ${khanOn() ? 'under each lesson, open the Khan Academy link to watch the video or read the article, then do the practice below it.' : 'read each lesson and watch its video if it has one, then do the practice below it.'} Sections marked “Learn” with no practice are reading only.</p>${(n => n ? `<p class="review-banner">🔁 Your teacher ${khanOn() ? 'checked your Khan test and ' : ''}wants you to review ${n} lesson${n === 1 ? '' : 's'} below. Pass each one again to clear it.</p>` : '')(practiceSkills(course).filter(skillId => reviewDue(course.id, skillId)).length)}${groups}<section class="ela-final-assessment"><div><h3>${esc(course.title)} Test</h3><p class="muted">Cumulative · ${size} questions · ${finalStatus}</p><p class="muted test-gate-note">📇 Review first, then a grown-up enters the PIN to start the test.</p></div><div class="row test-buttons">${testReviewButtonHTML(course.id)}<button type="button" class="btn small${finalReady && testReady(`${course.id}:pw`) ? ' berry' : ''}" data-ela-final data-ela-course="${course.id}" ${finalReady ? '' : 'disabled'}>🔐 ${finalRecord.passed ? 'Retake test' : 'Start test'}</button>${scoreFixRows(course).length ? `<button type="button" class="btn small" data-fix-score data-ela-course="${course.id}" title="A grown-up can correct a test or quiz score">🔐 Fix a score</button>` : ''}</div></section>${finalRecord.passed ? khanTestCardHTML(course.id) : ''}${isProjectCourse(course.id) ? historyProjectCardHTML(course.id) : ''}${isHistoryCourse(course.id) ? historyActivityCardsHTML(course.id) : ''}${isScienceCourse(course.id) ? greenhouseCardHTML(course.id) + barnBreederCardHTML(course.id) + lifeCycleCardHTML(course.id) + handsOnCardsHTML(course.id) : ''}${writtenListHTML(course.id)}`;
 }
 /* Cross out (like digital state and AP tests): every multiple-choice option gets a small ✕ button that strikes it
    through, so students can rule out choices before picking one. Tapping ↺, or tapping a crossed-out choice, brings
@@ -11934,7 +12001,7 @@ function renderEnglishQuestion(){
   const role = ROLE_CARDS[question.skillId];
   const active = selectedReading(), context = role ? `<strong>${role.emoji} You are ${esc(role.who)}</strong><span>${esc(role.where)} · ${esc(role.intro)}</span>` : active ? `<strong>${esc(active.book.title)}</strong><span>${esc(active.chapter.label)} · ${esc(readingText(active.chapter,'themes','Your chapter notes'))}</span>` : '<strong>General practice</strong><span>No book selected</span>';
   $('#libraryWrap').innerHTML = `<div class="backrow"><h2>${esc(run.title)}</h2>${run.shop ? `<button class="btn small" data-back-shop="${run.shop}">Back to the shop</button>` : `<button class="btn small" data-ela-unit data-ela-course="${run.courseId || 'nouns'}">Exit practice</button>`}</div>${role ? roleSceneHTML(question.skillId, run.courseId, run.index === 0) : ''}${role ? stageHTML({role:ROLE_SCENES[question.skillId]?.scene ? {...role, intro:ROLE_SCENES[question.skillId].scene} : role, prompt:question.prompt, science:isScienceCourse(run.courseId), you:petEmoji(), pets:ownedPetEmoji(), index:run.index, first:run.index === 0 && !run.answered,
-    history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}${typeOf(question) === 'mc' ? `<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div>` : `<div class="typed" data-type="${typeOf(question)}">${typedBodyHTML(question, run)}</div>`}<div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
+    history:run.questions.slice(0, run.index).map((q, i) => ({prompt:q.prompt, index:i, ...(run.replies?.[i] || {})})).filter(h => h.text)}) : ''}<div class="ela-question"><p class="muted">Question ${run.index+1} of ${run.questions.length} · ${run.score} correct</p>${role ? '' : `<h3>${esc(question.prompt)}</h3>`}${question.figure ? `<div class="gene-figure">${question.figure}</div>` : ''}${typeOf(question) === 'mc' ? `<div class="ela-options">${question.options.map((option,index) => `<button type="button" class="ela-option" data-ela-answer="${index}" ${run.answered ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div>` : `<div class="typed" data-type="${typeOf(question)}">${typedBodyHTML(question, run)}</div>`}<div class="ela-feedback" aria-live="polite"></div>${run.answered ? '<button type="button" class="btn berry" data-ela-next>Continue</button>' : ''}</div>`;
   addCrossOuts($('#libraryWrap'), '.ela-option:not([data-typed-place]):not([data-typed-unplace])');
   const talkLog = $('#libraryWrap .stage-history'); if (talkLog) talkLog.scrollTop = talkLog.scrollHeight;   // newest exchange in view
 }
@@ -12090,6 +12157,14 @@ function typedBodyHTML(question, run){
   }
   if (type === 'fill') return `<form class="typed-fill" data-typed-fill><input type="text" class="typed-input" maxlength="80" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your answer" value="${esc(r || '')}" ${off}>${check.replace('type="button"', 'type="submit"')}</form>`;
   if (type === 'sort') return `<p class="typed-hint">Choose a group for each one.</p><div class="typed-sort">${question.items.map(([text], i) => `<div class="typed-sort-row"><span>${esc(text)}</span><span class="typed-seg" role="group" aria-label="${esc(text)}">${question.groups.map((group, g) => `<button type="button" data-typed-sort="${i}" data-typed-group="${g}" aria-pressed="${r?.[i] === g}" ${off}>${esc(group)}</button>`).join('')}</span></div>`).join('')}</div>${check}`;
+  if (type === 'punnett') {   // 🐄 Build a Punnett square (the Farm Barn): typed alleles, capital letters matter
+    const box = (i, max, label) => `<input type="text" class="gene-input" data-gene-slot="${i}" maxlength="${max}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="${esc(label)}" value="${esc(Array.isArray(r) ? r[i] ?? '' : '')}" ${off}>`;
+    const ask = !!question.ask, first = ask ? 4 : 0;
+    const top = j => (ask ? box(j, 1, `${question.colLabel}: allele ${j + 1}`) : `<b>${esc(question.cols[j])}</b>`), side = i => (ask ? box(2 + i, 1, `${question.rowLabel}: allele ${i + 1}`) : `<b>${esc(question.rows[i])}</b>`);
+    return `<p class="typed-hint">${ask ? 'Type each parent’s alleles on the edges, then the two alleles in each box.' : 'Type the two alleles in each box.'} Capital letters matter.</p>
+      <p class="pb-labels"><span>Across the top: <b>${esc(question.colLabel)}</b></span> <span>Down the side: <b>${esc(question.rowLabel)}</b></span></p>
+      <table class="punnett-build"><tr><th aria-hidden="true"></th><th>${top(0)}</th><th>${top(1)}</th></tr>${[0, 1].map(i => `<tr><th>${side(i)}</th>${[0, 1].map(j => `<td>${box(first + i * 2 + j, 3, `Box in row ${i + 1}, column ${j + 1}`)}</td>`).join('')}</tr>`).join('')}</table>${check}`;
+  }
   if (type === 'pick') return `<p class="typed-hint">Tap the words. Tap again to undo.</p><p class="typed-words">${pickWords(question.sentence).map((word, i) => `<button type="button" class="typed-word" data-typed-toggle="${i}" aria-pressed="${chosen(i)}" ${off}>${esc(word)}</button>`).join(' ')}</p>${check}`;
   return '';
 }
@@ -12104,7 +12179,15 @@ function markTyped(host, question, response){
   if (type === 'order') host.querySelectorAll('[data-typed-unplace]').forEach((el, place) => el.classList.add(+el.dataset.typedUnplace === place ? 'correct' : 'incorrect'));
   if (type === 'sort') host.querySelectorAll('[data-typed-sort]').forEach(el => { const i = +el.dataset.typedSort, g = +el.dataset.typedGroup; if (g === question.items[i][1]) el.classList.add('correct'); else if (response[i] === g) el.classList.add('incorrect'); });
   if (type === 'fill') host.querySelector('.typed-input')?.classList.add(checkTyped(question, response) ? 'correct' : 'incorrect');
+  if (type === 'punnett') { const marks = punnettMarks(question, response); host.querySelectorAll('[data-gene-slot]').forEach(el => el.classList.add(marks[+el.dataset.geneSlot] ? 'correct' : 'incorrect')); }
 }
+/* 🐄 Build a Punnett square: each box she types goes into run.response, one slot per box */
+$('#libraryWrap').addEventListener('input', event => {
+  const run = englishRun; if (!event.target.matches('.gene-input') || !run || run.answered) return;
+  const question = run.questions[run.index], list = Array.isArray(run.response) ? [...run.response] : Array(punnettSlots(question)).fill('');
+  list[+event.target.dataset.geneSlot] = event.target.value; run.response = list;
+  const check = $('#libraryWrap [data-typed-check]'); if (check) check.disabled = !responseReady(question, run.response);
+});
 function refreshTyped(){
   const run = englishRun, host = $('#libraryWrap .typed'); if (!run || !host) return;
   const question = run.questions[run.index];
@@ -14682,6 +14765,7 @@ function placeOnScreen(){
   if ($('#paxWrap')) return `course:${$('#paxWrap').dataset.course}:⚖️ Pax Oeconomica`;   // counts for its history unit
   if ($('#greenhouseWrap')) return 'course:bio3:🌺 Greenhouse Keeper';   // counts for Biology Unit 3
   if ($('#lifecycleWrap')) return 'course:bio4:🦋 Life Cycle Lab';   // counts for Biology Unit 4
+  if ($('#barnBreederWrap')) return 'course:bio5:🐄 Barn Breeder';   // counts for Biology Unit 5
   if ($('#detectiveWrap')) return 'detective';
   if ($('#carnivalWrap')) return 'carnival';
   if ($('#bibleWrap')) return 'bible';
@@ -14760,6 +14844,7 @@ function eventText(e){
   if (e.k === 'pax') return `⚖️ Pax Oeconomica: ${e.title}`;
   if (e.k === 'greenhouse') return `🌺 Greenhouse Keeper: ${e.title}`;
   if (e.k === 'lifecycle') return `🦋 Life Cycle Lab: ${e.title}`;
+  if (e.k === 'barnBreeder') return `🐄 Barn Breeder: ${e.title}`;
   if (e.k === 'handson') return `🔬 Hands-on Biology: ${e.title}`;
   if (e.k === 'detective') return `🔍 Potion Detective: ${e.title}`;
   if (e.k === 'carnival') return `🎪 Carnival: ${e.title}`;
@@ -14862,6 +14947,7 @@ function subjectOnScreen(){
   if ($('#paxWrap')) return 'history';   // Pax Oeconomica is History Unit 4 and 5's game
   if ($('#greenhouseWrap')) return 'science';   // Greenhouse Keeper is Biology Unit 3's game
   if ($('#lifecycleWrap')) return 'science';   // the Life Cycle Lab is Biology Unit 4's game
+  if ($('#barnBreederWrap')) return 'science';   // Barn Breeder is Biology Unit 5's game
   if ($('#detectiveWrap')) return 'math';   // Potion Detective is Potion Lab practice
   if ($('#carnivalWrap')) return 'math';   // the Carnival Midway is Pet Fair practice
   if ($('#bibleWrap')) return 'bible';

@@ -104,6 +104,7 @@ The owner wants every new unit to unlock new animals and decorations, so library
 | Sentence Library (`elaSent`) | 🐊 Clause the crocodile, 🦥 Pause the sloth, 🦨 Fragment the skunk, 🦏 Subject the rhino, 🦖 Rex the sentence-saurus | 🪑 Reading chair, 🗂️ Card catalog, 🔖 Bookmark banner, 🖋️ Fountain pen, 🗝️ Golden library key |
 | Rule Library (`elaRules`) | 🦛 Judge Hippo, 🐦‍⬛ Gavel the raven, 🐜 Clerk the ant, 🦂 Rulebreaker the scorpion, 🐆 Chief Justice Cheetah | 🛎️ Court bell, 🪵 Witness bench, 🎖️ Medal of order, 💼 Case briefcase, 🕮 Golden rule book |
 | Butterfly House (`bioDivide`) | 🪱 Loamy the earthworm, 🪰 Zippy the hoverfly, 🪲 Scarab the beetle, 🕷️ Webster the garden spider, 🧚 Flutter the garden fairy | 🪻 Lavender pots, 🎐 Wind chime, 🪷 Lotus pond, 🔭 Butterfly-spotting scope, 🏵️ Golden rosette |
+| Farm Barn (`bioGenes`) | 🐏 Woolly the ram, 🦃 Gobbles the turkey, 🫏 Hazel the donkey, 🐃 Boulder the water buffalo, 🐂 Duke the blue-ribbon bull | 🪣 Milk pail, 🪺 Nest box, 🧶 Wool basket, 🚜 Red tractor, 🧬 Golden DNA trophy (the Farm Barn has 2 quizzes, so slot 4 also opens with Quiz 2) |
 
 The ids follow the pattern `<buildingId>_<pet|decor>_<slot>`, where slot is `welcome`, `s2`, `s3`, `s4`, or `legend`. For example, `bakery_pet_welcome` or `show_decor_legend`. The exact TypeScript is in `TASK-rewards.md`.
 

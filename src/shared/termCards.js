@@ -135,6 +135,30 @@ export const TERM_CARDS = {
     { term: 'heart rate', means: 'How many times your heart beats in one minute. A faster heart moves oxygen and sugar to cells faster.', example: 'Count your pulse for 15 seconds and multiply by 4.', skill: 'foodEnergyA' },
     { term: 'fair test', means: 'An experiment that changes only one thing and keeps everything else the same.', example: 'Same person, same counting time, before and after exercise', skill: 'foodEnergyA' }
   ],
+  /* Biology Unit 5: Inheritance and variation, the Farm Barn (docs/SCIENCE-UNIT5.md) */
+  bio5: [
+    { term: 'chromosome', means: 'A long, coiled strand of DNA in the nucleus that carries many genes. Body cells have chromosomes in pairs.', example: 'A cow’s body cells have 30 pairs: 60 chromosomes.', skill: 'chromU' },
+    { term: 'gene', means: 'A section of DNA on a chromosome with the instructions for making a protein.', example: 'The polled gene helps decide whether a calf grows horns.', skill: 'chromU' },
+    { term: 'protein', means: 'A molecule that builds body parts and does much of a cell’s work. Genes hold the instructions for proteins.', example: 'Myostatin is a protein that tells muscles when to stop growing.', skill: 'chromU' },
+    { term: 'chromosome pair', means: 'Two chromosomes with the same genes in the same places, one from each parent.', example: 'A calf’s chromosome 1 pair: one from the cow, one from the bull', skill: 'chromA' },
+    { term: 'sex cell', means: 'An egg or a sperm cell. It has one chromosome from each pair, half the body-cell number.', example: 'A bull’s sperm cell has 30 chromosomes.', skill: 'chromA' },
+    { term: 'fertilization', means: 'When a sperm cell joins an egg cell, so the new cell has full chromosome pairs again.', example: '30 + 30 = 60 chromosomes in a calf’s first cell', skill: 'chromA' },
+    { term: 'mutation', means: 'A change in the DNA of a gene. It can be harmful, helpful, or have no effect.', example: 'Belgian Blue cattle’s myostatin mutation gives them huge muscles.', skill: 'mutA' },
+    { term: 'codon', means: 'Three DNA letters in a row that stand for one amino acid (or say “stop”).', example: 'ATG stands for the amino acid Met.', skill: 'mutA' },
+    { term: 'sexual reproduction', means: 'Two parents each give a sex cell, so the offspring gets a new mix of alleles.', example: 'A ram and a ewe have twin lambs that look different.', skill: 'sexVarU' },
+    { term: 'asexual reproduction', means: 'One parent makes offspring with copies of its own genes.', example: 'A strawberry runner, or Dolly the cloned sheep', skill: 'sexVarU' },
+    { term: 'genetic variation', means: 'Differences in alleles among the members of a group.', example: 'Piglets in one litter with different coat patterns', skill: 'sexVarU' },
+    { term: 'allele', means: 'One version of a gene.', example: 'P (no horns) and p (horns) are two alleles of the polled gene.', skill: 'vocabA' },
+    { term: 'genotype', means: 'The two alleles an animal has for a gene.', example: 'Pp', skill: 'vocabA' },
+    { term: 'phenotype', means: 'The trait you can see or measure.', example: 'No horns, or a red coat', skill: 'vocabA' },
+    { term: 'dominant and recessive', means: 'A dominant allele shows its trait with one copy; a recessive allele shows only with two copies.', example: 'Black (B) is dominant over red (b) in Angus cattle.', skill: 'vocabA' },
+    { term: 'homozygous and heterozygous', means: 'Homozygous: two of the same allele (BB or bb). Heterozygous: two different alleles (Bb).', example: 'A red Angus is homozygous: bb.', skill: 'vocabA' },
+    { term: 'codominance', means: 'Both alleles show at the same time.', example: 'A roan Shorthorn (RW) has red hairs and white hairs mixed.', skill: 'vocabA' },
+    { term: 'incomplete dominance', means: 'The two alleles blend into an in-between trait.', example: 'A blue Andalusian chicken (BW) from black and splash white parents', skill: 'vocabA' },
+    { term: 'Punnett square', means: 'A grid that shows every way the parents’ alleles can combine. Each of the 4 boxes is equally likely.', example: 'Pp × Pp gives PP, Pp, Pp, pp: a 1/4 chance of horns.', skill: 'punnettA' },
+    { term: 'probability', means: 'How likely something is, as a fraction or a percent.', example: '1 box out of 4 = 1/4 = 25%', skill: 'punnettA' },
+    { term: 'F1 and F2', means: 'F1: the offspring of the first cross. F2: the offspring when two F1 animals are crossed.', example: 'PP × pp gives all Pp (F1); Pp × Pp gives the F2.', skill: 'punnettA' }
+  ],
   punctuation: [
     { term: 'end mark', means: "The punctuation mark that ends a sentence: a period, a question mark, or an exclamation point.", example: "The robot is ready. Is the robot ready? The robot is ready!", skill: 'endMarks' },
     { term: 'indirect question', means: "A sentence that reports a question someone asked. It is a statement, so it ends with a period.", example: "Comet asked if the jet was fueled.", skill: 'endMarks' },

@@ -14,6 +14,7 @@ These types mix into practice, block quizzes and unit tests the same way multipl
 | `fill`: type the answer | Types a word. Case, extra spaces and a final period don't matter, and several answers can be accepted | Spelling plurals, naming a cell part |
 | `sort`: sort into groups | Chooses a group (2 or 3) for each item | Common or proper, primary or secondary, pollination or dispersal |
 | `pick`: tap the words | Taps words in a sentence | Find the nouns, verbs or proper nouns |
+| `punnett`: build a Punnett square | Types the two alleles in each of the 4 boxes (and, with `ask`, each parent's alleles on the edges). Capital letters matter; the order inside a box doesn't, and a square with a parent's alleles swapped still counts | The Farm Barn (Biology Unit 5), made fresh each time by `src/shared/genetics.js` |
 
 After Check, each part shows green (right), red (wrong), or a dashed outline (a right choice the student missed). The ✕ cross-out works on select-all and two-part choices.
 

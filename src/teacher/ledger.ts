@@ -85,7 +85,7 @@ function eventSubject(ev: LedgerEvent): string {
     case 'course': case 'review': return course === 'math' ? 'math' : course.startsWith('history') ? 'history' : course.startsWith('bio') ? 'science' : 'english';
     case 'project': return course.startsWith('bio') ? 'science' : course.startsWith('history') ? 'history' : 'english';
     case 'dig': case 'scribe': case 'pax': return 'history';
-    case 'sim': case 'handson': case 'greenhouse': case 'lifecycle': return 'science';
+    case 'sim': case 'handson': case 'greenhouse': case 'lifecycle': case 'barnBreeder': return 'science';
     case 'ggame': case 'recall': case 'hero': case 'repair': case 'snap': return 'english';
     case 'court': return 'english';   // ⚖️ Rule Court (English Unit 9)
     case 'bible': return 'bible';

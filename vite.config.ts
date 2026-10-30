@@ -13,7 +13,8 @@ export default defineConfig({
         linkGames: resolve(__dirname, 'arcade/link-games/index.html'),
         bookRepair: resolve(__dirname, 'arcade/book-repair/index.html'),
         ruleCourt: resolve(__dirname, 'arcade/rule-court/index.html'),
-        sentenceSnap: resolve(__dirname, 'arcade/sentence-snap/index.html')
+        sentenceSnap: resolve(__dirname, 'arcade/sentence-snap/index.html'),
+        barnBreeder: resolve(__dirname, 'arcade/barn-breeder/index.html')   // 🐄 the Farm Barn's game (docs/BARN-BREEDER.md)
       }
     }
   }

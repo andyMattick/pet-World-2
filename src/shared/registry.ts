@@ -368,6 +368,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'pet-show', name: 'Pet Show Awards', emoji: '🏆', description: 'You’re the head judge! Find the mean, the median or a quartile of the pets’ stats, then pin each ribbon on the pet closest to it.', src: '/arcade/pet-show/', available: true },
   { id: 'greenhouse-keeper', name: 'Greenhouse Keeper', emoji: '🌺', description: 'Run the Pet World Greenhouse for a day: power up leaves and cells with the right inputs, read the gas sensor, sort who does photosynthesis, and follow the energy from the sun to a hummingbird.', src: '/arcade/greenhouse-keeper/', available: true },
   { id: 'life-cycle-lab', name: 'Life Cycle Lab', emoji: '🦋', description: 'Raise a monarch from egg to butterfly, spin the Life Cycle Ring, and make chromosomes dance through mitosis and meiosis (Biology Unit 4).', src: '/arcade/life-cycle-lab/', available: true },
+  { id: 'barn-breeder', name: 'Barn Breeder', emoji: '🐄', description: 'Breed blue-ribbon farm animals for the county fair! Predict the odds of every litter with Punnett squares, then breed over generations (F1, F2) to hit each goal: polled calves, roan cattle, blue chickens and more.', src: '/arcade/barn-breeder/', available: true },
   { id: 'pax-oeconomica', name: 'Pax Oeconomica', emoji: '⚖️', description: 'Lead an empire of the Classical or Medieval world. Every empire is rich in some goods and short of others: trade wisely at the market, keep your people fed, deal with barbarians and earn the most prestige.', src: '/arcade/pax-oeconomica/', available: true },
   { id: 'parcel-post', name: 'Parcel Post', emoji: '📮', description: 'The holiday rush is on! Spin each 3D parcel to sort it, count its faces, pack it (volume) and wrap it (surface area) before the truck leaves.', src: '/arcade/parcel-post/', available: true },
   { id: 'harbor-battleship', name: 'Harbor Battleship', emoji: '⚓', description: 'Pirates are hiding ships on a coordinate plane! Name your target’s coordinates to fire, plot the pirates’ shots, and use sonar to find their fleet.', src: '/arcade/harbor-battleship/', available: true },
@@ -688,7 +689,9 @@ const LIBRARY_SETS: [string, [string,string][], [string,string][]][] = [
   ['elaRules', [['🦛','Judge Hippo'],['🐦‍⬛','Gavel the raven'],['🐜','Clerk the ant'],['🦂','Rulebreaker the scorpion'],['🐆','Chief Justice Cheetah']],
                [['🛎️','Court bell'],['🪵','Witness bench'],['🎖️','Medal of order'],['💼','Case briefcase'],['🕮','Golden rule book']]],
   ['bioDivide', [['🪱','Loamy the earthworm'],['🪰','Zippy the hoverfly'],['🪲','Scarab the beetle'],['🕷️','Webster the garden spider'],['🧚','Flutter the garden fairy']],
-               [['🪻','Lavender pots'],['🎐','Wind chime'],['🪷','Lotus pond'],['🔭','Butterfly-spotting scope'],['🏵️','Golden rosette']]]   // 🦋 Butterfly House, Biology Unit 4 (docs/SCIENCE-UNIT4.md)
+               [['🪻','Lavender pots'],['🎐','Wind chime'],['🪷','Lotus pond'],['🔭','Butterfly-spotting scope'],['🏵️','Golden rosette']]],   // 🦋 Butterfly House, Biology Unit 4 (docs/SCIENCE-UNIT4.md)
+  ['bioGenes', [['🐏','Woolly the ram'],['🦃','Gobbles the turkey'],['🫏','Hazel the donkey'],['🐃','Boulder the water buffalo'],['🐂','Duke the blue-ribbon bull']],   // 🐄 the Farm Barn (Biology Unit 5)
+               [['🪣','Milk pail'],['🪺','Nest box'],['🧶','Wool basket'],['🚜','Red tractor'],['🧬','Golden DNA trophy']]]
 ];
 const SLOTS = ['welcome','s2','s3','s4','legend'] as const;
 // a unit with only 3 stations (Clock Tower, Pet Harbor) unlocks its 4th-slot reward at its last station
@@ -757,7 +760,7 @@ export const BUILDINGS: Building[] = [
   {id:'bioCells',   emoji:'🐑', name:'Petting Zoo',     unit:'Unit 2: Organism growth and reproduction', hood:'g6', subject:'biology', open:true},
   {id:'bioEnergy',  emoji:'🌺', name:'Greenhouse',      unit:'Unit 3: Matter and energy in organisms (photosynthesis and cellular respiration)', hood:'g6', subject:'biology', open:true},
   {id:'bioDivide',  emoji:'🦋', name:'Butterfly House', unit:'Unit 4: Cell division and life cycles (mitosis, meiosis, and metamorphosis)', hood:'g6', subject:'biology', open:true},
-  {id:'bioGenes',   emoji:'🐄', name:'Farm Barn',       unit:'Heredity and genes', hood:'g6', subject:'biology'},
+  {id:'bioGenes',   emoji:'🐄', name:'Farm Barn',       unit:'Unit 5: Inheritance and variation (chromosomes, mutations, Punnett squares)', hood:'g6', subject:'biology', open:true},
   {id:'bioEvolve',  emoji:'🦜', name:'Aviary',          unit:'Evolution and natural selection', hood:'g6', subject:'biology'},
   {id:'bioEco',     emoji:'🐠', name:'Aquarium',        unit:'Ecosystems and energy flow', hood:'g6', subject:'biology'},
   {id:'bioPlanet',  emoji:'🦁', name:'Zoo',             unit:'Biodiversity and human impact', hood:'g6', subject:'biology'},
