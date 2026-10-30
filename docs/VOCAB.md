@@ -25,13 +25,13 @@ Words a teacher or parent adds are split by a simple rule (vowel groups, with ch
 
 Owner: "let's add a timer after she hears the word and tells her how many syllables it is supposed to have (and pronounce each one). she needs to spend more time hearing the word and its parts."
 
-On every card where she hears a word and types it (🔤 Spell it, the spelling cards in 🃏 Practice cards, and step 2 of the 🏁 Friday mastery check), `listenFirst` in `game.js`:
+On every card where she hears a word and types it (🔤 Spell it, the spelling cards in 🃏 Practice cards, the 🐾 Paw Path’s 🔤 Spell it “Listen, then type the word” items, and step 2 of the 🏁 Friday mastery check), `listenFirst` in `game.js`:
 
 1. **Plays it:** the whole word, then "It has 3 syllables.", then each syllable with a short pause while its dot lights up, then the whole word again.
 2. **Shows only the count:** "🔊 3 syllables" and three dots. The syllables' letters are never shown before she answers, because they'd give away the spelling. After she answers she sees "ba·nan·a", same as before.
 3. **Runs a listening timer:** a bar counts down, "👂 Listen to the word and its parts: 8". The answer box and Check stay locked until it ends, then "✏️ Now type it!" and the box gets the cursor. During the first playback the 🔊 / 🐢 / Slowly buttons wait; after that she can replay as much as she wants, and replaying doesn't shorten the timer. There's no skip button.
 
-- **How long:** 8 seconds after the playback by default. 0 turns the wait off (the box opens right after the playback); up to 20 seconds. The **teacher** sets it for the class (Vocabulary tab → 👂 Listening time, saved in `classes.game_settings.vocab.listenSec`, no new column). A **grown-up** at home sets it behind the PIN (Word Workshop → For grown-ups → 👂 Listening time, saved in `S.vocab.home.listenSec`). The grown-up's setting wins, then the teacher's, then 8 (`listenSeconds` in `vocab.js`).
+- **How long:** 8 seconds after the playback by default. 0 turns the wait off (the box opens right after the playback); up to 20 seconds. The **teacher** sets it for the class (Vocabulary tab → 👂 Listening time, saved in `classes.game_settings.vocab.listenSec`, no new column). A **grown-up** at home sets it behind the PIN (Word Workshop → For grown-ups → 👂 Listening time, saved in `S.vocab.home.listenSec`). The grown-up's setting wins, then the teacher's, then 8 (`listenSeconds` in `vocab.js`). The Paw Path uses the same `listenFirst` and the same setting (owner, Oct 30, 2026: "the Paw Path's Spell it uses the same listening time as everywhere"), so changing it changes the path's wait too.
 - **Timed rounds:** ⚡ Word sprint asks "which word means" and has no spelling cards, so the listening timer never runs inside it. If a timed run ever gets a spelling card, the time spent listening is added back to its clock (we pause it), so listening never costs her sprint time.
 - **No voice on the device:** a note says "🔇 This device can't read words out loud right now, so you can type right away" and the box opens straight away. She's never locked out. (Pet World waits up to 1.5 seconds for the device's voices to load first.)
 
@@ -201,6 +201,26 @@ Add the word to `vocab.js` as usual, then add its entry to `WORD_PARTS` with the
 
 **Tested** (phone size, 375px, Playwright with the clock on a Friday): a miss in practice cards (fill-in-the-sentence and spelling cards), Word sprint, Spell it, the Crossword, Scramble, Secret Code and Match-Up puzzles, and the Friday check each shows the box with the type-it box under it; a wrong copy still doesn’t move on; a right answer in each of those shows no box; nothing shows before she answers; no sideways scroll; 📊 My words shows the parts when she taps a word.
 
+## 🖼️ Word pictures (Oct 30, 2026)
+
+Owner: "i'd also like the image with the word to help her understanding." Every built-in word has a picture (`pictureFor` in `src/shared/wordPictures.js`: the cartoon in `public/vocab-pics/cartoons/`, otherwise its emoji scene; the photo slot stays empty for now). See `WORD-PICTURES.md` for the pictures themselves. `wordPicHTML` in `game.js` draws one.
+
+**Where she sees them** (only next to the word itself, or after she answers):
+- **🐾 Paw Path, 👂 Meet the words:** big, between the word and its meaning.
+- **After she answers** a Paw Path item (right or wrong; not a look-alike sentence), a practice card (Practice cards, Spell it; not the timed Word sprint), or misses a word in a daily puzzle or the Friday check: small, beside the word, above the word parts.
+- **📊 My words:** in the peek when she taps a word.
+- **🏁 Friday:** on the back of each flashcard (after the flip), and beside each word she mastered on the results screen.
+- **Lesson complete:** a strip of the lesson's words, each with its picture.
+
+**Never** on a question the picture could answer: "Which word means…?", meaning → word, spelling from the meaning, Listen-then-type, the match boards, letter and part tiles, the daily puzzles' clues, and the Friday check's questions. The Playwright test checks every question type for this.
+
+- **Read-aloud:** each picture has a one-sentence `alt` (screen readers read it); tapping the picture reads it aloud.
+- **Loading:** cartoons are `loading="lazy"`; one that can't load shows its emoji scene instead.
+- **Words a grown-up or teacher adds** show no picture (until the pick-an-emoji box is built).
+- `node scripts/check-word-pictures.mjs` runs inside `npm run verify`.
+
+**Tested** (375px, Playwright with the pretend backend, the voice stubbed and a fake clock; `/home/claude/shots/pics-warmup-e2e.mjs`, 42 checks): Today's plan and the Warm-up time! card show ⏱️ 10 min 🐾 Paw Path and ⏱️ 7 min ✏️ Crossword on a Wednesday (an older 7-minute extra gets no extra "more practice" row); the path row starts a 10:00 round; Meet the words shows the big, lazy-loaded cartoon with its alt, and tapping it reads the alt; the lesson-complete strip; Next lesson ▶ while time is left; the clock jumped past 10 minutes mid-question: the question stayed, "⏰ Time's up! Finish this lesson" showed, and the finished lesson offered "Next: ✏️ Crossword, 7 min"; the crossword started at 7:00 with no pictures, a miss showed the picture, and it ended by itself at 7 minutes; both rows turned ✅ with scores; a teacher's 3 + 2 (+ 5 more) showed and the round ran 3:00. Every Paw Path question type (match boards, which word means, word → meaning, build, part questions, letter tiles, spelling choices, fill the blank, in context, listen and spell from the meaning) had no picture before she answered and one after (none after a look-alike sentence). The path's 👂 Spell it waited 8 s by default, 5 s with the teacher's setting and 3 s with the grown-up's over the teacher's. Practice cards: no picture before answering, one after every card; My words peek; Friday: one warm-up row, no picture on a flashcard's front or any check question, one on the back and after a miss, every mastered word with its picture on the results, and the row ✅. No sideways scroll and no page errors.
+
 ## This week's word path: 🐾 the Paw Path (Oct 30, 2026)
 
 Owner: "Can we add a Duolingo feel to the vocab? Right now for English words, eventually any language." Then: "I'd like it to focus on how we are doing her words. She gets 20 a week with 5 distinct skills/games testing different parts of teaching the words and definitions, then Friday she proves her mastery and we move on."
@@ -239,7 +259,7 @@ Why these five and not exactly the proposal: they match it, with two small chang
 ### Where it shows up
 
 - **Words of the Week card:** a 🐾 line (next node and lesson, XP, days), and **🐾 Practice** opens Word Workshop on the path with her next node's bubble open.
-- **The warm-up** (a Word Workshop extra on Today's plan and the Warm-up time! card): a timed round on the path instead of the daily puzzle, same length as before (7 minutes unless a grown-up picked another). She does lessons back to back from her next node (once all 5 skills are done, practice in the skill she's least accurate in). The score is the answers she got right. When the clock runs out mid-lesson she can finish the lesson ("⏰ Time! Finish this lesson to keep its XP"); the round's brag (last time, best) shows on the complete screen. Listening time on Spell it cards is added back to the clock, like Word sprint. On Friday the warm-up is the mastery check, as before. Time in Word Workshop counts for the extra the same way as before.
+- **The warm-up: 10 + 7** (owner, Oct 30, 2026; a Word Workshop extra on Today's plan and the Warm-up time! card; `DAILY-PLAN.md`, "Word Workshop warm-up: 10 + 7"): two rows. **⏱️ 10 min on the 🐾 Paw Path:** lessons back to back from her next node (once all 5 skills are done, practice in the skill she's least accurate in); if a lesson ends early the next one starts from **Next lesson ▶**; the score is the answers she got right. At 10 minutes she is never cut off mid-question: a calm "⏰ Time's up! Finish this lesson to keep its XP" shows and she finishes the lesson she's in (it still counts). Then the complete screen shows the round's brag and **Next: 🔀 Word Scramble, 7 min ▶**. **⏱️ 7 min on the word game of the day:** Monday 🔀 scramble, Tuesday 🔐 secret code, Wednesday ✏️ crossword, Thursday 🔎 word search (if today's puzzle is already done, a fresh one of the same kind). Its score is kept under `<id>~game`. **Friday** is one row, the 🏁 mastery check, as before. A grown-up or teacher sets both lengths on her page (🐾 Paw Path and 🎲 Word game; 10 and 7 are the defaults, `x.path` and `x.game`; an extra saved before Oct 30 keeps its round length for the game). Listening time on Spell it cards is added back to the path's clock, like Word sprint. Time in Word Workshop counts for the extra the same way as before.
 - **Day log:** each lesson ("🔤 Paw Path: 🔗 Match it · lesson 2 · +15 XP · 9 of 10") and each warm-up round.
 - **📊 My words** and the grown-ups' report: "🐾 Paw Path: 2 of 5 skills done · 85 XP · 3 days · 👂 Meet the words ✅ 92% · 🔗 Match it ✅ 88% · 🧩 Build it 1/4 70%".
 - **Teacher app → Vocabulary → 📚 Each student's words:** the same line under each student's summary (read from her save, `saves.state->vocab.path`; no new table).

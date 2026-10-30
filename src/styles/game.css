@@ -1602,6 +1602,26 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .wp-gloss{margin-top:4px !important}
 .wp-guess{border-style:dotted}
 .vocab-peek .word-parts{margin:6px 0 0}
+/* 🖼️ word pictures (docs/VOCAB.md "Word pictures"): a cartoon or emoji scene beside the word, never on a question */
+.wpic{display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; margin:0; border:2px solid var(--edge); border-radius:14px; background:#FFF8F2; color:#4A2E2A; font:inherit; cursor:pointer; vertical-align:middle; flex:none}
+.wpic:focus-visible{outline:3px solid var(--berry); outline-offset:2px}
+.wpic-img{display:block; width:100%; height:auto; aspect-ratio:1; border-radius:10px}
+.wpic-emoji{display:flex; align-items:center; justify-content:center; width:100%; aspect-ratio:1; line-height:1.1; text-align:center; word-break:break-all}
+.wpic-big{width:min(176px, 50vw); margin:6px auto 2px; display:flex}
+.wpic-big .wpic-emoji{font-size:3.2rem}
+.wpic-small{width:84px}
+.wpic-small .wpic-emoji{font-size:1.9rem}
+.wpic-tiny{width:58px; padding:2px; border-radius:10px}
+.wpic-tiny .wpic-emoji{font-size:1.2rem}
+.wpic-word{font-size:.72rem; font-weight:700; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.wpic-row{display:flex; align-items:center; gap:10px; margin:6px auto; max-width:46ch; text-align:left}
+.wpic-cap{font-size:1.15rem}
+.wpic-strip{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:8px 0}
+.wpic-chip{display:inline-flex; align-items:center; gap:6px; padding:3px 10px 3px 3px}
+.wpic-chip .wpic-tiny{width:40px; border-width:1.5px}
+.wpic-chip .wpic-emoji{font-size:.72rem; letter-spacing:-1px}
+.flashcard .wpic{width:96px}
+.vocab-peek .wpic{display:flex; margin:6px 0 0}
 /* ---------- 🐾 This Week's Paw Path (docs/VOCAB.md "This week's word path") ---------- */
 :root{ --pp-green:#58C76B; --pp-green-deep:#3A9A4C; --pp-gold:#FFC83D; --pp-gold-deep:#D99A12; --pp-lock:#E4DCDF; --pp-lock-deep:#B8ABB0; --pp-good-bg:#DDF6DF; --pp-bad-bg:#FFE1E6; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --pp-lock:#4E3C46; --pp-lock-deep:#2E2229; --pp-good-bg:#1F3B26; --pp-bad-bg:#4A2430; } }
@@ -1666,6 +1686,7 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .pp-prog{flex:1; height:16px; border-radius:999px; background:var(--pp-lock); overflow:hidden}
 .pp-prog i{display:block; height:100%; background:var(--pp-green); border-radius:999px; transition:width .3s; box-shadow:inset 0 -4px 0 rgba(0,0,0,.08)}
 .pp-time{font-weight:800; white-space:nowrap}
+.pp-timeup{margin:4px 0 8px; padding:6px 10px; border-radius:10px; background:var(--butter); color:#4A2E2A; font-weight:700; text-align:center}
 .pp-skill{margin:6px 0 2px; font-weight:800; color:var(--ink-soft); font-size:.9rem}
 .pp-again{margin:4px 0; font-weight:800; color:#C2410C}
 .pp-word{font-size:2.2rem; font-weight:800; text-align:center; margin:8px 0 2px; word-break:break-word}

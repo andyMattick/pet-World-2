@@ -1,6 +1,7 @@
 // Safety check: fails if the real Pet World code has been replaced or gutted.
 // Run with: npm run verify
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const problems = [];
 const read = (p) => { if (!existsSync(p)) { problems.push(`Missing file: ${p}`); return ''; } return readFileSync(p, 'utf8'); };
@@ -258,6 +259,12 @@ if (!existsSync('public/brain-games/index.html')) problems.push("The Brain Games
 // Khan links are well formed (offline; "npm run check-links" opens each one). Docs: KHAN.md
 try { const { khanLinks, offlineProblems } = await import('./check-links.mjs'); problems.push(...offlineProblems(await khanLinks())); }
 catch (error) { problems.push(`The Khan link check could not run: ${error.message}`); }
+
+// 🖼️ Word pictures (docs/WORD-PICTURES.md): every built-in word has a picture entry, the cartoons are valid, and
+// Word Workshop shows them (pictureFor in game.js). Runs scripts/check-word-pictures.mjs.
+try { execFileSync(process.execPath, ['scripts/check-word-pictures.mjs'], { stdio: 'pipe' }); }
+catch (error) { problems.push(`Word pictures check failed (node scripts/check-word-pictures.mjs): ${String(error.stderr || error.message).trim().split('\n').slice(0, 6).join(' | ')}`); }
+need('src/game/game.js', 'function wordPicHTML(', 'the word pictures in Word Workshop (wordPicHTML)');
 
 // History and Science: the videos come first (owner rule, Oct 27, 2026; CLAUDE.md). Every lesson block of a History or
 // Biology unit lists its Khan videos in KHAN_VIDEOS (an empty list for a lesson with none), and the game shows them and

@@ -13,7 +13,7 @@ import { renderPlanCard } from './plan';
 import { renderInsightsCard, refreshInsights } from './insightsCard';
 import { SKILLS, SKILL_ORDER as ORDER, SHOPS, BUILDINGS, DEFAULT_HOME, builtHoods, validHood, shopOfSkill, MIS, statusFromRecent, drillLabel, DRILLS, type DrillSettings } from '../shared/registry';
 /* extras a grown-up assigns one student (ROADMAP F7) */
-interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string; challenge?: number }
+interface Extra { id: string; kind: 'sprint' | 'vocab'; minutes: number; skills?: string[]; tables?: number[]; mode?: string; challenge?: number; path?: number; game?: number }
 const DRILL_NAMES = DRILLS as unknown as Record<string, { name?: string }>;
 const VOCAB_MODES: Record<string, string> = { practice: '🃏 Practice cards', sprint: '⚡ Word sprint', spell: '🔤 Spell it' };
 
@@ -342,21 +342,25 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   function renderExtrasCard() {
     const el = $('#extrasCard'); if (!el) return;
     const list = extrasList(), drillIds = Object.keys(DRILL_NAMES).filter(id => !id.startsWith('story'));
-    const roundOf = (x: Extra) => Math.max(1, Math.round(x.challenge && x.challenge > 0 ? x.challenge : x.kind === 'vocab' ? 7 : 5));
-    const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: the day’s puzzle on this week’s words (Friday: the mastery check)${x.minutes > roundOf(x) ? `; more practice: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}` : ''}`
+    /* Word Workshop (owner, Oct 30, 2026): x.path minutes on the 🐾 Paw Path (default 10), then x.game minutes on the word
+       game of the day (default 7; an extra saved before then keeps its round length, x.challenge, for the game) */
+    const pathOf = (x: Extra) => Math.max(1, Math.round(x.path && x.path > 0 ? x.path : 10));
+    const roundOf = (x: Extra) => Math.max(1, Math.round(x.kind === 'vocab' && x.game && x.game > 0 ? x.game : x.challenge && x.challenge > 0 ? x.challenge : x.kind === 'vocab' ? 7 : 5));
+    const warmOf = (x: Extra) => x.kind === 'vocab' && x.path && x.path > 0 ? pathOf(x) + roundOf(x) : roundOf(x);
+    const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: the 🐾 Paw Path, then the word game of the day, on this week’s words (Friday: the mastery check)${x.minutes > warmOf(x) ? `; more practice: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}` : ''}`
       : `⚡ Fact Sprint: ${(x.skills || ['times']).map(t => DRILL_NAMES[t]?.name || t).join(' + ')}${x.tables?.length ? ` (${x.tables.join(', ')}s)` : ''}`;
     /* every extra is a timed warm-up round (owner, Oct 27, 2026): x.challenge minutes (default 5 for a Fact Sprint, 7 for
        Word Workshop's daily puzzle), and minutes beyond it (x.minutes - round) are a "more practice" row later in the day */
-    el.innerHTML = `<p class="muted" style="margin-top:0">Extras are ${esc(r.n)}’s warm-up, right after Bible, before any subject. Each one is a <b>timed round</b>: “how many can you get in 5 minutes?” It stops by itself, and not finishing is fine. ${esc(r.n)} sees her score, her best and how she’s improving. The Word Workshop round is the day’s word puzzle on this week’s words. <b>More practice later</b> adds a separate row after her plan for the rest of the time.</p>
+    el.innerHTML = `<p class="muted" style="margin-top:0">Extras are ${esc(r.n)}’s warm-up, right after Bible, before any subject. Each one is a <b>timed round</b>: “how many can you get in 5 minutes?” It stops by itself, and not finishing is fine. ${esc(r.n)} sees her score, her best and how she’s improving. The Word Workshop warm-up is two rounds: <b>10 minutes on the 🐾 Paw Path</b> (her next lessons), then <b>7 minutes on the word game of the day</b> (Mon scramble, Tue secret code, Wed crossword, Thu word search; Friday is the mastery check). <b>More practice later</b> adds a separate row after her plan for the rest of the time.</p>
   ${list.length ? `<table class="steptable"><tr><th>Extra</th><th>Timed round</th><th>More practice later</th><th></th></tr>${list.map(x => `<tr><td>${esc(label(x))}</td>
-    <td><input type="number" min="1" max="30" value="${roundOf(x)}" data-ex-round="${esc(x.id)}" style="width:60px"> min</td>
-    <td><input type="number" min="0" max="60" value="${Math.max(0, Math.round(x.minutes) - roundOf(x))}" data-ex-more="${esc(x.id)}" style="width:60px"> min</td>
+    <td>${x.kind === 'vocab' ? `<label style="white-space:nowrap">🐾 Paw Path <input type="number" min="1" max="30" value="${pathOf(x)}" data-ex-path="${esc(x.id)}" style="width:60px"> min</label><br><label style="white-space:nowrap">🎲 Word game <input type="number" min="1" max="30" value="${roundOf(x)}" data-ex-round="${esc(x.id)}" style="width:60px"> min</label>` : `<input type="number" min="1" max="30" value="${roundOf(x)}" data-ex-round="${esc(x.id)}" style="width:60px"> min`}</td>
+    <td><input type="number" min="0" max="60" value="${Math.max(0, Math.round(x.minutes) - warmOf(x))}" data-ex-more="${esc(x.id)}" style="width:60px"> min</td>
     <td style="white-space:nowrap"><button class="btn small" data-extra-save="${esc(x.id)}">Save</button> <button class="btn small" data-extra-remove="${esc(x.id)}">Remove</button></td></tr>`).join('')}</table>` : '<p class="muted">No extras yet.</p>'}
   <h3>Add an extra</h3>
   <div class="row"><label>Activity <select id="exKind"><option value="sprint">⚡ Fact Sprint</option><option value="vocab">🔤 Word Workshop</option></select></label><label>⏱️ Timed round <input id="exMin" type="number" min="1" max="30" value="5" style="width:60px"> min</label><label>More practice later <input id="exMore" type="number" min="0" max="60" value="0" style="width:60px"> min</label></div>
   <div id="exSprint"><p style="margin:6px 0 2px"><b>Skills</b></p><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px">${drillIds.map(id => `<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-ex-skill="${esc(id)}" ${id === 'times' ? 'checked' : ''}> ${esc(DRILL_NAMES[id]?.name || id)}</label>`).join('')}</div>
   <p style="margin:8px 0 2px"><b>Times tables</b> <span class="muted">(tick the ones to practice, or leave them all unticked for a mix of every table)</span></p><div class="row">${[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => `<label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-ex-table="${n}"> ${n}s</label>`).join('')}</div></div>
-  <div id="exVocab" hidden><label>Exercise <select id="exMode">${Object.entries(VOCAB_MODES).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}</select></label> <span class="muted">Uses ${esc(r.n)}’s focus words.</span></div>
+  <div id="exVocab" hidden><label>🐾 Paw Path <input id="exPath" type="number" min="1" max="30" value="10" style="width:60px"> min, then the timed round above is the 🎲 word game of the day.</label><br><label>More practice exercise <select id="exMode">${Object.entries(VOCAB_MODES).map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}</select></label> <span class="muted">Uses ${esc(r.n)}’s focus words.</span></div>
   <div class="row"><button class="btn small primary" id="exAdd">Add extra</button></div>`;
     const kind = el.querySelector<HTMLSelectElement>('#exKind')!;
     kind.addEventListener('change', () => { el.querySelector<HTMLElement>('#exSprint')!.hidden = kind.value !== 'sprint'; el.querySelector<HTMLElement>('#exVocab')!.hidden = kind.value !== 'vocab'; el.querySelector<HTMLInputElement>('#exMin')!.value = kind.value === 'vocab' ? '7' : '5'; });
@@ -366,14 +370,16 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
       const ticked = [...el.querySelectorAll<HTMLInputElement>('[data-ex-skill]:checked')].map(b => b.dataset.exSkill!), skills = ticked.length ? ticked : ['times'];
       const tables = [...el.querySelectorAll<HTMLInputElement>('[data-ex-table]:checked')].map(b => +b.dataset.exTable!);
       const id = `x${Date.now().toString(36)}`;
-      const extra: Extra = kind.value === 'vocab' ? { id, kind: 'vocab', minutes, challenge, mode: el.querySelector<HTMLSelectElement>('#exMode')!.value }
+      const path = Math.max(1, Math.min(30, Math.round(+el.querySelector<HTMLInputElement>('#exPath')!.value || 10)));
+      const extra: Extra = kind.value === 'vocab' ? { id, kind: 'vocab', minutes: minutes + path, challenge, path, game: challenge, mode: el.querySelector<HTMLSelectElement>('#exMode')!.value }
         : { id, kind: 'sprint', minutes, challenge, skills, tables: skills.includes('times') ? tables : [] };
       void saveOverride('extras', JSON.stringify([...extrasList(), extra].slice(-10)));
     });
     el.querySelectorAll<HTMLButtonElement>('[data-extra-save]').forEach(b => b.addEventListener('click', () => {
       const id = b.dataset.extraSave!, val = (sel: string) => +(el.querySelector<HTMLInputElement>(`[${sel}="${CSS.escape(id)}"]`)?.value || 0);
       const round = Math.max(1, Math.min(30, Math.round(val('data-ex-round')) || 5)), more = Math.max(0, Math.min(60, Math.round(val('data-ex-more')) || 0));
-      void saveOverride('extras', JSON.stringify(extrasList().map(x => x.id === id ? { ...x, challenge: round, minutes: round + more } : x)));
+      const path = Math.max(1, Math.min(30, Math.round(val('data-ex-path')) || 10));
+      void saveOverride('extras', JSON.stringify(extrasList().map(x => x.id !== id ? x : x.kind === 'vocab' ? { ...x, challenge: round, game: round, path, minutes: path + round + more } : { ...x, challenge: round, minutes: round + more })));
     }));
     el.querySelectorAll<HTMLButtonElement>('[data-extra-remove]').forEach(b => b.addEventListener('click', () => {
       const next = extrasList().filter(x => x.id !== b.dataset.extraRemove);

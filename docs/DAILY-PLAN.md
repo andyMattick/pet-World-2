@@ -63,10 +63,20 @@ With the class wheel on (`CLASS-WHEEL.md`), a school day's plan keeps only the c
 
 Every extra is a **timed round** (owner: "how many can you get in X minutes?"). In the teacher app → her page → extras, each extra has **⏱️ Timed round** (default 5 minutes for a Fact Sprint, 7 for Word Workshop) and **More practice later** (default 0).
 
-- **The warm-up is one round** that stops by itself when the clock runs out; not finishing is fine. A Fact Sprint extra runs one long sprint; a Word Workshop extra is a round on the 🐾 Paw Path (lessons back to back at her next node; it was the day's word puzzle until Oct 30, 2026; see `VOCAB.md`, "This week's word path"), and on Friday the mastery check.
+- **The warm-up is one round** that stops by itself when the clock runs out; not finishing is fine. A Fact Sprint extra runs one long sprint; a Word Workshop extra is 10 minutes on the 🐾 Paw Path then 7 on the word game of the day (below), and on Friday the mastery check.
 - **Bragging on progress:** the end screen shows her score, how it compares with last time ("📈 4 more than last time!"), her best, how far she's come since her first rounds, and a bar chart of her last 7 rounds (`S.challengeLog`; per minute when the round length changed). The start screen says "Last time: 19 · Your best: 23. Can you beat it?"
 - **More practice later:** minutes beyond the round are a separate **➕ … more practice** row after her plan items. It doesn't block subjects, and it must be done before "I'm done for today" counts the extra as finished.
 - An older extra with no round length keeps its minutes: a 5-minute (or 7-minute) round, then the rest as more practice.
+
+### Word Workshop warm-up: 10 + 7 (Oct 30, 2026)
+
+Owner: "I'm OK if we spend 10 minutes doing the phases (Meet, Match, Build, Use, Spell), then another 7 with the word game of the day."
+
+- A Word Workshop extra is **two rows** on Today's plan and the Warm-up time! card: **⏱️ 10 min: 🐾 Paw Path** (her next lessons, back to back), then **⏱️ 7 min: the word game of the day** (Mon 🔀 Word Scramble, Tue 🔐 Secret Code, Wed ✏️ Crossword, Thu 🔎 Word Search). Each row has its own Start, ✅ and score; the game row's Start turns berry once the path part is done.
+- **The path part** continues lesson to lesson until the clock runs out. At 10 minutes she's never cut off mid-question: "⏰ Time's up! Finish this lesson to keep its XP." When that lesson is done, **Next: <game>, 7 min ▶** starts the game part.
+- **Friday** is one row: the 🏁 mastery check (as before).
+- **Lengths:** teacher app → her page → extras: 🐾 Paw Path (default 10) and 🎲 Word game (default 7), saved as `path` and `game` on the extra. An extra saved before Oct 30 has no `path`: it gets 10 + its old round length, and its minutes beyond the old round stay "more practice later".
+- **Time** counts the same way as before (every minute in Word Workshop today counts for the extra); "more practice later" starts after the 17 minutes.
 - The day log shows "⏱️ 5-minute challenge: …" with the score.
 
 ## ⭐ Start here, tests last

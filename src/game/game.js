@@ -16,6 +16,7 @@ import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
+import { pictureFor } from '../shared/wordPictures';
 import { PATH_SKILLS, skillInfo, buildLesson, lessonGroups, lessonCount, againItem, matchRetryItem, pathForWeek, pathNodes, recordLesson, pathSummaryText, fillBlank, XP_LESSON, langOf, graphemes } from '../shared/wordPath';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
@@ -9535,8 +9536,22 @@ function addExtraTime(id, secs){ extraSecs(id); S.extrasLog.secs[id] = Math.roun
    for a Fact Sprint and 7 for Word Workshop; any minutes beyond the round are the "more practice" row later in the day.
    Not finishing is fine: the round counts how many she gets. */
 const ROUND_DEFAULT = {sprint:5, vocab:7};
-const challengeMin = x => !x ? 0 : +x.challenge > 0 ? Math.max(1, Math.round(+x.challenge)) : ROUND_DEFAULT[x.kind] || 5;
+/* ☀️ the Word Workshop warm-up is two parts (owner, Oct 30, 2026: "I'm OK if we spend 10 minutes doing the phases
+   (Meet, Match, Build, Use, Spell), then another 7 with the word game of the day"; docs/DAILY-PLAN.md "Word Workshop
+   warm-up: 10 + 7"): x.path minutes on the 🐾 Paw Path (default 10), then x.game minutes on the word game of the day
+   (default 7; an extra saved before Oct 30 keeps its round length, x.challenge, for the game). Friday is the mastery
+   check instead. The game part's score is kept under "<id>~game". */
+const VOCAB_PATH_MIN = 10, VOCAB_GAME_MIN = 7;
+const clampMin = n => Math.max(1, Math.min(30, Math.round(+n)));
+const vocabPathMin = x => +x?.path > 0 ? clampMin(x.path) : VOCAB_PATH_MIN;
+const vocabGameMin = x => +x?.game > 0 ? clampMin(x.game) : +x?.challenge > 0 ? clampMin(x.challenge) : VOCAB_GAME_MIN;
+const gameId = x => `${x.id}~game`;
+const challengeMin = x => !x ? 0 : x.kind === 'vocab' ? vocabPathMin(x) + vocabGameMin(x) : +x.challenge > 0 ? Math.max(1, Math.round(+x.challenge)) : ROUND_DEFAULT[x.kind] || 5;
 function challengeScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[x.id]; return Number.isFinite(v) ? v : null; }
+function gameScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[gameId(x)]; return Number.isFinite(v) ? v : null; }
+/* Friday: the warm-up is the mastery check (one row), while it's due and on the day she did it */
+const vocabCheckToday = x => checkDue() || (checkDay() && !!S.extrasLog?.check?.[x.id]);
+const vocabWarmDone = x => vocabCheckToday(x) ? challengeScore(x) !== null && !checkDue() : challengeScore(x) !== null && gameScore(x) !== null;
 function recordChallenge(id, right, min = 0){
   extraSecs(id); S.extrasLog.challenge = {...(S.extrasLog.challenge || {}), [id]:right};
   const best = S.challengeBest?.[id] || 0; S.challengeBest = {...(S.challengeBest || {}), [id]:Math.max(best, right)};
@@ -9561,11 +9576,12 @@ function challengeBragHTML(id, right, min, unit = 'right'){
   const bars = recent.length > 1 ? `<div class="brag-bars" aria-label="Your last ${recent.length} rounds">${recent.map((r, i) => `<span style="height:${Math.max(8, Math.round(r.n / top * 48))}px" class="${i === recent.length - 1 ? 'now' : ''}" title="${r.n}"><i>${r.n}</i></span>`).join('')}</div>` : '';
   return `<div class="brag">${lines.map(l => `<p>${l}</p>`).join('')}${bars}</div>`;
 }
-const restMin = x => Math.max(0, Math.round(+x.minutes || 0) - challengeMin(x));
+/* more practice later: the minutes beyond the warm-up (an older Word Workshop extra counted only its 7-minute round) */
+const restMin = x => Math.max(0, Math.round(+x.minutes || 0) - (x.kind === 'vocab' && !(+x.path > 0) ? vocabGameMin(x) : challengeMin(x)));
 const restDone = x => Math.max(0, Math.floor(extraSecs(x.id) / 60) - challengeMin(x));
 /* is the warm-up part of this extra done? (the challenge, or all its minutes) */
-const extraFullyDone = x => challengeMin(x) ? challengeScore(x) !== null && restDone(x) >= restMin(x) : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
-const extraWarmDone = x => challengeMin(x) ? challengeScore(x) !== null : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
+const extraWarmDone = x => x.kind === 'vocab' ? vocabWarmDone(x) : challengeMin(x) ? challengeScore(x) !== null : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
+const extraFullyDone = x => challengeMin(x) ? extraWarmDone(x) && restDone(x) >= restMin(x) : Math.floor(extraSecs(x.id) / 60) >= Math.round(+x.minutes);
 /* one extra's row: the warm-up part, or (part 'rest') the minutes left after a challenge */
 function extraRowHTML(x, part = 'warm', lead = ''){
   const start = (p, berry = true) => `<button type="button" class="btn small${berry ? ' berry' : ''}" data-extra-start="${esc(x.id)}" data-extra-part="${p}">Start</button>`;
@@ -9574,10 +9590,18 @@ function extraRowHTML(x, part = 'warm', lead = ''){
     const done = restDone(x), finished = done >= goal;
     return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ➕ ${esc(extraLabel(x))}, more practice · <b>${done} of ${goal} min</b></span>${finished ? '' : start('rest', extraWarmDone(x))}</div>`;
   }
+  if (x.kind === 'vocab' && !vocabCheckToday(x)) {
+    /* two rows: ⏱️ 10 min on the Paw Path, then ⏱️ 7 min on the word game of the day */
+    const ps = challengeScore(x), gs = gameScore(x), pBest = S.challengeBest?.[x.id] || 0, gBest = S.challengeBest?.[gameId(x)] || 0, t = todayPuzzleType(), info = PUZZLE_INFO[t];
+    const words = n => `${n} ${n === 1 ? 'word' : 'words'}`;
+    const startPart = (p, berry) => `<button type="button" class="btn small${berry ? ' berry' : ''}" data-extra-start="${esc(x.id)}" data-extra-part="${p}">Start</button>`;
+    return `<div class="row extras-row" data-warm-part="path"><span style="flex:1">${ps !== null ? '✅' : '⬜'} ${lead}⏱️ <b>${vocabPathMin(x)} min</b>: ${esc(vocabWarmLabel())} · <b>${ps !== null ? `${words(ps)} right` : pBest ? `best ${pBest}` : 'lessons back to back'}</b></span>${ps !== null ? '' : startPart('path', true)}</div>`
+      + `<div class="row extras-row" data-warm-part="game"><span style="flex:1">${gs !== null ? '✅' : '⬜'} ${lead}⏱️ <b>${vocabGameMin(x)} min</b>: ${info.emoji} Word game of the day: ${esc(info.name)} · <b>${gs !== null ? words(gs) : gBest ? `best ${gBest}` : 'how many can you get?'}</b></span>${gs !== null ? '' : startPart('game', ps !== null)}</div>`;
+  }
   if (challengeMin(x)) {
     const score = challengeScore(x), best = S.challengeBest?.[x.id] || 0;
-    const vocab = x.kind === 'vocab', check = vocab && checkDue() && score === null, label = vocab ? vocabWarmLabel() : extraLabel(x);
-    return `<div class="row extras-row"><span style="flex:1">${score !== null ? '✅' : '⬜'} ${lead}${check ? '' : `⏱️ ${challengeMin(x)}-minute `}${check ? '' : 'challenge: '}${esc(label)} · <b>${score !== null ? `${score} ${vocab ? (score === 1 ? 'word' : 'words') : 'right'}` : check ? 'show what you know!' : best ? `best ${best}` : 'how many can you get?'}</b></span>${score !== null ? '' : start('challenge')}</div>`;
+    const vocab = x.kind === 'vocab', check = vocab && checkDue() && score === null, label = vocab ? '🏁 Friday mastery check' : extraLabel(x);   // a Word Workshop extra gets here only on its Friday check
+    return `<div class="row extras-row"><span style="flex:1">${score !== null ? '✅' : '⬜'} ${lead}${vocab ? '' : `⏱️ ${challengeMin(x)}-minute challenge: `}${esc(label)} · <b>${score !== null ? `${score} ${vocab ? 'mastered' : 'right'}` : check ? 'show what you know!' : best ? `best ${best}` : 'how many can you get?'}</b></span>${score !== null ? '' : start('challenge')}</div>`;
   }
   const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
   return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${lead}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : start('all')}</div>`;
@@ -9594,12 +9618,20 @@ function extrasCardHTML(){
   return `<div class="card extras-card" style="grid-column:1/-1"><h2>📋 Today’s extras</h2>${list.map(x => extraRowHTML(x) + extraRowHTML(x, 'rest')).join('')}</div>`;
 }
 let pendingExtra = null, activeExtra = null;   // the extra the next sprint was started from
+/* the Word Workshop warm-up: Friday's mastery check; otherwise ⏱️ the Paw Path part (10 min), then the word game of the
+   day (7 min). part 'game' starts the game; anything else starts whichever part is still to do. */
+function startVocabWarm(x, part = ''){
+  if (checkDue()) { vocabTab = 'path'; show('vocab'); startCheck(x.id); return; }
+  const doGame = part === 'game' || (part !== 'path' && challengeScore(x) !== null);
+  if (doGame && gameScore(x) === null) { vocabTab = 'week'; show('vocab'); startPuzzle({timed:true, min:vocabGameMin(x), extraId:gameId(x)}); return; }
+  vocabTab = 'path'; show('vocab'); startPathRound({min:vocabPathMin(x), extraId:x.id});
+}
 document.addEventListener('click', event => {
   const b = event.target.closest('[data-extra-start]'); if (!b) return;
   const x = assignedExtras().find(e => e.id === b.dataset.extraStart); if (!x) return;
   const challenge = b.dataset.extraPart === 'challenge' && challengeMin(x) > 0;
   /* the warm-up: Friday's mastery check, or (owner, Oct 30, 2026) a timed round on the 🐾 Paw Path instead of the daily puzzle */
-  if (x.kind === 'vocab' && challenge) { vocabTab = 'path'; show('vocab'); if (checkDue()) startCheck(x.id); else startPathRound({min:challengeMin(x), extraId:x.id}); }
+  if (x.kind === 'vocab' && (challenge || ['path', 'game'].includes(b.dataset.extraPart))) { startVocabWarm(x, b.dataset.extraPart); return; }
   else if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
   else { pendingExtra = challenge ? {...x, challengeRun:true} : x; openSprint(); }
 });
@@ -12778,6 +12810,32 @@ function wordPartsHTML(word, {compact = false} = {}){
   const origin = !compact && ORIGIN_NAMES[e.origin] ? ` <span class="muted">(${esc(ORIGIN_NAMES[e.origin])})</span>` : '';
   return `<div class="word-parts${e.guess ? ' wp-guess' : ''}"><p class="wp-head"><b>🧩 ${e.guess ? 'Looks like:' : 'Word parts'}</b>${origin}</p><div class="wp-chips">${chips}</div>${e.gloss ? `<p class="wp-gloss">→ ${esc(e.gloss)}</p>` : ''}</div>`;
 }
+/* 🖼️ the word's picture (owner, Oct 30, 2026: "I'd like the image with the word to help her understanding";
+   docs/WORD-PICTURES.md, docs/VOCAB.md "Word pictures"). pictureFor gives the cartoon (lazy-loaded from
+   public/vocab-pics/cartoons/) or the emoji scene; the photo slot is empty for now. Only ever shown next to the word
+   itself or after she answers, never on a question it could answer ("which word means…", match boards, spelling from
+   the meaning, the Friday check's questions). Tapping it reads the picture's description aloud. size: big (Meet the
+   words), small (beside an answer), tiny (a strip). `label` adds the word under it. */
+function wordPicHTML(word, {size = 'small', label = false} = {}){
+  const v = typeof word === 'object' ? word : null, w = String(v?.w ?? word ?? '');
+  let pic = null; try { pic = pictureFor(w, v); } catch { pic = null; }
+  if (!pic) return '';
+  const alt = pic.alt || `A picture for ${w}`;
+  const art = pic.src ? `<img class="wpic-img" src="${esc(pic.src)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="200" height="200" data-emoji="${esc(pic.emoji)}">`
+    : `<span class="wpic-emoji" role="img" aria-label="${esc(alt)}">${esc(pic.emoji)}</span>`;
+  return `<button type="button" class="wpic wpic-${size}" data-pic-say="${esc(alt)}" title="${esc(alt)}" aria-label="${esc(`Picture for ${w}: ${alt} Tap to hear it.`)}">${art}${label ? `<span class="wpic-word">${esc(w)}</span>` : ''}</button>`;
+}
+/* a cartoon that can't load shows its emoji scene instead */
+document.addEventListener('error', e => {
+  const img = e.target; if (!(img instanceof HTMLImageElement) || !img.classList.contains('wpic-img')) return;
+  const span = document.createElement('span'); span.className = 'wpic-emoji'; span.setAttribute('role', 'img'); span.setAttribute('aria-label', img.alt); span.textContent = img.dataset.emoji || '🖼️';
+  img.replaceWith(span);
+}, true);
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-pic-say]'); if (!b) return;
+  e.stopPropagation();
+  if (canSpeak()) speakPractice(b.dataset.picSay, () => {});
+}, true);
 /* the listening-time choices: "" follows the teacher's setting (or 8 seconds), then 0 (off) to 20 seconds */
 function listenOptionsHTML(cur, firstLabel){
   const val = validListen(cur);
@@ -12802,7 +12860,8 @@ function answerVocab(ok, shownAnswer, typed = ''){
   sfx(ok ? 'good' : 'bad');
   $('#vocabWrap .ela-feedback').textContent = ok ? 'That’s right!' : `Not quite. ${shownAnswer}`;
   const tip = kinds.length ? patternById(kinds[0]) : null;
-  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', `${tip ? `<p class="spell-tip"><b>Tricky part: ${esc(tip.name)}.</b> ${esc(tip.tip)}</p>` : ''}${syllableAnswerHTML(c.word.w)}${ok ? '' : wordPartsHTML(c.word.w)}${moved === 'down' ? '<p class="level-note">🌱 Let’s try some easier words for a bit.</p>' : moved === 'up' ? `<p class="level-note">🌳 Nice! On to ${esc(LEVEL_NAMES[S.vocab.level[c.kind === 'spell' ? 'spell' : 'cards']].replace(/^\S+ /, '').toLowerCase())}.</p>` : ''}`);
+  const picRow = run.mode === 'sprint' || !wordPicHTML(c.word) ? '' : `<div class="wpic-row">${wordPicHTML(c.word)}<span><b class="wpic-cap">${esc(c.word.w)}</b>${c.word.d ? `: ${esc(c.word.d)}` : ''}</span></div>`;   // 🖼️ after she answers
+  $('#vocabWrap .ela-feedback').insertAdjacentHTML('afterend', `${picRow}${tip ? `<p class="spell-tip"><b>Tricky part: ${esc(tip.name)}.</b> ${esc(tip.tip)}</p>` : ''}${syllableAnswerHTML(c.word.w)}${ok ? '' : wordPartsHTML(c.word.w)}${moved === 'down' ? '<p class="level-note">🌱 Let’s try some easier words for a bit.</p>' : moved === 'up' ? `<p class="level-note">🌳 Nice! On to ${esc(LEVEL_NAMES[S.vocab.level[c.kind === 'spell' ? 'spell' : 'cards']].replace(/^\S+ /, '').toLowerCase())}.</p>` : ''}`);
   $$('#vocabWrap [data-vocab-answer]').forEach(b => { b.disabled = true; if (+b.dataset.vocabAnswer === c.answer) b.classList.add('correct'); });
   $('#vocabWrap .typed-input')?.classList.add(ok ? 'correct' : 'incorrect'); const inp = $('#vocabWrap .typed-input'); if (inp) inp.disabled = true;
   run.index++;
@@ -12901,7 +12960,9 @@ function addVocabExtraTime(startedAt){ assignedExtras().filter(x => x.kind === '
 /* every word game is a timed round (7 minutes unless the grown-up set another length for the warm-up). type: play any of
    the 5 games for fun (not saved); without it, today's puzzle (saved, and finished tomorrow if the clock runs out) */
 function startPuzzle({timed = true, min = 7, extraId = null, type = ''} = {}){
-  const p = type && type !== todayPuzzleType() ? {...makePuzzle(type), free:true} : todayPuzzle(); if (!p.words.length) { toast('Add a few more words first.'); return; }
+  let p = type && type !== todayPuzzleType() ? {...makePuzzle(type), free:true} : todayPuzzle();
+  if (p.done && extraId) p = {...makePuzzle(p.type), free:true};   // the warm-up's word game when today's puzzle is already done: a fresh one of the same kind
+  if (!p.words.length) { toast('Add a few more words first.'); return; }
   if (vocabRun) { stopVocabTimer(); vocabRun = null; }
   puzzleRun = {p, timed, min, extraId, end:performance.now() + min * 60000, startedAt:performance.now(), startSolved:p.solved.length, sel:null, active:0};
   if (puzzleTimer) clearInterval(puzzleTimer);
@@ -12961,7 +13022,7 @@ function puzzleAnswer(k, ok){
   if (ok) { if (!p.solved.includes(k)) p.solved.push(k); sfx('good'); crack(); save(); renderPuzzle(); return; }
   sfx('bad');
   const host = $('#vocabWrap .pz-wrap'); host.querySelector('form[data-pz-answer]')?.remove();
-  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>${wordPartsHTML(k)}`);
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not quite. The word is “<b>${esc(k)}</b>”: ${esc(wordObj(k).d)}</p>${wordPicHTML(wordObj(k))}${wordPartsHTML(k)}`);   // 🖼️ after the miss, with the word
   askFix(host, k, () => { if (!p.helped.includes(k) && !p.solved.includes(k)) p.helped.push(k); crack(); save(); renderPuzzle(); });
 }
 function finishPuzzle(why){
@@ -13007,7 +13068,7 @@ function renderCheckCards(){
   const c = checkRun?.cards; if (!c) return;
   const v = c.deck[0]; if (!v) { finishCheckCards(false); return; }
   const front = `<span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s)}</span>` : ''}<span class="card-ask">What’s the word? Say it, then flip.</span>`;
-  const back = `<span class="card-term">${esc(v.w)}</span><span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s.replace(/___/g, v.w))}</span>` : ''}`;
+  const back = `${wordPicHTML(v)}<span class="card-term">${esc(v.w)}</span><span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s.replace(/___/g, v.w))}</span>` : ''}`;
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Stop</button></div>
     <div class="sprint-card vocab-card"><p class="muted">Step 1 of 2: 📇 flashcards of this week’s ${c.total} words. Cards you’re still learning come back. Step 2: type each word to master it.</p>
     <div class="row card-tools"><span><b>${c.known}</b> of ${c.total} known</span><button type="button" class="btn small" data-check-hear="${esc(v.w)}">🔊 Hear it</button><button type="button" class="btn small" data-ccard-skip>Skip to the check</button></div>
@@ -13058,10 +13119,12 @@ function finishCheck(){
   wk.mastered = [...new Set([...wk.mastered, ...mastered])]; wk.check.done = true;
   S.vocab.hall = [...(S.vocab.hall || []).filter(h => !fresh.includes(h.w) && !slipped.includes(h.w)), ...fresh.map(w => ({w, wk:wk.id}))].slice(-VOCAB_LIMITS.list);
   if (run) addVocabExtraTime(run.startedAt);
-  if (run?.extraId) recordChallenge(run.extraId, fresh.length, 0);
+  /* the Friday check is the Word Workshop warm-up that day, started from the warm-up row or from the path's 🏆 */
+  const checkIds = run?.extraId ? [run.extraId] : checkDay() ? assignedExtras().filter(x => x.kind === 'vocab' && challengeScore(x) === null).map(x => x.id) : [];
+  for (const id of checkIds) { recordChallenge(id, fresh.length, 0); S.extrasLog.check = {...(S.extrasLog.check || {}), [id]:true}; }
   logEvent({k:'vocab', mode:'check', s:mastered.length, n:mastered.length + stay.length, title:`mastered ${fresh.join(', ') || 'none yet'}${review.size ? ` · review ${kept.length} of ${kept.length + slipped.length} kept` : ''}`});
   S.coins += fresh.length; save(); updateHeader();
-  const cards = wk.check.cards, chip = k => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(k)?.w || k)}</span>`;
+  const cards = wk.check.cards, chip = k => `<span class="vocab-chip st-solid wpic-chip">${wordPicHTML(map.get(k) || k, {size:'tiny'})}⭐ ${esc(map.get(k)?.w || k)}</span>`;
   $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Mastery check done!</h2><button class="btn small" data-go="home">Back to town</button></div>
     <div class="sprint-card vocab-card"><div class="big-emoji">${fresh.length ? '🎉🏆🎉' : '💪'}</div>
     <h2>${fresh.length ? `You mastered ${fresh.length} word${fresh.length === 1 ? '' : 's'}!` : 'Keep going!'}</h2>
@@ -13101,7 +13164,7 @@ document.addEventListener('submit', event => {
   recordVocab(k, ok); wk.check.results[k] = ok ? 1 : 0; save();
   if (ok) { sfx('good'); toast('⭐ Mastered!'); renderCheck(); return; }
   sfx('bad'); const host = $('#vocabWrap .pz-wrap'); f.remove();
-  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on next week’s list.</p>${wordPartsHTML(k)}`);
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on next week’s list.</p>${wordPicHTML(wordObj(k))}${wordPartsHTML(k)}`);
   askFix(host, k, renderCheck);
 }, true);
 $('#vocabWrap').addEventListener('click', event => {
@@ -13200,6 +13263,7 @@ function pathHTML(){
 function startPathLesson(skill, idx){
   const groups = lessonGroups(pathWordObjs(), ensureWeek().id), g = groups[idx] || groups[0];
   if (!g?.length) { toast('Add a few more words first.'); return; }
+  if (pathRound?.over) stopPathRound();   // a finished warm-up round: lessons after it are ordinary practice
   if (vocabRun) { stopVocabTimer(); vocabRun = null; }
   if (puzzleRun || checkRun) stopPuzzleRun();
   stopListen(); fixThen = null;
@@ -13232,7 +13296,7 @@ const showNext = el => { if (!el) return; el.focus({preventScroll:true}); el.scr
 function pathTopHTML(){
   const run = pathRun, done = run.pos, pct = Math.round(100 * done / Math.max(1, run.items.length)), info = skillInfo(run.skill);
   return `<div class="pp-top"><button type="button" class="pp-x" data-pp-quit aria-label="Stop the lesson">✕</button><div class="pp-prog" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>${pathRound && !pathRound.over ? `<span class="pp-time">⏱️ <b id="ppTime">${fmtCountdown(Math.max(0, pathRound.end - performance.now()))}</b></span>` : ''}</div>
-    <p class="pp-skill">${info.emoji} ${esc(info.name)} · Lesson ${run.idx + 1}</p>`;
+    <p class="pp-skill">${info.emoji} ${esc(info.name)} · Lesson ${run.idx + 1}</p>${pathRound?.over ? '<p class="pp-timeup" role="status">⏰ Time’s up! Finish this lesson to keep its XP.</p>' : ''}`;
 }
 function renderPathItem(){
   const run = pathRun; if (!run) return;
@@ -13243,7 +13307,7 @@ function renderPathItem(){
   if (it.type === 'intro') {
     const n = wordSyl(v).say.length;
     body = `<div class="pp-intro"><p class="pp-new">✨ New word</p><div class="pp-word">${esc(v.w)}</div><p class="row pp-hear"><button type="button" class="btn small" data-pp-hear>🔊 Hear it</button><button type="button" class="btn small" data-pp-hear="syllables">🐢 By syllables</button><span class="muted">${n} syllable${n === 1 ? '' : 's'}</span></p>
-      <p class="pp-mean">${esc(it.d)}</p>${it.s ? `<p class="pp-example">“${esc(fillBlank(it.s, v.w))}”</p>` : ''}</div>`;
+      ${wordPicHTML(v, {size:'big'})}<p class="pp-mean">${esc(it.d)}</p>${it.s ? `<p class="pp-example">“${esc(fillBlank(it.s, v.w))}”</p>` : ''}</div>`;
     foot = '<button type="button" class="btn berry pp-check" data-pp-next>Got it!</button>';
   } else if (it.type === 'pick') {
     const wordPrompt = ['word2def', 'partMeaning'].includes(it.kind);
@@ -13293,11 +13357,13 @@ function answerPath(ok, shown = '', typed = '', note = ''){
   /* 🧩 a word-parts item teaches as it goes: after every build (right or wrong) and every part question she sees the
      word's parts and what each means, so the next "what does vid mean?" asks about something she was shown */
   const parts = ['build', 'partMeaning', 'hasPart'].includes(it.kind) ? wordPartsHTML(v.w) : '';
-  if (ok) { foot.innerHTML = `<p class="pp-fb"><span class="pp-fb-pet">${pet.emoji}</span> <b>${esc(pickOne(PATH_CHEERS))}</b></p>${note}${why}${parts}${it.type === 'type' ? syllableAnswerHTML(v) : ''}<button type="button" class="btn berry pp-check" data-pp-next>Continue</button>`; showNext(foot.querySelector('[data-pp-next]')); return; }
+  /* 🖼️ after she answers: the word's picture with the word (never before: the question could be "which word means…") */
+  const pic = it.kind === 'nuance' ? '' : `<div class="wpic-row">${wordPicHTML(v, {size:'small'})}<b class="wpic-cap">${esc(v.w)}</b></div>`;
+  if (ok) { foot.innerHTML = `<p class="pp-fb"><span class="pp-fb-pet">${pet.emoji}</span> <b>${esc(pickOne(PATH_CHEERS))}</b></p>${note}${why}${wordPicHTML(v) ? pic : ''}${parts}${it.type === 'type' ? syllableAnswerHTML(v) : ''}<button type="button" class="btn berry pp-check" data-pp-next>Continue</button>`; showNext(foot.querySelector('[data-pp-next]')); return; }
   /* a miss: she types the right answer to keep going (the word; for a part question, the part's meaning; for a
      look-alike sentence, the look-alike) */
   const fix = it.fix || (it.type === 'pick' && it.kind === 'nuance' ? it.choices[it.answer] : v.w);
-  foot.innerHTML = `<p class="pp-fb"><b>Not quite.</b> ${shown}</p>${why}${tip}${it.type === 'type' ? syllableAnswerHTML(v) : ''}${it.kind === 'letters' || it.kind === 'spellPick' ? '' : wordPartsHTML(v.w)}`;
+  foot.innerHTML = `<p class="pp-fb"><b>Not quite.</b> ${shown}</p>${why}${wordPicHTML(v) ? pic : ''}${tip}${it.type === 'type' ? syllableAnswerHTML(v) : ''}${it.kind === 'letters' || it.kind === 'spellPick' ? '' : wordPartsHTML(v.w)}`;
   askFix(foot, fix, () => { foot.insertAdjacentHTML('beforeend', '<button type="button" class="btn berry pp-check" data-pp-next>Continue</button>'); showNext(foot.querySelector('[data-pp-next]')); });
 }
 /* a match board: a right pair turns green; a wrong pair shows that word's meaning and she types it to keep going; the
@@ -13336,6 +13402,12 @@ function finishBoard(it){
   showNext(foot.querySelector('[data-pp-next]'));
   sfx(missed.length ? 'good' : 'coin');
 }
+/* 🖼️ the lesson's words as a small picture strip on the lesson-complete screen (each with its word) */
+function lessonPicStripHTML(idx){
+  let g = []; try { const groups = lessonGroups(pathWordObjs(), ensureWeek().id); g = groups[idx] || groups[0] || []; } catch { g = []; }
+  const pics = g.map(v => wordPicHTML(v, {size:'tiny', label:true})).filter(Boolean);
+  return pics.length ? `<div class="wpic-strip" aria-label="This lesson’s words">${pics.join('')}</div>` : '';
+}
 function finishPathLesson(){
   const run = pathRun; if (!run) return;
   pathRun = null; stopListen(); fixThen = null;
@@ -13346,23 +13418,35 @@ function finishPathLesson(){
   logEvent({k:'vocab', mode:'path', s:run.right, n:run.asked, title:`${info.emoji} ${info.name} · lesson ${run.idx + 1} · +${res.xp} XP`});
   save(); updateHeader();
   const after = pathNodes(path), nowDone = !wasDone && after.nodes.find(n => n.id === run.skill)?.state === 'done', next = after.current;
-  const roundLeft = pathRound && !pathRound.over;
+  const roundLeft = pathRound && !pathRound.over, gameNext = pathRound?.over ? warmGameButtonHTML(pathRound.extraId) : '';
   const brag = pathRound?.over && !pathRound.shown ? (() => { pathRound.shown = true; return challengeBragHTML(pathRound.extraId, pathRound.right, pathRound.min, 'words'); })() : '';
   const pet = petReward();
   $('#vocabWrap').innerHTML = `<div class="sprint-card vocab-card pp-done"><div class="pp-done-pet">${pet.emoji}</div><h2>${perfect ? 'Perfect lesson!' : 'Lesson complete!'}</h2>
     <div class="pp-tiles"><div class="pp-tile-stat xp"><small>XP</small><b>⚡ ${res.xp}</b></div><div class="pp-tile-stat acc"><small>${acc >= 90 ? 'Amazing' : acc >= 70 ? 'Good' : 'Accuracy'}</small><b>🎯 ${acc}%</b></div><div class="pp-tile-stat streak"><small>Days this week</small><b>📅 ${path.days.length}</b></div></div>
+    ${lessonPicStripHTML(run.idx)}
     <p>You earned <b>🪙 ${coins}</b>. ${esc(petName())} is proud of you!</p>
     ${nowDone ? `<p class="pp-unlocked">🎉 You finished <b>${info.emoji} ${esc(info.name)}</b>!${next ? ` Next up: <b>${next.emoji} ${esc(next.name)}</b>` : ' The whole path is done: you’re ready for Friday!'}</p>` : ''}
     ${run.missed.size ? `<p class="muted">Words to keep an eye on: ${[...run.missed].map(k => `<b>${esc(pathWordObj(k).w)}</b>`).join(', ')}</p>` : ''}
     ${brag}
-    <div class="row pp-done-row">${roundLeft ? '<button type="button" class="btn berry" data-pp-nextlesson>Next lesson ▶</button>' : '<button type="button" class="btn berry" data-pp-continue>Continue</button>'}</div></div>`;
+    <div class="row pp-done-row">${roundLeft ? '<button type="button" class="btn berry" data-pp-nextlesson>Next lesson ▶</button>' : gameNext || '<button type="button" class="btn berry" data-pp-continue>Continue</button>'}</div></div>`;
   sfx('unlock');
   if (!roundLeft && pathRound?.over) stopPathRound();
 }
 /* ⏱️ the Word Workshop warm-up on the path (the extra's round, 7 minutes unless a grown-up picked another length): she
    does lessons back to back until the clock runs out; the score is the answers she got right. When time's up she can
    finish the lesson she's in (it still counts). Friday's warm-up is the mastery check, as before. */
-function startPathRound({min = 7, extraId = null} = {}){
+/* after the Paw Path part of the warm-up: the button to the word game of the day (when that part is still to do) */
+function warmGameButtonHTML(extraId){
+  const x = extraId && assignedExtras().find(e => e.id === extraId); if (!x || gameScore(x) !== null || checkDue()) return '';
+  const info = PUZZLE_INFO[todayPuzzleType()];
+  return `<button type="button" class="btn berry" data-warm-game="${esc(x.id)}">Next: ${info.emoji} ${esc(info.name)}, ${vocabGameMin(x)} min ▶</button><button type="button" class="btn small" data-pp-continue>Back to the path</button>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-warm-game]'); if (!b) return;
+  const x = assignedExtras().find(z => z.id === b.dataset.warmGame); if (!x) return;
+  stopPathRound(); startVocabWarm(x, 'game');
+});
+function startPathRound({min = VOCAB_PATH_MIN, extraId = null} = {}){
   stopPathRound();
   pathRound = {min, extraId, end:performance.now() + min * 60000, right:0, over:false, pathClock:true};
   pathRoundTimer = setInterval(() => {
@@ -13378,7 +13462,9 @@ function endPathRoundClock(){
   if (pathRound.extraId) recordChallenge(pathRound.extraId, pathRound.right, pathRound.min);
   logEvent({k:'vocab', mode:'path', s:pathRound.right, min:pathRound.min, title:'warm-up round'});
   save(); $('.pp-time')?.remove();
-  if (pathRun) toast(`⏰ Time! ${pathRound.right} right. Finish this lesson to keep its XP.`);
+  /* never cut mid-question: a calm note, and she finishes the lesson she's in (it still counts) */
+  if (pathRun) { toast(`⏰ Time’s up! Finish this lesson, then it’s the word game.`); $('#vocabWrap .pp-top')?.insertAdjacentHTML('afterend', '<p class="pp-timeup" role="status">⏰ Time’s up! Finish this lesson to keep its XP.</p>'); }
+  else { const row = $('#vocabWrap .pp-done-row'); if (row && row.querySelector('[data-pp-nextlesson]')) { const brag = challengeBragHTML(pathRound.extraId, pathRound.right, pathRound.min, 'words'); pathRound.shown = true; row.innerHTML = warmGameButtonHTML(pathRound.extraId) || '<button type="button" class="btn berry" data-pp-continue>Continue</button>'; row.insertAdjacentHTML('beforebegin', `<p class="pp-timeup" role="status">⏰ Time’s up for the Paw Path! ${pathRound.right} right.</p>${brag}`); } }
 }
 /* leaving Word Workshop mid-lesson: the lesson is dropped; a timed round still records what she got */
 function leavePath(){ if (pathRun) addVocabExtraTime(pathRun.startedAt); pathRun = null; stopListen(); if (pathRound && !pathRound.over) endPathRoundClock(); stopPathRound(); }
@@ -13403,7 +13489,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.ppNode) { pathOpen = pathOpen === b.dataset.ppNode ? null : b.dataset.ppNode; renderVocab(); $(`#vocabWrap [data-pp-node="${b.dataset.ppNode}"]`)?.focus(); return; }
   if (b.dataset.ppStart) { startPathLesson(b.dataset.ppStart, +b.dataset.ppLesson || 0); return; }
   if (b.hasAttribute('data-pp-continue')) { vocabTab = 'path'; renderVocab(); return; }
-  if (b.hasAttribute('data-pp-nextlesson')) { const {skill, idx} = nextPathLesson(); startPathLesson(skill, idx); return; }
+  if (b.hasAttribute('data-pp-nextlesson')) { if (pathRound?.over) { const id = pathRound.extraId; stopPathRound(); const x = assignedExtras().find(z => z.id === id); if (x) { startVocabWarm(x, 'game'); return; } vocabTab = 'path'; renderVocab(); return; } const {skill, idx} = nextPathLesson(); startPathLesson(skill, idx); return; }
   const run = pathRun; if (!run) return;
   const it = run.items[run.pos];
   /* ✕ asks first once she has started (her lesson isn't saved, and a timed warm-up round would end too) */
@@ -13467,7 +13553,7 @@ function vocabGrownUpHTML(all){
       <label>Example sentence, with ___ where the word goes (optional)<input type="text" data-flag-sentence maxlength="200" value="${esc(blankSentence(f.ctx, f.w).split(/\s+/).length >= 4 ? blankSentence(f.ctx, f.w) : '')}" placeholder="The volcano ___ with a loud boom."></label>
       <span class="row"><button type="button" class="btn small primary" data-flag-add="${esc(f.w)}">Add</button><button type="button" class="btn small" data-flag-dismiss="${esc(f.w)}">Dismiss</button><a class="btn small" href="https://www.merriam-webster.com/dictionary/${encodeURIComponent(f.w)}" target="_blank" rel="noopener noreferrer">Look it up ↗</a></span></div>`).join('')}` : ''}
     <label><input type="checkbox" id="vocabBuiltIn" ${v.builtIn ? 'checked' : ''}> Include Pet World’s word list (${VOCAB_WORDS.length} grade 4–6 words)</label>
-    <p><label>👂 Listening time on spelling cards <select id="vocabListen">${listenOptionsHTML(v.listenSec, `${Backend.me?.game_settings?.vocab?.listenSec != null ? 'Teacher’s setting' : 'Default'} (${listenSeconds({classVocab:Backend.me?.game_settings?.vocab})} s)`)}</select></label><br><span class="muted">After Pet World says the word, how many syllables it has, and each syllable, the answer box stays locked this long so she keeps listening. She can replay it as much as she wants. 0 turns the wait off.</span></p>
+    <p><label>👂 Listening time on spelling cards and the 🐾 Paw Path’s Spell it <select id="vocabListen">${listenOptionsHTML(v.listenSec, `${Backend.me?.game_settings?.vocab?.listenSec != null ? 'Teacher’s setting' : 'Default'} (${listenSeconds({classVocab:Backend.me?.game_settings?.vocab})} s)`)}</select></label><br><span class="muted">After Pet World says the word, how many syllables it has, and each syllable, the answer box stays locked this long so she keeps listening. She can replay it as much as she wants. 0 turns the wait off.</span></p>
     <h4>Add or import words</h4><p class="muted" style="margin-top:0">One per line: <code>word - meaning</code>. You can add an example sentence with ___ for the word: <code>word - meaning - The ___ sat here.</code> To put words in a set, add a line like <code>Set: Lesson 4</code> above them (otherwise they go in “My words”). Headings like <code>Set 11:</code> or <code>Lesson 4</code> work too, and bullets or numbers at the start of a line are ignored. You can paste just the words (one per line, or <code>Set 11: abundant, scarce, eager</code>): Pet World fills in its own meaning when it has the word, and the rest come back in the box as <code>word - </code> for you to finish. You can also paste two columns from a spreadsheet. <b>Other languages:</b> put a line like <code>Language: Spanish</code> above the words (and <code>Language: English</code> to switch back); they’re read aloud in that language. For the 🐾 Paw Path you can add a second sentence as a fourth part, and the part of speech after the word: <code>árbol (n) - tree - El pájaro está en el ___. - Hay un ___ en el patio.</code></p>
     <p class="muted"><b>Type syllables with + to help Pet World say them: <code>ap+ples</code></b> (or <code>cel+e+bra+tion - a big party</code>). Pet World saves the word without the +’s and uses the pieces for the syllable count, the dots and the spoken parts. She never sees the pieces before she answers.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
@@ -13499,7 +13585,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.hasAttribute('data-vocab-hear') && vocabRun) { void speakWord(vocabRun.card.word, b.dataset.vocabHear || 'word'); return; }
   if (b.hasAttribute('data-voice-test')) { void speakWord('analyze', 'syllables'); return; }
   if (b.dataset.vocabAnswer != null && vocabRun && !vocabRun.answered) { const c = vocabRun.card; answerVocab(+b.dataset.vocabAnswer === c.answer, c.kind === 'meaning' ? `“${c.word.w}” means ${c.word.d}.` : `The word is “${c.word.w}”: ${c.word.d}.`); if (+b.dataset.vocabAnswer !== c.answer) b.classList.add('incorrect'); return; }
-  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}${wordPartsHTML(v.w, {compact:true})}` : ''; return; }
+  if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}${wordPicHTML(v)}${wordPartsHTML(v.w, {compact:true})}` : ''; return; }
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
   if (!parentReadingUnlocked) return;
   if (b.dataset.vocabUnmaster) {

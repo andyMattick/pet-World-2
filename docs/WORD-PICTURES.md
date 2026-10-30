@@ -4,7 +4,7 @@ Owner (Oct 30, 2026): "i'd also like the image with the word to help her underst
 
 Every built-in word in Word Workshop has a picture that shows what it **means**: real photos where a photo can show it, cartoons for 25–50% of the words, and emoji where neither works. The data is in `src/shared/wordPictures.js` and the drawings are in `public/vocab-pics/cartoons/`.
 
-**Status:** the cartoons and emoji are done. The photos come later, because the image sites they come from can't be reached from where this was built. Until a word's photo is added, it shows its emoji. Word Workshop doesn't show the pictures yet. Adding them to the cards is a separate step in `game.js` / `vocab.js`.
+**Status:** the cartoons and emoji are done. The photos come later, because the image sites they come from can't be reached from where this was built. Until a word's photo is added, it shows its emoji. Word Workshop shows them (Oct 30, 2026): see `VOCAB.md`, "Word pictures", for where they show and where they never do.
 
 ## The mix
 
