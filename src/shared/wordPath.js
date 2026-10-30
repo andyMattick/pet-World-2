@@ -61,7 +61,7 @@ ancient|a|Scientists studied ___ bones that were thousands of years old.
 modern|a|Our school has ___ laptops that came out just this year.
 enormous|a|The whale was so ___ that it was longer than our school bus.
 minute|a|The ___ seed was so small that I could barely see it on my fingertip.
-reluctant|a|The puppy was ___ to take a bath and pulled back on its leash.
+reluctant|a|The puppy was ___ to take a bath and hid under the bed when it saw the tub.
 eager|a|The kids were ___ to start the game and kept asking, “Can we play now?”
 cautious|a|The ___ hiker tested each rock with her foot before stepping on it.
 confident|a|After weeks of practice, Leo felt ___ that he could play the song without a mistake.
@@ -119,15 +119,15 @@ drowsy|a|After the long car ride, the baby was so ___ that her eyes kept closing
 eventually|r|We waited and waited, and ___ the bus came around the corner.
 hesitate|v|Did you ___ at the top of the slide before going down?
 immense|a|The mountain was ___, rising so high that clouds covered its top.
-peculiar|a|The milk tasted ___, so we checked the date and saw it had gone bad.
+peculiar|a|Our cat’s habits are ___: she sleeps in the sink, and of all the bowls in the house, she will only drink out of a teacup.
 rapid|a|The cheetah’s ___ run lets it catch up to almost any animal.
 vivid|a|Her dream was so ___ that she could remember every bright color and sound.
 wander|v|On Saturday we like to ___ around the market with no plan, just looking.
 accomplish|v|If you work a little every day, you can ___ your goal of reading twenty books.
 demonstrate|v|Our science teacher will ___ how a volcano erupts by showing us a model.
-expand|v|Bread dough will ___ and get bigger as it rises in a warm place.
-improve|v|Reading every night can ___ your spelling and make it better.
-investigate|v|The scientists came to ___ why the fish in the lake were getting sick.
+expand|v|Put the bread dough in a warm place, and in an hour it will ___ to twice its size.
+improve|v|If you read every night, your spelling scores will ___ from 6 out of 10 to 9 out of 10.
+investigate|v|For a whole month, the scientists will ___ the lake, testing the water and studying the sick fish to learn what is wrong.
 locate|v|Use the map to ___ the closest library.
 perform|v|The band will ___ three songs on stage tonight.
 protect|v|Sunscreen will ___ your skin from a bad sunburn.
@@ -158,7 +158,7 @@ piece|n|Can I have one ___ of your orange?
 ceiling|n|The balloon floated up and stuck to the ___ of the room.
 field|n|The horses ran across the open ___ of grass.
 necessary|a|Is it ___ to bring a coat, or will it be warm?
-tomorrow|r|Today is Monday, so ___ will be Tuesday.
+tomorrow|r|Pack your swimsuit tonight, because we leave for the beach ___ morning.
 occasion|n|Her graduation was a special ___, so the whole family came.
 address|n|Write your street and city on the envelope so the letter goes to the right ___.
 success|n|After many tries, the rocket launch was finally one big ___.
@@ -170,12 +170,12 @@ distance|n|The ___ from my house to school is about one mile.
 excellent|a|Your science project was ___; it won first prize!
 assistant|n|The chef’s ___ chopped the onions to help.
 comfortable|a|The soft couch is so ___ that I fell asleep on it.
-possible|a|Is it ___ for a dog to learn twenty tricks? Yes, it can happen!
+possible|a|Is it ___ to see the moon in the daytime? Look up on a clear morning and you might spot it.
 valuable|a|The gold ring is ___, so keep it in a safe place.
 visible|a|On a clear night, many stars are ___ in the sky.
 terrible|a|The storm was ___ and knocked down three trees.
 reliable|a|Our old car is ___; it starts every single morning.
-question|n|If you don’t understand, raise your hand and ask your ___.
+question|n|Mia wrote her ___ on a sticky note for the scientist: “Why do cats purr?”
 vacation|n|We went camping for a week on our summer ___.
 decision|n|Choosing between the two puppies was a hard ___.
 television|n|We watched the parade on ___ because it was too cold to go.
@@ -192,7 +192,7 @@ export const PATH_DATA = Object.fromEntries(PD.split('\n').map(line => { const [
 export const NEAR = [
   ['enormous', 'immense'], ['compare', 'contrast'], ['estimate', 'approximate'], ['accurate', 'precise'], ['precise', 'thorough'],
   ['migrate', 'migration'], ['migrate', 'wander'], ['data', 'evidence'], ['conflict', 'debate'], ['essential', 'significant'], ['essential', 'require'],
-  ['determine', 'identify'], ['determine', 'locate'], ['identify', 'locate'], ['analyze', 'investigate'], ['analyze', 'observe'], ['investigate', 'observe'],
+  ['determine', 'identify'], ['determine', 'investigate'], ['determine', 'locate'], ['identify', 'locate'], ['analyze', 'investigate'], ['analyze', 'observe'], ['investigate', 'observe'],
   ['explain', 'interpret'], ['explain', 'demonstrate'], ['explain', 'describe'], ['reveal', 'demonstrate'], ['reluctant', 'hesitate'], ['timid', 'reluctant'],
   ['patient', 'patience'], ['eager', 'curious'], ['peculiar', 'distinct'], ['civilization', 'culture'], ['civilization', 'empire'], ['culture', 'empire'],
   ['culture', 'tradition'], ['habitat', 'environment'], ['adapt', 'transform'], ['accomplish', 'perform'], ['accomplish', 'success'], ['opinion', 'perspective'],

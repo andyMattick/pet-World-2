@@ -26,7 +26,7 @@ Each is the "Which word fits best?" item for its word in Use it (never shown as 
 | modern | adjective (also noun) | Our school has **modern** laptops that came out just this year. |
 | enormous | adjective | The whale was so **enormous** that it was longer than our school bus. |
 | minute | adjective (also noun) | The **minute** seed was so small that I could barely see it on my fingertip. |
-| reluctant | adjective | The puppy was **reluctant** to take a bath and pulled back on its leash. |
+| reluctant | adjective | The puppy was **reluctant** to take a bath and hid under the bed when it saw the tub. |
 | eager | adjective | The kids were **eager** to start the game and kept asking, “Can we play now?” |
 | cautious | adjective | The **cautious** hiker tested each rock with her foot before stepping on it. |
 | confident | adjective | After weeks of practice, Leo felt **confident** that he could play the song without a mistake. |
@@ -84,15 +84,15 @@ Each is the "Which word fits best?" item for its word in Use it (never shown as 
 | eventually | adverb | We waited and waited, and **eventually** the bus came around the corner. |
 | hesitate | verb | Did you **hesitate** at the top of the slide before going down? |
 | immense | adjective | The mountain was **immense**, rising so high that clouds covered its top. |
-| peculiar | adjective | The milk tasted **peculiar**, so we checked the date and saw it had gone bad. |
+| peculiar | adjective | Our cat’s habits are **peculiar**: she sleeps in the sink, and of all the bowls in the house, she will only drink out of a teacup. |
 | rapid | adjective (also noun) | The cheetah’s **rapid** run lets it catch up to almost any animal. |
 | vivid | adjective | Her dream was so **vivid** that she could remember every bright color and sound. |
 | wander | verb (also noun) | On Saturday we like to **wander** around the market with no plan, just looking. |
 | accomplish | verb | If you work a little every day, you can **accomplish** your goal of reading twenty books. |
 | demonstrate | verb | Our science teacher will **demonstrate** how a volcano erupts by showing us a model. |
-| expand | verb (also adjective) | Bread dough will **expand** and get bigger as it rises in a warm place. |
-| improve | verb | Reading every night can **improve** your spelling and make it better. |
-| investigate | verb | The scientists came to **investigate** why the fish in the lake were getting sick. |
+| expand | verb (also adjective) | Put the bread dough in a warm place, and in an hour it will **expand** to twice its size. |
+| improve | verb | If you read every night, your spelling scores will **improve** from 6 out of 10 to 9 out of 10. |
+| investigate | verb | For a whole month, the scientists will **investigate** the lake, testing the water and studying the sick fish to learn what is wrong. |
 | locate | verb | Use the map to **locate** the closest library. |
 | perform | verb (also adjective) | The band will **perform** three songs on stage tonight. |
 | protect | verb | Sunscreen will **protect** your skin from a bad sunburn. |
@@ -123,7 +123,7 @@ Each is the "Which word fits best?" item for its word in Use it (never shown as 
 | ceiling | noun | The balloon floated up and stuck to the **ceiling** of the room. |
 | field | noun (also verb) | The horses ran across the open **field** of grass. |
 | necessary | adjective | Is it **necessary** to bring a coat, or will it be warm? |
-| tomorrow | adverb (also noun) | Today is Monday, so **tomorrow** will be Tuesday. |
+| tomorrow | adverb (also noun) | Pack your swimsuit tonight, because we leave for the beach **tomorrow** morning. |
 | occasion | noun (also verb) | Her graduation was a special **occasion**, so the whole family came. |
 | address | noun (also verb) | Write your street and city on the envelope so the letter goes to the right **address**. |
 | success | noun (also adjective) | After many tries, the rocket launch was finally one big **success**. |
@@ -135,12 +135,12 @@ Each is the "Which word fits best?" item for its word in Use it (never shown as 
 | excellent | adjective | Your science project was **excellent**; it won first prize! |
 | assistant | noun (also adjective) | The chef’s **assistant** chopped the onions to help. |
 | comfortable | adjective | The soft couch is so **comfortable** that I fell asleep on it. |
-| possible | adjective (also noun) | Is it **possible** for a dog to learn twenty tricks? Yes, it can happen! |
+| possible | adjective (also noun) | Is it **possible** to see the moon in the daytime? Look up on a clear morning and you might spot it. |
 | valuable | adjective (also noun) | The gold ring is **valuable**, so keep it in a safe place. |
 | visible | adjective | On a clear night, many stars are **visible** in the sky. |
 | terrible | adjective | The storm was **terrible** and knocked down three trees. |
 | reliable | adjective | Our old car is **reliable**; it starts every single morning. |
-| question | noun (also verb) | If you don’t understand, raise your hand and ask your **question**. |
+| question | noun (also verb) | Mia wrote her **question** on a sticky note for the scientist: “Why do cats purr?” |
 | vacation | noun (also verb) | We went camping for a week on our summer **vacation**. |
 | decision | noun (also adjective) | Choosing between the two puppies was a hard **decision**. |
 | television | noun (also adjective) | We watched the parade on **television** because it was too cold to go. |
@@ -203,12 +203,31 @@ Each is the "Which word fits best?" item for its word in Use it (never shown as 
 
 ## Near-synonym pairs (never wrong answers for each other, never in the same lesson)
 
-enormous / immense · compare / contrast · estimate / approximate · accurate / precise · precise / thorough · migrate / migration · migrate / wander · data / evidence · conflict / debate · essential / significant · essential / require · determine / identify · determine / locate · identify / locate · analyze / investigate · analyze / observe · investigate / observe · explain / interpret · explain / demonstrate · explain / describe · reveal / demonstrate · reluctant / hesitate · timid / reluctant · patient / patience · eager / curious · peculiar / distinct · civilization / culture · civilization / empire · culture / empire · culture / tradition · habitat / environment · adapt / transform · accomplish / perform · accomplish / success · opinion / perspective · cooperate / compromise · prevent / protect · persuade / influence · necessary / essential · necessary / require · important / essential · important / significant · different / distinct · visible / distinct · reliable / honest · reliable / responsible · decision / conclusion · decide / determine · notice / observe · cycle / pattern · cycle / circle · sequence / pattern · consequence / conclusion · estimate / calculate · predict / infer · predict / estimate · source / evidence · survey / data · question / survey · trade / tradition · predator / prey · cautious / timid · generous / grateful · patient / persistent · expand / improve · frequent / rapid · vivid / visible · summarize / describe · abundant / enormous · permit / require · ancient / previous · valuable / important · excellent / significant · astonished / curious · field / habitat · boundary / distance
+enormous / immense · compare / contrast · estimate / approximate · accurate / precise · precise / thorough · migrate / migration · migrate / wander · data / evidence · conflict / debate · essential / significant · essential / require · determine / identify · determine / investigate · determine / locate · identify / locate · analyze / investigate · analyze / observe · investigate / observe · explain / interpret · explain / demonstrate · explain / describe · reveal / demonstrate · reluctant / hesitate · timid / reluctant · patient / patience · eager / curious · peculiar / distinct · civilization / culture · civilization / empire · culture / empire · culture / tradition · habitat / environment · adapt / transform · accomplish / perform · accomplish / success · opinion / perspective · cooperate / compromise · prevent / protect · persuade / influence · necessary / essential · necessary / require · important / essential · important / significant · different / distinct · visible / distinct · reliable / honest · reliable / responsible · decision / conclusion · decide / determine · notice / observe · cycle / pattern · cycle / circle · sequence / pattern · consequence / conclusion · estimate / calculate · predict / infer · predict / estimate · source / evidence · survey / data · question / survey · trade / tradition · predator / prey · cautious / timid · generous / grateful · patient / persistent · expand / improve · frequent / rapid · vivid / visible · summarize / describe · abundant / enormous · permit / require · ancient / previous · valuable / important · excellent / significant · astonished / curious · field / habitat · boundary / distance
 
 ## One meaning changed
 
 - musician: was “a person who plays or makes music” (the meaning named the word); now **“a person who plays an instrument or sings, often for others”**.
 
-## Blind review (CONTENT-RULES.md): not done yet
+## Blind review, Oct 30, 2026
 
-These sentences and look-alike items have not had an independent blind review. A keyless view for a fresh reviewer (187 items: each second sentence as a 4-choice "Which word fits best?" with wrong answers drawn the way the path draws them, and each look-alike item as a 2-choice item, plus the meanings she has studied) is at `/home/claude/blind/paw-path/views/paw-path.md`; the key is at `/home/claude/blind/paw-path/keys/paw-path.json` (export script: `/home/claude/blind/paw-path/export.mjs`). The writer of the content can't be its blind reviewer.
+A fresh agent that never saw the keys or the repo solved the keyless view (`/home/claude/blind/paw-path/views/paw-path.md`, 187 items: each second sentence as a 4-choice "Which word fits best?" with wrong answers drawn the way the path draws them, and each look-alike item as a 2-choice item, plus the meanings she has studied). Answers: `/home/claude/blind/paw-path/answers.jsonl`; key: `/home/claude/blind/paw-path/keys/paw-path.json`; export script: `/home/claude/blind/paw-path/export.mjs`.
+
+**Blind score: 187/187.** No key mismatches. 8 items flagged, 4 more with a note (confidence below 5). A perfect score shows the keys are right; it doesn't show the items are hard.
+
+| # | word | flags | decision | what changed / why |
+|---|---|---|---|---|
+| 19 | reluctant | unrealistic | **FIX** | A puppy on a leash at bath time read oddly. Now “…to take a bath and hid under the bed when it saw the tub.” |
+| 22 | confident | note | **KEEP** | “comfortable” was a near miss, but “felt comfortable that he could…” isn’t natural English. |
+| 63 | determine | note | **KEEP** | “calculate” is weaker: reading a thermometer isn’t math. |
+| 64 | essential | note | **KEEP** | Reviewer found the wording a little odd but the answer clear. |
+| 77 | peculiar | two-right | **FIX** | “The milk tasted ___” also fit “terrible”. Now a strange cat habit (sleeps in the sink, drinks only from a teacup), where “terrible” doesn’t fit. |
+| 83 | expand | giveaway | **FIX** | “and get bigger” restated the meaning. Now “in an hour it will ___ to twice its size.” |
+| 84 | improve | giveaway | **FIX** | “and make it better” restated the meaning. Now “your spelling scores will ___ from 6 out of 10 to 9 out of 10.” |
+| 85 | investigate | two-right | **FIX** | “came to determine why…” also fit. Now “will ___ the lake, testing the water and studying the sick fish…”, and determine / investigate is added to the near-synonym pairs, so they’re never wrong answers for each other. |
+| 116 | tomorrow | too-easy, giveaway | **FIX** | “Today is Monday, so ___ will be Tuesday” restated the meaning. Now “we leave for the beach ___ morning.” |
+| 128 | possible | giveaway | **FIX** | “Yes, it can happen!” restated the meaning. Now the moon in the daytime: “you might spot it.” |
+| 133 | question | giveaway, too-easy | **FIX** | “ask your ___” gave it away. Now “Mia wrote her ___ on a sticky note: “Why do cats purr?”” |
+| 155 | cautious | note | **KEEP** | “timid” is the planned look-alike; “to stay safe” is the clue to cautious, and the reason shown after she answers says so. |
+
+Items fixed: 8 (ids stable; each is still the word’s one second sentence). No judgment calls for Andy. Every other same-part-of-speech word that can be drawn as a wrong answer was checked by hand against the 8 new sentences. After the fixes: `check-word-path` (its test-wise bot included), verify, check-content, the build and smoke pass. The rewritten sentences haven’t had a second blind solve.
