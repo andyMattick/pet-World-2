@@ -12840,7 +12840,7 @@ function listenRowHTML(word, hearAttr){
     : `<button type="button" class="btn small" ${hear('')} disabled>🔊 Hear the word</button><button type="button" class="btn small" ${hear('syllables')} disabled>🐢 By syllables</button><button type="button" class="btn small" ${hear('slow')} disabled>Slowly</button>`;
   return `<div class="listen-box"><p class="listen-count"><b>🔊 ${n} syllable${n === 1 ? '' : 's'}</b><span class="syl-dots" aria-label="${n} syllable${n === 1 ? '' : 's'}">${Array.from({length:n}, () => '<i class="syl-dot"></i>').join('')}</span></p>
     <div class="row syl-row">${btns}</div>
-    <div class="listen-timer" role="timer" aria-live="polite"><span class="listen-bar"><i style="width:100%"></i></span><span class="listen-text">👂 Listen…</span></div></div>`;
+    <div class="listen-timer" role="timer" aria-live="polite" data-idle-busy><span class="listen-bar"><i style="width:100%"></i></span><span class="listen-text">👂 Listen…</span></div></div>`;
 }
 let listenState = null;
 /* true once the device has a voice (voices can load a moment after the page; wait up to 1.5 seconds) */
@@ -12863,7 +12863,7 @@ async function listenFirst(word, run = null){
     if (!alive()) return; stopListen();
     if (run?.end && (vocabRun === run || (run.pathClock && pathRound === run && !run.over))) run.end += performance.now() - st.started;   // a timed run (or the Paw Path warm-up) never loses clock to listening
     input.disabled = false; if (submitBtn) submitBtn.disabled = false; btns.forEach(b => { b.disabled = false; });
-    host.querySelector('.listen-timer')?.classList.add('done'); if (bar) bar.style.width = '0%';
+    host.querySelector('.listen-timer')?.classList.add('done'); host.querySelector('.listen-timer')?.removeAttribute('data-idle-busy');   // the idle nudge waits while she listens if (bar) bar.style.width = '0%';
     if (text) text.textContent = msg; input.focus();
   };
   input.disabled = true; if (submitBtn) submitBtn.disabled = true;
