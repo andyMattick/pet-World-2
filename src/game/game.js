@@ -1299,7 +1299,7 @@ units(lvl){
   const n = pickK(f <= 12 ? f : 2, 2, f > 12 ? 6 : kTop(lvl));
   const bigToSmall = Math.random() < 0.5;
   const start = bigToSmall ? n : n*f, ans = bigToSmall ? n*f : n;
-  const from = bigToSmall ? (n === 1 ? big : big + 's') : small, to = bigToSmall ? small : big + 's';
+  const from = bigToSmall ? (n === 1 ? big : plural(2, big)) : small, to = bigToSmall ? small : plural(2, big);
   const opts = [
     {html:`× ${f}`, text:`× ${f}`, ok:bigToSmall, mis:bigToSmall ? null : 'unitsDirection'},
     {html:`÷ ${f}`, text:`÷ ${f}`, ok:!bigToSmall, mis:bigToSmall ? 'unitsDirection' : null}
@@ -1307,7 +1307,7 @@ units(lvl){
   return {title:'Measuring up', ctx:`1 ${big} = ${f} ${small}, ${start} ${from}`,
     bubble:`My recipe needs ${start} ${from}. My measuring tool only shows ${to}. How many ${to} is that?`,
     helper:`Remember: 1 ${big} = ${f} ${small}.`,
-    visual:`<div style="text-align:center">${miniTable(big + 's', small, [[1, f],[2, 2*f],[3, 3*f]])}</div>`,
+    visual:`<div style="text-align:center">${miniTable(plural(2, big), small, [[1, f],[2, 2*f],[3, 3*f]])}</div>`,
     steps:[
       {name:'Pick the operation', type:'concept', kind:'choice', prompt:`To change ${from} into ${to}, do we multiply or divide by ${f}?`, options:opts, drill:{type:'story', key:'ratio'},
         hint:() => bigToSmall ? `A ${big} is bigger, so you need MORE ${small}.` : `A ${big} is bigger, so you need FEWER of them.`},
@@ -3382,7 +3382,8 @@ const PRODUCE = [['🍎', 'apples', 'pound'], ['🍐', 'pears', 'pound'], ['🥕
 const BY_EACH = [['🍋', 'lemons'], ['🥝', 'kiwis'], ['🍑', 'peaches'], ['🥑', 'avocados'], ['🍊', 'oranges']];
 const cash = c => c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`;      // cents → "$3" or "$2.50"
 const dollars = c => XD.fmt(c, 2);                                                     // cents → "2.5" (typed answer)
-const plural = (n, w) => n === 1 ? w : w === 'bunch' ? 'bunches' : w + 's';
+const PLURAL_WORDS = {bunch:'bunches', foot:'feet', inch:'inches', box:'boxes', glass:'glasses', loaf:'loaves', tooth:'teeth', mouse:'mice', goose:'geese', child:'children', person:'people'};
+const plural = (n, w) => n === 1 ? w : PLURAL_WORDS[w] || w + 's';
 /* a typed money answer in dollars, exact to the cent */
 const moneyStep = (name, prompt, cents, extra = {}) => ({name, type:'compute', kind:'num', prompt, answer:dollars(cents), eq:XD.eq(cents, 2), decimal:true, ...extra,
   ...(extra.mis ? {mis:v => XD.eq(cents, 2)(v) ? null : extra.mis(v)} : {})});
