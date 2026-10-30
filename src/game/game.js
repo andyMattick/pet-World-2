@@ -29,6 +29,8 @@ import { moveById, moveSettings, allowedMoves, pickMoves, normalizeMoveState, mo
 import { SIMS, simById, TRAITS, WEATHER, ISLAND_SEASONS, newIslands, runSeason, islandsDone, ENERGY, HOMES, FAMILY_SIZES, bestFamily, raiseFamily, averageGrownUps, homeSolved, LAKE_WEEKS, FERTILIZER, HEAT, runLake, lakeSummary, LAKE_MISSIONS, SIM_QUESTIONS, SIM_MISSIONS, CELL_PARTS, CELLS, cellPart, cellPick, GENOTYPES, furOf, punnettGrid, whiteShare, litter, PUNNETT_MISSIONS, WEB, webById, WEB_ANIMALS, WEB_LIVING, sameSet, removeEffect, effectLabel, WEB_MISSIONS } from './scienceSims.js';
 import { HERO_PACKS, missionsIn, heroKey, heroOutcome, startChoices } from './heroLab.js';
 import { REPAIR_SHELVES, booksOn, repairSentenceHTML, choiceLabel } from './bookRepair.js';
+import { SNAP_SHELVES, createSnap, snapItemCount } from './sentenceSnap.js';
+import { ENGLISH_UNIT8, ENGLISH_GROUPS8, SENTENCE_QUESTIONS } from '../shared/questionBanks';
 import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { ROLE_SCENES, COURSE_ERAS, commonsThumb, WORLD_MAP, yearText } from '../shared/roleScenes.js';
 import { mathSkillVideos, struggleCheck, HELP_WINDOW } from '../shared/mathVideos.js';
@@ -186,6 +188,7 @@ function normalize(raw){
     s.sims = Object.fromEntries(SIMS.map(x => [x.id, s.sims?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {done:!!v.done, runs:Math.max(0, Math.floor(+v.runs) || 0), homes:Object.fromEntries(HOMES.filter(h => FAMILY_SIZES.includes(+v.homes?.[h.id])).map(h => [h.id, +v.homes[h.id]])), missions:Object.fromEntries((SIM_MISSIONS[id] || []).filter(m => v.missions?.[m.id]).map(m => [m.id, true]))}]));   // science sims (docs: SCIENCE-UNIT2.md)
     s.heroLab = {packs:Object.fromEntries(HERO_PACKS.map(p => [p.id, s.heroLab?.packs?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.heroLab?.master};   // ⚡ Punctuation Power Lab (docs/ENGLISH-UNIT6.md)
     s.bookRepair = {shelves:Object.fromEntries(REPAIR_SHELVES.map(p => [p.id, s.bookRepair?.shelves?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.bookRepair?.master};   // 📚 Book Repair Desk (docs/ENGLISH-UNIT7.md)
+    s.sentenceSnap = {shelves:Object.fromEntries(SNAP_SHELVES.map(p => [p.id, s.sentenceSnap?.shelves?.[p.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), top:Math.max(0, Math.min(999, Math.floor(+v.top) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0)}])), master:!!s.sentenceSnap?.master};   // 🧩 Sentence Snap (docs/ENGLISH-UNIT8.md)
     s.grammarGames = Object.fromEntries([...GGAMES.map(x => [x.id, s.grammarGames?.[x.id]]).filter(([, v]) => v && typeof v === 'object').map(([id, v]) => [id, {best:Math.max(0, Math.min(3, Math.floor(+v.best) || 0)), plays:Math.max(0, Math.floor(+v.plays) || 0), ...(id === 'hide' ? {levels:hideLevelsFrom(v)} : {})}]), ...(s.grammarGames?.master ? [['master', true]] : [])]);   // English Unit 5 games (docs: ENGLISH-UNIT5.md)
     s.prepRecall = {best:Math.max(0, Math.round(+s.prepRecall?.best || 0)), games:(Array.isArray(s.prepRecall?.games) ? s.prepRecall.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, ms:Math.max(0, +g.ms || 0), found:Math.max(0, Math.min(48, +g.found || 0)), wrong:Math.max(0, +g.wrong || 0), hints:Math.max(0, +g.hints || 0), completed:!!g.completed}))};   // 🔗 Name all 48 prepositions
     s.chefRush = {best:Math.max(0, Math.round(+s.chefRush?.best || 0)), day:typeof s.chefRush?.day === 'string' ? s.chefRush.day : '', coinsToday:Math.max(0, Math.round(+s.chefRush?.coinsToday || 0)),
@@ -411,6 +414,7 @@ function unitLockedText(building){
 }
 /* English units keep their progress in S.elaProgress; Unit 1 (nouns) came first, so its keys have no course prefix */
 const ELA_FINAL_KEYS = {elaNouns:'final-test', elaVerbs:'verbs:final-test', elaPron:'pronouns:final-test', elaDescr:'modifiers:final-test', elaConj:'prepositions:final-test', elaPunct:'punctuation:final-test', elaColon:'colons:final-test'};
+ELA_FINAL_KEYS.elaSent = 'sentences:final-test';   // English Unit 8 (docs/ENGLISH-UNIT8.md)
 function unitTestPassed(unit){
   if (HISTORY_BUILDING_COURSE[unit]) return !!progressStore(HISTORY_BUILDING_COURSE[unit])?.[`${HISTORY_BUILDING_COURSE[unit]}:final-test`]?.passed || Backend.me?.quiz_overrides?.[`${unit}:test`] === 'excused';
   if (ELA_FINAL_KEYS[unit]) {
@@ -6239,6 +6243,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'link-games') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'power-lab') earned = Math.min(3, Math.floor(score / 2));   // 1 ticket per 2 missions on the first launch, up to 3 a pack (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'book-repair') earned = Math.max(0, Math.min(3, Math.floor(score / 2)));   // 1 ticket per 2 books fixed on the first try, up to 3 a shelf (docs/ARCADE-GAMES.md)
+  else if (run.gameId === 'sentence-snap') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/ARCADE-GAMES.md)
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
   else if (run.gameId === 'pax-oeconomica') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/PAX-OECONOMICA.md)
@@ -6367,7 +6372,7 @@ function brainBreakNow(){
   const on = id => { const el = $('#scr-' + id); return !!el && !el.hidden; };
   if (document.hidden || ['loading','join','name','shift','sprint','arcade','artstudio'].some(on)) return false;
   if (on('vocab') && (vocabRun || puzzleRun || checkRun)) return false;
-  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap') || $('#brWrap'))) return false;
+  if (on('library') && (readingRun || digRun || $('#libraryWrap .flashcard') || $('#libraryWrap .ela-question') || $('#libraryWrap .ela-layout') || $('#historyProjectForm') || $('#scribeWrap') || $('#simWrap') || $('#ggWrap') || $('#hlWrap') || $('#brWrap') || $('#snapWrap'))) return false;
   return true;
 }
 function newBrainStretch(kind, label, item){
@@ -9049,6 +9054,47 @@ $('#libraryWrap').addEventListener('click', e => {
     renderBookRepair();
   }
 });
+/* 🧩 Sentence Snap (English Unit 8, the Sentence Library; src/game/sentenceSnap.js, docs/ENGLISH-UNIT8.md)
+   A 90-second rush at the shelf for each block. Stars from the number right (SNAP_SHELVES[].stars). Coins like the Book
+   Repair Desk: 10 + 5 a star the first time a shelf earns a star, then 5 for each new star; 3 stars on all four shelves
+   is "Sentence Smith" (+50 once). S.sentenceSnap = {shelves:{shelfId:{best, top, plays}}, master}. */
+let snapShelf = null, snapGame = null;
+function sentenceSnapCardHTML(courseId, groupId){
+  if (courseId !== 'sentences') return '';
+  const shelf = SNAP_SHELVES.find(p => p.id === groupId); if (!shelf) return '';
+  const st = S.sentenceSnap.shelves[shelf.id], stars = st?.best ? `${'⭐'.repeat(st.best)}${'☆'.repeat(3 - st.best)} · best ${st.top} right` : st?.plays ? `☆☆☆ · best ${st.top} right` : 'Not played yet';
+  return `<section class="ela-final-assessment sim-card"><div><h3>🧩 Sentence Snap: ${esc(shelf.name)}</h3><p class="muted">${esc(shelf.blurb)} 90 seconds on the clock! ${shelf.id === 'types' ? 'Endless orders' : `${snapItemCount(shelf.id)} puzzles`} · ${stars}</p></div><button type="button" class="btn small berry" data-snap-open="${shelf.id}">${st?.plays ? 'Play again' : 'Play'}</button></section>`;
+}
+function renderSentenceSnap(shelfId, result){
+  const shelf = SNAP_SHELVES.find(p => p.id === shelfId); if (!shelf) return;
+  snapShelf = shelfId; activeEnglishCourse = 'sentences';
+  snapGame?.stop(); snapGame = null;
+  const head = `<div class="backrow"><h2>🧩 Sentence Snap</h2><button class="btn small" data-dig-back="sentences">Back to unit</button></div><p class="muted">${shelf.emoji} ${esc(shelf.name)} · ${esc(shelf.blurb)}</p>`;
+  if (result) {
+    const r = result, need = shelf.stars;
+    $('#libraryWrap').innerHTML = `<div id="snapWrap" class="sim gg">${head}<section class="card"><h3>🏁 ${'⭐'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)} ${r.right} right${r.wrong ? `, ${r.wrong} missed` : ''}</h3>
+      <p>${r.stars === 3 ? 'Three stars! The Sentence Library runs on puzzles like yours.' : `Stars at ${need[0]}, ${need[1]} and ${need[2]} right. ${r.stars ? 'Go again for more stars?' : 'Every shift makes you faster. Try again?'}`}${r.coins ? ` +${r.coins} 🪙` : ''}</p>
+      ${r.master ? '<p class="review-banner">🧩 Sentence Smith! Three stars on every shelf. +50 🪙</p>' : ''}
+      <div class="row"><button type="button" class="btn berry" data-snap-open="${shelf.id}">🔁 Play again</button></div></section></div>`;
+    return;
+  }
+  $('#libraryWrap').innerHTML = `<div id="snapWrap" class="sim gg">${head}<div id="snapGame"></div></div>`;
+  snapGame = createSnap($('#snapGame'), {shelf:shelfId, esc, sfx, onDone:snapFinish});
+}
+function snapFinish(r){
+  const st = S.sentenceSnap.shelves[r.shelf] || (S.sentenceSnap.shelves[r.shelf] = {best:0, top:0, plays:0}), before = st.best;
+  const coins = r.stars > before ? (before ? (r.stars - before) * 5 : 10 + 5 * r.stars) : 0;
+  st.plays++; st.best = Math.max(before, r.stars); st.top = Math.max(st.top || 0, r.right); r.coins = coins;
+  if (coins) { S.coins += coins; updateHeader(); }
+  logEvent({k:'snap', title:SNAP_SHELVES.find(p => p.id === r.shelf)?.name || 'Sentence Snap', s:r.right, n:r.stars});
+  if (!S.sentenceSnap.master && SNAP_SHELVES.every(p => (S.sentenceSnap.shelves[p.id]?.best || 0) >= 3)) { S.sentenceSnap.master = true; S.coins += 50; updateHeader(); r.master = true; }
+  sfx(r.stars ? 'good' : 'bad'); save();
+  snapGame = null; renderSentenceSnap(r.shelf, r);
+}
+$('#libraryWrap').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-snap-open]'); if (!btn) return;
+  renderSentenceSnap(btn.dataset.snapOpen);
+});
 /* the unit page: the dig site (and the dinosaur bonus) and Scribe School */
 function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
@@ -9333,6 +9379,7 @@ const todayTimeHTML = (subject, unit = '') => `<p class="today-time" data-today-
 setInterval(() => { if (S) $$('[data-today-time]').forEach(el => { el.innerHTML = todayTimeText(el.dataset.todayTime, el.dataset.todayUnit); }); }, 20000);
 const PLAN_MARK = {done:'✅', waiting:'⏳', todo:'⬜'};
 const ELA_BUILDING_COURSE = {elaNouns:'nouns', elaVerbs:'verbs', elaPron:'pronouns', elaDescr:'modifiers', elaConj:'prepositions', elaPunct:'punctuation', elaColon:'colons'};
+ELA_BUILDING_COURSE.elaSent = 'sentences';   // English Unit 8, the Sentence Library (docs/ENGLISH-UNIT8.md)
 const unitCourse = id => ELA_BUILDING_COURSE[id] || HISTORY_BUILDING_COURSE[id] || '';
 function planSettings(){ try { const v = JSON.parse(Backend.me?.quiz_overrides?.plan || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } }
 function validPlanItem(x){
@@ -9781,7 +9828,7 @@ function helpPlace(){
   const where = placeOnScreen(), [kind, a = ''] = where.split(':');
   const open = kind === 'shop' ? a : ['vocab', 'sprint', 'arcade', 'reading'].includes(kind) ? kind
     : kind === 'course' ? (a === 'math' ? currentShop || '' : courseBuilding(a)) : kind === 'project' ? projectBuilding(a)
-    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'repair' ? courseBuilding('colons') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
+    : kind === 'dig' ? courseBuilding(digSiteById(a)?.course) : kind === 'sim' ? courseBuilding(simById(a)?.course) : kind === 'ggame' ? courseBuilding(ggameById(a)?.course) : kind === 'hero' ? courseBuilding('punctuation') : kind === 'repair' ? courseBuilding('colons') : kind === 'snap' ? courseBuilding('sentences') : kind === 'scribe' ? courseBuilding(scribeRun.back) : '';
   return {where, label:String(placeLabel(where)), open};
 }
 const helpBtn = document.createElement('button');
@@ -10396,7 +10443,9 @@ const HISTORY_PROJECTS = {
     {key:'photo',kind:'photo',label:'5. Draw or build your exhibit (on paper or a shelf at home) and take a photo of it.'},
     {key:'sources',label:'6. List the sources you used so a grown-up can check them.'}]}
 };
-const englishCourse = course => course === 'colons'
+const englishCourse = course => course === 'sentences'
+  ? {id:'sentences',building:'elaSent',title:'English Unit 8: Sentences and Clauses',skills:ENGLISH_UNIT8,groups:ENGLISH_GROUPS8,finalKey:'sentences:final-test',testPer:2,finalPass:17}   // Khan Grammar Unit 8; 2 questions a lesson (docs/ENGLISH-UNIT8.md)
+  : course === 'colons'
   ? {id:'colons',building:'elaColon',title:'English Unit 7: Colons, Semicolons, and More',skills:ENGLISH_UNIT7,groups:ENGLISH_GROUPS7,finalKey:'colons:final-test',testPer:2,finalPass:15}   // Khan's Quiz 1 and unit test (docs/ENGLISH-UNIT7.md)
   : course === 'punctuation'
   ? {id:'punctuation',building:'elaPunct',title:'English Unit 6: Punctuation',skills:ENGLISH_UNIT6,groups:ENGLISH_GROUPS6,finalKey:'punctuation:final-test',finalPass:11}
@@ -10523,6 +10572,7 @@ const KHAN_UNIT_TESTS = {
   prepositions:`${KHAN}ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/test/x90cef5375e9bcad6:prepositions-and-interjections-5-unit-test`,
   punctuation:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/its-vs-its/test/punctuation-the-comma-and-the-apostrophe-unit-test`,
   colons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/hyphens-dashes-and-ellipses/test/punctuation-the-colon-semicolon-and-more-unit-test`,   // checked on khanacademy.org, Oct 29 2026
+  sentences:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/phrases-and-clauses/test/syntax-sentences-and-clauses-unit-test`,   // checked on khanacademy.org, Oct 30 2026
   /* History follows Khan's World History Project (Origins to the Present), Biology Unit 1 Grade 6 Science: Life sciences,
      Biology Unit 2 Middle school biology: Organism growth and reproduction (checked on khanacademy.org, Oct 20 2026) */
   history:`${KHAN}humanities/world-history/x66f79d8a:origins-of-history/x66f79d8a:history-and-memory-1-4/test/x66f79d8a:origins-of-history-unit-test`,
@@ -10918,7 +10968,7 @@ $('#libraryWrap').addEventListener('keydown', event => {
   if (event.target.closest('[data-card-flip]') && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); flipCard(); }
   else if (cardRun.flipped && (event.key === '1' || event.key === '2')) gradeCard(event.key === '2');
 });
-const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','colons','history','history2','history3','history4','history5','bio1','bio2','bio3','history6','history7','history8','history9'];
+const REPORT_COURSES = ['nouns','verbs','pronouns','modifiers','prepositions','punctuation','colons','sentences','history','history2','history3','history4','history5','bio1','bio2','bio3','history6','history7','history8','history9'];
 function englishProgressReportHTML(canReview = false){
   return REPORT_COURSES.map(courseId => `<section class="panel"><h3>${esc(englishCourse(courseId).title)}</h3>${courseReportBodyHTML(courseId, canReview)}</section>`).join('');
 }
@@ -11062,6 +11112,10 @@ function englishBankQuestions(skillId, courseId='nouns'){
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
   if (isHistoryCourse(courseId)) return applyQuestionEdits(courseId, skillId, (courseId === 'history6' ? HISTORY6_QUESTIONS : courseId === 'history7' ? HISTORY7_QUESTIONS : courseId === 'history5' ? HISTORY5_QUESTIONS : courseId === 'history4' ? HISTORY4_QUESTIONS : courseId === 'history3' ? HISTORY3_QUESTIONS : courseId === 'history2' ? HISTORY2_QUESTIONS : courseId === 'history8' ? HISTORY8_QUESTIONS : courseId === 'history9' ? HISTORY9_QUESTIONS : HISTORY_QUESTIONS)[skillId] || [], edits).map(question => {
+    const correct = question.options[question.answer], options = shuffle(question.options);
+    return {...question,options,answer:options.indexOf(correct),skillId};
+  });
+  if (courseId === 'sentences') return applyQuestionEdits(courseId, skillId, SENTENCE_QUESTIONS[skillId] || [], edits).map(question => {   // English Unit 8
     const correct = question.options[question.answer], options = shuffle(question.options);
     return {...question,options,answer:options.indexOf(correct),skillId};
   });
@@ -11385,7 +11439,7 @@ function englishRecord(key,courseId='nouns'){
   const progress = progressStore(courseId), record = progress?.[key];
   return record && typeof record === 'object' ? record : {best:0,tries:0,passed:false,recentScores:[],answered:0,misses:0,recentAnswers:[]};
 }
-const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' || courseId === 'colons' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
+const englishQuizKey = (id, courseId='nouns') => isProjectCourse(courseId) ? `${courseId}:quiz:${id}` : courseId === 'verbs' || courseId === 'pronouns' || courseId === 'modifiers' || courseId === 'punctuation' || courseId === 'colons' || courseId === 'sentences' ? `${courseId}:quiz:${id}` : `quiz:${id}`;
 function englishAssessmentQuestions(skillIds, count, courseId='nouns'){
   const pools = skillIds.map(skillId => leanHard(englishQuestions(skillId, courseId)).reverse());
   const questions = [];
@@ -11630,7 +11684,7 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       : quiz.tries ? `Best ${quiz.best}/4 · ${quiz.tries} tries · Get 3 of 4 to unlock the next block`
         : canQuiz ? 'Ready · Get 3 of 4 to unlock the next block' : 'Pass each practice to unlock this quiz';
     const extraLessons = (group.extraLessons || []).map((lesson, lessonIndex) => `<article class="ela-read-only"><strong>${esc(lesson.name)}</strong><p>${esc(lesson.lesson)}</p>${khanLinkHTML(lesson.url, lesson.name, `${course.id}:${group.id}:${lessonIndex + 1}`)}<span>Learn · no separate practice set listed</span></article>`).join('');
-    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${bookRepairCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
+    return `<section class="ela-unit-group"><div class="ela-unit-learn"><h3>${esc(group.name)}</h3>${group.hook ? `<div class="lesson-hook"><b>${group.hook.emoji} Why it matters: ${esc(group.hook.title)}</b><p>${esc(group.hook.story)}</p></div>` : ''}<p>${esc(group.learn)}</p>${khanLinkHTML(KHAN_LINKS[course.id]?.[group.id], group.name, `${course.id}:${group.id}`)}${khanVideosHTML(course.id, group.id)}<span>Learn${group.skills.length ? '' : ' · no practice set in this lesson'}</span></div>${extraLessons}<div class="ela-exercise-list">${exercises}</div>${simCardsHTML(course.id, group.id)}${ggameCardsHTML(course.id, group.id)}${heroLabCardHTML(course.id, group.id)}${bookRepairCardHTML(course.id, group.id)}${sentenceSnapCardHTML(course.id, group.id)}${prepRecallCardHTML(course.id, group.id)}${course.noQuizzes || group.noQuiz ? '' : `<div class="ela-assessment"><div><strong>${esc(group.quizName || `${group.name} Quiz`)}</strong><p class="muted">${quizStatus}</p></div><button type="button" class="btn small${canQuiz ? ' berry' : ''}" data-ela-quiz="${group.id}" data-ela-course="${course.id}" ${canQuiz ? '' : 'disabled'}>${quiz.passed ? 'Retake quiz' : 'Start quiz'}</button></div>`}</section>`;
   }).join('');
   const finalKey = course.finalKey, finalRecord = englishRecord(finalKey,course.id), finalReady = englishFinalReady(course), size = testSize(course);
   const finalStatus = finalRecord.passed ? `Passed · best ${finalRecord.best}/${size} · ${finalRecord.tries} tries`
@@ -14437,6 +14491,7 @@ function placeOnScreen(){
   if ($('#ggWrap') && ggRun) return `ggame:${ggRun.id}`;
   if ($('#hlWrap') && hlRun) return `hero:${hlRun.pack}`;
   if ($('#brWrap') && brRun) return `repair:${brRun.shelf}`;
+  if ($('#snapWrap') && snapShelf) return `snap:${snapShelf}`;
   if (readingRun || $('#libraryWrap .ela-layout')) return 'reading';
   if (englishRun?.retryType === 'think' && englishRun.shop && $('#libraryWrap .ela-question')) return `shop:${englishRun.progressKey}:think`;   // Think it through counts for its unit
   if (englishRun && $('#libraryWrap .ela-question')) return `course:${englishRun.courseId}:${String(englishRun.title || englishRun.progressKey || '').slice(0, 50)}`;
@@ -14469,6 +14524,7 @@ function placeLabel(key){
   if (kind === 'ggame') return `🎮 ${ggameById(a)?.name || 'Grammar game'}`;
   if (kind === 'hero') return `⚡ Punctuation Power Lab · ${HERO_PACKS.find(p => p.id === a)?.name || ''}`;
   if (kind === 'repair') return `📚 Book Repair Desk · ${REPAIR_SHELVES.find(p => p.id === a)?.name || ''}`;
+  if (kind === 'snap') return `🧩 Sentence Snap · ${SNAP_SHELVES.find(p => p.id === a)?.name || ''}`;
   if (kind === 'course') { const course = englishCourse(a); return `📚 ${course?.title || a}${b ? ` · ${key.split(':').slice(2).join(':')}` : ''}`; }
   return {sprint:'⚡ Fact Sprint', reading:'📖 Reading Log', brain:'🧠 Brain stretch', arcade:'🕹️ Arcade', town:'🏠 Around town', shops:'🏪 Shops'}[kind] || key;
 }
@@ -14501,6 +14557,7 @@ function eventText(e){
   if (e.k === 'ggame') return `🎮 ${e.title}: ${e.s} of ${e.n} right on the first try`;
   if (e.k === 'hero') return `⚡ Punctuation Power Lab, ${e.title}: ${e.s} of ${e.n} missions on the first launch`;
   if (e.k === 'repair') return `📚 Book Repair Desk, ${e.title}: ${e.s} of ${e.n} books fixed on the first try`;
+  if (e.k === 'snap') return `🧩 Sentence Snap, ${e.title}: ${e.s} right in 90 seconds (${e.n} ⭐)`;
   if (e.k === 'sim') return `🧪 Finished the ${e.title} lab and its questions`;
   if (e.k === 'reading') return `📖 Sent Reading Log notes: ${e.title}`;
   if (e.k === 'mastered') return `⭐ Mastered: ${e.title || e.skill}`;

@@ -2172,6 +2172,7 @@ const KHAN_LINKS = {
   prepositions:{prepositions:'https://www.khanacademy.org/ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/x90cef5375e9bcad6:prepositions-and-prepositional-phrases-5/v/meet-the-preposition',interjections:'https://www.khanacademy.org/ela/5th-and-6th-grade-grammar/x90cef5375e9bcad6:prepositions-and-interjections-5/x90cef5375e9bcad6:interjections-5/a/interjections-5'},
   punctuation:{endCommas:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/introduction-to-commas/v/three-ways-to-end-a-sentence-punctuation-khan-academy`,spaceTime:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/commas-in-space-and-time/v/salutations-and-valedictions-the-comma-punctuation-khan-academy`,moreCommas:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/more-ways-to-use-commas/v/more-uses-for-commas-the-comma-punctuation-khan-academy`,apostrophes:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/apostrophes-and-contractions/v/introduction-to-the-apostrophe-the-apostrophe-punctuation-khan-academy`,possessive:`${KHAN}humanities/grammar/punctuation-the-comma-and-the-apostrophe/introduction-to-the-possessive/v/introduction-to-the-possessive-the-apostrophe-punctuation-khan-academy`},
   colons:{colons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/introduction-to-colons/v/linking-function-of-the-colon-the-colon-and-semicolon-punctuation-khan-academy`,semicolons:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/introduction-to-semicolons/v/introduction-to-the-semicolon-the-colon-and-semicolon-punctuation-khan-academy`,formatting:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/formatting-styles/v/italics-and-underlining`,dashes:`${KHAN}humanities/grammar/punctuation-the-colon-semicolon-and-more/hyphens-dashes-and-ellipses/v/dashes`},
+  sentences:{intro:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/introduction-to-sentences/v/what-is-a-sentence-syntax-khan-academy`,types:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/types-of-sentences/v/simple-and-compound-sentences-syntax-khan-academy`,subjects:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/subjects-and-predicates/v/subjects-and-predicates-syntax-khan-academy`,clauses:`${KHAN}humanities/grammar/syntax-sentences-and-clauses/phrases-and-clauses/v/phrases-and-clauses-syntax-khan-academy`},   // English Unit 8, Khan's lesson sitemaps, Oct 30 2026
   history:{stories:`${WORLD}origins-of-history/x66f79d8a:history-stories-1-1/v/meet-oer-project-world-history`,frames:`${WORLD}origins-of-history/x66f79d8a:history-frames-1-3/v/frame-concept-introduction-world-history-project-beta`,memory:`${WORLD}origins-of-history/x66f79d8a:history-and-memory-1-4/a/activity-opener-worst-day-ever`},
   history2:{earliestHumans:`${WORLD}early-humans/x66f79d8a:the-earliest-humans-2-1/a/activity-opener-then-vs-now`,migrationArt:`${WORLD}early-humans/x66f79d8a:migration-and-art-2-2/a/activity-opener-who-s-an-authority`,foragingSocieties:`${WORLD}early-humans/x66f79d8a:foraging-societies-2-3/a/activity-opener-what-is-this-asking-introduction-origins`,agriculturalRevolution:`${WORLD}early-humans/x66f79d8a:the-agricultural-revolution-2-4/a/activity-opener-which-frame`,biggestMistake:`${WORLD}early-humans/x66f79d8a:the-biggest-mistake-humans-ever-made-2-5/a/activity-opener-casual-map-jack-and-the-giant-beanstalk`},
   history3:{earlyAmericas:`${WORLD}early-agrarian-societies/x66f79d8a:ancient-mesoamerica/a/article-ancient-agrarian-societies-mesoamerica-olmec-and-chavin-de-huantar`,ancientIndia:`${WORLD}early-agrarian-societies/x66f79d8a:indus-river-valley/a/article-ancient-agrarian-societies-indus-river-valley`,earlyAgrarian:`${WORLD}early-agrarian-societies/x66f79d8a:early-agrarian-societies-in-context/a/activity-contextualization-agrarian-societies`},
@@ -3490,11 +3491,201 @@ const COLON_QUESTIONS = {
     qLevel(3,"Original: “Pandas spend most of the day eating, and they can eat about 40 pounds of bamboo.” Which shortened quotation is correct?","“Pandas … can eat about 40 pounds of bamboo.”","“Pandas spend … about 40 pounds of bamboo.”","“Pandas can eat about 40 pounds of bamboo.”","“Pandas spend most of the day … 40 pounds of bamboo eating.”")
   ]
 };
+/* English Unit 8 (the 🧩 Sentence Library): Khan Academy Grammar, Syntax: sentences and clauses.
+   Khan's 10 practice exercises in Khan's order (lesson sitemaps on khanacademy.org, Oct 30 2026): Introduction to sentences,
+   Types of sentences, Subjects and predicates, Phrases and clauses; the unit test sits in the last lesson.
+   Docs: docs/ENGLISH-UNIT8.md, review list docs/ENGLISH-UNIT8-review.md */
+const ENGLISH_UNIT8 = [
+  {id:'sentenceTypes',name:'Declarative, interrogative, and imperative sentences',lesson:'A declarative sentence makes a statement (The bus is late.). An interrogative sentence asks a question (Is the bus late?). An imperative sentence gives a command or makes a request, and its subject, you, is understood but not written (Wait for the bus.). An exclamatory sentence shows strong feeling (What a long wait this is!). Judge a sentence by the job it does: “Watch out!” is still a command, and “I wonder if the bus is late.” is a statement, not a question.'},
+  {id:'simpleCompound',name:'Simple and compound sentences',lesson:'A simple sentence has one independent clause: one subject-and-verb pair that can stand alone. It can still have a compound subject or a compound verb (Jo and Max ran and jumped.). A compound sentence joins two or more independent clauses, either with a comma and a joining word (for, and, nor, but, or, yet, so) or with a semicolon: The rain stopped, and the sun came out.'},
+  {id:'rearrangeSentences',name:'Rearranging simple and compound sentences',lesson:'Join two simple sentences into a compound sentence with a comma and a joining word, or with a semicolon. Pick the joining word that shows how the ideas connect: and adds, but and yet show a contrast, so shows a result, or gives a choice. You can also split a compound sentence into two simple sentences, or combine sentences that share a subject into one simple sentence with a compound verb (Max swept. Max mopped. → Max swept and mopped.).'},
+  {id:'complexSentences',name:'Complex and compound-complex sentences',lesson:'A dependent clause has a subject and a verb but can’t stand alone, because it starts with a word like because, when, although, if, since, after or until. A complex sentence has one independent clause and at least one dependent clause (When the bell rang, we left.). A compound-complex sentence has at least two independent clauses and at least one dependent clause (When the bell rang, we left, and the hall got quiet.). Put a comma after a dependent clause that starts the sentence.'},
+  {id:'subjectPredicate',name:'Identifying subject and predicate',lesson:'The complete subject is who or what the sentence is about (The tall girl in the red coat). The complete predicate is the rest: what the subject does or is (waved at us from the bus). The simple subject is the main noun or pronoun (girl), and the simple predicate is the verb, with any helping verbs (waved, has been waving). In a question the subject can come after the first verb (Did your dog bark?), and in a command the subject, you, is understood.'},
+  {id:'subjectObjects',name:'Identifying subject, direct object, and indirect object',lesson:'The direct object receives the action of the verb: it answers “what?” or “whom?” after the verb (Kai kicked the ball.). The indirect object tells to whom or for whom the action is done, and it sits between the verb and the direct object (Kai passed me the ball.). If the sentence says “to me” or “for me,” that is a prepositional phrase, not an indirect object. A sentence can’t have an indirect object without a direct object.'},
+  {id:'phrasesClauses',name:'Introduction to phrases and clauses',lesson:'A clause is a group of words with a subject and its verb (the dog barked, when the dog barked). A phrase is a group of words that work together but don’t have a subject and its verb (in the morning, running down the hall, the big red barn). An independent clause can stand alone as a sentence. A phrase by itself is a fragment.'},
+  {id:'depIndepClauses',name:'Dependent and independent clauses',lesson:'An independent clause can stand alone as a sentence (we went inside). A dependent clause has a subject and a verb but can’t stand alone, because it starts with a word like because, when, if, although, since or until, or a relative pronoun like who or which (because it started to rain). A dependent clause by itself is a fragment, so attach it to an independent clause.'},
+  {id:'clausePlacement',name:'Phrase and clause placement',lesson:'Put a describing phrase or clause right next to the word it describes. If it lands next to the wrong word, the sentence says something silly: “Riding the bus, a deer ran past me” sounds like the deer was riding the bus. Fix it by moving the phrase next to the right word (Riding the bus, I saw a deer run past) or by turning it into a clause (While I was riding the bus, a deer ran past me).'},
+  {id:'relativeClauses',name:'Relative clauses',lesson:'A relative clause is a dependent clause that describes a noun. It starts with a relative pronoun: who or whom for people, which for things, that for people or things, and whose to show belonging (the boy whose dog barks). If the clause is needed to tell which one you mean, use no commas: The book that I borrowed is overdue. If it adds extra information about a noun that is already clear, set it off with commas and use who or which: My grandma, who lives in Ohio, writes me letters.'}
+];
+const SYNTAX_LESSON = `${KHAN}humanities/grammar/syntax-sentences-and-clauses/`;
+const ENGLISH_GROUPS8 = [
+  {id:'intro',hook:{emoji:'🧩',title:'Welcome to the Sentence Library',story:'In the Sentence Library, every book is built from sentences, and every sentence is a puzzle with a job. Some tell, some ask, some give orders, and some shout. “The library is open.” “Is the library open?” “Open the library!” Same words, three different jobs.'},quizName:'Sentence types Quiz',name:'Introduction to sentences',learn:'Tell declarative, interrogative, imperative and exclamatory sentences apart by the job each one does.',skills:['sentenceTypes'],
+    extraLessons:[{name:'Three types of sentence (video)',lesson:'A short video on statements, questions and commands.',url:`${SYNTAX_LESSON}introduction-to-sentences/v/three-types-of-sentence-syntax-khan-academy`},{name:'Exclamations (video)',lesson:'A short video on sentences that show strong feeling.',url:`${SYNTAX_LESSON}introduction-to-sentences/v/exclamations-syntax-khan-academy`}]},
+  {id:'types',hook:{emoji:'🔗',title:'Snap the pieces together',story:'The library’s puzzle tables hold clause pieces. One independent clause is a simple sentence. Snap two together with a comma and a joining word, and you get a compound sentence. Clip on a dependent clause, a piece that can’t stand by itself, and the sentence becomes complex.'},quizName:'Types of sentences Quiz',name:'Types of sentences',learn:'Build and recognize simple, compound, complex and compound-complex sentences, and rearrange simple and compound sentences.',skills:['simpleCompound','rearrangeSentences','complexSentences'],
+    extraLessons:[{name:'Complex sentences (video)',lesson:'A short video on sentences with a dependent clause.',url:`${SYNTAX_LESSON}types-of-sentences/v/complex-sentences-syntax-khan-academy`},{name:'Compound-complex sentences (video)',lesson:'A short video on sentences with two independent clauses and a dependent clause.',url:`${SYNTAX_LESSON}types-of-sentences/v/compound-complex-sentences-syntax-khan-academy`}]},
+  {id:'subjects',hook:{emoji:'✂️',title:'The two halves of every sentence',story:'Every sentence in the library can be sliced in two. The subject half says who or what. The predicate half says what happens. Inside the predicate, the direct object catches the action, and the indirect object is who gets it: “The librarian handed me a book.”'},quizName:'Subjects and predicates Quiz',name:'Subjects and predicates',learn:'Find the subject and predicate of a sentence, and the subject, direct object and indirect object.',skills:['subjectPredicate','subjectObjects'],
+    extraLessons:[{name:'Subject, direct object, and indirect object (video)',lesson:'A short video on who does the action, what receives it, and who gets it.',url:`${SYNTAX_LESSON}subjects-and-predicates/v/subject-direct-object-and-indirect-object-syntax-khan-academy`}]},
+  {id:'clauses',hook:{emoji:'🔧',title:'Fragments on the repair cart',story:'Some pieces in the library look like sentences but can’t stand up alone: “Because the shelf fell.” “Running down the hall.” The repair crew knows the trick: a clause has a subject and a verb, a phrase doesn’t, and a dependent clause needs an independent clause to lean on.'},quizName:'Phrases and clauses Quiz',name:'Phrases and clauses',learn:'Tell phrases from clauses and dependent clauses from independent ones, put describing phrases in the right place, and use relative clauses.',skills:['phrasesClauses','depIndepClauses','clausePlacement','relativeClauses'],
+    extraLessons:[{name:'Dependent and independent clauses (video)',lesson:'A short video on clauses that can and can’t stand alone.',url:`${SYNTAX_LESSON}phrases-and-clauses/v/dependent-and-independent-clauses-syntax-khan-academy`},{name:'Relative clauses (video)',lesson:'A short video on clauses that start with who, which, that and whose.',url:`${SYNTAX_LESSON}phrases-and-clauses/v/relative-clauses-syntax-khan-academy`}]}
+];
+const SENTENCE_QUESTIONS = {
+  sentenceTypes:[
+    qLevel(1,"What kind of sentence is this? The library closes at six.","Declarative","Interrogative","Imperative","Exclamatory"),
+    qLevel(1,"What kind of sentence is this? Please return your books by Friday.","Imperative","Declarative","Interrogative","Exclamatory"),
+    qLevel(1,"Which sentence is interrogative?","Where did you leave the map?","Leave the map on the table.","I left the map on the table.","The map is on the table, I think."),
+    qLevel(2,"What kind of sentence is this? Hand me the scissors, please.","Imperative","Interrogative","Declarative","Exclamatory"),
+    qLevel(2,"Who is the subject of this sentence? Close the door quietly.","you","door","Close","quietly"),
+    qLevel(2,"Which sentence is declarative?","I wonder whether the bus is late.","Is the bus late?","Call the bus company and ask about the delay.","How late the bus is!"),
+    qLevel(2,"Which sentence is imperative?","Watch out for the falling books!","The falling books scared us!","Did the books fall on you?","What a loud crash the books made!"),
+    qLevel(2,"Which end mark belongs in the blank? Can you tell me where the gym is___","?",".","!",";"),
+    qLevel(3,"What kind of sentence is this? Tell me why the sky is blue.","Imperative","Interrogative","Declarative","Exclamatory"),
+    qLevel(3,"Which sentence should end with a period, not a question mark?","Maya asked whether the pool was open","Is the pool open","Did Maya ask if the pool was open today","Why is the pool closed"),
+    qLevel(3,"How many of these are imperative sentences? (1) Sit down. (2) You sat down. (3) Please sit here. (4) Where should I sit?","Two","One","Three","Four"),
+    qLevel(3,"Which sentence is exclamatory?","What a huge dog that is!","Stop that huge dog!","Is that dog huge?","That dog is huge, isn’t it?"),
+    qLevel(3,"Ana wrote, “Turn left at the bakery.” She wants to ask for directions instead of giving them. Which sentence does that?","Where should I turn after the bakery?","You turn left at the bakery.","Please turn left when you get to the bakery.","I will turn left at the bakery."),
+    qLevel(3,"Which sentence has the wrong end mark?","Do you know who wrote this book.","Tell me who wrote this book before the bell rings.","I know who wrote this book.","Who wrote this book?")
+  ],
+  simpleCompound:[
+    qLevel(1,"Which sentence is compound?","The dog barked, and the cat ran away.","The big brown dog barked loudly at the frightened cat.","The dog and the cat ran away.","The dog barked and ran away."),
+    qLevel(1,"How many independent clauses does a simple sentence have?","One","Two","At least two","Three"),
+    qLevel(1,"Which word can join two independent clauses after a comma?","but","because","when","although"),
+    qLevel(2,"Is this sentence simple or compound? My aunt and my uncle drove to the beach and swam all day.","Simple, with a compound subject and a compound verb","Compound, because it has two subjects and two different verbs","Compound, because it uses the word and twice","Simple, because it has just one verb"),
+    qLevel(2,"Which sentence is a compound sentence?","I wanted to swim, but the pool was closed.","I wanted to swim in the pool after lunch.","After lunch, I wanted to swim in the pool.","My brother and I wanted to swim but stayed home."),
+    qLevel(2,"Which compound sentence is punctuated correctly?","We packed lunch, and we drove to the lake.","We packed lunch and, we drove to the lake.","We packed lunch, we drove to the lake.","We packed, lunch and we drove to the lake."),
+    qLevel(2,"Which joining word fits best? I studied hard, ___ I passed the test.","so","but","or","nor"),
+    qLevel(2,"Which pair could be joined into a compound sentence?","The bell rang. Everyone ran outside.","The bell rang. Because it was noon.","When the bell rang. Everyone ran outside.","The bell. Rang loudly at noon."),
+    qLevel(3,"Which sentence is simple?","Lena and her cousins baked bread and sold it at the fair.","Lena baked bread, and then her cousins sold all of it at the fair.","Lena baked bread; her cousins sold it at the fair.","Lena baked bread, so her cousins sold it at the fair."),
+    qLevel(3,"Which sentence correctly joins two independent clauses?","The game ended; the fans went home.","The game ended, the fans went home.","The game ended the fans went home.","The game ended, the fans, went home."),
+    qLevel(3,"How many independent clauses are in this sentence? The storm knocked out the power, so we lit candles, and Dad told stories.","Three","Two","One","Four"),
+    qLevel(3,"Why is this sentence simple, not compound? The puppy chased the ball and brought it back.","It has one subject doing two actions.","It has two separate subject-and-verb pairs.","It has a comma before the word and.","It has a helping verb."),
+    qLevel(3,"Which sentence is compound?","Sam had no pencil, nor did Ty have one.","Neither Sam nor Ty had a pencil.","Sam and Ty both forgot their pencils.","Sam forgot his pencil and borrowed one."),
+    qLevel(3,"Which sentence is compound?","The movie was long, yet nobody left early.","The long movie kept everybody in their seats.","Nobody left the long movie early.","Although the movie was long, nobody left early.")
+  ],
+  rearrangeSentences:[
+    qLevel(1,"Which sentence combines these correctly? The sun set. The sky turned pink.","The sun set, and the sky turned pink.","The sun set, the sky turned pink.","The sun set and, the sky turned pink.","The sun set the sky, and turned pink."),
+    qLevel(1,"Which joining word shows the contrast? I was tired, ___ I stayed up to finish my book.","but","so","or","nor"),
+    qLevel(1,"Which shows this compound sentence split into two simple sentences? The lake froze, so we went skating.","The lake froze. We went skating.","The lake froze so. We went skating.","The lake. Froze, so we went skating.","The lake froze, so. We went skating."),
+    qLevel(2,"Which sentence combines these into one simple sentence? Rosa washed the car. Rosa dried the car.","Rosa washed and dried the car.","Rosa washed the car, and Rosa dried the car.","Rosa washed the car Rosa dried it.","Rosa washed, the car and dried it."),
+    qLevel(2,"Which joining word shows a choice? We can walk to the park, ___ we can ride our bikes.","or","so","but","yet"),
+    qLevel(2,"Which combined sentence keeps the meaning? It rained all morning. The game went on anyway.","It rained all morning, but the game went on anyway.","It rained all morning, so the game went on anyway.","It rained all morning, or the game went on anyway.","It rained all morning, for the game went on anyway."),
+    qLevel(2,"Which sentence combines these correctly with a semicolon? Owls hunt at night. Hawks hunt during the day.","Owls hunt at night; hawks hunt during the day.","Owls hunt at night; and hawks hunt during the day.","Owls hunt; at night hawks hunt during the day.","Owls hunt at night, hawks; hunt during the day."),
+    qLevel(2,"Which pair of sentences could become one simple sentence with a compound subject?","Lin plays the drums. Kofi plays the drums.","Lin plays the drums. Kofi plays soccer.","Lin plays the drums. She practices daily.","Lin plays the drums. The drums are very loud."),
+    qLevel(3,"Original: The bridge was closed. We took the long way home. Which combination changes the meaning?","The bridge was closed, yet we took the long way home.","The bridge was closed, so we took the long way home.","The bridge was closed; we took the long way home.","We took the long way home, for the bridge was closed."),
+    qLevel(3,"Which sentence combines these into a simple sentence with a compound verb? The museum opens at nine. The museum closes at five.","The museum opens at nine and closes at five.","The museum opens at nine, and it closes at five.","The museum opens at nine; it closes at five.","Opening at nine, the museum, closes at five."),
+    qLevel(3,"Which is NOT a correct way to combine these? Jamal set the table. His sister cooked dinner.","Jamal set the table, his sister cooked dinner.","Jamal set the table, and his sister cooked dinner.","Jamal set the table; his sister cooked dinner.","Jamal set the table while his sister cooked dinner."),
+    qLevel(3,"Which correctly splits this into two simple sentences? The cat climbed the tree, but it couldn’t get down.","The cat climbed the tree. It couldn’t get down.","The cat climbed the tree, but. It couldn’t get down.","The cat climbed. The tree, but it couldn’t get down.","The cat climbed the tree but it. Couldn’t get down."),
+    qLevel(3,"Which joining word fits? Maya didn’t like the soup, ___ did she like the salad.","nor","or","but","so"),
+    qLevel(3,"Which rewrite turns this compound sentence into a simple sentence with the same meaning? Theo grabbed his coat, and he ran out the door.","Theo grabbed his coat and ran out the door.","Theo grabbed his coat, so he ran out the door.","Theo grabbed his coat; he ran out the door.","Theo grabbed his coat, and then he ran out.")
+  ],
+  complexSentences:[
+    qLevel(1,"Which sentence is complex?","Because it was cold, we wore mittens.","It was cold, so we wore mittens.","It was cold; we wore mittens.","We wore mittens and hats in the cold."),
+    qLevel(1,"Which word often begins a dependent clause?","because","and","but","or"),
+    qLevel(1,"What does a complex sentence have?","One independent clause and at least one dependent clause","Two independent clauses joined by a comma and a joining word","One subject and one verb, and nothing else","Two dependent clauses and no independent clause"),
+    qLevel(2,"What is the dependent clause? We stayed inside until the storm passed.","until the storm passed","We stayed inside until","We stayed","the storm"),
+    qLevel(2,"Which sentence is compound-complex?","After the game ended, Ana cheered, and Ben clapped.","After the game ended, Ana cheered loudly.","Ana cheered, and Ben clapped.","Ana and Ben cheered and clapped after the game ended."),
+    qLevel(2,"Where does the comma go? When the bus finally came we all climbed aboard.","After “came”","After “bus”","After “When”","After “all”"),
+    qLevel(2,"What kind of sentence is this? I’ll call you if the package arrives.","Complex","Compound","Simple","Compound-complex"),
+    qLevel(2,"What kind of sentence is this? The lights flickered, and the dog barked because it was scared.","Compound-complex","Complex","Compound","Simple"),
+    qLevel(3,"What kind of sentence is this? Although the trail was steep, we reached the top, but we were too tired to enjoy the view.","Compound-complex","Complex","Compound","Simple"),
+    qLevel(3,"Which sentence is complex, not compound?","Since the store was closed, we went home.","The store was closed, so we went home.","The store was closed; we went home.","The store was closed, and we went home early."),
+    qLevel(3,"Which sentence is NOT complex?","We waited for an hour, but the bus never came.","We waited until the bus came.","If the bus comes, we’ll wave.","The bus that we waited for all morning finally came."),
+    qLevel(3,"How many dependent clauses are in this sentence? When Grandpa visits, he tells stories that make us laugh.","Two","One","Three","Zero"),
+    qLevel(3,"Which revision turns this compound sentence into a complex sentence? The power went out, so we played board games.","Because the power went out, we played board games.","The power went out; we played board games.","The power went out, and we played board games.","The power went out, so we played many board games."),
+    qLevel(3,"Which sentence is punctuated correctly?","Although Kim was nervous, she sang, and the crowd loved it.","Although Kim was nervous she sang and, the crowd loved it.","Although, Kim was nervous, she sang and the crowd loved it.","Although Kim was nervous, she sang the crowd loved it.")
+  ],
+  subjectPredicate:[
+    qLevel(1,"What is the complete subject? My little brother loves trains.","My little brother","loves trains","My little brother loves","little"),
+    qLevel(1,"What is the complete predicate? The old clock ticked loudly all night.","ticked loudly all night","The old clock","The old clock ticked loudly","all night"),
+    qLevel(1,"What does the predicate of a sentence tell?","What the subject does or is","Who or what the sentence is about","Where the sentence takes place","When the sentence was written"),
+    qLevel(2,"What is the simple subject? The muddy boots by the door belong to Dad.","boots","door","Dad","muddy"),
+    qLevel(2,"What is the simple predicate? Three hungry geese chased us across the park.","chased","geese","across","park"),
+    qLevel(2,"What is the complete subject? Under the bridge lived a grumpy troll.","a grumpy troll","Under the bridge","the bridge","lived a grumpy troll"),
+    qLevel(2,"What is the simple subject? Did the bus leave already?","bus","Did","leave","already"),
+    qLevel(2,"Which shows the sentence split correctly into complete subject | complete predicate?","The kids on our street | play tag every evening.","The kids | on our street play tag every evening.","The kids on our street play | tag every evening.","The kids on our | street play tag every evening."),
+    qLevel(3,"What is the simple subject? One of my friends has a pet snake.","One","friends","snake","has"),
+    qLevel(3,"What is the complete subject? Here comes the parade.","the parade","Here","Here comes","comes the parade"),
+    qLevel(3,"What is the complete subject? Did the girl with the green backpack win the race?","the girl with the green backpack","the girl","the girl with the green backpack win","win the race"),
+    qLevel(3,"What is the simple predicate? My sister and I have been practicing all week.","have been practicing","practicing","have been practicing all week","My sister and I"),
+    qLevel(3,"What is the complete subject? Lions, tigers, and bears live at the city zoo.","Lions, tigers, and bears","Lions","Lions, tigers, and bears live","the city zoo"),
+    qLevel(3,"Which sentence has a compound subject?","The coach and the players cheered.","The coach cheered and clapped.","The coach cheered for the players.","The coach’s players cheered loudly.")
+  ],
+  subjectObjects:[
+    qLevel(1,"What is the direct object? Nora painted a picture.","picture","Nora","painted","a"),
+    qLevel(1,"What is the subject? The puppy chewed my shoe.","puppy","shoe","chewed","my"),
+    qLevel(1,"Which question does a direct object answer?","What? or Whom? after the verb","Where? or When? after the verb","How? after the verb","Who did the action?"),
+    qLevel(2,"What is the indirect object? Mr. Ruiz gave the class a quiz.","class","quiz","Ruiz","gave"),
+    qLevel(2,"What is the direct object? Grandma baked us cookies.","cookies","us","Grandma","baked"),
+    qLevel(2,"Which sentence has an indirect object?","Dev showed his mom the trophy.","Dev showed the trophy to his mom.","Dev showed the trophy proudly.","Dev and his mom saw the trophy."),
+    qLevel(2,"What is the direct object? The coach handed each player a water bottle.","bottle","player","coach","handed"),
+    qLevel(2,"What job does “her” do in this sentence? I sent her a postcard.","Indirect object","Direct object","Subject of the sentence","Simple predicate"),
+    qLevel(3,"What is the indirect object? Will you lend me your bike?","me","bike","you","lend"),
+    qLevel(3,"Which sentence has a direct object but no indirect object?","Lila told a funny story to us.","Lila told us a funny story.","Lila told her friends a story.","Lila gave the dog a bath."),
+    qLevel(3,"What is the direct object? Whom did you invite?","Whom","you","invite","did"),
+    qLevel(3,"Which sentence has no direct object?","The baby slept all afternoon.","The baby grabbed my finger.","The baby threw her rattle across the room.","The baby gave me a smile."),
+    qLevel(3,"In which sentence is “Sam” an indirect object?","We bought Sam a new hat.","We bought a new hat for Sam.","Sam bought a new hat.","We saw Sam at the hat store."),
+    qLevel(3,"Which words are the direct objects? The waiter brought my parents their menus and some water.","menus and water","parents and menus","waiter and parents","parents and water")
+  ],
+  phrasesClauses:[
+    qLevel(1,"Which group of words is a clause?","the bird sang","in the tree","on a sunny day","singing loudly"),
+    qLevel(1,"Which group of words is a phrase?","under the bed","the cat hid","she slept","we left early"),
+    qLevel(1,"What does every clause have?","A subject and a verb","A comma and a period","A joining word like and","At least ten words"),
+    qLevel(2,"Which group of words is a phrase?","after the long, boring meeting","after the meeting ended","the meeting ended","because the meeting ran very late"),
+    qLevel(2,"Is “running through the sprinklers” a phrase or a clause?","A phrase, because nobody in it is doing the running","A clause, because it has a verb","A clause, because it has more than three words in it","A phrase, because it has no nouns"),
+    qLevel(2,"Which group of words is a clause?","until the sun came up","before sunrise","at the crack of dawn","with the bright rising sun above"),
+    qLevel(2,"How many clauses are in this sentence? We ate lunch after the show ended.","Two","One","Three","Four"),
+    qLevel(2,"Which group of words can stand alone as a sentence?","The phone rang.","When the phone rang.","Ringing loudly.","The ringing phone in the kitchen."),
+    qLevel(3,"Which group of words is a clause, even though it can’t stand alone?","because we were late","because of the heavy rain outside","during the storm","after a long nap"),
+    qLevel(3,"Which group of words is a prepositional phrase? The kite that I built flew over the trees.","over the trees","that I built","The kite that I built","I built"),
+    qLevel(3,"Which group of words is NOT a clause?","to win the race","she won the race","if she wins the race","who won the race"),
+    qLevel(3,"Which of these is a sentence fragment?","Hoping for a snow day.","We hoped for a snow day.","Hope for a snow day.","It snowed."),
+    qLevel(3,"How many clauses are in this sentence? The book that you lent me was so good that I read it twice.","Three","Two","One","Four"),
+    qLevel(3,"Which group of words is a phrase?","the dog with the spotted ears","the dog barked","dogs bark","when the dogs on our street bark")
+  ],
+  depIndepClauses:[
+    qLevel(1,"Which is an independent clause?","the pizza arrived","when the pizza arrived","because the pizza was late","after the pizza"),
+    qLevel(1,"Which is a dependent clause?","if you finish early","you finish early","you can finish your work early","finish early"),
+    qLevel(1,"Why can’t “Because my alarm didn’t ring” stand alone?","It starts with because, so the thought is unfinished.","It is too short to be a sentence, since it has only five words.","It has no subject.","It has no verb."),
+    qLevel(2,"What is the independent clause? Unless it rains, we will hike tomorrow.","we will hike tomorrow","Unless it rains","it rains","Unless it rains, we will hike"),
+    qLevel(2,"What is the dependent clause? The movie that we watched last night was scary.","that we watched last night","The movie was scary","The movie","The movie that we watched last night"),
+    qLevel(2,"Which sentence has a dependent clause?","I smiled when I saw the puppy.","I smiled and petted the puppy.","I smiled at the cute puppy.","I saw the puppy, and I smiled."),
+    qLevel(2,"Which word turns “the bus stopped” into a dependent clause?","after","and","the","so"),
+    qLevel(2,"Which is a complete sentence?","We cheered when the team scored.","When the team scored.","Because our team scored the winning goal at last.","The team that scored the goal."),
+    qLevel(3,"Which group of words is a dependent clause?","who lives next door","next to the door","the woman next door","she lives next door"),
+    qLevel(3,"Which is a fragment?","Although we practiced every day for a month.","We practiced every single day for a whole month, and it paid off.","Practice every day for a month.","We practiced, and we improved."),
+    qLevel(3,"Which revision fixes this fragment? Since the library was closed.","Since the library was closed, we read at home.","Since the library was closed today.","Since the library, was closed.","Since the library was closed, and we read at home."),
+    qLevel(3,"How many independent clauses are in this sentence? Before we left, Mom checked the stove, and Dad locked the door.","Two","One","Three","Four"),
+    qLevel(3,"Which of these is an independent clause?","then the bell rang","when the bell rang","as soon as the bell rang","until the bell rang"),
+    qLevel(3,"What does the dependent clause tell? We stayed inside because it was freezing.","Why we stayed inside","When we stayed inside","Where we stayed","Who stayed inside")
+  ],
+  clausePlacement:[
+    qLevel(1,"Which sentence is clear?","Riding my bike, I saw a deer.","I saw a deer riding my bike.","A deer, riding my bike, I saw.","Riding my bike, a deer was seen by me."),
+    qLevel(1,"What is wrong with this sentence? The boy fed the goat wearing a red cap.","It sounds like the goat is wearing the cap.","It needs a comma after boy and another comma after goat.","It is missing a verb.","It has two subjects."),
+    qLevel(1,"Where should a describing phrase go?","Right next to the word it describes","As far as possible from the word it describes","At the very start of the sentence","Right after the verb"),
+    qLevel(2,"Which sentence is clear?","Dad found his old coat hanging in the closet.","Hanging in the closet, Dad found his old coat.","Dad, hanging in the closet, found his old coat.","Hanging in the closet, his old coat Dad found."),
+    qLevel(2,"Which revision fixes this sentence? We gave the cookies to the neighbors that we baked.","We gave the cookies that we baked to the neighbors.","We gave the neighbors to the cookies that we baked.","That we baked, we gave the cookies to the neighbors.","We gave the cookies to the neighbors, that we baked."),
+    qLevel(2,"What does this sentence seem to say? Covered in mud, Mom washed the dog.","Mom was covered in mud.","The dog was covered in mud.","The mud covered the house.","Mom and the dog both dislike mud."),
+    qLevel(2,"Which sentence is clear?","Barking loudly, the dog chased the mail truck.","Barking loudly, the mail truck was chased by the dog.","The mail truck, barking loudly, was chased by the dog.","Barking loudly, the truck chased the dog."),
+    qLevel(2,"Which sentence puts “with a long tail” in the right place?","The monkey with a long tail ate a banana.","The monkey ate a banana with a long tail.","With a long tail, a banana was eaten by the monkey.","The monkey ate with a long tail a banana."),
+    qLevel(3,"Which sentence is clear?","While I walked to the park, a dog followed me.","Walking to the park, a dog followed me.","While walking to the park, a dog followed me.","Walking to the park, a dog behind me followed along."),
+    qLevel(3,"Which revision fixes this sentence? I read about the bear that escaped in the newspaper.","I read in the newspaper about the bear that escaped.","I read about the bear in the newspaper that escaped.","I read in the bear about the newspaper that escaped.","That escaped, I read about the bear in the newspaper."),
+    qLevel(3,"Which sentence is clear?","The girl in the blue dress sang a song.","The girl sang a song in the blue dress.","In the blue dress, a song was sung by the girl.","The girl sang in the blue dress a song."),
+    qLevel(3,"What is wrong with this sentence? After finishing my homework, the TV was turned on.","It doesn’t say who finished the homework.","It needs a semicolon after homework instead of a comma.","The verb is in the wrong tense.","It has too many commas in it."),
+    qLevel(3,"Which revision fixes this sentence? Full of fresh water, the dog drank from the bowl.","The dog drank from the bowl full of fresh water.","Full of fresh water, the bowl drank the dog.","The dog, full of fresh water, drank from the bowl.","Full of fresh water drank the dog from the bowl."),
+    qLevel(3,"Which sentence is clear?","Flying over the city, we spotted the stadium.","Flying over the city, the stadium was easy to spot.","The stadium, flying over the city, was easy to spot.","We spotted the stadium, which was flying over the city.")
+  ],
+  relativeClauses:[
+    qLevel(1,"Which word begins the relative clause? The cake that Ana baked was delicious.","that","Ana","baked","cake"),
+    qLevel(1,"Which relative pronoun fits? The girl ___ won the race is my cousin.","who","which","whose","whom"),
+    qLevel(1,"What does a relative clause do?","It describes a noun.","It names the action.","It ends the sentence.","It joins two verbs."),
+    qLevel(2,"What is the relative clause? The bike that I wanted was sold out.","that I wanted","The bike","was sold out","I wanted was sold"),
+    qLevel(2,"Which relative pronoun fits? That’s the boy ___ backpack fell in the pond.","whose","who","which","whom"),
+    qLevel(2,"Which relative pronoun fits? Our class read a book ___ won a big award.","that","who","whose","whom"),
+    qLevel(2,"Which noun does the relative clause describe? The man who fixed our roof is my uncle’s friend.","man","roof","uncle’s","friend"),
+    qLevel(2,"Which sentence has a relative clause?","The dog that lives next door barks at birds.","The dog next door barks at birds.","The dog barks at birds, and then the birds fly away.","The dog barks at birds in the yard."),
+    qLevel(3,"Which sentence is punctuated correctly?","My grandpa, who was born in Peru, loves soccer.","My grandpa who was born in Peru, loves soccer.","My grandpa, who was born in Peru loves soccer.","My grandpa who, was born in Peru, loves soccer."),
+    qLevel(3,"Which relative pronoun is correct? The coach ___ we thanked gave a speech.","whom","which","whose","what"),
+    qLevel(3,"Which sentence needs NO commas around its relative clause?","The students who finished early may read.","My mom who is a nurse works at night.","The Eiffel Tower which is in Paris is tall.","Lake Superior which is very cold is huge."),
+    qLevel(3,"What is the relative clause? The house whose roof blew off is being fixed.","whose roof blew off","The house whose roof","is being fixed","roof blew off"),
+    qLevel(3,"Which sentence uses “which” correctly?","Our car, which is ten years old, still runs well.","Our neighbor, which is ten years old, likes cars.","The car which, is ten years old, still runs.","The boy which owns the toy car is ten."),
+    qLevel(3,"How many relative clauses are in this sentence? The girl who sits next to me has a cat that can open doors.","Two","One","Three","Four")
+  ]
+};
 /* ---------- end of the moved banks ---------- */
 
 export {
   ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, ENGLISH_UNIT4, ENGLISH_GROUPS4, ENGLISH_UNIT5, ENGLISH_GROUPS5, ENGLISH_UNIT6, ENGLISH_GROUPS6,
   ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS,
+  ENGLISH_UNIT8, ENGLISH_GROUPS8, SENTENCE_QUESTIONS,
   HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, HISTORY_UNIT6, HISTORY_GROUPS6,
   BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS,
   HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS,
@@ -3515,6 +3706,7 @@ export const LESSON_COURSES = [
   {id:'prepositions', title:'English Unit 5: Prepositions and Interjections', skills:ENGLISH_UNIT5, groups:ENGLISH_GROUPS5},
   {id:'punctuation', title:'English Unit 6: Punctuation', skills:ENGLISH_UNIT6, groups:ENGLISH_GROUPS6},
   {id:'colons', title:'English Unit 7: Colons, Semicolons, and More', skills:ENGLISH_UNIT7, groups:ENGLISH_GROUPS7},
+  {id:'sentences', title:'English Unit 8: Sentences and Clauses', skills:ENGLISH_UNIT8, groups:ENGLISH_GROUPS8},
   {id:'history', title:'History Unit 1: Origins of History', skills:HISTORY_UNIT1, groups:HISTORY_GROUPS},
   {id:'history2', title:'History Unit 2: Early Humans', skills:HISTORY_UNIT2, groups:HISTORY_GROUPS2},
   {id:'history3', title:'History Unit 3: Early Agrarian Societies', skills:HISTORY_UNIT3, groups:HISTORY_GROUPS3},
@@ -3533,6 +3725,7 @@ export const LESSON_COURSES = [
 export function builtInBank(courseId){
   if (courseId === 'history8') return HISTORY8_QUESTIONS;
   if (courseId === 'colons') return COLON_QUESTIONS;
+  if (courseId === 'sentences') return SENTENCE_QUESTIONS;
   return courseId === 'bio1' ? BIO1_QUESTIONS : courseId === 'bio2' ? BIO2_QUESTIONS : courseId === 'bio3' ? BIO3_QUESTIONS
     : courseId === 'history6' ? HISTORY6_QUESTIONS
     : courseId === 'history7' ? HISTORY7_QUESTIONS

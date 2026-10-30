@@ -17,13 +17,14 @@
 | 🔗 Link Library Games (Pet Hide-and-Seek with its 8 levels, Cross It Out, Comic Strip Studio) | English Unit 5, cards under its blocks (`ggameCardsHTML`) | `link-games`, `arcade/link-games/index.html` | 1 per star, up to 3 a game |
 | ⚡ Punctuation Power Lab | English Unit 6, a card under each block (`heroLabCardHTML`) | `power-lab`, `arcade/power-lab/index.html` | 1 per 2 first launches, up to 3 a pack |
 | 📚 Book Repair Desk | English Unit 7, a card under each block (`bookRepairCardHTML`) | `book-repair`, `arcade/book-repair/index.html` | 1 per 2 books fixed on the first try, up to 3 a shelf |
+| 🧩 Sentence Snap | English Unit 8, a card under each block (`sentenceSnapCardHTML`) | `sentence-snap`, `arcade/sentence-snap/index.html` | 1 per star, up to 3 a shift |
 | 🌺 Greenhouse Keeper | Biology Unit 3, a card at the bottom of the unit page (`openGreenhouse`) | `greenhouse-keeper`, `public/arcade/greenhouse-keeper/` | 1 per star, up to 3 a shift |
 | ⚖️ Pax Oeconomica | History Units 4 and 5, a card at the bottom of the unit page (`openPax`; Unit 4 plays the Classical empires, Unit 5 the Medieval ones) | `pax-oeconomica`, `public/arcade/pax-oeconomica/` (React source in `src/arcade/pax-oeconomica/`; both eras) | 1 per star, up to 3 a game |
 
 ## Two ways to build the Arcade copy
 
 1. **One standalone page** in `public/arcade/<id>/index.html` (Chef's Rush, the surgery game, Supermarket Dash, Penguin Push, Potion Detective, Carnival Midway). The unit opens the same page in an overlay with `?from=<shop>` and pays coins; the Arcade opens it with `?arcadeRun=` and pays tickets (`arcade:round-complete`).
-2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`, the Book Repair Desk `src/game/bookRepair.js`; the Link Library Games import `src/game/grammarGames.js` and `src/game/hideSeek.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
+2. **A Vite page** at `arcade/<id>/index.html` (not under `public/`), listed in `vite.config.ts`, for a game whose content lives in `src/` (the Power Lab imports `src/game/heroLab.js`, the Book Repair Desk `src/game/bookRepair.js`, Sentence Snap `src/game/sentenceSnap.js`; the Link Library Games import `src/game/grammarGames.js` and `src/game/hideSeek.js`). The Arcade copy uses the same content, so there's only one list to edit. Vite builds it to `/arcade/<id>/`.
 
 Either way:
 - Add the payout to `arcadeModuleMessage` in `src/game/game.js` (tickets, capped per round).

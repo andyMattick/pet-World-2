@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentence Snap</title>
+<!-- Pet World Arcade copy of 🧩 Sentence Snap (English Unit 8, docs/ENGLISH-UNIT8.md, docs/ARCADE-GAMES.md).
+     Served at /arcade/sentence-snap/. It is a Vite page (vite.config.ts), not a public/ file, so it runs the same
+     shifts as the unit: createSnap() in src/game/sentenceSnap.js. In the Arcade (?arcadeRun=…) it pays tickets (1 per
+     star); it never pays coins or changes the unit's stars or Sentence Smith. -->
+<style>
+  :root{ --bg:#EAF1FB; --surface:#FFFFFF; --ink:#2F3A4A; --ink-soft:#5E6B7D; --edge:#2F3A4A; --berry:#E4577A; --berry-deep:#B83659; --butter:#FFD76A; --dot:#CBD8EA; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#1B2230; --surface:#283244; --ink:#E9EEF7; --ink-soft:#B4BFD0; --edge:#0E131C; --berry:#EE7394; --berry-deep:#FF9DB6; --butter:#6B5520; --dot:#3A475C; } }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif}
+  button{font:inherit; color:inherit; cursor:pointer}
+  .wrap{max-width:760px; margin:0 auto; padding:12px 16px 32px}
+  h1{font-size:1.7em; margin:6px 0 4px} h2{font-size:1.2em; margin:0 0 6px}
+  .muted{color:var(--ink-soft)}
+  .card{background:var(--surface); border:3px solid var(--edge); border-radius:16px; padding:14px; margin-top:12px}
+  .btn{border:3px solid var(--edge); background:var(--surface); border-radius:12px; padding:8px 14px; font-weight:700}
+  .btn.go{background:var(--berry); color:#fff; border-color:var(--berry-deep)}
+  .shelves{display:grid; gap:10px}
+  .shelf{display:flex; gap:12px; align-items:center; text-align:left; width:100%; border:3px solid var(--edge); background:var(--surface); border-radius:14px; padding:10px 12px}
+  .shelf .e{font-size:1.8em} .shelf b{display:block}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script type="module">
+import { SNAP_SHELVES, createSnap, snapItemCount } from '../../src/game/sentenceSnap.js';
+const params = new URLSearchParams(location.search), ARCADE_RUN = params.get('arcadeRun') || '';
+const app = document.getElementById('app');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let best = {}; try { best = JSON.parse(localStorage.getItem('sentence-snap:best') || '{}') || {}; } catch(e){}
+const stars = n => `${'⭐'.repeat(n)}${'☆'.repeat(3 - n)}`;
+let game = null;
+
+function renderShelves(){
+  game?.stop(); game = null;
+  app.innerHTML = `<h1>🧩 Sentence Snap</h1>
+    <p class="muted">Welcome to the Sentence Library! Pick a shelf and beat the 90-second clock. Five right in a row adds time; a miss costs 5 seconds and shows you why.</p>
+    <div class="shelves">${SNAP_SHELVES.map(p => `<button type="button" class="shelf" data-shelf="${p.id}"><span class="e">${p.emoji}</span><span><b>${esc(p.name)}</b><span class="muted">${esc(p.blurb)} · ${p.id === 'types' ? 'endless orders' : `${snapItemCount(p.id)} puzzles`} · ${best[p.id] ? stars(best[p.id]) : 'Not played yet'}</span></span></button>`).join('')}</div>`;
+}
+function start(shelfId){
+  const shelf = SNAP_SHELVES.find(p => p.id === shelfId);
+  app.innerHTML = `<div class="row"><h1 style="flex:1">🧩 Sentence Snap</h1><button type="button" class="btn" data-shelves>All shelves</button></div><p class="muted">${shelf.emoji} ${esc(shelf.name)}</p><div id="game"></div>`;
+  game = createSnap(document.getElementById('game'), {shelf:shelfId, esc, onDone:done});
+}
+function done(r){
+  game = null;
+  best[r.shelf] = Math.max(best[r.shelf] || 0, r.stars); try { localStorage.setItem('sentence-snap:best', JSON.stringify(best)); } catch(e){}
+  try { if (ARCADE_RUN && window.parent !== window) window.parent.postMessage({type:'arcade:round-complete', gameId:'sentence-snap', runId:ARCADE_RUN, roundId:`${r.shelf}-${Date.now()}`, score:r.stars}, location.origin); } catch(e){}
+  const need = SNAP_SHELVES.find(p => p.id === r.shelf).stars;
+  document.getElementById('game').innerHTML = `<div class="card"><h2>🏁 ${stars(r.stars)} ${r.right} right${r.wrong ? `, ${r.wrong} missed` : ''}</h2>
+    <p>${r.stars === 3 ? 'Three stars! The Sentence Library runs on puzzles like yours.' : `Stars at ${need[0]}, ${need[1]} and ${need[2]} right. Try again?`}</p>
+    <div class="row"><button type="button" class="btn go" data-shelf="${r.shelf}">🔁 Play again</button><button type="button" class="btn" data-shelves>Pick another shelf</button></div></div>`;
+}
+app.addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.shelf) { start(btn.dataset.shelf); return; }
+  if (btn.hasAttribute('data-shelves')) renderShelves();
+});
+renderShelves();
+</script>
+</body>
+</html>

@@ -147,6 +147,23 @@ export const TERM_CARDS = {
     { term: 'hyphenated describing word', means: "Two or more words joined by hyphens to describe a noun that comes after them. After the noun, no hyphens.", example: "a ten-year-old dog / the dog is ten years old", skill: 'dashesHyphens' },
     { term: 'ellipsis', means: "Three dots (…) that show words were left out of a quotation, or that a speaker pauses or trails off.", example: "“The zoo … has over two hundred animals.”", skill: 'ellipses' }
   ],
+  sentences: [   // English Unit 8, the Sentence Library (docs/ENGLISH-UNIT8.md)
+    { term: 'declarative sentence', means: "A sentence that makes a statement. It ends with a period.", example: "The library opens at nine.", skill: 'sentenceTypes' },
+    { term: 'interrogative sentence', means: "A sentence that asks a question. It ends with a question mark.", example: "When does the library open?", skill: 'sentenceTypes' },
+    { term: 'imperative sentence', means: "A sentence that gives a command or makes a request. Its subject, you, is understood.", example: "Open the library, please.", skill: 'sentenceTypes' },
+    { term: 'exclamatory sentence', means: "A sentence that shows strong feeling, often starting with What or How.", example: "What a huge library this is!", skill: 'sentenceTypes' },
+    { term: 'simple sentence', means: "One independent clause. It can have a compound subject or a compound verb.", example: "Jo and Max read and laughed.", skill: 'simpleCompound' },
+    { term: 'compound sentence', means: "Two or more independent clauses, joined by a comma and a joining word (for, and, nor, but, or, yet, so) or by a semicolon.", example: "The rain stopped, and the sun came out.", skill: 'simpleCompound' },
+    { term: 'complex sentence', means: "One independent clause plus at least one dependent clause.", example: "When the bell rang, we left.", skill: 'complexSentences' },
+    { term: 'compound-complex sentence', means: "At least two independent clauses plus at least one dependent clause.", example: "When the bell rang, we left, and the hall got quiet.", skill: 'complexSentences' },
+    { term: 'subject and predicate', means: "The subject is who or what the sentence is about. The predicate tells what the subject does or is.", example: "The tall girl | waved at us.", skill: 'subjectPredicate' },
+    { term: 'direct object', means: "The word that receives the action of the verb. It answers what? or whom? after the verb.", example: "Kai kicked the ball.", skill: 'subjectObjects' },
+    { term: 'indirect object', means: "The word that tells to whom or for whom the action is done. It comes before the direct object.", example: "Kai passed me the ball.", skill: 'subjectObjects' },
+    { term: 'phrase or clause?', means: "A clause has a subject and its verb. A phrase is a group of words without them.", example: "clause: the dog barked · phrase: in the morning", skill: 'phrasesClauses' },
+    { term: 'dependent clause', means: "A clause that can’t stand alone, because it starts with a word like because, when, if or although.", example: "because it started to rain", skill: 'depIndepClauses' },
+    { term: 'misplaced modifier', means: "A describing phrase that sits next to the wrong word, so the sentence says something silly. Move it next to the word it describes.", example: "Not: Riding the bus, a deer ran past. Yes: Riding the bus, I saw a deer.", skill: 'clausePlacement' },
+    { term: 'relative clause', means: "A dependent clause that describes a noun. It starts with who, whom, whose, which or that.", example: "the book that I borrowed", skill: 'relativeClauses' }
+  ],
   prepositions: [
     { term: 'preposition', means: 'A word that shows how a noun or pronoun is related to the rest of the sentence: where, when, or how.', example: 'under the bed, after lunch, with a spoon', skill: 'meetPreposition' },
     { term: 'object of the preposition', means: 'The noun or pronoun at the end of a prepositional phrase.', example: 'behind the shed (shed), with her (her)', skill: 'prepPhrases' },

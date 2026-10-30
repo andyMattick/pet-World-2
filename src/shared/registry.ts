@@ -373,6 +373,7 @@ export const ARCADE_GAMES: ArcadeGame[] = [
   { id: 'shape-asteroids', name: 'Shape Asteroids', emoji: '☄️', description: 'Shape asteroids are flying at the ship! Tap one to freeze space, turn it to see it, and find its area or a missing side to blast it.', src: '/arcade/shape-asteroids/', available: true },
   { id: 'carnival', name: 'Carnival Midway', emoji: '🎪', description: 'Six carnival booths: pop balloons, toss rings, check riders’ heights and more, with equations and inequalities.', src: '/arcade/carnival/', available: true },
   { id: 'book-repair', name: 'Book Repair Desk', emoji: '📚', description: 'Books came back to the Pause Library with marks torn out. Pick the colon, semicolon, dash, hyphen, title style or ellipsis that fixes each one.', src: '/arcade/book-repair/', available: true },
+  { id: 'sentence-snap', name: 'Sentence Snap', emoji: '🧩', description: 'Ninety seconds on the clock at the Sentence Library: sort sentence types, snap clauses into compound and complex sentences, slice subjects from predicates and fix fragments.', src: '/arcade/sentence-snap/', available: true },
   { id: 'power-lab', name: 'Punctuation Power Lab', emoji: '⚡', description: 'Tap the glowing spots to change the punctuation and watch your superhero change. Build the hero each mission needs!', src: '/arcade/power-lab/', available: true },
   { id: 'link-games', name: 'Link Library Games', emoji: '🔗', description: 'Pet Hide-and-Seek (8 levels), Cross It Out and the Comic Strip Studio: prepositions and interjections from English Unit 5.', src: '/arcade/link-games/', available: true },
   { id: 'prep-recall', name: 'Name All 48 Prepositions', emoji: '🔗', description: 'Race the clock to type every preposition you can remember. (During English Unit 5 it is on Today’s plan instead.)', src: '/prep-recall/', available: true }
@@ -748,7 +749,7 @@ export const BUILDINGS: Building[] = [
   {id:'elaConj',   emoji:'🔗', name:'Link Library',         unit:'Unit 5: Prepositions and interjections', hood:'g6', subject:'english', open:true},
   {id:'elaPunct',  emoji:'🦸', name:'Superhero Factory',    unit:'Unit 6: End marks, commas, and apostrophes', hood:'g6', subject:'english', open:true},
   {id:'elaColon',  emoji:'⏸️', name:'Pause Library',        unit:'Unit 7: Colons, semicolons, and more', hood:'g6', subject:'english', open:true},
-  {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Unit 8: Sentences and clauses', hood:'g6', subject:'english'},
+  {id:'elaSent',   emoji:'🧩', name:'Sentence Library',     unit:'Unit 8: Sentences and clauses', hood:'g6', subject:'english', open:true},
   {id:'elaRules',  emoji:'📏', name:'Rule Library',         unit:'Unit 9: Conventions of standard English', hood:'g6', subject:'english'},
   {id:'elaStyle',  emoji:'🪶', name:'Style Library',        unit:'Unit 10: Usage and style', hood:'g6', subject:'english'},
   {id:'elaVocab',  emoji:'🔤', name:'Word Library',         unit:'Vocabulary, word roots, and context clues', hood:'g6', subject:'english'},
