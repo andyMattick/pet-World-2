@@ -2,12 +2,15 @@
    ({builtIn, words, focus}), which students already receive, so no new database column is needed. */
 import { esc } from './report';
 import { pathSummaryText } from '../shared/wordPath';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets, masteredAmong, validListen, LISTEN_DEFAULT, LISTEN_MAX } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, STATUS_TEXT, parseVocabImport, missingLines, validWord, findWord, blankSentence, PATTERN_WORDS, normalizeVocabState, wordBuckets, masteredAmong, validListen, LISTEN_DEFAULT, LISTEN_MAX, keepPictures } from '../shared/vocab';
 import { weekOf } from '../shared/wordPuzzles';
 import { patternSummary, patternById } from '../shared/spellingPatterns';
 import { dictLinkHTML } from './wordPick';
+import { pictureFor, suggestEmoji, validPictureEmoji, needsCartoon, cartoonRequest } from '../shared/wordPictures';
+import { searchPhotos, photoChoice, photoResultsHTML } from '../shared/photoSearch';
 
-interface VocabWord { w: string; d: string; s?: string; set?: string; syl?: string[] }   // syl: syllables typed with + (ap+ples)
+interface WordPhoto { src: string; credit: string; license: string; licenseVersion?: string; source: string; title?: string; creator?: string }
+interface VocabWord { w: string; d: string; s?: string; set?: string; syl?: string[]; pic?: string; noPic?: boolean; photo?: WordPhoto }   // syl: syllables typed with + (ap+ples); pic / noPic / photo: the word's picture (F92)
 export interface ClassVocab { builtIn?: boolean; listenSec?: number; words?: VocabWord[]; focus?: string[]; dismissed?: string[] }   // dismissed: flagged words the teacher said no to
 interface VocabClass { id: string; name: string; game_settings: { vocab?: ClassVocab; [key: string]: unknown } | null }
 type SaveVocab = (vocab: ClassVocab) => Promise<string | null>;
@@ -38,6 +41,38 @@ export function pendingBackOf(overrides: Record<string, unknown> | null | undefi
   return [...new Set(out)];
 }
 const backNotes = new Map<string, string>();   /* per student: the result of a move, shown in her box after the redraw */
+
+/* ---------- 🖼️ pictures for class words (owner, Oct 30, 2026; ROADMAP F92, docs/VOCAB.md "Pictures for added words") ----------
+   Each class word's 🖼️ Picture opens a box: 🔍 Find a photo (Openverse from the browser: free licenses only, safe search,
+   6 results; the teacher picks one or none, nothing is ever picked automatically) or an emoji (suggested from the
+   meaning; use it, change it or turn it off). A class word's photo is saved as its https address with its credit,
+   license and source, inside the class word list the tab already saves (classes.game_settings.vocab.words; no new
+   table). 🎨 Needs a cartoon lists class words with no cartoon yet and copies a request for Claude. */
+type PhotoResult = Parameters<typeof photoChoice>[0];
+let picEdit: { w: string; q?: string; results?: PhotoResult[] | null; busy?: boolean; err?: string } | null = null;
+function picHTML(v: VocabWord): string {
+  const p = pictureFor(v.w, v) as { kind: string; emoji: string; src?: string; alt: string; credit?: string; suggested?: boolean } | null;
+  if (!p) return '<span class="muted">none</span>';
+  const art = p.src ? `<img class="vb-pic-img" src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy" referrerpolicy="no-referrer">` : `<span class="vb-pic-emoji" role="img" aria-label="${esc(p.alt)}">${esc(p.emoji)}</span>`;
+  return `<span class="vb-pic">${art}${p.credit ? `<small class="vb-pic-credit">📷 ${esc(p.credit)}</small>` : p.suggested ? '<small class="muted">suggested</small>' : ''}</span>`;
+}
+function picEditorRow(v: VocabWord): string {
+  const ed = picEdit!, sug = suggestEmoji(v.w, v.d);
+  return `<tr class="vb-pic-row"><td colspan="5"><div class="vb-pic-editor" id="vbPicEditor"><b>🖼️ Picture for “${esc(v.w)}”</b>
+    <div class="row" style="align-items:center">${picHTML(v)}${v.photo ? `<span class="muted">📷 ${esc(v.photo.credit)} · <a href="${esc(v.photo.source)}" target="_blank" rel="noopener noreferrer">source ↗</a></span> <button class="btn small" type="button" data-vbp-photo-remove>Remove photo</button>` : ''}</div>
+    <p style="margin:8px 0 4px"><b>🔍 Find a photo</b></p><div class="row"><input type="search" id="vbPicQ" maxlength="60" value="${esc(ed.q ?? v.w)}" aria-label="Search words for the photo"><button class="btn small primary" type="button" data-vbp-search ${ed.busy ? 'disabled' : ''}>${ed.busy ? 'Searching…' : '🔍 Find a photo'}</button></div>
+    ${ed.err ? `<p class="err">${esc(ed.err)}</p>` : ''}${ed.results ? `<div class="vb-pic-results">${photoResultsHTML(ed.results, ed.q || v.w)}</div>` : ''}
+    <p style="margin:8px 0 4px"><b>🙂 Or an emoji</b> ${sug && !v.pic ? `<span class="muted">Suggested from the meaning:</span> <span class="vb-pic-emoji">${esc(sug)}</span> <button class="btn small" type="button" data-vbp-use-sug>Use it</button>` : !sug ? '<span class="muted">No suggestion for this word.</span>' : ''}</p>
+    <div class="row"><input type="text" id="vbPicEmoji" maxlength="12" value="${esc(v.pic || '')}" placeholder="${esc(sug || '🍎')}" aria-label="1 to 3 emoji"><button class="btn small" type="button" data-vbp-emoji-save>Save emoji</button><button class="btn small" type="button" data-vbp-none>No picture</button><button class="btn small" type="button" data-vbp-close>Done</button></div>
+    <p class="status" id="vbPicMsg"></p></div></td></tr>`;
+}
+function cartoonCardHTML(words: VocabWord[]): string {
+  const need = needsCartoon(words) as VocabWord[];
+  if (!need.length) return '';
+  return `<div class="card vb-cartoons"><h2>🎨 Needs a cartoon (${need.length})</h2><p class="muted" style="margin-top:0">Class words with no cartoon yet. Until one is drawn they show their photo or emoji. <b>Copy request for Claude</b> copies a ready-to-paste request with each word’s meaning and example sentence; Claude draws them in Pet World’s style and sends back a patch.</p>
+    <p>${need.map(v => `<span class="chip">${esc(v.w)}</span>`).join(' ')}</p>
+    <div class="row"><button class="btn primary" type="button" id="vbCartoonCopy">📋 Copy request for Claude</button><span class="status" id="vbCartoonMsg"></span></div><div id="vbCartoonText"></div></div>`;
+}
 
 let flash = '';
 let spNote: { id: string; text: string } | null = null;   /* the result of “Add to focus and practice”, shown in that student's box after the redraw */
@@ -94,9 +129,9 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
       <p class="muted"><b>Type syllables with + to help Pet World say them: <code>ap+ples</code></b> (or <code>cel+e+bra+tion - a big party</code>). The word is saved without the +’s; the pieces set the syllable count, the dots and what the voice says. Students never see the pieces before they answer.</p>
       <textarea id="vbImport" rows="6" style="width:100%; font-family:inherit">${esc(refill)}</textarea>
       <div class="row"><button class="btn primary" id="vbAdd">Add these words</button><span class="status" id="vbMsg"></span></div>
-      ${words.length ? `<details class="vb-classwords"><summary><b>Class words you added (${words.length})</b> <span class="muted">· tap to see or remove them. They’re part of each student’s Unmastered list above.</span></summary><table class="steptable"><tr><th>Word</th><th>Meaning</th><th>Sentence</th><th></th></tr>${words.map(v => `<tr><td><b>${esc(v.w)}</b>${v.syl ? `<br><span class="muted">${esc(v.syl.join('+'))}</span>` : ''}<br>${dictLinkHTML(v.w)}</td><td>${esc(v.d)}</td><td class="muted">${esc(v.s || '')}</td><td><button class="btn small" data-vb-remove="${esc(v.w)}">Remove</button></td></tr>`).join('')}</table></details>` : ''}
+      ${words.length ? `<details class="vb-classwords"><summary><b>Class words you added (${words.length})</b> <span class="muted">· tap to see or remove them. They’re part of each student’s Unmastered list above.</span></summary><table class="steptable"><tr><th>Word</th><th>Meaning</th><th>Sentence</th><th>Picture</th><th></th></tr>${words.map(v => `<tr><td><b>${esc(v.w)}</b>${v.syl ? `<br><span class="muted">${esc(v.syl.join('+'))}</span>` : ''}<br>${dictLinkHTML(v.w)}</td><td>${esc(v.d)}</td><td class="muted">${esc(v.s || '')}</td><td>${picHTML(v)}<br><button class="btn small" type="button" data-vb-pic="${esc(v.w)}">🖼️ Picture</button></td><td><button class="btn small" data-vb-remove="${esc(v.w)}">Remove</button></td></tr>${picEdit && wordKey(picEdit.w) === wordKey(v.w) ? picEditorRow(v) : ''}`).join('')}</table></details>` : ''}
     </div>
-    ${flaggedCard}${spellingCard(roster, all, focusSet)}
+    ${cartoonCardHTML(words)}${flaggedCard}${spellingCard(roster, all, focusSet)}
     <div class="card"><h2>Class progress on all words</h2>${progress}</div>${wordsCard}`;
   /* spelling patterns: practice the suggested words */
   /* spelling patterns: the ticked words go on the student's practice list, and any that aren't on the class list or in
@@ -154,10 +189,57 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
       if (missing.length) { box.value = missingLines(missing); m.textContent = needs.trim(); m.className = 'status'; return; }
       m.textContent = errors[0] || 'Nothing to add yet.'; m.className = 'status err'; return;
     }
-    const merged = [...words.filter(v => !added.some(a => wordKey(a.w) === wordKey(v.w))), ...added].slice(0, VOCAB_LIMITS.list);
+    const merged = [...words.filter(v => !added.some(a => wordKey(a.w) === wordKey(v.w))), ...(keepPictures(words, added) as VocabWord[])].slice(0, VOCAB_LIMITS.list);   // a word added again keeps its picture
     const nextFocus = focusSet.size ? [...new Set([...focusSet, ...added.map(a => wordKey(a.w))])] : [];
     leftover = missing.length ? missingLines(missing) : '';
     void bumpMastered(added.map(a => a.w)).then(bumped => commit({ ...vocab, words: merged, focus: nextFocus }, `${added.length} word${added.length === 1 ? '' : 's'} added${errors.length ? `; ${errors.length} line(s) skipped` : ''}.${needs}${bumped}`));
+  });
+  /* 🖼️ a class word's picture */
+  const redraw = () => renderVocabTab(pane, cls, save, roster, saveSpellFocus, saveUnmaster);
+  const setWord = (w: string, change: (v: VocabWord) => VocabWord, done: string) => {
+    const next = words.map(v => (wordKey(v.w) === wordKey(w) ? change({ ...v }) : v));
+    if (picEdit) picEdit.results = null;
+    void commit({ ...vocab, words: next }, done);
+  };
+  pane.querySelectorAll<HTMLButtonElement>('[data-vb-pic]').forEach(b => b.addEventListener('click', () => {
+    picEdit = picEdit && wordKey(picEdit.w) === wordKey(b.dataset.vbPic!) ? null : { w: b.dataset.vbPic! };
+    redraw();
+    pane.querySelector('#vbPicEditor')?.scrollIntoView?.({ block: 'nearest' });
+  }));
+  const editor = pane.querySelector<HTMLElement>('#vbPicEditor'), editing = picEdit && words.find(v => wordKey(v.w) === wordKey(picEdit!.w));
+  if (editor && editing && picEdit) {
+    const ed = picEdit, v = editing, msg = editor.querySelector('#vbPicMsg')!;
+    editor.addEventListener('click', e => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!b) return;
+      if (b.hasAttribute('data-vbp-close')) { picEdit = null; redraw(); keepOpen(); return; }
+      if (b.hasAttribute('data-vbp-search')) {
+        const q = ((editor.querySelector('#vbPicQ') as HTMLInputElement).value || v.w).trim() || v.w;
+        Object.assign(ed, { q, busy: true, err: '', results: null }); redraw(); keepOpen();
+        searchPhotos(q).then(r => { ed.results = r as PhotoResult[]; }, (err: Error) => { ed.err = err.message; }).finally(() => { ed.busy = false; if (picEdit === ed) { redraw(); keepOpen(); } });
+        return;
+      }
+      if (b.hasAttribute('data-photo-none')) { ed.results = null; redraw(); keepOpen(); return; }   // nothing picked
+      if (b.dataset.photoUse != null) {
+        const r = ed.results?.[+b.dataset.photoUse]; if (!r) return;
+        setWord(v.w, x => { const { noPic, ...rest } = x; void noPic; return { ...rest, photo: photoChoice(r, r.thumb) as WordPhoto }; }, `📷 Photo saved for ${v.w}: ${photoChoice(r, r.thumb).credit}.`);
+        return;
+      }
+      if (b.hasAttribute('data-vbp-photo-remove')) { setWord(v.w, x => { const { photo, ...rest } = x; void photo; return rest; }, `Photo removed from ${v.w}.`); return; }
+      if (b.hasAttribute('data-vbp-use-sug')) { const em = suggestEmoji(v.w, v.d); if (em) setWord(v.w, x => { const { noPic, ...rest } = x; void noPic; return { ...rest, pic: em }; }, `${em} saved for ${v.w}.`); return; }
+      if (b.hasAttribute('data-vbp-emoji-save')) {
+        const em = validPictureEmoji((editor.querySelector('#vbPicEmoji') as HTMLInputElement).value);
+        if (!em) { msg.textContent = 'Type 1 to 3 emoji, and nothing else.'; return; }
+        setWord(v.w, x => { const { noPic, ...rest } = x; void noPic; return { ...rest, pic: em }; }, `${em} saved for ${v.w}.`); return;
+      }
+      if (b.hasAttribute('data-vbp-none')) { setWord(v.w, x => { const { pic, ...rest } = x; void pic; return { ...rest, noPic: true }; }, `No emoji for ${v.w}.`); return; }
+    });
+  }
+  function keepOpen(){ pane.querySelector('.vb-classwords')?.setAttribute('open', ''); }
+  if (picEdit) keepOpen();
+  pane.querySelector('#vbCartoonCopy')?.addEventListener('click', async () => {
+    const text = cartoonRequest(words.map(v => ({ ...v, from: 'class word' }))), m = pane.querySelector('#vbCartoonMsg')!;
+    try { await navigator.clipboard.writeText(text); m.textContent = `✅ Copied: ${(needsCartoon(words) as unknown[]).length} words. Paste it to Claude.`; }
+    catch { const host = pane.querySelector('#vbCartoonText')!; host.innerHTML = `<textarea readonly rows="8" style="width:100%">${esc(text)}</textarea>`; host.querySelector('textarea')!.select(); m.textContent = 'Copy the request below.'; }
   });
   pane.querySelectorAll<HTMLButtonElement>('[data-vb-remove]').forEach(b => b.addEventListener('click', () => {
     void commit({ ...vocab, words: words.filter(v => v.w !== b.dataset.vbRemove), focus: (vocab.focus || []).filter(f => f !== wordKey(b.dataset.vbRemove)) }, 'Word removed.');

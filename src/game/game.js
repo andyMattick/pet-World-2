@@ -13,10 +13,11 @@ import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
 import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong, keepPictures } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
-import { pictureFor } from '../shared/wordPictures';
+import { pictureFor, suggestEmoji, validPictureEmoji, needsCartoon, cartoonRequest, PHOTO_DATA_MAX } from '../shared/wordPictures';
+import { searchPhotos, photoChoice, photoResultsHTML } from '../shared/photoSearch';
 import { PATH_SKILLS, skillInfo, buildLesson, lessonGroups, lessonCount, againItem, matchRetryItem, pathForWeek, pathNodes, recordLesson, pathSummaryText, fillBlank, XP_LESSON, langOf, graphemes } from '../shared/wordPath';
 import { PUZZLE_INFO, puzzleForDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
@@ -6966,11 +6967,11 @@ document.addEventListener('change', async event => {
   inp.value = '';
 });
 /* a photo shrunk to a JPEG data URL under about 190 KB (the database takes up to 200 KB each) */
-async function photoToJpeg(file, maxLen = 190000){
+async function photoToJpeg(file, maxLen = 190000, sides = [[1280, .72], [1024, .65], [800, .6], [640, .55], [480, .5]]){
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
-    for (const [side, q] of [[1280, .72], [1024, .65], [800, .6], [640, .55], [480, .5]]) {
+    for (const [side, q] of sides) {
       const k = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
       const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
@@ -12625,7 +12626,7 @@ function renderVocab(){
       <h4 class="vocab-set">Unmastered (${un.length})</h4><div class="vocab-grid">${un.map(v => chip(v, wordStatus(vocabStat(v.w)))).join('')}</div>
       ${(S.vocab.back || []).length ? `<p class="muted vocab-back-line">🔁 First in line for next week: ${S.vocab.back.map(k => `<b>${esc(all.find(v => wordKey(v.w) === k)?.w || k)}</b>`).join(', ')}</p>` : ''}
       ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>${unmasterListHTML(won)}` : ''}
-      <p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
+      ${needsCartoonHTML()}<p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
   } else {
     const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
       sprint:`Read the meaning and tap the word. As many as you can in 60 seconds. Every 2 right earn 🪙 1. Your best: ${S.vocab.sprintBest}.`,
@@ -12812,7 +12813,8 @@ function wordPartsHTML(word, {compact = false} = {}){
 }
 /* 🖼️ the word's picture (owner, Oct 30, 2026: "I'd like the image with the word to help her understanding";
    docs/WORD-PICTURES.md, docs/VOCAB.md "Word pictures"). pictureFor gives the cartoon (lazy-loaded from
-   public/vocab-pics/cartoons/) or the emoji scene; the photo slot is empty for now. Only ever shown next to the word
+   public/vocab-pics/cartoons/) or the emoji scene; for a word a grown-up or teacher added, the photo they picked (with
+   its credit under it), a cartoon drawn later, or their emoji (or the suggested one). Only ever shown next to the word
    itself or after she answers, never on a question it could answer ("which word means…", match boards, spelling from
    the meaning, the Friday check's questions). Tapping it reads the picture's description aloud. size: big (Meet the
    words), small (beside an answer), tiny (a strip). `label` adds the word under it. */
@@ -12823,7 +12825,8 @@ function wordPicHTML(word, {size = 'small', label = false} = {}){
   const alt = pic.alt || `A picture for ${w}`;
   const art = pic.src ? `<img class="wpic-img" src="${esc(pic.src)}" alt="${esc(alt)}" loading="lazy" decoding="async" width="200" height="200" data-emoji="${esc(pic.emoji)}">`
     : `<span class="wpic-emoji" role="img" aria-label="${esc(alt)}">${esc(pic.emoji)}</span>`;
-  return `<button type="button" class="wpic wpic-${size}" data-pic-say="${esc(alt)}" title="${esc(alt)}" aria-label="${esc(`Picture for ${w}: ${alt} Tap to hear it.`)}">${art}${label ? `<span class="wpic-word">${esc(w)}</span>` : ''}</button>`;
+  const credit = pic.credit ? `<span class="wpic-credit" title="${esc(pic.credit)}">📷 ${esc(pic.credit)}</span>` : '';   // a photo's credit, under it, wherever it shows
+  return `<button type="button" class="wpic wpic-${size}${credit ? ' wpic-photo' : ''}" data-pic-say="${esc(alt)}" title="${esc(alt)}${pic.credit ? ` Photo: ${esc(pic.credit)}` : ''}" aria-label="${esc(`Picture for ${w}: ${alt} Tap to hear it.`)}">${art}${label ? `<span class="wpic-word">${esc(w)}</span>` : ''}${credit}</button>`;
 }
 /* a cartoon that can't load shows its emoji scene instead */
 document.addEventListener('error', e => {
@@ -13539,6 +13542,49 @@ function moveWordsBack(words, who = 'a grown-up'){
   return moved;
 }
 const backNote = moved => moved.map(k => `📌 ${k} was mastered, so it’s back on her practice list.`).join(' ');
+/* ---------- 🖼️ pictures for words a grown-up adds (owner, Oct 30, 2026; ROADMAP F92, docs/VOCAB.md "Pictures for added
+   words"). Behind the PIN, each added word's 🖼️ opens this box: 🔍 Find a photo (Openverse, free licenses only, safe
+   search, 6 results; the grown-up picks one or none: nothing is ever picked for them), or an emoji (suggested from the
+   meaning, which they can use, change or turn off). The picked photo is saved as a small JPEG data URL with its credit,
+   license and source (photoChoice, capped like outside-work photos). pictureFor: photo → cartoon → emoji → none. */
+let picEdit = null;   // {w, q, results, busy, err}
+const homeWord = w => S.vocab.home.words.find(x => wordKey(x.w) === wordKey(w));
+function addedPicBadge(x){
+  const p = pictureFor(x.w, x);
+  return !p ? '🖼️' : p.kind === 'photo' ? '📷' : p.kind === 'cartoon' ? '🎨' : esc([...new Intl.Segmenter('en', {granularity:'grapheme'}).segment(p.emoji)][0]?.segment || '🖼️');
+}
+function picEditorHTML(){
+  const x = picEdit && homeWord(picEdit.w); if (!x) return '';
+  const p = pictureFor(x.w, x), sug = suggestEmoji(x.w, x.d);
+  const now = p ? `${wordPicHTML(x)}<span class="muted">${p.kind === 'photo' ? 'Photo' : p.kind === 'cartoon' ? 'Cartoon' : p.suggested ? 'Suggested emoji (showing now)' : 'Your emoji'}</span>` : '<span class="muted">No picture yet.</span>';
+  return `<div class="vocab-pic-editor" id="vocabPicEditor" role="group" aria-label="Picture for ${esc(x.w)}"><h4>🖼️ Picture for “${esc(x.w)}”</h4><p class="muted" style="margin:0 0 6px">${esc(x.d)}</p>
+    <div class="row vpe-now">${now}</div>
+    ${x.photo ? `<p class="vpe-credit">📷 ${esc(x.photo.credit)} · <a href="${esc(x.photo.source)}" target="_blank" rel="noopener noreferrer">source ↗</a> <button type="button" class="btn small" data-pic-photo-remove>Remove photo</button></p>` : ''}
+    <h5>🔍 Find a photo</h5><div class="row"><input type="search" id="vocabPicQ" maxlength="60" value="${esc(picEdit.q ?? x.w)}" aria-label="Search words for the photo"><button type="button" class="btn small primary" data-pic-search ${picEdit.busy ? 'disabled' : ''}>${picEdit.busy ? 'Searching…' : '🔍 Find a photo'}</button></div>
+    ${picEdit.err ? `<p class="err">${esc(picEdit.err)}</p>` : ''}${picEdit.results ? `<div class="vpe-results">${photoResultsHTML(picEdit.results, picEdit.q || x.w)}</div>` : ''}
+    <h5>🙂 Or an emoji</h5>${sug && !x.pic ? `<p class="vpe-sug">Suggested from the meaning: <span class="vpe-sug-emoji">${esc(sug)}</span> <button type="button" class="btn small" data-pic-use-sug>Use it</button></p>` : !sug ? '<p class="muted vpe-sug">No emoji suggestion for this word. Type one if you like.</p>' : ''}
+    <div class="row"><input type="text" id="vocabPicEmoji" maxlength="12" value="${esc(x.pic || '')}" placeholder="${esc(sug || '🍎')}" aria-label="1 to 3 emoji"><button type="button" class="btn small" data-pic-emoji-save>Save emoji</button><button type="button" class="btn small" data-pic-none>No picture</button></div>
+    <div class="row"><button type="button" class="btn small" data-pic-close>Done</button></div></div>`;
+}
+/* the picked photo, shrunk to a small JPEG data URL; if the photo site doesn't allow that, its https address */
+async function photoForSave(r){
+  try { const res = await fetch(r.thumb); if (!res.ok) return null; const blob = await res.blob(); if (!/^image\//.test(blob.type)) return null;
+    return await photoToJpeg(blob, PHOTO_DATA_MAX, [[320, .72], [256, .66], [200, .6], [160, .55]]); } catch { return null; }
+}
+/* 🎨 added words with no cartoon yet, and the request to paste to Claude (docs/WORD-CARTOONS.md) */
+function needsCartoonHTML(){
+  if (!parentReadingUnlocked) return '';
+  const words = needsCartoon([...S.vocab.home.words.map(v => ({...v, from:'family word'})), ...(Backend.me?.game_settings?.vocab?.words || []).map(v => ({...validWord(v), from:'class word'})).filter(v => v.w)]);
+  if (!words.length) return '';
+  return `<details class="vocab-cartoons"><summary>🎨 Needs a cartoon (${words.length}) <span class="muted">grown-ups</span></summary><p class="muted" style="margin:4px 0">Words you or the teacher added that don’t have a cartoon yet. They show their photo or emoji until one is drawn. Copy the request and paste it to Claude to have cartoons drawn in Pet World’s style.</p>
+    <div class="vocab-grid">${words.map(v => `<span class="vocab-chip st-new">${esc(v.w)} <small class="muted">${esc(v.from)}</small></span>`).join('')}</div>
+    <div class="row"><button type="button" class="btn small primary" data-cartoon-copy>📋 Copy request for Claude</button><span class="status" id="cartoonCopyMsg"></span></div></details>`;
+}
+async function copyText(text, fallbackHost){
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* no clipboard here: show it to copy by hand */ }
+  if (fallbackHost) { fallbackHost.innerHTML = `<textarea readonly rows="6" style="width:100%">${esc(text)}</textarea>`; fallbackHost.querySelector('textarea').select(); }
+  return false;
+}
 /* grown-ups: add or import words and choose focus words, behind the grown-up PIN (the class's words come from the teacher) */
 function vocabGrownUpHTML(all){
   const v = S.vocab.home, classWords = Backend.me?.game_settings?.vocab?.words?.length || 0;
@@ -13558,7 +13604,7 @@ function vocabGrownUpHTML(all){
     <p class="muted"><b>Type syllables with + to help Pet World say them: <code>ap+ples</code></b> (or <code>cel+e+bra+tion - a big party</code>). Pet World saves the word without the +’s and uses the pieces for the syllable count, the dots and the spoken parts. She never sees the pieces before she answers.</p>
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
-    ${v.words.length ? `<h4>Words you added</h4><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.syl ? x.syl.join('+') : x.w)} <button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>` : ''}
+    ${v.words.length ? `<h4>Words you added</h4><p class="muted" style="margin-top:0">Tap 🖼️ to pick a word’s picture: 🔍 find a free photo, or choose an emoji.</p><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.syl ? x.syl.join('+') : x.w)} <button type="button" class="vocab-pic-btn" data-vocab-pic="${esc(x.w)}" aria-label="Picture for ${esc(x.w)}" title="Picture for ${esc(x.w)}">${addedPicBadge(x)}</button><button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>${picEditorHTML()}` : ''}
     <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each Monday she gets 20 unmastered words (the ones she didn’t master last week first, the rest picked at random) plus 5 mastered words to review; Friday’s mastery check moves the ones she spells right to her 🏆 Hall of Fame, and a review word she misses goes back to unmastered.</p>
     <div class="row"><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
 }
@@ -13588,6 +13634,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.vocabPeek) { const v = vocabWords().all.find(x => x.w === b.dataset.vocabPeek); $('#vocabWrap .vocab-peek').innerHTML = v ? `<b>${esc(v.w)}</b>: ${esc(v.d)}${v.s ? ` (${esc(v.s.replace('___', v.w))})` : ''} ${dictLinkHTML(v.w)}${wordPicHTML(v)}${wordPartsHTML(v.w, {compact:true})}` : ''; return; }
   if (b.id === 'parentPinLock') { parentReadingUnlocked = false; renderVocab(); return; }
   if (!parentReadingUnlocked) return;
+  if (handlePicEditor(b)) return;
   if (b.dataset.vocabUnmaster) {
     const moved = moveWordsBack([b.dataset.vocabUnmaster]); save(); renderVocab();
     if (moved.length) toast(`🔁 ${moved[0]} is back on the practice list, first in line for next week.`);
@@ -13596,7 +13643,7 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.hasAttribute('data-vocab-import')) {
     const {words, errors, missing} = parseVocabImport($('#vocabImport').value);
     const have = new Set(S.vocab.home.words.map(x => wordKey(x.w)));
-    S.vocab.home.words = [...S.vocab.home.words.filter(x => !words.some(w => wordKey(w.w) === wordKey(x.w))), ...words].slice(0, VOCAB_LIMITS.list);
+    S.vocab.home.words = [...S.vocab.home.words.filter(x => !words.some(w => wordKey(w.w) === wordKey(x.w))), ...keepPictures(S.vocab.home.words, words)].slice(0, VOCAB_LIMITS.list);   // a word added again keeps its picture
     if (S.vocab.home.focus.length) S.vocab.home.focus = [...new Set([...S.vocab.home.focus, ...words.map(w => wordKey(w.w))])];   // new words join the focus list
     const needs = missing.length ? ` ${missing.length} word${missing.length === 1 ? ' still needs' : 's still need'} a meaning: type it after the dash in the box, then add again.` : '';
     const moved = moveWordsBack(masteredAmong(S.vocab, words));   // adding a word she already mastered puts it back on her practice list
@@ -13623,6 +13670,47 @@ $('#vocabWrap').addEventListener('click', event => {
   }
 });
 $('#vocabWrap').addEventListener('change', event => { if (event.target.id === 'vocabBuiltIn' && parentReadingUnlocked) { S.vocab.home.builtIn = event.target.checked; save(); renderVocab(); } });
+/* the 🖼️ picture box's buttons (grown-ups only; the caller checked the PIN) */
+function handlePicEditor(b){
+  if (b.dataset.vocabPic) { picEdit = picEdit?.w === b.dataset.vocabPic ? null : {w:b.dataset.vocabPic}; renderVocab(); $('#vocabPicEditor')?.scrollIntoView?.({block:'nearest'}); return true; }
+  if (b.hasAttribute('data-cartoon-copy')) {
+    const words = needsCartoon([...S.vocab.home.words.map(v => ({...v, from:'family word'})), ...(Backend.me?.game_settings?.vocab?.words || []).map(v => ({...validWord(v), from:'class word'})).filter(v => v.w)]);
+    const msg = $('#cartoonCopyMsg');
+    void copyText(cartoonRequest(words), msg).then(ok => { if (ok && msg) msg.textContent = `✅ Copied: ${words.length} word${words.length === 1 ? '' : 's'}. Paste it to Claude.`; });
+    return true;
+  }
+  const x = picEdit && homeWord(picEdit.w);
+  if (!x || !b.closest('#vocabPicEditor')) return false;
+  const done = text => { save(); renderVocab(); if (text) toast(text); };
+  if (b.hasAttribute('data-pic-close')) { picEdit = null; renderVocab(); return true; }
+  if (b.hasAttribute('data-pic-search')) {
+    const q = ($('#vocabPicQ')?.value || x.w).trim() || x.w, ed = picEdit;
+    Object.assign(ed, {q, busy:true, err:'', results:null}); renderVocab();
+    searchPhotos(q).then(r => { ed.results = r; }, e => { ed.err = e.message; }).finally(() => { ed.busy = false; if (picEdit === ed) renderVocab(); });
+    return true;
+  }
+  if (b.hasAttribute('data-photo-none')) { picEdit.results = null; renderVocab(); return true; }   // nothing picked
+  if (b.dataset.photoUse != null) {
+    const r = picEdit.results?.[+b.dataset.photoUse], ed = picEdit; if (!r) return true;
+    b.disabled = true; b.textContent = 'Saving…';
+    void photoForSave(r).then(data => {
+      const w = homeWord(ed.w); if (!w) return;
+      w.photo = photoChoice(r, data || r.thumb); delete w.noPic; ed.results = null;
+      logEvent({k:'wordPic', title:`🖼️ Photo picked for ${w.w} by a grown-up: ${w.photo.credit}`});
+      done(`📷 Photo saved for ${w.w}${data ? '' : ' (it loads from the photo site, so it needs the internet)'}.`);
+    });
+    return true;
+  }
+  if (b.hasAttribute('data-pic-photo-remove')) { delete x.photo; done(`Photo removed from ${x.w}.`); return true; }
+  if (b.hasAttribute('data-pic-use-sug')) { const e = suggestEmoji(x.w, x.d); if (e) { x.pic = e; delete x.noPic; done(`${e} saved for ${x.w}.`); } return true; }
+  if (b.hasAttribute('data-pic-emoji-save')) {
+    const e = validPictureEmoji($('#vocabPicEmoji')?.value);
+    if (!e) { toast('Type 1 to 3 emoji, and nothing else.'); return true; }
+    x.pic = e; delete x.noPic; done(`${e} saved for ${x.w}.`); return true;
+  }
+  if (b.hasAttribute('data-pic-none')) { delete x.pic; x.noPic = true; done(`No emoji for ${x.w}${x.photo ? ' (its photo stays)' : ''}.`); return true; }
+  return false;
+}
 /* the grown-ups' progress report: a one-line summary that opens the chart */
 function vocabReportHTML(){
   const {focus} = vocabWords(), count = st => focus.filter(v => wordStatus(vocabStat(v.w)) === st).length;

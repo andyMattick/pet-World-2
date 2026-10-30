@@ -12,8 +12,9 @@
    - alt: one plain sentence describing the picture that shows now, for read-aloud.
 
    pictureFor(word, entry?) gives the best picture there is (photo → cartoon → emoji) as
-   {w, kind, emoji, src?, alt, credit?}. For a word a teacher or grown-up added, pass its entry: it shows the emoji they
-   chose (entry.pic), if any. Unknown words with no chosen emoji give null. */
+   {w, kind, emoji, src?, alt, credit?}. For a word a teacher or grown-up added, pass its entry: its chosen photo, a
+   cartoon drawn later (CLASS_CARTOONS), the emoji they chose (entry.pic) or else a suggested one (suggestEmoji), in that
+   order (see "pictures for words a grown-up or teacher ADDS" below). Unknown words with none of those give null. */
 
 const E = (w, kind, emoji, alt) => ({ w, kind, emoji, ...(kind === 'cartoon' ? { svg: `cartoons/${w}.svg` } : {}), ...(kind === 'photo' ? { photo: {} } : {}), alt });
 const CA = 'cartoon', PH = 'photo', EM = 'emoji';
@@ -189,12 +190,103 @@ export function validPictureEmoji(text){
   return emoji.length && emoji.length <= 3 && emoji.length === parts.filter(c => c.trim()).length ? emoji.join('') : '';
 }
 
+/* ---------- pictures for words a grown-up or teacher ADDS (owner, Oct 30, 2026; ROADMAP F92, docs/VOCAB.md "Pictures for
+   added words"). Built-in words keep their own pictures above. For an added word the entry can carry:
+   - photo: {src, credit, license, licenseVersion?, source, title?, creator?}: a free-license photo the grown-up or
+     teacher picked from 🔍 Find a photo (photoSearch.js). Nothing is ever picked for them. src is a small JPEG data URL
+     (a family's words, saved with her town) or the photo's https address (a class's words, in classes.game_settings).
+   - pic: the 1–3 emoji they chose; noPic: true when they said "No picture" (then no emoji is suggested).
+   pictureFor's order for them: photo → cartoon (CLASS_CARTOONS, drawn later) → chosen emoji → suggested emoji → none. */
+export const PHOTO_LICENSES = { cc0: 'CC0', pdm: 'public domain', by: 'CC BY', 'by-sa': 'CC BY-SA' };
+export const PHOTO_DATA_MAX = 30000;   // a saved photo's data URL, in characters (about 22 KB of JPEG)
+const httpsURL = x => typeof x === 'string' && x.length <= 600 && /^https:\/\/[^\s"'<>]+$/.test(x);
+const cut = (x, n) => String(x ?? '').replace(/\s+/g, ' ').trim().slice(0, n);
+export function validWordPhoto(p){
+  if (!p || typeof p !== 'object') return null;
+  const src = String(p.src || ''), license = String(p.license || '').toLowerCase(), credit = cut(p.credit, 200);
+  const okSrc = (src.length <= PHOTO_DATA_MAX && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(src)) || httpsURL(src);
+  if (!okSrc || !PHOTO_LICENSES[license] || !credit || !httpsURL(p.source)) return null;
+  const v = cut(p.licenseVersion, 8);
+  return { src, credit, license, ...(/^[\d.]+$/.test(v) ? { licenseVersion: v } : {}), source: p.source, ...(p.title ? { title: cut(p.title, 120) } : {}), ...(p.creator ? { creator: cut(p.creator, 80) } : {}) };
+}
+
+/* Cartoons drawn later for added words (class or family words), with the same kit and checks as the built-in ones
+   (docs/WORD-CARTOONS.md). Key: the word in lower case. svg: 'cartoons/class/<word>.svg' under public/vocab-pics/. */
+export const CLASS_CARTOONS = {
+  /* apples: { svg: 'cartoons/class/apples.svg', emoji: '🍎', alt: 'A bunny picks round red apples from a tree.' }, */
+};
+
+/* 🙂 A suggested emoji from the word and its meaning, for added words: a small keyword table, meanings only (no
+   sound-alike puns). Conservative on purpose:
+   - THINGS (fruit, water, dog, book, music…) count anywhere in the meaning, and when there is one, only things are
+     used ("a small boat you paddle" is ⛵, not 🐜⛵). DESCRIBING words (big, fast, sad, sleepy, see…) count only when
+     there's no thing, and only in a short meaning (6 words or fewer, like "very big"), since in a long one they're
+     often about something else ("a large, organized society").
+   - Words with more than one everyday meaning are left out (time, little, say, help, find, grow, key, present, fall…).
+   - Whole words only, at most 2 emoji, and nothing at all when the meaning says not, no, without, opposite, less, lack
+     or un-something (so "not big" never gets 🐘), or when nothing matches. */
+const THING_EMOJI = [
+  ['🍎', 'apple fruit fruits'], ['🍌', 'banana'], ['🍓', 'berry berries strawberry'], ['🥕', 'carrot vegetable vegetables veggie'],
+  ['🍞', 'bread loaf'], ['🍰', 'cake dessert'], ['🍪', 'cookie cookies'], ['🍕', 'pizza'], ['🥛', 'milk'], ['🍽️', 'food meal meals dinner lunch breakfast'],
+  ['💧', 'water liquid'], ['🌊', 'ocean sea'], ['🌧️', 'rain storm'], ['❄️', 'snow ice'], ['🔥', 'fire flame'],
+  ['☀️', 'sun sunshine'], ['🌙', 'moon'], ['⭐', 'star stars'], ['🌍', 'earth planet globe'], ['⛰️', 'mountain mountains hill'],
+  ['🌳', 'tree trees forest woods'], ['🌸', 'flower flowers blossom'], ['🌱', 'plant plants seed seeds sprout'], ['🍂', 'leaf leaves autumn'],
+  ['🪨', 'rock rocks stone stones'], ['🏜️', 'desert sand'], ['🏝️', 'island'], ['🌋', 'volcano lava'], ['🌈', 'rainbow'], ['💨', 'wind'],
+  ['🐶', 'dog dogs puppy'], ['🐱', 'cat cats kitten'], ['🐦', 'bird birds'], ['🐟', 'fish'], ['🐎', 'horse horses'], ['🐄', 'cow cows cattle'], ['🐾', 'animal animals pet pets'],
+  ['🐝', 'bee bees insect insects'], ['🦋', 'butterfly'], ['🐍', 'snake'],
+  ['🏠', 'house home'], ['🏫', 'school classroom'], ['🏰', 'castle king queen kingdom'], ['🏙️', 'city'], ['🛣️', 'road street'], ['🌉', 'bridge'],
+  ['🚗', 'car cars'], ['🚌', 'bus'], ['🚂', 'train'], ['✈️', 'airplane plane'], ['⛵', 'boat ship sailboat'], ['🚀', 'rocket spaceship'],
+  ['📚', 'book books story stories'], ['✏️', 'pencil'], ['🎨', 'painting art artist'], ['🎵', 'music song songs'],
+  ['⚽', 'ball soccer sport sports'], ['💰', 'money coin coins'], ['⏰', 'clock'], ['📅', 'day days week month year years calendar'],
+  ['🎁', 'gift'], ['🎉', 'party celebration'], ['💡', 'idea'], ['🧪', 'experiment science'], ['🔢', 'number numbers'], ['🏆', 'trophy prize']
+];
+const DESCRIBE_EMOJI = [
+  ['🐘', 'big huge giant enormous'], ['🐜', 'tiny small'], ['⚡', 'fast quick quickly'], ['🐢', 'slow slowly'],
+  ['😊', 'happy glad cheerful joyful'], ['😢', 'sad unhappy crying'], ['😠', 'angry mad furious'], ['😨', 'scared afraid frightened'],
+  ['😴', 'sleep sleepy asleep tired'], ['🤔', 'think thinks thinking wonder puzzled'], ['😲', 'surprised amazed shocked'], ['❤️', 'love loves'],
+  ['❄️', 'cold frozen'], ['🔥', 'hot burning'], ['💧', 'wet'], ['🕊️', 'fly flies flying'], ['🏃', 'run runs running'], ['🏊', 'swim swims swimming'],
+  ['👀', 'see look watch'], ['👂', 'hear listen'], ['🗣️', 'speak talk'], ['🤝', 'together share friend friends'], ['💪', 'strong strength'],
+  ['⚖️', 'equal weigh'], ['🎵', 'sing singing'], ['📖', 'read reading'], ['✏️', 'write writing']
+];
+const keyMap = list => new Map(list.flatMap(([e, words]) => words.split(' ').map(w => [w, e])));
+const THING_KEYS = keyMap(THING_EMOJI), DESCRIBE_KEYS = keyMap(DESCRIBE_EMOJI);
+const NEGATION = /\b(not|no|never|without|opposite|less|lack|lacks|lacking|isn['’]t|aren['’]t|don['’]t|doesn['’]t|can['’]t|un(?!der|til|it|ion|ique|iverse)\w+)\b/i;
+const lookUp = (map, t) => map.get(t) || (t.length > 3 && t.endsWith('s') ? map.get(t.slice(0, -1)) : '') || '';
+export function suggestEmoji(word, meaning){
+  const w = String(word ?? '').trim().toLowerCase(), d = String(meaning ?? '').toLowerCase().replace(/\([^)]*\)/g, ' ');
+  if (!w || NEGATION.test(d)) return '';
+  const words = d.match(/[a-z]+/g) || [], short = words.length <= 6, pick = list => [...new Set(list.filter(Boolean))].slice(0, 2).join('');
+  /* a thing in the word or meaning wins ("a small boat" is ⛵, not 🐜⛵); describing words only when there's no thing */
+  return pick([w, ...words].map(t => lookUp(THING_KEYS, t))) || pick([lookUp(DESCRIBE_KEYS, w), ...(short ? words.map(t => lookUp(DESCRIBE_KEYS, t)) : [])]);
+}
+
+/* 🎨 Added words that have no cartoon yet (not built in, not in CLASS_CARTOONS), each once, in the order given */
+export function needsCartoon(words){
+  const seen = new Set();
+  return (Array.isArray(words) ? words : []).filter(v => {
+    const k = String(v?.w ?? '').trim().toLowerCase();
+    if (!k || seen.has(k) || BY_WORD.has(k) || CLASS_CARTOONS[k]) return false;
+    seen.add(k); return true;
+  });
+}
+/* 📋 the ready-to-paste request for Claude: the words with their meanings and example sentences, naming the skill */
+export function cartoonRequest(words){
+  const list = needsCartoon(words);
+  if (!list.length) return '';
+  const line = (v, i) => `${i + 1}. ${v.w}: means "${String(v.d || '').trim()}"${v.s ? `. Example: "${String(v.s).replace(/___/g, v.w)}"` : ''}${v.from ? ` (${v.from})` : ''}`;
+  return [`Please draw Pet World word cartoons for ${list.length === 1 ? 'this word' : `these ${list.length} words`} that a grown-up or teacher added. Use the pet-world-word-cartoons skill (docs/WORD-CARTOONS.md): draw each one with the kit in scripts/word-cartoons in the same style (flat, thick rounded outlines, the Pet World palette, pets acting out the meaning, square, under 6 KB, readable at 120px, no answer text), render the contact sheets and look at them, get a fresh-eyes review for meaning and misreads, fix what it finds, run node scripts/check-word-pictures.mjs and npm run verify, and send me a patch that adds them to CLASS_CARTOONS in src/shared/wordPictures.js.`,
+    '', 'Words:', ...list.map(line)].join('\n');
+}
+
 export function pictureFor(word, entry){
   const key = String(word ?? '').trim().toLowerCase();
   const p = BY_WORD.get(key);
   if (!p) {
-    const emoji = validPictureEmoji(entry?.pic);
-    return emoji ? { w: key, kind: 'emoji', emoji, alt: String(entry?.picAlt || '').slice(0, 200) } : null;
+    const photo = validWordPhoto(entry?.photo), cartoon = CLASS_CARTOONS[key];
+    const chosen = validPictureEmoji(entry?.pic), emoji = chosen || (entry && !entry.noPic ? suggestEmoji(key, entry.d) : '');
+    if (photo) return { w: key, kind: 'photo', emoji: emoji || cartoon?.emoji || '🖼️', src: photo.src, alt: `A photo for ${key}${photo.title ? `: ${photo.title}` : ''}.`, credit: photo.credit, source: photo.source };
+    if (cartoon) return { w: key, kind: 'cartoon', emoji: cartoon.emoji, src: PICTURE_BASE + cartoon.svg, alt: cartoon.alt };
+    return emoji ? { w: key, kind: 'emoji', emoji, ...(chosen ? {} : { suggested: true }), alt: cut(entry?.picAlt, 200) || `A picture to help with the word ${key}.` } : null;
   }
   if (p.photo?.file) return { w: p.w, kind: 'photo', emoji: p.emoji, src: PICTURE_BASE + p.photo.file, alt: p.photo.alt || p.alt, credit: p.photo.credit };
   if (p.svg) return { w: p.w, kind: 'cartoon', emoji: p.emoji, src: PICTURE_BASE + p.svg, alt: p.alt };

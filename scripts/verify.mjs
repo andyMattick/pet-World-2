@@ -265,6 +265,13 @@ catch (error) { problems.push(`The Khan link check could not run: ${error.messag
 try { execFileSync(process.execPath, ['scripts/check-word-pictures.mjs'], { stdio: 'pipe' }); }
 catch (error) { problems.push(`Word pictures check failed (node scripts/check-word-pictures.mjs): ${String(error.stderr || error.message).trim().split('\n').slice(0, 6).join(' | ')}`); }
 need('src/game/game.js', 'function wordPicHTML(', 'the word pictures in Word Workshop (wordPicHTML)');
+// Pictures for added words (ROADMAP F92, docs/VOCAB.md "Pictures for added words"): the grown-up's picture box and 🎨 cartoon
+// list behind the PIN, the teacher's picture box and cartoon card, and the free-license photo search.
+need('src/game/game.js', 'function picEditorHTML(', 'the grown-up’s 🖼️ picture box for added words (picEditorHTML)');
+need('src/game/game.js', 'function needsCartoonHTML(', 'the grown-up’s 🎨 Needs a cartoon list (needsCartoonHTML)');
+need('src/teacher/vocab.ts', 'function picEditorRow(', 'the teacher’s 🖼️ picture box for class words (picEditorRow)');
+need('src/teacher/vocab.ts', 'function cartoonCardHTML(', 'the teacher’s 🎨 Needs a cartoon card (cartoonCardHTML)');
+need('src/shared/photoSearch.js', 'export async function searchPhotos(', 'the free-license photo search (searchPhotos)');
 
 // History and Science: the videos come first (owner rule, Oct 27, 2026; CLAUDE.md). Every lesson block of a History or
 // Biology unit lists its Khan videos in KHAN_VIDEOS (an empty list for a lesson with none), and the game shows them and

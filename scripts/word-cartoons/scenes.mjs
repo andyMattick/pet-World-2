@@ -412,3 +412,9 @@ export const SCENES = {
     P({ kind: 'cat', mood: 'happy', look: -1, arms: [[-50, -72], null] }, { x: 108, y: 196, s: 0.52 }) + check(60, 66, 0.9)
   , C.grass]
 };
+
+/* Scenes for words a grown-up or teacher ADDED (docs/WORD-CARTOONS.md). draw.mjs writes them to
+   public/vocab-pics/cartoons/class/<word>.svg; list each one in CLASS_CARTOONS in src/shared/wordPictures.js too.
+   Key: the word in lower case. Same rules as above: pets act out the meaning, one idea, no words in the picture. */
+export const CLASS_SCENES = {
+};

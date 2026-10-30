@@ -5,6 +5,7 @@
    words, for example from a Wordly Wise lesson, and choose focus words; all words are in focus by default. */
 
 import { normalizePath } from './wordPath.js';
+import { validPictureEmoji, validWordPhoto } from './wordPictures.js';
 
 const W = (set, w, d, s) => ({ w, d, s, set });
 export const VOCAB_WORDS = [
@@ -145,8 +146,24 @@ export function validWord(entry){
   /* optional, for 🐾 the Paw Path (wordPath.js): a second sentence `u` (never shown as the example), the part of speech
      (v n a r), and the word's language for the voice (`lang`, like "es" or "fr-CA"; none means English) */
   const u = clean(entry.u, VOCAB_LIMITS.sentence), pos = /^[vnar]$/.test(String(entry.pos || '')) ? entry.pos : '', lang = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i.test(String(entry.lang || '')) ? String(entry.lang) : '';
+  /* 🖼️ the picture a grown-up or teacher picked for a word they added (wordPictures.js): a free-license photo with its
+     credit, their emoji, or "No picture" (noPic) */
+  const pic = validPictureEmoji(entry.pic), photo = validWordPhoto(entry.photo);
   return { w, d, ...(s.includes('___') ? { s } : {}), ...(entry.set ? { set: clean(entry.set, 40) } : {}), ...(syl && syl.length > 1 ? { syl } : {}),
-    ...(u.includes('___') && u !== s ? { u } : {}), ...(pos ? { pos } : {}), ...(lang ? { lang } : {}) };
+    ...(u.includes('___') && u !== s ? { u } : {}), ...(pos ? { pos } : {}), ...(lang ? { lang } : {}),
+    ...(photo ? { photo } : {}), ...(pic ? { pic } : {}), ...(entry.noPic === true && !pic ? { noPic: true } : {}) };
+}
+/* a word added again keeps the picture it already had, unless the new line brings its own */
+export function keepPictures(oldWords, added){
+  const old = new Map((oldWords || []).map(v => [wordKey(v.w), v]));
+  return added.map(v => { const o = old.get(wordKey(v.w)); if (!o || v.photo || v.pic || v.noPic) return v;
+    return { ...v, ...(o.photo ? { photo: o.photo } : {}), ...(o.pic ? { pic: o.pic } : {}), ...(o.noPic ? { noPic: true } : {}) }; });
+}
+/* a family's saved photos are small data URLs; at most this many words keep one, so the save stays small */
+export const HOME_PHOTOS_MAX = 40;
+function capHomePhotos(words){
+  let n = 0;
+  return words.map(v => { if (!v.photo || !v.photo.src.startsWith('data:')) return v; if (++n <= HOME_PHOTOS_MAX) return v; const { photo, ...rest } = v; return rest; });
 }
 /* How long she listens after the word is played on a spelling card, before she can type (docs/VOCAB.md, "Listen first"):
    the family's setting, else the class's, else 8 seconds. 0 turns the wait off; at most 20. */
@@ -324,7 +341,7 @@ export function normalizeVocabState(v){
   const lv = out.level && typeof out.level === 'object' ? out.level : {}, level = x => Math.max(1, Math.min(3, Math.round(+x) || 2));
   return {
     flagged, lookedUp, stats, mistakes, level: { spell: level(lv.spell ?? 1), cards: level(lv.cards) }, streak: Number.isFinite(+out.streak) ? Math.max(-9, Math.min(9, Math.round(+out.streak))) : 0, sprintBest: Number.isFinite(+out.sprintBest) ? Math.max(0, Math.floor(+out.sprintBest)) : 0,
-    home: { builtIn: home.builtIn !== false, ...(validListen(home.listenSec) != null ? { listenSec: validListen(home.listenSec) } : {}), words: (Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list),
+    home: { builtIn: home.builtIn !== false, ...(validListen(home.listenSec) != null ? { listenSec: validListen(home.listenSec) } : {}), words: capHomePhotos((Array.isArray(home.words) ? home.words : []).map(validWord).filter(Boolean).slice(0, VOCAB_LIMITS.list)),
       focus: (Array.isArray(home.focus) ? home.focus : []).map(wordKey).filter(Boolean).slice(0, VOCAB_LIMITS.list) },
     ...weeklyState(out)
   };

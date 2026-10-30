@@ -4,7 +4,7 @@ Owner (Oct 30, 2026): "i'd also like the image with the word to help her underst
 
 Every built-in word in Word Workshop has a picture that shows what it **means**: real photos where a photo can show it, cartoons for 25–50% of the words, and emoji where neither works. The data is in `src/shared/wordPictures.js` and the drawings are in `public/vocab-pics/cartoons/`.
 
-**Status:** the cartoons and emoji are done. The photos come later, because the image sites they come from can't be reached from where this was built. Until a word's photo is added, it shows its emoji. Word Workshop shows them (Oct 30, 2026): see `VOCAB.md`, "Word pictures", for where they show and where they never do.
+**Status:** the cartoons and emoji are done. The photos come later, because the image sites they come from can't be reached from where this was built. Until a word's photo is added, it shows its emoji. Word Workshop shows them (Oct 30, 2026): see `VOCAB.md`, "Word pictures", for where they show and where they never do. Words a grown-up or teacher adds get a picked photo or an emoji, and cartoons drawn later (F92, Oct 30, 2026; `WORD-CARTOONS.md`).
 
 ## The mix
 
@@ -32,7 +32,7 @@ Every built-in word in Word Workshop has a picture that shows what it **means**:
 
 `pictureFor(word, entry?)` returns the best picture available, as `{w, kind, emoji, src?, alt, credit?}`: the photo if its file is there, then the cartoon, then the emoji. `src` starts with `/vocab-pics/`.
 
-**Words a teacher or grown-up adds** get no picture until they choose an emoji scene for it. Pass the word's entry (`pictureFor(word, entry)`) and it shows `entry.pic`, if that's 1–3 emoji and nothing else (`validPictureEmoji`). A word with no `pic` gets `null`, so the card shows no picture. The pick-an-emoji box in the teacher app and the grown-up's word list hasn't been built yet. `validWord` in `vocab.js` will need to keep `pic` when it is.
+**Words a teacher or grown-up adds** (F92, Oct 30, 2026): pass the word's entry (`pictureFor(word, entry)`). It shows, in order, the free-license photo they picked (`entry.photo`, with its credit), a cartoon drawn later (`CLASS_CARTOONS`), the emoji they chose (`entry.pic`, 1–3 emoji and nothing else, `validPictureEmoji`), or else the emoji suggested from the meaning (`suggestEmoji`, unless `entry.noPic`). With none of those it's `null` and the card shows no picture. `validWord` in `vocab.js` keeps `photo`, `pic` and `noPic`. The picture boxes (🔍 Find a photo, the emoji) and the 🎨 cartoon ramp are in `VOCAB.md`, "Pictures for added words"; drawing a cartoon for an added word is in `WORD-CARTOONS.md`.
 
 ## The cartoons
 

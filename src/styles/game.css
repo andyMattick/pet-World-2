@@ -1622,6 +1622,29 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .wpic-chip .wpic-emoji{font-size:.72rem; letter-spacing:-1px}
 .flashcard .wpic{width:96px}
 .vocab-peek .wpic{display:flex; margin:6px 0 0}
+.wpic-credit{display:block; max-width:100%; font-size:.58rem; line-height:1.15; color:#7A5A55; white-space:normal; overflow-wrap:anywhere; text-align:center}
+.wpic-big .wpic-credit{font-size:.68rem}
+.wpic-tiny .wpic-credit{font-size:.48rem}
+.wpic-img[src^="http"], .wpic-photo .wpic-img{object-fit:cover}
+/* 🖼️ pictures for added words (grown-ups, behind the PIN; docs/VOCAB.md "Pictures for added words") */
+.vocab-pic-btn{border:0; background:none; padding:0 2px; font-size:1rem; cursor:pointer; line-height:1}
+.vocab-pic-editor{margin:10px 0; padding:10px; border:2px dashed var(--edge); border-radius:14px; background:#FFFBF6}
+.vocab-pic-editor h4{margin:0 0 4px}
+.vocab-pic-editor h5{margin:10px 0 4px; font-size:.95rem}
+.vocab-pic-editor input[type=search], .vocab-pic-editor input[type=text]{flex:1 1 140px; min-width:0}
+.vpe-now{align-items:center; gap:10px; flex-wrap:nowrap}
+.vpe-now > .muted{flex:1; min-width:0}
+.photo-pick .btn{padding:6px 8px; font-size:.8rem}
+.vpe-credit{font-size:.8rem; margin:6px 0; overflow-wrap:anywhere}
+.vpe-sug-emoji{font-size:1.4rem; vertical-align:middle}
+.photo-results{display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px; margin:6px 0}
+.photo-pick{margin:0; padding:6px; border:1px solid var(--edge); border-radius:10px; background:#fff; display:flex; flex-direction:column; gap:4px; min-width:0}
+.photo-pick img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; background:#f3ece6}
+.photo-pick figcaption{display:flex; flex-direction:column; font-size:.72rem; line-height:1.25; overflow-wrap:anywhere}
+.photo-pick figcaption b{font-size:.78rem}
+.photo-help{font-size:.8rem; margin:4px 0}
+.vocab-cartoons{margin:10px 0}
+.vocab-cartoons > summary{cursor:pointer; font-weight:700}
 /* ---------- 🐾 This Week's Paw Path (docs/VOCAB.md "This week's word path") ---------- */
 :root{ --pp-green:#58C76B; --pp-green-deep:#3A9A4C; --pp-gold:#FFC83D; --pp-gold-deep:#D99A12; --pp-lock:#E4DCDF; --pp-lock-deep:#B8ABB0; --pp-good-bg:#DDF6DF; --pp-bad-bg:#FFE1E6; }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --pp-lock:#4E3C46; --pp-lock-deep:#2E2229; --pp-good-bg:#1F3B26; --pp-bad-bg:#4A2430; } }
