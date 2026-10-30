@@ -35,6 +35,8 @@ Quizzes and tests keep their own review-and-PIN gates (docs/TEST-GATE.md).
 
 ### Where the videos come from
 
+**Kid videos first (Oct 30, 2026):** each station or lesson that has them starts with kid-friendly YouTube picture cards that play inside Pet World, with Khan folded under them. See `KID-VIDEOS.md`.
+
 **Math:** `src/shared/mathVideos.js`, read from the 24 Khan unit pages on Oct 28, 2026. It covers 140 lessons and 358 videos, keyed by the lesson part of each skill’s Khan link. Every math skill has videos.
 
 To refresh the list, open each unit page in a browser and collect the links whose text says “(Opens a modal)” and that contain `/v/`, grouped by the lesson slug just before `/v/`.

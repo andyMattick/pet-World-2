@@ -7,6 +7,7 @@ import { esc } from './report';
 import { lessonVideo, youtubeId } from '../shared/lessonVideos';
 import { typedQuestions, typeOf, isWritten, answerText, TYPE_LABELS, buildTypedPrompt, parseTypedImport, TYPED_IMPORT_LIMIT } from '../shared/questionTypes';
 import { SHOPS } from '../shared/registry';
+import { KID_VIDEOS, kidVideoList, kidEditToggle, kidEditMove, kidEditAdd, kidEditRemove, kidEditReset, type KidVideoEdits } from '../shared/kidVideos';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
 import { LESSON_COURSES, builtInBank, lessonLinkSlots, khanSearchUrl, validLessonLink, validQuestion, applyQuestionEdits, QUESTION_LIMITS } from '../shared/questionBanks';
 
@@ -15,7 +16,7 @@ interface QuestionText { prompt: string; options: string[]; difficulty?: number 
 interface TeacherQuestion extends QuestionText { id: string; status: 'approved' | 'draft' }
 /* addedTyped: the teacher's own questions of the newer types, by "<course>:<lesson>" (math: "math:<shop>:<station>"), docs: QUESTION-TYPES.md */
 interface TeacherTyped { id: string; status: 'approved' | 'draft'; q: Record<string, unknown> }
-export interface QuestionEdits { hidden?: string[]; edited?: Record<string, QuestionText>; added?: Record<string, TeacherQuestion[]>; addedTyped?: Record<string, TeacherTyped[]> }
+export interface QuestionEdits { hidden?: string[]; edited?: Record<string, QuestionText>; added?: Record<string, TeacherQuestion[]>; addedTyped?: Record<string, TeacherTyped[]>; videos?: KidVideoEdits }
 export interface LessonClass { id: string; name: string; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; game_settings?: { khan?: unknown; [key: string]: unknown } | null }
 /* saves columns on one class and returns an error message, or null when it worked */
 type SaveClass = (classId: string, patch: { lesson_links?: Record<string, LessonLink>; question_edits?: QuestionEdits }) => Promise<string | null>;
@@ -90,6 +91,14 @@ const MATH_STATIONS = Object.keys((TYPED_QUESTIONS as Record<string, Record<stri
   return { key, name: shop ? `${shop.emoji} ${shop.name} · Station ${n}: ${shop.stations.find(st => st.id === +n)?.name || ''}` : key };
 });
 let flash = '';   // message shown once after a save reloads the page
+/* 🎬 Kid videos (docs/KID-VIDEOS.md): every station or lesson that has a kid-video list, with a name for the picker */
+const KID_KEYS = Object.keys(KID_VIDEOS).map(key => {
+  const [, shopId, n] = key.split(':'), shop = key.startsWith('math:') ? (SHOPS as Record<string, { emoji: string; name: string; stations: { id: number; name: string }[] }>)[shopId] : null;
+  const course = !key.startsWith('math:') ? COURSES.find(c => c.id === key.split(':')[0]) : null;
+  const slot = course ? (lessonLinkSlots(course.id) as LinkSlot[]).find(sl => sl.key === key) : null;
+  return { key, name: shop ? `${shop.emoji} ${shop.name} · Station ${n}: ${shop.stations.find(st => st.id === +n)?.name || ''}` : course ? `${course.title} · ${slot?.name || key}` : key };
+});
+let kidKey = '';
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value ?? {})) as T;
 const shownQuestions = (cls: LessonClass, includeHidden: boolean) =>
@@ -255,6 +264,7 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
         <div class="row"><button class="btn" id="lqCopy">Copy to selected classes</button><span class="status" id="lqCopyMsg"></span></div>` : '<p class="muted">You have no other classes.</p>'}
       </div>
     </div>
+    ${kidVideoCardHTML(cls)}
     <div class="card"><h2>Questions</h2>
       <p>Students see <b>${visible.length}</b> question${visible.length === 1 ? '' : 's'} in this lesson. Practice picks 4 at random; quizzes and the unit test draw from all of them.</p>
       <p class="muted">${stats === undefined ? 'Loading how often each question is missed…' : stats === null ? 'Miss rates could not be loaded right now.'
@@ -361,6 +371,27 @@ export function renderLessons(pane: HTMLElement, cls: LessonClass, others: Lesso
   $('#lqCourse').addEventListener('change', e => { pick.course = (e.target as HTMLSelectElement).value; pick.skill = ''; pick.slot = ''; renderLessons(pane, cls, others, save, reload, stats, khan); });
   $('#lqSkill').addEventListener('change', e => { pick.skill = (e.target as HTMLSelectElement).value; pick.slot = ''; renderLessons(pane, cls, others, save, reload, stats, khan); });
   pane.querySelector('#lqSlot')?.addEventListener('change', e => { pick.slot = (e.target as HTMLSelectElement).value; renderLessons(pane, cls, others, save, reload, stats, khan); });
+
+  /* ---- 🎬 kid videos ---- */
+  pane.querySelector('#kvKey')?.addEventListener('change', e => { kidKey = (e.target as HTMLSelectElement).value; renderLessons(pane, cls, others, save, reload, stats, khan); });
+  const saveVideos = async (next: KidVideoEdits, done: string) => {
+    const error = await save(cls.id, { question_edits: { ...edits(), videos: next } });
+    if (error) { $('#kvMsg').textContent = error; return; }
+    flash = done; await reload();
+  };
+  pane.querySelector('#kidVideoCard')?.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!b || b.disabled) return;
+    const cur = cls.question_edits?.videos;
+    if (b.dataset.kvMove) void saveVideos(kidEditMove(cur, kidKey, b.dataset.kvId || '', +b.dataset.kvMove), 'Video order saved.');
+    else if (b.dataset.kvToggle) void saveVideos(kidEditToggle(cur, kidKey, b.dataset.kvToggle), 'Video list saved.');
+    else if (b.dataset.kvRemove) void saveVideos(kidEditRemove(cur, kidKey, b.dataset.kvRemove), 'Video removed.');
+    else if (b.id === 'kvReset') void saveVideos(kidEditReset(cur, kidKey), 'Back to Pet World’s video list.');
+    else if (b.id === 'kvAdd') {
+      const id = youtubeId(($('#kvUrl') as HTMLInputElement).value), title = ($('#kvTitle') as HTMLInputElement).value.trim();
+      if (!id) { $('#kvMsg').textContent = 'Paste a YouTube link (youtube.com/watch?v=… or youtu.be/…).'; $('#kvMsg').className = 'status err'; return; }
+      void saveVideos(kidEditAdd(cur, kidKey, { id, title: title || 'Your teacher’s pick', channel: '' }), 'Video added.');
+    }
+  });
 
   /* ---- lesson link ---- */
   if (slot) {
@@ -664,4 +695,20 @@ export function mergeCourse(courseId: string, from: LessonClass, into: LessonCla
     addedTyped[key] = [...byId.values()];
   });
   return { lesson_links, question_edits: { ...dst, hidden, edited, added, addedTyped } };
+}
+
+/* 🎬 Kid videos card: the kid-friendly YouTube videos students pick from before practice, for one station or lesson.
+   Saved per class in question_edits.videos ({<key>: {hide, add, order}}), which the game reads (docs/KID-VIDEOS.md). */
+function kidVideoCardHTML(cls: LessonClass): string {
+  if (!KID_KEYS.length) return '';
+  const slotKeys = (lessonLinkSlots(pick.course) as LinkSlot[]).map(sl => sl.key);
+  if (!KID_KEYS.some(k => k.key === kidKey)) kidKey = KID_KEYS.find(k => slotKeys.includes(k.key))?.key || KID_KEYS[0].key;
+  const list = kidVideoList(kidKey, cls.question_edits?.videos, { includeHidden: true });
+  return `<div class="card" id="kidVideoCard"><h2>🎬 Kid videos</h2>
+    <p class="muted" style="margin-top:0">Before practice, students pick one of these kid-friendly videos (Khan stays under them as one more choice). They play inside Pet World and count as class time. Hide, reorder or add your own YouTube videos for <b>${esc(cls.name)}</b>.</p>
+    <label for="kvKey">Station or lesson</label><select id="kvKey">${KID_KEYS.map(k => `<option value="${esc(k.key)}" ${k.key === kidKey ? 'selected' : ''}>${esc(k.name)}</option>`).join('')}</select>
+    <table class="steptable"><tbody>${list.map((v, i) => `<tr${v.hidden ? ' class="muted"' : ''}><td><a href="https://www.youtube.com/watch?v=${esc(v.id)}" target="_blank" rel="noopener noreferrer">${esc(v.title)}</a><br><span class="muted">${esc(v.channel || 'Added by you')}${v.hidden ? ' · hidden' : ''}</span></td>
+      <td style="text-align:right; white-space:nowrap"><button class="btn small" data-kv-move="-1" data-kv-id="${esc(v.id)}" ${i ? '' : 'disabled'} title="Move up">↑</button><button class="btn small" data-kv-move="1" data-kv-id="${esc(v.id)}" ${i < list.length - 1 ? '' : 'disabled'} title="Move down">↓</button><button class="btn small" data-kv-toggle="${esc(v.id)}">${v.hidden ? 'Show' : 'Hide'}</button>${v.added ? `<button class="btn small" data-kv-remove="${esc(v.id)}">Remove</button>` : ''}</td></tr>`).join('') || '<tr><td class="muted">No videos yet.</td></tr>'}</tbody></table>
+    <div class="two"><div><label for="kvUrl">Add a YouTube video</label><input type="url" id="kvUrl" maxlength="300" placeholder="https://youtu.be/…"></div><div><label for="kvTitle">Title students see</label><input type="text" id="kvTitle" maxlength="100" placeholder="Ratios with tape diagrams"></div></div>
+    <div class="row"><button class="btn primary" id="kvAdd">Add video</button>${cls.question_edits?.videos?.[kidKey] ? '<button class="btn" id="kvReset">Back to Pet World’s list</button>' : ''}<span class="status" id="kvMsg"></span></div></div>`;
 }

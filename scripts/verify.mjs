@@ -264,6 +264,16 @@ need('src/game/game.js', 'function watchFirstThen(', 'the watch-first prompt bef
 need('src/game/game.js', 'function videoGateThen(', 'today’s video, signed by a grown-up, before practice (docs/VIDEO-GATE.md)');
 need('src/game/game.js', 'function helpBlocks(', 'the 🛑 Time to get help stop (docs/VIDEO-GATE.md)');
 need('src/shared/mathVideos.js', 'export function struggleCheck(', 'the 🛑 Time to get help rule');
+// 🎬 Kid videos in Today's video picker (docs/KID-VIDEOS.md): checked ids only, every list points at the catalog
+need('src/game/game.js', 'function kidVideosFor(', 'the kid video cards in Today’s video picker (docs/KID-VIDEOS.md)');
+need('src/teacher/lessons.ts', 'function kidVideoCardHTML(', 'the teacher’s Kid videos card (docs/KID-VIDEOS.md)');
+{
+  const kv = read('src/shared/kidVideos.ts');
+  const catalog = new Set([...(kv.split('export const KID_VIDEOS')[0] || '').matchAll(/^\s+'([A-Za-z0-9_-]{11})': \[/gm)].map(m => m[1]));
+  const lists = [...(kv.split('export const KID_VIDEOS')[1] || '').matchAll(/^\s+'([^']+)': \[([^\]]*)\]/gm)];
+  if (kv && (!catalog.size || !lists.length)) problems.push('src/shared/kidVideos.ts: could not read KID_VIDEO_CATALOG or KID_VIDEOS');
+  for (const [, key, ids] of lists) for (const id of ids.match(/'[^']*'/g) || []) if (!catalog.has(id.slice(1, -1))) problems.push(`src/shared/kidVideos.ts: ${key} lists ${id}, which is not in KID_VIDEO_CATALOG (add it only after checking it exists)`);
+}
 
 // Tests: review first, a grown-up's PIN, every unit (CLAUDE.md, "Tests: review first"; docs/TEST-GATE.md)
 for (const [fn, what] of [['async function gatedTestReview(', 'the PIN before a test review'], ['async function gatedPetWorldTest(', 'the review + PIN before a Pet World test'],

@@ -35,6 +35,7 @@ import { COURT_DOCKETS, casesOn, newCourtRun, courtAct, courtHTML, COURT_CSS } f
 import { GGAMES, ggameById, starsFor, CROSS_SENTENCES, parseCross, crossTargets, COMIC_PANELS, COMIC_WORDS, comicCheck, comicLine } from './grammarGames.js';
 import { ROLE_SCENES, COURSE_ERAS, commonsThumb, WORLD_MAP, yearText } from '../shared/roleScenes.js';
 import { mathSkillVideos, struggleCheck, HELP_WINDOW } from '../shared/mathVideos.js';
+import { kidVideoList, cleanKidEdits, kidEditToggle, kidEditMove, kidEditAdd, kidEditRemove, kidEditReset, kidThumb } from '../shared/kidVideos';
 import { HIDE_LEVELS, newHideRun, hideHTML as hideLevelHTML, hideMenuHTML, hideAct } from './hideSeek.js';
 import { HISTORY_UNIT9, HISTORY_GROUPS9, HISTORY9_QUESTIONS, ENGLISH_UNIT1, ENGLISH_GROUPS, ENGLISH_UNIT2, ENGLISH_GROUPS2, ENGLISH_UNIT3, ENGLISH_GROUPS3, PRONOUN_QUESTIONS, ENGLISH_UNIT4, ENGLISH_GROUPS4, MODIFIER_QUESTIONS, ENGLISH_UNIT5, ENGLISH_GROUPS5, PREPOSITION_QUESTIONS, ENGLISH_UNIT6, ENGLISH_GROUPS6, PUNCTUATION_QUESTIONS, ENGLISH_UNIT7, ENGLISH_GROUPS7, COLON_QUESTIONS, HISTORY_UNIT1, HISTORY_GROUPS, HISTORY_UNIT2, HISTORY_GROUPS2, HISTORY_UNIT3, HISTORY_GROUPS3, HISTORY_UNIT4, HISTORY_GROUPS4, HISTORY_UNIT5, HISTORY_GROUPS5, BIO_UNIT1, BIO_GROUPS, BIO_UNIT2, BIO_GROUPS2, BIO_UNIT3, BIO_GROUPS3, BIO3_QUESTIONS, HISTORY_QUESTIONS, HISTORY2_QUESTIONS, HISTORY3_QUESTIONS, HISTORY4_QUESTIONS, HISTORY5_QUESTIONS, BIO1_QUESTIONS, BIO2_QUESTIONS, PLURAL_QUESTIONS, VERB_QUESTIONS, KHAN, KHAN_LINKS, KHAN_VIDEOS, applyQuestionEdits, validLessonLink, HISTORY_UNIT6, HISTORY_GROUPS6, HISTORY6_QUESTIONS, HISTORY_UNIT7, HISTORY_GROUPS7, HISTORY7_QUESTIONS } from '../shared/questionBanks';
 import { ENGLISH_UNIT9, ENGLISH_GROUPS9, RULE_QUESTIONS } from '../shared/questionBanks';   // English Unit 9, the Rule Library (docs/ENGLISH-UNIT9.md)
@@ -147,6 +148,7 @@ function normalize(raw){
   s.mathThink = s.mathThink && typeof s.mathThink === 'object' ? s.mathThink : {};   // math Think it through sets, by station ("cafe:1")
   s.videoPass = Object.fromEntries(Object.entries(s.videoPass && typeof s.videoPass === 'object' && !Array.isArray(s.videoPass) ? s.videoPass : {})   // 🎬 today's video per unit: {day, title, picked, signed} (docs/VIDEO-GATE.md)
     .filter(([k, v]) => k.length <= 40 && v && typeof v.day === 'string' && typeof v.title === 'string').slice(-60).map(([k, v]) => [k, {day:v.day.slice(0, 10), title:v.title.slice(0, 120), picked:+v.picked || 0, signed:+v.signed || 0}]));
+  s.kidVideoEdits = cleanKidEdits(s.kidVideoEdits);   // 🎬 a family's own changes to the kid videos per lesson (hide, add, order), local mode (docs/KID-VIDEOS.md)
   s.helpWatch = Object.fromEntries(Object.entries(s.helpWatch && typeof s.helpWatch === 'object' && !Array.isArray(s.helpWatch) ? s.helpWatch : {})   // 🛑 last practice answers per subject, 1 right 0 missed
     .filter(([k, v]) => k.length <= 20 && Array.isArray(v)).map(([k, v]) => [k, v.slice(-10).map(x => x ? 1 : 0)]));
   s.helpLock = Object.fromEntries(Object.entries(s.helpLock && typeof s.helpLock === 'object' && !Array.isArray(s.helpLock) ? s.helpLock : {})   // 🛑 a subject stopped until a grown-up signs her back in
@@ -10557,6 +10559,7 @@ const WATCHED_SHARE = 0.8;
 /* The video a student gets for a lesson: the class teacher's own YouTube link first (Lessons & questions tab), then
    Pet World's own video (src/shared/lessonVideos.js), else null, and the lesson keeps its Khan link. */
 function studentVideo(key){
+  if (typeof key === 'string' && key.startsWith('kid:')) return kidVideoShown.get(key) || null;   // a kid video from Today's video picker (docs/KID-VIDEOS.md)
   const mine = key ? validLessonLink(Backend.me?.lesson_links?.[key]) : null, id = mine ? youtubeId(mine.url) : null;
   if (id) return {key, title:mine.title || 'Watch your teacher\u2019s lesson', youtube:id, kind:'teacher', minutes:null, note:mine.note};
   return key ? lessonVideo(key) : null;
@@ -10725,21 +10728,35 @@ function watchFirstThen(courseId, skillId, go){
    The pass is per unit, per day. Tests and quizzes keep their own gates. */
 const gateUnitName = unit => SHOPS[unit]?.name || englishCourse(unit)?.title || unit;
 const videoGateUnit = unit => !!SHOPS[unit] || videoFirstCourse(unit);
+/* 🎬 Kid videos (owner, Oct 30, 2026: "Khan videos are really boring"; docs/KID-VIDEOS.md): 2 to 4 kid-friendly
+   YouTube videos per station or lesson (src/shared/kidVideos.ts), shown first as picture cards, with Khan under them.
+   They play in Pet World's own player (openLessonVideo, youtube-nocookie.com), so watch time counts as class time.
+   A class uses its teacher's changes (question_edits.videos, teacher app → Lessons & questions); a family at home
+   changes them in the picker with the PIN (S.kidVideoEdits). */
+const kidVideoShown = new Map();   // "kid:<id>" → the video, for studentVideo / openLessonVideo
+const kidEditsNow = () => Backend.me ? Backend.me.question_edits?.videos : S.kidVideoEdits;
+function kidVideosFor(key){
+  return kidVideoList(key, kidEditsNow()).map(v => {
+    const k = `kid:${v.id}`; kidVideoShown.set(k, {key:k, title:v.title, youtube:v.id, kind:'kid', minutes:null, channel:v.channel});
+    return {title:v.title, key:k, kid:v.id, channel:v.channel};
+  });
+}
 /* the unit's videos in sections: {name, focus, videos:[{title, url} | {title, key} (a video that plays in Pet World)]} */
+/* each section also has kidKey and kid:[{title, key:'kid:<id>', kid, channel}] (the kid videos, shown first) */
 function unitVideoSections(unit, focus = null){
   if (SHOPS[unit]) return SHOPS[unit].stations.filter(st => st.skills.length).map(st => {
     const own = lessonVideo(`math:${unit}:${st.id}`), seen = new Set(), videos = own ? [{title:own.title, key:own.key}] : [];
     for (const sk of st.skills) { const v = lessonVideo(`math:${sk}`); if (v && !seen.has(v.key)) { seen.add(v.key); videos.push({title:v.title, key:v.key}); }
       for (const m of khanOn() ? mathSkillVideos(SKILLS[sk]?.url) : []) if (!seen.has(m.url)) { seen.add(m.url); videos.push(m); } }
-    return {name:`${st.emoji} ${st.id}. ${st.name}`, focus:st.id === focus, videos};
-  }).filter(s => s.videos.length);
+    return {name:`${st.emoji} ${st.id}. ${st.name}`, focus:st.id === focus, videos, kidKey:`math:${unit}:${st.id}`, kid:kidVideosFor(`math:${unit}:${st.id}`)};
+  }).filter(s => s.videos.length || s.kid.length);
   const course = englishCourse(unit);
   return (course?.groups || []).map(group => {
     const key = `${course.id}:${group.id}`, mine = studentVideo(key), list = khanOn() && !validLessonLink(Backend.me?.lesson_links?.[key]) ? KHAN_VIDEOS[course.id]?.[group.id] : null;
     const videos = mine ? [{title:mine.title, key}] : list?.length ? list.map(([title, url]) => ({title, url, watchKey:key}))
       : KHAN_LINKS[course.id]?.[group.id] && khanOn() ? [{title:`The lesson on Khan Academy: ${group.name}`, url:KHAN_LINKS[course.id][group.id], watchKey:key}] : [];
-    return {name:group.name, focus:group.id === focus, videos};
-  }).filter(s => s.videos.length);
+    return {name:group.name, focus:group.id === focus, videos, kidKey:key, kid:kidVideosFor(key)};
+  }).filter(s => s.videos.length || s.kid.length);
 }
 const videoPassToday = unit => S.videoPass?.[unit]?.day === arcadeDateKey() && !!S.videoPass[unit].signed;
 function videoPassBannerHTML(unit){
@@ -10757,33 +10774,43 @@ function openVideoPicker(unit, focus = null, go = null){
   const sections = unitVideoSections(unit, focus); if (!sections.length) return;
   if (!sections.some(s => s.focus)) sections[0].focus = true;
   const shown = [...sections.filter(s => s.focus), ...sections.filter(s => !s.focus)];
-  const all = shown.flatMap(s => s.videos), signed = videoPassToday(unit);
-  const videoHTML = (v, i) => v.url ? `<a class="btn pick-video" href="${esc(v.url)}" target="_blank" rel="noopener" data-pick-video="${i}">▶ ${esc(v.title)}</a>` : `<button type="button" class="btn pick-video" data-pick-video="${i}">▶ ${esc(v.title)}</button>`;
-  let n = 0; const sectionHTML = s => `<div class="pick-section"><b>${esc(s.name)}</b>${s.videos.map(v => videoHTML(v, n++)).join('')}</div>`;
+  /* order in each section: the teacher's or Pet World's own video, the kid video cards, then Khan (folded away when there are kid videos) */
+  for (const s of shown) { s.own = s.videos.filter(v => !v.url); s.khan = s.videos.filter(v => v.url); }
+  const all = shown.flatMap(s => [...s.own, ...(s.kid || []), ...s.khan]), signed = videoPassToday(unit), gated = videoGateUnit(unit);
+  const videoHTML = (v, i) => v.kid ? `<button type="button" class="kid-card pick-video" data-pick-video="${i}" data-kid-video="${esc(v.kid)}"><img src="${esc(kidThumb(v.kid))}" alt="" loading="lazy" width="120" height="68"><span><b>▶ ${esc(v.title)}</b><small>${esc(v.channel)}${S.videosWatched?.[v.key] ? ' · ✓ watched' : ''}</small></span></button>`
+    : v.url ? `<a class="btn pick-video" href="${esc(v.url)}" target="_blank" rel="noopener" data-pick-video="${i}">▶ ${esc(v.title)}</a>` : `<button type="button" class="btn pick-video" data-pick-video="${i}">▶ ${esc(v.title)}</button>`;
+  let n = 0; const sectionHTML = s => `<div class="pick-section"><b>${esc(s.name)}</b>${s.own.map(v => videoHTML(v, n++)).join('')}${(s.kid || []).map(v => videoHTML(v, n++)).join('')}${s.khan.length && s.kid?.length ? `<details class="pick-khan"><summary>Khan Academy videos (${s.khan.length})</summary>${s.khan.map(v => videoHTML(v, n++)).join('')}</details>` : s.khan.map(v => videoHTML(v, n++)).join('')}</div>`;
   const focusHTML = shown.filter(s => s.focus).map(sectionHTML).join(''), restHTML = shown.filter(s => !s.focus).map(sectionHTML).join('');
   const el = document.createElement('div');
   el.className = 'theme-card video-picker'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Pick today’s video');
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(gateUnitName(unit))}</p><div class="theme-emoji" aria-hidden="true">🎬</div><h2>${signed ? 'Watch another video' : 'Pick today’s video'}</h2>
-    <ol class="pick-steps"><li><b>Pick a video</b> from this unit (it opens in a new tab).</li><li><b>Watch all of it.</b> Watching counts as class time.</li><li><b>Get Mom’s signature.</b> Then practice opens for today.</li></ol>
+    <ol class="pick-steps"><li><b>Pick a video</b> from this unit${shown.some(s => s.kid?.length) ? '. Picture cards play right here; Khan videos open in a new tab' : ' (it opens in a new tab)'}.</li><li><b>Watch all of it.</b> Watching counts as class time.</li>${gated ? '<li><b>Get Mom’s signature.</b> Then practice opens for today.</li>' : ''}</ol>
     <div class="pick-list">${focusHTML}${restHTML ? `<details class="pick-more"><summary>More videos in this unit</summary>${restHTML}</details>` : ''}</div>
     <p class="pick-now" hidden></p>
-    <div class="row" style="justify-content:center"><button type="button" class="btn berry" data-sign-video${S.videoPass?.[unit]?.day === arcadeDateKey() && S.videoPass[unit].title ? '' : ' disabled'}>✍️ Mom’s signature: I watched it</button><button type="button" class="btn small" data-pick-close>Not now</button></div>
-    ${signed ? '' : '<p class="pick-skip"><button type="button" class="btn small" data-skip-video>🔐 Grown-up: no good video today, open practice</button></p>'}</div>`;
+    <div class="row" style="justify-content:center">${gated ? `<button type="button" class="btn berry" data-sign-video${S.videoPass?.[unit]?.day === arcadeDateKey() && S.videoPass[unit].title ? '' : ' disabled'}>✍️ Mom’s signature: I watched it</button>` : ''}<button type="button" class="btn small" data-pick-close>${gated ? 'Not now' : 'Close'}</button></div>
+    ${signed || !gated ? '' : '<p class="pick-skip"><button type="button" class="btn small" data-skip-video>🔐 Grown-up: no good video today, open practice</button></p>'}
+    ${!Backend.me && shown[0]?.kidKey ? '<p class="pick-skip"><button type="button" class="btn small" data-kid-edit>🔐 Grown-up: change these videos</button></p>' : ''}</div>`;
   document.body.appendChild(el);
   const now = el.querySelector('.pick-now'), sign = el.querySelector('[data-sign-video]');
-  const showPicked = () => { const p = S.videoPass?.[unit]; if (p?.day === arcadeDateKey() && p.title) { now.hidden = false; now.innerHTML = `Watching: <b>${esc(p.title)}</b>. When it’s over, bring Mom here to sign.`; sign.disabled = false; } };
+  const showPicked = () => { const p = S.videoPass?.[unit]; if (gated && p?.day === arcadeDateKey() && p.title) { now.hidden = false; now.innerHTML = `Watching: <b>${esc(p.title)}</b>. When it’s over, bring Mom here to sign.`; sign.disabled = false; } };
   showPicked();
   el.addEventListener('click', e => {
     const pick = e.target.closest('[data-pick-video]');
     if (pick) {
       const v = all[+pick.dataset.pickVideo]; if (!v) return;
-      S.videoPass = {...S.videoPass, [unit]:{...(signed ? S.videoPass[unit] : {}), day:arcadeDateKey(), title:String(v.title).slice(0, 120), picked:Date.now()}};
+      if (gated) S.videoPass = {...S.videoPass, [unit]:{...(signed ? S.videoPass[unit] : {}), day:arcadeDateKey(), title:String(v.title).slice(0, 120), picked:Date.now()}};
+      if (v.kid) logEvent({k:'watch', title:`🎬 Picked a kid video: ${String(v.title).slice(0, 80)} (${String(v.channel).slice(0, 40)})`});
       if (v.key) { openLessonVideo(v.key); el.style.display = "none"; const back = setInterval(() => { if (!videoSession || !el.isConnected) { clearInterval(back); el.style.display = ""; } }, 500); }   // the video plays in Pet World, under this card
       else if (v.watchKey) markKhanOpened(v.watchKey);
       else { startWatching('khan', `math:${unit}`); logEvent({k:'watch', title:`🎬 Opened the Khan Academy video: ${String(v.title).slice(0, 80)}`}); }
       save(); showPicked(); return;   // a link opens its new tab by itself
     }
     if (e.target.closest('[data-pick-close]')) { el.remove(); rerenderGateUnit(unit); return; }
+    if (e.target.closest('[data-kid-edit]')) void (async () => {   // a family at home changes the kid videos for this station or lesson
+      const sec = shown[0];
+      if (!await askGrownUp({title:'Change these videos', text:`Hide, reorder or add YouTube videos for <b>${esc(sec.name)}</b>.`, ok:'Change videos', log:`🔐 Grown-up opened the video editor: ${sec.name}`})) return;
+      el.remove(); openKidVideoEditor(unit, sec.kidKey, sec.name, () => openVideoPicker(unit, focus, go));
+    })();
     if (e.target.closest('[data-skip-video]')) void (async () => {   // a parent override, when none of the unit's videos is a good fit
       if (!await askGrownUp({title:'Open practice without a video', text:`None of the ${esc(gateUnitName(unit))} videos fits today? Your PIN opens practice for today without one.`, ok:'Open practice', log:`🔐 Grown-up opened practice without a video today: ${gateUnitName(unit)}`})) return;
       S.videoPass = {...S.videoPass, [unit]:{day:arcadeDateKey(), title:'No video today (a grown-up said OK)', picked:0, signed:Date.now()}}; save();
@@ -10791,14 +10818,48 @@ function openVideoPicker(unit, focus = null, go = null){
       if (go) go(); else rerenderGateUnit(unit);
     })();
     if (e.target.closest('[data-sign-video]') && !sign.disabled) void (async () => {
-      const p = S.videoPass?.[unit];
-      if (!await askGrownUp({title:'Sign off today’s video', text:`She watched <b>${esc(p.title)}</b> (${esc(gateUnitName(unit))}). Your PIN says she watched all of it, and practice opens for today.`, ok:'✍️ Sign', log:`✍️ Grown-up signed off today’s video: ${p.title} (${gateUnitName(unit)})`})) return;
+      const p = S.videoPass?.[unit], seen = [...kidVideoShown.values()].find(v => v.title === p.title && S.videosWatched?.[v.key] === arcadeDateKey());
+      if (!await askGrownUp({title:'Sign off today’s video', text:`She watched <b>${esc(p.title)}</b> (${esc(gateUnitName(unit))}).${seen ? ' Pet World saw her play it to the end.' : ''} Your PIN says she watched all of it, and practice opens for today.`, ok:'✍️ Sign', log:`✍️ Grown-up signed off today’s video: ${p.title} (${gateUnitName(unit)})`})) return;
       S.videoPass = {...S.videoPass, [unit]:{...p, signed:Date.now()}}; save();
       el.remove(); toast('✍️ Signed! Practice is open for today.');
       if (go) go(); else rerenderGateUnit(unit);
     })();
   });
   setTimeout(() => el.querySelector('[data-pick-video]')?.focus(), 50);
+}
+/* 🔐 the family's kid-video editor (local mode; a class uses the teacher app): hide or show, move up or down, add a
+   YouTube link, or go back to Pet World's list. Saved in S.kidVideoEdits[key]. done() reopens the picker. */
+function openKidVideoEditor(unit, key, name, done){
+  const el = document.createElement('div');
+  el.className = 'theme-card video-picker kid-editor'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Change these videos');
+  const draw = () => {
+    const list = kidVideoList(key, S.kidVideoEdits, {includeHidden:true});
+    el.innerHTML = `<div class="theme-box"><p class="theme-kicker">For a grown-up · ${esc(gateUnitName(unit))}</p><h2>🎬 ${esc(name)}</h2>
+      <p class="muted">She sees these in this order. Hidden videos stay hidden until you show them again.</p>
+      <ol class="kid-edit-list">${list.map((v, i) => `<li class="${v.hidden ? 'kid-hidden' : ''}"><img src="${esc(kidThumb(v.id))}" alt="" loading="lazy" width="80" height="45"><span><b>${esc(v.title)}</b><small>${esc(v.channel || 'Added by you')}${v.hidden ? ' · hidden' : ''}</small></span>
+        <span class="kid-edit-btns"><button type="button" class="btn small" data-kid-move="-1" data-kid-id="${esc(v.id)}" ${i ? '' : 'disabled'} aria-label="Move up">↑</button><button type="button" class="btn small" data-kid-move="1" data-kid-id="${esc(v.id)}" ${i < list.length - 1 ? '' : 'disabled'} aria-label="Move down">↓</button>
+        <button type="button" class="btn small" data-kid-toggle="${esc(v.id)}">${v.hidden ? 'Show' : 'Hide'}</button>${v.added ? `<button type="button" class="btn small" data-kid-remove="${esc(v.id)}">Remove</button>` : ''}</span></li>`).join('') || '<li class="muted">No videos yet. Add one below.</li>'}</ol>
+      <label for="kidAddUrl"><b>Add a YouTube video</b></label><input id="kidAddUrl" type="url" maxlength="300" placeholder="https://youtu.be/…">
+      <label for="kidAddTitle">Title she sees</label><input id="kidAddTitle" type="text" maxlength="100" placeholder="Ratios with tape diagrams">
+      <p class="kid-edit-msg muted" aria-live="polite"></p>
+      <div class="row" style="justify-content:center"><button type="button" class="btn" data-kid-add>➕ Add</button><button type="button" class="btn small" data-kid-reset>Back to Pet World’s list</button><button type="button" class="btn berry" data-kid-done>Done</button></div></div>`;
+  };
+  draw(); document.body.appendChild(el);
+  const store = next => { S.kidVideoEdits = next; save(); draw(); };
+  el.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.kidMove) store(kidEditMove(S.kidVideoEdits, key, t.dataset.kidId, +t.dataset.kidMove));
+    else if (t.dataset.kidToggle) store(kidEditToggle(S.kidVideoEdits, key, t.dataset.kidToggle));
+    else if (t.dataset.kidRemove) store(kidEditRemove(S.kidVideoEdits, key, t.dataset.kidRemove));
+    else if ('kidReset' in t.dataset) store(kidEditReset(S.kidVideoEdits, key));
+    else if ('kidAdd' in t.dataset) {
+      const id = youtubeId(el.querySelector('#kidAddUrl').value), title = el.querySelector('#kidAddTitle').value.trim();
+      if (!id) { el.querySelector('.kid-edit-msg').textContent = 'Paste a YouTube link (youtube.com/watch?v=… or youtu.be/…).'; return; }
+      store(kidEditAdd(S.kidVideoEdits, key, {id, title:title || 'A video picked by your grown-up', channel:''}));
+      logEvent({k:'gate', title:`🎬 Grown-up added a video for ${name}: ${title || id}`});
+    }
+    else if ('kidDone' in t.dataset) { el.remove(); done?.(); }
+  });
 }
 function rerenderGateUnit(unit){
   if (SHOPS[unit] && !$('#scr-cafe').hidden) renderShopFloor(unit);
