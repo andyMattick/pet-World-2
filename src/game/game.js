@@ -235,6 +235,8 @@ function normalize(raw){
       games:(Array.isArray(s.petshow?.games) ? s.petshow.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), ribbons:Math.max(0, +g.ribbons || 0), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🏆 Pet Show Awards (docs/PET-SHOW-AWARDS.md)
     s.pax = {day:typeof s.pax?.day === 'string' ? s.pax.day : '', coinsToday:Math.max(0, Math.round(+s.pax?.coinsToday || 0)),
       games:(Array.isArray(s.pax?.games) ? s.pax.games : []).filter(g => g && Number.isFinite(+g.t) && (g.course === 'history4' || g.course === 'history5')).slice(-30).map(g => ({t:+g.t, course:g.course, id:String(g.id || '').slice(0, 20), stars:Math.max(1, Math.min(3, Math.round(+g.stars || 1))), rank:Math.max(1, Math.min(4, Math.round(+g.rank || 1))), empires:Math.max(2, Math.min(4, Math.round(+g.empires || 2))), prestige:Math.max(0, Math.min(5000, Math.round(+g.prestige || 0))), rounds:Math.max(1, Math.min(40, Math.round(+g.rounds || 1)))}))};   // ⚖️ Pax Oeconomica (docs/PAX-OECONOMICA.md)
+    s.terra = {day:typeof s.terra?.day === 'string' ? s.terra.day : '', coinsToday:Math.max(0, Math.round(+s.terra?.coinsToday || 0)),
+      games:(Array.isArray(s.terra?.games) ? s.terra.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, id:String(g.id || '').slice(0, 20), length:['short', 'long', 'grand'].includes(g.length) ? g.length : 'short', stars:Math.max(0, Math.min(3, Math.round(+g.stars || 0))), regions:Math.max(0, Math.min(30, Math.round(+g.regions || 0))), specimens:Math.max(0, Math.min(60, Math.round(+g.specimens || 0))), treaties:Math.max(0, Math.min(12, Math.round(+g.treaties || 0))), months:Math.max(1, Math.min(48, Math.round(+g.months || 1)))}))};   // 🧭 Terra Incognita (docs/TERRA-INCOGNITA.md)
     s.greenhouse = {best:Math.max(0, Math.min(3, Math.round(+s.greenhouse?.best || 0))), day:typeof s.greenhouse?.day === 'string' ? s.greenhouse.day : '', coinsToday:Math.max(0, Math.round(+s.greenhouse?.coinsToday || 0)),
       games:(Array.isArray(s.greenhouse?.games) ? s.greenhouse.games : []).filter(g => g && Number.isFinite(+g.t)).slice(-30).map(g => ({t:+g.t, stars:Math.max(0, Math.min(3, +g.stars || 0)), jobs:Math.max(0, Math.min(8, +g.jobs || 0)), right:Math.max(0, +g.right || 0), tries:Math.max(0, +g.tries || 0), missed:g.missed && typeof g.missed === 'object' ? g.missed : {}}))};   // 🌺 Greenhouse Keeper (docs/GREENHOUSE-KEEPER.md)
     s.lifecycle = {best:Math.max(0, Math.min(3, Math.round(+s.lifecycle?.best || 0))), day:typeof s.lifecycle?.day === 'string' ? s.lifecycle.day : '', coinsToday:Math.max(0, Math.round(+s.lifecycle?.coinsToday || 0)),
@@ -6294,6 +6296,7 @@ function arcadeModuleMessage(event){
   else if (run.gameId === 'carnival') earned = Math.max(0, Math.min(3, score));   // 1 ticket per booth star, up to 3 a booth (docs/CARNIVAL.md)
   else if (run.gameId === 'pet-show') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a show (docs/PET-SHOW-AWARDS.md)
   else if (run.gameId === 'pax-oeconomica') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a game (docs/PAX-OECONOMICA.md)
+  else if (run.gameId === 'terra-incognita') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a charter (docs/TERRA-INCOGNITA.md)
   else if (run.gameId === 'life-cycle-lab') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a round (docs/LIFE-CYCLE-LAB.md)
   else if (run.gameId === 'greenhouse-keeper') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a shift (docs/GREENHOUSE-KEEPER.md)
   else if (run.gameId === 'barn-breeder') earned = Math.max(0, Math.min(3, score));   // 1 ticket per star, up to 3 a fair season (docs/BARN-BREEDER.md)
@@ -8641,6 +8644,49 @@ window.addEventListener('message', e => {
   save();
   toast(`⚖️ ${g.rank === 1 ? 'Your empire won!' : `Your empire finished #${g.rank}.`} ${'⭐'.repeat(g.stars)}${coins ? ` +${coins} 🪙` : c.coinsToday >= PAX_COINS_PER_DAY ? ' (Today’s Pax Oeconomica coins are all earned.)' : ''}`);
 });
+/* ---------- 🧭 Terra Incognita (src/arcade/terra-incognita, docs/TERRA-INCOGNITA.md) ----------
+   History Unit 6's game (the ⛵ Age of Sail Museum): lead a 1604 exploration charter for England, France, Spain or
+   Portugal. Chart new lands, survey plants and animals, and sign treaties by negotiation and fair trade (no conquest).
+   A short charter is the default; longer ones save on the device. It opens from the unit page (?from=history6) and
+   from the Arcade. A finished charter pays 3 coins a star (1 star per goal met), up to 20 a day, once per charter. */
+const TERRA_COINS_PER_DAY = 20;
+function terraCardHTML(courseId){
+  if (courseId !== 'history6') return '';
+  const games = S.terra.games, best = games.reduce((a, g) => Math.max(a, g.stars), 0);
+  return `<section class="ela-final-assessment"><div><h3>🧭 Terra Incognita</h3><p class="muted">It’s 1604. Lead an exploration charter for England, France, Spain or Portugal: chart new lands, record plants and animals, and make friends through fair trade and treaties · ${games.length ? `${games.length} charter${games.length === 1 ? '' : 's'} finished${best ? `, best ${'⭐'.repeat(best)}` : ''}` : 'Not played yet'}</p></div><button type="button" class="btn small berry" data-terra-open>Play</button></section>`;
+}
+function openTerra(){
+  if ($('#terraWrap')) return;
+  const el = document.createElement('div');
+  el.id = 'terraWrap'; el.className = 'prep-recall'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Terra Incognita');
+  el.innerHTML = `<div class="row prep-recall-bar"><b style="flex:1">🧭 Terra Incognita</b><button type="button" class="btn small" data-terra-close>Done</button></div><iframe src="/arcade/terra-incognita/?from=history6" title="Terra Incognita"></iframe>`;
+  document.body.appendChild(el);
+  el.querySelector('[data-terra-close]').addEventListener('click', closeTerra);
+}
+function closeTerra(){
+  const el = $('#terraWrap'); if (!el) return;
+  el.remove();
+  if (!$('#scr-library').hidden && $('#libraryWrap [data-terra-open]')) renderEnglishUnit('history6');
+}
+$('#libraryWrap').addEventListener('click', e => { if (e.target.closest('[data-terra-open]')) openTerra(); });
+window.addEventListener('message', e => {
+  const frame = $('#terraWrap iframe');
+  if (e.origin !== location.origin || !frame || e.source !== frame.contentWindow) return;
+  if (e.data?.type === 'terra:close') { closeTerra(); return; }
+  if (e.data?.type !== 'terra:result' || e.data.from !== 'history6') return;
+  const d = e.data, id = String(d.charterId || '').slice(0, 20), c = S.terra, day = logDayKey();
+  if (!id || c.games.some(g => g.id === id)) return;   // each charter pays once
+  const n = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+v || 0)));
+  const g = {t:Date.now(), id, length:['short', 'long', 'grand'].includes(d.length) ? d.length : 'short', stars:n(d.stars, 0, 3), regions:n(d.regions, 0, 30), specimens:n(d.specimens, 0, 60), treaties:n(d.treaties, 0, 12), months:n(d.months, 1, 48)};
+  if (c.day !== day) { c.day = day; c.coinsToday = 0; }
+  c.games = [...c.games, g].slice(-30);
+  const coins = Math.min(g.stars * 3, Math.max(0, TERRA_COINS_PER_DAY - c.coinsToday));
+  if (coins) { c.coinsToday += coins; S.coins += coins; updateHeader(); }
+  const name = {short:'Short Charter', long:'Long Voyage', grand:'Grand Charter'}[g.length];
+  logEvent({k:'terra', course:'history6', title:`${name}: charted ${g.regions} new land${g.regions === 1 ? '' : 's'}, surveyed ${g.specimens} plants and animals, signed ${g.treaties} treat${g.treaties === 1 ? 'y' : 'ies'} in ${g.months} month${g.months === 1 ? '' : 's'} ${'⭐'.repeat(g.stars)}`});
+  save();
+  toast(`🧭 ${g.stars === 3 ? 'Charter fulfilled!' : 'The charter has ended.'} ${'⭐'.repeat(g.stars)}${coins ? ` +${coins} 🪙` : g.stars && c.coinsToday >= TERRA_COINS_PER_DAY ? ' (Today’s Terra Incognita coins are all earned.)' : ''}`);
+});
 /* ---------- 🌺 Greenhouse Keeper (public/arcade/greenhouse-keeper, docs/GREENHOUSE-KEEPER.md) ----------
    Biology Unit 3's game: a shift of 8 greenhouse jobs (run photosynthesis or cellular respiration in a leaf or a cell,
    sort who does which, read a day-and-night gas sensor, trace where a plant's mass came from, follow the energy). It
@@ -9561,7 +9607,7 @@ function historyActivityCardsHTML(courseId){
   const sites = DIG_SITES.filter(s => s.course === courseId).map(s => { const st = S.digs[s.id], n = st?.found ? Object.keys(st.found).length : 0;
     return `<section class="ela-final-assessment"><div><h3>⛏️ ${esc(s.name)}${s.bonus ? ' <small>(bonus)</small>' : ''}</h3><p class="muted">Uncover ${s.finds.length} famous finds and tap where each came from on the map · ${st?.done ? '✅ Finished' : n ? `${n} of ${s.finds.length} found` : 'Not started'}</p></div><button type="button" class="btn small berry" data-dig-open="${s.id}">${n && !st?.done ? 'Keep digging' : 'Open the dig'}</button></section>`; }).join('');
   const scribe = courseId === 'history3' || courseId === 'history4' ? `<section class="ela-final-assessment"><div><h3>✍️ Scribe School</h3><p class="muted">Write your name in cuneiform, hieroglyphs or Greek letters, or ask the ancestors a question on an oracle bone · ${S.scribe.done.length} of ${SCRIBE_SYSTEMS.length} tried</p></div><button type="button" class="btn small berry" data-scribe-open="${courseId}">Open Scribe School</button></section>` : '';
-  return sites + scribe + paxCardHTML(courseId);
+  return sites + scribe + paxCardHTML(courseId) + terraCardHTML(courseId);
 }
 let digBrushing = false, digLastCell = -1;
 $('#libraryWrap').addEventListener('pointerdown', e => { const cell = e.target.closest('#digWrap [data-dig-cell]'); if (!cell) return; e.preventDefault(); digBrushing = true; digLastCell = +cell.dataset.digCell; digBrush(digLastCell); });
@@ -15944,6 +15990,7 @@ function placeOnScreen(){
   if ($('#parcelWrap')) return 'parcel';
   if ($('#petshowWrap')) return 'petshow';
   if ($('#paxWrap')) return `course:${$('#paxWrap').dataset.course}:⚖️ Pax Oeconomica`;   // counts for its history unit
+  if ($('#terraWrap')) return 'course:history6:🧭 Terra Incognita';   // counts for History Unit 6
   if ($('#greenhouseWrap')) return 'course:bio3:🌺 Greenhouse Keeper';   // counts for Biology Unit 3
   if ($('#lifecycleWrap')) return 'course:bio4:🦋 Life Cycle Lab';   // counts for Biology Unit 4
   if ($('#barnBreederWrap')) return 'course:bio5:🐄 Barn Breeder';   // counts for Biology Unit 5
@@ -16027,6 +16074,7 @@ function eventText(e){
   if (e.k === 'parcel') return `📮 Parcel Post: ${e.title}`;
   if (e.k === 'petshow') return `🏆 Pet Show Awards: ${e.title}`;
   if (e.k === 'pax') return `⚖️ Pax Oeconomica: ${e.title}`;
+  if (e.k === 'terra') return `🧭 Terra Incognita: ${e.title}`;
   if (e.k === 'greenhouse') return `🌺 Greenhouse Keeper: ${e.title}`;
   if (e.k === 'lifecycle') return `🦋 Life Cycle Lab: ${e.title}`;
   if (e.k === 'barnBreeder') return `🐄 Barn Breeder: ${e.title}`;
@@ -16132,6 +16180,7 @@ function subjectOnScreen(){
   if ($('#parcelWrap')) return 'math';   // Parcel Post is Pet Post Office practice
   if ($('#petshowWrap')) return 'math';   // Pet Show Awards is Pet Show practice
   if ($('#paxWrap')) return 'history';   // Pax Oeconomica is History Unit 4 and 5's game
+  if ($('#terraWrap')) return 'history';   // Terra Incognita is History Unit 6's game
   if ($('#greenhouseWrap')) return 'science';   // Greenhouse Keeper is Biology Unit 3's game
   if ($('#lifecycleWrap')) return 'science';   // the Life Cycle Lab is Biology Unit 4's game
   if ($('#barnBreederWrap')) return 'science';   // Barn Breeder is Biology Unit 5's game
