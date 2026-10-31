@@ -7,8 +7,8 @@
    - emoji: a 1–3 emoji scene that shows the meaning (never a sound-alike pun). Every word has one: it's the fallback.
    - svg: 'cartoons/<word>.svg' under public/vocab-pics/ (drawn by scripts/word-cartoons/, checked by
      scripts/check-word-pictures.mjs).
-   - photo: {file, credit, license, source, alt?}. Empty until the photos are added (free licenses only, stored in
-     public/vocab-pics/photos/ so it works offline). A photo word shows its emoji until then.
+   - photo: {file, credit, license, source, alt} from wordPhotos.js (Wikimedia Commons, free licenses only, stored in
+     public/vocab-pics/photos/ so it works offline; scripts/word-photos/). A photo word shows its emoji until its photo is in.
    - alt: one plain sentence describing the picture that shows now, for read-aloud.
 
    pictureFor(word, entry?) gives the best picture there is (photo → cartoon → emoji) as
@@ -16,7 +16,9 @@
    cartoon drawn later (CLASS_CARTOONS), the emoji they chose (entry.pic) or else a suggested one (suggestEmoji), in that
    order (see "pictures for words a grown-up or teacher ADDS" below). Unknown words with none of those give null. */
 
-const E = (w, kind, emoji, alt) => ({ w, kind, emoji, ...(kind === 'cartoon' ? { svg: `cartoons/${w}.svg` } : {}), ...(kind === 'photo' ? { photo: {} } : {}), alt });
+import { WORD_PHOTOS } from './wordPhotos.js';   // the photos, made by scripts/word-photos/fetch.mjs from picks.json
+
+const E = (w, kind, emoji, alt) => ({ w, kind, emoji, ...(kind === 'cartoon' ? { svg: `cartoons/${w}.svg` } : {}), ...(kind === 'photo' ? { photo: WORD_PHOTOS[w] ? { ...WORD_PHOTOS[w] } : {} } : {}), alt });
 const CA = 'cartoon', PH = 'photo', EM = 'emoji';
 
 export const WORD_PICTURES = [
@@ -288,7 +290,7 @@ export function pictureFor(word, entry){
     if (cartoon) return { w: key, kind: 'cartoon', emoji: cartoon.emoji, src: PICTURE_BASE + cartoon.svg, alt: cartoon.alt };
     return emoji ? { w: key, kind: 'emoji', emoji, ...(chosen ? {} : { suggested: true }), alt: cut(entry?.picAlt, 200) || `A picture to help with the word ${key}.` } : null;
   }
-  if (p.photo?.file) return { w: p.w, kind: 'photo', emoji: p.emoji, src: PICTURE_BASE + p.photo.file, alt: p.photo.alt || p.alt, credit: p.photo.credit };
+  if (p.photo?.file) return { w: p.w, kind: 'photo', emoji: p.emoji, src: PICTURE_BASE + p.photo.file, alt: p.photo.alt || p.alt, credit: `${p.photo.credit} · ${p.photo.license}`, source: p.photo.source };
   if (p.svg) return { w: p.w, kind: 'cartoon', emoji: p.emoji, src: PICTURE_BASE + p.svg, alt: p.alt };
   return { w: p.w, kind: 'emoji', emoji: p.emoji, alt: p.alt };
 }

@@ -12,6 +12,7 @@
     "check-links": "node scripts/check-links.mjs --online",
     "smoke": "node scripts/smoke.mjs",
     "check-math": "node scripts/check-math.mjs",
+    "word-photos": "node scripts/word-photos/fetch.mjs",
     "deploy:insights": "node scripts/copy-insights.mjs && npx supabase functions deploy daily-insights --no-verify-jwt"
   },
   "dependencies": {

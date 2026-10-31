@@ -4,13 +4,13 @@ Owner (Oct 30, 2026): "i'd also like the image with the word to help her underst
 
 Every built-in word in Word Workshop has a picture that shows what it **means**: real photos where a photo can show it, cartoons for 25–50% of the words, and emoji where neither works. The data is in `src/shared/wordPictures.js` and the drawings are in `public/vocab-pics/cartoons/`.
 
-**Status:** the cartoons and emoji are done. The photos come later, because the image sites they come from can't be reached from where this was built. Until a word's photo is added, it shows its emoji. Word Workshop shows them (Oct 30, 2026): see `VOCAB.md`, "Word pictures", for where they show and where they never do. Words a grown-up or teacher adds get a picked photo or an emoji, and cartoons drawn later (F92, Oct 30, 2026; `WORD-CARTOONS.md`).
+**Status:** the cartoons and emoji are done. The 62 photos are picked (Oct 30, 2026): one Wikimedia Commons photo per photo word, chosen by eye to show the meaning at phone size, listed in `scripts/word-photos/picks.json`. `npm run word-photos` (in a Codespace, where Wikimedia can be reached) downloads, crops and credits them; until it has run, a photo word shows its emoji. Word Workshop shows them (Oct 30, 2026): see `VOCAB.md`, "Word pictures", for where they show and where they never do. Words a grown-up or teacher adds get a picked photo or an emoji, and cartoons drawn later (F92, Oct 30, 2026; `WORD-CARTOONS.md`).
 
 ## The mix
 
 | Kind | Words | When |
 |---|---|---|
-| 📷 Photo (planned) | 62 | Things you can see: whale, cactus, canyon, a herd on the move. A photo shows the meaning best. |
+| 📷 Photo | 62 | Things you can see: whale, cactus, canyon, a herd on the move. A photo shows the meaning best. |
 | 🎨 Cartoon | 50 (35%) | Ideas a photo can't show: analyze, infer, predict, summarize, contrast, evidence, scarce and abundant, feelings like reluctant or timid. Pets act out the meaning. |
 | 🙂 Emoji | 31 | Small words a picture can't add much to: perhaps, previous, necessary, circle. |
 
@@ -27,7 +27,7 @@ Every built-in word in Word Workshop has a picture that shows what it **means**:
 - **kind:** the picture the word should have: `photo`, `cartoon` or `emoji`.
 - **emoji:** 1–3 emoji that show the meaning. They never sound like the word or spell it (no puns like 🐝 + 🍃 for "belief").
 - **svg:** `cartoons/<word>.svg`, under `public/vocab-pics/`.
-- **photo:** `{file, credit, license, source, alt?}`, empty for now.
+- **photo:** `{file, credit, license, source, alt}`, from `src/shared/wordPhotos.js` (made by `scripts/word-photos/fetch.mjs`; empty for a word until its photo is in).
 - **alt:** one plain sentence describing the picture that shows now, for read-aloud and screen readers. A photo's own `alt` replaces it once the photo is in.
 
 `pictureFor(word, entry?)` returns the best picture available, as `{w, kind, emoji, src?, alt, credit?}`: the photo if its file is there, then the cartoon, then the emoji. `src` starts with `/vocab-pics/`.
@@ -71,6 +71,20 @@ Look at the contact sheets after any change. Every picture should be clear at ph
 
 The check fails if a photo is missing its file, credit, license or source.
 
+### How the photos are made
+
+`scripts/word-photos/picks.json` has one entry per photo word: the Commons file name, the photo's own `alt`, and `"fit":"contain"` for a wide picture whose meaning would be cut off by a square crop (only `debate`, two speakers at podiums). The picks were made by looking at the candidates at card size: the photo has to show the meaning, nothing with a recognizable child's face, no brand or logo as the point of the picture, and no photo of a current politician.
+
+```
+npm i --no-save sharp          # once; only this script needs it
+npm run word-photos            # every word; or: node scripts/word-photos/fetch.mjs vivid rapid
+node scripts/check-word-pictures.mjs
+```
+
+The script asks Commons for each file's license and author and refuses anything that isn't CC0, public domain, CC BY or CC BY-SA, downloads a 960px copy, crops it to 400 × 400 (sharp's "attention" crop keeps the subject in frame), saves a JPEG under 60 KB as `public/vocab-pics/photos/<word>.jpg`, and writes `src/shared/wordPhotos.js` (`file`, `credit` = the author, `license`, `source` = the Commons page, `alt`). Don't edit `wordPhotos.js` by hand. The card shows the credit and license in small print under the photo (`📷 Author · CC BY-SA 4.0`).
+
+**To swap a photo:** change its `file` (and `alt`) in `picks.json`, run the script for that word, look at the JPEG, run the check.
+
 ## What the check covers
 
 `node scripts/check-word-pictures.mjs`:
@@ -80,7 +94,8 @@ The check fails if a photo is missing its file, credit, license or source.
 - every cartoon file exists, is valid XML, has a square viewBox, is under 8 KB, and has no script, image or outside link
 - cartoons are 25–50% of the words
 - no picture has its own word written in it, and only the `TEXT_OK` words have any text with letters
-- every photo that's been added has its file, credit, license and source
+- every photo that's been added has its file, credit, license and source; it's a square JPEG about 400 × 400 under 60 KB, with an open license, its Commons page as the source and a one-sentence alt
+- every photo word is in `picks.json`, and every pick is a photo word
 - `pictureFor` falls from photo to cartoon to emoji, gives a grown-up's word its chosen emoji, and gives `null` for unknown words
 
 The check isn't in `npm run verify` yet. It belongs there once the pictures are on the cards.

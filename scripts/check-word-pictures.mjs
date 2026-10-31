@@ -4,7 +4,9 @@
    - every cartoon's svg exists, is well-formed XML with a square viewBox and no scripts or outside links, and is under 8 KB
    - 25–50% of the words are cartoons
    - no picture has its own word written in it (text in a picture is only allowed for the words in TEXT_OK)
-   - a photo, once added, has its file, credit, license and source, and the file exists
+   - a photo, once added, has its file, credit, license and source, and the file exists; it's a square JPEG about
+     400 × 400 under 60 KB, with an open license, its Commons page as the source and a one-sentence alt; every photo word
+     is in scripts/word-photos/picks.json (scripts/word-photos/fetch.mjs makes the photos)
    - pictureFor: photo → cartoon → emoji, a grown-up's word gets its chosen emoji, unknown words give null
    - words a grown-up or teacher ADDS (F92): photo → CLASS_CARTOONS → chosen emoji → suggested emoji → none; every
      CLASS_CARTOONS svg passes the same checks as the built-in cartoons; the emoji suggestions stay conservative; a photo
@@ -49,6 +51,26 @@ function xmlProblem(src){
   return '';
 }
 
+/* a JPEG's width and height, from its SOF marker */
+function jpegSize(b){
+  let i = 2;
+  while (i + 9 < b.length) {
+    if (b[i] !== 0xFF) return null;
+    const m = b[i + 1], len = b.readUInt16BE(i + 2);
+    if (m >= 0xC0 && m <= 0xCF && ![0xC4, 0xC8, 0xCC].includes(m)) return { h: b.readUInt16BE(i + 5), w: b.readUInt16BE(i + 7) };
+    i += 2 + len;
+  }
+  return null;
+}
+const PHOTO_LICENSE_LINE = /^(CC0|Public domain|CC BY(-SA)? [\d.]+)$/;
+/* every photo word in picks.json, and only photo words */
+const PICKS = JSON.parse(readFileSync(resolve(root, 'scripts/word-photos/picks.json'), 'utf8'));
+for (const k of PICKS) {
+  if (seen.get(k.w)?.kind !== 'photo') problems.push(`picks.json: ${k.w} isn't a photo word`);
+  if (!k.file || !k.alt) problems.push(`picks.json: ${k.w} needs a file and an alt`);
+}
+for (const p of WORD_PICTURES) if (p.kind === 'photo' && !PICKS.some(k => k.w === p.w)) problems.push(`${p.w}: photo word missing from scripts/word-photos/picks.json`);
+
 let cartoons = 0;
 const KINDS = ['photo', 'cartoon', 'emoji'];
 for (const p of WORD_PICTURES) {
@@ -69,6 +91,20 @@ for (const p of WORD_PICTURES) {
     for (const k of ['credit', 'license', 'source']) if (!String(p.photo[k] || '').trim()) problems.push(`${p.w}: photo has no ${k}`);
     if (!existsSync(resolve(pics, p.photo.file))) problems.push(`${p.w}: photo file ${p.photo.file} is missing`);
     if (/^https?:/.test(p.photo.file)) problems.push(`${p.w}: photo must be stored in the repo, not linked`);
+    if (p.kind !== 'photo') problems.push(`${p.w}: has a photo but kind is ${p.kind}`);
+    if (p.photo.file !== `photos/${p.w}.jpg`) problems.push(`${p.w}: photo file should be photos/${p.w}.jpg`);
+    if (!PHOTO_LICENSE_LINE.test(String(p.photo.license || ''))) problems.push(`${p.w}: photo license "${p.photo.license}" isn't CC0, public domain, CC BY or CC BY-SA`);
+    if (!/^https:\/\/commons\.wikimedia\.org\/wiki\/File(:|%3A)/i.test(String(p.photo.source || ''))) problems.push(`${p.w}: photo source should be its Wikimedia Commons page`);
+    const palt = String(p.photo.alt || '').trim();
+    if (palt.length < 8 || !/[.?!”]$/.test(palt) || (palt.match(/[.?!](\s|$)/g) || []).length > 1) problems.push(`${p.w}: photo alt should be one sentence`);
+    if (/'/.test(palt)) problems.push(`${p.w}: straight apostrophe in photo alt`);
+    const f = resolve(pics, p.photo.file);
+    if (existsSync(f)) {
+      const b = readFileSync(f);
+      if (b.length > 60 * 1024) problems.push(`${p.w}: photo is ${Math.round(b.length / 1024)} KB (over 60 KB)`);
+      if (b[0] !== 0xFF || b[1] !== 0xD8) problems.push(`${p.w}: photo isn't a JPEG`);
+      else { const d = jpegSize(b); if (!d || d.w !== d.h || d.w < 300 || d.w > 600) problems.push(`${p.w}: photo should be square, about 400 × 400 (is ${d ? `${d.w} × ${d.h}` : 'unreadable'})`); }
+    }
   }
   if (p.svg) {
     const file = resolve(pics, p.svg);
@@ -161,5 +197,6 @@ if (process.argv.includes('--table')) {
   for (const p of WORD_PICTURES) console.log(`| ${p.w} | ${p.kind} | ${p.emoji} | ${p.alt} |`);
 }
 const counts = KINDS.map(k => `${WORD_PICTURES.filter(p => p.kind === k).length} ${k}`).join(', ');
+const photosIn = WORD_PICTURES.filter(p => p.photo?.file).length;
 if (problems.length) { console.error(`✗ word pictures: ${problems.length} problem(s)\n  ${problems.join('\n  ')}`); process.exit(1); }
-console.log(`✓ word pictures: ${WORD_PICTURES.length} words (${counts}; ${(share * 100).toFixed(0)}% cartoons), every svg valid, square, under 8 KB; ${Object.keys(CLASS_CARTOONS).length} class cartoons; added-word photos, emoji suggestions and the photo search checked`);
+console.log(`✓ word pictures: ${WORD_PICTURES.length} words (${counts}; ${(share * 100).toFixed(0)}% cartoons; ${photosIn} photos in), every svg valid, square, under 8 KB; ${Object.keys(CLASS_CARTOONS).length} class cartoons; added-word photos, emoji suggestions and the photo search checked`);
