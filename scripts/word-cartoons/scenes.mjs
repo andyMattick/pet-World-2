@@ -416,5 +416,377 @@ export const SCENES = {
 /* Scenes for words a grown-up or teacher ADDED (docs/WORD-CARTOONS.md). draw.mjs writes them to
    public/vocab-pics/cartoons/class/<word>.svg; list each one in CLASS_CARTOONS in src/shared/wordPictures.js too.
    Key: the word in lower case. Same rules as above: pets act out the meaning, one idea, no words in the picture. */
+/* ---------- small helpers shared by several added-word scenes ---------- */
+const R = v => Math.round(v * 10) / 10;
+const GL = '#E8F7FF';
+/* an ear of grain on a stalk (barley) */
+const stalkEar = (x, y, h = 70, rot = 0) => g(
+  path(`M0 0V${-h}`, 'none', ` stroke="${C.green}" stroke-width="5"`) +
+  [0, 1, 2, 3].map(i => ellipse(-5, -h - i * 10 + 4, 5, 8, C.butter, sw(3.5)) + ellipse(5, -h - i * 10 - 1, 5, 8, C.butter, sw(3.5))).join('') +
+  path(`M-8 ${-h - 38}l-6 -22M0 ${-h - 44}v-22M8 ${-h - 40}l6 -22`, 'none', sw(3)), { x, y, rot });
+/* a burr: a round brown seed with little hooked spikes */
+const burr = (x, y, r = 14) => path(Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `M${R(x + (r - 2) * Math.cos(a))} ${R(y + (r - 2) * Math.sin(a))}L${R(x + (r + 7) * Math.cos(a))} ${R(y + (r + 7) * Math.sin(a))}`; }).join(''), 'none', sw(3.5)) + circle(x, y, r, C.woodDark) + circle(x - r * 0.3, y - r * 0.3, r * 0.22, C.wood, noStroke);
+/* a fat fuzzy bumble bee, facing left, centred on (0,0) before g() moves it */
+const bee = (x, y, s = 1) => g(
+  ellipse(-6, -34, 15, 24, GL, ' transform="rotate(-20 -6 -34)"') + ellipse(16, -34, 15, 24, GL, ' transform="rotate(22 16 -34)"') +
+  `<clipPath id="bbc"><ellipse cx="0" cy="0" rx="42" ry="32"/></clipPath>` +
+  ellipse(0, 0, 42, 32, C.butter) +
+  `<g clip-path="url(#bbc)">` + rect(-14, -40, 15, 80, C.dark, 0, noStroke) + rect(14, -40, 15, 80, C.dark, 0, noStroke) + `</g>` +
+  ellipse(0, 0, 42, 32, 'none') +
+  poly([[40, -5], [56, 0], [40, 5]], C.dark, sw(3.5)) +
+  path('M-18 30l-4 12M0 32v12M18 30l4 12', 'none', sw(4)) +
+  circle(-40, -2, 20, C.dark) + circle(-46, -6, 3.2, C.white, noStroke) + circle(-36, -6, 3.2, C.white, noStroke) + path('M-48 4q6 6 12 0', 'none', ` stroke="${C.white}" stroke-width="3"`) +
+  path('M-48 -20q-6 -14 -16 -14M-34 -21q0 -14 8 -18', 'none', sw(3.5)) + circle(-64, -34, 3.5, C.ink, noStroke) + circle(-26, -39, 3.5, C.ink, noStroke), { x, y, s });
+/* a flower: petals round a butter centre, stem and leaf */
+const flower = (x, y, r = 14, petal = C.pink) => path(`M${x} ${y}V${y + 62}`, 'none', ` stroke="${C.green}" stroke-width="6"`) +
+  Array.from({ length: 6 }, (_, i) => { const a = i * Math.PI / 3; return circle(x + r * 1.15 * Math.cos(a), y + r * 1.15 * Math.sin(a), r * 0.72, petal, sw(3.5)); }).join('') + circle(x, y, r * 0.8, C.butter, sw(3.5));
+/* a germ: a spiky green blob with an angry little face */
+const germ = (x, y, r = 12) => path(Array.from({ length: 10 }, (_, i) => { const a = i * Math.PI / 5; return `M${R(x + (r - 2) * Math.cos(a))} ${R(y + (r - 2) * Math.sin(a))}L${R(x + (r + 6) * Math.cos(a))} ${R(y + (r + 6) * Math.sin(a))}`; }).join(''), 'none', sw(3.5)) + circle(x, y, r, C.grass2) +
+  circle(x - r * 0.38, y - r * 0.1, 1.9, C.ink, noStroke) + circle(x + r * 0.38, y - r * 0.1, 1.9, C.ink, noStroke) + path(`M${R(x - r * 0.6)} ${R(y - r * 0.4)}l${R(r * 0.4)} ${R(r * 0.18)}M${R(x + r * 0.6)} ${R(y - r * 0.4)}l${R(-r * 0.4)} ${R(r * 0.18)}M${R(x - r * 0.3)} ${R(y + r * 0.45)}q${R(r * 0.3)} ${R(-r * 0.3)} ${R(r * 0.6)} 0`, 'none', sw(2.2));
+/* a leg for the leg-part words: a dog's hind leg (rump, thigh, knee, shin, hock, paw) with its bones showing; segment 0..6 is lit
+   up in red with a yellow halo (coxa, trochanter, femur, patella, tibia, tarsus, metatarsus) */
+const seg = (x1, y1, x2, y2, w, fill, extra = '') => path(`M${x1} ${y1}L${x2} ${y2}`, 'none', ` stroke-width="${w + 7}"${extra}`) + path(`M${x1} ${y1}L${x2} ${y2}`, 'none', ` stroke="${fill}" stroke-width="${w}"${extra}`);
+const legParts = (hi) => {
+  const f = i => i === hi ? C.berry : C.white;
+  const shapes = [
+    (c, h = 0) => circle(58, 38, 13 + h, c, h ? ` stroke="${c}" stroke-width="2"` : ''),                          // coxa: the hip ball
+    (c, h = 0) => seg(70, 52, 78, 60, 11 + h, c),                                                                // trochanter: the small bump under it
+    (c, h = 0) => seg(82, 64, 108, 94, 17 + h, c),                                                               // femur: the long thigh bone
+    (c, h = 0) => circle(118, 99, 9 + h, c, h ? ` stroke="${c}" stroke-width="2"` : ''),                          // patella: the kneecap, at the front of the knee
+    (c, h = 0) => seg(106, 110, 86, 148, 14 + h, c),                                                             // tibia: the shin bone
+    (c, h = 0) => seg(76, 154, 82, 162, 11 + h, c) + seg(86, 152, 90, 160, 11 + h, c),                           // tarsus: the small ankle (hock) bones
+    (c, h = 0) => seg(82, 168, 88, 186, 9 + h, c) + seg(94, 166, 100, 184, 9 + h, c)                              // metatarsus: the long foot bones
+  ];
+  const at = [[58, 38, 'L'], [74, 56, 'L'], [95, 79, 'L'], [118, 99, 'R'], [96, 129, 'L'], [83, 157, 'L'], [91, 176, 'L']][hi];
+  const lit = hi >= 0 ? shapes[hi](C.butter, 12) + shapes[hi](C.berry) : '';
+  const body = circle(44, 30, 38, '#FFE3C4') + path('M62 38L110 98L84 156L96 188', 'none', ' stroke-width="52"') + path('M62 38L110 98L84 156L96 188', 'none', ' stroke="#FFE3C4" stroke-width="42"') +
+    ellipse(106, 190, 26, 10, '#FFE3C4') + path('M96 192v-8M108 194v-8M120 192v-8', 'none', sw(3.5));
+  const bones = shapes.map((sh, k) => k === hi ? '' : sh(C.white)).join('');
+  const arrowEl = at[2] === 'L' ? arrow(4, at[1], at[0] + 14 - 4 > 40 ? at[0] - 24 + 24 : 40, at[1], C.deep, 7) : arrow(196, at[1], at[0] + 40, at[1], C.deep, 7);
+  return g(body + bones + lit, { x: 20, y: 2 }) + (at[2] === 'L' ? arrow(4, at[1] + 2, Math.max(at[0] + 20 - 26, 30), at[1] + 2, C.deep, 7) : arrow(196, at[1] + 2, at[0] + 20 + 30, at[1] + 2, C.deep, 7)) +
+    P({ kind: 'cat', mood: 'wow', look: -1, tail: false, arms: [[-34, -64], null] }, { x: 172, y: 196, s: 0.46 });
+};
+
 export const CLASS_SCENES = {
+  barley: () => [
+    // a field of golden barley with full ears of grain; a bunny holds one ear and nibbles it
+    [[24, 172, 62, -4], [54, 174, 80, 3], [84, 172, 58, -3], [112, 174, 74, 4]].map(([x, y, h, r]) => stalkEar(x, y, h, r)).join('') +
+    stalkEar(133, 160, 30, 8) + ground(172) +
+    P({ kind: 'bunny', mood: 'happy', look: -1, arms: [[-34, -52], null] }, { x: 156, y: 190, s: 0.62 }),
+    C.sky
+  ],
+  barely: () => [
+    // a tall glass with only a thin splash of water left at the bottom; the cat peers in: hardly any
+    ground(190, C.path) + rect(54, 176, 100, 10, C.wood, 5) +
+    path('M70 36h60l-8 130q0 10 -10 10h-24q-10 0 -10 -10z', GL) + path('M77 154h46l-1.5 14q0 8 -8 8h-27q-8 0 -8 -8z', C.blue) +
+    path('M100 118q-6 8 0 10q6 -2 0 -10z', C.blue, sw(3)) +
+    P({ kind: 'cat', mood: 'sad', look: 1, arms: [null, [38, -84]] }, { x: 34, y: 196, s: 0.82 })
+  ],
+  interact: () => [
+    // a cat tosses a ball and the dog tosses it back: each one responds to the other
+    P({ kind: 'cat', mood: 'happy', look: 1, arms: [null, [46, -76]] }, { x: 36, y: 192, s: 0.66 }) +
+    P({ kind: 'dog', mood: 'happy', look: -1, arms: [[-46, -76], null] }, { x: 164, y: 192, s: 0.66 }) +
+    curveArrow('M76 118Q100 52 124 114', [124, 114], 70) + curveArrow('M124 150Q100 184 76 152', [76, 152], 235) +
+    ball(100, 84, 11)
+  ],
+  distribution: () => [
+    // a cat hands out carrots from a basket: each of three friends in the row gets one
+    `<defs><g id="dr">${pet({ kind: 'bunny', mood: 'happy', look: -1, tail: false, arms: [[-30, -50], null] })}</g></defs>` +
+    P({ kind: 'cat', mood: 'happy', look: 1, tail: false, arms: [null, [46, -56]] }, { x: 70, y: 192, s: 0.74 }) +
+    path('M6 158h46l-5 30h-36z', C.wood) + carrot(20, 150, 0.8, -10) + carrot(38, 150, 0.8, 10) +
+    [112, 148, 184].map(x => `<use href="#dr" transform="translate(${x} 194) scale(.44)"/>` + carrot(x - 14, 166, 0.6, 15)).join('') +
+    path('M108 130Q140 86 176 118', 'none', ' stroke-dasharray="2 9" stroke-width="5"')
+  ],
+  production: () => [
+    // a machine with a smoking chimney makes cookies; they ride out on a belt while a bunny watches
+    rect(10, 56, 74, 80, C.gray) + rect(52, 26, 16, 32, C.dark, 4) + circle(58, 14, 7, C.white) + circle(72, 6, 5.5, C.white) +
+    circle(34, 88, 14, GL) + path('M34 80v8l6 4', 'none', sw(3)) + circle(58, 116, 6, C.berry, sw(3.5)) + rect(70, 108, 16, 26, C.dark, 3) +
+    rect(80, 122, 114, 14, C.dark, 7) + [96, 124, 152, 180].map(x => circle(x, 146, 6, C.gray, sw(3.5))).join('') +
+    cookie(108, 111, 10) + cookie(140, 111, 10) + cookie(172, 111, 10) + sparkle(120, 84, 8) +
+    P({ kind: 'bunny', mood: 'wow', look: -1, arms: [[-30, -52], null] }, { x: 150, y: 200, s: 0.5 })
+  ],
+  participle: () => [
+    // a verb in two forms: first the dog is eating from a heaped bowl, then the action is done (empty bowl, round full tummy)
+    rect(8, 16, 88, 168, C.cream, 14) + rect(104, 16, 88, 168, GL, 14) +
+    P({ kind: 'dog', mood: 'happy', look: 0, tail: false }, { x: 52, y: 148, s: 0.58 }) + path('M24 154h56q0 18 -28 18t-28 -18z', C.berry) + path('M32 154q20 -34 40 0z', C.wood, sw(3.5)) + circle(44, 140, 3.5, C.butter, noStroke) + circle(58, 138, 3.5, C.butter, noStroke) +
+    arrow(88, 100, 112, 100) +
+    P({ kind: 'dog', mood: 'smile', look: 0, tail: false, arms: [[-8, -32], null], extra: ellipse(0, -26, 28, 26, C.cream, ' fill-opacity=".9"') }, { x: 148, y: 148, s: 0.58 }) + path('M120 156h56q0 18 -28 18t-28 -18z', C.berry) + ellipse(148, 154, 24, 4, C.white, noStroke) + sparkle(172, 56, 9) + sparkle(124, 44, 7)
+  ],
+  regular: () => [
+    // a tidy grid of identical, ordinary cats: nobody stands out, everything is normal
+    `<defs><g id="rc">${pet({ kind: 'cat', mood: 'calm', tail: false })}</g></defs>` +
+    [34, 78, 122, 166].map(x => [98, 186].map(y => `<use href="#rc" transform="translate(${x} ${y}) scale(.46)"/>`).join('')).join('')
+  ],
+  'bumble bee': () => [
+    // a big round fuzzy striped bee hovers over a flower while a small bunny watches
+    flower(54, 132, 14) + path('M30 168q-14 -10 -6 -24q14 4 18 20z', C.grass2, sw(3.5)) +
+    path('M92 124Q70 140 64 126', 'none', ' stroke-dasharray="2 8" stroke-width="4"') +
+    bee(122, 78, 0.95) +
+    P({ kind: 'bunny', mood: 'wow', look: -1 }, { x: 158, y: 198, s: 0.56 }) + ground(198, C.grass),
+    C.sky
+  ],
+  notable: () => [
+    // a gray statue of a dog on a pedestal, a gold star over it: a hero people still remember
+    rect(60, 140, 80, 44, C.gray, 6) + rect(74, 154, 52, 18, C.butter, 4, sw(3)) + star(100, 163, 6, C.white) +
+    P({ kind: 'dog', color: C.gray, mood: 'happy', look: 0, arms: [[-30, -56], [30, -56]] }, { x: 100, y: 142, s: 0.72 }) +
+    star(100, 18, 13) + sparkle(54, 40, 8) + sparkle(150, 48, 8) +
+    P({ kind: 'bunny', mood: 'wow', look: 1 }, { x: 28, y: 196, s: 0.5 }) + P({ kind: 'cat', mood: 'wow', look: -1 }, { x: 172, y: 196, s: 0.5 }) + ground(190, C.path)
+  ],
+  burr: () => [
+    // a round spiky burr seed has hooked onto a worried white dog's fur; more small burrs still hang on a weed beside it
+    ground(192, C.grass) +
+    path('M170 192V110M170 150q-16 -4 -20 -20M170 134q16 -4 20 -18', 'none', ` stroke="${C.green}" stroke-width="6"`) + burr(170, 100, 8) + burr(150, 126, 6) + burr(190, 112, 6) +
+    P({ kind: 'dog', color: C.white, mood: 'worried', look: 1 }, { x: 78, y: 194, s: 1.0 }) + burr(106, 150, 17) + path('M120 138q8 -6 14 -2M122 158q8 2 14 8', 'none', sw(3.5))
+  ],
+  dispersed: () => [
+    // a bunny blows a dandelion and its seeds drift away in every direction
+    ground(192, C.grass) +
+    path('M100 118Q108 134 86 142', 'none', ` stroke="${C.green}" stroke-width="5"`) +
+    Array.from({ length: 12 }, (_, i) => { const a = i * Math.PI / 6; return `<path d="M${R(100 + 12 * Math.cos(a))} ${R(100 + 12 * Math.sin(a))}L${R(100 + 20 * Math.cos(a))} ${R(100 + 20 * Math.sin(a))}" stroke-width="3"/>`; }).join('') + circle(100, 100, 11, C.white) +
+    [[134, 80, 20], [158, 108, 70], [150, 50, -20], [176, 70, 10], [126, 140, 100], [172, 142, 60], [184, 30, 0]].map(([x, y, r]) =>
+      g(path('M0 0v10', 'none', sw(3)) + path('M-7 -1q7 -11 14 0M0 -1v-8M-3.5 -1l-3 -7M3.5 -1l3 -7', 'none', sw(2.5)), { x, y, rot: r })).join('') +
+    path('M76 112q8 -2 14 -8M76 120q10 0 16 -4', 'none', sw(3.5)) +
+    P({ kind: 'bunny', mood: 'wow', look: 1, arms: [[50, -70], null] }, { x: 50, y: 194, s: 0.7 }),
+    C.sky
+  ],
+  saliva: () => [
+    // a cat licks her lips at a big cookie and her mouth is watering: a long string of drool hangs from her mouth
+    P({ kind: 'cat', mood: 'wow', look: 1, tail: false, top: ellipse(0, -52, 6, 8, C.pink, sw(3)) + path('M7 -50q5 18 0 36', 'none', ` stroke="${C.blue}" stroke-width="5"`) + path('M7 -14q-6 9 0 12q6 -3 0 -12z', C.blue, sw(3)) }, { x: 84, y: 198, s: 1.35 }) +
+    cookie(160, 60, 24) + sparkle(184, 28, 8) + sparkle(132, 26, 7)
+  ],
+  esophagus: () => [
+    // the long tube from the mouth down to the stomach: a bite of cookie is squeezed along it, and a bunny pats its full tummy
+    path('M80 -6V116', 'none', ' stroke-width="34"') + path('M80 -6V116', 'none', ` stroke="#F7A9BD" stroke-width="24"`) +
+    ellipse(80, 54, 21, 17, '#F7A9BD') + circle(80, 54, 10, '#E3A55F', sw(3.5)) + path('M62 92h36M62 106h36', 'none', ` stroke="${C.deep}" stroke-width="4"`) +
+    arrow(40, 26, 40, 58, C.deep, 6) + arrow(120, 26, 120, 58, C.deep, 6) +
+    ellipse(94, 148, 52, 34, '#F7A9BD', ' transform="rotate(-10 94 148)"') + circle(78, 152, 5, '#E3A55F', sw(2.5)) + circle(98, 160, 5, '#E3A55F', sw(2.5)) + circle(112, 144, 5, '#E3A55F', sw(2.5)) +
+    P({ kind: 'bunny', mood: 'happy', tail: false, arms: [[-14, -26], null] }, { x: 170, y: 196, s: 0.44 })
+  ],
+  digestive: () => [
+    // a smiling stomach churns up a cookie; the food becomes energy (a gold bolt)
+    rect(58, 6, 16, 56, '#F7A9BD', 7) + path('M156 118q16 -8 20 6t18 6', 'none', ' stroke-width="17"') + path('M156 118q16 -8 20 6t18 6', 'none', ` stroke="#F7A9BD" stroke-width="9"`) +
+    ellipse(100, 108, 62, 44, '#F7A9BD', ' transform="rotate(-12 100 108)"') +
+    circle(84, 86, 3.8, C.ink, noStroke) + circle(112, 82, 3.8, C.ink, noStroke) + path('M86 94q12 12 26 -2', 'none', sw(3.8)) + circle(76, 96, 5, C.pink, noStroke) + circle(122, 90, 5, C.pink, noStroke) +
+    path('M66 122q10 -10 20 0t20 0t20 0', 'none', sw(3.5)) + circle(78, 134, 6, '#E3A55F', sw(3)) + circle(96, 138, 5, '#E3A55F', sw(3)) + circle(116, 132, 6, '#E3A55F', sw(3)) +
+    poly([[150, 18], [132, 52], [146, 52], [136, 82], [166, 40], [150, 40], [160, 18]], C.butter, sw(4)) +
+    P({ kind: 'bunny', mood: 'happy', arms: [[-14, -26], null] }, { x: 38, y: 198, s: 0.42 })
+  ],
+  agriculture: () => [
+    // a bunny farmer digs the soil into rows and little green sprouts come up
+    rect(0, 120, 200, 80, C.wood, 0, noStroke) + sun(164, 36, 13) +
+    [[132, 144], [158, 144], [184, 144], [118, 174], [146, 174], [174, 174]].map(([x, y]) => path(`M${x} ${y}v-14M${x} ${y - 10}q-9 -2 -9 -10M${x} ${y - 10}q9 -2 9 -10`, 'none', ` stroke="${C.green}" stroke-width="5"`)).join('') +
+    path('M100 150H200M92 180H200', 'none', ` stroke="${C.woodDark}" stroke-width="5"`) +
+    path('M98 112L118 174', 'none', ` stroke="${C.woodDark}" stroke-width="7"`) + poly([[110, 172], [128, 176], [124, 190], [106, 188]], C.gray, sw(4)) + ellipse(86, 190, 14, 6, C.woodDark) +
+    P({ kind: 'bunny', mood: 'determined', look: 1, arms: [[40, -62], null], top: ellipse(0, -100, 38, 8, C.butter) + path('M-24 -102q24 -36 48 0z', C.butter, sw(4)) }, { x: 60, y: 192, s: 0.74 }),
+    C.sky
+  ],
+  surplus: () => [
+    // two friends are full and pat their tummies, and a big pile of extra cookies is still left over (a plus sign)
+    P({ kind: 'cat', mood: 'happy', look: 1, tail: false, arms: [[-4, -30], null] }, { x: 34, y: 192, s: 0.64 }) +
+    P({ kind: 'dog', mood: 'happy', look: 1, tail: false, arms: [[-4, -30], null] }, { x: 84, y: 192, s: 0.64 }) +
+    path('M118 192h76v-14h-76z', C.wood, sw(4)) +
+    [[132, 168], [152, 168], [172, 168], [142, 150], [162, 150], [182, 150], [152, 132], [172, 132], [162, 114]].map(([x, y]) => cookie(x, y, 10)).join('') +
+    path('M160 72h28M174 58v28', 'none', ` stroke="${C.green}" stroke-width="9"`)
+  ],
+  historian: () => [
+    // a cat in glasses studies an old scroll and a clay pot, with a timeline of long-ago things (pyramid, tower, house) above
+    path('M8 36H182', 'none', sw(5)) + path('M178 28l12 8l-12 8', 'none', sw(5)) + path('M30 36v6M76 36v6M124 36v6', 'none', sw(4)) +
+    poly([[16, 30], [44, 30], [30, 8]], C.butter, sw(3.5)) + rect(64, 14, 24, 16, C.gray, 3, sw(3.5)) + rect(62, 8, 7, 8, C.gray, 2, sw(3)) + rect(73, 8, 7, 8, C.gray, 2, sw(3)) + rect(84, 8, 7, 8, C.gray, 2, sw(3)) +
+    rect(110, 18, 28, 12, C.cream, 3, sw(3.5)) + poly([[106, 18], [124, 4], [142, 18]], C.berry, sw(3.5)) +
+    rect(138, 176, 58, 8, C.wood, 4) + path('M150 176q-8 -22 6 -30h20q14 8 6 30z', C.orange) + path('M152 160h28', 'none', ` stroke="${C.deep}" stroke-width="4"`) +
+    P({ kind: 'cat', mood: 'calm', look: 1, arms: [null, [46, -50]], top: circle(-12, -76, 10, 'none', sw(3.5)) + circle(12, -76, 10, 'none', sw(3.5)) + path('M-2 -76h4', 'none', sw(3.5)) }, { x: 52, y: 196, s: 0.78 }) +
+    rect(92, 126, 48, 36, '#F3E3C3', 6) + path('M100 138h32M100 148h24', 'none', sw(3.5)) + rect(88, 122, 8, 44, C.wood, 4) + rect(136, 122, 8, 44, C.wood, 4)
+  ],
+  paleolithic: () => [
+    // a dog in a fur wrap holds a stone axe next to a campfire, in front of a cave wall with a painted animal: the old stone age
+    path('M22 200V94q0 -74 78 -74t78 74V200z', C.dark) +
+    ellipse(96, 66, 18, 10, 'none', ` stroke="${C.white}" stroke-width="3.5"`) + circle(76, 62, 7, 'none', ` stroke="${C.white}" stroke-width="3.5"`) + path('M84 74v12M92 76v12M106 76v12M114 74v12M70 56l-6 -8', 'none', ` stroke="${C.white}" stroke-width="3.5"`) +
+    P({ kind: 'dog', mood: 'happy', look: 1, arms: [null, [46, -70]], extra: path('M-26 -50L26 -22V-8L-26 -34z', '#C98B5E') + path('M-6 -40l6 -2M8 -30l6 -2', 'none', sw(3)) }, { x: 58, y: 194, s: 0.72 }) +
+    path('M92 146L106 98', 'none', ` stroke="${C.wood}" stroke-width="7"`) + poly([[96, 94], [118, 86], [122, 106], [104, 106]], C.gray, sw(4)) +
+    path('M122 192l32 -12M156 192l-32 -12', 'none', ` stroke="${C.wood}" stroke-width="9"`) + path('M140 180q-18 -16 -4 -34q4 12 14 10q10 14 -10 24z', C.orange, sw(4)) + path('M140 178q-6 -8 0 -16q4 6 4 10z', C.butter, noStroke),
+    '#E9DCC8'
+  ],
+  counterargument: () => [
+    // the cat says "yes" (green check); the dog holds up a paw and answers "no" (red X) that pushes back against it
+    bubble(8, 10, 76, 58, 40, 112) + check(46, 40, 1.2) + bubble(116, 10, 76, 58, 160, 112) + cross(154, 40, 1.1) + arrow(110, 40, 92, 40, C.berry, 6) +
+    P({ kind: 'cat', mood: 'happy', look: 1 }, { x: 42, y: 194, s: 0.62 }) +
+    P({ kind: 'dog', mood: 'determined', look: -1, arms: [[-52, -78], null] }, { x: 158, y: 194, s: 0.62 }) + ground(194, C.path)
+  ],
+  diseases: () => [
+    // a sick bunny lies in bed with a thermometer in its mouth, and angry little green germs float around it
+    rect(8, 96, 16, 92, C.wood, 6) + rect(176, 130, 16, 58, C.wood, 6) + rect(20, 100, 62, 34, C.white, 14) +
+    P({ kind: 'bunny', mood: 'sad', look: 0, tail: false, extra: path('M4 -58L40 -50', 'none', ' stroke-width="11"') + path('M4 -58L40 -50', 'none', ` stroke="${C.white}" stroke-width="6"`) + circle(41, -50, 5.5, C.berry, sw(3)) + sweat(26, -92) }, { x: 56, y: 150, s: 0.8 }) +
+    rect(36, 128, 150, 50, C.butter, 14) + [[60, 148], [92, 156], [124, 146], [156, 156]].map(([x, y]) => circle(x, y, 5, C.berry, noStroke)).join('') + rect(8, 172, 184, 14, C.wood, 6) +
+    germ(150, 60, 14) + germ(112, 34, 11) + germ(178, 100, 11) + germ(100, 84, 9)
+  ],
+
+  farming: () => [
+    // a dog drives a tractor across a field of corn, with a barn behind: working the land
+    path('M0 120Q100 96 200 124V200H0z', C.grass2, noStroke) + line(0, 120, 200, 124) +
+    rect(10, 66, 58, 54, C.berry) + poly([[4, 68], [39, 36], [74, 68]], C.deep) + rect(28, 88, 22, 32, C.white, 3, sw(3.5)) + path('M28 88l22 32M50 88l-22 32', 'none', sw(3)) +
+    [[24, 196], [50, 200]].map(([x, y]) => path(`M${x} ${y}V${y - 34}M${x} ${y - 20}q-12 -6 -14 -16M${x} ${y - 14}q12 -6 14 -16`, 'none', ` stroke="${C.green}" stroke-width="5"`) + ellipse(x, y - 38, 5, 11, C.butter, sw(3.5))).join('') +
+    path('M82 112v-24', 'none', sw(5)) + rect(88, 100, 74, 36, C.berry, 8) + rect(112, 78, 40, 28, GL, 6) +
+    P({ kind: 'dog', mood: 'happy', look: 1, tail: false }, { x: 132, y: 110, s: 0.34 }) +
+    circle(98, 154, 22, C.dark) + circle(98, 154, 8, C.gray, sw(3.5)) + circle(154, 160, 13, C.dark) + circle(154, 160, 5, C.gray, sw(3)) +
+    [[40, 196]].map(() => '').join('')
+  ],
+  enchanted: () => [
+    // a dog in a wizard hat points a star wand and the cat floats off the ground, spellbound, sparkles swirling round her
+    ellipse(148, 192, 26, 6, '#E8CBD4', noStroke) +
+    P({ kind: 'dog', mood: 'happy', look: 1, arms: [null, [54, -76]], top: poly([[-26, -98], [0, -152], [26, -98]], C.blue, sw(4)) + ellipse(0, -98, 36, 8, C.blue) + star(0, -122, 7) }, { x: 38, y: 192, s: 0.62 }) +
+    path('M72 140L104 108', 'none', ` stroke="${C.wood}" stroke-width="6"`) + star(108, 104, 10) +
+    path('M118 100Q128 94 134 104', 'none', ` stroke="${C.butter}" stroke-width="5" stroke-dasharray="2 8"`) +
+    P({ kind: 'cat', mood: 'sleepy', look: 0, arms: [[-30, -30], [30, -30]] }, { x: 150, y: 176, s: 0.68 }) +
+    ellipse(150, 128, 38, 50, 'none', ` stroke="${C.butter}" stroke-width="5" stroke-dasharray="3 10"`) + sparkle(112, 150, 8) + sparkle(188, 100, 8) + sparkle(120, 56, 7) + sparkle(176, 40, 9) + star(190, 160, 7)
+  , C.sky],
+  peered: () => [
+    // a cat holds binoculars up to her eyes and peers hard through a window at the bunny inside
+    ground(192, C.grass) +
+    rect(92, 24, 104, 132, C.wood, 10) + rect(102, 34, 84, 112, '#FFF4CC', 4) +
+    P({ kind: 'bunny', mood: 'calm', look: -1 }, { x: 150, y: 144, s: 0.5 }) +
+    path('M102 34h22q-6 54 0 112h-22z', C.berry, sw(3.5)) + rect(82, 150, 124, 14, C.wood, 6) +
+    P({ kind: 'cat', mood: 'calm', look: 1, top: circle(-14, -76, 13, C.dark, sw(4)) + circle(14, -76, 13, C.dark, sw(4)) + rect(-6, -82, 12, 10, C.dark, 3, sw(3)) + circle(-17, -80, 3, C.white, noStroke) + circle(11, -80, 3, C.white, noStroke), arms: [[-26, -52], [26, -52]] }, { x: 44, y: 196, s: 0.88 })
+  ],
+  they: () => [
+    // a cat points across to a group of other pets standing over there, far away: those others are "they"
+    path('M70 172Q140 130 200 160V200H70z', C.grass2, noStroke) +
+    [[112, 'dog', C.wood], [146, 'bunny', C.white], [180, 'cat', C.gray]].map(([x, k, c]) => P({ kind: k, color: c, mood: 'calm', look: -1, tail: false }, { x, y: 170, s: 0.4 })).join('') +
+    P({ kind: 'cat', mood: 'smile', look: 1, arms: [null, [52, -66]] }, { x: 36, y: 196, s: 0.74 })
+  , C.sky],
+  someone: () => [
+    // someone is at the door: one dark silhouette stands in the doorway with a question mark over it, and a bunny inside looks on
+    rect(96, 14, 94, 174, C.wood, 8) + rect(106, 24, 74, 164, C.sky, 4) +
+    P({ kind: 'cat', color: C.ink, mood: 'calm', tail: false }, { x: 144, y: 188, s: 0.66 }) +
+    poly([[106, 24], [130, 32], [130, 180], [106, 188]], C.woodDark) + circle(124, 112, 4, C.butter, sw(3)) +
+    text(152, 78, '?', 46, C.berry) +
+    P({ kind: 'bunny', mood: 'wow', look: 1, arms: [[-30, -52], null] }, { x: 46, y: 192, s: 0.68 }) + ground(192, C.path)
+  ],
+  stories: () => [
+    // a dog reads aloud from a big book; a picture of a castle with a star floats above while two friends listen
+    bubble(24, 6, 152, 88, 100, 120) + rect(74, 44, 52, 38, C.gray, 4) + rect(66, 30, 16, 52, C.gray, 3) + rect(118, 30, 16, 52, C.gray, 3) + poly([[62, 32], [74, 14], [86, 32]], C.berry, sw(3.5)) + poly([[114, 32], [126, 14], [138, 32]], C.berry, sw(3.5)) + path('M94 82v-16q6 -8 12 0v16', C.dark, sw(3)) + star(150, 36, 9) + circle(44, 40, 3, C.butter, noStroke) +
+    P({ kind: 'bunny', mood: 'happy', look: 1, tail: false }, { x: 26, y: 196, s: 0.5 }) + P({ kind: 'cat', mood: 'happy', look: -1, tail: false }, { x: 174, y: 196, s: 0.5 }) +
+    P({ kind: 'dog', mood: 'happy', look: 0, tail: false }, { x: 100, y: 194, s: 0.6 }) + rect(68, 158, 34, 26, C.white, 4) + rect(98, 158, 34, 26, C.cream, 4) + path('M72 166h26M72 174h22M104 166h22M104 174h22', 'none', sw(2.5)) + ground(196, C.path)
+  ],
+  our: () => [
+    // a cat and a dog stand close together, each with a paw on the same little house: it belongs to both of them
+    poly([[44, 88], [100, 36], [156, 88]], C.berry) + rect(56, 86, 88, 66, '#FFF4CC', 4) + rect(90, 112, 20, 40, C.wood, 4) + rect(64, 98, 20, 18, GL, 3, sw(3.5)) + rect(116, 98, 20, 18, GL, 3, sw(3.5)) + heart(100, 64, 1.1) +
+    P({ kind: 'cat', mood: 'happy', look: 1, arms: [null, [34, -62]] }, { x: 52, y: 196, s: 0.64 }) +
+    P({ kind: 'dog', mood: 'happy', look: -1, arms: [[-34, -62], null] }, { x: 148, y: 196, s: 0.64 }) + ground(196, C.grass)
+  ],
+  mesopotamia: () => [
+    // the land between two winding rivers, with a stepped mud-brick tower in the middle; a bunny explorer looks on
+    path('M40 -6Q78 50 36 100T44 206', 'none', ` stroke="${C.grass2}" stroke-width="44" stroke-linecap="butt"`) + path('M160 -6Q122 50 164 100T156 206', 'none', ` stroke="${C.grass2}" stroke-width="44" stroke-linecap="butt"`) +
+    path('M40 -6Q78 50 36 100T44 206', 'none', ' stroke-width="20"') + path('M40 -6Q78 50 36 100T44 206', 'none', ` stroke="${C.blue}" stroke-width="12"`) +
+    path('M160 -6Q122 50 164 100T156 206', 'none', ' stroke-width="20"') + path('M160 -6Q122 50 164 100T156 206', 'none', ` stroke="${C.blue}" stroke-width="12"`) +
+    rect(58, 128, 84, 26, '#E3C28A', 4) + rect(72, 104, 56, 26, '#E3C28A', 4) + rect(86, 82, 28, 24, '#E3C28A', 4) + rect(94, 92, 12, 14, C.woodDark, 3, sw(3)) + path('M100 154v-24', 'none', ` stroke="${C.woodDark}" stroke-width="5"`) +
+    P({ kind: 'bunny', mood: 'wow', look: 0, tail: false }, { x: 100, y: 198, s: 0.38 })
+  , '#F3E3C3'],
+  societies: () => [
+    // a village where everyone has a job and helps the others: a farmer, a builder and a teacher, with homes behind them
+    sun(170, 26, 11) +
+    [[34, 0], [100, 0], [166, 0]].map(([x]) => rect(x - 22, 90, 44, 32, '#FFF4CC', 4) + poly([[x - 28, 92], [x, 66], [x + 28, 92]], C.berry, sw(4)) + rect(x - 6, 104, 12, 18, C.wood, 3, sw(3.5))).join('') +
+    P({ kind: 'cat', mood: 'happy', look: 1, tail: false, arms: [null, [36, -40]] }, { x: 34, y: 192, s: 0.6 }) + carrot(60, 160, 0.8, -10) +
+    P({ kind: 'dog', mood: 'happy', look: 0, tail: false, arms: [null, [38, -66]] }, { x: 100, y: 192, s: 0.6 }) + path('M122 152L128 128', 'none', ` stroke="${C.wood}" stroke-width="5"`) + rect(118, 120, 20, 10, C.gray, 3, sw(3.5)) +
+    P({ kind: 'bunny', mood: 'happy', look: -1, tail: false }, { x: 166, y: 192, s: 0.6 }) + rect(150, 158, 34, 22, C.white, 3) + path('M167 158v22', 'none', sw(3)) +
+    heart(67, 150, 0.8) + heart(133, 150, 0.8) + ground(192, C.grass)
+  ],
+  reflexive: () => [
+    // a cat gives herself a big hug, both paws wrapped round her own shoulders, with hearts: the action goes back to the one doing it
+    P({ kind: 'cat', mood: 'happy', look: 0, arms: [[20, -50], [-20, -50]] }, { x: 100, y: 194, s: 1.0 }) +
+    heart(38, 70, 1.4) + heart(164, 56, 1.2) + heart(152, 118, 0.8) + sparkle(30, 128, 9)
+  ],
+  library: () => [
+    // shelves packed with books, a stack on the floor and a cat reading a book of her own
+    rect(8, 8, 184, 124, C.wood, 8) + rect(16, 16, 168, 52, C.woodDark, 3, noStroke) + rect(16, 74, 168, 52, C.woodDark, 3, noStroke) +
+    [0, 1].map(row => { let x = 20; return Array.from({ length: 11 }, (_, i) => { const w = [13, 11, 15, 12, 14, 12][i % 6], h = [36, 42, 32, 40, 34, 28][(i + row * 2) % 6], c = [C.berry, C.blue, C.mint, C.butter, C.orange, C.green, C.pink][(i * 3 + row * 2) % 7], bottom = row ? 126 : 68; const r = rect(x, bottom - h - 2, w, h, c, 2, sw(3)); x += w + 2; return r; }).join(''); }).join('') +
+    rect(8, 126, 184, 8, C.wood, 3) + ground(194, C.path) +
+    rect(20, 176, 60, 12, C.berry, 3) + rect(24, 164, 52, 12, C.blue, 3) + rect(28, 152, 44, 12, C.butter, 3) +
+    P({ kind: 'cat', mood: 'happy', look: 0, tail: false }, { x: 138, y: 198, s: 0.6 }) + rect(110, 162, 56, 26, C.white, 4) + path('M138 162v26M118 172h14M144 172h14M118 180h14M144 180h14', 'none', sw(3)),
+    C.cream
+  ],
+  coxa: () => [legParts(0)],
+  trochanter: () => [legParts(1)],
+  femur: () => [legParts(2)],
+  patella: () => [legParts(3)],
+  tibia: () => [legParts(4)],
+  metatarsus: () => [legParts(6)],
+  tarsus: () => [legParts(5)],
+  diviners: () => [
+    // a sleepy dog dreams (a moon and star in a cloud) and a cat in a turban reads the dream with a magnifier to say what it means
+    thought(64, 58, 52, 38, 46, 128) + path('M52 40a15 15 0 1 0 15 20a12 12 0 1 1 -15 -20z', C.butter, sw(3.5)) + star(88, 64, 9) + star(82, 40, 5) +
+    P({ kind: 'dog', mood: 'sleepy', look: 0, tail: false }, { x: 44, y: 194, s: 0.62 }) + path('M62 140q4 -8 0 -14M72 134q4 -8 0 -14', 'none', sw(3)) +
+    P({ kind: 'cat', mood: 'calm', look: -1, arms: [[-46, -64], null], top: path('M-32 -92q32 -38 64 0z', C.mint) + rect(-33, -98, 66, 9, C.berry, 4) + circle(0, -112, 5, C.butter, sw(3)) }, { x: 154, y: 194, s: 0.62 }) +
+    magnifier(104, 122, 16, 35)
+  ],
+  oracle: () => [
+    // a cat in a starry wizard hat gazes into a crystal ball that shows what will happen next: a trophy
+    P({ kind: 'cat', mood: 'calm', look: 0, arms: [[-36, -28], [36, -28]], top: poly([[-30, -96], [0, -156], [30, -96]], C.blue, sw(4)) + ellipse(0, -96, 38, 8, C.blue) + star(0, -124, 7) }, { x: 100, y: 172, s: 0.78 }) +
+    path('M70 194q4 -20 30 -20t30 20z', C.wood) + circle(100, 154, 32, GL, ' fill-opacity=".55"') +
+    path('M88 138h24q0 20 -12 20t-12 -20z', C.butter, sw(3.5)) + path('M88 142q-8 0 -6 8q2 4 8 4M112 142q8 0 6 8q-2 4 -8 4', 'none', sw(3)) + rect(94, 158, 12, 6, C.butter, 2, sw(3)) +
+    sparkle(52, 120, 9) + sparkle(152, 112, 8) + sparkle(160, 160, 7) + star(44, 60, 8) + star(160, 48, 10),
+    '#3E3350'
+  ],
+  'mohenjo-daro': () => [
+    // a bird's-eye view of a city planned on straight streets: blocks of neat brick houses, trees at the corners and covered drains down the streets; a cat city planner holds the plan
+    rect(6, 6, 188, 124, '#FBF3E2', 10) +
+    [0, 1, 2].map(i => [0, 1].map(j => [0, 1].map(a => [0, 1].map(b => rect(14 + i * 62 + a * 26, 14 + j * 56 + b * 24, 22, 20, C.orange, 3, sw(3.5))).join('')).join('')).join('')).join('') +
+    path('M8 64H192', 'none', ' stroke-width="11"') + path('M8 64H192', 'none', ` stroke="${C.blue}" stroke-width="5"`) + path('M8 120H192', 'none', ' stroke-width="11"') + path('M8 120H192', 'none', ` stroke="${C.blue}" stroke-width="5"`) +
+    [[69, 41], [131, 41], [69, 97], [131, 97]].map(([x, y]) => circle(x, y, 8, C.grass2, sw(3.5))).join('') +
+    rect(12, 140, 86, 50, C.white, 6) + path('M12 156H98M12 172H98M34 140V190M56 140V190M78 140V190', 'none', ` stroke="${C.blue}" stroke-width="2.5"`) +
+    P({ kind: 'cat', mood: 'determined', look: -1, arms: [[-34, -40], null], top: path('M-30 -96q30 -26 60 0z', C.butter) + rect(-34, -98, 68, 8, C.butter, 4) }, { x: 150, y: 198, s: 0.55 })
+  , '#F3E3C3'],
+  wail: () => [
+    // a dog throws back its head and cries loudly, big tears running down its cheeks
+    ellipse(100, 188, 56, 8, '#CDE6F2', noStroke) +
+    P({ kind: 'dog', mood: 'sad', look: 0, tail: false, top: path('M-14 -70q-10 14 -6 34M14 -70q10 14 6 34', 'none', ` stroke="${C.blue}" stroke-width="6"`) + ellipse(0, -54, 9, 11, C.deep, sw(3.5)) + ellipse(0, -50, 5, 4, C.pink, noStroke) }, { x: 100, y: 190, s: 1.2 }) +
+    path('M26 70q-10 14 0 28M12 62q-14 22 0 44M174 70q10 14 0 28M188 62q14 22 0 44', 'none', sw(4.5)) + path('M30 150q-5 8 0 10q5 -2 0 -10z', C.blue, sw(3)) + path('M172 140q-5 8 0 10q5 -2 0 -10z', C.blue, sw(3))
+  ],
+  articles: () => [
+    // a big newspaper page (a heading bar, a picture and columns of lines) and a cat who points at the story she is reading
+    rect(14, 14, 118, 164, C.white, 6) + rect(22, 22, 102, 18, C.dark, 3) + rect(22, 48, 48, 40, '#CFE8F5', 3) + path('M24 84l14 -18l10 10l8 -12l12 20z', C.grass2, sw(3)) + circle(58, 58, 5, C.butter, sw(3)) +
+    path('M78 54h42M78 64h42M78 74h42M78 84h34M22 98h98M22 110h98M22 122h60M92 122h28M22 136h98M22 148h98M22 160h70', 'none', sw(3.5)) +
+    P({ kind: 'cat', mood: 'happy', look: -1, arms: [[-48, -60], null], tail: false }, { x: 164, y: 196, s: 0.62 })
+  ],
+  humans: () => [
+    // three people (two grown-ups and a child) wave hello and a friendly dog looks up at them: humans
+    `<g>${[[40, 196, 0.95, '#F3D9BF', C.dark, C.blue, C.dark], [92, 196, 0.7, '#C98B5E', C.woodDark, C.berry, C.blue], [140, 196, 0.95, '#E8B88F', '#B5651D', C.mint, C.wood]].map(([x, y, s, skin, hair, shirt, pants]) => g(
+      rect(-12, -36, 10, 36, pants, 4) + rect(2, -36, 10, 36, pants, 4) + limb(-14, -66, -30, -44, shirt) + limb(14, -66, 30, -92, shirt) + rect(-16, -76, 32, 44, shirt, 10) +
+      circle(0, -92, 18, skin) + path('M-18 -94q2 -22 18 -22t18 22q-12 -10 -36 0z', hair) + circle(-6, -90, 2.6, C.ink, noStroke) + circle(6, -90, 2.6, C.ink, noStroke) + path('M-5 -82q5 5 10 0', 'none', sw(3)), { x, y, s })).join('')}</g>` +
+    P({ kind: 'dog', mood: 'happy', look: -1 }, { x: 184, y: 196, s: 0.4 }) + ground(196, C.grass)
+  ],
+  circulatory: () => [
+    // a heart pumps blood round a loop: red blood leaves on one side and blue blood returns on the other
+    path('M100 28A72 72 0 0 0 100 172', 'none', ' stroke-width="15"') + path('M100 28A72 72 0 0 0 100 172', 'none', ` stroke="${C.berry}" stroke-width="8"`) +
+    path('M100 172A72 72 0 0 0 100 28', 'none', ' stroke-width="15"') + path('M100 172A72 72 0 0 0 100 28', 'none', ` stroke="${C.blue}" stroke-width="8"`) +
+    g(path('M-10 -9L0 0L-10 9', 'none', ` stroke="${C.deep}" stroke-width="7"`), { x: 104, y: 172 }) + g(path('M-10 -9L0 0L-10 9', 'none', ` stroke="#3F8FBE" stroke-width="7"`), { x: 96, y: 28, rot: 180 }) +
+    [[54, 45], [28, 100], [54, 155]].map(([x, y]) => circle(x, y, 5, C.deep, sw(2.5))).join('') + [[146, 45], [172, 100], [146, 155]].map(([x, y]) => circle(x, y, 5, '#3F8FBE', sw(2.5))).join('') +
+    heart(100, 104, 3.4, C.berry) + path('M86 92q4 -8 12 -6', 'none', ` stroke="${C.white}" stroke-width="4"`)
+  ],
+  pancreas: () => [
+    // a smiling pancreas (a long lumpy organ) squirts juice down onto the small intestine tube below
+    path('M22 88q4 -26 44 -24q30 2 58 -6q40 -8 62 6q10 8 -6 18q-24 16 -70 20q-38 4 -64 8q-26 -2 -24 -22z', C.orange) +
+    circle(50, 78, 3.6, C.ink, noStroke) + circle(72, 78, 3.6, C.ink, noStroke) + path('M56 86q5 5 10 0', 'none', sw(3.5)) + circle(40, 84, 4, C.pink, noStroke) + circle(82, 84, 4, C.pink, noStroke) +
+    [[112, 118], [136, 126], [158, 118]].map(([x, y]) => path(`M${x} ${y}q-8 11 0 14q8 -3 0 -14z`, C.blue, sw(3.5))).join('') +
+    path('M4 176Q40 150 76 172T150 170T200 176', 'none', ' stroke-width="20"') + path('M4 176Q40 150 76 172T150 170T200 176', 'none', ` stroke="#F7A9BD" stroke-width="12"`)
+  ],
+  enzymes: () => [
+    // a cookie with big bites taken out of it: two tiny mint-green helpers with big mouths chomp it into crumbs; they break things down
+    cookie(78, 100, 48) + circle(122, 66, 17, C.bg, noStroke) + circle(130, 100, 17, C.bg, noStroke) + circle(122, 134, 17, C.bg, noStroke) +
+    [[152, 70], [156, 130]].map(([x, y]) => g(circle(0, 0, 21, C.mint) + circle(-3, -9, 3.4, C.ink, noStroke) + circle(9, -8, 3.4, C.ink, noStroke) + path('M-2 4L-24 -6L-24 16z', C.deep, sw(3.5)) + path('M-24 -6l8 4l4 -6M-24 16l8 -4l4 6', 'none', ` stroke="${C.white}" stroke-width="3.5"`), { x, y })).join('') +
+    [[110, 30], [136, 36], [124, 170], [146, 164], [176, 100], [96, 190]].map(([x, y]) => circle(x, y, 5, '#E3A55F', sw(2.5))).join('')
+  ],
+  fertilization: () => [
+    // a flower is fertilized: pollen drifts into its centre, and a new seed sprouts into a baby plant (new life)
+    ground(190, C.grass) + flower(46, 72, 14) + path('M46 134q-18 -6 -22 -22q18 0 22 22z', C.grass2, sw(3.5)) +
+    [[20, 28], [34, 20], [14, 46]].map(([x, y]) => circle(x, y, 5, C.butter, sw(3))).join('') + path('M28 36Q42 44 44 62', 'none', ` stroke="${C.orange}" stroke-width="4" stroke-dasharray="2 8"`) +
+    arrow(86, 120, 112, 120, C.ink, 6) +
+    ellipse(156, 178, 34, 12, C.wood) + path('M156 170V132', 'none', ` stroke="${C.green}" stroke-width="7"`) + path('M156 146q-26 -4 -26 -26q22 0 26 26zM156 136q26 -4 26 -26q-22 0 -26 26z', C.grass2, sw(4)) + sparkle(184, 70, 9) + heart(130, 78, 1)
+  ],
+  ovule: () => [
+    // inside a flower's ovary: a cut-open bulb holds a few little round ovules, and a magnifier shows one up close
+    path('M100 40V16', 'none', ` stroke="${C.green}" stroke-width="7"`) + circle(100, 14, 7, C.pink, sw(3.5)) +
+    path('M100 40C44 40 46 172 100 172C154 172 156 40 100 40z', C.grass2) + path('M100 54C58 54 60 160 100 160C140 160 142 54 100 54z', C.cream, sw(3.5)) +
+    [[84, 90], [116, 90], [84, 128], [116, 128]].map(([x, y]) => circle(x, y, 13, C.butter) + circle(x, y, 4.5, C.orange, noStroke)).join('') +
+    magnifier(150, 128, 24, 40) + circle(150, 128, 11, C.butter, noStroke) + circle(150, 128, 4, C.orange, noStroke)
+  ],
 };
