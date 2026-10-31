@@ -229,7 +229,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     reportShop = b.dataset.reportShop || null;
     renderClassReport(el, list, onSaveStudentDrills, onResetStudent, onSaveQuizOverride);
   }));
-  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => { if (b.dataset.subject) detailSubject = b.dataset.subject; openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride); }));
+  el.querySelectorAll<HTMLButtonElement>('.namebtn').forEach(b => b.addEventListener('click', () => { if (b.dataset.subject) { detailSubject = b.dataset.subject; detailJump = true; } openDetail(list.find(r => r.id === b.dataset.id)!, onSaveStudentDrills, onResetStudent, onSaveQuizOverride); }));
   el.querySelector('#csv')?.addEventListener('click', () => downloadCSV(list));
   el.querySelector('#printDash')?.addEventListener('click', () => window.print());
   refreshInsights(list);   // a student's page that is open gets the new numbers too
@@ -253,7 +253,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   const subjectTabs: [string, string][] = [['math', '➗ Math'], ['English', '📚 English'], ['History', '🏛️ History'], ['Biology', '🦁 Biology'], ['bible', '✝️ Bible'], ['projects', '📁 Projects'], ['written', '✍️ Written'], ['reading', '📖 Reading Log'], ['brain', '🧠 Brain'], ['ledger', '📅 Ledger'], ['courses', '🎓 Grades'], ['transcript', '📜 Transcript']];
   if (!subjectTabs.some(([id]) => id === detailSubject)) detailSubject = 'math';
   const panel = (id: string, inner: string) => `<div data-subject-panel="${id}"${id === detailSubject ? '' : ' hidden'}>${inner}</div>`;
-  h += `<h2>Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
+  h += `<h2 id="dSubjects">Progress by subject and unit</h2><div class="noprint subject-tabs" role="group" aria-label="Subject">${subjectTabs.map(([id, label]) => `<button type="button" class="btn small subject-tab" data-subject-tab="${id}" aria-pressed="${id === detailSubject}">${label}</button>`).join('')}</div>`;
   h += panel('math', mathUnitsHTML(r) + `<h3>🧠 Think it through</h3>${thinkReportHTML(r.mathThink, reportThinkRequired)}`) + ['English', 'History', 'Biology'].map(id => panel(id, englishReadingHTML(r, id))).join('');
   h += panel('bible', '<div id="bibleCard"></div>') + panel('projects', '<div id="projectCard"></div>') + panel('written', '<div id="writtenCard"></div>') + panel('reading', '<div id="readingCard"></div>') + panel('brain', `<h3>🧠 Brain stretches</h3>${brainReportHTML(r.brain, r.brainOn)}`) + panel('ledger', '<div id="ledgerCard"></div>') + panel('courses', '<div id="coursesCard"></div>') + panel('transcript', '<div id="transcriptCard"></div>');
   /* the Ledger (docs/LEDGER.md step 4) reads the database, so it loads the first time its tab opens;
@@ -488,6 +488,8 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
   }));
   renderQuizCard();
   showLedger();
+  /* opened from "Waiting for a grown-up": go straight to that tab instead of the Insights at the top */
+  if (detailJump) { detailJump = false; requestAnimationFrame(() => $('#dSubjects')?.scrollIntoView({ block: 'start' })); }
   $('#studentDrillMode').addEventListener('change', async e => {
     if (!onSaveStudentDrills) return;
     const value = (e.target as HTMLSelectElement).value;
@@ -541,6 +543,7 @@ function misListHTML(list: [string, [number, string[]]][]) {
   return '<ul>' + list.map(([id, v]) => `<li><b>${esc(MIS[id] ? MIS[id].name : id)}</b> (${v[0]})${(v[1] || []).map(x => `<div class="muted">${esc(x)}</div>`).join('')}${MIS[id] ? `<div class="muted">Try: ${esc(MIS[id].tip)}</div>` : ''}</li>`).join('') + '</ul>';
 }
 let detailSubject = 'math';
+let detailJump = false;   // set by a "Waiting for a grown-up" chip, so the page opens scrolled to its tab
 /* the student's math skills, one fold-out per shop (unit), stations as sub-headings; home grade first */
 function mathUnitsHTML(r: StudentReport) {
   const hoods = builtHoods().filter(n => shopsIn(n.id).length).sort((a, b) => Number(b.id === reportHome) - Number(a.id === reportHome));
