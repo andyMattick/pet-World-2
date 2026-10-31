@@ -351,7 +351,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     const pathOf = (x: Extra) => Math.max(1, Math.round(x.path && x.path > 0 ? x.path : 10));
     const roundOf = (x: Extra) => Math.max(1, Math.round(x.kind === 'vocab' && x.game && x.game > 0 ? x.game : x.challenge && x.challenge > 0 ? x.challenge : x.kind === 'vocab' ? 7 : 5));
     const warmOf = (x: Extra) => x.kind === 'vocab' && x.path && x.path > 0 ? pathOf(x) + roundOf(x) : roundOf(x);
-    const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: the 🐾 Paw Path, then the word game of the day, on this week’s words (Friday: the mastery check)${x.minutes > warmOf(x) ? `; more practice: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}` : ''}`
+    const label = (x: Extra) => x.kind === 'vocab' ? `🔤 Word Workshop: the 🐾 Paw Path, then the word game of the day, on her word set (her 5th practice day: the mastery check)${x.minutes > warmOf(x) ? `; more practice: ${VOCAB_MODES[x.mode || 'practice'] || 'Practice cards'}` : ''}`
       : `⚡ Fact Sprint: ${(x.skills || ['times']).map(t => DRILL_NAMES[t]?.name || t).join(' + ')}${x.tables?.length ? ` (${x.tables.join(', ')}s)` : ''}`;
     /* every extra is a timed warm-up round (owner, Oct 27, 2026): x.challenge minutes (default 5 for a Fact Sprint, 7 for
        Word Workshop's daily puzzle), and minutes beyond it (x.minutes - round) are a "more practice" row later in the day */

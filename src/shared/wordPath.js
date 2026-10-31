@@ -596,6 +596,6 @@ export function pathSummary(p, weekId){
 }
 export function pathSummaryText(p, weekId){
   const s = pathSummary(p, weekId);
-  if (!s.started) return '🐾 Paw Path: not started this week';
+  if (!s.started) return '🐾 Paw Path: not started in this word set';
   return `🐾 Paw Path: ${s.done.length} of 5 skills done · ${s.xp} XP · ${s.days} day${s.days === 1 ? '' : 's'} · ` + s.skills.filter(x => x.lessons > 0).map(x => `${x.emoji} ${x.name} ${x.done ? '✅' : `${x.lessons}/${x.total}`}${x.acc != null ? ` ${x.acc}%` : ''}`).join(' · ');
 }

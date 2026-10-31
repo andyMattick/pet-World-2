@@ -18,6 +18,7 @@ export interface TeacherSetting {
   where: string;              // where a teacher finds it in the teacher app
   quick?: boolean;            // shown in 🧭 Quick setup
   settingsIds?: string[];     // the Settings controls for it ("#id" or "[data-attr]"); scripts/verify.mjs checks these
+  quickIds?: string[];        // its controls in 🧭 Quick setup, for a quick 'list' entry; scripts/verify.mjs checks these
   choices?: { value: string; label: string }[];   // for kind 'choice' in Quick setup
 }
 
@@ -69,7 +70,7 @@ export const TEACHER_SETTINGS: TeacherSetting[] = [
   /* 🕹️ arcade and music */
   { id: 'arcade', scope: 'class', kind: 'switch', group: 'fun', emoji: '🕹️', name: 'Arcade', what: 'Games students play with the practice time they earn. Off puts a lock on its town tile.', saved: 'game_settings.arcade.enabled', where: `${S} → Arcade`, quick: true, settingsIds: ['#arcadeEnabled'] },
   { id: 'freePlay', scope: 'class', kind: 'switch', group: 'fun', emoji: '🎟️', name: 'Arcade Free Play', what: 'No coin admission or tickets: practice time alone opens the Arcade.', saved: 'game_settings.arcade.freePlay', where: `${S} → Arcade`, quick: true, settingsIds: ['#arcadeFreePlay'] },
-  { id: 'arcadeGames', scope: 'class', kind: 'list', group: 'fun', emoji: '🎮', name: 'Open or close each Arcade game', what: 'Pick which Arcade games students can play. A closed game ends within a minute.', saved: 'game_settings.arcade.games', where: `${S} → Arcade → Games students can play`, settingsIds: ['[data-arcade-game]'] },
+  { id: 'arcadeGames', scope: 'class', kind: 'list', group: 'fun', emoji: '🎮', name: 'Open or close each Arcade game', what: 'Pick which Arcade games students can play. A closed game ends within a minute.', saved: 'game_settings.arcade.games', where: `${S} → Arcade → Games students can play, or 🧭 Quick setup → Arcade games`, quick: true, settingsIds: ['[data-arcade-game]'], quickIds: ['[data-setup-game]'] },
   { id: 'arcadeTickets', scope: 'class', kind: 'number', group: 'fun', emoji: '🎫', name: 'Ticket rewards', what: 'Tickets per game, the daily cap, and the Game of the Day bonus (paid entry only).', saved: 'game_settings.arcade (ticket numbers)', where: `${S} → Arcade → Ticket rewards`, settingsIds: ['#arcadeTicketCap'] },
   { id: 'allowMusic', scope: 'class', kind: 'switch', group: 'fun', emoji: '🎵', name: 'Allow music', what: 'Students can turn music on. Sound effects stay up to each student.', saved: 'game_settings.allowMusic', where: `${S} → Class settings → Allow music`, quick: true, settingsIds: ['#allowMusic'] },
 
@@ -92,7 +93,8 @@ export const TEACHER_SETTINGS: TeacherSetting[] = [
   { id: 'spellFocus', scope: 'student', kind: 'list', group: 'student', emoji: '🔤', name: 'Spelling-pattern words', what: 'Extra words for one student’s spelling practice.', saved: 'quiz_overrides.spellFocus', where: 'Vocabulary tab → each student’s words' }
 ];
 
-/** The switches and choices shown in 🧭 Quick setup, in group order. */
+/** The switches and choices shown in 🧭 Quick setup, in group order. A quick 'list' entry (the Arcade games) is a folded
+    set of switches, one per item, under its group; Quick setup shows the Arcade games only while the Arcade is on. */
 export const QUICK_SETUP = TEACHER_SETTINGS.filter(s => s.quick);
 export const settingById = (id: string) => TEACHER_SETTINGS.find(s => s.id === id);
 /** Settings' label for a switch: the same short name Quick setup shows. */

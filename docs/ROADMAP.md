@@ -57,6 +57,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Reading Quiz in the Story Corner Library: chapter notes are checked by a grown-up (teacher app, or a parent PIN in local mode) before they can be quizzed; multiple-choice, true-or-false, and essay questions are built from the checked notes (`READING-QUIZ.md`)
 - [x] Draft plans written for Bakery stations 2 to 5 (`BAKERY-2-PANS.md` to `BAKERY-5-BULK.md`) and the 4th grade version (`GRADE4.md`)
 - [x] 🤖 Help bot in the corner of both apps (`HELP-BOT.md`): finds places, games, skills, tabs and settings from the apps' own lists, takes you there through the normal doors (gates stay), and `npm run verify` checks it covers every building, Arcade game, town spot and teacher setting
+- [x] 🧭 First-time tour guide (`TOUR.md`): a short spotlight walk-through the first time a student reaches her town (6th and 4th grade differ), a games guest comes in, a grown-up opens the progress report, or a teacher opens the dashboard (or has no class yet); runs before the daily pop-ups, never touches a gate, remembered in `S.tour` / per teacher account, replay from the helper or 🧭 Tour; `npm run verify` runs `scripts/check-tour.mjs`
 
 ## Next up
 

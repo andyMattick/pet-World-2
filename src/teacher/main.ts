@@ -17,9 +17,10 @@ import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus,
 import { installWordPick } from './wordPick';
 import { insightsSaveFields, rowsByStudent, insightsSince } from '../shared/insights';
 import { setInsightsEmailer } from './insightsCard';
-import { TEACHER_SETTINGS, QUICK_SETUP, SETTING_GROUPS, settingName, type TeacherSetting } from './settingsList';   // every teacher setting, one list (docs/QUICK-SETUP.md)
+import { TEACHER_SETTINGS, QUICK_SETUP, SETTING_GROUPS, settingName, settingById, type TeacherSetting } from './settingsList';   // every teacher setting, one list (docs/QUICK-SETUP.md)
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
 import { initTeacherHelpBot } from './helpBot';   // 🤖 the corner helper (docs/HELP-BOT.md)
+import { initTeacherTour, replayTeacherTour } from './tour';   // 🧭 first-time tour (docs/TOUR.md)
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
@@ -522,6 +523,7 @@ const SETUP_READ: Record<string, (cls: ClassRow) => SetupValue> = {
   youtube: c => c.game_settings?.youtube !== false,
   arcade: c => arcadeSettings(c.game_settings?.arcade as Partial<ArcadeSettings> | undefined).enabled,
   freePlay: c => arcadeSettings(c.game_settings?.arcade as Partial<ArcadeSettings> | undefined).freePlay,
+  arcadeGames: c => (g => ARCADE_GAMES.filter(x => g[x.id]).map(x => x.id).join(','))(arcadeSettings(c.game_settings?.arcade as Partial<ArcadeSettings> | undefined).games),   // the open games' ids
   allowMusic: c => c.game_settings?.allowMusic !== false,
   insightsEmail: c => insightsEmailSetting(c.game_settings).on
 };
@@ -536,19 +538,25 @@ function renderSetup() {
       ? `<div class="setup-item"><span class="setup-emoji" aria-hidden="true">${s.emoji}</span><span><b>${esc(s.name)}</b> ${control}<br><span class="muted">${esc(s.what)}</span></span></div>`
       : `<label class="setup-item">${control}<span class="setup-emoji" aria-hidden="true">${s.emoji}</span><span><b>${esc(s.name)}</b><br><span class="muted">${esc(s.what)}</span></span></label>`;
   };
-  const groups = SETTING_GROUPS.map(gr => ({ gr, list: QUICK_SETUP.filter(s => s.group === gr.id && SETUP_READ[s.id]) })).filter(x => x.list.length);
+  const groups = SETTING_GROUPS.map(gr => ({ gr, list: QUICK_SETUP.filter(s => s.group === gr.id && SETUP_READ[s.id] && s.kind !== 'list') })).filter(x => x.list.length);
+  /* the Arcade games: one switch per ARCADE_GAMES entry (new games show up on their own), saved to game_settings.arcade.games
+     like Settings → Arcade; folded under a count, and shown only while the Arcade switch is on */
+  const arcadeNow = arcadeSettings(cls.game_settings?.arcade as Partial<ArcadeSettings> | undefined), gamesEntry = settingById('arcadeGames');
+  const gamesBlock = gamesEntry ? `<details class="setup-always setup-games" id="setupGames" ${arcadeNow.enabled ? '' : 'hidden'}><summary>${gamesEntry.emoji} <b>Arcade games</b> <span class="muted" id="setupGamesCount"></span></summary>
+      <p class="muted" style="margin:6px 0">${esc(gamesEntry.what)}</p><div class="row"><button type="button" class="btn small" data-setup-games-all="1">Open all</button><button type="button" class="btn small" data-setup-games-all="0">Close all</button></div>
+      <div class="setup-game-list">${ARCADE_GAMES.map(g => `<label><input type="checkbox" data-setup-game="${g.id}" ${arcadeNow.games[g.id] ? 'checked' : ''}> <span aria-hidden="true">${g.emoji}</span> ${esc(g.name)}</label>`).join('')}</div></details>` : '';
   const more = TEACHER_SETTINGS.filter(s => !s.quick && s.scope === 'class'), perStudent = TEACHER_SETTINGS.filter(s => s.scope === 'student');
   const lineOf = (s: TeacherSetting) => `<li>${s.emoji} <b>${esc(s.name)}</b> <span class="muted">· ${esc(s.where)}</span></li>`;
   pane.innerHTML = `<div class="card setup-menu"><h2>🧭 Set up ${esc(cls.name)}</h2>
     <p class="muted" style="margin-top:0">Choose what this class uses. You can change any of these later here or in Settings.</p>
-    ${groups.map(({ gr, list }) => `<h3 class="setup-group">${gr.emoji} ${esc(gr.name)}</h3><div class="setup-list">${list.map(item).join('')}</div>`).join('')}
+    ${groups.map(({ gr, list }) => `<h3 class="setup-group">${gr.emoji} ${esc(gr.name)}</h3><div class="setup-list">${list.map(item).join('')}</div>${gr.id === gamesEntry?.group ? gamesBlock : ''}`).join('')}
     <details class="setup-always"><summary><b>🔧 Finer controls</b> <span class="muted">(in Settings and other tabs)</span></summary><ul>${more.map(lineOf).join('')}</ul></details>
     <details class="setup-always"><summary><b>👤 Set per student</b> <span class="muted">(on each student’s page)</span></summary><ul>${perStudent.map(lineOf).join('')}</ul></details>
     <details class="setup-always"><summary><b>✅ Always on (no switch needed)</b></summary><ul>
       <li>📇 <b>Review before every test</b>, then a grown-up’s PIN to start it. No fix-up round.</li>
       <li>🎬 <b>Today’s video</b>: the first practice each day in a Math, History or Biology unit waits for a video and a grown-up’s PIN.</li>
       <li>🔐 <b>Fix a score</b>: a grown-up can correct a unit test or quiz score with the PIN (on the unit page).</li>
-      <li>📘 <b>Word Workshop weekly words</b>: up to 25 new words a week, a different puzzle each day, and a Friday mastery check with a Hall of Fame.</li>
+      <li>📘 <b>Word Workshop weekly words</b>: 25 words per 5-practice-day set, a different puzzle each day, and a mastery check on her 5th practice day with a Hall of Fame.</li>
       <li>🔬 <b>Hands-on Biology</b>: one experiment or nature journal page a week while a Biology unit is open, sent to you as outside work with photos. Every lab from every Biology unit is in the 🔬 Science Lab in the Biology class; the week’s ⭐ follows her current unit.</li>
       <li>⏱️ <b>Time inside each assignment</b>: students see today’s minutes for that subject on the page.</li>
       <li>🎬 <b>Videos first</b> in History and Science, with watching counted as class time.</li>
@@ -557,6 +565,12 @@ function renderSetup() {
     <p class="status muted" id="setupMsg"></p></div>`;
   const val = (id: string): SetupValue => { const el = pane.querySelector(`[data-setup="${id}"]`) as HTMLInputElement | HTMLSelectElement | null; return !el ? (SETUP_READ[id]?.(cls) ?? false) : el instanceof HTMLSelectElement ? el.value : el.checked; };
   const on = (id: string) => val(id) === true;
+  const gameBoxes = () => [...pane.querySelectorAll<HTMLInputElement>('[data-setup-game]')];
+  const countGames = () => { const c = pane.querySelector('#setupGamesCount'); if (c) c.textContent = `(${gameBoxes().filter(b => b.checked).length} open of ${ARCADE_GAMES.length})`; };
+  countGames();
+  pane.querySelectorAll<HTMLInputElement>('[data-setup-game]').forEach(b => b.addEventListener('change', countGames));
+  pane.querySelectorAll<HTMLButtonElement>('[data-setup-games-all]').forEach(button => button.addEventListener('click', () => { gameBoxes().forEach(b => { b.checked = button.dataset.setupGamesAll === '1'; }); countGames(); }));
+  pane.querySelector<HTMLInputElement>('[data-setup="arcade"]')?.addEventListener('change', e => { const d = pane.querySelector<HTMLElement>('#setupGames'); if (d) d.hidden = !(e.target as HTMLInputElement).checked; });
   const save = async (next: typeof tab | null) => {
     const old = cls.game_settings || {};
     const oldThemes = themeSettings(old.themes as Partial<ThemeSettings> | undefined), when = String(val('themesWhen'));
@@ -565,7 +579,7 @@ function renderSetup() {
       move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: on('move') },
       idle: (i => ({ on: on('idle'), nudge: i.nudge, pause: i.pause }))(idleSettings(null, old.idle)),
       themes: { ...oldThemes, enabled: on('themes'), special: on('themesSpecial'), when: (['every', 'fri'].includes(when) ? when : 'earned') as ThemeSettings['when'] }, extrasFirst: on('extrasFirst'),
-      arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: on('arcade'), freePlay: on('freePlay') },
+      arcade: (a => ({ ...a, enabled: on('arcade'), freePlay: on('freePlay'), games: { ...a.games, ...Object.fromEntries(gameBoxes().map(b => [b.dataset.setupGame!, b.checked])) } }))(arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined)),
       insightsEmail: { ...insightsEmailSetting(old), on: on('insightsEmail') } };
     const drill_settings = { ...(cls.drill_settings || {}), enabled: on('drills') };
     const quiz_settings = { ...(cls.quiz_settings || {}), requireQuiz: on('requireQuiz'), showSteps: val('quizSteps') === 'true' };
@@ -795,5 +809,12 @@ function renderSettings() {
 /* 🤖 the corner helper (docs/HELP-BOT.md): it only switches tabs (through renderMain) and points at settings */
 initTeacherHelpBot({
   goTab: t => { if (!current || adminView) return; tab = t as typeof tab; renderMain(); },
-  state: () => ({ ready: !!document.querySelector('.shell'), hasClass: !!current && !adminView, tab, lang: teacherLanguage })
+  state: () => ({ ready: !!document.querySelector('.shell'), hasClass: !!current && !adminView, tab, lang: teacherLanguage }),
+  tour: () => replayTeacherTour()
+});
+/* 🧭 the first-time tour (docs/TOUR.md): remembered per teacher account; it only points at things */
+initTeacherTour({
+  state: () => ({ ready: !!document.querySelector('.shell'), hasClass: !!current && !adminView, adminView, tab }),
+  userId: async () => sb ? (await sb.auth.getUser()).data.user?.id || null : null,
+  goTab: t => { if (!current || adminView) return; tab = t as typeof tab; renderMain(); }
 });

@@ -5,23 +5,25 @@ import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKI
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
 import { initHelpBot } from './helpBot';   // 🤖 the corner helper (docs/HELP-BOT.md)
+import { initStudentTour, tourOnShow, tourHold, replayTour } from './tour';   // 🧭 first-time tour (docs/TOUR.md)
+import { normTours, mergeTours } from '../shared/tour';
 import { applyRoom } from './rooms';
 import { thinkReportHTML, thinkStationName } from '../shared/thinkReport';
 import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML, subjectDayKey as logDayKey } from '../shared/subjectTime';
 import { stageHTML, stageReact } from './stage';
 import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITIC, HIEROGLYPHS, HIEROGLYPH_NAMES, GREEK, GREEK_NAMES, ORACLE_SIGNS } from './historyData';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
-import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP } from '../shared/bible';
+import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP, VERSE_CYCLE, withAddedVerses, normalizeAddedVerses, verseFormError, verseCycle, verseRecap, verseDays, markVerseDay } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong, keepPictures } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong, keepPictures, SET_DAYS, setDayInfo, markSetDay } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { makeRedPenRound, plainWord as redPenWord, tapIsRight, spellingIsRight, patternIsRight, PATTERN_SHORT } from '../shared/redPen';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
 import { pictureFor, suggestEmoji, validPictureEmoji, needsCartoon, cartoonRequest, PHOTO_DATA_MAX } from '../shared/wordPictures';
 import { searchPhotos, photoChoice, photoResultsHTML } from '../shared/photoSearch';
 import { PATH_SKILLS, skillInfo, buildLesson, lessonGroups, lessonCount, againItem, matchRetryItem, pathForWeek, pathNodes, recordLesson, pathSummaryText, fillBlank, XP_LESSON, langOf, graphemes } from '../shared/wordPath';
-import { PUZZLE_INFO, wordGameForDate, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
+import { PUZZLE_INFO, wordGameForDate, wordGameForSetDay, puzzleWord, scramble as scrambleWord, makeCode, encode as encodeWord, buildCrossword, crosswordCells, buildWordSearch, wordAt, wordCells, weekOf, nextWeekWords, knownLetters } from '../shared/wordPuzzles';
 import { GOAL_SUBJECTS, parseSubjectGoals, goalsFor, subjectDayKey as goalDayKey } from '../shared/subjectTime';
 import { CORE_CLASSES, wheelRules, pickClasses, normalizeWheelLog, isSchoolDay } from '../shared/classWheel';
 import { BRAIN_GAMES, brainGame, brainSettings, normalizeBrainState, mergeBrainState, pickStretchGames, recordBrainResult, brainPace } from '../shared/brainGames';
@@ -320,6 +322,7 @@ function normalize(raw){
   s.arcade.rewardsPaid = Array.isArray(s.arcade.rewardsPaid) ? [...new Set(s.arcade.rewardsPaid.filter(id => typeof id === 'string'))].slice(-500) : [];
   s.arcade.gameSaves = Object.fromEntries(Object.entries(s.arcade.gameSaves && typeof s.arcade.gameSaves === 'object' ? s.arcade.gameSaves : {})
     .filter(([id, state]) => ARCADE_GAMES.some(game => game.id === id) && typeof state === 'string' && state.length <= 100000));
+  s.tour = normTours(s.tour);   // 🧭 which tours she has seen (docs/TOUR.md)
   return s;
 }
 function loadState(key){
@@ -6153,6 +6156,7 @@ function show(id){
   window.scrollTo(0,0);
   if (brainRun && (id === 'join' || id === 'name' || id === 'loading')) closeBrainStretch(false);   // signed out: the stretch waits in the save
   if (moveRun && (id === 'join' || id === 'name' || id === 'loading')) closeMoveBreak();            // the same for a stand-and-stretch break
+  tourOnShow(id);   // 🧭 the first-time tour comes before the daily pop-ups (docs/TOUR.md)
   bibleCheck();
   brainCheck();
   moveCheck();
@@ -6428,6 +6432,7 @@ function newBrainStretch(kind, label, item){
   S.brain.stretches = [...S.brain.stretches, stretch].slice(-90); S.brain.active = stretch.id; save();
 }
 function brainCheck(){
+  if (tourHold()) return;   // 🧭 waits for the first-time tour
   if (LOOK_ID) return;   // look only: no pop-ups
   if (bibleFirst()) return;   // ✝️ Bible comes first, before the morning brain stretch
   if (brainRun || moveRun || !S?.brain || !brainAllowed().length) return;
@@ -6542,6 +6547,7 @@ function moveTrack(subject, seconds){
   if (MOVE_SUBJECTS.includes(subject) && subject === S.move.subject) S.move.secs += seconds;
 }
 function moveCheck(){
+  if (tourHold()) return;   // 🧭 waits for the first-time tour
   if (LOOK_ID) return;   // look only: no pop-ups
   if (bibleFirst()) return;
   if (moveRun || brainRun || $('.theme-card') || !S?.move || !allowedMoves(movePolicy()).length) return;
@@ -6817,6 +6823,7 @@ function trackDoneRows(){
   save();
 }
 function themeCheck(){
+  if (tourHold()) return;   // 🧭 waits for the first-time tour
   if (LOOK_ID) return;   // look only: no pop-ups
   if (!S?.brain) return;
   trackDoneRows();
@@ -8757,7 +8764,7 @@ window.addEventListener('message', e => {
    and 5 tries at the memory verse (when there is one). A grown-up can skip it for one day with the grown-up PIN (logged).
    S.bible: {journal:[{day, passage, learned, prayer, at, updatedAt}], books:{level, streak, done:{3:[], 4:[]}, n5, mastered,
    rounds:[…]}, vp:{verseId:{step, up, tries:[{t, day, step, pct}], learned}}, skipped, shown, coinDay} */
-const bibleSettings = () => parseBibleSettings(Backend.me?.quiz_overrides?.bible);
+const bibleSettings = () => withAddedVerses(parseBibleSettings(Backend.me?.quiz_overrides?.bible), S?.bible?.added);   // the teacher's verses, plus any a grown-up wrote on the 5th-day recap
 const bibleOn = () => !!Backend.me && !!S?.bible && bibleSettings().on;
 function normalizeBible(raw){
   const b = raw && typeof raw === 'object' ? raw : {}, str = (v, n) => String(v ?? '').slice(0, n), isDay = d => /^\d{4}-\d{2}-\d{2}$/.test(d);
@@ -8769,7 +8776,7 @@ function normalizeBible(raw){
     books:{level:Math.max(1, Math.min(5, Math.round(+bk.level || 1))), streak:Math.max(0, Math.round(+bk.streak || 0)), n5:Math.max(0, Math.round(+bk.n5 || 0)), mastered:!!bk.mastered,
       done:{3:ids(bk.done?.[3]), 4:ids(bk.done?.[4])},
       rounds:(Array.isArray(bk.rounds) ? bk.rounds : []).filter(r => r && Number.isFinite(+r.t)).slice(-60).map(r => ({t:+r.t, level:Math.max(1, Math.min(5, Math.round(+r.level || 1))), right:Math.max(0, +r.right || 0), total:Math.max(0, +r.total || 0), perfect:!!r.perfect, section:str(r.section, 20)}))},
-    vp, skipped:str(b.skipped, 10), shown:str(b.shown, 10), coinDay:str(b.coinDay, 10)
+    vp, skipped:str(b.skipped, 10), shown:str(b.shown, 10), coinDay:str(b.coinDay, 10), added:normalizeAddedVerses(b.added)
   };
 }
 /* two devices: each day's journal entry, the newer edit wins; the books game keeps the higher level and every round; each
@@ -8796,7 +8803,12 @@ function mergeBible(base, other){
     if (add.length) { mine.tries = [...mine.tries, ...add].sort((x, y) => x.t - y.t).slice(-60); n++; }
     if (v.step > mine.step || (v.step === mine.step && v.up && !mine.up)) { mine.step = v.step; mine.up = v.up; n++; }
     if (v.learned && !mine.learned) { mine.learned = v.learned; n++; }
+    if (v.aside && !mine.aside) { mine.aside = v.aside; n++; }   // set aside by a grown-up on either device
+    const both = [...new Set([...verseDays(mine), ...verseDays(v)])].sort().slice(-400);   // practice days from both devices (5-day rounds)
+    if (both.length !== (mine.days || []).length) { mine.days = both; n++; }
+    if (v.seen && (!mine.seen || v.seen.round > mine.seen.round)) mine.seen = v.seen;
   }
+  for (const a of normalizeAddedVerses(other.added)) if (!(base.added ||= []).some(x => x.id === a.id)) { base.added.push(a); n++; }   // verses a grown-up wrote on either device
   return n;
 }
 /* the memory verse she's on, and her progress on it (a move up earned on an earlier day starts today) */
@@ -8812,7 +8824,8 @@ function bibleStatus(day = logDayKey()){
   const journal = S.bible.journal.some(j => j.day === day && j.learned.trim());
   const books = S.bible.books.rounds.some(r => logDayKey(new Date(r.t)) === day);
   const now = bibleVerseNow(day), learnedToday = Object.values(S.bible.vp).some(p => p.learned === day);
-  const verseDone = learnedToday || (!!now && now.today >= VERSE_TRIES_A_DAY);
+  const asideToday = Object.values(S.bible.vp).some(p => p.aside === day && p.tries.filter(t => t.day === day).length >= VERSE_TRIES_A_DAY);   // her 5 tries were on a verse a grown-up replaced today
+  const verseDone = learnedToday || asideToday || (!!now && now.today >= VERSE_TRIES_A_DAY);
   return {journal, books, verse:now, verseDone, waiting:!now, done:journal && books && (verseDone || !now)};
 }
 /* Bible holds up the day: on for her, not done today, not skipped by a grown-up today */
@@ -8828,8 +8841,9 @@ function bibleMaybeDone(){
 function bibleRowsHTML(){
   const st = bibleStatus(), mark = ok => (ok ? '✅' : '⬜'), skip = S.bible.skipped === logDayKey();
   const btn = (go, on, label, ok) => `<button type="button" class="btn small${ok || !on ? '' : ' berry'}" data-bible-go="${go}" ${on || ok || skip ? '' : 'disabled'}>${label}</button>`;
-  const learnedToday = bibleSettings().verses.find(v => S.bible.vp[v.id]?.learned === logDayKey());
-  const verseRow = learnedToday ? `<div class="row extras-row"><span style="flex:1">✅ 3. 💬 Memory verse: you learned ${esc(learnedToday.ref)} today! ⭐</span></div>` : st.verse ? `<div class="row extras-row"><span style="flex:1">${mark(st.verseDone)} 3. 💬 Memory verse: ${esc(st.verse.v.ref)} <small class="muted">(${Math.min(st.verse.today, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY} tries, ${esc(stepName(st.verse.step))})</small></span>${btn('verse', st.books, 'Practice', st.verseDone)}</div>`
+  const learnedToday = bibleSettings().verses.find(v => S.bible.vp[v.id]?.learned === logDayKey()), asideToday = !learnedToday && bibleSettings().verses.find(v => S.bible.vp[v.id]?.aside === logDayKey());
+  const verseRow = learnedToday ? `<div class="row extras-row"><span style="flex:1">✅ 3. 💬 Memory verse: you learned ${esc(learnedToday.ref)} today! ⭐</span></div>`
+    : asideToday ? `<div class="row extras-row"><span style="flex:1">✅ 3. 💬 Memory verse: 5 tries done on ${esc(asideToday.ref)}.${st.verse ? ` Your next verse, ${esc(st.verse.v.ref)}, starts tomorrow.` : ''}</span></div>` : st.verse ? `<div class="row extras-row"><span style="flex:1">${mark(st.verseDone)} 3. 💬 Memory verse: ${esc(st.verse.v.ref)} <small class="muted">(${Math.min(st.verse.today, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY} tries, ${esc(stepName(st.verse.step))})</small></span>${btn('verse', st.books, 'Practice', st.verseDone)}</div>`
     : `<div class="row extras-row"><span style="flex:1">${st.verseDone ? '✅' : '➖'} 3. 💬 Memory verse: <small class="muted">${Object.values(S.bible.vp).some(p => p.learned) ? 'you learned every verse! A grown-up will add the next one.' : 'none yet. A grown-up adds it.'}</small></span></div>`;
   return `<div class="row extras-row"><span style="flex:1">${mark(st.journal)} 1. 📝 Devotion journal: what you read and what you learned</span>${btn('journal', true, st.journal ? 'Open' : 'Write', st.journal)}</div>
     <div class="row extras-row"><span style="flex:1">${mark(st.books)} 2. 📚 Books of the Bible: one round${st.journal || st.books ? '' : ' <small class="muted">(after the journal)</small>'}</span>${btn('books', st.journal, 'Play', st.books)}</div>
@@ -8861,6 +8875,7 @@ function openBibleFirstCard(){
 }
 /* right after sign-in (and whenever the town is on screen), before the morning brain stretch */
 function bibleCheck(){
+  if (tourHold()) return;   // 🧭 waits for the first-time tour
   if (!bibleFirst() || brainRun || moveRun || $('.theme-card') || $('#bibleWrap') || $('#scr-home').hidden) return;
   const day = logDayKey();
   if (S.bible.shown !== day) { S.bible.shown = day; save(); openBibleFirstCard(); }
@@ -8909,7 +8924,7 @@ function bibleTodayHTML(){
   const st = bibleStatus();
   return `<div class="card"><h2>☀️ Today</h2>
     <p class="muted" style="margin-top:0">${st.done ? '✅ Bible is done for today. The rest of your day is open!' : `In order: your journal, a round of the books game${st.verse ? ', then 5 tries at your memory verse' : ''}.`}</p>
-    ${bibleRowsHTML()}</div>`;
+    ${bibleRowsHTML()}${bibleRecapToday() ? '<p>🏁 <b>Your 5-day verse check is ready.</b> <button type="button" class="btn small berry" data-bible-tab="verse">See how far you got</button></p>' : ''}</div>`;
 }
 /* 📝 devotion journal: today's entry (she can change it all day), and the ones before */
 function bibleJournalHTML(){
@@ -8939,20 +8954,97 @@ function saveBibleJournal(form){
    average 90% or better: 10% → 20% → 35% → 50% → 70% → the whole verse. The whole verse at 90% means she learned it. */
 function bibleVerseHTML(){
   const st = bibleStatus(), now = st.verse, skip = S.bible.skipped === logDayKey(), learnedToday = bibleSettings().verses.find(v => S.bible.vp[v.id]?.learned === logDayKey());
-  if (learnedToday) return `<div class="card"><h2>⭐ You learned ${esc(learnedToday.ref)}!</h2><p>${now ? `Your next verse, <b>${esc(now.v.ref)}</b>, starts tomorrow.` : 'A grown-up will add your next verse.'}</p></div>${learnedVersesHTML()}`;
+  const recap = bibleRecapHTML();
+  if (learnedToday) return `${recap}<div class="card"><h2>⭐ You learned ${esc(learnedToday.ref)}!</h2><p>${now ? `Your next verse, <b>${esc(now.v.ref)}</b>, starts tomorrow.` : 'A grown-up will add your next verse.'}</p></div>${learnedVersesHTML()}`;
+  if (recap && !bibleRecapToday()?.missed) return `${recap}${learnedVersesHTML()}`;   // a missed round's recap sits above today's practice instead
   if (!now) return `<div class="card"><h2>💬 Memory verse</h2><p>${Object.values(S.bible.vp).some(p => p.learned) ? '🎉 You learned every verse so far! A grown-up will add your next one.' : 'There’s no memory verse yet. A grown-up adds it in the teacher app (your page → ✝️ Bible).'}</p>${learnedVersesHTML()}</div>`;
-  if (!st.books && !st.verseDone && !skip) return `<div class="card"><h2>💬 Memory verse</h2><p>First play a round of the books game, then practice your verse.</p><button type="button" class="btn berry" data-bible-tab="books">📚 Books of the Bible</button></div>`;
+  if (!st.books && !st.verseDone && !skip) return `${recap}<div class="card"><h2>💬 Memory verse</h2><p>First play a round of the books game, then practice your verse.</p><button type="button" class="btn berry" data-bible-tab="books">📚 Books of the Bible</button></div>`;
   const {v, p, step, today} = now, practice = verseStepPractice(v.text, step), avg = lastFiveAverage(p, step);
   const ladder = [0, 1, 2, 3, 4, FULL_STEP].map(i => `<span class="bible-dot${i === step ? ' today' : ''}" title="${esc(stepName(i))}">${i >= FULL_STEP ? 'All' : `${Math.round([10, 20, 35, 50, 70][i])}%`}<b>${i < step ? '✅' : ''}</b></span>`).join('');
   const what = practice.mode === 'full' ? 'Write the whole verse from memory.' : `Fill in ${practice.blanks} blank${practice.blanks === 1 ? '' : 's'} (${esc(stepName(step))}).`;
   const tries = Math.min(today, VERSE_TRIES_A_DAY), up = p.up === logDayKey();
-  return `<div class="card"><h2>💬 ${esc(v.ref)}${v.version ? ` <small class="muted">${esc(v.version)}</small>` : ''}</h2>
+  return `${recap}<div class="card"><h2>💬 ${esc(v.ref)}${v.version ? ` <small class="muted">${esc(v.version)}</small>` : ''}</h2>
     <div class="bible-week">${ladder}</div>
+    <p class="muted bible-cycle">${(c => `📅 Day ${c.day} of ${VERSE_CYCLE}${c.practiced ? '' : ' (counts when you practice today)'} · ${c.day === VERSE_CYCLE ? 'after today’s tries' : `on day ${VERSE_CYCLE}`} you’ll see how far you got.`)(verseCycle(p, logDayKey()))}</p>
     <p><b>Today:</b> ${what} <b>Try ${Math.min(today + 1, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY}</b>${today >= VERSE_TRIES_A_DAY ? ' ✅ Done for today. Extra tries still count.' : ''}</p>
     <p class="muted" style="margin:0 0 6px">${avg == null ? `After 5 tries, a 90% average moves you up to more blanks the next day.` : `Your last 5 tries: <b>${avg}%</b>. ${up ? `🎉 Tomorrow: ${esc(stepName(Math.min(FULL_STEP, step + 1)))}!` : avg >= VERSE_MOVE_UP ? 'Finish today’s 5 tries to move up tomorrow.' : `${VERSE_MOVE_UP}% moves you up.`}`}</p>
     <details class="bible-peek"${step === 0 && !today ? ' open' : ''}><summary>📖 Read the verse${step > 0 || today ? ' (peek)' : ''}</summary><p class="bible-verse-text">${esc(v.text)}</p></details>
     ${bibleRun?.verse ? '<iframe id="verseFrame" class="bible-verse-frame" src="/bible/verse-memorizer/?pw=1" title="Verse Memorizer"></iframe>' : `<button type="button" class="btn berry" data-verse-start>✍️ ${tries ? 'Keep practicing' : 'Practice now'}</button>`}</div>${learnedVersesHTML()}`;
 }
+/* 🏁 the 5th-day verse recap (owner, Oct 31, 2026: "for bible, I want them to see what level they made it to in bible
+   and a parent's link to write the new verse"; docs/BIBLE.md "5 practice days"). It shows the rest of that day: on her
+   5th practice day of a round after the day's 5 tries, the day she learns a verse, or the day a grown-up replaced it. */
+let bibleWrite = '';   // the verse whose grown-up panel is open (after the PIN)
+function bibleRecapToday(day = logDayKey()){
+  for (const v of bibleSettings().verses) {
+    const p = S.bible.vp[v.id]; if (!p) continue;
+    if (p.learned === day || p.aside === day || verseCycle(p, day).recapToday) return {v, p};
+  }
+  /* a round she finished before today whose recap she never saw (her 5th day ended before the 5th try, or the round was
+     finished before the recap existed): show it the next time she opens Bible, for the rest of that day, until she
+     practices again or a grown-up keeps or replaces the verse */
+  const now = currentVerse(bibleSettings(), S.bible.vp), p = now && S.bible.vp[now.id];
+  if (p && !p.learned && !p.aside && p.kept !== day) {
+    const c = verseCycle(p, day), seen = p.seen || {round:0, day:''};
+    if (c.rounds >= 1 && !c.practiced && (seen.round < c.rounds || seen.day === day)) return {v:now, p, missed:true};
+  }
+  return null;
+}
+function bibleRecapHTML(){
+  const r = bibleRecapToday(); if (!r) return '';
+  const day = logDayKey(), {v, p} = r, rounds = verseCycle(p, day).rounds;
+  if (!p.seen || p.seen.round < rounds) { p.seen = {round:rounds, day}; save(); }   // shown: a missed recap won't come back after today
+  const rc = verseRecap(p, day), next = currentVerse(bibleSettings(), S.bible.vp);
+  const wrote = (S.bible.added || []).find(a => a.after === v.id && logDayKey(new Date(a.at)) === day);
+  const ladder = [0, 1, 2, 3, 4, FULL_STEP].map(i => `<span class="bible-dot${i === rc.step ? ' today' : ''}" title="${esc(stepName(i))}">${i >= FULL_STEP ? 'All' : `${[10, 20, 35, 50, 70][i]}%`}<b>${i < rc.step || (i === rc.step && rc.learned) ? '✅' : ''}</b></span>`).join('');
+  const status = rc.learned ? '⭐ <b>You learned it by heart!</b>' : p.aside === day ? '⏸️ A grown-up set this verse aside for now. You can come back to it later.' : p.up === day && rc.step < FULL_STEP ? `🎉 <b>Moving up!</b> Tomorrow: ${esc(stepName(rc.step + 1))}.` : `💪 <b>Not learned yet.</b> ${VERSE_MOVE_UP}% over your last 5 tries moves you up. Keep going!`;
+  let grown;
+  if (wrote) grown = `<p>✅ A grown-up wrote your next verse: <b>${esc(wrote.ref)}</b>. It starts tomorrow.</p>`;
+  else if (p.kept === day) grown = `<p>✅ A grown-up kept <b>${esc(v.ref)}</b> for 5 more days.</p>`;
+  else if (bibleWrite === v.id) grown = `<div class="bible-grownup"><h3>✍️ For a grown-up: the next verse</h3>
+      ${rc.learned ? (next ? `<p class="muted">Next on her list: <b>${esc(next.ref)}</b>. A verse you write here comes before it.</p>` : '') : `<p>She hasn’t learned <b>${esc(v.ref)}</b> yet. Keep it another 5 days, or write a new verse (this one is set aside, with its tries kept).</p><button type="button" class="btn" data-bible-keep="${esc(v.id)}">Keep ${esc(v.ref)} 5 more days</button>`}
+      <form id="bibleNewVerse" class="bible-journal" data-after="${esc(v.id)}">
+        <div class="row"><label>Reference <input name="ref" maxlength="80" placeholder="e.g. John 3:16" required></label><label>Translation <input name="version" maxlength="40" placeholder="e.g. ESV" style="width:110px"></label></div>
+        <label>Verse <small class="muted">(type it in the translation you use)</small><textarea name="text" rows="4" maxlength="2000" required></textarea></label>
+        <div class="row"><button type="submit" class="btn berry">${rc.learned ? 'Add the next verse' : 'Use this verse instead'}</button><button type="button" class="btn" data-bible-grownup-close>Cancel</button></div>
+        <p class="status" id="bibleNewVerseMsg" role="status"></p></form></div>`;
+  else grown = `<button type="button" class="btn berry" data-bible-grownup="${esc(v.id)}">🔐 Grown-up: write the next verse</button>`;
+  return `<div class="card bible-recap"><h2>🏁 ${rc.learned ? 'You learned it!' : `Day ${VERSE_CYCLE}: how far you got`}</h2>
+    <p><b>${esc(v.ref)}</b>${v.version ? ` <small class="muted">${esc(v.version)}</small>` : ''}: you made it to <b>level ${rc.level} of ${rc.levels}</b> (${esc(rc.name)}).</p>
+    <div class="bible-week">${ladder}</div>
+    <p>${rc.tries} tr${rc.tries === 1 ? 'y' : 'ies'} over ${rc.days} day${rc.days === 1 ? '' : 's'}${rc.avg != null ? ` · last 5 tries: <b>${rc.avg}%</b>` : ''}</p>
+    <p>${status}</p>${grown}</div>`;
+}
+document.addEventListener('click', async e => {
+  const g = e.target.closest('[data-bible-grownup]');
+  if (g) {
+    const r = bibleRecapToday(); if (!r || r.v.id !== g.dataset.bibleGrownup) return;
+    if (!await askGrownUp({title:'Write the next memory verse', text:`See how ${esc(S.name || 'she')} did on <b>${esc(r.v.ref)}</b>, then write the next verse.`, ok:'Open', log:'🔐 Grown-up opened the next memory verse'})) return;
+    bibleWrite = r.v.id; renderBible(); setTimeout(() => $('#bibleNewVerse input[name="ref"]')?.focus(), 50); return;
+  }
+  if (e.target.closest('[data-bible-grownup-close]')) { bibleWrite = ''; renderBible(); return; }
+  const k = e.target.closest('[data-bible-keep]');
+  if (k && bibleWrite === k.dataset.bibleKeep) {
+    const r = bibleRecapToday(); if (!r || r.v.id !== bibleWrite) return;
+    r.p.kept = logDayKey(); bibleWrite = '';
+    logEvent({k:'bible', title:`💬 A grown-up kept the memory verse ${r.v.ref} for 5 more days`});
+    save(); renderBible(); toast(`💬 ${r.v.ref} stays for 5 more days.`);
+  }
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest?.('#bibleNewVerse'); if (!f) return;
+  e.preventDefault();
+  const r = bibleRecapToday(); if (!r || r.v.id !== f.dataset.after || bibleWrite !== r.v.id) return;
+  const d = new FormData(f), ref = String(d.get('ref') || '').trim(), version = String(d.get('version') || '').trim(), text = String(d.get('text') || '').trim().replace(/\s+/g, ' ');
+  const err = verseFormError(ref, text);
+  if (err) { const m = $('#bibleNewVerseMsg'); if (m) m.textContent = `❌ ${err}`; f.querySelector(ref ? 'textarea' : 'input[name="ref"]')?.focus(); return; }
+  const day = logDayKey(), {v, p} = r, replace = !p.learned;
+  S.bible.added = [...(S.bible.added || []), {id:`v${Date.now().toString(36)}`, ref:ref.slice(0, 80), version:version.slice(0, 40), text:text.slice(0, 2000), after:v.id, at:Date.now()}].slice(-100);
+  if (replace) p.aside = day;
+  bibleWrite = '';
+  logEvent({k:'bible', alert:'verse', title:`✍️ A grown-up wrote the next memory verse: ${ref}${replace ? ` (in place of ${v.ref}, set aside)` : ''}`});
+  save(); renderBible(); toast(`✍️ ${ref} is her next verse. It starts tomorrow.`);
+});
 function learnedVersesHTML(){
   const s = bibleSettings(), learned = s.verses.filter(v => S.bible.vp[v.id]?.learned);
   return learned.length ? `<div class="card"><h2>⭐ Verses you know</h2>${learned.slice().reverse().map(v => `<details class="bible-entry"><summary><b>${esc(v.ref)}</b> <small class="muted">learned ${esc(new Date(`${S.bible.vp[v.id].learned}T12:00:00`).toLocaleDateString([], {month:'short', day:'numeric'}))}</small></summary><p class="bible-verse-text">${esc(v.text)}</p></details>`).join('')}</div>` : '';
@@ -8965,7 +9057,7 @@ window.addEventListener('message', e => {
   if (e.data?.type === 'verse:ready') { frame.contentWindow.postMessage({type:'verse:start', ref:v.ref, version:v.version, text:v.text, mode:practice.mode, blanks:practice.blanks}, location.origin); return; }
   if (e.data?.type !== 'verse:result') return;
   const mistakes = Math.max(0, Math.round(+e.data.mistakes || 0)), total = Math.max(1, Math.round(+e.data.total || 1)), pct = Math.max(0, Math.round((total - mistakes) * 100 / total));
-  p.tries = [...p.tries, {t:Date.now(), day, step, pct}].slice(-60);
+  markVerseDay(p, day); p.tries = [...p.tries, {t:Date.now(), day, step, pct}].slice(-60);
   const today = p.tries.filter(t => t.day === day).length, avg = lastFiveAverage(p, step), name = S.name || 'She';
   let msg = `💬 ${pct}% right. Try ${Math.min(today, VERSE_TRIES_A_DAY)} of ${VERSE_TRIES_A_DAY}.`;
   if (step >= FULL_STEP && avg != null && avg >= VERSE_MOVE_UP) {   // learned it
@@ -8979,7 +9071,7 @@ window.addEventListener('message', e => {
   }
   save(); toast(msg);
   bibleMaybeDone();
-  if (p.learned === day) { bibleRun = null; renderBible(); }   // the celebration, and the next verse waits for tomorrow
+  if (p.learned === day || verseCycle(p, day).recapToday) { bibleRun = null; renderBible(); }   // the celebration or the 5th-day recap; the next verse waits for tomorrow
   else if ($('#verseFrame')) renderBibleVerseHeader();
 });
 /* refresh the verse card's text (tries, average) without reloading the Verse Memorizer under it */
@@ -9656,7 +9748,7 @@ const ROUND_DEFAULT = {sprint:5, vocab:7};
 /* ☀️ the Word Workshop warm-up is two parts (owner, Oct 30, 2026: "I'm OK if we spend 10 minutes doing the phases
    (Meet, Match, Build, Use, Spell), then another 7 with the word game of the day"; docs/DAILY-PLAN.md "Word Workshop
    warm-up: 10 + 7"): x.path minutes on the 🐾 Paw Path (default 10), then x.game minutes on the word game of the day
-   (default 7; an extra saved before Oct 30 keeps its round length, x.challenge, for the game). Friday is the mastery
+   (default 7; an extra saved before Oct 30 keeps its round length, x.challenge, for the game). Day 5 of a word set is the mastery
    check instead. The game part's score is kept under "<id>~game". */
 const VOCAB_PATH_MIN = 10, VOCAB_GAME_MIN = 7;
 const clampMin = n => Math.max(1, Math.min(30, Math.round(+n)));
@@ -9666,7 +9758,7 @@ const gameId = x => `${x.id}~game`;
 const challengeMin = x => !x ? 0 : x.kind === 'vocab' ? vocabPathMin(x) + vocabGameMin(x) : +x.challenge > 0 ? Math.max(1, Math.round(+x.challenge)) : ROUND_DEFAULT[x.kind] || 5;
 function challengeScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[x.id]; return Number.isFinite(v) ? v : null; }
 function gameScore(x){ extraSecs(x.id); const v = S.extrasLog.challenge?.[gameId(x)]; return Number.isFinite(v) ? v : null; }
-/* Friday: the warm-up is the mastery check (one row), while it's due and on the day she did it */
+/* day 5 of a word set: the warm-up is the mastery check (one row), while it's due and on the day she did it */
 const vocabCheckToday = x => checkDue() || (checkDay() && !!S.extrasLog?.check?.[x.id]);
 const vocabWarmDone = x => vocabCheckToday(x) ? challengeScore(x) !== null && !checkDue() : challengeScore(x) !== null && gameScore(x) !== null;
 function recordChallenge(id, right, min = 0){
@@ -9717,13 +9809,13 @@ function extraRowHTML(x, part = 'warm', lead = ''){
   }
   if (challengeMin(x)) {
     const score = challengeScore(x), best = S.challengeBest?.[x.id] || 0;
-    const vocab = x.kind === 'vocab', check = vocab && checkDue() && score === null, label = vocab ? '🏁 Friday mastery check' : extraLabel(x);   // a Word Workshop extra gets here only on its Friday check
+    const vocab = x.kind === 'vocab', check = vocab && checkDue() && score === null, label = vocab ? '🏁 Mastery check (day 5)' : extraLabel(x);   // a Word Workshop extra gets here only on its Friday check
     return `<div class="row extras-row"><span style="flex:1">${score !== null ? '✅' : '⬜'} ${lead}${vocab ? '' : `⏱️ ${challengeMin(x)}-minute challenge: `}${esc(label)} · <b>${score !== null ? `${score} ${vocab ? 'mastered' : 'right'}` : check ? 'show what you know!' : best ? `best ${best}` : 'how many can you get?'}</b></span>${score !== null ? '' : start('challenge')}</div>`;
   }
   const done = Math.floor(extraSecs(x.id) / 60), goal = Math.round(+x.minutes), finished = done >= goal;
   return `<div class="row extras-row"><span style="flex:1">${finished ? '✅' : '⬜'} ${lead}${esc(extraLabel(x))} · <b>${done} of ${goal} min</b></span>${finished ? '' : start('all')}</div>`;
 }
-const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it', puzzle:'Word puzzle', check:'Friday mastery check', path:'Paw Path'};
+const VOCAB_MODE_NAME = {practice:'Practice cards', sprint:'Word sprint', spell:'Spell it', puzzle:'Word puzzle', check:'Mastery check (day 5)', path:'Paw Path'};
 function extraTypes(x){ const t = (x.skills || []).filter(type => DRILL_IMPL[type]?.sprintItem); return t.length ? t : ['times']; }
 function extraLabel(x){
   if (x.kind === 'vocab') return `🔤 Word Workshop${x.mode && VOCAB_MODE_NAME[x.mode] ? `: ${VOCAB_MODE_NAME[x.mode]}` : ''}`;
@@ -9735,7 +9827,7 @@ function extrasCardHTML(){
   return `<div class="card extras-card" style="grid-column:1/-1"><h2>📋 Today’s extras</h2>${list.map(x => extraRowHTML(x) + extraRowHTML(x, 'rest')).join('')}</div>`;
 }
 let pendingExtra = null, activeExtra = null;   // the extra the next sprint was started from
-/* the Word Workshop warm-up: Friday's mastery check; otherwise ⏱️ the Paw Path part (10 min), then the word game of the
+/* the Word Workshop warm-up: the day-5 mastery check; otherwise ⏱️ the Paw Path part (10 min), then the word game of the
    day (7 min). part 'game' starts the game; anything else starts whichever part is still to do. */
 function startVocabWarm(x, part = ''){
   if (checkDue()) { vocabTab = 'path'; show('vocab'); startCheck(x.id); return; }
@@ -9747,7 +9839,7 @@ document.addEventListener('click', event => {
   const b = event.target.closest('[data-extra-start]'); if (!b) return;
   const x = assignedExtras().find(e => e.id === b.dataset.extraStart); if (!x) return;
   const challenge = b.dataset.extraPart === 'challenge' && challengeMin(x) > 0;
-  /* the warm-up: Friday's mastery check, or (owner, Oct 30, 2026) a timed round on the 🐾 Paw Path instead of the daily puzzle */
+  /* the warm-up: the day-5 mastery check, or (owner, Oct 30, 2026) a timed round on the 🐾 Paw Path instead of the daily puzzle */
   if (x.kind === 'vocab' && (challenge || ['path', 'game'].includes(b.dataset.extraPart))) { startVocabWarm(x, b.dataset.extraPart); return; }
   else if (x.kind === 'vocab') { vocabTab = VOCAB_MODE_NAME[x.mode] ? x.mode : 'practice'; show('vocab'); startVocab(vocabTab); }
   else { pendingExtra = challenge ? {...x, challengeRun:true} : x; openSprint(); }
@@ -10024,15 +10116,17 @@ function wordsWeekCardHTML(){
   ensureWeek();
   const b = wordBuckets(S.vocab, all), n = b.week.length; if (!n) return '';
   const group = tag => b.week.filter(x => x.tag === tag), carried = group('carried'), fresh = group('new'), review = group('review');
-  const right = b.week.filter(x => x.right).length, day = weekdayNum(), ck = S.vocab.week.check;
+  const right = b.week.filter(x => x.right).length, ck = S.vocab.week.check, sd = setDay(), recap = recapSet();
+  const recapBtn = recap ? '<button type="button" class="btn small berry" data-open="vocab" data-wk-recap>🆕 See your new words</button>' : '';
+  /* 5 practice days (owner, Oct 31, 2026): "Day N of 5", and the mastery check on day 5 (never on day 1) */
   let fri;
   if (b.checkDone) {
     const won = b.week.filter(x => x.result === 1 && x.tag !== 'review').length, stays = b.week.filter(x => x.result === 0).length, revDone = review.filter(x => x.result !== null);
-    fri = `🏁 <b>Friday check:</b> ⭐ ${won} mastered · ${stays} stay${stays === 1 ? 's' : ''}${revDone.length ? ` · 🔄 ${revDone.filter(x => x.result === 1).length} of ${revDone.length} review kept` : ''}${b.cards && !b.cards.skipped ? ` · 📇 ${b.cards.first} of ${b.cards.n} cards first try` : ''}`;
+    fri = `🏁 <b>Mastery check done:</b> ⭐ ${won} mastered · ${stays} stay${stays === 1 ? 's' : ''}${revDone.length ? ` · 🔄 ${revDone.filter(x => x.result === 1).length} of ${revDone.length} review kept` : ''}${b.cards && !b.cards.skipped ? ` · 📇 ${b.cards.first} of ${b.cards.n} cards first try` : ''}. <span class="wow-next">New words start the next day you open Pet World.</span> ${recapBtn}`;
   } else if (checkDue()) {
     const did = Object.keys(ck?.results || {}).length;
-    fri = `🏁 <b>Mastery check ${did ? `under way: ${did} of ${weekWordObjs().length} done` : 'today'}!</b> ${did ? '' : '📇 Flashcards first, then type each word.'}<button type="button" class="btn small berry" data-open="vocab" data-wk-check>${did ? 'Finish it' : 'Start'}</button>`;
-  } else fri = `🏁 Mastery check ${day >= 1 && day <= 4 ? `in ${5 - day} day${5 - day === 1 ? '' : 's'} (Friday)` : 'on Friday'}: 📇 flashcards, then type each word.`;
+    fri = `🏁 <b>Day ${SET_DAYS} of ${SET_DAYS}: mastery check ${did ? `under way: ${did} of ${weekWordObjs().length} done` : 'today'}!</b> ${did ? '' : '📇 Flashcards first, then type each word.'}<button type="button" class="btn small berry" data-open="vocab" data-wk-check>${did ? 'Finish it' : 'Start'}</button>`;
+  } else fri = `📅 <b>Day ${sd.day} of ${SET_DAYS}</b>${sd.practiced ? '' : ' <small class="muted">(counts when you practice today)</small>'} · 🏁 Mastery check on day ${SET_DAYS}${sd.left ? ` (${sd.left} more practice day${sd.left === 1 ? '' : 's'} first)` : ''}: 📇 flashcards, then type each word.${recap ? `<br>🎉 <b>New words!</b> ${recap.mastered.length} mastered word${recap.mastered.length === 1 ? '' : 's'} moved to your 🏆 Hall of Fame. ${recapBtn}` : ''}`;
   const chip = x => { const mark = x.result === 1 ? '⭐' : x.result === 0 ? '↩️' : x.right ? '✅' : '';
     return `<span class="vocab-chip wow-chip st-${x.result === 1 ? 'solid' : x.result === 0 ? 'work' : x.right ? 'close' : 'new'}" title="${esc(x.d)}">${mark ? `${mark} ` : ''}${esc(x.w)}</span>`; };
   const list = (title, xs) => xs.length ? `<h4 class="vocab-set">${title} (${xs.length})</h4><div class="vocab-grid">${xs.map(chip).join('')}</div>` : '';
@@ -10040,15 +10134,45 @@ function wordsWeekCardHTML(){
   const path = ensurePath(), {current, allDone} = pathNodes(path);
   const pathLine = `<p class="wow-path">🐾 <b>Paw Path:</b> ${current ? `next ${current.emoji} ${esc(current.name)}, lesson ${current.nextLesson + 1} of ${current.total}` : allDone ? 'all 5 skills done! 🎉' : ''} · ⚡ ${path.xp} XP · 📅 ${path.days.length} day${path.days.length === 1 ? '' : 's'}</p>`;
   return `<div class="card extras-card wow-card" style="grid-column:1/-1"><div class="wow-head"><h2>📚 Words of the Week</h2><button type="button" class="btn small${checkDue() ? '' : ' berry'}" data-open="vocab" data-wk-path>${current ? '🐾 Practice' : 'Practice'}</button></div>${pathLine}
-    <p class="wow-stats"><span><b>${n}</b> words</span><span>✅ <b>${right}</b> right this week</span>${carried.length ? `<span>🔁 <b>${carried.length}</b> carried over</span>` : ''}${review.length ? `<span>🔄 <b>${review.length}</b> review</span>` : ''}</p>
-    <div class="wow-bar" role="img" aria-label="${right} of ${n} words right this week"><i style="width:${Math.round(100 * right / n)}%"></i></div>
+    <p class="wow-stats"><span><b>${n}</b> words</span><span>✅ <b>${right}</b> right so far</span>${carried.length ? `<span>🔁 <b>${carried.length}</b> carried over</span>` : ''}${review.length ? `<span>🔄 <b>${review.length}</b> review</span>` : ''}</p>
+    <div class="wow-bar" role="img" aria-label="${right} of ${n} words right so far"><i style="width:${Math.round(100 * right / n)}%"></i></div>
     <p class="wow-fri">${fri}</p>
     <details class="wow-all"${wowOpen ? ' open' : ''}><summary>See all words</summary>
-      ${list('🔁 Carried over from last week', carried)}${list('🆕 New this week', fresh)}${list('🔄 Review (mastered before)', review)}
-      <p class="muted wow-legend">✅ right this week · ⭐ mastered on Friday · ↩️ stays for next week</p></details></div>`;
+      ${list('🔁 Carried over from the last set', carried)}${list('🆕 New in this set', fresh)}${list('🔄 Review (mastered before)', review)}
+      <p class="muted wow-legend">✅ right in this set · ⭐ mastered on day 5 · ↩️ stays for the next set</p></details></div>`;
 }
 document.addEventListener('toggle', e => { if (e.target.classList?.contains('wow-all')) wowOpen = e.target.open; }, true);
 document.addEventListener('click', e => { if (e.target.closest('[data-wk-check]') && !$('#scr-vocab').hidden && checkDue() && !checkRun) { vocabTab = 'week'; renderVocab(); startCheck(); } });
+document.addEventListener('click', e => { if (e.target.closest('[data-wk-recap]') && !$('#scr-vocab').hidden && !checkRun && recapSet()) renderWordRecap(); });
+/* 🆕 "Your new words" (owner, Oct 31, 2026: "after mastery, I want students to see last week's words, mastery words moved
+   out and new words moved in"): the set whose check is done, while its next set waits (the rest of the check day), or the
+   last set (S.vocab.last) until the new set's first practice day. */
+function recapSet(){
+  const wk = ensureWeek();
+  if (wk.check?.done && wk.next) return wk;
+  const last = S.vocab.last;
+  return last?.next && !(wk.days || []).length ? last : null;
+}
+function wordRecapHTML(){
+  const set = recapSet(); if (!set) return '';
+  const map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), res = set.check?.results || {}, review = new Set(set.review || []), nx = set.next;
+  const name = k => esc(map.get(k)?.w || k), chip = (k, mark, st) => `<span class="vocab-chip st-${st}" title="${esc(map.get(k)?.d || '')}">${mark} ${name(k)}</span>`;
+  const out = set.words.filter(k => res[k] === 1 && !review.has(k)), kept = set.words.filter(k => res[k] === 1 && review.has(k));
+  const stay = set.words.filter(k => res[k] !== 1 && nx.words.includes(k)), slipped = set.words.filter(k => res[k] === 0 && review.has(k));
+  const sec = (title, note, ks, mark, st) => ks.length ? `<h4 class="vocab-set">${title} (${ks.length})</h4>${note ? `<p class="muted wow-note">${note}</p>` : ''}<div class="vocab-grid">${ks.map(k => chip(k, mark, st)).join('')}</div>` : '';
+  const waiting = set === S.vocab.week;   // the check was today: the new set starts the next day she opens Pet World
+  return `<div class="backrow"><h2>🆕 Your new words</h2><button class="btn small" data-go="home">Back to town</button></div>
+    <div class="sprint-card vocab-card wow-recap">
+    <p>Your last set: <b>${set.words.length} words</b>. ${out.length ? `You mastered <b>${out.length}</b>! 🎉` : 'Keep going: they’ll come back.'}</p>
+    ${sec('⭐ Mastered: moving out', 'They go to your 🏆 Word Hall of Fame.', out, '⭐', 'solid')}
+    ${sec('🔄 Review words you still know', '', kept, '🔄', 'solid')}
+    ${sec('↩️ Staying for more practice', slipped.length ? 'Words you’re still learning, and review words you missed.' : 'Words you’re still learning.', stay, '↩️', 'work')}
+    ${sec('🆕 New words: moving in', '', nx.added || [], '🆕', 'new')}
+    ${sec('🔄 Review words (mastered before)', '', nx.review || [], '🔄', 'close')}
+    <p><b>${nx.words.length} words</b> in your new set. ${waiting ? `They start the next day you open Pet World: <b>Day 1 of ${SET_DAYS}</b>.` : `<b>Day 1 of ${SET_DAYS}</b> starts when you practice today.`} 🏁 Mastery check on day ${SET_DAYS}.</p>
+    <div class="row">${waiting ? '' : '<button type="button" class="btn berry" data-vocab-tab="path">🐾 Start practicing</button>'}</div></div>`;
+}
+function renderWordRecap(){ const h = wordRecapHTML(); if (h) { $('#vocabWrap').innerHTML = h; $('#vocabWrap').scrollTop = 0; } }
 /* the card's Practice opens Word Workshop on the 🐾 Paw Path with her next node's bubble open (runs before the town's data-open) */
 document.addEventListener('click', e => { if (e.target.closest('[data-wk-path]')) { vocabTab = 'path'; pathOpen = pathNodes(ensurePath()).current?.id || null; } }, true);
 function renderHome(){
@@ -12705,7 +12829,7 @@ const vocabStat = word => S.vocab.stats[wordKey(word)];
 function recordVocab(word, ok){
   const key = wordKey(word), stat = S.vocab.stats[key] || {r:[]};
   delete S.vocab.stats[key]; S.vocab.stats[key] = {r:[...stat.r, ok ? 1 : 0].slice(-8)};   // newest last, so old words drop off first
-  const wk = S.vocab.week; if (ok && wk?.id === weekOf(localDay()) && wk.words.includes(key) && !(wk.right ||= []).includes(key)) wk.right.push(key);   // ✅ right this week (Words of the Week card)
+  markVocabDay(); const wk = S.vocab.week; if (ok && wk?.words.includes(key) && !(wk.right ||= []).includes(key)) wk.right.push(key);   // a practice day of the set, and ✅ right in this set (Words of the Week card)
   const keys = Object.keys(S.vocab.stats); for (let i = 0; i < keys.length - VOCAB_LIMITS.list; i++) delete S.vocab.stats[keys[i]];
   const day = arcadeDateKey(); S.mathMinutes[day] = (S.mathMinutes[day] || 0) + 0.25;   // four answers earn one arcade minute
   save();
@@ -12745,7 +12869,7 @@ function vocabCard(kind, word, all){
 }
 function renderVocab(){
   const {all, focus} = vocabWords();
-  const tabs = [['path','🐾 Paw Path'],['week','📅 This week'],['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
+  const tabs = [['path','🐾 Paw Path'],['week','📅 Word set'],['practice','🃏 Practice cards'],['sprint','⚡ Word sprint'],['spell','🔤 Spell it'],['chart','📊 My words']];
   const solid = focus.filter(v => wordStatus(vocabStat(v.w)) === 'solid').length;
   let body = '';
   if (vocabTab === 'path') body = pathHTML();
@@ -13045,26 +13169,44 @@ const WEEK_NEW_WORDS = 20, WEEK_REVIEW_WORDS = 5, PUZZLE_SIZE = {scramble:8, dec
 const weekdayNum = () => new Date(`${localDay()}T12:00:00`).getDay();
 const dayBefore = day => { const d = new Date(`${day}T12:00:00`); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const hallKeys = () => new Set((S.vocab.hall || []).map(h => h.w));
-function ensureWeek(){
-  const id = weekOf(localDay()), cur = S.vocab.week;
-  if (cur?.id === id) return cur;
-  /* the weekly draw (owner, Oct 28, 2026): last week's unmastered words carry over and count toward 20 unmastered words,
-     the rest of the 20 drawn at random from the unmastered list, plus 5 random mastered words to review */
+/* A word set lasts 5 practice days, not a calendar week (owner, Oct 31, 2026: "5 days of vocab words, not necessarily
+   Monday–Friday"). A day counts when she does any Word Workshop work (recordVocab → markVocabDay). The check is due on
+   her 5th practice day and stays due until done. When it's done, the next set is drawn right away (so the recap can show
+   the 🆕 words moving in, week.next) and starts the next day she opens Pet World; the finished set is kept as S.vocab.last
+   for the recap until the new set's first practice day. A week saved before this keeps going (normalizeVocabState). */
+function drawWordSet(prevWords){
   const {all} = vocabWords(), hall = hallKeys(), keys = all.map(v => wordKey(v.w));
-  const next = nextWeekWords(cur?.words || [], keys.filter(k => !hall.has(k)), keys.filter(k => hall.has(k)), {fresh:WEEK_NEW_WORDS, review:WEEK_REVIEW_WORDS, back:S.vocab.back || []});
-  S.vocab.week = {id, words:next.words, kept:next.carried.length, added:next.added.length, carried:next.carried, review:next.review, right:[], mastered:[], check:null};
-  S.vocab.back = (S.vocab.back || []).filter(k => !next.words.includes(k) && keys.includes(k) && !hall.has(k));   // words moved back from mastered: drawn now (first in line), the rest wait for next week
+  return nextWeekWords(prevWords || [], keys.filter(k => !hall.has(k)), keys.filter(k => hall.has(k)), {fresh:WEEK_NEW_WORDS, review:WEEK_REVIEW_WORDS, back:S.vocab.back || []});
+}
+function ensureWeek(){
+  const today = localDay(), cur = S.vocab.week;
+  if (cur && !(cur.check?.done && (cur.check.day || '') < today)) return cur;
+  /* the draw (owner, Oct 28, 2026): last set's unmastered words carry over and count toward 20 unmastered words, the rest
+     of the 20 drawn at random from the unmastered list, plus 5 random mastered words to review. A set drawn when the check
+     was done (cur.next) is used as shown in the recap, minus any word mastered or gone since. */
+  const {all} = vocabWords(), hall = hallKeys(), keys = all.map(v => wordKey(v.w)), have = new Set(keys);
+  const planned = cur?.next ? {words:cur.next.words.filter(k => have.has(k)), carried:cur.next.carried.filter(k => have.has(k)), added:cur.next.added.filter(k => have.has(k)), review:cur.next.review.filter(k => have.has(k))} : null;
+  const next = planned?.words.length ? planned : drawWordSet(cur?.words);
+  if (cur) { const {next:_drop, ...done} = cur; S.vocab.last = {...done, next:{words:next.words, carried:next.carried, added:next.added, review:next.review}}; }
+  S.vocab.week = {id:today, n:cur ? (cur.n || 0) + 1 : 0, days:[], words:next.words, kept:next.carried.length, added:next.added.length, carried:next.carried, review:next.review, right:[], mastered:[], check:null};
+  S.vocab.back = (S.vocab.back || []).filter(k => !next.words.includes(k) && keys.includes(k) && !hall.has(k));   // words moved back from mastered: drawn now (first in line), the rest wait for the next set
   save(); return S.vocab.week;
 }
+/* today counts as one of the set's 5 practice days (any Word Workshop answer); the recap of the last set goes away then */
+function markVocabDay(){
+  const wk = ensureWeek(), today = localDay();
+  if (markSetDay(wk, today) && S.vocab.last && !(wk.check?.done)) S.vocab.last = null;
+}
+const setDay = () => setDayInfo(ensureWeek(), localDay());
 /* this week's words still being worked on (not mastered yet), as word objects */
 function weekWordObjs(all = vocabWords().all){
   const wk = ensureWeek(), map = new Map(all.map(v => [wordKey(v.w), v])), done = new Set(wk.mastered);
   return wk.words.filter(k => !done.has(k)).map(k => map.get(k)).filter(Boolean);
 }
-const checkDay = () => [5, 6, 0].includes(weekdayNum());   // Friday, or the weekend if Friday was missed
-const checkDue = () => checkDay() && !ensureWeek().check?.done && weekWordObjs().length > 0;
-function vocabWarmLabel(){ if (checkDue()) return '🏁 Friday mastery check'; const {skill} = nextPathLesson(), info = skillInfo(skill); return `🐾 Paw Path: ${info.emoji} ${info.name}`; }
-function todayPuzzleType(){ const p = S.vocab.puzzle, day = localDay(); if (p && !p.done && (p.day === day || (p.first === p.day && p.day === dayBefore(day)))) return p.type; const t = wordGameForDate(localDay()); return t === 'check' ? 'match' : t; }
+const checkDay = () => { const wk = ensureWeek(); return setDayInfo(wk, localDay()).before >= SET_DAYS - 1 || wk.check?.day === localDay(); };   // her 5th practice day (or later, until it's done), or the day she did it
+const checkDue = () => setDay().due && weekWordObjs().length > 0;
+function vocabWarmLabel(){ if (checkDue()) return '🏁 Mastery check (day 5)'; const {skill} = nextPathLesson(), info = skillInfo(skill); return `🐾 Paw Path: ${info.emoji} ${info.name}`; }
+function todayPuzzleType(){ const p = S.vocab.puzzle, day = localDay(); if (p && !p.done && (p.day === day || (p.first === p.day && p.day === dayBefore(day)))) return p.type; const wk = ensureWeek(), t = wordGameForSetDay(wk.n, setDayInfo(wk, day).day); return t === 'check' ? 'match' : t; }
 /* today's puzzle: yesterday's unfinished one (one more day only), or a new one */
 function todayPuzzle(){
   const day = localDay(), p = S.vocab.puzzle;
@@ -13293,7 +13435,7 @@ function finishPuzzle(why){
     ${complete ? `<p><b>${rp ? 'Every paper graded!' : 'Puzzle complete!'}</b>${p.helped.length ? ` (${p.helped.length} with a little help)` : ''}</p>` : ''}${later}
     ${run.extraId ? challengeBragHTML(run.extraId, n, run.min, rp ? 'papers' : 'words') : best && n ? '<p><b>Your best puzzle yet!</b></p>' : ''}
     ${coins ? `<p>You earned <b>🪙 ${coins}</b>.</p>` : ''}
-    <div class="row"><button class="btn" data-vocab-tab="week">📅 This week’s words</button></div></div>`;
+    <div class="row"><button class="btn" data-vocab-tab="week">📅 This set’s words</button></div></div>`;
   sfx(complete ? 'coin' : 'good');
 }
 /* ---------- 🏁 Friday mastery check ---------- */
@@ -13320,8 +13462,8 @@ function renderCheckCards(){
   const v = c.deck[0]; if (!v) { finishCheckCards(false); return; }
   const front = `<span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s)}</span>` : ''}<span class="card-ask">What’s the word? Say it, then flip.</span>`;
   const back = `${wordPicHTML(v)}<span class="card-term">${esc(v.w)}</span><span class="card-means">${esc(v.d)}</span>${v.s ? `<span class="card-example">${esc(v.s.replace(/___/g, v.w))}</span>` : ''}`;
-  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Stop</button></div>
-    <div class="sprint-card vocab-card"><p class="muted">Step 1 of 2: 📇 flashcards of this week’s ${c.total} words. Cards you’re still learning come back. Step 2: type each word to master it.</p>
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Mastery check: day ${SET_DAYS}</h2><button class="btn small" data-pz-stop>Stop</button></div>
+    <div class="sprint-card vocab-card"><p class="muted">Step 1 of 2: 📇 flashcards of this set’s ${c.total} words. Cards you’re still learning come back. Step 2: type each word to master it.</p>
     <div class="row card-tools"><span><b>${c.known}</b> of ${c.total} known</span><button type="button" class="btn small" data-check-hear="${esc(v.w)}">🔊 Hear it</button><button type="button" class="btn small" data-ccard-skip>Skip to the check</button></div>
     <div class="flashcard${c.flipped ? ' flipped' : ''}" role="button" tabindex="0" data-ccard-flip aria-live="polite" aria-label="${c.flipped ? 'Card answer' : 'Flip the card'}">${c.flipped ? back : front}${c.flipped ? '' : '<span class="card-hint">Tap to flip</span>'}</div>
     ${c.flipped ? '<div class="row card-grade"><button type="button" class="btn" data-ccard-grade="again">😕 Still learning</button><button type="button" class="btn berry" data-ccard-grade="knew">✅ I knew it</button></div>' : ''}</div>`;
@@ -13353,7 +13495,7 @@ function renderCheck(){
   const wk = S.vocab.week, words = weekWordObjs(), left = words.filter(v => !(wordKey(v.w) in wk.check.results));
   if (!left.length) { finishCheck(); return; }
   const v = left[0], i = words.length - left.length + 1, isReview = (wk.review || []).includes(wordKey(v.w));
-  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Friday mastery check</h2><button class="btn small" data-pz-stop>Save and stop</button></div>
+  $('#vocabWrap').innerHTML = `<div class="backrow"><h2>🏁 Mastery check: day ${SET_DAYS}</h2><button class="btn small" data-pz-stop>Save and stop</button></div>
     <div class="sprint-card vocab-card pz-wrap"><p class="muted">${wk.check.cards ? 'Step 2 of 2: ' : ''}Word ${i} of ${words.length}. Spell each word from its meaning. Words you get right are mastered!${isReview ? ' <b>🔄 Review word:</b> one you mastered before.' : ''}</p>
     <p class="vocab-ask">Which word means:</p><div class="fact vocab-prompt long">${esc(v.d)}</div>${v.s ? `<p class="muted">${esc(v.s)}</p>` : ''}
     ${listenRowHTML(v, 'data-check-hear')}
@@ -13367,8 +13509,10 @@ function finishCheck(){
   const mastered = results.filter(([, v]) => v).map(([k]) => k), stay = results.filter(([, v]) => !v).map(([k]) => k);
   /* review words: right = still mastered; missed = back to unmastered (out of the Hall of Fame, carried to next week) */
   const fresh = mastered.filter(k => !review.has(k)), kept = mastered.filter(k => review.has(k)), slipped = stay.filter(k => review.has(k));
-  wk.mastered = [...new Set([...wk.mastered, ...mastered])]; wk.check.done = true;
+  wk.mastered = [...new Set([...wk.mastered, ...mastered])]; wk.check.done = true; wk.check.day = localDay();   // the day it was finished: the next set starts after it
   S.vocab.hall = [...(S.vocab.hall || []).filter(h => !fresh.includes(h.w) && !slipped.includes(h.w)), ...fresh.map(w => ({w, wk:wk.id}))].slice(-VOCAB_LIMITS.list);
+  /* the next set, drawn now so the recap can show the 🆕 words moving in; it starts the next day she opens Pet World */
+  { const nx = drawWordSet(wk.words); wk.next = {words:nx.words, carried:nx.carried, added:nx.added, review:nx.review}; }
   if (run) addVocabExtraTime(run.startedAt);
   /* the Friday check is the Word Workshop warm-up that day, started from the warm-up row or from the path's 🏆 */
   const checkIds = run?.extraId ? [run.extraId] : checkDay() ? assignedExtras().filter(x => x.kind === 'vocab' && challengeScore(x) === null).map(x => x.id) : [];
@@ -13382,8 +13526,9 @@ function finishCheck(){
     ${cards && !cards.skipped ? `<p>📇 Flashcards: you knew <b>${cards.first} of ${cards.n}</b> on the first try.</p>` : ''}
     ${fresh.length ? `<div class="vocab-grid mastered">${fresh.map(chip).join('')}</div><p>They go in your <b>Word Hall of Fame</b> (${S.vocab.hall.length} words so far) and leave your practice list. ${fresh.length >= 10 ? 'WOW! 🚀' : 'Amazing work!'}</p>` : ''}
     ${kept.length + slipped.length ? `<p>🔄 Review words: <b>${kept.length} of ${kept.length + slipped.length}</b> still mastered.${slipped.length ? ` ${slipped.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')} ${slipped.length === 1 ? 'goes' : 'go'} back on your practice list.` : ''}</p>` : ''}
-    ${stay.length ? `<p>${stay.length} word${stay.length === 1 ? ' stays' : 's stay'} for next week: ${stay.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')}.</p>` : '<p>Every word mastered! Next week brings new ones.</p>'}
-    ${fresh.length ? `<p>You earned <b>🪙 ${fresh.length}</b>.</p>` : ''}</div>`;
+    ${stay.length ? `<p>${stay.length} word${stay.length === 1 ? ' stays' : 's stay'} for the next set: ${stay.map(k => `<b>${esc(map.get(k)?.w || k)}</b>`).join(', ')}.</p>` : '<p>Every word mastered! The next set brings new ones.</p>'}
+    ${fresh.length ? `<p>You earned <b>🪙 ${fresh.length}</b>.</p>` : ''}
+    <div class="row"><button type="button" class="btn berry" data-wk-recap>🆕 See your new words</button></div></div>`;
   sfx('unlock');
 }
 /* "(4 carried over, 16 new, 5 review)" */
@@ -13395,14 +13540,14 @@ function weekMixText(wk){
 function weekTabHTML(){
   const wk = ensureWeek(), map = new Map(vocabWords().all.map(v => [wordKey(v.w), v])), done = new Set(wk.mastered);
   const chip = k => { const v = map.get(k); if (!v) return ''; const st = done.has(k) ? 'solid' : wordStatus(vocabStat(v.w)), tag = (wk.review || []).includes(k) ? ' title="Review: a word you mastered before"' : (wk.carried || []).includes(k) ? ' title="Carried over from last week"' : ''; return `<button type="button" class="vocab-chip st-${st}" data-vocab-peek="${esc(v.w)}"${tag}>${done.has(k) ? '⭐ ' : ''}${(wk.review || []).includes(k) ? '🔄 ' : (wk.carried || []).includes(k) ? '🔁 ' : ''}${esc(v.w)}</button>`; };
-  const day = weekdayNum(), p = S.vocab.puzzle, today = localDay();
+  const p = S.vocab.puzzle, today = localDay();
   const puzzleLine = (checkDue() ? '<button type="button" class="btn berry" data-check-start>🏁 Start the mastery check</button>' : '')
     + (p && p.day === today && p.done ? `<p>✅ Today’s ${esc(PUZZLE_INFO[p.type].name)} is done!</p>` : `<button type="button" class="btn${checkDue() ? '' : ' berry'}" data-pz-start>${PUZZLE_INFO[todayPuzzleType()].emoji} ${checkDue() ? 'Puzzle' : 'Today’s puzzle'}: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}</button>`);
-  return `<p>This week: <b>${wk.words.length} words</b>${weekMixText(wk)}. Practice them all week. <b>Friday</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
+  return `<p>This set: <b>${wk.words.length} words</b>${weekMixText(wk)}. Practice them for ${SET_DAYS} practice days (a day counts when you practice). <b>Day ${SET_DAYS}</b> is the mastery check: words you spell right from their meaning are mastered and celebrated.</p>
     <div class="row">${puzzleLine}</div>
     <h4 class="vocab-set">🎮 All 6 word games (7 minutes each, on this week’s words)</h4>
     <div class="row pz-games">${['scramble', 'decode', 'crossword', 'search', 'redpen', 'match'].map(t => `<button type="button" class="btn small${t === todayPuzzleType() ? ' butter' : ''}" data-pz-play="${t}">${PUZZLE_INFO[t].emoji} ${esc(PUZZLE_INFO[t].name)}${t === todayPuzzleType() ? ' (today’s)' : ''}</button>`).join('')}</div>
-    ${wk.check?.done ? `<p>🏁 Mastery check done: <b>${wk.mastered.length} mastered</b> this week! 🎉</p>` : day >= 1 && day <= 4 ? `<p class="muted">Mastery check in ${5 - day} day${5 - day === 1 ? '' : 's'} (Friday).</p>` : ''}
+    ${wk.check?.done ? `<p>🏁 Mastery check done: <b>${wk.mastered.length} mastered</b> in this set! 🎉 ${recapSet() ? '<button type="button" class="btn small" data-wk-recap>🆕 See your new words</button>' : ''}</p>` : (sd => sd.due ? '' : `<p class="muted">📅 Day ${sd.day} of ${SET_DAYS}. Mastery check on day ${SET_DAYS}${sd.left ? ` (${sd.left} more practice day${sd.left === 1 ? '' : 's'} first)` : ''}.</p>`)(setDay())}
     <div class="vocab-grid">${wk.words.map(chip).join('')}</div><p class="vocab-peek muted" aria-live="polite"></p>
     ${(S.vocab.hall || []).length ? `<details><summary>🏆 Word Hall of Fame: ${S.vocab.hall.length} mastered</summary><div class="vocab-grid">${S.vocab.hall.map(h => `<span class="vocab-chip st-solid">⭐ ${esc(map.get(h.w)?.w || h.w)}</span>`).join('')}</div></details>` : ''}`;
 }
@@ -13415,7 +13560,7 @@ document.addEventListener('submit', event => {
   recordVocab(k, ok); wk.check.results[k] = ok ? 1 : 0; save();
   if (ok) { sfx('good'); toast('⭐ Mastered!'); renderCheck(); return; }
   sfx('bad'); const host = $('#vocabWrap .pz-wrap'); f.remove();
-  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on next week’s list.</p>${wordPicHTML(wordObj(k))}${wordPartsHTML(k)}`);
+  host.insertAdjacentHTML('beforeend', `<p class="ela-feedback">Not this time. It’s spelled “<b>${esc(k)}</b>.” It stays on your list for the next set.</p>${wordPicHTML(wordObj(k))}${wordPartsHTML(k)}`);
   askFix(host, k, renderCheck);
 }, true);
 $('#vocabWrap').addEventListener('click', event => {
@@ -13486,7 +13631,7 @@ function pathHTML(){
   if (words.length < 2) return '<p>Add a few more words to start this week’s path.</p>';
   const path = ensurePath(), {nodes} = pathNodes(path), wk = ensureWeek(), pet = petReward(), today = localDay();
   const friState = wk.check?.done ? 'done' : checkDue() ? 'current' : 'locked';
-  const days = Array.from({length:7}, (_, i) => addDays(wk.id, i));
+  const sd = setDayInfo(wk, today), setDays = Array.from({length:SET_DAYS}, (_, i) => i + 1);
   const bubble = n => {
     if (n.state === 'locked') return `<div class="pp-bubble pp-b-locked" role="note"><b>${n.emoji} ${esc(n.name)}</b><p>🔒 Finish ${esc(PATH_SKILLS[PATH_SKILLS.findIndex(s => s.id === n.id) - 1]?.name || 'the one before')} to open this one.</p></div>`;
     const lessons = Array.from({length:path.n}, (_, i) => { const got = path.lessons[n.id]?.[i]; return `<button type="button" class="pp-lesson-btn${got ? ' done' : ''}${i === n.nextLesson ? ' next' : ''}" data-pp-start="${n.id}" data-pp-lesson="${i}" ${!got && i !== n.nextLesson ? 'disabled' : ''} aria-label="Lesson ${i + 1}${got ? ', done, practice again' : ''}">${got ? '✅' : i === n.nextLesson ? '▶' : '🔒'} ${i + 1}</button>`; }).join('');
@@ -13503,15 +13648,15 @@ function pathHTML(){
   };
   const fri = `<div class="pp-step pp-fri" style="--x:0px">
       ${friState === 'current' ? `<div class="pp-pet right" aria-hidden="true"><span class="pp-pet-say">Show what you know!</span><span class="pp-pet-emoji">${pet.emoji}</span></div>` : ''}
-      <button type="button" class="pp-node pp-trophy pp-${friState}" data-pp-node="friday" aria-expanded="${pathOpen === 'friday'}" aria-label="Friday mastery check: ${friState === 'done' ? 'done' : friState === 'current' ? 'ready' : 'opens on Friday'}"><span class="pp-face">${friState === 'locked' ? '🏆' : friState === 'done' ? '🏆' : '🏁'}</span></button>
-      <span class="pp-label">${friState === 'done' ? '✅ ' : ''}Friday: show what you know</span>
-      ${pathOpen === 'friday' ? `<div class="pp-bubble pp-b-${friState}"><b>🏁 Friday mastery check</b><p>📇 Flashcards, then type each word from its meaning. Words you spell right are mastered and go in your 🏆 Hall of Fame.</p>${friState === 'current' ? `<button type="button" class="btn berry pp-go" data-check-start>${Object.keys(wk.check?.results || {}).length ? 'Finish the check' : 'Start the check'}</button>` : friState === 'done' ? `<p>✅ Done this week: <b>${wk.mastered.length}</b> mastered!</p>` : `<p class="muted">🔒 Opens on Friday${nodes.every(n => n.state === 'done') ? '. You’re ready!' : '. Finish the path to get ready.'}</p>`}</div>` : ''}</div>`;
+      <button type="button" class="pp-node pp-trophy pp-${friState}" data-pp-node="friday" aria-expanded="${pathOpen === 'friday'}" aria-label="Day ${SET_DAYS} mastery check: ${friState === 'done' ? 'done' : friState === 'current' ? 'ready' : `opens on day ${SET_DAYS}`}"><span class="pp-face">${friState === 'locked' ? '🏆' : friState === 'done' ? '🏆' : '🏁'}</span></button>
+      <span class="pp-label">${friState === 'done' ? '✅ ' : ''}Day ${SET_DAYS}: show what you know</span>
+      ${pathOpen === 'friday' ? `<div class="pp-bubble pp-b-${friState}"><b>🏁 Day ${SET_DAYS} mastery check</b><p>📇 Flashcards, then type each word from its meaning. Words you spell right are mastered and go in your 🏆 Hall of Fame.</p>${friState === 'current' ? `<button type="button" class="btn berry pp-go" data-check-start>${Object.keys(wk.check?.results || {}).length ? 'Finish the check' : 'Start the check'}</button>` : friState === 'done' ? `<p>✅ Done: <b>${wk.mastered.length}</b> mastered!</p>${recapSet() ? '<button type="button" class="btn small" data-wk-recap>🆕 See your new words</button>' : ''}` : `<p class="muted">🔒 Opens on your day ${SET_DAYS} of practice (today is day ${sd.day})${nodes.every(n => n.state === 'done') ? '. You’re ready!' : '. Finish the path to get ready.'}</p>`}</div>` : ''}</div>`;
   const p = S.vocab.puzzle, puzzleDone = p && p.day === today && p.done;
-  return `<div class="pp-head"><div><h3>🐾 This Week’s Paw Path</h3><p class="muted">${words.length} words · ${path.n} short lesson${path.n === 1 ? '' : 's'} in each skill · then Friday</p></div>
+  return `<div class="pp-head"><div><h3>🐾 Your Paw Path</h3><p class="muted">${words.length} words · ${path.n} short lesson${path.n === 1 ? '' : 's'} in each skill · then the day ${SET_DAYS} check</p></div>
     <div class="pp-stats"><span class="pp-xp" title="XP this week">⚡ ${path.xp} XP</span><span class="pp-streak" title="Days this week with a lesson">📅 ${path.days.length} day${path.days.length === 1 ? '' : 's'}</span></div></div>
-    <div class="pp-week" aria-label="Days this week with a lesson: ${path.days.length}">${days.map((d, i) => `<span class="${path.days.includes(d) ? 'on' : ''}${d === today ? ' today' : ''}"><i>${path.days.includes(d) ? '🐾' : ''}</i>${'MTWTFSS'[i]}</span>`).join('')}</div>
+    <div class="pp-week" aria-label="Day ${sd.day} of ${SET_DAYS} practice days">${setDays.map(i => `<span class="${i <= (wk.days || []).length ? 'on' : ''}${i === sd.day ? ' today' : ''}"><i>${i <= (wk.days || []).length ? '🐾' : ''}</i>${i === SET_DAYS ? '🏁' : i}</span>`).join('')}</div>
     <div class="pp-path">${nodes.map(nodeHTML).join('<div class="pp-link" aria-hidden="true"></div>')}<div class="pp-link" aria-hidden="true"></div>${fri}</div>
-    <div class="pp-bonus"><button type="button" class="btn small" data-pz-start ${puzzleDone ? 'disabled' : ''}>🎲 Puzzle of the day: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}${puzzleDone ? ' ✅' : ''}</button><button type="button" class="btn small" data-vocab-tab="week">📅 All this week’s words</button></div>`;
+    <div class="pp-bonus"><button type="button" class="btn small" data-pz-start ${puzzleDone ? 'disabled' : ''}>🎲 Puzzle of the day: ${esc(PUZZLE_INFO[todayPuzzleType()].name)}${puzzleDone ? ' ✅' : ''}</button><button type="button" class="btn small" data-vocab-tab="week">📅 All words in this set</button></div>`;
 }
 /* one lesson: the week's words in that lesson's group, wrong answers from this week's words first, then all of hers */
 function startPathLesson(skill, idx){
@@ -13679,7 +13824,7 @@ function finishPathLesson(){
     <div class="pp-tiles"><div class="pp-tile-stat xp"><small>XP</small><b>⚡ ${res.xp}</b></div><div class="pp-tile-stat acc"><small>${acc >= 90 ? 'Amazing' : acc >= 70 ? 'Good' : 'Accuracy'}</small><b>🎯 ${acc}%</b></div><div class="pp-tile-stat streak"><small>Days this week</small><b>📅 ${path.days.length}</b></div></div>
     ${lessonPicStripHTML(run.idx)}
     <p>You earned <b>🪙 ${coins}</b>. ${esc(petName())} is proud of you!</p>
-    ${nowDone ? `<p class="pp-unlocked">🎉 You finished <b>${info.emoji} ${esc(info.name)}</b>!${next ? ` Next up: <b>${next.emoji} ${esc(next.name)}</b>` : ' The whole path is done: you’re ready for Friday!'}</p>` : ''}
+    ${nowDone ? `<p class="pp-unlocked">🎉 You finished <b>${info.emoji} ${esc(info.name)}</b>!${next ? ` Next up: <b>${next.emoji} ${esc(next.name)}</b>` : ' The whole path is done: you’re ready for the day 5 check!'}</p>` : ''}
     ${run.missed.size ? `<p class="muted">Words to keep an eye on: ${[...run.missed].map(k => `<b>${esc(pathWordObj(k).w)}</b>`).join(', ')}</p>` : ''}
     ${brag}
     <div class="row pp-done-row">${roundLeft ? '<button type="button" class="btn berry" data-pp-nextlesson>Next lesson ▶</button>' : gameNext || '<button type="button" class="btn berry" data-pp-continue>Continue</button>'}</div></div>`;
@@ -13856,7 +14001,7 @@ function vocabGrownUpHTML(all){
     <textarea id="vocabImport" rows="5" style="width:100%" placeholder="hesitate - to stop for a moment because you are unsure - Don’t ___ to ask for help."></textarea>
     <div class="row"><button class="btn small primary" type="button" data-vocab-import>Add these words</button><span class="status" id="vocabMsg"></span></div>
     ${v.words.length ? `<h4>Words you added</h4><p class="muted" style="margin-top:0">Tap 🖼️ to pick a word’s picture: 🔍 find a free photo, or choose an emoji.</p><div class="vocab-grid">${v.words.map(x => `<span class="vocab-chip st-new">${esc(x.syl ? x.syl.join('+') : x.w)} <button type="button" class="vocab-pic-btn" data-vocab-pic="${esc(x.w)}" aria-label="Picture for ${esc(x.w)}" title="Picture for ${esc(x.w)}">${addedPicBadge(x)}</button><button type="button" class="room-remove" data-vocab-remove="${esc(x.w)}" aria-label="Remove ${esc(x.w)}">×</button></span>`).join('')}</div>${picEditorHTML()}` : ''}
-    <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each Monday she gets 20 unmastered words (the ones she didn’t master last week first, the rest picked at random) plus 5 mastered words to review; Friday’s mastery check moves the ones she spells right to her 🏆 Hall of Fame, and a review word she misses goes back to unmastered.</p>
+    <p class="muted">All the words (Pet World’s 10 sets, the class’s and yours) are one list. Words you add join it as unmastered. Each set of words lasts 5 practice days (days she practices; missed days don’t count): 20 unmastered words (the ones she didn’t master in the last set first, the rest picked at random) plus 5 mastered words to review. The mastery check on her 5th practice day moves the ones she spells right to her 🏆 Hall of Fame, and a review word she misses goes back to unmastered.</p>
     <div class="row"><button class="btn small" id="parentPinLock" type="button">Lock</button></div></section>`;
 }
 $('#vocabWrap').addEventListener('submit', event => {
@@ -16047,6 +16192,7 @@ function mergeWork(base, other){
   for (const f of other.vocab?.flagged || []) if (!base.vocab.flagged.some(x => x.w === f.w)) { base.vocab.flagged = [...base.vocab.flagged, f].slice(-60); n++; }
   for (const f of other.vocab?.lookedUp || []) if (!base.vocab.lookedUp.some(x => x.w === f.w)) { base.vocab.lookedUp = [...base.vocab.lookedUp, f].slice(-60); n++; }
   if (Array.isArray(other.missLog)) base.missLog = [...(base.missLog || []), ...other.missLog.filter(m => m && Number.isFinite(+m.t) && typeof m.q === 'string' && !(base.missLog || []).some(x => x.t === m.t && x.q === m.q))].sort((a, b) => a.t - b.t).slice(-80);   // Insights only: not counted as new work
+  base.tour = mergeTours(base.tour, other.tour);   // 🧭 a tour seen on either device counts as seen (not counted as new work)
   n += mergeProgress(base, other);
   return n;
 }
@@ -16091,6 +16237,8 @@ function mergeProgress(base, other){
     for (const [st, count] of Object.entries(theirs)) if ((Number(count) || 0) > (Number(mine[st]) || 0)) { mine[st] = count; n++; }
   });
   for (const [w, stat] of Object.entries(other.vocab?.stats || {})) if ((stat?.r?.length || 0) > (base.vocab.stats[w]?.r?.length || 0)) { base.vocab.stats[w] = stat; n++; }
+  /* the same word set on both devices: practice days and ✅ right words from both (a 5-practice-day set never loses a day) */
+  { const bw = base.vocab?.week, ow = other.vocab?.week; if (bw && ow && bw.id === ow.id) for (const f of ['days', 'right']) { const add = (ow[f] || []).filter(x => !(bw[f] || []).includes(x) && (f === 'days' || bw.words.includes(x))); if (add.length) { bw[f] = [...(bw[f] || []), ...add]; if (f === 'days') bw.days.sort(); n++; } } }
   for (const [id, v] of Object.entries(other.questionStats || {})) if (Array.isArray(v) && v[0] > (base.questionStats[id]?.[0] || 0)) { base.questionStats[id] = v; n++; }
   for (const [key, day] of Object.entries(other.videosWatched || {})) if (!base.videosWatched[key]) { base.videosWatched[key] = day; n++; }
   base.testSeen = normalizeTestSeen(base.testSeen);   // reserved test questions seen on either device: the later time wins
@@ -16306,5 +16454,17 @@ initHelpBot({
   home:() => show('home'),
   showClass:subject => { show('home'); viewSubject = subject; renderHome(); },
   showGrade:hood => { show('home'); viewHood = hood; viewSubject = null; renderHome(); },
-  openSpot:id => { if ($('#scr-home').hidden) show('home'); openTownSpot(id); }
+  openSpot:id => { if ($('#scr-home').hidden) show('home'); openTownSpot(id); },
+  tour:id => replayTour(id)
+});
+/* 🧭 the first-time tour (docs/TOUR.md): only points at things; the daily pop-ups wait for it and come right after */
+initStudentTour({
+  state:() => {
+    const screen = SCREENS.find(s => !$('#scr-' + s).hidden) || '';
+    return {screen, tours:S.tour, hood:currentHood(), lookOnly:!!LOOK_ID, gamesOnly:gamesOnlyMode, signedIn:!['loading','join','name',''].includes(screen),
+      blocked:!!(brainRun || moveRun || $('.theme-card') || $('#bibleWrap') || $('.modal:not([hidden])'))};
+  },
+  saveTours:tours => { if (LOOK_ID) return; S.tour = tours; save(); },
+  home:() => show('home'),
+  resume:() => setTimeout(() => { bibleCheck(); brainCheck(); moveCheck(); themeCheck(); }, 200)
 });

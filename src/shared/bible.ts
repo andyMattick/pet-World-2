@@ -91,9 +91,9 @@ export function typedMayContinue(raw: string): boolean {
    There's no deadline: a verse carries on into the next week. When she's learned every verse, the grown-up gets an alert
    to add the next one. */
 export interface MemoryVerse { id: string; ref: string; version: string; text: string }
-export interface BibleSettings { on: boolean; verses: MemoryVerse[] }
+export interface BibleSettings { on: boolean; verses: MemoryVerse[]; removed?: string[] }
 export interface VerseTry { t: number; day: string; step: number; pct: number }
-export interface VerseProgress { step: number; up: string; tries: VerseTry[]; learned: string }
+export interface VerseProgress { step: number; up: string; tries: VerseTry[]; learned: string; aside?: string; kept?: string; days?: string[]; seen?: { round: number; day: string } }
 export const VERSE_STEPS = [0.1, 0.2, 0.35, 0.5, 0.7, 1];
 export const FULL_STEP = VERSE_STEPS.length - 1;
 export const VERSE_TRIES_A_DAY = 5;
@@ -105,12 +105,19 @@ export function parseBibleSettings(raw: unknown): BibleSettings {
   const list = (Array.isArray(o.verses) ? o.verses : []).filter(x => x && typeof x === 'object' && String((x as MemoryVerse).text || '').trim()) as (MemoryVerse & { week?: string })[];
   if (list.some(x => x.week) && !list.some(x => x.id)) list.sort((a, b) => String(a.week) < String(b.week) ? -1 : 1);   // the first version kept verses by week
   const verses = list.map((x, i) => ({ id: String(x.id || x.week || `v${i}`).slice(0, 40), ref: String(x.ref || '').slice(0, 80), version: String(x.version || '').slice(0, 40), text: String(x.text).slice(0, 2000) }));
-  return { on: o.on === true, verses };
+  const removed = (Array.isArray(o.removed) ? o.removed : []).map(x => String(x).slice(0, 40)).filter(Boolean).slice(-200);
+  return { on: o.on === true, verses, ...(removed.length ? { removed } : {}) };
 }
 export function normalizeVerseProgress(raw: unknown): VerseProgress {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Partial<VerseProgress>;
   return {
     step: Math.max(0, Math.min(FULL_STEP, Math.round(+(o.step || 0)) || 0)), up: typeof o.up === 'string' ? o.up.slice(0, 10) : '', learned: typeof o.learned === 'string' ? o.learned.slice(0, 10) : '',
+    ...(typeof o.aside === 'string' && o.aside ? { aside: o.aside.slice(0, 10) } : {}),
+    ...(typeof o.kept === 'string' && o.kept ? { kept: o.kept.slice(0, 10) } : {}),
+    /* days: every day she practiced this verse, kept apart from the 60-try cap so the 5-day rounds never shift.
+       seen: the last round whose recap she was shown, and the day (the recap stays up for the rest of that day) */
+    ...(Array.isArray(o.days) ? { days: [...new Set(o.days.map(d => String(d).slice(0, 10)).filter(d => /^\d{4}-\d\d-\d\d$/.test(d)))].sort().slice(-400) } : {}),
+    ...(o.seen && typeof o.seen === 'object' && Number.isFinite(+o.seen.round) ? { seen: { round: Math.max(0, Math.round(+o.seen.round)), day: String(o.seen.day || '').slice(0, 10) } } : {}),
     tries: (Array.isArray(o.tries) ? o.tries : []).filter(t => t && Number.isFinite(+t.t)).slice(-60).map(t => ({ t: +t.t, day: String(t.day || '').slice(0, 10), step: Math.max(0, Math.min(FULL_STEP, Math.round(+t.step) || 0)), pct: Math.max(0, Math.min(100, Math.round(+t.pct) || 0)) }))
   };
 }
@@ -123,7 +130,59 @@ export function lastFiveAverage(p: VerseProgress, step: number): number | null {
 }
 /** The verse she's learning: the first one in the list not learned yet (null when there are none, or all are learned). */
 export function currentVerse(s: BibleSettings, progress: Record<string, unknown> | undefined): MemoryVerse | null {
-  return s.verses.find(v => !normalizeVerseProgress(progress?.[v.id]).learned) || null;
+  return s.verses.find(v => { const p = normalizeVerseProgress(progress?.[v.id]); return !p.learned && !p.aside; }) || null;
+}
+
+/* ---------- the 5-day verse cycle (owner, Oct 31, 2026; docs/BIBLE.md "5 practice days") ----------
+   Like the Word Workshop's word sets, a verse is looked at every 5 days she practiced it (days with a try; missed days
+   don't count). On the 5th day, after that day's 5 tries, she sees a recap: the step she reached, her tries and last-5
+   average, and whether she learned it, with a grown-up link (behind the PIN) to write the next verse. If she hasn't learned
+   it, the grown-up can keep it another 5 days (nothing changes: it carries on, as always) or write a new one (the old one
+   is set aside: `aside`, and kept with its tries). A grown-up's verse is saved in her save (S.bible.added: {id, ref,
+   version, text, after, at}) and joins her list right after the verse it followed, so the teacher app sees it. */
+export const VERSE_CYCLE = 5;
+export interface AddedVerse extends MemoryVerse { after: string; at: number }
+export function normalizeAddedVerses(raw: unknown): AddedVerse[] {
+  return (Array.isArray(raw) ? raw : []).filter(x => x && typeof x === 'object' && String((x as AddedVerse).text || '').trim() && String((x as AddedVerse).ref || '').trim() && (x as AddedVerse).id)
+    .map(x => { const a = x as AddedVerse; return { id: String(a.id).slice(0, 40), ref: String(a.ref).trim().slice(0, 80), version: String(a.version || '').trim().slice(0, 40), text: String(a.text).trim().replace(/\s+/g, ' ').slice(0, 2000), after: String(a.after || '').slice(0, 40), at: Number.isFinite(+a.at) ? +a.at : 0 }; })
+    .filter((a, i, all) => all.findIndex(b => b.id === a.id) === i).slice(-100);
+}
+/** Her verse list: the teacher's verses, with each grown-up verse from her save placed right after the verse it followed
+    (at the end when that one is gone). A verse the teacher saved with the same id, or removed, isn't added again. */
+export function withAddedVerses(s: BibleSettings, added: unknown): BibleSettings {
+  const have = new Set([...s.verses.map(v => v.id), ...(s.removed || [])]), list = [...s.verses];
+  for (const a of normalizeAddedVerses(added).sort((x, y) => x.at - y.at)) {
+    if (have.has(a.id)) continue;
+    have.add(a.id);
+    const v = { id: a.id, ref: a.ref, version: a.version, text: a.text }, i = list.findIndex(x => x.id === a.after);
+    if (i < 0) list.push(v); else list.splice(i + 1, 0, v);
+  }
+  return { ...s, verses: list };
+}
+/** The same checks as the teacher app's verse form: a reference and the verse are needed; spaces are tidied. */
+export function verseFormError(ref: string, text: string): string {
+  if (!String(ref || '').trim()) return 'Type the reference (like John 3:16) first. Nothing was saved yet.';
+  if (!String(text || '').trim()) return 'Type the verse first. Nothing was saved yet.';
+  return '';
+}
+/** Where a verse's 5-day round stands on `day`: practice days so far (days with a try), the day of this round (1–5),
+    the finished rounds, and whether today is a 5th day with the day's tries done (the recap shows). */
+/** Every day she practiced this verse: the saved days plus the days of her kept tries. */
+export const verseDays = (p: VerseProgress) => [...new Set([...(p.days || []), ...p.tries.map(t => t.day)])].filter(Boolean).sort();
+/** Counts a day as practiced (in place). */
+export function markVerseDay(p: VerseProgress, day: string) { if (!/^\d{4}-\d\d-\d\d$/.test(day)) return; p.days = verseDays(p); if (!p.days.includes(day)) p.days = [...p.days, day].sort().slice(-400); }
+export function verseCycle(p: VerseProgress, day: string) {
+  const days = verseDays(p), upTo = days.filter(d => d <= day), n = upTo.length, practiced = days.includes(day);
+  const dayInRound = n ? ((n - 1) % VERSE_CYCLE) + 1 : 0, todayTries = p.tries.filter(t => t.day === day).length;
+  return { days: n, practiced, day: practiced ? dayInRound : (n % VERSE_CYCLE) + 1, rounds: Math.floor(n / VERSE_CYCLE), recapToday: practiced && dayInRound === VERSE_CYCLE && todayTries >= VERSE_TRIES_A_DAY };
+}
+/** The recap of a verse's latest 5 practice days (up to `day`): the step she reached, its name, tries, the last-5
+    average at that step, and whether she learned it. */
+export function verseRecap(p: VerseProgress, day: string) {
+  const days = verseDays(p).filter(d => d <= day), last5 = days.slice(-VERSE_CYCLE);
+  const tries = p.tries.filter(t => last5.includes(t.day)), step = tries.length ? Math.max(...tries.map(t => t.step)) : p.step;
+  const avg = lastFiveAverage(p, step);
+  return { step, name: stepName(step), level: step + 1, levels: VERSE_STEPS.length, tries: tries.length, days: last5.length, from: last5[0] || '', avg, learned: !!p.learned, learnedDay: p.learned, aside: p.aside || '' };
 }
 /** She has learned every verse (or none was ever added): a grown-up should add the next one. */
 export const needsNewVerse = (s: BibleSettings, progress: Record<string, unknown> | undefined) => s.on && !currentVerse(s, progress);

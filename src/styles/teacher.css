@@ -148,6 +148,10 @@ details.unit-card[open]>summary{margin-bottom:8px}
 .setup-group{margin:16px 0 0; font-size:1.05rem}
 .setup-item select{margin:2px 0 0 6px; font:inherit; font-size:.9rem; width:auto}
 .setup-callout{padding:10px 16px}
+.setup-game-list{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:4px 12px; margin:8px 0 2px}
+.setup-games .row{flex-wrap:nowrap; gap:8px; margin:6px 0}
+.setup-games .row .btn{flex:0 1 auto; width:auto; min-height:0}
+.setup-game-list label{display:flex; gap:8px; align-items:center; padding:4px 0; font-weight:400; cursor:pointer}
 
 a.btn{display:inline-block; text-decoration:none}
 

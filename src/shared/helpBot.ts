@@ -44,6 +44,7 @@ const STOP = new Set(('a an the i me my mine we our you your it its is are am wa
 
 /* phrases first (on normalized text), then single words */
 const PHRASES: [RegExp, string][] = [
+  [/\b(show me around|show me how (this|it) works|how does (this|it|pet world)( all)? work|how do(es)? (this|pet world) work|give me a tour|tour guide|guided tour|walk ?through|walk me through|new here|im new|i am new)\b/g, ' tour '],   // 🧭 docs/TOUR.md
   [/\b(pass ?word|pass ?code|passcode|log ?in code|secret number)\b/g, 'pin'],
   [/\btimes tables?\b|\bmultiplication facts?\b|\bmath facts?\b/g, 'sprint facts'],
   [/\bfact sprint\b|\bsprint track\b/g, 'sprint'],
@@ -146,7 +147,7 @@ export function editDistance(a: string, b: string, max = 3): number {
   return d[a.length][b.length];
 }
 
-const KEEP_WORDS = new Set(['brainstretch', 'movebreak', 'petroom', 'stickerbook', 'townhall', 'wordworkshop', 'readinglog', 'sciencelab', 'artstudio', 'themedays', 'freeplay', 'classcode']);
+const KEEP_WORDS = new Set(['tour', 'brainstretch', 'movebreak', 'petroom', 'stickerbook', 'townhall', 'wordworkshop', 'readinglog', 'sciencelab', 'artstudio', 'themedays', 'freeplay', 'classcode']);
 const INTENT_WORDS: Record<string, HelpIntent> = { wherex: 'where', howx: 'how', whatx: 'what', on: 'on', off: 'off', whatnext: 'next' };
 
 /* words from text, with phrase aliases and synonyms applied (used for both questions and entries) */
@@ -293,7 +294,7 @@ export interface StudentData {
 export const STUDENT_SPOTS: { id: string; emoji: string; name: string; text: string; keys: string[]; boost?: number }[] = [
   { id: 'bible', emoji: '✝️', name: 'Bible', text: 'Bible comes first each day: your journal, the verse, and books of the Bible.', keys: ['bible', 'verse', 'journal', 'books of the bible', 'devotion', 'pray', 'god', 'jesus'] },
   { id: 'sprint', emoji: '⚡', name: 'Sprint Track', text: 'Fact Sprint: 60 seconds of times tables. Right answers power up your tips.', keys: ['sprint', 'sprint facts', 'multiply', 'multiplication', 'facts', 'fast math', 'power', 'tips', 'race'] },
-  { id: 'vocab', emoji: '🔤', name: 'Word Workshop', text: 'Your words of the week: the Paw Path, the word game of the day, and the Friday mastery check.', keys: ['wordworkshop', 'words', 'word', 'spelling', 'definitions', 'word game', 'crossword', 'word search', 'mastery check', 'hall of fame'] },
+  { id: 'vocab', emoji: '🔤', name: 'Word Workshop', text: 'Your words of the week: the Paw Path, the word game of the day, and the mastery check on your 5th practice day.', keys: ['wordworkshop', 'words', 'word', 'spelling', 'definitions', 'word game', 'crossword', 'word search', 'mastery check', 'hall of fame'] },
   { id: 'reading', emoji: '📖', name: 'Reading Log', text: 'Log the books you read, write chapter notes, and take Reading Quizzes once a grown-up checks your notes.', keys: ['readinglog', 'reading', 'read', 'books', 'book', 'chapter', 'notes', 'reading quiz', 'novel'] },
   { id: 'artstudio', emoji: '🎨', name: 'Art Studio', text: 'Paint pictures, buy frames, and hang your art in your Pet Room.', keys: ['artstudio', 'art', 'paint', 'draw', 'frame', 'picture', 'color'] },
   { id: 'room', emoji: '🏠', name: 'My Pet Room', text: 'Decorate your room with stickers you earned and dress up your pets.', keys: ['petroom', 'room', 'decorate', 'decorations', 'furniture', 'dress up', 'clothes', 'hat', 'wardrobe'] },
@@ -321,6 +322,7 @@ export const STUDENT_FAQ: { id: string; title: string; text: string; keys: strin
   { id: 'grade', title: 'Change grade (neighborhood)', text: 'Your town has a neighborhood for each grade. Use the grade buttons on the town page to switch.', keys: ['grade', 'neighborhood', '4th grade', '6th grade', 'fourth', 'sixth', 'switch grade'], intents: ['how', 'where'], go: 'screen:home' },
   { id: 'helper', title: 'Helper pet and display case', text: 'Tap My helper on the town page to pick the pet that helps you, and tap a shelf to show off a decoration.', keys: ['helper', 'pet', 'display', 'case', 'shelf', 'choose pet'], intents: ['how'], go: 'screen:home' },
   { id: 'spanish', title: 'Español', text: 'Tap Español at the top to see Pet World in Spanish. Tap English to switch back.', keys: ['spanish', 'language', 'espanol', 'translate'], intents: ['how', 'on', 'off'] },
+  { id: 'tour', title: '🧭 Take the tour', text: 'A quick walk around your town: Today’s plan, your classes, your words, coins, the Arcade and me. Skip it any time.', keys: ['tour', 'show me around', 'how does this work', 'guide', 'walkthrough', 'new here', 'first time', 'help me start'], go: 'tour:town', intents: ['how', 'what', 'where'] },
   { id: 'grownup', title: 'Grown-up page', text: 'The 👩‍🏫 button at the top opens the teacher and parent page. It needs the grown-up PIN.', keys: ['grown up', 'parent', 'teacher page', 'parent page', 'settings'], intents: ['where', 'how'] }
 ];
 
@@ -442,6 +444,7 @@ export const TEACHER_FAQ: { id: string; title: string; text: string; keys: strin
   { id: 'teacherLock', title: 'Teacher lock PIN', text: 'Tap 🔒 at the top to set a PIN on this computer so a student can’t open the teacher app. Forgot it? Sign in again with your email.', keys: ['lock', 'teacher pin', 'lock app', 'grown up pin', 'forgot pin'], intents: ['how'] },
   { id: 'newClass', title: 'Make a new class', text: 'On the left, type a class name and tap Add class. It opens Quick setup.', keys: ['new class', 'add class', 'create class', 'another class'], intents: ['how'] },
   { id: 'classCode', title: 'Class code', text: 'The class code is at the top right of every tab. Students type it to join, or use the 🐾 Student view link.', keys: ['classcode', 'join', 'code', 'student link'], go: 'setting:copyJoin', intents: ['what', 'where'] },
+  { id: 'tour', title: '🧭 Take the tour', text: 'A one-minute walk around the teacher app: the dashboard, each student’s page, Waiting for a grown-up, the Roster, Settings and Quick setup. Skip it any time.', keys: ['tour', 'show me around', 'how does this work', 'guide', 'walkthrough', 'new here', 'getting started tour'], go: 'tour:teacher', intents: ['how', 'what', 'where'] },
   { id: 'messages', title: 'Messages and ✋ questions', text: 'Student questions show as ✋ alerts on the Dashboard and on the student’s page. Answer there to reopen what they asked about.', keys: ['message', 'chat', 'question', 'alert', 'hand', 'help request'], go: 'tab:dashboard', intents: ['how', 'where'] }
 ];
 
@@ -459,7 +462,7 @@ export function fromSharedSettings(list: SharedSetting[], groups: { id: string; 
 /* one setting per Arcade game, brain game, move and theme day, from the apps' own lists */
 export function teacherItemSettings(data: { ARCADE_GAMES?: NamedThing[]; BRAIN_GAMES?: NamedThing[]; MOVES?: { id: string; name: string; emoji?: string }[]; THEME_DAYS?: { id: string; name: string; emoji?: string }[] }): TeacherSetting[] {
   const out: TeacherSetting[] = [];
-  for (const g of data.ARCADE_GAMES || []) out.push({ id: 'arcade-game:' + g.id, emoji: g.emoji, name: `${g.name} (Arcade game)`, what: `Turn ${g.name} on or off for the class (Settings → Arcade).`, keys: [g.name, 'arcade', 'game'], sel: `[data-arcade-game="${g.id}"]` });
+  for (const g of data.ARCADE_GAMES || []) out.push({ id: 'arcade-game:' + g.id, emoji: g.emoji, name: `${g.name} (Arcade game)`, what: `Open or close ${g.name} for the class (Settings → Arcade, or 🧭 Quick setup → Arcade games).`, keys: [g.name, 'arcade', 'game', 'open', 'close'], sel: `[data-arcade-game="${g.id}"]` });
   for (const g of data.BRAIN_GAMES || []) out.push({ id: 'brain-game:' + g.id, emoji: g.emoji, name: `${g.name} (brain game)`, what: `Turn ${g.name} on or off in brain stretches (Settings → Brain stretches).`, keys: [g.name, 'brainstretch', 'brain game'], sel: `[data-brain-game="${g.id}"]` });
   for (const m of data.MOVES || []) out.push({ id: 'move:' + m.id, emoji: m.emoji, name: `${m.name} (stand-and-stretch move)`, what: `Turn the ${m.name} move on or off (Settings → Stand-and-stretch breaks).`, keys: [m.name, 'movebreak', 'move'], sel: `[data-move="${m.id}"]` });
   for (const t of data.THEME_DAYS || []) out.push({ id: 'theme:' + t.id, emoji: t.emoji, name: `${t.name} (theme day)`, what: `Turn ${t.name} on or off (Settings → Theme days).`, keys: [t.name, 'themedays', 'theme'], sel: `[data-themeday="${t.id}"]` });

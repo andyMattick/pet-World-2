@@ -5,6 +5,7 @@
    words, for example from a Wordly Wise lesson, and choose focus words; all words are in focus by default. */
 
 import { normalizePath } from './wordPath.js';
+import { setNoOfWeek } from './wordPuzzles.js';
 import { validPictureEmoji, validWordPhoto } from './wordPictures.js';
 
 const W = (set, w, d, s) => ({ w, d, s, set });
@@ -302,16 +303,51 @@ export const wordWeight = stat => ({ new: 3, work: 4, close: 2, solid: 1 })[word
 /* this week's words, the Friday mastery check, words mastered for good, and the day's puzzle (docs/VOCAB.md, "Weekly words") */
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const keys = (list, max = VOCAB_LIMITS.list) => (Array.isArray(list) ? list : []).map(wordKey).filter(k => k && k.length <= VOCAB_LIMITS.word).slice(0, max);
+/* A word set lasts 5 practice days (owner, Oct 31, 2026; docs/VOCAB.md "5 practice days"): a day counts when she does
+   any Word Workshop work that day (missed days, weekends and holidays don't). The mastery check is due on her 5th
+   practice day, after 4 earlier practice days, and stays due until it's done. `week.days` lists the practice days. */
+export const SET_DAYS = 5;
+/** Where a set stands on `today`: day = her practice day number today (today's if she practiced, else the one today
+    would be), before = earlier practice days, practiced = today counted, due = the mastery check is due (never on day 1). */
+export function setDayInfo(week, today){
+  const days = Array.isArray(week?.days) ? week.days : [], before = days.filter(d => d < today).length, practiced = days.includes(today);
+  return { day: before + 1, before, practiced, due: before >= SET_DAYS - 1 && !week?.check?.done, left: Math.max(0, SET_DAYS - 1 - before) };
+}
+/** Counts today as a practice day of the set (in place). Returns true when it was new. */
+export function markSetDay(week, today){
+  if (!week || !DAY_KEY.test(today)) return false;
+  if (!Array.isArray(week.days)) week.days = [];
+  if (week.days.includes(today)) return false;
+  week.days = [...week.days, today].sort().slice(-40);
+  return true;
+}
+const daysList = list => (Array.isArray(list) ? list : []).filter(d => DAY_KEY.test(d)).filter((d, i, a) => a.indexOf(d) === i).sort().slice(-40);
 function weeklyState(out){
-  const wk = out.week && typeof out.week === 'object' && DAY_KEY.test(out.week.id) ? out.week : null;
+  const week = normWeek(out.week, out.path);
+  /* last: the set before this one, kept for the "Your new words" recap until the new set's first practice day */
+  const last = out.last && typeof out.last === 'object' ? normWeek(out.last, null) : null;
+  return { ...weeklyRest(out), week, last: last && week && last.id !== week.id ? last : null };
+}
+function normWeek(raw, path){
+  const wk = raw && typeof raw === 'object' && DAY_KEY.test(raw.id) ? raw : null;
   const ck = wk?.check && typeof wk.check === 'object' ? wk.check : null;
   /* carried: last week's unmastered words; review: mastered words drawn to review; right: words she answered right this
      week anywhere in Word Workshop; check.cards: the Friday flashcard warm-up (first: known on the first try, n: cards) */
   const words = wk ? keys(wk.words, 80) : [], inWeek = list => keys(list, 80).filter(k => words.includes(k));
   const cards = ck?.cards && typeof ck.cards === 'object' ? { first: Math.max(0, Math.round(+ck.cards.first || 0)), n: Math.max(0, Math.round(+ck.cards.n || 0)), skipped: !!ck.cards.skipped } : null;
-  const week = wk ? { id: wk.id, words, kept: Math.max(0, Math.round(+wk.kept || 0)), added: Math.max(0, Math.round(+wk.added || 0)), mastered: keys(wk.mastered, 80),
+  /* days: her practice days in this set (5 = the mastery check). A week saved before Oct 31 has none: it keeps going and
+     starts counting, crediting the days this week she did a Paw Path lesson (path.days), so a nearly finished week isn't
+     pushed back. n: the set's number, for the game of the day (a calendar week keeps its old number). next: the set drawn
+     when the check was done, shown in the recap and started on her next day. */
+  const p = path ? normalizePath(path) : null, legacyDays = p && p.wk === wk?.id ? p.days.filter(d => d >= wk.id) : [];
+  const nextRaw = wk?.next && typeof wk.next === 'object' ? wk.next : null, nextWords = nextRaw ? keys(nextRaw.words, 80) : [], inNext = list => keys(list, 80).filter(k => nextWords.includes(k));
+  return wk ? { id: wk.id, words, kept: Math.max(0, Math.round(+wk.kept || 0)), added: Math.max(0, Math.round(+wk.added || 0)), mastered: keys(wk.mastered, 80),
     carried: Array.isArray(wk.carried) ? inWeek(wk.carried) : words.slice(0, Math.max(0, Math.round(+wk.kept || 0))), review: inWeek(wk.review), right: inWeek(wk.right),
+    days: Array.isArray(wk.days) ? daysList(wk.days) : daysList(legacyDays), n: Number.isFinite(+wk.n) && wk.n !== null && wk.n !== '' ? Math.round(+wk.n) : setNoOfWeek(wk.id),
+    ...(nextWords.length ? { next: { words: nextWords, carried: inNext(nextRaw.carried), added: inNext(nextRaw.added), review: inNext(nextRaw.review) } } : {}),
     check: ck ? { day: DAY_KEY.test(ck.day) ? ck.day : '', done: !!ck.done, ...(cards ? { cards } : {}), results: Object.fromEntries(Object.entries(ck.results && typeof ck.results === 'object' ? ck.results : {}).filter(([k]) => k.length <= VOCAB_LIMITS.word).slice(0, 80).map(([k, v]) => [wordKey(k), v ? 1 : 0])) } : null } : null;
+}
+function weeklyRest(out){
   const hall = (Array.isArray(out.hall) ? out.hall : []).filter(h => h && typeof h.w === 'string' && h.w.length <= VOCAB_LIMITS.word).map(h => ({ w: wordKey(h.w), wk: DAY_KEY.test(h.wk) ? h.wk : '' })).slice(-VOCAB_LIMITS.list);
   const pz = out.puzzle && typeof out.puzzle === 'object' && DAY_KEY.test(out.puzzle.day) && typeof out.puzzle.type === 'string' ? out.puzzle : null;
   const puzzle = pz ? { day: pz.day, first: DAY_KEY.test(pz.first) ? pz.first : pz.day, type: pz.type.slice(0, 12), words: keys(pz.words, 12), solved: keys(pz.solved, 12), helped: keys(pz.helped, 12),
@@ -319,7 +355,7 @@ function weeklyState(out){
   /* back: words a grown-up or teacher moved back from mastered, first in line for the next weekly draw (unmasterWord) */
   const back = keys(out.back, 60).filter((k, i, a) => a.indexOf(k) === i);
   /* path: 🐾 this week's Paw Path (wordPath.js): lessons done per skill, XP, streak days, accuracy per skill */
-  return { week, hall, back, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0, path: normalizePath(out.path) };
+  return { hall, back, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0, path: normalizePath(out.path) };
 }
 export function normalizeVocabState(v){
   const out = v && typeof v === 'object' ? v : {};

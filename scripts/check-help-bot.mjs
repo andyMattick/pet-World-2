@@ -73,12 +73,26 @@ const S = [
   ['Quick setup', 'tab:setup', null, 'teacher'],
   ['stop the music', 'sel:#allowMusic', null, 'teacher'],
   ['turn off mine walker', 'sel:[data-arcade-game="mine-walker"]', null, 'teacher'],
+  ['close carnival midway', 'sel:[data-arcade-game="carnival"]', null, 'teacher'],
+  ['open penguin push', 'sel:[data-arcade-game="penguin-push"]', null, 'teacher'],
+  ['open or close each arcade game', 'shared:arcadeGames', null, 'teacher'],
   ['how many questions on a unit test', 'sel:#testPerSkill', null, 'teacher'],
   ['open a unit for everyone', 'sel:[data-open-unit]', null, 'teacher'],
   ['kid is locked out', 'faq:resetPin', null, 'teacher'],
   ['pajama day', 'sel:[data-themeday="pajamas"]', null, 'teacher'],
   ['see a students town', 'faq:look', null, 'teacher'],
-  ['grades', 'faq:grades', null, 'teacher']
+  ['grades', 'faq:grades', null, 'teacher'],
+  // 🧭 the tour (docs/TOUR.md)
+  ['tour', 'tour:town'],
+  ['show me around', 'tour:town'],
+  ['how does this work', 'tour:town'],
+  ['can you give me a tour', 'tour:town'],
+  ['im new here', 'tour:town'],
+  ['take the tour', 'tour:town'],
+  ['tour', 'tour:teacher', null, 'teacher'],
+  ['show me around', 'tour:teacher', null, 'teacher'],
+  ['how does this work', 'tour:teacher', null, 'teacher'],
+  ['walk me through the app', 'tour:teacher', null, 'teacher']
 ];
 let pass = 0; const fails = [];
 for (const [q, want, ctx, side] of S) {

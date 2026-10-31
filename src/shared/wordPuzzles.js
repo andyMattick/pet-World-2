@@ -28,6 +28,19 @@ export function wordGameForDate(day){
   const weeks = Math.floor((t - ROTATION_START) / (7 * 86400000)), slot = 4 * weeks + (wd - 1);
   return WORD_GAME_CYCLE[((slot % 5) + 5) % 5];
 }
+/** Word sets last 5 practice days (owner, Oct 31, 2026; docs/VOCAB.md "5 practice days"): the game of the day goes by
+    the set's number and her practice day in it, the same formula as wordGameForDate with weeks → sets and Monday–Thursday
+    → days 1–4. Day 5 (and later, until the check is done) is the mastery check, with the Match-Up as its puzzle. */
+export function wordGameForSetDay(setNo, day){
+  if (!(day < 5)) return 'check';
+  const slot = 4 * (Math.round(+setNo) || 0) + Math.max(0, Math.round(+day) - 1);
+  return WORD_GAME_CYCLE[((slot % 5) + 5) % 5];
+}
+/** The set number a calendar week id (a Monday) had under the old rotation, so a week saved before Oct 31 keeps its games. */
+export function setNoOfWeek(weekId){
+  const [y, m, d] = String(weekId || '').split('-').map(Number);
+  return y ? Math.floor((Date.UTC(y, m - 1, d) - ROTATION_START) / (7 * 86400000)) : 0;
+}
 
 const letters = w => String(w).toLowerCase().replace(/[^a-z]/g, '');
 export const puzzleWord = w => /^[a-z]+$/i.test(String(w)) && String(w).length >= 3;   // one plain word (no spaces or apostrophes)

@@ -9,7 +9,7 @@ import { buildIndex, ask, suggestWords, studentEntries, normalize } from '../sha
 
 const ES = {
   'Ask me where something is…': 'Pregúntame dónde está algo…', 'Take me there': 'Llévame', 'Helper': 'Ayudante', 'Close': 'Cerrar',
-  'Where do I start?': '¿Por dónde empiezo?', 'Find the Arcade': 'Buscar el Arcade', 'How do I take a test?': '¿Cómo hago una prueba?', 'Send': 'Enviar'
+  'Where do I start?': '¿Por dónde empiezo?', 'Find the Arcade': 'Buscar el Arcade', 'How do I take a test?': '¿Cómo hago una prueba?', 'Send': 'Enviar', '🧭 Take the tour': '🧭 Hacer el recorrido', 'Start the tour': 'Empezar el recorrido'
 };
 
 let api = null, index = null, root = null, open = false;
@@ -76,7 +76,7 @@ function toggle(force){
   panel = document.createElement('div'); panel.className = 'hb-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', t('Helper'));
   panel.innerHTML = `<div class="hb-head"><span aria-hidden="true">🐾</span><b>${esc(t('Helper'))}</b><button type="button" data-hb-close aria-label="${esc(t('Close'))}">✕</button></div>
     <div class="hb-log" aria-live="polite"></div>
-    <div class="hb-chips">${['Where do I start?', 'Find the Arcade', 'How do I take a test?'].map(q => `<button type="button" data-hb-ask="${esc(q)}">${esc(t(q))}</button>`).join('')}</div>
+    <div class="hb-chips">${['Where do I start?', 'Find the Arcade', 'How do I take a test?'].map(q => `<button type="button" data-hb-ask="${esc(q)}">${esc(t(q))}</button>`).join('')}${st.lookOnly || !api.tour ? '' : `<button type="button" data-hb-go="tour:town">${esc(t('🧭 Take the tour'))}</button>`}</div>
     <form class="hb-form"><input type="text" maxlength="120" autocomplete="off" enterkeyhint="send" aria-label="${esc(t('Ask me where something is…'))}" placeholder="${esc(t('Ask me where something is…'))}"><button type="submit">${esc(t('Send'))}</button></form>`;
   root.appendChild(panel);
   say(st.lang === 'es' ? `¡Hola${st.name ? ', ' + esc(st.name) : ''}! Pregúntame dónde está algo o cómo funciona.` : `Hi${st.name ? ' ' + esc(st.name) : ''}! Ask me where something is or how something works.${st.lookOnly ? ' <small>(Look only: nothing here is saved.)</small>' : ''}`);
@@ -117,6 +117,7 @@ function question(q){
 /* is it something she can't see at all? (teacher-closed Arcade games are left out) */
 function hiddenFor(entry, st){
   if (entry.kind === 'game') return !st.arcadeGames.includes(entry.go.slice(5));
+  if (entry.go?.startsWith('tour:')) return st.lookOnly || !api.tour;   // 🧭 look only never shows the tour
   return false;
 }
 
@@ -144,7 +145,7 @@ function answerFor(entry, st = api.state(), also = []){
   const block = entry.go ? blocker(entry.go, st) : '';
   /* a locked building still gets a button: it goes to its class page and points at the locked tile */
   const goable = entry.go && (!block || entry.go.startsWith('building:'));
-  const label = entry.go?.startsWith('building:') && block ? 'Show me' : t('Take me there');
+  const label = entry.go?.startsWith('building:') && block ? 'Show me' : entry.go?.startsWith('tour:') ? t('Start the tour') : t('Take me there');
   let html = `<b>${esc(entry.emoji || '')} ${esc(entry.title)}</b><br>${esc(entry.text)}`;
   if (block) html += `<span class="hb-lock">${esc(block)}</span>`;
   if (entry.id === 'faq:locked' || entry.id === 'faq:test') {   // name the next locked place in her grade, if any
@@ -169,6 +170,7 @@ function flash(el){ document.querySelectorAll('.hb-flash').forEach(x => x.classL
 function goTo(go){
   const st = api.state(), i = go.indexOf(':'), kind = go.slice(0, i), id = go.slice(i + 1);
   const block = blocker(go, st);
+  if (kind === 'tour') { api.tour?.(id); return; }   // 🧭 docs/TOUR.md
   if (kind === 'screen') { api.home(); return; }
   if (kind === 'class') { api.showClass(id); return; }
   if (kind === 'grade') { if (!block) api.showGrade(id); return; }

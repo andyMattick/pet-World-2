@@ -11,6 +11,7 @@ import { TEACHER_SETTINGS as SHARED_SETTINGS, SETTING_GROUPS } from './settingsL
 export interface TeacherBotApi {
   goTab: (tab: string) => void;                          // switch tabs through the app's own renderMain()
   state: () => { ready: boolean; hasClass: boolean; tab: string; lang: string };
+  tour?: () => void;                                     // 🧭 replay the tour (docs/TOUR.md)
 }
 
 /* the shared settings list (src/teacher/settingsList.ts, docs/QUICK-SETUP.md): the same list Quick setup and Settings use */
@@ -72,7 +73,7 @@ function toggle(force?: boolean) {
   panel = document.createElement('div'); panel.className = 'hb-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Helper');
   panel.innerHTML = `<div class="hb-head"><span aria-hidden="true">❓</span><b>Helper</b><button type="button" data-hb-close aria-label="Close">✕</button></div>
     <div class="hb-log" aria-live="polite"></div>
-    <div class="hb-chips">${CHIPS.map(q => `<button type="button" data-hb-ask="${esc(q)}">${esc(q)}</button>`).join('')}</div>
+    <div class="hb-chips">${CHIPS.map(q => `<button type="button" data-hb-ask="${esc(q)}">${esc(q)}</button>`).join('')}${api.tour ? '<button type="button" data-hb-go="tour:teacher">🧭 Take the tour</button>' : ''}</div>
     <form class="hb-form"><input type="text" maxlength="140" autocomplete="off" enterkeyhint="send" aria-label="Ask where a page or setting is" placeholder="Find a page or setting…"><button type="submit">Ask</button></form>`;
   root.appendChild(panel);
   say(api.state().hasClass ? 'Hi! Ask me where a page or setting is, or how to do something (e.g. “turn off the Arcade”).' : 'Hi! Start by adding a class on the left (type a name, then Add class). Then ask me anything about setting it up.');
@@ -105,10 +106,10 @@ function question(q: string) {
 }
 
 function answer(entry: HelpEntry, also: HelpEntry[] = []) {
-  const needsClass = !!entry.go && !api.state().hasClass;
+  const needsClass = !!entry.go && !entry.go.startsWith('tour:') && !api.state().hasClass;
   let html = `<b>${esc(entry.emoji || '')} ${esc(entry.title)}</b><br>${esc(entry.text)}`;
   if (needsClass) html += '<small>Add a class on the left first.</small>';
-  else if (entry.go) html += `<br><button type="button" class="hb-go" data-hb-go="${esc(entry.go)}">Take me there</button>`;
+  else if (entry.go) html += `<br><button type="button" class="hb-go" data-hb-go="${esc(entry.go)}">${entry.go.startsWith('tour:') ? 'Start the tour' : 'Take me there'}</button>`;
   if (also.length) { lastHits = also; html += `<small>Also:</small>${also.map((e, i) => `<button type="button" class="hb-pick" data-hb-pick="${i}">${esc(e.emoji || '')} ${esc(e.title)}</button>`).join('')}`; }
   say(html);
 }
@@ -131,6 +132,7 @@ function whenThere(sel: string, tries = 25) {
 }
 function goTo(go: string) {
   const i = go.indexOf(':'), kind = go.slice(0, i), id = go.slice(i + 1);
+  if (kind === 'tour') { api.tour?.(); return; }   // 🧭 docs/TOUR.md
   if (kind === 'tab') { api.goTab(id); document.getElementById('main')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   if (kind === 'setup') { api.goTab('setup'); whenThere(`[data-setup="${CSS.escape(id)}"]`); return; }
   if (kind === 'sel') {

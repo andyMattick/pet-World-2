@@ -274,7 +274,22 @@ need('src/game/game.js', 'function wordPicHTML(', 'the word pictures in Word Wor
 // right kind of mistake), a test-wise bot near chance, and the 5-game word game rotation. Runs scripts/check-red-pen.mjs.
 try { execFileSync(process.execPath, ['scripts/check-red-pen.mjs', '--papers', '4000'], { stdio: 'pipe' }); }
 catch (error) { problems.push(`Red Pen Desk check failed (node scripts/check-red-pen.mjs): ${String(error.stderr || error.message).trim().split('\n').slice(0, 6).join(' | ')}`); }
-need('src/game/game.js', 'wordGameForDate(localDay())', 'the word game of the day rotation (wordGameForDate in todayPuzzleType)');
+need('src/game/game.js', 'wordGameForSetDay(wk.n, setDayInfo(wk, day).day)', 'the word game of the day rotation by word set and practice day (wordGameForSetDay in todayPuzzleType)');
+// 📅 5 practice days (owner, Oct 31, 2026; docs/VOCAB.md and docs/BIBLE.md "5 practice days"): word sets and memory-verse
+// rounds count practice days, day 1 is never the check, the "Your new words" recap, the 5th-day verse recap with the
+// grown-up's next verse behind the PIN, and the teacher app's views. Runs scripts/check-five-days.mjs.
+try { execFileSync(process.execPath, ['scripts/check-five-days.mjs'], { stdio: 'pipe' }); }
+catch (error) { problems.push(`5 practice days check failed (node scripts/check-five-days.mjs): ${String(error.stderr || error.message).trim().split('\n').slice(0, 6).join(' | ')}`); }
+need('src/game/game.js', 'const checkDue = () => setDay().due && weekWordObjs().length > 0;', 'the mastery check due on her 5th practice day (checkDue via setDayInfo)');
+need('src/game/game.js', 'markVocabDay(); const wk = S.vocab.week;', 'practice days counted from any Word Workshop answer (markVocabDay in recordVocab)');
+need('src/game/game.js', 'function wordRecapHTML(', 'the 🆕 Your new words recap (wordRecapHTML)');
+need('src/game/game.js', 'data-wk-recap', 'the recap button on the Words of the Week card');
+need('src/game/game.js', 'function bibleRecapHTML(', 'the 5th-day memory verse recap (bibleRecapHTML)');
+need('src/game/game.js', "askGrownUp({title:'Write the next memory verse'", 'the grown-up PIN before writing the next verse');
+need('src/game/game.js', 'withAddedVerses(parseBibleSettings(', 'grown-up verses joining her verse list in the game');
+need('src/teacher/bible.ts', 'withAddedVerses(parseBibleSettings(', 'grown-up verses joining her verse list in the teacher app');
+need('src/teacher/bible.ts', 'id="bvWriteNext"', 'the teacher app’s 5-day recap with Write the next verse');
+need('src/teacher/vocab.ts', 'setDayInfo(', 'the teacher Vocabulary tab’s Day N of 5');
 // Pictures for added words (ROADMAP F92, docs/VOCAB.md "Pictures for added words"): the grown-up's picture box and 🎨 cartoon
 // list behind the PIN, the teacher's picture box and cartoon card, and the free-license photo search.
 need('src/game/game.js', 'function picEditorHTML(', 'the grown-up’s 🖼️ picture box for added words (picEditorHTML)');
@@ -348,6 +363,18 @@ if (/<a [^>]*>Open the Khan test<\/a>/.test(game)) problems.push('src/game/game.
   for (const sel of listed) { const needle = sel.startsWith('#') ? `id="${sel.slice(1)}"` : `${sel.slice(1, -1)}="`; if (teacher && !teacher.includes(needle)) problems.push(`TEACHER_SETTINGS lists ${sel}, but Settings (src/teacher/main.ts) has no such control`); }
   for (const [, body] of list.matchAll(/\{ (id: '[A-Za-z]+'[^\n]*quick: true[^\n]*)/g)) { const id = body.match(/id: '([A-Za-z]+)'/)[1]; if (!new RegExp(`\\n  ${id}: c =>`).test(teacher)) problems.push(`Quick setup entry "${id}" has no SETUP_READ line in src/teacher/main.ts`); }
   for (const key of new Set([...game.matchAll(/game_settings\?\.([A-Za-z]+)/g)].map(m => m[1]))) if (!saved.includes(`game_settings.${key}`)) problems.push(`src/game/game.js reads game_settings.${key}, which is not in TEACHER_SETTINGS (src/teacher/settingsList.ts)`);
+  // a quick 'list' entry names its Quick setup controls (quickIds), and they must be in renderSetup
+  const setupPane = (teacher.match(/function renderSetup\(\)[\s\S]*?\n\}\n/) || [''])[0];
+  for (const [, ids] of list.matchAll(/quickIds: \[((?:'[^']*'(?:, )?)*)\]/g)) for (const [, sel] of ids.matchAll(/'([^']+)'/g)) if (!setupPane.includes(sel.startsWith('#') ? `id="${sel.slice(1)}"` : `${sel.slice(1, -1)}="`)) problems.push(`TEACHER_SETTINGS lists Quick setup control ${sel}, but renderSetup (src/teacher/main.ts) has no such control`);
+  // every Arcade game (ARCADE_GAMES in src/shared/registry.ts) gets an open/close switch in both Settings and Quick setup,
+  // both saved to game_settings.arcade.games: each page must draw one switch per ARCADE_GAMES entry, with no filter
+  const arcadeIds = [...((rewardRegistry.match(/export const ARCADE_GAMES[\s\S]*?\n\];/) || [''])[0]).matchAll(/\{ id: '([a-z0-9-]+)'/g)].map(m => m[1]);
+  if (!arcadeIds.length) problems.push('ARCADE_GAMES could not be read from src/shared/registry.ts for the Arcade switches check');
+  if (new Set(arcadeIds).size !== arcadeIds.length) problems.push('ARCADE_GAMES (src/shared/registry.ts) has the same game id twice');
+  if (!/ARCADE_GAMES\.map\(game => `[^\n]*data-arcade-game="\$\{game\.id\}"/.test(settingsPane)) problems.push('Settings → Arcade (src/teacher/main.ts) must draw one data-arcade-game switch for every ARCADE_GAMES entry');
+  if (!/ARCADE_GAMES\.map\(g => `[^\n]*data-setup-game="\$\{g\.id\}"/.test(setupPane)) problems.push('🧭 Quick setup (renderSetup in src/teacher/main.ts) must draw one data-setup-game switch for every ARCADE_GAMES entry');
+  if (!/arcade: [^\n]*games: \{ \.\.\.a\.games, [^\n]*dataset\.setupGame/.test(setupPane)) problems.push('🧭 Quick setup must save its Arcade game switches into game_settings.arcade.games, keeping the others');
+  if (!/arcadeGames\[input\.dataset\.arcadeGame!\] = input\.checked/.test(settingsPane)) problems.push('Settings must save its Arcade game switches into game_settings.arcade.games');
 }
 
 {
@@ -373,6 +400,17 @@ if (/<a [^>]*>Open the Khan test<\/a>/.test(game)) problems.push('src/game/game.
   if (!tabs.length) problems.push('src/teacher/main.ts: the tab list could not be read for the help bot check');
   const tabIds = new Set([...((bot.match(/export const TEACHER_TABS[\s\S]*?\n\];/) || [''])[0]).matchAll(/\{ id: '([a-z]+)'/g)].map(m => m[1]));
   for (const t of [...tabs, 'setup']) if (!tabIds.has(t)) problems.push(`Teacher tab "${t}" is missing from TEACHER_TABS in src/shared/helpBot.ts`);
+}
+
+// 🧭 tour guide (docs/TOUR.md): every step points at something the apps draw, ≤7 steps, Spanish, safe two-device merge;
+// the daily pop-ups wait for it and look-only never shows it
+try { execFileSync(process.execPath, ['scripts/check-tour.mjs'], { stdio: 'pipe' }); }
+catch (error) { problems.push(`Tour check failed (node scripts/check-tour.mjs): ${String(error.stdout || '').trim().split('\n').slice(-6).join(' | ')}`); }
+{
+  const g = read('src/game/game.js'), t = read('src/game/tour.js');
+  for (const f of ['bibleCheck', 'brainCheck', 'moveCheck', 'themeCheck']) if (!new RegExp(`function ${f}\\(\\)\\{\\n  if \\(tourHold\\(\\)\\) return;`).test(g)) problems.push(`src/game/game.js ${f}() must wait for the first-time tour (if (tourHold()) return;) (docs/TOUR.md)`);
+  if (!/base\.tour = mergeTours\(/.test(g)) problems.push('mergeWork (src/game/game.js) must merge S.tour with mergeTours (docs/TOUR.md)');
+  if (t && !/if \(st\.lookOnly\) return false;/.test(t)) problems.push('src/game/tour.js must never show the tour in look-only mode');
 }
 
 if (problems.length) {
