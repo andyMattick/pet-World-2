@@ -36,7 +36,8 @@ Khan's World History Project, Unit 6. It's built in the ⛵ Age of Sail Museum (
   - 📁 Global Meal Map (`history6`): trace the foods in one real meal back to where they first grew.
   - 📁 Curate a Museum Exhibit (`history6lab`): trace one good or idea across the hemispheres.
 - **Test.** The unit test has 20 questions (2 per practice), and 16 right passes. The Khan unit test link is in `KHAN_UNIT_TESTS`.
-- **No game and no reward set yet**, to match Units 1–5 (owner, Oct 28, 2026).
+- **Game.** 🧭 Terra Incognita has a card at the bottom of the unit page (owner, Oct 31, 2026). It's a 1604 exploration charter: chart new lands, survey plants and animals, and sign treaties through negotiation and fair trade, with no conquest. It's also in the 🕹️ Arcade. See `docs/TERRA-INCOGNITA.md`.
+- **No reward set yet**, to match Units 1–5 (owner, Oct 28, 2026).
 
 ## 6.10 The Transatlantic Slave Trade: a hard lesson
 

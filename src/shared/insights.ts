@@ -135,7 +135,7 @@ function eventSubject(ev: Record<string, unknown>): string {
     case 'reading': case 'readtime': return 'reading';
     case 'course': case 'review': return courseSubject(course);
     case 'project': return course.startsWith('bio') ? 'science' : course.startsWith('history') ? 'history' : 'english';
-    case 'dig': case 'scribe': case 'pax': return 'history';
+    case 'dig': case 'scribe': case 'pax': case 'terra': return 'history';
     case 'sim': case 'handson': return 'science';
     case 'ggame': case 'recall': case 'hero': return 'english';
     case 'bible': return 'bible';

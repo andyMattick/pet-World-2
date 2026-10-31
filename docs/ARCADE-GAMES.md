@@ -25,6 +25,7 @@
 | 🐄 Barn Breeder | Biology Unit 5 (Farm Barn), a card at the bottom of the unit page (`openBarnBreeder`) | `barn-breeder`, `arcade/barn-breeder/index.html` (a Vite page using `src/game/barnBreeder.js` and `src/shared/genetics.js`) | 1 per star, up to 3 a fair season |
 | ✍️ Red Pen Desk | Word Workshop: the word game of the day in its turn (Mon–Thu rotation), the path's 🎲 Puzzle of the day, and the 📅 This week tab's games (`redPenBodyHTML`; docs/RED-PEN-DESK.md) | `red-pen`, `arcade/red-pen/index.html` (a Vite page using `src/shared/redPen.js`; her words of the week via `arcade:words-request`) | 1 per 3 papers graded perfectly, up to 3 a round |
 | ⚖️ Pax Oeconomica | History Units 4 and 5, a card at the bottom of the unit page (`openPax`; Unit 4 plays the Classical empires, Unit 5 the Medieval ones) | `pax-oeconomica`, `public/arcade/pax-oeconomica/` (React source in `src/arcade/pax-oeconomica/`; both eras) | 1 per star, up to 3 a game |
+| 🧭 Terra Incognita | History Unit 6, a card at the bottom of the unit page (`openTerra`) | `terra-incognita`, `public/arcade/terra-incognita/` (React source in `src/arcade/terra-incognita/`) | 1 per star, up to 3 a charter |
 
 ## Two ways to build the Arcade copy
 
