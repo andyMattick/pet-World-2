@@ -17,7 +17,9 @@ import { renderVocabTab, type VocabRoster, type ClassVocab, type SaveSpellFocus,
 import { installWordPick } from './wordPick';
 import { insightsSaveFields, rowsByStudent, insightsSince } from '../shared/insights';
 import { setInsightsEmailer } from './insightsCard';
+import { TEACHER_SETTINGS, QUICK_SETUP, SETTING_GROUPS, settingName, type TeacherSetting } from './settingsList';   // every teacher setting, one list (docs/QUICK-SETUP.md)
 import { renderLessons, sumQuestionStats, type LessonLink, type QuestionEdits, type QuestionStats, type KhanData, type KhanResults, type RosterRow } from './lessons';
+import { initTeacherHelpBot } from './helpBot';   // 🤖 the corner helper (docs/HELP-BOT.md)
 
 interface ClassRow { id: string; name: string; join_code: string; min_station: number; drill_settings: Partial<DrillSettings> | null; quiz_settings: Partial<QuizSettings> | null; game_settings: { openUnits?: string[]; allowMusic?: boolean; [key: string]: unknown } | null; lesson_links?: Record<string, LessonLink> | null; question_edits?: QuestionEdits | null; created_at: string }
 interface StudentRow { id: string; display_name: string; pin_plain: string | null; failed_attempts: number; locked_until: string | null }
@@ -159,8 +161,9 @@ function renderShell() {
     <aside class="side"><h2>Classes</h2>
       ${classes.map(c => `<button class="classbtn ${!adminView && current && c.id === current.id ? 'on' : ''}" data-id="${c.id}">${esc(c.name)}</button>`).join('') || '<p class="muted" style="margin:4px">No classes yet.</p>'}
       ${isAdmin ? `<button class="classbtn ${adminView ? 'on' : ''}" id="approvalsBtn">${approvalsLabel()}</button>` : ''}
+      <details class="side-more" ${classes.length ? '' : 'open'}><summary>Add a class · Sign out</summary>
       <div class="row"><input type="text" id="newClass" placeholder="New class name, e.g. Period 3" maxlength="60"></div>
-      <div class="row"><button class="btn small primary" id="addClass">Add class</button><button class="btn small" id="signOut">Sign out</button></div>
+      <div class="row"><button class="btn small primary" id="addClass">Add class</button><button class="btn small" id="signOut">Sign out</button></div></details>
     </aside>
     <section id="main"></section></div>`;
   app.querySelectorAll<HTMLButtonElement>('.classbtn[data-id]').forEach(b => b.addEventListener('click', () => { adminView = false; current = classes.find(c => c.id === b.dataset.id) || null; renderShell(); }));
@@ -496,53 +499,80 @@ function renderVocabularyTab() {
 }
 
 /* ---------- quick setup (shown after a class is made, and from Settings) ----------
-   Every on/off choice for the class on one page, with what each one does. It saves into the same game_settings
-   that Settings uses, so the two always agree; the finer controls (units, stations, ticket rules) stay in Settings. */
-interface SetupChoice { id: string; emoji: string; name: string; what: string; on: (g: ClassRow['game_settings']) => boolean }
-const SETUP_CHOICES: SetupChoice[] = [
-  { id: 'brain', emoji: '🧠', name: 'Brain stretches', what: 'One brain break a day: 3 short brain games after the student’s first subject. Results go to each student’s 🧠 Brain tab.', on: g => brainSettings(g?.brain as Partial<BrainSettings> | undefined).enabled },
-  { id: 'move', emoji: '🤸', name: 'Stand-and-stretch breaks', what: 'One exercise break a day, after the third subject: their pet leads a 1½-minute movement break. Pick the moves in Settings.', on: g => moveSettings(g?.move as Partial<MoveSettings> | undefined).enabled },
-  { id: 'idle', emoji: '⏸️', name: '“Still there?” and pause', what: 'After 2 minutes with no taps, the student’s pet asks “Still there?”; with no answer in 3 more, Pet World pauses and that time doesn’t count as practice. Change the minutes in Settings; a grown-up’s own setting wins.', on: g => idleSettings(null, g?.idle).on },
-  { id: 'planShuffle', emoji: '⭐', name: 'Random first subject', what: 'Each day one subject on the plan is marked ⭐ Start here, and quizzes and unit tests move to the end of Today’s plan.', on: g => g?.planShuffle !== false },
-  { id: 'extrasFirst', emoji: '☀️', name: 'Warm-up first', what: 'A student’s extras come first each day, after Bible: timed rounds of Fact Sprint (5 minutes) and Word Workshop (10 minutes on the 🐾 Paw Path, then 7 on the word game of the day). Subjects open once they’re done. Set each student’s extras on their page.', on: g => g?.extrasFirst !== false },
-  { id: 'themes', emoji: '🎉', name: 'Theme days', what: 'A fun theme day (Pajama Day, Detective Day, Pi Day…) when a grown-up says yes each morning (after seeing what wasn’t finished the day before). Each theme has a quick way (wear something) and a longer way (make something). Every day or Fridays instead in Settings.', on: g => themeSettings(g?.themes as Partial<ThemeSettings> | undefined).enabled },
-  { id: 'arcade', emoji: '🕹️', name: 'Arcade', what: 'Games students play with the practice time they earn. Pick which games in Settings.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).enabled },
-  { id: 'freePlay', emoji: '🎟️', name: 'Arcade Free Play', what: 'No coin admission or tickets: practice time alone opens the Arcade.', on: g => arcadeSettings(g?.arcade as Partial<ArcadeSettings> | undefined).freePlay },
-  { id: 'allowMusic', emoji: '🎵', name: 'Background music', what: 'Students can turn music on. Sound effects stay up to each student.', on: g => g?.allowMusic !== false },
-  { id: 'requireThink', emoji: '💭', name: 'Require Think it through', what: 'Each math station’s reasoning set must be passed before the next station opens.', on: g => g?.requireThink !== false },
-  { id: 'khan', emoji: '🎓', name: 'Khan Academy links', what: 'Khan videos and the Khan unit test check. Off keeps students inside Pet World.', on: g => g?.khan !== false },
-  { id: 'youtube', emoji: '▶️', name: 'YouTube video searches', what: 'A backup "Find videos on YouTube" link on each lesson.', on: g => g?.youtube !== false },
-  { id: 'insightsEmail', emoji: '✉️', name: 'Daily insights email', what: 'Each evening (7 PM unless you change it in Settings), an email with every student’s 📈 Insights: struggles, when they struggle, time, and recommendations. Needs the one-time setup in docs/INSIGHTS.md.', on: g => insightsEmailSetting(g).on }
-];
+   Every on/off choice for the class on one page, with what each one does. The list (names, one-line explanations,
+   groups) is TEACHER_SETTINGS in src/teacher/settingsList.ts, shared with Settings and the help bot (docs/QUICK-SETUP.md).
+   It saves into the same game_settings, drill_settings and quiz_settings that Settings uses, so the two always agree;
+   the finer controls (units, stations, which games and moves, ticket rules) stay in Settings. */
+type SetupValue = boolean | string;
+/* how each Quick setup entry reads its value from the class (scripts/verify.mjs checks every quick entry has one) */
+const SETUP_READ: Record<string, (cls: ClassRow) => SetupValue> = {
+  planShuffle: c => c.game_settings?.planShuffle !== false,
+  extrasFirst: c => c.game_settings?.extrasFirst !== false,
+  themes: c => themeSettings(c.game_settings?.themes as Partial<ThemeSettings> | undefined).enabled,
+  themesWhen: c => themeSettings(c.game_settings?.themes as Partial<ThemeSettings> | undefined).when,
+  themesSpecial: c => themeSettings(c.game_settings?.themes as Partial<ThemeSettings> | undefined).special,
+  brain: c => brainSettings(c.game_settings?.brain as Partial<BrainSettings> | undefined).enabled,
+  move: c => moveSettings(c.game_settings?.move as Partial<MoveSettings> | undefined).enabled,
+  idle: c => idleSettings(null, c.game_settings?.idle).on,
+  requireThink: c => c.game_settings?.requireThink !== false,
+  requireQuiz: c => quizSettings(c.quiz_settings || QUIZ_DEFAULTS).requireQuiz,
+  quizSteps: c => String(quizSettings(c.quiz_settings || QUIZ_DEFAULTS).showSteps),
+  drills: c => mergeDrillSettings(c.drill_settings).enabled,
+  khan: c => c.game_settings?.khan !== false,
+  youtube: c => c.game_settings?.youtube !== false,
+  arcade: c => arcadeSettings(c.game_settings?.arcade as Partial<ArcadeSettings> | undefined).enabled,
+  freePlay: c => arcadeSettings(c.game_settings?.arcade as Partial<ArcadeSettings> | undefined).freePlay,
+  allowMusic: c => c.game_settings?.allowMusic !== false,
+  insightsEmail: c => insightsEmailSetting(c.game_settings).on
+};
 function renderSetup() {
-  const pane = $('#pane'), cls = current!, g = cls.game_settings;
+  const pane = $('#pane'), cls = current!;
+  const item = (s: TeacherSetting) => {
+    const v = SETUP_READ[s.id]?.(cls);
+    const control = s.kind === 'choice'
+      ? `<select data-setup="${s.id}" aria-label="${esc(s.name)}">${(s.choices || []).map(o => `<option value="${esc(o.value)}" ${String(v) === o.value ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>`
+      : `<input type="checkbox" data-setup="${s.id}" ${v ? 'checked' : ''}>`;
+    return s.kind === 'choice'
+      ? `<div class="setup-item"><span class="setup-emoji" aria-hidden="true">${s.emoji}</span><span><b>${esc(s.name)}</b> ${control}<br><span class="muted">${esc(s.what)}</span></span></div>`
+      : `<label class="setup-item">${control}<span class="setup-emoji" aria-hidden="true">${s.emoji}</span><span><b>${esc(s.name)}</b><br><span class="muted">${esc(s.what)}</span></span></label>`;
+  };
+  const groups = SETTING_GROUPS.map(gr => ({ gr, list: QUICK_SETUP.filter(s => s.group === gr.id && SETUP_READ[s.id]) })).filter(x => x.list.length);
+  const more = TEACHER_SETTINGS.filter(s => !s.quick && s.scope === 'class'), perStudent = TEACHER_SETTINGS.filter(s => s.scope === 'student');
+  const lineOf = (s: TeacherSetting) => `<li>${s.emoji} <b>${esc(s.name)}</b> <span class="muted">· ${esc(s.where)}</span></li>`;
   pane.innerHTML = `<div class="card setup-menu"><h2>🧭 Set up ${esc(cls.name)}</h2>
     <p class="muted" style="margin-top:0">Choose what this class uses. You can change any of these later here or in Settings.</p>
-    <div class="setup-list">${SETUP_CHOICES.map(c => `<label class="setup-item"><input type="checkbox" data-setup="${c.id}" ${c.on(g) ? 'checked' : ''}><span class="setup-emoji" aria-hidden="true">${c.emoji}</span><span><b>${esc(c.name)}</b><br><span class="muted">${esc(c.what)}</span></span></label>`).join('')}</div>
+    ${groups.map(({ gr, list }) => `<h3 class="setup-group">${gr.emoji} ${esc(gr.name)}</h3><div class="setup-list">${list.map(item).join('')}</div>`).join('')}
+    <details class="setup-always"><summary><b>🔧 Finer controls</b> <span class="muted">(in Settings and other tabs)</span></summary><ul>${more.map(lineOf).join('')}</ul></details>
+    <details class="setup-always"><summary><b>👤 Set per student</b> <span class="muted">(on each student’s page)</span></summary><ul>${perStudent.map(lineOf).join('')}</ul></details>
     <details class="setup-always"><summary><b>✅ Always on (no switch needed)</b></summary><ul>
       <li>📇 <b>Review before every test</b>, then a grown-up’s PIN to start it. No fix-up round.</li>
+      <li>🎬 <b>Today’s video</b>: the first practice each day in a Math, History or Biology unit waits for a video and a grown-up’s PIN.</li>
       <li>🔐 <b>Fix a score</b>: a grown-up can correct a unit test or quiz score with the PIN (on the unit page).</li>
       <li>📘 <b>Word Workshop weekly words</b>: up to 25 new words a week, a different puzzle each day, and a Friday mastery check with a Hall of Fame.</li>
       <li>🔬 <b>Hands-on Biology</b>: one experiment or nature journal page a week while a Biology unit is open, sent to you as outside work with photos. Every lab from every Biology unit is in the 🔬 Science Lab in the Biology class; the week’s ⭐ follows her current unit.</li>
       <li>⏱️ <b>Time inside each assignment</b>: students see today’s minutes for that subject on the page.</li>
       <li>🎬 <b>Videos first</b> in History and Science, with watching counted as class time.</li>
-    </ul><p class="muted">Per student, on their page: the daily plan, subject minutes, and extras (the length of each timed round).</p></details>
+    </ul></details>
     <div class="row"><button class="btn primary" id="setupSave">Save and add students →</button><button class="btn" id="setupSaveStay">Save</button><button class="btn" id="setupMore">More settings</button></div>
     <p class="status muted" id="setupMsg"></p></div>`;
-  const val = (id: string) => (pane.querySelector(`[data-setup="${id}"]`) as HTMLInputElement).checked;
+  const val = (id: string): SetupValue => { const el = pane.querySelector(`[data-setup="${id}"]`) as HTMLInputElement | HTMLSelectElement | null; return !el ? (SETUP_READ[id]?.(cls) ?? false) : el instanceof HTMLSelectElement ? el.value : el.checked; };
+  const on = (id: string) => val(id) === true;
   const save = async (next: typeof tab | null) => {
     const old = cls.game_settings || {};
-    const game_settings = { ...old, allowMusic: val('allowMusic'), requireThink: val('requireThink'), planShuffle: val('planShuffle'), khan: val('khan'), youtube: val('youtube'),
-      brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: val('brain') },
-      move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: val('move') },
-      idle: (i => ({ on: val('idle'), nudge: i.nudge, pause: i.pause }))(idleSettings(null, old.idle)),
-      themes: { ...themeSettings(old.themes as Partial<ThemeSettings> | undefined), enabled: val('themes') }, extrasFirst: val('extrasFirst'),
-      arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: val('arcade'), freePlay: val('freePlay') },
-      insightsEmail: { ...insightsEmailSetting(old), on: val('insightsEmail') } };
+    const oldThemes = themeSettings(old.themes as Partial<ThemeSettings> | undefined), when = String(val('themesWhen'));
+    const game_settings = { ...old, allowMusic: on('allowMusic'), requireThink: on('requireThink'), planShuffle: on('planShuffle'), khan: on('khan'), youtube: on('youtube'),
+      brain: { ...brainSettings(old.brain as Partial<BrainSettings> | undefined), enabled: on('brain') },
+      move: { ...moveSettings(old.move as Partial<MoveSettings> | undefined), enabled: on('move') },
+      idle: (i => ({ on: on('idle'), nudge: i.nudge, pause: i.pause }))(idleSettings(null, old.idle)),
+      themes: { ...oldThemes, enabled: on('themes'), special: on('themesSpecial'), when: (['every', 'fri'].includes(when) ? when : 'earned') as ThemeSettings['when'] }, extrasFirst: on('extrasFirst'),
+      arcade: { ...arcadeSettings(old.arcade as Partial<ArcadeSettings> | undefined), enabled: on('arcade'), freePlay: on('freePlay') },
+      insightsEmail: { ...insightsEmailSetting(old), on: on('insightsEmail') } };
+    const drill_settings = { ...(cls.drill_settings || {}), enabled: on('drills') };
+    const quiz_settings = { ...(cls.quiz_settings || {}), requireQuiz: on('requireQuiz'), showSteps: val('quizSteps') === 'true' };
     $('#setupMsg').textContent = 'Saving…';
-    const { error } = await sb!.from('classes').update({ game_settings }).eq('id', cls.id);
+    const { error } = await sb!.from('classes').update({ game_settings, drill_settings, quiz_settings }).eq('id', cls.id);
     if (error) { $('#setupMsg').textContent = error.message; return; }
-    cls.game_settings = game_settings;
+    cls.game_settings = game_settings; cls.drill_settings = drill_settings; cls.quiz_settings = quiz_settings;
     if (next) { tab = next; renderMain(); } else $('#setupMsg').textContent = 'Saved.';
   };
   $('#setupSave').addEventListener('click', () => { void save('roster'); });
@@ -571,34 +601,34 @@ function renderSettings() {
       <p class="muted">Signing in on a new computer brings their town with them.</p><div class="row"><button class="btn small" id="copyJoin" data-label="Copy join instructions">Copy join instructions</button></div><textarea id="joinFallback" class="copy-fallback" hidden readonly aria-label="Join instructions to copy"></textarea></div>
     <div class="card"><h2>Class settings</h2>
       <label for="cName">Class name</label><input type="text" id="cName" maxlength="60" value="${esc(cls.name)}">
-      ${builtHoods().map(n => { const inHood = BUILDINGS.filter(b => b.hood === n.id && b.open); return `<div class="grade-set"><h3>${n.emoji} ${esc(n.name)}</h3>${inHood.map(b => b.id === 'cafe'
+      ${builtHoods().map(n => { const inHood = BUILDINGS.filter(b => b.hood === n.id && b.open); return `<details class="grade-set"><summary><h3>${n.emoji} ${esc(n.name)}: which stations and units are open</h3></summary>${inHood.map(b => b.id === 'cafe'
         ? `<label for="cStation">Unlock the café through</label><select id="cStation">${STATIONS.map(s => `<option value="${s.id}" ${s.id === cls.min_station ? 'selected' : ''}>Station ${s.id}: ${esc(s.name)}</option>`).join('')}</select>`
-        : SHOPS[b.id] ? (shop => { const m = (cls.game_settings?.minStations as Record<string, number> | undefined)?.[shop.id] || 1; return `<label for="minSt-${shop.id}">Unlock the ${esc(shop.name)} through</label><select id="minSt-${shop.id}" data-min-station="${shop.id}">${shop.stations.filter(st => st.skills.length).map(st => `<option value="${st.id}" ${st.id === m ? 'selected' : ''}>Station ${st.id}: ${esc(st.name)}</option>`).join('')}</select>`; })(SHOPS[b.id]) : '').join('')}${inHood.filter(b => prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}</div>`; }).join('')}
+        : SHOPS[b.id] ? (shop => { const m = (cls.game_settings?.minStations as Record<string, number> | undefined)?.[shop.id] || 1; return `<label for="minSt-${shop.id}">Unlock the ${esc(shop.name)} through</label><select id="minSt-${shop.id}" data-min-station="${shop.id}">${shop.stations.filter(st => st.skills.length).map(st => `<option value="${st.id}" ${st.id === m ? 'selected' : ''}>Station ${st.id}: ${esc(st.name)}</option>`).join('')}</select>`; })(SHOPS[b.id]) : '').join('')}${inHood.filter(b => prevBuilding(b.id)).map(b => { const prev = prevBuilding(b.id)!; return `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-open-unit="${b.id}" ${(cls.game_settings?.openUnits || []).includes(b.id) ? 'checked' : ''}> Open the ${esc(b.name)} for everyone</label><p class="muted" style="margin-top:0">Otherwise each student opens it by passing the ${esc(prev.name)} Unit Test.</p>`; }).join('')}</details>`; }).join('')}
       <p class="muted">Later stations still open on their own: after 6 orders at the one before, or after its quiz when quizzes open stations. Skipped stations are open right away. The unit test still needs every station quiz passed, or excused on a student's page.</p>
       ${builtHoods().length > 1 ? `<label for="cHome">Home grade</label><select id="cHome">${builtHoods().map(n => `<option value="${n.id}" ${(validHood(cls.game_settings?.home) ? cls.game_settings?.home : DEFAULT_HOME) === n.id ? 'selected' : ''}>${n.emoji} ${esc(n.name)}</option>`).join('')}</select><p class="muted">The town opens here, and students can still walk to the other grades.</p>` : ''}
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> Allow music</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${cls.game_settings?.khan === false ? '' : 'checked'}> Use Khan Academy</label><p class="muted" style="margin-top:0">When it's off, students and families never see Khan links or mentions, and the Khan unit test check is hidden. Lessons keep their own text, Pet World videos, and your own lesson links. Nothing is deleted, so you can turn it back on any time.</p>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${cls.game_settings?.requireThink === false ? '' : 'checked'}> Require 🧠 Think it through</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set (select all, sort, two-part and more) has to be passed, every question right, before the next station opens. Stations a student already worked at, and stations you opened, stay open.</p>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${cls.game_settings?.youtube === false ? '' : 'checked'}> Show YouTube video searches</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup (and the only video link when Khan is off). Pet World doesn't check what YouTube shows, so turn this off if your school blocks YouTube or you'd rather students stay off it.</p>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="allowMusic" ${cls.game_settings?.allowMusic === false ? '' : 'checked'}> ${esc(settingName('allowMusic'))}</label><p class="muted" style="margin-top:0">When it's off, background music never plays for this class. Students keep control of sound effects.</p>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useKhan" ${cls.game_settings?.khan === false ? '' : 'checked'}> ${esc(settingName('khan'))}</label><p class="muted" style="margin-top:0">When it's off, students and families never see Khan links or mentions, and the Khan unit test check is hidden. Lessons keep their own text, Pet World videos, and your own lesson links. Nothing is deleted, so you can turn it back on any time.</p>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="requireThink" ${cls.game_settings?.requireThink === false ? '' : 'checked'}> ${esc(settingName('requireThink'))}</label><p class="muted" style="margin-top:0">When it's on, each math station's Think it through set (select all, sort, two-part and more) has to be passed, every question right, before the next station opens. Stations a student already worked at, and stations you opened, stay open.</p>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="useYouTube" ${cls.game_settings?.youtube === false ? '' : 'checked'}> ${esc(settingName('youtube'))}</label><p class="muted" style="margin-top:0">Each lesson gets a "Find videos on YouTube" link as a backup (and the only video link when Khan is off). Pet World doesn't check what YouTube shows, so turn this off if your school blocks YouTube or you'd rather students stay off it.</p>
       <h3>🧠 Brain stretches</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> Brain stretches</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="brainEnabled" ${brain.enabled ? 'checked' : ''}> ${esc(settingName('brain'))}</label>
       <p class="muted" style="margin-top:0">3 short brain games in a row, once a day, after the student’s first subject (the break order: Bible, warm-up, first subject, 🧠 brain break, two more subjects, 🤸 exercise break, last subject). There's no skip button. Each game starts at its easiest level and moves up after 3 scores in a row of 85% or better. Results are on each student's 🧠 Brain tab.</p>
       <h4>Games in the cycle</h4><div class="row"><button type="button" class="btn small" data-brain-all="1">Use all</button><button type="button" class="btn small" data-brain-all="0">Block all</button></div>${BRAIN_GAMES.map(game => `<label style="display:flex; gap:8px; align-items:center"><input type="checkbox" data-brain-game="${game.id}" ${brain.games[game.id] ? 'checked' : ''}> ${game.emoji} ${esc(game.name)} <span class="muted">· ${esc(game.skill)}</span></label>`).join('')}
       <h3>⭐ Order of the day</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="planShuffle" ${cls.game_settings?.planShuffle === false ? '' : 'checked'}> Random first subject, quizzes and tests last</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="planShuffle" ${cls.game_settings?.planShuffle === false ? '' : 'checked'}> ${esc(settingName('planShuffle'))}, quizzes and tests last</label>
       <p class="muted" style="margin-top:0">Each day Pet World picks one subject on the plan for ⭐ Start here, and moves “pass the quiz” and “pass the unit test” items to the end of Today’s plan.</p>
       <h3>☀️ Warm-up first</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="extrasFirst" ${cls.game_settings?.extrasFirst === false ? '' : 'checked'}> Extras before any subject</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="extrasFirst" ${cls.game_settings?.extrasFirst === false ? '' : 'checked'}> ${esc(settingName('extrasFirst'))}: extras before any subject</label>
       <p class="muted" style="margin-top:0">Each student’s extras (the Fact Sprint and Word Workshop you set on their page) come first each day, after Bible. Each is timed: a Fact Sprint round is 5 minutes, and Word Workshop is 10 minutes on the 🐾 Paw Path then 7 on the word game of the day, unless you change them on their page; any extra minutes wait as more practice later in the day. Until the rounds are done, opening a subject shows the warm-up instead.</p>
       <h3>🎉 Theme days</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="themesEnabled" ${themes.enabled ? 'checked' : ''}> Theme days</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="themesEnabled" ${themes.enabled ? 'checked' : ''}> ${esc(settingName('themes'))}</label>
       <p class="muted" style="margin-top:0">A fun theme for the day, like Pajama Day or Detective Day, with something to wear and a small challenge. Students see it when they open Pet World and pick a quick way (wear something) or a longer way (make something); it stays in Today’s plan all day. Earned (the default): every morning, before the warm-up, a grown-up sees what the student didn’t finish the school day before and decides (with the grown-up PIN) whether today is a theme day.</p>
       <label for="themesWhen">How often</label><select id="themesWhen"><option value="earned" ${themes.when === 'earned' ? 'selected' : ''}>Earned: a grown-up decides each morning</option><option value="every" ${themes.when === 'every' ? 'selected' : ''}>Every school day (Monday to Friday)</option><option value="fri" ${themes.when === 'fri' ? 'selected' : ''}>Fridays only</option></select>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="themesSpecial" ${themes.special ? 'checked' : ''}> Special days on their dates: ${SPECIAL_DAYS.map(s => `${s.emoji} ${esc(s.name)}`).join(', ')}</label>
       <p class="muted" style="margin-top:0">The 100th day of school counts weekdays from the school year’s start date on each student’s Transcript tab (holidays aren’t skipped).</p>
       <h4>Themes in the rotation</h4><div class="row"><button type="button" class="btn small" data-theme-all="1">Use all</button><button type="button" class="btn small" data-theme-all="0">Block all</button></div>${THEME_DAYS.map(th => `<label style="display:flex; gap:8px; align-items:center" title="⚡ ${esc(th.wear)} 🛠️ ${esc(th.make)} ${esc(th.challenge)}"><input type="checkbox" data-themeday="${th.id}" ${themes.themes[th.id] ? 'checked' : ''}> ${th.emoji} ${esc(th.name)}</label>`).join('')}
       <h3>🤸 Stand-and-stretch breaks</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="moveEnabled" ${move.enabled ? 'checked' : ''}> Stand-and-stretch breaks</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="moveEnabled" ${move.enabled ? 'checked' : ''}> ${esc(settingName('move'))}</label>
       <p class="muted" style="margin-top:0">Once a day, after the student’s third subject, their pet leads ${MOVES_PER_BREAK} moves (half stretches, half fun ones like a staring contest or sock basketball), about ${MOVE_SECONDS} seconds each, before the new subject. There's no skip button. Walking around town or the Arcade in between doesn't count as a new subject, and break time doesn't count toward any subject.</p>
       <label for="moveMinutes">Minutes in a subject before it counts as one of the three (0 = any time)</label><input type="number" id="moveMinutes" min="0" max="${MOVE_MINUTES_MAX}" step="1" value="${move.minutes}">
       <h4>Moves in the cycle</h4><div class="row"><button type="button" class="btn small" data-move-all="1">Use all</button><button type="button" class="btn small" data-move-all="0">Block all</button></div>${([['stretch', 'Stretches'], ['fun', 'Fun ones']] as const).map(([kind, title]) => `<p style="margin:8px 0 2px"><b>${title}</b></p>${MOVES.filter(m => m.kind === kind).map(m => `<label style="display:flex; gap:8px; align-items:center" title="${esc(m.cue)}"><input type="checkbox" data-move="${m.id}" ${move.moves[m.id] ? 'checked' : ''}> ${m.emoji} ${esc(m.name)}</label>`).join('')}`).join('')}
@@ -612,7 +642,7 @@ function renderSettings() {
       <label for="insightsHour">Send at</label><select id="insightsHour">${Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === insightsMail.hour ? 'selected' : ''}>${hourLabel(h)}</option>`).join('')}</select>
       <p class="muted" style="margin-top:0">Time zone: ${esc(insightsMail.tz)}${insightsMail.tz !== browserTz() ? ` (this computer is on ${esc(browserTz())}; saving switches to it)` : ''}. It goes to the email you sign in with. The same summary is at the top of each student’s page, with ✉️ Email me this now. The email needs a one-time setup (a free Resend account and one deploy): see docs/INSIGHTS.md.</p>
       <h3>Arcade</h3>
-      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Open the Arcade</label>
+      <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeEnabled" ${arcade.enabled ? 'checked' : ''}> Open the ${esc(settingName('arcade'))}</label>
       <p class="muted" style="margin-top:0">When it's off, the Arcade is closed and students see a lock on its town tile. Students already playing are sent back within a minute.</p>
       <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="arcadeFreePlay" ${arcade.freePlay ? 'checked' : ''}> Free Play: banked math time only, no admission or tickets</label>
       <p class="muted" style="margin-top:0">Free Play needs only practice time banked today. Without it, students pay 🪙 100 once a day and earn tickets.</p>
@@ -641,11 +671,11 @@ function renderSettings() {
       <label for="testMin">Minimum test problems</label><input type="number" id="testMin" min="4" max="30" step="1" value="${quizzes.testMin}">
       <label for="testMax">Maximum test problems</label><input type="number" id="testMax" min="4" max="30" step="1" value="${quizzes.testMax}">
       <label for="reviewPerfect">Perfect review problems per missed skill</label><input type="number" id="reviewPerfect" min="1" max="5" step="1" value="${quizzes.reviewPerfect}">
-      <label><input type="checkbox" id="requireQuiz" ${quizzes.requireQuiz ? 'checked' : ''}> Passing a station quiz opens the next station</label>
+      <label><input type="checkbox" id="requireQuiz" ${quizzes.requireQuiz ? 'checked' : ''}> ${esc(settingName('requireQuiz'))}</label>
       <div class="row"><button class="btn primary" id="saveQuizSettings">Save</button><button class="btn" id="resetQuizSettings">Reset to defaults</button><span class="status" id="quizSettingsMsg"></span></div>
     </div>
     <div class="card"><h2>Practice pop-ups</h2>
-      <label><input type="checkbox" id="drillEnabled" ${settings.enabled ? 'checked' : ''}> Enable practice pop-ups</label>
+      <label><input type="checkbox" id="drillEnabled" ${settings.enabled ? 'checked' : ''}> ${esc(settingName('drills'))}</label>
       <h3>Drill types</h3>${drillTypes.map(([type, drill]) => `<label><input type="checkbox" data-drill-type="${type}" ${settings.types[type] === false ? '' : 'checked'}> ${esc(drill.name)}</label>`).join('')}
       <h3>Triggers</h3>
       <label><input type="checkbox" id="triggerMiss" ${settings.triggers.miss ? 'checked' : ''}> Missed answer</label>
@@ -762,3 +792,8 @@ function renderSettings() {
     current = null; tab = 'dashboard'; await loadClasses();
   });
 }
+/* 🤖 the corner helper (docs/HELP-BOT.md): it only switches tabs (through renderMain) and points at settings */
+initTeacherHelpBot({
+  goTab: t => { if (!current || adminView) return; tab = t as typeof tab; renderMain(); },
+  state: () => ({ ready: !!document.querySelector('.shell'), hasClass: !!current && !adminView, tab, lang: teacherLanguage })
+});

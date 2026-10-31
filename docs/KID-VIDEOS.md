@@ -8,7 +8,7 @@ Today’s video picker (`videoGateThen` → `openVideoPicker` in `src/game/game.
 
 1. **Pick a video.** A kid video plays **inside Pet World** in the same player as Pet World’s own lessons (`openLessonVideo`, `youtube-nocookie.com`, captions on, no related videos from other channels). Khan videos still open in a new tab.
 2. **Watch all of it.** While the kid video plays, the time counts for that class (Math, History or Biology) with no taps needed (`ActivityTracker.watching`). Playing 80% of it marks it ✓ watched (`S.videosWatched["kid:<id>"]`), and the card shows “✓ watched”.
-3. **Mom’s signature** works as before (`askGrownUp`). If Pet World saw her play the kid video to the end, the sign-off card says so. The day log gets “🎬 Picked a kid video: … (channel)”.
+3. **The grown-up’s signature** works as before (`askGrownUp`). If Pet World saw her play the kid video to the end, the sign-off card says so. The day log gets “🎬 Picked a kid video: … (channel)”.
 
 The grown-up override (“no good video today”) and the 🛑 Time to get help lock are unchanged. Her teacher’s own lesson link (`lesson_links`) still comes first in its lesson.
 

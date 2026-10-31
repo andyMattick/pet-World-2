@@ -84,6 +84,7 @@ Owner: "I'm OK if we spend 10 minutes doing the phases (Meet, Match, Build, Use,
 - Each day one subject on the plan (time in a subject or a unit's practice, still to do) is picked at random and goes first, marked **⭐ Start here**. It's picked once a day, so it doesn't change while she works.
 - "Pass the quiz" and "pass the unit test" items go to the end of the list.
 - Class setting `game_settings.planShuffle`: on unless a teacher turns it off (Quick setup, or Settings → ⭐ Order of the day).
+- **Nothing planned yet** (local mode, or a class with no plan set; Oct 31, 2026): the card shows one row, **⭐ Start here: practice math in the <next math unit> [Go]**, so a first-day student has one obvious thing to do. The 🔬 Hands-on Biology row only shows for a home grade that has Biology (a 4th grader used to get the 6th grade lab).
 
 ## Fix first
 

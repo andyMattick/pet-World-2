@@ -98,3 +98,7 @@ Three reviewers solved one problem per skill and level **without the key**: 459 
 ## The review list
 
 `docs/math-review.md` has one problem per skill and level as a test shows it, with the right answers in **bold**. It's regenerated from the game, so read it before applying the patch.
+
+## Answer forms in the fraction boxes (Oct 31, 2026)
+
+Some fraction steps only take simplest form, a mixed number, or both (`FRAC.canon`, `mixedOnly`, `rqStep(..., {simplest:true})`), and an equal answer like 2/4 or 5/4 is marked wrong. In practice the mix-up note says why (`notSimplest`, `notMixed`), but on a quiz or test it was a silent miss, and the prompt often didn't say which form was wanted (for example `evalOne`, `orderFracExp`, `powFrac`, `volCubes`, `mixedAS`, `oneStepAddFrac`). The tip under the fraction boxes now says so: `fracFormTip(st)` in `src/game/game.js` tries an unsimplified and an improper copy of the step's own answer against `st.eq`, and shows "Write it in simplest form", "Write it as a mixed number" or both. Generators and answer checks are unchanged. Number boxes already drop commas, spaces and `$` and read `.5` as 0.5.

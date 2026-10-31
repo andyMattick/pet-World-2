@@ -1834,3 +1834,75 @@ details.role-scene > summary{cursor:pointer; font-weight:800; padding:2px 4px}
 .pp-match{grid-template-columns:1fr 1.6fr}
 .pp-match.from-meaning{grid-template-columns:1.6fr 1fr}
 @media (max-width:420px){ .pp-match{gap:6px} .pp-tile{font-size:.88rem; padding:6px} .pp-tile.word{font-size:1rem} }
+
+/* ---------- calmer layout (Tina, Oct 31, 2026): show what matters now, fold the rest. Layout only, no features removed. ---------- */
+/* empty display case: one quiet shelf row instead of eight empty boxes */
+.display-case.case-empty .display-shelves{grid-template-columns:1fr; padding-bottom:6px}
+.display-case.case-empty .display-slot:nth-child(n+2){display:none}
+.display-case.case-empty .display-slot{aspect-ratio:auto; flex-direction:row; gap:8px; padding:10px 12px; min-height:44px}
+.display-case.case-empty .display-slot small{font-size:.9rem}
+.display-case.case-empty .display-slot span{font-size:1.4rem}
+.display-case.case-empty .helper-box{min-height:0}
+/* locked units on a class page: the next one shows, the rest fold into "Coming up" */
+.locked-units{grid-column:1/-1; background:color-mix(in srgb,var(--surface) 70%,transparent); border:2px dashed var(--edge); border-radius:16px; padding:6px 12px}
+.locked-units>summary{cursor:pointer; font-weight:700; color:var(--ink-soft); padding:8px 0; min-height:28px}
+.locked-units-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; padding:6px 0 10px}
+.locked-units .tile{padding:20px 10px 10px}
+.locked-units .tile .te{font-size:2rem}
+/* a locked station: skills fold away, the disabled button is quiet */
+.locked-skills>summary{cursor:pointer; font-size:.9rem; color:var(--ink-soft); font-weight:600}
+.locked-skills[open]>summary{margin-bottom:4px}
+.station .station-locked-btn:disabled{background:transparent; box-shadow:none; border-style:dashed; border-width:2px; font-size:.9rem; padding:6px 12px}
+/* English/History lesson: the backup links sit quietly on one line */
+.ela-khan-also{display:inline-block; margin-right:12px; font-size:.82rem; opacity:.85}
+
+@media (max-width:700px){
+  /* top bar: title, then one row of controls (no lone wrapped button) */
+  .topbar{padding:20px 12px 6px; gap:8px}
+  .chips{gap:6px; flex-wrap:nowrap}
+  .chip{padding:3px 9px; border-width:2px}
+  .language-toggle button{padding:5px 6px; font-size:.78rem}
+  .iconbtn{border-width:2px}
+  /* town: the helper and shelf take less room, so Today's plan is near the top */
+  .plaza{padding:10px; gap:8px; margin-bottom:12px; border-radius:18px}
+  #displayCaseWrap{flex:1 1 100%}
+  .plaza-stats{width:100%; justify-content:center}
+  .helper-box{min-height:0; padding:6px}
+  .helper-box-emoji{font-size:2.8rem}
+  .display-case{grid-template-columns:84px minmax(0,1fr)}
+  .display-slot.empty small{display:none}
+  .display-case.case-empty .display-slot small{display:inline}
+  .display-progress{margin-top:6px; min-height:36px}
+  .plaza-stats span{font-size:.85rem}
+  /* town tiles: two across, smaller */
+  .town{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:10px; border-radius:20px}
+  .class-grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+  .town>.tile,.class-grid .tile{padding:20px 8px 10px}
+  .town .tile .te{font-size:2.1rem}
+  .town .tile .tn{font-size:1rem; line-height:1.2}
+  .town .tile .tu{font-size:.8rem; line-height:1.25}
+  .town .tile .soon{font-size:.72rem}
+  .town>.card,.town>div:not(.tile):not(.class-grid),.town>details{grid-column:1/-1}
+  .locked-units-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* arcade: compact summary and two cards across */
+  .arcade-summary{grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+  .arcade-summary>div{padding:6px 4px; border-width:2px}
+  .arcade-summary b{font-size:1.05rem}
+  .arcade-summary span{font-size:.7rem; line-height:1.2}
+  .arcade-grid{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+  .arcade-card{padding:10px; border-radius:14px; display:flex; flex-direction:column}
+  .arcade-emoji{font-size:2rem}
+  .arcade-card h3{font-size:1rem; margin:6px 0 2px}
+  .arcade-card p{min-height:0; font-size:.8rem; margin:0 0 8px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+  .arcade-card .btn{margin-top:auto; width:100%; font-size:.85rem; padding:6px 8px; white-space:normal}
+  .arcade-badge{font-size:.68rem}
+}
+/* arcade: a card that can't be played right now has a quiet button (the reason is in the summary above) */
+.arcade-card .btn:disabled{background:transparent; color:var(--ink-soft); box-shadow:none; border:2px dashed var(--edge); opacity:.8}
+@media (max-width:700px){
+  /* the ✋ question button (bottom-left) and the help bot (bottom-right) float: leave room under the last card */
+  main{padding-bottom:84px}
+  .help-btn{font-size:15px; padding:9px 13px; gap:6px; left:10px; bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+}
+/* "I’m done for today" stays easy to find but no longer the loudest thing on the town page */
+.day-done-btn{justify-self:center; width:min(100%,440px)}

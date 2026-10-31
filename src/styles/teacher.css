@@ -145,6 +145,8 @@ details.unit-card[open]>summary{margin-bottom:8px}
 .setup-item:has(input:checked){border-color:var(--berry)}
 .setup-item input{margin-top:4px; width:20px; height:20px; flex:none}
 .setup-emoji{font-size:1.6rem; line-height:1}
+.setup-group{margin:16px 0 0; font-size:1.05rem}
+.setup-item select{margin:2px 0 0 6px; font:inherit; font-size:.9rem; width:auto}
 .setup-callout{padding:10px 16px}
 
 a.btn{display:inline-block; text-decoration:none}
@@ -244,3 +246,51 @@ a.btn{display:inline-block; text-decoration:none}
   .ins-tool{flex-direction:column; gap:2px}
 }
 @media print{ .ins-fold{display:block} .ins-fold>*{display:block} }
+
+/* calmer layout (Tina, Oct 31, 2026): scannable cards, long lists folded, one clear "selected" state */
+.summary{grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px}
+.kpi b{font-size:1.5rem}
+.kpi{font-size:.88rem; color:var(--soft)} .kpi b{color:var(--ink)}
+.two{align-items:start}
+.btn.mint{background:var(--mint); color:#1F4D40; border-color:var(--edge)}
+.btn.small[aria-selected="false"]{box-shadow:0 2px 0 var(--line); border-color:var(--line)}
+.group-khan{margin-top:6px; font-size:.88rem}
+.group-khan>summary{cursor:pointer; font-weight:600; color:var(--berry-deep)}
+.group-khan[open]>summary{margin-bottom:4px}
+details.grade-set>summary{cursor:pointer; list-style-position:inside; padding:4px 0}
+details.grade-set>summary h3{display:inline; font-size:1rem}
+details.grade-set[open]>summary{margin-bottom:6px}
+.card > h3{margin:16px 0 4px; font-size:1rem}
+.card > .muted:first-of-type{margin-top:0}
+/* 💬 Messages on the dashboard: one compact strip (students first, the how-it-works line quieter below) */
+#msgPanel > .card{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:12px 16px}
+#msgPanel > .card > h2{margin:0 !important; font-size:1.1rem; order:0}
+#msgPanel > .card > [data-msg-chips]{order:1; margin:0; flex:1 1 300px; gap:6px}
+#msgPanel > .card > p.muted{order:2; margin:0; flex:1 1 280px; font-size:.82rem}
+#msgPanel > .card > [data-msg-notify]{order:3; margin:0 !important}
+#msgPanel [data-msg-chips] .btn,#msgPanel [data-msg-notify] .btn{box-shadow:none; border-width:1px; border-color:var(--line); padding:3px 10px; font-weight:600; border-radius:999px}
+#msgPanel [data-msg-chips] .btn:hover{border-color:var(--berry)}
+details.pt-more{margin-top:10px; border-top:1px solid var(--line); padding-top:6px}
+details.pt-more>summary{cursor:pointer; font-weight:600; padding:4px 0}
+@media print{ details.pt-more>*{display:block} }
+/* Quick setup look only (content is Quinn's): calm cards, checked ones lightly tinted, readable descriptions */
+.setup-list{align-items:start}
+.setup-item{font-weight:400; margin:0; border-width:1px; transition:border-color .12s, background .12s}
+.setup-item:hover{border-color:var(--berry)}
+.setup-item:has(input:checked){background:color-mix(in srgb,var(--berry) 6%,var(--surface)); border-color:color-mix(in srgb,var(--berry) 55%,var(--line))}
+.setup-item b{font-size:.95rem}
+.setup-item .muted{display:block; margin-top:2px; font-size:.84rem; line-height:1.4}
+.setup-item input{accent-color:var(--berry)}
+/* class list: adding a class and signing out are one tap away (open when there are no classes yet) */
+.side-more{margin-top:8px; border-top:1px solid var(--line); padding-top:6px}
+.side-more>summary{cursor:pointer; font-size:.85rem; color:var(--soft); padding:4px}
+@media (max-width:700px){
+  .side{padding:8px 10px}
+  .side h2{font-size:1rem; margin:2px 4px 6px}
+  #msgPanel .row > .btn{flex:0 0 auto}
+  #msgPanel > .card > [data-msg-chips]{flex-basis:100%}
+  header.top p{font-size:.85rem}
+  .summary{grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+  .kpi{padding:8px 10px} .kpi b{font-size:1.3rem}
+}
+header.top .btn{display:inline-flex; align-items:center; justify-content:center}

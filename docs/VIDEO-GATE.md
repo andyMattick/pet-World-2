@@ -21,7 +21,7 @@ Quizzes and tests keep their own review-and-PIN gates (docs/TEST-GATE.md).
    - Khan videos open in a new tab, and watching counts as class time (`startWatching` / `markKhanOpened`).
    - A teacher’s own YouTube link, or a Pet World video, plays inside Pet World.
 2. **Watch all of it.**
-3. **✍️ Mom’s signature:** this button opens only after she has picked a video. A grown-up’s PIN (`askGrownUp`) signs it off, and the day log records “✍️ Grown-up signed off today’s video: …”.
+3. **✍️ Grown-up’s signature** (said “Mom’s signature” until Oct 31, 2026; worded for any family or class): this button opens only after she has picked a video. A grown-up’s PIN (`askGrownUp`) signs it off, and the day log records “✍️ Grown-up signed off today’s video: …”.
 
 **After the signature:** the pass is saved as `S.videoPass[<shop or course id>] = {day, title, picked, signed}`. Practice in that unit is open for the rest of the day.
 

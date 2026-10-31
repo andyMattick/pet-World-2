@@ -57,7 +57,7 @@ const coreTranslations: Record<string, string> = {
 };
 
 const extendedTranslations: Record<string, string> = {
-  'Pet World for Teachers': 'Pet World para docentes', 'Unit 1: Ratios. Step-level diagnostics, mix-ups, and times tables, live as your class plays.': 'Unidad 1: razones. Diagnóstico por pasos, confusiones y tablas de multiplicar mientras la clase juega.',
+  'Pet World for Teachers': 'Pet World para docentes', 'See how each student is doing, check work that is waiting, and set up your class.': 'Mira cómo va cada estudiante, revisa el trabajo pendiente y configura tu clase.', 'Unit 1: Ratios. Step-level diagnostics, mix-ups, and times tables, live as your class plays.': 'Unidad 1: razones. Diagnóstico por pasos, confusiones y tablas de multiplicar mientras la clase juega.',
   'This build has no Supabase settings. Copy .env.example to .env, fill in your project URL and anon key, and rebuild. See the README.': 'Esta versión no tiene la configuración de Supabase. Copia .env.example a .env, agrega la URL del proyecto y la clave anónima, y vuelve a compilar. Consulta el README.',
   'Create an account': 'Crear una cuenta', 'No classes yet.': 'Aún no hay clases.', 'New class name, e.g. Period 3': 'Nombre de la clase, por ejemplo, Grupo 3',
   'Add your first class on the left to get a class code.': 'Añade tu primera clase a la izquierda para obtener un código de clase.',
@@ -78,7 +78,7 @@ const extendedTranslations: Record<string, string> = {
   'Free Play is on: no Pet World coins or Arcade tickets. Math practice still unlocks play time.': 'El modo de juego gratis está activado: no se usan monedas ni se ganan boletos. La práctica de matemáticas desbloquea tiempo de juego.',
   'Today\'s arcade time is used up.': 'Ya se usó todo el tiempo de juego de hoy.', 'Leave game': 'Salir del juego', 'min left': 'min restantes',
   'No arcade time left today': 'No queda tiempo de juego hoy',
-  'Choose a pet': 'Elige una mascota', 'Empty display slot': 'Espacio de exhibición vacío', 'Earn more in the café!': '¡Gana más en la cafetería!',
+  'Choose a pet': 'Elige una mascota', 'Empty display slot': 'Espacio de exhibición vacío', 'Earn more in the café!': '¡Gana más en la cafetería!', 'Earn more by practicing!': '¡Gana más practicando!', 'Practice first to unlock': 'Practica primero para desbloquear',
   'Add a decoration': 'Añadir una decoración', 'My helper': 'Mi ayudante', 'orders served': 'pedidos atendidos',
   'Sprint Track': 'Carrera relámpago', '60-second times tables': 'Tablas de multiplicar en 60 segundos', 'tips powered up ×': 'propinas potenciadas ×',
   'Closed by your teacher': 'Cerrado por tu docente', 'Opening soon': 'Próximamente', 'Pass the': 'Aprueba',

@@ -142,6 +142,8 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     <div class="kpi"><b>${pctTxt(ip)}</b>idea steps right, first try</div>
     <div class="kpi"><b>${pctTxt(ap)}</b>arithmetic steps right, first try</div>
     <div class="kpi"><b>${readingStudents}</b>students with Reading Logs · ${englishStudents} practiced English</div></div>`;
+  /* one student's progress was only reachable from the Skill grid far down the page: put the names up top */
+  h += `<div class="card student-jump"><h2 style="margin-top:0">👤 Each student's page</h2><p class="muted" style="margin-top:0">Tap a name to see that student's progress, work, and settings.</p><div class="row" style="flex-wrap:wrap;gap:6px">${[...list].sort((a, b) => String(a.n).localeCompare(String(b.n))).map(r => `<button class="namebtn chip" data-id="${esc(r.id)}">${esc(r.n)}</button>`).join('')}</div></div>`;
   h += questionsWaitingHTML(list);
   h += waitingHTML(list);
 
@@ -156,7 +158,9 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
       <div class="who">${arr.sort((a, b) => b.n - a.n).map(x => `<span class="chip">${esc(x.r.n)} (${x.n})</span>`).join('')}</div>
       <div class="muted">${esc(MIS[id].tip)}</div>
       ${arr[0].ex ? `<div class="muted" style="margin-top:6px"><i>Example: ${esc(arr[0].ex)}</i></div>` : ''}
-      ${MIS[id].skills.length && reportKhan ? `<div style="margin-top:6px">Khan practice: ${MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${SHOPS[shopOfSkill(s)].emoji} ${esc(SKILLS[s].name)}</a>`).join(', ')}</div>` : ''}</div>`).join('') + '</div>'
+      ${MIS[id].skills.length && reportKhan ? (links => MIS[id].skills.length > 3   // a long Khan list folds so the group card stays short
+        ? `<details class="group-khan"><summary>Khan practice (${MIS[id].skills.length} lessons)</summary>${links}</details>`
+        : `<div style="margin-top:6px">Khan practice: ${links}</div>`)(MIS[id].skills.map(s => `<a href="${SKILLS[s].url}" target="_blank" rel="noopener">${SHOPS[shopOfSkill(s)].emoji} ${esc(SKILLS[s].name)}</a>`).join(', ')) : ''}</div>`).join('') + '</div>'
     : '<p class="muted">No mix-ups spotted yet.</p>';
   const inReview = list.flatMap(r => {
     const latest = new Map<string, AssessmentHistory>();
@@ -239,7 +243,7 @@ export function openDetail(r: StudentReport, onSaveStudentDrills?: SaveStudentDr
     <span><button class="btn small" id="dPrint">Print</button> <button class="btn small" id="dReset">Reset</button> <button class="btn small" id="dClose">Close</button></span></div><div id="studentResetPanel" class="reset-panel" hidden></div>
     <div id="insightsCard"></div>
     <p class="muted">Last active ${r.o ? ago(r.t) : 'not yet'}. ${r.o || 0} problems, ${r.pf || 0} perfect. About ${r.tm || 0} minutes played. Best sprint: ${r.sp || 0}.</p>
-    <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>Counting and reading the picture: ${setupC} of ${setupA}</b> right on first try.</div></div>`;
+    <div class="summary"><div class="kpi"><b>${pctTxt(st.ip)}</b>idea steps right, first try</div><div class="kpi"><b>${pctTxt(st.ap)}</b>arithmetic steps right, first try</div><div class="kpi"><b>${setupC} of ${setupA}</b>counting and reading the picture, right on first try</div></div>`;
   h += '<div id="helpQCard" class="noprint"></div>';   // ✋ questions (docs/QUESTIONS.md)
   h += '<div id="liveNowCard" class="noprint"></div>';   // 🔴 Right now (docs/LIVE.md)
   h += practiceHTML(r);
@@ -748,8 +752,9 @@ function practiceHTML(r: StudentReport) {
     return `<tr><td>${esc(s.toLocaleDateString())}</td><td>${esc(s.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td><td>${esc(e.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</td><td>${Math.round(secs / 60)} min</td><td>${esc(device || '–')}</td></tr>`; }).join('');
   return `<h2>Practice time</h2><div class="summary"><div class="kpi"><b>${minTxt(ss?.today ?? 0)}</b>today</div><div class="kpi"><b>${minTxt(ss?.week ?? 0)}</b>in the last 7 days</div><div class="kpi"><b>${esc(signedInTxt(ss?.last))}</b>last signed in</div></div>
     <p class="muted" style="margin:10px 0 4px">Active minutes per day, last 4 weeks</p><div class="pt-bars" aria-label="Active minutes per day for the last 4 weeks">${bars}</div>
+    <details class="pt-more"><summary>Time by subject and recent sessions</summary>
     <h3>Time by subject</h3>${subjectTimeTableHTML(r.subjectTime, 7)}
-    <h3>Recent sessions</h3>${recent ? `<table class="steptable"><tr><th>Date</th><th>Started</th><th>Last active</th><th>Active</th><th>Device</th></tr>${recent}</table>` : '<p class="muted">No sessions yet.</p>'}`;
+    <h3>Recent sessions</h3>${recent ? `<table class="steptable"><tr><th>Date</th><th>Started</th><th>Last active</th><th>Active</th><th>Device</th></tr>${recent}</table>` : '<p class="muted">No sessions yet.</p>'}</details>`;
 }
 
 function downloadCSV(list: StudentReport[]) {

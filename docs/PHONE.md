@@ -76,3 +76,14 @@ Commit after each step. Before each commit, run `npm run verify`, `npm run typec
 5. **Pop-ups** fit on screen, with their buttons visible.
 6. **Computers:** nothing changes. Typing and Enter work as before, and there's no number pad.
 7. `npm run verify`, `npm run typecheck`, and `npm run build` pass, with no red Console errors.
+
+## Calmer layout (Oct 31, 2026)
+
+Show what matters now and fold the rest; nothing was removed, everything folded is one tap away.
+
+- **Town (phone):** the top bar fits on one row; an empty display case is one short shelf row (filled cases look the same as before); town tiles sit two across. "I’m done for today" is centered, not full width.
+- **Class page:** goes straight to the units. Today’s plan, Words of the Week, I’m done and the grade switch stay on the All classes page. The next locked unit shows; later ones fold into “🔒 Coming up: N more units”.
+- **Math shop floor:** a locked station folds its skill list (“What you’ll learn here”), hides “0 orders served here”, and its Locked button is quiet.
+- **Arcade (phone):** a compact summary row and two cards across; a card that can’t be played right now has a quiet button.
+- **✋ I have a question (phone):** a bit smaller, still bottom-left; the page leaves room at the bottom for it and the help bot (bottom-right).
+- **Teacher app:** the dashboard number tiles fit on one row; 💬 Messages is one compact strip; a small group’s Khan list folds when it has more than 3 lessons; the selected shop in the Skill grid is mint; Settings folds each grade’s unlock list; a student’s “Time by subject” and “Recent sessions” fold under Practice time; Add class and Sign out fold under the class list (open when there are no classes). Quick setup cards are lighter, and checked ones are tinted.

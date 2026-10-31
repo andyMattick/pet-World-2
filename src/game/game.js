@@ -4,6 +4,7 @@
 import { SKILLS, SKILL_ORDER, STATIONS, SHOPS, UNLOCK_AT, MIS, REWARDS, UNIT_SKILLS, BUILDINGS, NEIGHBORHOODS, SUBJECTS, DEFAULT_HOME, buildingsIn, buildingsInClass, subjectsIn, prevBuilding, nextBuilding, builtHoods, townHoods, validHood, DRILLS, QUIZ_DEFAULTS, quizSettings, drillLabel, mergeDrillSettings, drillTypeOn, ARCADE_GAMES, arcadeGameOfTheDay, arcadeSettings, ACCESSORIES, ARCADE_ROOM_FURNITURE } from '../shared/registry';
 import { Backend, ActivityTracker } from '../lib/studentBackend';
 import { installLanguage, translateText } from '../shared/language';
+import { initHelpBot } from './helpBot';   // 🤖 the corner helper (docs/HELP-BOT.md)
 import { applyRoom } from './rooms';
 import { thinkReportHTML, thinkStationName } from '../shared/thinkReport';
 import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTableHTML, subjectDayKey as logDayKey } from '../shared/subjectTime';
@@ -6324,7 +6325,7 @@ function arcadeCard(game, daily, policy){
   const remaining = gamesOnlyMode ? 0 : arcadeRemainingSeconds(), admitted = policy.freePlay || arcadeAdmitted();
   const playable = gamesOnlyMode || (remaining > 0 && (policy.freePlay || admitted || S.coins >= arcadeEntryCost));
   const action = gamesOnlyMode ? 'Play' : policy.freePlay ? 'Play free' : admitted ? 'Play' : `Enter for 🪙 ${arcadeEntryCost}`;
-  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : 'No arcade time left today'}</button></article>`;
+  return `<article class="arcade-card${daily ? ' arcade-daily' : ''}"><div class="arcade-card-top"><span class="arcade-emoji">${game.emoji}</span><span class="arcade-badge" ${daily ? '' : 'hidden'}>Game of the day</span></div><h3>${esc(game.name)}</h3><p>${esc(game.description)}</p><button class="btn berry" data-arcade-start="${esc(game.id)}" ${playable ? '' : 'disabled'}>${playable ? action : remaining ? `Need ${arcadeEntryCost} 🪙` : arcadeMathMinutes() ? 'No arcade time left today' : 'Practice first to unlock'}</button></article>`;
 }
 function renderArcade(){
   const policy = arcadePolicy(), games = arcadeGamesForClass(), daily = arcadeGameOfTheDay(new Date(), games);
@@ -6337,8 +6338,9 @@ function renderArcade(){
     : `<div><b>${minutes} min</b><span>practice time unlocked today</span></div><div><b>${Math.floor(remaining / 60)} min</b><span>arcade time left</span></div>`;
   const prizeShop = policy.freePlay ? '' : `<section class="arcade-prizes"><div class="backrow"><h3>Furniture stickers for My Pet Room</h3><span>🎟️ ${S.arcade.tickets}</span></div><div class="wardrobe-grid">${ARCADE_ROOM_FURNITURE.map(arcadeFurnitureCard).join('')}</div><p class="wardrobe-note">Earn tickets in Arcade games. Ticket purchases use Arcade tickets only.</p></section>`;
   $('#arcadeWrap').innerHTML = `<div class="backrow"><h2>🕹️ Arcade</h2>${gamesOnlyMode ? '<button class="btn small" data-games-only-exit>Exit games</button>' : '<button class="btn small" data-go="home">Back to town</button>'}</div>
+    ${!gamesOnlyMode && remaining <= 0 ? `<p class="arcade-earn-hint"><b>🔓 How to get play time:</b> ${minutes ? 'you used today’s time. ' : ''}Practice in your classes first. Each math problem you finish earns about 1 minute here. <button type="button" class="btn small berry" data-go="home">Go practice</button></p>` : ''}
     <div class="arcade-summary">${timeStats}${arcadeStats}</div>
-    <p class="muted">${gamesOnlyMode ? 'Games-only session: no practice timer, Pet World coins, Arcade tickets, or prize shop.' : policy.freePlay ? 'Free Play is on: no Pet World coins or Arcade tickets. Learning practice unlocks play time.' : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your practice time remains. Ticket prizes are separate from Pet World coins.`}</p>
+    <p class="muted">${gamesOnlyMode ? 'Games-only session: no practice timer, Pet World coins, Arcade tickets, or prize shop.' : policy.freePlay ? `Free Play is on: no Pet World coins or Arcade tickets.${remaining <= 0 ? '' : ' Learning practice unlocks play time.'}` : `Arcade admission costs 🪙 ${arcadeEntryCost} once per day. Then play any game while your practice time remains. Ticket prizes are separate from Pet World coins.`}</p>
     <div class="arcade-grid">${games.map(game => arcadeCard(game, daily?.id === game.id, policy)).join('') || '<p class="muted">Your teacher has not enabled any Arcade games.</p>'}</div>
     ${prizeShop}
     <div id="arcadePlayWrap" class="arcade-play" hidden></div>`;
@@ -6967,7 +6969,7 @@ const bioOpen = () => ['bioChem', 'bioCells', 'bioEnergy', 'bioDivide', 'bioGene
 const currentBioCourse = () => unitCourse(nextUnit('biology')?.id || 'bioChem') || 'bio1';
 function handsOnPick(){ return weekHandsOn(currentBioCourse(), handsOnSentIds()); }
 function handsOnPlanRow(){
-  if (!bioOpen()) return '';
+  if (!bioOpen() || !BUILDINGS.some(b => b.subject === 'biology' && b.hood === homeHood())) return '';   // not for a grade with no Biology (a 4th grader saw the 6th grade lab)
   const done = handsOnDoneThisWeek(), x = handsOnPick();
   return `<div class="row extras-row"><span style="flex:1">${done ? '✅' : '⬜'} 🔬 <b>Hands-on Biology this week:</b> ${done ? 'done! 🎉' : `${x.emoji} ${esc(x.title)}`}</span>${done ? '' : `<button type="button" class="btn small" data-hands-on="${x.id}">Go</button>`}</div>`;
 }
@@ -7463,7 +7465,7 @@ function renderPetRoom(){
     <div class="room-layout"><div><div id="roomScene" class="room-scene" aria-label="Your room. Drag decorations or focus one and use the arrow keys to move it."><div id="roomBubble" class="room-bubble" role="status">${esc(petName())}: My room!</div><div class="room-rug" aria-hidden="true"></div>
       ${roomFramesHTML()}<div class="room-pet" data-room-pet role="button" tabindex="0" aria-label="Tap ${esc(petName())}, your helper pet"><span id="roomPetArt" class="room-pet-art"><span class="room-pet-emoji" aria-hidden="true">${roomPetArt()}</span>${wear('hat')}${wear('eyes')}${wear('neck')}</span></div>${positions}</div>
       <div class="room-panel"><h3>Decorations</h3><div class="room-inventory">${inventory || '<p class="muted">All your decorations are in the room.</p>'}</div><h4 class="room-subhead">In the room</h4><div class="room-placed-list">${roomInventory || '<span class="muted">No stickers placed yet.</span>'}</div>${roomFramesPanelHTML()}</div></div>
-      <aside class="room-side"><section class="room-panel"><h3>Dress-up</h3><div class="wardrobe-grid">${ACCESSORIES.map(roomAccessoryCard).join('')}</div><p class="wardrobe-note">Coin items can be bought here. Practice rewards are earned by math. Arcade-ticket items unlock with the secure Arcade prize shop.</p></section></aside></div>`;
+      <aside class="room-side"><section class="room-panel"><h3>Dress-up</h3><div class="wardrobe-grid">${ACCESSORIES.filter(item => item.source !== 'arcade' || S.accessoriesOwned.includes(item.id)).map(roomAccessoryCard).join('')}</div><p class="wardrobe-note">Buy items with 🪙 coins from practice. Some are prizes for perfect orders in a row.</p></section></aside></div>`;
 }
 let roomDrag = null;
 $('#roomWrap').addEventListener('pointerdown', event => {
@@ -9999,13 +10001,15 @@ function planCardHTML(){
   const {items, goalRows} = dayPlan(), extras = assignedExtras(), day = goalDayKey(), today = S.subjectTime?.[day] || {}, first = carryFirst();
   const brainRows = [...themePlanRows(), ...brainPlanRows()], warm = warmupPending(), fixHTML = fixPlanRowsHTML(), fixing = fixShown.length > 0, helpHTML = helpPlanHTML();
   const bibleRow = bibleOn() ? (st => `<div class="row extras-row"><span style="flex:1">${st.done ? '✅' : S.bible.skipped === logDayKey() ? '⏭️' : '⬜'} <b>✝️ Bible first:</b> journal, then ${st.verse ? 'the verse or ' : ''}a books round${S.bible.skipped === logDayKey() && !st.done ? ' <small class="muted">(skipped today by a grown-up)</small>' : ''}</span>${st.done ? '' : `<button type="button" class="btn small berry" data-open="bible">Go</button>`}</div>`)(bibleStatus()) : '';
-  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow && !handsOnPlanRow()) return '';
+  /* nothing planned yet (local mode, or no plan set): one obvious first step instead of an empty or lab-only list */
+  const starter = !items.length && !goalRows.length ? (u => u && unitOpen(u.id) ? `<div class="row extras-row"><span style="flex:1">⬜ <b>⭐ Start here:</b> practice math in the ${esc(u.name)}</span><button type="button" class="btn small${warm ? '' : ' berry'}" data-open="${esc(u.id)}">Go</button></div>` : '')(nextUnit('math')) : '';
+  if (!items.length && !extras.length && !goalRows.length && !brainRows.length && !fixHTML && !helpHTML && !bibleRow && !handsOnPlanRow() && !starter) return '';
   const extraRows = extras.map(x => extraRowHTML(x, 'warm', extrasFirst() ? '☀️ ' : '')), restRows = extras.map(x => extraRowHTML(x, 'rest')).filter(Boolean);
   const rows = (extrasFirst() ? extraRows : []).concat(items.map(x => {
     const i = planItemInfo(x), go = i.status === 'todo' && i.open && (i.open === 'reading' || i.open === 'prepRecall' || unitOpen(i.open));
     const must = first.some(y => y.id === x.id && y.carried === x.carried), lead = must ? '<b>⏪ Finish first:</b> ' : x.start && i.status === 'todo' && !fixing && !first.length ? '<b>⭐ Start here:</b> ' : '';
     return `<div class="row extras-row"><span style="flex:1">${PLAN_MARK[i.status]} ${lead}${esc(i.label)}${i.progress ? ` · <b>${esc(i.progress)}</b>` : ''}${x.carried ? ' <small class="muted">(from before)</small>' : ''}</span>${x.kind === 'elective' && i.status === 'todo' ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-elective="${esc(x.course)}" data-minutes="${Math.round(+x.minutes) || ''}">Write it</button>` : go && helpLockFor(i.open) ? '<small class="muted">✋ waiting for your teacher</small>' : go ? `<button type="button" class="btn small${warm || (first.length && !must) ? '' : ' berry'}" data-open="${esc(i.open)}">Go</button>` : ''}</div>`;
-  }), extrasFirst() ? [] : extraRows, restRows, [handsOnPlanRow()].filter(Boolean), goalRows.map(([id, name, goal]) => {
+  }), starter ? [starter] : [], extrasFirst() ? [] : extraRows, restRows, [handsOnPlanRow()].filter(Boolean), goalRows.map(([id, name, goal]) => {
     const done = Math.floor((today[id] || 0) / 60), go = id === 'reading' && !(done >= goal);
     return `<div class="row extras-row"><span style="flex:1">${done >= goal ? '✅' : '⬜'} ${esc(name)} · <b>${done} of ${goal} min</b></span>${go ? `<button type="button" class="btn small${warm ? '' : ' berry'}" data-open="reading">Go</button>` : ''}</div>`;
   }), brainRows);
@@ -10053,12 +10057,15 @@ function renderHome(){
   const stickerCount = REWARDS.filter(owns).length;
   const slots = displayed.map((reward, i) => reward
     ? `<button type="button" class="display-slot filled" data-case-slot="${i}" aria-label="${esc(reward.name)}"><span>${reward.emoji}</span><small>${esc(reward.name)}</small></button>`
-    : `<button type="button" class="display-slot empty" data-case-slot="${i}" aria-label="Empty display slot"><span>+</span><small>${ownedDecor.length < 8 ? 'Earn more in the café!' : 'Add a decoration'}</small></button>`).join('');
-  $('#displayCaseWrap').innerHTML = `<div class="display-case"><button type="button" class="helper-box" data-case-pet aria-label="Choose helper pet"><span class="helper-box-emoji">${helper.emoji}</span><strong>My helper</strong><small>${esc(helper.name)}</small></button><div class="case-main"><div class="display-shelves">${slots}</div></div></div><button type="button" class="display-progress" data-open="book">📒 Sticker Book: ${stickerCount} of ${REWARDS.length} stickers</button>`;
+    : `<button type="button" class="display-slot empty" data-case-slot="${i}" aria-label="Empty display slot"><span>+</span><small>${ownedDecor.length < 8 ? 'Earn more by practicing!' : 'Add a decoration'}</small></button>`).join('');
+  const caseEmpty = !displayed.some(Boolean);   // nothing on display yet: a short, quiet shelf instead of 8 empty boxes (layout only)
+  $('#displayCaseWrap').innerHTML = `<div class="display-case${caseEmpty ? ' case-empty' : ''}"><button type="button" class="helper-box" data-case-pet aria-label="Choose helper pet"><span class="helper-box-emoji">${helper.emoji}</span><strong>My helper</strong><small>${esc(helper.name)}</small></button><div class="case-main"><div class="display-shelves">${slots}</div></div></div><button type="button" class="display-progress" data-open="book">📒 Sticker Book: ${stickerCount} of ${REWARDS.length} stickers</button>`;
   $('#dayChip').textContent = 'Day ' + S.day;
   $('#ordersChip').textContent = S.orders + ' orders served';
   const hood = currentHood(), selectedSubject = subjectsIn(hood).some(subject => subject.id === viewSubject) ? viewSubject : null;
-  let h = planCardHTML() + wordsWeekCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">${dayLogToday().sent ? '📅 Today’s record (saved) · save again' : '✅ I’m done for today'}</button>` + hoodSwitchHTML();
+  /* a class page goes straight to its units: Today's plan, Words of the Week, I'm done and the grade switch stay on the
+     All classes page, one tap back (layout, Oct 31, 2026) */
+  let h = selectedSubject ? '' : planCardHTML() + wordsWeekCardHTML() + `<button type="button" class="btn berry day-done-btn" data-day-done style="grid-column:1/-1">${dayLogToday().sent ? '📅 Today’s record (saved) · save again' : '✅ I’m done for today'}</button>` + hoodSwitchHTML();
   if (!selectedSubject) {
     h += `<div class="class-heading"><h2>${esc(NEIGHBORHOODS.find(n => n.id === hood)?.name || 'Grade')} classes</h2></div><div class="class-grid">`;
     subjectsIn(hood).forEach(subject => {
@@ -10070,7 +10077,7 @@ function renderHome(){
     const subject = SUBJECTS.find(item => item.id === selectedSubject);
     h += `<div class="class-heading"><button type="button" class="btn small" data-class-back>All classes</button><h2>${subject?.emoji || ''} ${esc(subject?.name || selectedSubject)}</h2></div>`;
     h += worldMapHTML(hood, selectedSubject);
-    let labTile = '';
+    let labTile = '', lockedTiles = [];
     if (selectedSubject === 'biology' && bioOpen()) {   // 🔬 the Science Lab: every Biology lab, one a week (not a unit: docs/HANDS-ON.md); it sits after the open units
       const pick = handsOnPick();
       labTile = `<button class="tile sci-lab-tile" data-open="scienceLab"><span class="te">🔬</span><span class="tn">Science Lab</span><span class="tu">${handsOnDoneThisWeek() ? '✅ This week’s lab is done' : `⭐ This week: ${pick.emoji} ${esc(pick.title)}`}</span></button>`;
@@ -10081,11 +10088,14 @@ function renderHome(){
       if (!open && labTile) { h += labTile; labTile = ''; }
       const stickers = open && rewards.length ? `<span class="tile-stickers" aria-label="${owned} of ${rewards.length} stickers">${rewards.map(r => `<i class="${owns(r) ? 'filled' : ''}" title="${esc(r.name)}"></i>`).join('')}</span>` : '';
       const progress = open && rewards.length ? `<span class="tile-collection">${owned}/${rewards.length}</span>${stickers}` : '';
+      if (!open && h.includes('class="tile locked"')) { lockedTiles.push(`<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`); return; }
       h += open
         ? `<button class="tile" data-open="${b.id}"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}</button>`
         : `<div class="tile locked" aria-disabled="true"><span class="te">${b.emoji}</span><span class="tn">${esc(b.name)}</span><span class="tu">${esc(b.unit)}</span>${progress}<span class="soon">${b.open ? `🔒 Pass the ${prevBuilding(b.id)?.name || 'last'} Unit Test` : 'Opening soon'}</span></div>`;
     });
     h += labTile;
+    /* the next locked unit stays in view; the ones after it fold into one quiet "Coming up" row (still one tap away) */
+    if (lockedTiles.length) h += `<details class="locked-units"><summary>🔒 Coming up: ${lockedTiles.length} more unit${lockedTiles.length === 1 ? '' : 's'}</summary><div class="locked-units-grid">${lockedTiles.join('')}</div></details>`;
   }
   /* a class page shows only that class's units; Bible, Sprint Track, Word Workshop, Reading Log and the other town spots
      stay on the All classes page (owner, Oct 30, 2026) */
@@ -11175,7 +11185,7 @@ function videoPassBannerHTML(unit){
   if (!videoGateUnit(unit) || LOOK_ID || !unitVideoSections(unit).length) return '';
   const p = S.videoPass?.[unit], today = p?.day === arcadeDateKey();
   if (videoPassToday(unit)) return `<div class="video-pass done">✅ <b>Today’s video:</b> ${esc(p.title)} · signed by a grown-up <button type="button" class="btn small" data-video-pass="${esc(unit)}">🎬 Watch another</button></div>`;
-  return `<div class="video-pass"><b>🎬 Before practice today:</b> pick a video, watch all of it, then get Mom’s signature.${today && p.title ? ` <span class="muted">You picked: ${esc(p.title)}</span>` : ''}<button type="button" class="btn berry" data-video-pass="${esc(unit)}">🎬 ${today && p.title ? 'Get Mom’s signature' : 'Pick today’s video'}</button></div>`;
+  return `<div class="video-pass"><b>🎬 Before practice today:</b> pick a video, watch all of it, then get a grown-up’s signature.${today && p.title ? ` <span class="muted">You picked: ${esc(p.title)}</span>` : ''}<button type="button" class="btn berry" data-video-pass="${esc(unit)}">🎬 ${today && p.title ? 'Get a grown-up’s signature' : 'Pick today’s video'}</button></div>`;
 }
 /* go() runs right away when the pass is signed today (or there is nothing to watch); otherwise the picker opens */
 function videoGateThen(unit, focus, go){
@@ -11196,15 +11206,15 @@ function openVideoPicker(unit, focus = null, go = null){
   const el = document.createElement('div');
   el.className = 'theme-card video-picker'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Pick today’s video');
   el.innerHTML = `<div class="theme-box"><p class="theme-kicker">${esc(gateUnitName(unit))}</p><div class="theme-emoji" aria-hidden="true">🎬</div><h2>${signed ? 'Watch another video' : 'Pick today’s video'}</h2>
-    <ol class="pick-steps"><li><b>Pick a video</b> from this unit${shown.some(s => s.kid?.length) ? '. Picture cards play right here; Khan videos open in a new tab' : ' (it opens in a new tab)'}.</li><li><b>Watch all of it.</b> Watching counts as class time.</li>${gated ? '<li><b>Get Mom’s signature.</b> Then practice opens for today.</li>' : ''}</ol>
+    <ol class="pick-steps"><li><b>Pick a video</b> from this unit${shown.some(s => s.kid?.length) ? '. Picture cards play right here; Khan videos open in a new tab' : ' (it opens in a new tab)'}.</li><li><b>Watch all of it.</b> Watching counts as class time.</li>${gated ? '<li><b>Get a grown-up’s signature.</b> Then practice opens for today.</li>' : ''}</ol>
     <div class="pick-list">${focusHTML}${restHTML ? `<details class="pick-more"><summary>More videos in this unit</summary>${restHTML}</details>` : ''}</div>
     <p class="pick-now" hidden></p>
-    <div class="row" style="justify-content:center">${gated ? `<button type="button" class="btn berry" data-sign-video${S.videoPass?.[unit]?.day === arcadeDateKey() && S.videoPass[unit].title ? '' : ' disabled'}>✍️ Mom’s signature: I watched it</button>` : ''}<button type="button" class="btn small" data-pick-close>${gated ? 'Not now' : 'Close'}</button></div>
+    <div class="row" style="justify-content:center">${gated ? `<button type="button" class="btn berry" data-sign-video${S.videoPass?.[unit]?.day === arcadeDateKey() && S.videoPass[unit].title ? '' : ' disabled'}>✍️ Grown-up’s signature: I watched it</button>` : ''}<button type="button" class="btn small" data-pick-close>${gated ? 'Not now' : 'Close'}</button></div>
     ${signed || !gated ? '' : '<p class="pick-skip"><button type="button" class="btn small" data-skip-video>🔐 Grown-up: no good video today, open practice</button></p>'}
     ${!Backend.me && shown[0]?.kidKey ? '<p class="pick-skip"><button type="button" class="btn small" data-kid-edit>🔐 Grown-up: change these videos</button></p>' : ''}</div>`;
   document.body.appendChild(el);
   const now = el.querySelector('.pick-now'), sign = el.querySelector('[data-sign-video]');
-  const showPicked = () => { const p = S.videoPass?.[unit]; if (gated && p?.day === arcadeDateKey() && p.title) { now.hidden = false; now.innerHTML = `Watching: <b>${esc(p.title)}</b>. When it’s over, bring Mom here to sign.`; sign.disabled = false; } };
+  const showPicked = () => { const p = S.videoPass?.[unit]; if (gated && p?.day === arcadeDateKey() && p.title) { now.hidden = false; now.innerHTML = `Watching: <b>${esc(p.title)}</b>. When it’s over, bring a grown-up here to sign.`; sign.disabled = false; } };
   showPicked();
   el.addEventListener('click', e => {
     const pick = e.target.closest('[data-pick-video]');
@@ -12229,7 +12239,8 @@ function renderEnglishUnit(courseId=activeEnglishCourse){
       const skill = course.skills.find(item => item.id === skillId), record = englishRecord(skillId,course.id);
       const unlocked = blockUnlocked && (skillIndex === 0 || !!englishRecord(group.skills[skillIndex-1],course.id).passed);
       const accuracy = record.answered ? Math.round((record.answered - record.misses) * 100 / record.answered) : null;
-      const status = record.passed ? `✓ Level up · Best ${record.best}/4 · ${record.tries} tries`
+      const status = !unlocked && !record.passed && !record.tries ? (blockUnlocked ? '🔒 Opens when you level up the practice above' : '🔒 Opens when you finish the lesson above')   // say why the button is grey
+        : record.passed ? `✓ Level up · Best ${record.best}/4 · ${record.tries} tries`
         : record.tries ? `Best ${record.best}/4 · ${record.tries} tries · Get 3 of 4 to level up`
           : 'Not started · Get 3 of 4 to level up';
       const tracking = record.answered ? `<span class="muted">${record.answered - record.misses}/${record.answered} answers correct${accuracy !== null ? ` · ${accuracy}% accuracy` : ''}${record.answered >= 4 && accuracy < 70 ? ' · Review suggested' : ''}</span>` : '';
@@ -12264,6 +12275,11 @@ function addCrossOuts(container, selector){
     x.setAttribute('aria-pressed', 'false');
     x.setAttribute('aria-label', `Cross out: ${option.textContent.replace(/^\d\s*/, '').trim().slice(0, 80)}`);
   });
+  /* first-run tip: the ✕ isn't obvious (it looked like "wrong"), so say what it does until she has used it once */
+  let seen = false; try { seen = !!localStorage.getItem('pettown:xoTipSeen'); } catch(e){}
+  const first = container.querySelector('.xo-wrap');
+  const at = first && first.parentElement !== container ? first.parentElement : first;   // above the whole list of choices, not inside a flex row
+  if (!seen && at && !container.querySelector('.xo-tip')) at.insertAdjacentHTML('beforebegin', '<p class="muted xo-tip" style="margin:0 0 4px;font-size:.85em;flex-basis:100%;width:100%">💡 Tip: tap ✕ to cross out a choice you know is wrong.</p>');
 }
 function setCrossed(option, on){
   const x = option.parentElement.querySelector('.xo');
@@ -12276,6 +12292,7 @@ document.addEventListener('click', event => {   /* capture: runs before the opti
   if (!option) return;
   event.preventDefault(); event.stopPropagation();
   if (!option.disabled) setCrossed(option, x ? !option.classList.contains('crossed') : false);
+  if (x) { try { localStorage.setItem('pettown:xoTipSeen', '1'); } catch(e){} document.querySelectorAll('.xo-tip').forEach(t => t.remove()); }
 }, true);
 function renderEnglishQuestion(){
   const run = englishRun; if (!run) return;
@@ -14130,8 +14147,8 @@ function renderShopFloor(shop){
     else if (open && (mastered || unitOpenedByGrownUp(config.id))) quizCard = `<button class="btn" data-quiz="${st.id}" data-shop="${config.id}">📝 Station Quiz</button>`;
     const stationVideo = lessonVideo(`math:${config.id}:${st.id}`);
     return `<div class="station ${open ? '' : 'locked'}"><div class="se">${st.emoji}</div><h3>${st.id}. ${st.name}</h3><p class="muted" style="margin:0">${st.kid}</p>${stationVideo && st.skills.length ? lessonVideoButtonHTML(stationVideo, 'station') : ''}${open && unitVideoSections(config.id).some(sec => sec.name.includes(`${st.id}. ${st.name}`)) ? `<button type="button" class="btn ${videoPassToday(config.id) ? 'small' : 'berry'} station-videos" data-video-pass="${config.id}" data-video-focus="${st.id}">🎬 Lesson videos</button>` : ''}
-      <ul class="skilllist">${skills}</ul>${lock}<p class="muted" style="margin:0">${done} orders served here</p>
-      <button class="btn ${open ? 'berry' : ''}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}${open && config.id === 'post' && st.id === 4 ? parcelButtonHTML() : ''}${open && config.id === 'show' && st.id === 6 ? petShowButtonHTML() : ''}</div>`;
+      ${open || !st.skills.length ? `<ul class="skilllist">${skills}</ul>` : `<details class="locked-skills"><summary>What you’ll learn here (${st.skills.length})</summary><ul class="skilllist">${skills}</ul></details>`}${lock}${done ? `<p class="muted" style="margin:0">${done} orders served here</p>` : ''}
+      <button class="btn ${open ? 'berry' : 'station-locked-btn'}" data-shop="${config.id}" data-station="${st.id}" ${open ? '' : 'disabled'}>${open ? 'Open for business' : st.skills.length ? 'Locked' : 'Coming soon'}</button>${quizCard}${open ? thinkButtonHTML(config.id, st.id) : ''}${open && config.id === 'cafe' && st.id === 4 ? chefRushButtonHTML() : ''}${open && config.id === 'bakery' && st.id === 5 ? surgeryButtonHTML('bakery') : ''}${open && config.id === 'clock' && st.id === 3 ? surgeryButtonHTML('clock') : ''}${open && config.id === 'market' && st.id === 4 ? dashButtonHTML() : ''}${open && config.id === 'rink' && st.id === 6 ? penguinButtonHTML() : ''}${open && config.id === 'potion' && st.id === 6 ? detectiveButtonHTML() : ''}${open && config.id === 'fair' && st.id === 6 ? carnivalButtonHTML() : ''}${open && config.id === 'houses' && st.id === 3 ? asteroidsButtonHTML() : ''}${open && config.id === 'harbor' && st.id === 3 ? battleshipButtonHTML() : ''}${open && config.id === 'post' && st.id === 4 ? parcelButtonHTML() : ''}${open && config.id === 'show' && st.id === 6 ? petShowButtonHTML() : ''}</div>`;
   }).join('') + writtenListHTML('math', `${config.id}:`);
 }
 $('#stations').addEventListener('click', e => {
@@ -14376,6 +14393,14 @@ function numberPad(input, onSubmit, {decimal = false} = {}){
   input.insertAdjacentElement('afterend', pad);
   return pad;
 }
+/* the fraction box says when this step wants simplest form or a mixed number (probed from the step's own check),
+   so an equal answer like 2/4 or 5/4 is never a silent miss on a quiz or test (Bill review, Oct 31, 2026) */
+function fracFormTip(st){
+  const a = Array.isArray(st.answer) ? st.answer : null, base = 'Whole number box: fill only if you need it.';
+  if (!a || !st.eq || !a[1] || !a[2]) return base;
+  const simp = !st.eq([a[0], a[1] * 2, a[2] * 2]), mixed = a[0] > 0 && !st.eq([0, a[0] * a[2] + a[1], a[2]]);
+  return simp && mixed ? 'Write it in simplest form, as a mixed number.' : simp ? 'Write it in simplest form. ' + base : mixed ? 'Write it as a mixed number.' : base;
+}
 function activateStep(i){
   order.i = i; const st = order.p.steps[i]; st.t0 = performance.now();
   $$('#plan .chip').forEach((chip, index) => chip.classList.toggle('now', index === i));
@@ -14442,7 +14467,7 @@ function activateStep(i){
     setTimeout(() => $('#qrQ').focus(), 40);
   } else if (st.kind === 'frac') {
     const fin = (id, label) => `<input class="cell sm" id="${id}" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="${label}">`;
-    box.innerHTML = `<span class="fracin">${fin('fracW','whole number (leave empty if none)')}<span class="fstack">${fin('fracN','top number')}<span class="fbar"></span>${fin('fracD','bottom number')}</span></span><span class="frac-tip">Whole number box: fill only if you need it.</span>`;
+    box.innerHTML = `<span class="fracin">${fin('fracW','whole number (leave empty if none)')}<span class="fstack">${fin('fracN','top number')}<span class="fbar"></span>${fin('fracD','bottom number')}</span></span><span class="frac-tip">${fracFormTip(st)}</span>`;
     const [w, n, d] = ['#fracW', '#fracN', '#fracD'].map(id => $(id));
     [w, n, d].forEach(inp => {
       inp.addEventListener('input', () => { inp.value = inp.value.replace(/\D/g, ''); inp.classList.remove('wrong'); });
@@ -15661,7 +15686,7 @@ function openJoin(){
     <input id="codeInput" class="textin" maxlength="8" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase; letter-spacing:.2em" value="${esc(last)}">
     <div class="row"><button class="btn berry" id="codeGo">Next</button></div>
     <div class="row"><button class="btn small" type="button" data-games-only>I'm just here for the games</button></div>
-    <form class="games-only-form" data-games-only-form hidden><label>Secret word<input class="textin" type="password" name="secretWord" autocomplete="off" required></label><div class="row"><button class="btn berry" type="submit">Open games</button></div><p class="muted" data-games-only-error aria-live="polite"></p></form>
+    <form class="games-only-form" data-games-only-form hidden><p class="muted games-only-help">Games without lessons are for guests. A grown-up knows the secret word.</p><label>Secret word<input class="textin" type="password" name="secretWord" autocomplete="off" required></label><div class="row"><button class="btn berry" type="submit">Open games</button></div><p class="muted" data-games-only-error aria-live="polite"></p></form>
     <p class="muted" id="joinMsg" aria-live="polite"></p>
     <div class="row join-teacher-link"><a class="btn small" href="teacher.html">👩‍🏫 Teacher or parent? Open the dashboard</a></div></div>`;
   show('join');
@@ -16266,3 +16291,20 @@ if (new URLSearchParams(location.search).has('videoSlides')) window.PetTownDraw 
 /* scripts/check-math.mjs opens the game with ?mathcheck to test every generator: answer keys against independent
    solvers (scripts/math-oracles/), choices, and what quizzes and tests show (testPrompt). */
 if (new URLSearchParams(location.search).has('mathcheck')) window.PetWorldMath = {GEN, SKILLS, SHOPS, answerStepsFor, testPrompt};
+/* 🤖 the corner helper (docs/HELP-BOT.md): reads state and opens places only through the town's own doors */
+initHelpBot({
+  data:{BUILDINGS, NEIGHBORHOODS, SUBJECTS, SHOPS, SKILLS, ARCADE_GAMES, BRAIN_GAMES},
+  state:() => {
+    const screen = SCREENS.find(s => !$('#scr-' + s).hidden) || '', mode = shift?.mode, run = englishRun?.retryType;
+    let next = null, planDone = false;
+    try { const items = dayPlan().items; const x = items.find(i => planItemInfo(i).status === 'todo'); next = x ? planItemInfo(x) : null; planDone = !!items.length && !x; } catch(e){}
+    return {screen, name:S.name, lang:S.practiceLanguage, lookOnly:!!LOOK_ID, signedIn:!['loading','join','name',''].includes(screen),
+      busy:!!(brainRun || moveRun || gamesOnlyMode || (screen === 'shift' && (mode === 'quiz' || mode === 'test' || shift?.unitReview)) || (screen === 'library' && ['final','quiz','review'].includes(run) && $('#libraryWrap .ela-question, #libraryWrap .flashcard')) || document.body.classList.contains('arcade-open') || $('.theme-card') || !$('#practice').hidden || $('.modal:not([hidden])')),
+      hood:currentHood(), hoods:townHoods().map(n => n.id), unitOpen, unitPassed:unitTestPassed, lockedText:unitLockedText,
+      arcadeOn:arcadePolicy().enabled, arcadeGames:arcadeGamesForClass().map(g => g.id), bibleOn:bibleOn(), bioOpen:bioOpen(), next, planDone};
+  },
+  home:() => show('home'),
+  showClass:subject => { show('home'); viewSubject = subject; renderHome(); },
+  showGrade:hood => { show('home'); viewHood = hood; viewSubject = null; renderHome(); },
+  openSpot:id => { if ($('#scr-home').hidden) show('home'); openTownSpot(id); }
+});

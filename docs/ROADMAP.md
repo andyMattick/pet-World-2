@@ -56,6 +56,7 @@ Work top to bottom. Each plan has its own step-by-step file in `docs/`.
 - [x] Music (`MUSIC.md`): 4 tracks, a music menu with volume, and a teacher Allow music switch
 - [x] Reading Quiz in the Story Corner Library: chapter notes are checked by a grown-up (teacher app, or a parent PIN in local mode) before they can be quizzed; multiple-choice, true-or-false, and essay questions are built from the checked notes (`READING-QUIZ.md`)
 - [x] Draft plans written for Bakery stations 2 to 5 (`BAKERY-2-PANS.md` to `BAKERY-5-BULK.md`) and the 4th grade version (`GRADE4.md`)
+- [x] 🤖 Help bot in the corner of both apps (`HELP-BOT.md`): finds places, games, skills, tabs and settings from the apps' own lists, takes you there through the normal doors (gates stay), and `npm run verify` checks it covers every building, Arcade game, town spot and teacher setting
 
 ## Next up
 
@@ -147,7 +148,7 @@ Quickest first. Each gets its own plan file before it's built. **Still open:** w
   - [x] Fresh puzzles every round (Pattern Matrix from rules, Word Builder's bigger word list), levels that go down as well as up, extra time at the easiest level, and "Your best yet!" (`BRAIN-GAMES.md`, "Never crushing")
 - [x] F16. 🕹️ Arcade open and close: "Open the Arcade" is the one main switch and Free Play only sets how students get in; each game's switch works in Free Play too (Open all / Close all); a student playing a game the teacher closes is sent back within a minute
 - [ ] F17. 🖼️ Fix Museum Caper (source `src/arcade/museum-caper`, built to `public/arcade/museum-caper`): the owner will describe what's broken
-- [x] F18. 🧭 Teacher Quick setup: a new class starts with brain stretches on and opens on one page of every on/off choice; Settings links back to it
+- [x] F18. 🧭 Teacher Quick setup: a new class starts with brain stretches on and opens on one page of every on/off choice; Settings links back to it Oct 31, 2026: grouped (school day, breaks, learning rules, videos, Arcade and music, for you), with the missing switches added (practice pop-ups, station quiz opens the next station, quiz style, theme-day frequency and special days) and lists of the finer controls and the per-student settings; Quick setup, Settings labels and the help bot all read one list, `TEACHER_SETTINGS` in `src/teacher/settingsList.ts`, and `npm run verify` fails if a Settings switch or a game_settings key is missing from it (docs/QUICK-SETUP.md).
 - [x] F19. 🐾 Teacher ⇄ student: Open Pet World and Student view (class code filled in) in the teacher app; a clearer teacher button on the join screen
 - [x] F20. 📦 `npm run import-game` for Arcade and Brain Games built outside Pet World (`IMPORT-GAMES.md`)
 - [x] F21. 🤸 Stand-and-stretch breaks (`MOVE-BREAKS.md`): when a student finishes one subject and starts another, her pet leads 4 moves (20 seconds each), no skip; teachers switch it on or off, set the minutes, and pick the moves

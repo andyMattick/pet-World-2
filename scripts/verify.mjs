@@ -336,6 +336,45 @@ if (/<a [^>]*>Open the Khan test<\/a>/.test(game)) problems.push('src/game/game.
   }
 }
 
+{
+  // 🧭 one list of teacher settings (src/teacher/settingsList.ts, docs/QUICK-SETUP.md): every Settings switch and menu, and
+  // every class setting the game reads, is in TEACHER_SETTINGS, and every Quick setup entry can be read in main.ts
+  const list = read('src/teacher/settingsList.ts'), teacher = read('src/teacher/main.ts');
+  const listed = new Set([...list.matchAll(/settingsIds: \[((?:'[^']*'(?:, )?)*)\]/g)].flatMap(m => [...m[1].matchAll(/'([^']+)'/g)].map(x => x[1])));
+  const saved = [...list.matchAll(/saved: '([^']*)'/g)].map(m => m[1]).join(', ');
+  const settingsPane = (teacher.match(/function renderSettings\(\)[\s\S]*$/) || [''])[0];
+  for (const [, id] of settingsPane.matchAll(/<(?:input type="checkbox"|select) id="([A-Za-z]+)"/g)) if (!listed.has('#' + id)) problems.push(`Settings control #${id} (src/teacher/main.ts) is not in TEACHER_SETTINGS (src/teacher/settingsList.ts): add it so Quick setup and the help bot know about it`);
+  for (const [, attr] of settingsPane.matchAll(/<(?:input type="checkbox"|select[^>]*?) (data-[a-z-]+)="\$\{/g)) if (!listed.has(`[${attr}]`)) problems.push(`Settings controls [${attr}] (src/teacher/main.ts) are not in TEACHER_SETTINGS (src/teacher/settingsList.ts)`);
+  for (const sel of listed) { const needle = sel.startsWith('#') ? `id="${sel.slice(1)}"` : `${sel.slice(1, -1)}="`; if (teacher && !teacher.includes(needle)) problems.push(`TEACHER_SETTINGS lists ${sel}, but Settings (src/teacher/main.ts) has no such control`); }
+  for (const [, body] of list.matchAll(/\{ (id: '[A-Za-z]+'[^\n]*quick: true[^\n]*)/g)) { const id = body.match(/id: '([A-Za-z]+)'/)[1]; if (!new RegExp(`\\n  ${id}: c =>`).test(teacher)) problems.push(`Quick setup entry "${id}" has no SETUP_READ line in src/teacher/main.ts`); }
+  for (const key of new Set([...game.matchAll(/game_settings\?\.([A-Za-z]+)/g)].map(m => m[1]))) if (!saved.includes(`game_settings.${key}`)) problems.push(`src/game/game.js reads game_settings.${key}, which is not in TEACHER_SETTINGS (src/teacher/settingsList.ts)`);
+}
+
+{
+  // 🤖 help bot (docs/HELP-BOT.md): its index must cover every building, Arcade game, brain game, town spot and teacher
+  // setting, so "the things you can control" never go missing from it. Buildings and games come straight from the
+  // registry; town spots and Settings controls are checked here against the bot's lists.
+  const bot = read('src/shared/helpBot.ts'), gameBot = read('src/game/helpBot.js'), teacherBot = read('src/teacher/helpBot.ts'), main = read('src/teacher/main.ts');
+  for (const list of ['data.BUILDINGS', 'data.SHOPS', 'data.ARCADE_GAMES', 'data.BRAIN_GAMES', 'data.SKILLS']) if (bot && !bot.includes(list)) problems.push(`src/shared/helpBot.ts: studentEntries no longer reads ${list}`);
+  if (game && !/initHelpBot\(\{\s*data:\{BUILDINGS, NEIGHBORHOODS, SUBJECTS, SHOPS, SKILLS, ARCADE_GAMES, BRAIN_GAMES\}/.test(game)) problems.push('src/game/game.js: initHelpBot must get {BUILDINGS, NEIGHBORHOODS, SUBJECTS, SHOPS, SKILLS, ARCADE_GAMES, BRAIN_GAMES}');
+  if (main && !main.includes('initTeacherHelpBot(')) problems.push('src/teacher/main.ts no longer starts the help bot (initTeacherHelpBot)');
+  if (gameBot && !gameBot.includes('blocker(')) problems.push('src/game/helpBot.js lost its gate check (blocker): the bot must never open a locked or closed place');
+  for (const t of ['ARCADE_GAMES', 'BRAIN_GAMES', 'MOVES', 'THEME_DAYS']) if (teacherBot && !teacherBot.includes(t)) problems.push(`src/teacher/helpBot.ts no longer indexes ${t} for the teacher`);
+  const spotIds = new Set([...((bot.match(/export const STUDENT_SPOTS[\s\S]*?\n\];/) || [''])[0]).matchAll(/\{ id: '([A-Za-z0-9]+)'/g)].map(m => m[1]));
+  const home = (game.match(/function renderHome\(\)\{[\s\S]*?\n\}/) || [''])[0];
+  for (const [, id] of home.matchAll(/data-open="([A-Za-z0-9]+)"/g)) if (!spotIds.has(id)) problems.push(`Town spot "${id}" (renderHome in src/game/game.js) is missing from STUDENT_SPOTS in src/shared/helpBot.ts`);
+  const settingsBody = (main.match(/function renderSettings\(\)[\s\S]*?\n\}\n/) || [''])[0];
+  const botIds = new Set([...((bot.match(/export const TEACHER_SETTINGS[\s\S]*?\n\];/) || [''])[0]).matchAll(/\{ id: '([A-Za-z0-9]+)'.*?(?:sel: '([^']+)')?\s*\},?$/gm)].map(m => m[1]));
+  const botSels = new Set([...bot.matchAll(/sel: '(\[data-[a-z-]+\])'/g)].map(m => m[1]));
+  const shared = existsSync('src/teacher/settingsList.ts') ? read('src/teacher/settingsList.ts') : '';
+  for (const [, id] of settingsBody.matchAll(/<(?:input|select|button)[^>]*\bid="([A-Za-z0-9]+)"/g)) if (!botIds.has(id) && !shared.includes(`'#${id}'`)) problems.push(`Settings control #${id} (src/teacher/main.ts) is missing from the help bot: add it to TEACHER_SETTINGS in src/shared/helpBot.ts (or the shared settings list)`);
+  for (const attr of new Set([...settingsBody.matchAll(/\b(data-(?:open-unit|min-station|arcade-game|brain-game|move|themeday|drill-type))="/g)].map(m => m[1]))) if (!botSels.has(`[${attr}]`) && !shared.includes(`'[${attr}]'`)) problems.push(`Settings list [${attr}] (src/teacher/main.ts) has no help-bot entry in src/shared/helpBot.ts`);
+  const tabs = ((main.match(/\(\[('dashboard'[^\]]*)\] as const\)\.map\(t => `<button class="tab/) || [])[1] || '').match(/[a-z]+/g) || [];
+  if (!tabs.length) problems.push('src/teacher/main.ts: the tab list could not be read for the help bot check');
+  const tabIds = new Set([...((bot.match(/export const TEACHER_TABS[\s\S]*?\n\];/) || [''])[0]).matchAll(/\{ id: '([a-z]+)'/g)].map(m => m[1]));
+  for (const t of [...tabs, 'setup']) if (!tabIds.has(t)) problems.push(`Teacher tab "${t}" is missing from TEACHER_TABS in src/shared/helpBot.ts`);
+}
+
 if (problems.length) {
   console.error('\n❌ Pet World verify FAILED. Do not commit.\n');
   problems.forEach(p => console.error('  - ' + p));
