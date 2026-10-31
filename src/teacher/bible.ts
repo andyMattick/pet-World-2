@@ -1,7 +1,7 @@
 /* ✝️ Bible on a student's page (docs/BIBLE.md): turn it on for this student, line up her memory verses, and read her
    devotion journal, her verse progress and her books-game progress. Settings are saved in quiz_overrides as "bible" (JSON
    {on, verses:[{id, ref, version, text}]}); the journal and progress come from her save (S.bible). */
-import { BOOK_LEVELS, RECALL_SECTIONS, BIBLE_SECTIONS, VERSE_TRIES_A_DAY, VERSE_MOVE_UP, FULL_STEP, parseBibleSettings, normalizeVerseProgress, currentVerse, stepOn, stepName, lastFiveAverage, verseWords, withAddedVerses, normalizeAddedVerses, verseCycle, verseRecap, verseFormError, VERSE_CYCLE, type BibleSettings, type MemoryVerse } from '../shared/bible';
+import { BOOK_LEVELS, RECALL_SECTIONS, BIBLE_SECTIONS, VERSE_TRIES_A_DAY, VERSE_MOVE_UP, FULL_STEP, parseBibleSettings, normalizeVerseProgress, currentVerse, stepOn, stepName, lastFiveAverage, verseWords, withAddedVerses, normalizeAddedVerses, verseCycle, verseRecap, verseRequest, verseFormError, VERSE_CYCLE, type BibleSettings, type MemoryVerse } from '../shared/bible';
 import { subjectDayKey } from '../shared/subjectTime';
 
 interface JournalEntry { day: string; passage?: string; learned?: string; prayer?: string; updatedAt?: number }
@@ -21,7 +21,8 @@ let editId = '';   // the verse in the form ('' = a new one)
 export function bibleVerseStatus(qxBible: unknown, saveRaw: unknown) {
   const b = (saveRaw && typeof saveRaw === 'object' ? saveRaw : {}) as BibleSave, s = withAddedVerses(parseBibleSettings(qxBible), b.added), today = subjectDayKey();
   const cur = currentVerse(s, b.vp), p = cur ? normalizeVerseProgress(b.vp?.[cur.id]) : null, step = p ? stepOn(p, today) : 0;
-  return { on: s.on, needsVerse: s.on && !cur, cur, p, step, avg: p ? lastFiveAverage(p, step) ?? lastFiveAverage(p, p.step) : null, today: p ? p.tries.filter(t => t.day === today).length : 0 };
+  const request = s.on && cur && p ? verseRequest(p, cur.id, b.added, today, s.answered) : '';
+  return { on: s.on, needsVerse: s.on && !cur, request, cur, p, step, avg: p ? lastFiveAverage(p, step) ?? lastFiveAverage(p, p.step) : null, today: p ? p.tries.filter(t => t.day === today).length : 0 };
 }
 
 export function renderBibleCard(el: HTMLElement, name: string, saveRaw: unknown, getRaw: () => unknown, save: (value: string | null) => Promise<void>) {
@@ -53,6 +54,7 @@ export function renderBibleCard(el: HTMLElement, name: string, saveRaw: unknown,
     <label style="display:flex; gap:8px; align-items:center"><input type="checkbox" id="bibleOn" ${s.on ? 'checked' : ''}> Bible first thing every day</label>
     <p class="status" id="bibleMsg" role="status" style="margin:2px 0"></p>
     <p class="muted" style="margin-top:0">When it’s on, a ✝️ Bible spot shows in ${esc(name)}’s town and comes first each day, before the morning brain stretch, the theme question and the warm-up. In order: a devotion journal entry, a round of the books game, then 5 tries at her memory verse. A grown-up can skip one day with the grown-up PIN (it shows in the Ledger).${b.skipped === today ? ' <b>Skipped today.</b>' : ''}</p>
+    ${st.request && st.cur ? `<p class="review-banner">🏁 ${esc(name)} finished 5 days on <b>${esc(st.cur.ref)}</b> (${esc(shortDay(st.request))}) and hasn’t learned it yet. <b>Write the next verse</b> below (it comes after this one), or <button type="button" class="btn small" id="bvKeep">Keep ${esc(st.cur.ref)} ${VERSE_CYCLE} more days</button></p>` : ''}
     ${st.needsVerse ? `<p class="review-banner">💬 ${esc(name)} ${s.verses.length ? 'has learned every verse on her list' : 'doesn’t have a memory verse yet'}. Add the next one below.</p>` : ''}
     <h3>💬 Memory verses</h3>
     <p class="muted" style="margin-top:0">She learns them in this order, one at a time, with 5 tries a day. The blanks start at 10% of the words. When her last 5 tries average ${VERSE_MOVE_UP}% or better, the next day has more blanks: 10% → 20% → 35% → 50% → 70% → the whole verse. Writing the whole verse at ${VERSE_MOVE_UP}% means she’s learned it, and the next verse starts the next day. There’s no deadline; a verse carries on until she learns it. Every ${VERSE_CYCLE} days she practices it, she sees a recap (the level she reached, her tries and average), and a grown-up at home can keep the verse ${VERSE_CYCLE} more days or write the next one there, behind the grown-up PIN; those show here as ✍️ written at home. You’ll get an alert when she moves up and when she needs a new verse.</p>
@@ -98,8 +100,10 @@ export function renderBibleCard(el: HTMLElement, name: string, saveRaw: unknown,
     if (missing) { if (m) { m.textContent = `❌ ${verseFormError(ref, text)}`; m.style.color = '#b3261e'; m.style.fontWeight = '700'; } el.querySelector<HTMLElement>(missing)?.focus(); return; }
     const verses = editing ? s.verses.map(v => (v.id === editing.id ? { ...v, ref, version, text } : v)) : [...s.verses, { id: `v${Date.now().toString(36)}`, ref, version, text }].slice(-100);
     editId = '';
-    void store({ ...s, verses }, editing ? 'Saved.' : `Added ${ref} to ${name}’s list.`);
+    const answered = !editing && st.request && st.cur ? { ...(s.answered || {}), [st.cur.id]: today } : s.answered;   // a new verse answers the 5-day check
+    void store({ ...s, verses, ...(answered ? { answered } : {}) }, editing ? 'Saved.' : `Added ${ref} to ${name}’s list.`);
   });
   el.querySelector('#bvRemove')?.addEventListener('click', () => { const id = editId; editId = ''; void store({ ...s, verses: s.verses.filter(x => x.id !== id), ...(home.has(id) || s.removed?.length ? { removed: [...new Set([...(s.removed || []), ...(home.has(id) ? [id] : [])])] } : {}) }, 'Removed.'); });
+  el.querySelector('#bvKeep')?.addEventListener('click', () => { if (st.cur) void store({ ...s, answered: { ...(s.answered || {}), [st.cur.id]: today } }, `${st.cur.ref} stays for ${VERSE_CYCLE} more days.`); });
   el.querySelector('#bvWriteNext')?.addEventListener('click', () => { editId = ''; again(); const f = el.querySelector<HTMLInputElement>('#bvRef'); f?.scrollIntoView({ block: 'center' }); f?.focus(); });
 }

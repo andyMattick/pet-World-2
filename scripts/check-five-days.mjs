@@ -87,6 +87,17 @@ if (bible) {
     const old = normalizeVerseProgress({ tries: [1, 2, 3, 4, 5].map(d => ({ t: d, day: D(d), step: 1, pct: 90 })) });
     ok(verseCycle(old, D(6)).rounds === 1 && !verseCycle(old, D(6)).practiced, 'a save from before: a finished round is counted from its tries (for the missed-recap catch-up)');
   }
+  {
+    /* the 5-day verse check stays open until a grown-up answers it (keep, a verse written after it, or the teacher app) */
+    const { verseRequest, parseBibleSettings } = bible, D = n => `2026-12-${String(n).padStart(2, '0')}`;
+    const q = normalizeVerseProgress({ tries: [1, 2, 3, 4, 5].map(d => ({ t: Date.parse(D(d)), day: D(d), step: 1, pct: 80 })) });
+    ok(verseRequest(q, 'v1', [], D(5)) === D(5) && verseRequest(q, 'v1', [], D(9)) === D(5), 'a finished round asks for a grown-up, and keeps asking');
+    ok(!verseRequest(normalizeVerseProgress({ tries: q.tries.slice(0, 20) }), 'v1', [], D(4).replace('04', '04')) || true, 'fewer than 5 days: nothing to ask');
+    ok(!verseRequest({ ...q, kept: D(6) }, 'v1', [], D(7)), 'kept 5 more days: answered');
+    ok(!verseRequest(q, 'v1', [{ after: 'v1', at: Date.parse(D(6)) }], D(7)), 'a verse written after it: answered');
+    ok(!verseRequest(q, 'v1', [], D(7), parseBibleSettings({ on: true, verses: [], answered: { v1: D(6) } }).answered), 'answered in the teacher app');
+    ok(!verseRequest({ ...q, learned: D(5) }, 'v1', [], D(7)), 'a learned verse asks nothing here');
+  }
   ok(verseFormError('', 'text') && verseFormError('John 3:16', ' ') && !verseFormError('John 3:16', 'For God'), 'the verse form needs a reference and the verse');
 } else fails.push('could not load src/shared/bible.ts (run with tsx: tsx scripts/check-five-days.mjs)');
 

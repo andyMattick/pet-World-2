@@ -150,7 +150,9 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
   const groups: Record<string, { r: StudentReport; n: number; ex?: string }[]> = {};
   list.forEach(r => Object.entries(r.m || {}).forEach(([id, v]) => { if (!MIS[id]) return; (groups[id] = groups[id] || []).push({ r, n: v[0], ex: v[1] && v[1][0] }); }));
   const gl = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
-  h += `<div class="card"><h2>Suggested small groups</h2><p class="muted" style="margin-top:0">Students grouped by the mix-up the game spotted, in unit order. Counts show how many times it happened.</p>`;
+  /* folded by default (owner, Oct 31, 2026: "suggested small groups takes up a lot of the dashboard"): the summary line says how many */
+  const groupKids = new Set(gl.flatMap(([, arr]) => arr.map(x => x.r.id))).size;
+  h += `<div class="card"><details class="groups-fold"><summary><h2 style="display:inline">Suggested small groups</h2> <span class="muted">· ${gl.length ? `${gl.length} group${gl.length === 1 ? '' : 's'}, ${groupKids} student${groupKids === 1 ? '' : 's'}` : 'none yet'}</span></summary><p class="muted" style="margin-top:6px">Students grouped by the mix-up the game spotted, in unit order. Counts show how many times it happened.</p>`;
   const unitOf = (id: string) => [...new Set(MIS[id].skills.filter(k => SKILLS[k]).map(k => shopOfSkill(k)))].map(sh => SHOPS[sh] ? `${SHOPS[sh].emoji} ${esc(SHOPS[sh].name)}` : '').filter(Boolean).join(' · ') || 'All units';
   const shopRank = (id: string) => { const k = MIS[id].skills.find(x => SKILLS[x]); return k ? Object.keys(SHOPS).indexOf(shopOfSkill(k)) : -1; };
   gl.sort((a, b) => shopRank(a[0]) - shopRank(b[0]) || b[1].length - a[1].length);
@@ -179,7 +181,7 @@ export function renderClassReport(el: HTMLElement, list: StudentReport[], onSave
     const missed = assessment.missed.map(skill => `${SHOPS[shopOfSkill(skill)]?.emoji || shopEmoji} ${esc(SKILLS[skill]?.name || skill)}`).join(', ');
     return `<div class="group"><h3>${esc(student)} · ${shopEmoji} ${name}</h3><div class="who">${missed}</div></div>`;
   }).join('') + '</div>' : '<p class="muted">No students are in review after a quiz.</p>';
-  h += `</div><div class="card"><h2>In review after a quiz</h2>${reviewGroups}</div>`;
+  h += `</details></div><div class="card"><h2>In review after a quiz</h2>${reviewGroups}</div>`;
   const byWeek = [...list].sort((a, b) => (a.ss?.week || 0) - (b.ss?.week || 0) || a.n.localeCompare(b.n));
   h += `<div class="card"><h2>Practice time this week</h2><p class="muted" style="margin-top:0">Active minutes in the last 7 days, least first. Only time with the game on screen and a tap or key press in the last minute counts.</p>${list.length ? '<table class="steptable"><tr><th>Student</th><th>Last 7 days</th><th>Today</th><th>Last signed in</th></tr>' + byWeek.map(r => `<tr class="${noRecentSignIn(r) ? 'stale' : ''}"><td>${esc(r.n)}</td><td>${minTxt(r.ss?.week ?? 0)}</td><td>${minTxt(r.ss?.today ?? 0)}</td><td>${signedInTxt(r.ss?.last)}${noRecentSignIn(r) ? ' <span class="tag stale-tag">no sign-in in 7 days</span>' : ''}</td></tr>`).join('') + '</table>' : '<p class="muted">No students yet.</p>'}</div>`;
   const notHelping = list.flatMap(r => Object.entries(r.dl || {}).filter(([, v]) => v.reteach).map(([id, v]) => ({name:r.n, id, v})));
@@ -606,14 +608,14 @@ function readingWaiting(r: StudentReport) {
   return { chapters, essays };
 }
 function waitingHTML(list: StudentReport[]) {
-  const rows = list.map(r => ({ r, projects: projectsWaiting(r), ...readingWaiting(r), written: writtenWaiting(r).length, verse: bibleVerseStatus(r.qx?.bible, r.bible).needsVerse ? 1 : 0 }))
-    .map(x => ({ ...x, total: x.projects + x.chapters + x.essays + x.written + x.verse })).filter(x => x.total).sort((a, b) => b.total - a.total || a.r.n.localeCompare(b.r.n));
+  const rows = list.map(r => ({ r, projects: projectsWaiting(r), ...readingWaiting(r), written: writtenWaiting(r).length, verse: (vs => vs.needsVerse ? 1 : vs.request ? 2 : 0)(bibleVerseStatus(r.qx?.bible, r.bible)) }))
+    .map(x => ({ ...x, total: x.projects + x.chapters + x.essays + x.written + (x.verse ? 1 : 0) })).filter(x => x.total).sort((a, b) => b.total - a.total || a.r.n.localeCompare(b.r.n));
   const total = rows.reduce((sum, x) => sum + x.total, 0);
   const chip = (r: StudentReport, n: number, one: string, many: string, subject: string) => n ? `<button class="namebtn chip" data-id="${esc(r.id)}" data-subject="${subject}">${n} ${n === 1 ? one : many}</button>` : '';
   return `<div class="card"><h2>🧑‍🏫 Waiting for a grown-up${total ? ` · ${total}` : ''}</h2><p class="muted" style="margin-top:0">Projects and labs, Reading Log chapters, reading-quiz essays, and written answers that nobody has checked yet, and students who need a new memory verse. Tap one to open that student's page at the right tab. A parent's check at home counts as checked; you can still change it.</p>
     ${rows.length ? `<table class="steptable"><thead><tr><th>Student</th><th>To check</th></tr></thead><tbody>${rows.map(x => `<tr><td><button class="namebtn" data-id="${esc(x.r.id)}" data-subject="${x.projects ? 'projects' : x.chapters || x.essays ? 'reading' : x.written ? 'written' : 'bible'}">${esc(x.r.n)}</button></td><td>${[
       chip(x.r, x.projects, 'project or lab', 'projects or labs', 'projects'), chip(x.r, x.chapters, 'reading chapter', 'reading chapters', 'reading'),
-      chip(x.r, x.essays, 'reading essay', 'reading essays', 'reading'), chip(x.r, x.written, 'written answer', 'written answers', 'written'), x.verse ? `<button class="namebtn chip" data-id="${esc(x.r.id)}" data-subject="bible">✝️ needs a new memory verse</button>` : ''].filter(Boolean).join(' ')}</td></tr>`).join('')}</tbody></table>`
+      chip(x.r, x.essays, 'reading essay', 'reading essays', 'reading'), chip(x.r, x.written, 'written answer', 'written answers', 'written'), x.verse ? `<button class="namebtn chip" data-id="${esc(x.r.id)}" data-subject="bible">${x.verse === 2 ? '✝️ 5-day verse check: write the next verse or keep it' : '✝️ needs a new memory verse'}</button>` : ''].filter(Boolean).join(' ')}</td></tr>`).join('')}</tbody></table>`
       : '<p class="muted">Nothing is waiting. Everything students sent has been checked.</p>'}</div>`;
 }
 /* accepted work folds into a closed "✅ Accepted" section at the bottom of its tab, so the page shows only what still

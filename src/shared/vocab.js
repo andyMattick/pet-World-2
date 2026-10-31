@@ -355,7 +355,10 @@ function weeklyRest(out){
   /* back: words a grown-up or teacher moved back from mastered, first in line for the next weekly draw (unmasterWord) */
   const back = keys(out.back, 60).filter((k, i, a) => a.indexOf(k) === i);
   /* path: 🐾 this week's Paw Path (wordPath.js): lessons done per skill, XP, streak days, accuracy per skill */
-  return { hall, back, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0, path: normalizePath(out.path) };
+  /* undo: how a word looked before it was moved back from mastered (remasterWord) */
+  const undo = Object.fromEntries(Object.entries(out.undo && typeof out.undo === 'object' ? out.undo : {}).filter(([k, u]) => k.length <= VOCAB_LIMITS.word && u && typeof u === 'object').slice(-60)
+    .map(([k, u]) => [wordKey(k), { wk: DAY_KEY.test(u.wk) ? u.wk : '', r: Array.isArray(u.r) ? u.r.slice(-20).map(x => (x ? 1 : 0)) : null, review: !!u.review, mastered: !!u.mastered, at: Number.isFinite(+u.at) ? +u.at : 0 }]));
+  return { hall, back, undo, puzzle, puzzleBest: Number.isFinite(+out.puzzleBest) ? Math.max(0, Math.round(+out.puzzleBest)) : 0, path: normalizePath(out.path) };
 }
 export function normalizeVocabState(v){
   const out = v && typeof v === 'object' ? v : {};
@@ -412,6 +415,11 @@ export function wordBuckets(vocab, all){
 export function unmasterWord(vocab, word){
   const k = wordKey(word);
   if (!vocab || !k || !Array.isArray(vocab.hall) || !vocab.hall.some(h => wordKey(h?.w) === k)) return false;
+  /* undo (owner, Oct 31, 2026: "I can send a Hall of Fame word back, but I can't undo that"): remember how it was */
+  const was = vocab.hall.find(h => wordKey(h?.w) === k), wk0 = vocab.week;
+  vocab.undo = { ...(vocab.undo && typeof vocab.undo === 'object' ? vocab.undo : {}), [k]: { wk: was?.wk || '', r: Array.isArray(vocab.stats?.[k]?.r) ? vocab.stats[k].r.slice(-20) : null,
+    review: !!(wk0?.review || []).includes(k), mastered: !!(wk0?.mastered || []).includes(k), at: Date.now() } };
+  const undoKeys = Object.keys(vocab.undo); if (undoKeys.length > 60) for (const x of undoKeys.slice(0, undoKeys.length - 60)) delete vocab.undo[x];
   vocab.hall = vocab.hall.filter(h => wordKey(h?.w) !== k);
   vocab.back = [...(Array.isArray(vocab.back) ? vocab.back : []).filter(x => x !== k), k].slice(-60);
   if (!vocab.stats || typeof vocab.stats !== 'object') vocab.stats = {};
@@ -422,6 +430,27 @@ export function unmasterWord(vocab, word){
     if (Array.isArray(wk.mastered)) wk.mastered = wk.mastered.filter(x => x !== k);
     if (wk.check && !wk.check.done && wk.check.results && k in wk.check.results) delete wk.check.results[k];
   }
+  return true;
+}
+/** Undo a move back: the word goes back in the Hall of Fame as it was (its set, its answer history, review/mastered in
+    this set), leaves the unmastered list and next set's front of the line. Works for a word moved back by a grown-up or
+    the teacher. Returns false when the word is already mastered. */
+export function remasterWord(vocab, word){
+  const k = wordKey(word);
+  if (!vocab || !k) return false;
+  if (!Array.isArray(vocab.hall)) vocab.hall = [];
+  if (vocab.hall.some(h => wordKey(h?.w) === k)) return false;
+  const u = vocab.undo?.[k] || {};
+  vocab.hall = [...vocab.hall, { w: k, wk: typeof u.wk === 'string' ? u.wk : '' }];
+  vocab.back = (Array.isArray(vocab.back) ? vocab.back : []).filter(x => x !== k);
+  if (!vocab.stats || typeof vocab.stats !== 'object') vocab.stats = {};
+  if (Array.isArray(u.r) && u.r.length) vocab.stats[k] = { r: u.r.slice(-20) };
+  const wk = vocab.week;
+  if (wk && Array.isArray(wk.words) && wk.words.includes(k)) {
+    if (u.review) { wk.review = [...new Set([...(wk.review || []), k])]; wk.carried = (wk.carried || []).filter(x => x !== k); }
+    else if (!(wk.mastered || []).includes(k)) wk.mastered = [...(wk.mastered || []), k];   // drawn again since: counts as mastered, so it isn't practiced
+  }
+  if (vocab.undo) delete vocab.undo[k];
   return true;
 }
 /* the mastered words among `words` (entries or keys), as keys: the ones adding to a list would move back to practice */

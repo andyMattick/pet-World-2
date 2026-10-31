@@ -13,10 +13,10 @@ import { normalizeSubjectTime, addSubjectTime, mergeSubjectTime, subjectTimeTabl
 import { stageHTML, stageReact } from './stage';
 import { WORLD_LAND, WORLD_WATER, DIG_PLACES, DIG_SITES, SCRIBE_SYSTEMS, UGARITIC, HIEROGLYPHS, HIEROGLYPH_NAMES, GREEK, GREEK_NAMES, ORACLE_SIGNS } from './historyData';
 import { lessonVideo, videoEmbedUrl, youtubeId } from '../shared/lessonVideos';
-import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP, VERSE_CYCLE, withAddedVerses, normalizeAddedVerses, verseFormError, verseCycle, verseRecap, verseDays, markVerseDay } from '../shared/bible';
+import { BIBLE_BOOKS, BIBLE_SECTIONS, TESTAMENTS, BOOK_LEVELS, SORT_STREAK, NEIGHBOR_ROUND, RECALL_SECTIONS, booksIn, sectionOf, neighborsOf, bookFromTyped, parseBibleSettings, typedMayContinue, currentVerse, normalizeVerseProgress, stepOn, lastFiveAverage, verseStepPractice, stepName, FULL_STEP, VERSE_TRIES_A_DAY, VERSE_MOVE_UP, VERSE_CYCLE, withAddedVerses, normalizeAddedVerses, verseFormError, verseCycle, verseRecap, verseDays, markVerseDay, verseRequest } from '../shared/bible';
 import { normalizeTyped, typeOf, isWritten, typedQuestions, shuffledCopy, checkTyped, responseReady, responseText, answerText, pickWords, wordCount, writtenReview, reviewScore, normalizeWrittenAnswers, WRITTEN_MAX } from '../shared/questionTypes';
 import { TYPED_QUESTIONS, UNIT_ESSAYS } from '../shared/typedQuestions';
-import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, masteredAmong, keepPictures, SET_DAYS, setDayInfo, markSetDay } from '../shared/vocab';
+import { VOCAB_WORDS, VOCAB_LIMITS, vocabList, wordKey, wordStatus, wordWeight, STATUS_TEXT, parseVocabImport, missingLines, normalizeVocabState, findWord, blankSentence, validWord, syllablesOf, wordLevel, LEVEL_NAMES, listenSeconds, validListen, LISTEN_MAX, PATTERN_WORDS, wordBuckets, unmasterWord, remasterWord, masteredAmong, keepPictures, SET_DAYS, setDayInfo, markSetDay } from '../shared/vocab';
 import { spellingPatterns, patternById } from '../shared/spellingPatterns';
 import { makeRedPenRound, plainWord as redPenWord, tapIsRight, spellingIsRight, patternIsRight, PATTERN_SHORT } from '../shared/redPen';
 import { wordPartsFor, ORIGIN_NAMES } from '../shared/wordParts';
@@ -8984,10 +8984,7 @@ function bibleRecapToday(day = logDayKey()){
      finished before the recap existed): show it the next time she opens Bible, for the rest of that day, until she
      practices again or a grown-up keeps or replaces the verse */
   const now = currentVerse(bibleSettings(), S.bible.vp), p = now && S.bible.vp[now.id];
-  if (p && !p.learned && !p.aside && p.kept !== day) {
-    const c = verseCycle(p, day), seen = p.seen || {round:0, day:''};
-    if (c.rounds >= 1 && !c.practiced && (seen.round < c.rounds || seen.day === day)) return {v:now, p, missed:true};
-  }
+  if (p && verseRequest(p, now.id, S.bible.added, day, bibleSettings().answered)) return {v:now, p, missed:true};   // until a grown-up keeps it or writes the next verse
   return null;
 }
 function bibleRecapHTML(){
@@ -12880,7 +12877,7 @@ function renderVocab(){
     body = `${pathSummaryHTML()}<p class="muted">All your words in one list. Tap a word to see what it means. Each week’s list has 20 unmastered words (last week’s leftovers first, the rest picked at random) and 5 mastered words to review.</p>
       <h4 class="vocab-set">Unmastered (${un.length})</h4><div class="vocab-grid">${un.map(v => chip(v, wordStatus(vocabStat(v.w)))).join('')}</div>
       ${(S.vocab.back || []).length ? `<p class="muted vocab-back-line">🔁 First in line for next week: ${S.vocab.back.map(k => `<b>${esc(all.find(v => wordKey(v.w) === k)?.w || k)}</b>`).join(', ')}</p>` : ''}
-      ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>${unmasterListHTML(won)}` : ''}
+      ${won.length ? `<h4 class="vocab-set">🏆 Mastered (${won.length})</h4><div class="vocab-grid">${won.map(v => chip(v, 'solid')).join('')}</div>` : ''}${won.length || Object.keys(S.vocab.undo || {}).length ? unmasterListHTML(won) : ''}
       ${needsCartoonHTML()}<p class="vocab-peek muted" aria-live="polite"></p><div class="legend"><span><i class="st-solid"></i>Solid</span><span><i class="st-close"></i>Getting there</span><span><i class="st-work"></i>Needs practice</span><span><i class="st-new"></i>Not seen yet</span></div>`;
   } else {
     const blurb = {practice:'8 cards: what a word means, which word fits a sentence, and spelling. Words you miss come back more often.',
@@ -13928,8 +13925,10 @@ function pathSummaryHTML(){ const wk = ensureWeek(); ensurePath(); return `<p cl
    already mastered (the own-words editor, a flagged word) does the same. A teacher's move arrives as a clear (applyClears). */
 function unmasterListHTML(won){
   if (!parentReadingUnlocked) return `<p class="muted vocab-back-tip">Grown-ups: unlock “For grown-ups” below with the PIN to move a mastered word back to practice.</p>`;
-  return `<details class="vocab-back" open><summary>↩️ Move a mastered word back to practice (grown-ups)</summary><p class="muted" style="margin:4px 0">It leaves the Hall of Fame, goes on the unmastered list, and is first in line for next week’s 20 words. To undo, she masters it again on a Friday check.</p>
-    <ul class="vocab-back-list">${won.map(v => `<li><span>⭐ ${esc(v.w)}</span><button type="button" class="btn small" data-vocab-unmaster="${esc(wordKey(v.w))}">Move to unmastered</button></li>`).join('')}</ul></details>`;
+  const hall = hallKeys(), back = Object.keys(S.vocab.undo || {}).filter(k => !hall.has(k));   // moved back and not mastered again yet: can be undone
+  return `<details class="vocab-back" open><summary>↩️ Move a mastered word back to practice (grown-ups)</summary><p class="muted" style="margin:4px 0">It leaves the Hall of Fame, goes on the unmastered list, and is first in line for her next set’s 20 words. Changed your mind? Use <b>Put back</b> below.</p>
+    ${won.length ? `<ul class="vocab-back-list">${won.map(v => `<li><span>⭐ ${esc(v.w)}</span><button type="button" class="btn small" data-vocab-unmaster="${esc(wordKey(v.w))}">Move to unmastered</button></li>`).join('')}</ul>` : ''}
+    ${back.length ? `<h5 style="margin:8px 0 4px">🔁 Moved back to practice</h5><ul class="vocab-back-list">${back.map(k => `<li><span>🔁 ${esc(wordObj(k).w)}</span><button type="button" class="btn small" data-vocab-remaster="${esc(k)}">↩️ Put back in the Hall of Fame</button></li>`).join('')}</ul>` : ''}</details>`;
 }
 /* moves mastered words back to practice and logs each one; returns the keys that moved */
 function moveWordsBack(words, who = 'a grown-up'){
@@ -14034,6 +14033,11 @@ $('#vocabWrap').addEventListener('click', event => {
   if (b.dataset.vocabUnmaster) {
     const moved = moveWordsBack([b.dataset.vocabUnmaster]); save(); renderVocab();
     if (moved.length) toast(`🔁 ${moved[0]} is back on the practice list, first in line for next week.`);
+    return;
+  }
+  if (b.dataset.vocabRemaster) {   // undo a move back (remasterWord in vocab.js)
+    const k = b.dataset.vocabRemaster;
+    if (remasterWord(S.vocab, k)) { logEvent({k:'wordBack', title:`↩️ ${k} put back in the Hall of Fame by a grown-up`}); save(); renderVocab(); toast(`↩️ ${k} is back in the Hall of Fame.`); }
     return;
   }
   if (b.hasAttribute('data-vocab-import')) {
@@ -16319,6 +16323,9 @@ function applyClears(state){
       } else if (kind === 'unmaster' && a && !recheck && state.vocab) {
         let w = a; try { w = decodeURIComponent(a); } catch(e){}
         if (unmasterWord(state.vocab, w)) { changed = true; if (state === S && !LOOK_ID) logEvent({k:'wordBack', title:`🔁 ${wordKey(w)} moved back to practice by the teacher`}); }
+      } else if (kind === 'remaster' && a && !recheck && state.vocab) {   // the teacher undid a move back
+        let w = a; try { w = decodeURIComponent(a); } catch(e){}
+        if (remasterWord(state.vocab, w)) { changed = true; if (state === S && !LOOK_ID) logEvent({k:'wordBack', title:`↩️ ${wordKey(w)} put back in the Hall of Fame by the teacher`}); }
       } else if (kind === 'think' && a && b) {
         dropKeys(state.mathThink, k => k === `${a}:${b}`, true);
       } else if (kind === 'quiz' && a && b) {

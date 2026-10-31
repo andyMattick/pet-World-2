@@ -91,7 +91,7 @@ export function typedMayContinue(raw: string): boolean {
    There's no deadline: a verse carries on into the next week. When she's learned every verse, the grown-up gets an alert
    to add the next one. */
 export interface MemoryVerse { id: string; ref: string; version: string; text: string }
-export interface BibleSettings { on: boolean; verses: MemoryVerse[]; removed?: string[] }
+export interface BibleSettings { on: boolean; verses: MemoryVerse[]; removed?: string[]; answered?: Record<string, string> }
 export interface VerseTry { t: number; day: string; step: number; pct: number }
 export interface VerseProgress { step: number; up: string; tries: VerseTry[]; learned: string; aside?: string; kept?: string; days?: string[]; seen?: { round: number; day: string } }
 export const VERSE_STEPS = [0.1, 0.2, 0.35, 0.5, 0.7, 1];
@@ -106,7 +106,9 @@ export function parseBibleSettings(raw: unknown): BibleSettings {
   if (list.some(x => x.week) && !list.some(x => x.id)) list.sort((a, b) => String(a.week) < String(b.week) ? -1 : 1);   // the first version kept verses by week
   const verses = list.map((x, i) => ({ id: String(x.id || x.week || `v${i}`).slice(0, 40), ref: String(x.ref || '').slice(0, 80), version: String(x.version || '').slice(0, 40), text: String(x.text).slice(0, 2000) }));
   const removed = (Array.isArray(o.removed) ? o.removed : []).map(x => String(x).slice(0, 40)).filter(Boolean).slice(-200);
-  return { on: o.on === true, verses, ...(removed.length ? { removed } : {}) };
+  /* answered: the teacher app's answer to a 5-day verse check (kept 5 more days, or a next verse added), by verse id → day */
+  const answered = Object.fromEntries(Object.entries(o.answered && typeof o.answered === 'object' ? o.answered as Record<string, unknown> : {}).filter(([, d]) => /^\d{4}-\d\d-\d\d$/.test(String(d))).slice(-200).map(([k, d]) => [String(k).slice(0, 40), String(d)]));
+  return { on: o.on === true, verses, ...(removed.length ? { removed } : {}), ...(Object.keys(answered).length ? { answered } : {}) };
 }
 export function normalizeVerseProgress(raw: unknown): VerseProgress {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Partial<VerseProgress>;
@@ -185,6 +187,18 @@ export function verseRecap(p: VerseProgress, day: string) {
   return { step, name: stepName(step), level: step + 1, levels: VERSE_STEPS.length, tries: tries.length, days: last5.length, from: last5[0] || '', avg, learned: !!p.learned, learnedDay: p.learned, aside: p.aside || '' };
 }
 /** She has learned every verse (or none was ever added): a grown-up should add the next one. */
+/** A finished 5-day round no grown-up has answered yet (owner, Oct 31, 2026: "a parent's link to write the new verse"):
+    the round ended, the verse isn't learned or set aside, and since that day nobody kept it 5 more days or wrote a new
+    verse after it. Returns the round's last day, or '' when there's nothing to ask. */
+export function verseRequest(p: VerseProgress, verseId: string, added: unknown, day: string, answered?: Record<string, string>): string {
+  if (!p || p.learned || p.aside) return '';
+  const days = verseDays(p).filter(d => d <= day), rounds = Math.floor(days.length / VERSE_CYCLE);
+  if (!rounds) return '';
+  const end = days[rounds * VERSE_CYCLE - 1];
+  if ((p.kept && p.kept >= end) || (answered?.[verseId] && answered[verseId] >= end)) return '';
+  const wrote = (Array.isArray(added) ? added : []).some((a: { after?: string; at?: number }) => a && a.after === verseId && +(a.at || 0) >= Date.parse(`${end}T00:00:00`));
+  return wrote ? '' : end;
+}
 export const needsNewVerse = (s: BibleSettings, progress: Record<string, unknown> | undefined) => s.on && !currentVerse(s, progress);
 export const verseWords = (text: string) => String(text || '').trim().split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
 /** A step's practice: this many blanks, or the whole verse. */

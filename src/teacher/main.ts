@@ -473,8 +473,8 @@ function renderVocabularyTab() {
   };
   /* move mastered words back to one student's practice list: a one-time clear in her quiz_overrides ("clear:vocab-back-<time>"
      = "unmaster:<word>,…"), which the game applies once (applyClears, state.clearsDone). Read fresh so nothing else is lost. */
-  const saveUnmaster: SaveUnmaster = async (id, words) => {
-    const clear = unmasterClear(words); if (!clear) return null;
+  const saveUnmaster: SaveUnmaster = async (id, words, kind = 'unmaster') => {
+    const clear = unmasterClear(words, Date.now(), kind); if (!clear) return null;
     const { data, error } = await sb!.from('students').select('quiz_overrides').eq('id', id).maybeSingle();
     if (error) return error.message;
     const next = { ...((data?.quiz_overrides as Record<string, string> | null) || {}), [clear[0]]: clear[1] };

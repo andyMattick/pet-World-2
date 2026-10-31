@@ -18,7 +18,7 @@ export type VocabRoster = { id?: string; name: string; stats: Record<string, { r
 /** saves the words picked for one student's spelling patterns (students.quiz_overrides.spellFocus); [] clears them */
 export type SaveSpellFocus = (studentId: string, words: string[]) => Promise<string | null>;
 /** moves mastered words back to one student's practice list (a one-time clear in students.quiz_overrides); null when saved */
-export type SaveUnmaster = (studentId: string, words: string[]) => Promise<string | null>;
+export type SaveUnmaster = (studentId: string, words: string[], kind?: 'unmaster' | 'remaster') => Promise<string | null>;
 
 /* ---------- moving mastered words back to practice (owner, Oct 30, 2026; docs/VOCAB.md "Moving words back to practice") ----------
    The teacher's move is saved as a clear in the student's quiz_overrides, the same way other teacher-to-student changes
@@ -26,16 +26,19 @@ export type SaveUnmaster = (studentId: string, words: string[]) => Promise<strin
    clear once per save copy and records it in state.clearsDone (applyClears in game.js), so it never fights with her
    mastering the word again later. */
 const BACK_PREFIX = 'clear:vocab-back-';
-export function unmasterClear(words: string[], now = Date.now()): [string, string] | null {
+export function unmasterClear(words: string[], now = Date.now(), kind: 'unmaster' | 'remaster' = 'unmaster'): [string, string] | null {
   const keys = [...new Set(words.map(wordKey).filter(Boolean))];
-  return keys.length ? [`${BACK_PREFIX}${now}`, keys.map(k => `unmaster:${encodeURIComponent(k)}`).join(',')] : null;
+  return keys.length ? [`${BACK_PREFIX}${now}`, keys.map(k => `${kind}:${encodeURIComponent(k)}`).join(',')] : null;   // remaster: undo a move back (remasterWord)
 }
 /** words moved back by the teacher that the student's game hasn't applied yet (their clear isn't in her clearsDone) */
 export function pendingBackOf(overrides: Record<string, unknown> | null | undefined, clearsDone: unknown): string[] {
   const done = new Set(Array.isArray(clearsDone) ? clearsDone.map(String) : []), out: string[] = [];
   for (const [k, v] of Object.entries(overrides || {})) {
     if (!k.startsWith(BACK_PREFIX) || done.has(k) || typeof v !== 'string') continue;
-    for (const t of v.split(',')) if (t.startsWith('unmaster:')) { try { out.push(wordKey(decodeURIComponent(t.slice(9)))); } catch { /* a bad token is skipped */ } }
+    for (const t of v.split(',')) {
+      const kind = t.startsWith('unmaster:') ? 1 : t.startsWith('remaster:') ? -1 : 0; if (!kind) continue;
+      try { const w = wordKey(decodeURIComponent(t.slice(9))); if (kind > 0) out.push(w); else { const i = out.lastIndexOf(w); if (i >= 0) out.splice(i, 1); } } catch { /* a bad token is skipped */ }
+    }
   }
   return [...new Set(out)];
 }
@@ -255,6 +258,18 @@ export function renderVocabTab(pane: HTMLElement, cls: VocabClass, save: SaveVoc
       const dismissed = [...new Set([...(vocab.dismissed || []), wordKey(b.dataset.vbFlagDismiss)])].slice(-300);
       void commit({ ...vocab, dismissed }, `${b.dataset.vbFlagDismiss} dismissed.`);
     }));
+  /* undo a move back: "Undo" on a ⏳ moving-back word, or ↩️ on a word already moved back */
+  pane.querySelectorAll<HTMLButtonElement>('[data-vb-remaster]').forEach(b => b.addEventListener('click', async () => {
+    const box = b.closest<HTMLElement>('[data-vb-student]'), st = roster?.find(r => r.id === box?.dataset.vbStudent), w = b.dataset.vbRemaster!;
+    if (!st?.id) return;
+    b.disabled = true; b.textContent = 'Saving…';
+    const err = saveUnmaster ? await saveUnmaster(st.id, [w], 'remaster') : 'reload the page and try again';
+    if (err) { b.disabled = false; b.textContent = `Couldn’t save: ${err}`; return; }
+    const was = new Set(st.pendingBack || []);
+    st.pendingBack = (st.pendingBack || []).filter(k => k !== wordKey(w));
+    backNotes.set(st.id, was.has(wordKey(w)) ? `↩️ Undone: ${w} stays in ${st.name}’s Mastered list.` : `↩️ ${w} goes back in ${st.name}’s Mastered list the next time Pet World opens for her.`);
+    renderVocabTab(pane, cls, save, roster, saveSpellFocus, saveUnmaster);
+  }));
   /* a student's ⭐ Mastered word → "Move to unmastered": ask first, then save it for her game */
   pane.querySelectorAll<HTMLButtonElement>('[data-vb-back]').forEach(b => b.addEventListener('click', () => {
     const box = b.closest<HTMLElement>('[data-vb-student]'), ask = box?.querySelector<HTMLElement>('[data-vb-back-ask]'), st = roster?.find(r => r.id === box?.dataset.vbStudent);
@@ -299,10 +314,11 @@ function studentListsHTML(roster: VocabRoster, vocab: ClassVocab): string {
     const chips = (xs: VocabWord[], mark: (v: VocabWord) => string) => xs.length ? xs.map(v => `<span class="chip" title="${esc(v.d || '')}">${mark(v)} ${esc(v.w)}</span>`).join(' ') : '<span class="muted">None yet.</span>';
     const active = b.week.length > 0 || Object.keys(st.stats || {}).length > 0 || backNotes.has(st.id || '');   // open for any student who has words this week or has practiced
     const pending = new Set(st.pendingBack || []), note = backNotes.get(st.id || ''); backNotes.delete(st.id || '');
-    const masteredBody = b.mastered.length ? `<p class="muted" style="margin:0 0 4px">Tap a word to move it back to Unmastered.</p>${b.mastered.map(v => pending.has(wordKey(v.w)) ? `<span class="chip" title="Moves back to Unmastered the next time she opens Pet World">⏳ ${esc(v.w)} <small class="muted">moving back</small></span>` : st.id ? `<button type="button" class="chip vb-back" data-vb-back="${esc(v.w)}" title="${esc(v.d || '')}: tap to move it back to Unmastered">⭐ ${esc(v.w)}</button>` : `<span class="chip">⭐ ${esc(v.w)}</span>`).join(' ')}` : '<span class="muted">None yet.</span>';
+    const hallNow = new Set(b.mastered.map(v => wordKey(v.w))), movedBack = Object.keys((saved as { undo?: Record<string, unknown> }).undo || {}).filter(k => !hallNow.has(k) && !pending.has(k));   // moved back and not mastered again: can be undone
+    const masteredBody = b.mastered.length ? `<p class="muted" style="margin:0 0 4px">Tap a word to move it back to Unmastered.</p>${b.mastered.map(v => pending.has(wordKey(v.w)) ? `<span class="chip" title="Moves back to Unmastered the next time she opens Pet World">⏳ ${esc(v.w)} <small class="muted">moving back</small> <button type="button" class="btn small" data-vb-remaster="${esc(v.w)}">Undo</button></span>` : st.id ? `<button type="button" class="chip vb-back" data-vb-back="${esc(v.w)}" title="${esc(v.d || '')}: tap to move it back to Unmastered">⭐ ${esc(v.w)}</button>` : `<span class="chip">⭐ ${esc(v.w)}</span>`).join(' ')}` : '<span class="muted">None yet.</span>';
     return `<details${active ? ' open' : ''} class="vb-student" data-vb-student="${esc(st.id || '')}"><summary><b>${esc(st.name)}</b> <span class="muted">⭐ ${b.mastered.length} mastered · ${b.unmastered.length} unmastered · this set ${b.week.length} (${n('carried')} carried over, ${n('new')} new, ${n('review')} review) · ✅ ${right} right in this set · ${friday}</span></summary>${stale}
       <p class="vb-path">${esc(pathSummaryText((saved as { path?: unknown }).path, b.weekId))}</p>
-      <div class="vb-lists">${box(`This set’s words (${b.week.length})`, weekBody)}${box(`Unmastered (${b.unmastered.length})`, `<p class="muted" style="margin:0 0 4px">✅ solid · 🟡 getting there · 🔴 needs practice</p>${chips(b.unmastered, v => `${b.back.includes(wordKey(v.w)) ? '🔁' : ''}${st3(v)}`)}`)}${box(`⭐ Mastered (${b.mastered.length})`, masteredBody)}</div><p class="status" data-vb-back-ask>${note ? esc(note) : ''}</p></details>`;
+      <div class="vb-lists">${box(`This set’s words (${b.week.length})`, weekBody)}${box(`Unmastered (${b.unmastered.length})`, `<p class="muted" style="margin:0 0 4px">✅ solid · 🟡 getting there · 🔴 needs practice</p>${chips(b.unmastered, v => `${b.back.includes(wordKey(v.w)) ? '🔁' : ''}${st3(v)}`)}`)}${box(`⭐ Mastered (${b.mastered.length})`, masteredBody + (movedBack.length && st.id ? `<p class="muted" style="margin:8px 0 4px">🔁 Moved back to practice (tap to put it back in Mastered):</p>${movedBack.map(k => `<button type="button" class="chip vb-back" data-vb-remaster="${esc(k)}">↩️ ${esc(k)}</button>`).join(' ')}` : ''))}</div><p class="status" data-vb-back-ask>${note ? esc(note) : ''}</p></details>`;
   }).join('');
   return `<div class="card"><h2>📚 Each student’s words</h2>${intro}${rows}</div>`;
 }
